@@ -1,0 +1,13 @@
+{
+  "target": "es6",
+  "allowSyntheticDefaultImports": true,
+  "esModuleInterop": true,
+  "moduleResolution": "node",
+  "compilerOptions": {
+    "strict": true,
+    "baseUrl": "../node_modules",
+    "types": ["cypress", "node"],
+    "noImplicitAny": false
+  },
+  "include": ["**/*.ts"]
+}

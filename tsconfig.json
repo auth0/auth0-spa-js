@@ -1,0 +1,12 @@
+{
+  "compilerOptions": {
+    "target": "es6",
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "sourceMap": true,
+    "declaration": true,
+    "declarationDir": "./dist/typings",
+    "moduleResolution": "node"
+  },
+  "exclude": ["./__tests__", "./dist/typings"]
+}

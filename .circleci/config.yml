@@ -1,0 +1,14 @@
+version: 2
+jobs:
+  build:
+    docker:
+      - image: cypress/browsers:chrome67
+    working_directory: ~/repo
+    steps:
+      - checkout
+      - run: npm ci
+      - run: npm run build
+      - run: npm run test
+      - run: npm run test:integration
+      - run: npm run test:es-check
+      - run: npm run print-bundle-size
