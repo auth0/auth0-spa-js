@@ -28,7 +28,8 @@
     "print-bundle-size": "node ./scripts/print-bundle-size",
     "prepack": "npm run build && npm run test:es-check && npm run test",
     "precommit": "pretty-quick --staged",
-    "version": "node ./scripts/release"
+    "version": "node ./scripts/release",
+    "publish:cdn": "ccu"
   },
   "devDependencies": {
     "@auth0/component-cdn-uploader": "github:auth0/component-cdn-uploader#v2.2.1",
