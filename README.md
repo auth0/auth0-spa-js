@@ -66,8 +66,9 @@ We appreciate feedback and contribution to this repo! Before you get started, pl
 
 ## Support + Feedback
 
-- Use [Issues](https://github.com/auth0/auth0-spa-js/issues) for code-level support
-- Use [Community](https://community.auth0.com/) for usage, questions, specific cases
+This SDK is in Early Access with selected stakeholders.
+
+We process feedback and provide support via private channels.
 
 ## Vulnerability Reporting
 
