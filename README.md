@@ -48,8 +48,8 @@ yarn add @auth0/auth0-spa-js
 import createAuth0Client from '@auth0/auth0-spa-js';
 
 const auth0 = await createAuth0Client({
-  domain: 'auth.brucke.club',
-  client_id: 'wLSIP47wM39wKdDmOj6Zb5eSEw3JVhVp'
+  domain: '<AUTH0_DOMAIN>',
+  client_id: '<AUTH0_CLIENT_ID>'
 });
 await auth0.loginWithPopup();
 const user = await auth0.getUser();

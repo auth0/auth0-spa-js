@@ -976,8 +976,8 @@ img { max-width: 100%; }
 			<pre><code class="language-js"><span class="hljs-keyword">import</span> createAuth0Client <span class="hljs-keyword">from</span> <span class="hljs-string">'@auth0/auth0-spa-js'</span>;
 
 <span class="hljs-keyword">const</span> auth0 = <span class="hljs-keyword">await</span> createAuth0Client({
-  <span class="hljs-attr">domain</span>: <span class="hljs-string">'auth.brucke.club'</span>,
-  <span class="hljs-attr">client_id</span>: <span class="hljs-string">'wLSIP47wM39wKdDmOj6Zb5eSEw3JVhVp'</span>
+  <span class="hljs-attr">domain</span>: <span class="hljs-string">'&lt;AUTH0_DOMAIN&gt;'</span>,
+  <span class="hljs-attr">client_id</span>: <span class="hljs-string">'&lt;AUTH0_CLIENT_ID&gt;'</span>
 });
 <span class="hljs-keyword">await</span> auth0.loginWithPopup();
 <span class="hljs-keyword">const</span> user = <span class="hljs-keyword">await</span> auth0.getUser();
@@ -1053,7 +1053,7 @@ img { max-width: 100%; }
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/80fc744/src/index.ts#L7">src/index.ts:7</a></li>
+								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/fd3f1cb/src/index.ts#L7">src/index.ts:7</a></li>
 							</ul>
 						</aside>
 						<h4 class="tsd-parameters-title">Parameters</h4>
