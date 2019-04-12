@@ -967,19 +967,18 @@ img { max-width: 100%; }
 			</ul>
 			<h2 id="installation">Installation</h2>
 			<p>From the CDN:</p>
-			<pre><code class="language-html"><span class="hljs-tag">&lt;<span class="hljs-name">script</span> <span class="hljs-attr">src</span>=<span class="hljs-string">"https://cdn.auth0.com/js/auth0-spa-js/1.0.0/auth0-spa-js.production.js"</span>&gt;</span><span class="undefined"></span><span class="hljs-tag">&lt;/<span class="hljs-name">script</span>&gt;</span></code></pre>
+			<pre><code class="language-html"><span class="hljs-tag">&lt;<span class="hljs-name">script</span> <span class="hljs-attr">src</span>=<span class="hljs-string">"https://cdn.auth0.com/js/auth0-spa-js/0.0.1-alpha.18/auth0-spa-js.production.js"</span>&gt;</span><span class="undefined"></span><span class="hljs-tag">&lt;/<span class="hljs-name">script</span>&gt;</span></code></pre>
 			<p>Using <a href="https://npmjs.org">npm</a>:</p>
 			<pre><code class="language-sh">npm install @auth0/auth0-spa-js</code></pre>
 			<p>Using <a href="https://yarnpkg.com">yarn</a>:</p>
 			<pre><code class="language-sh">yarn add @auth0/auth0-spa-js</code></pre>
 			<h2 id="getting-started">Getting Started</h2>
-			<pre><code class="language-js"><span class="hljs-keyword">import</span> Auth0 <span class="hljs-keyword">from</span> <span class="hljs-string">'@auth0/auth0-spa-js'</span>;
+			<pre><code class="language-js"><span class="hljs-keyword">import</span> createAuth0Client <span class="hljs-keyword">from</span> <span class="hljs-string">'@auth0/auth0-spa-js'</span>;
 
-<span class="hljs-keyword">const</span> auth0 = <span class="hljs-keyword">new</span> Auth0({
-  <span class="hljs-attr">domain</span>: <span class="hljs-string">'YOUR_AUTH0_DOMAIN'</span>,
-  <span class="hljs-attr">client_id</span>: <span class="hljs-string">'YOUR_AUTH0_CLIENT_ID'</span>
+<span class="hljs-keyword">const</span> auth0 = <span class="hljs-keyword">await</span> createAuth0Client({
+  <span class="hljs-attr">domain</span>: <span class="hljs-string">'auth.brucke.club'</span>,
+  <span class="hljs-attr">client_id</span>: <span class="hljs-string">'wLSIP47wM39wKdDmOj6Zb5eSEw3JVhVp'</span>
 });
-<span class="hljs-keyword">await</span> auth0.init();
 <span class="hljs-keyword">await</span> auth0.loginWithPopup();
 <span class="hljs-keyword">const</span> user = <span class="hljs-keyword">await</span> auth0.getUser();
 <span class="hljs-keyword">const</span> accessToken = <span class="hljs-keyword">await</span> auth0.getTokenSilently();</code></pre>
@@ -991,10 +990,8 @@ img { max-width: 100%; }
 				<li><a href="CONTRIBUTING.md">This repo&#39;s contribution guide</a></li>
 			</ul>
 			<h2 id="support-feedback">Support + Feedback</h2>
-			<ul>
-				<li>Use <a href="https://github.com/auth0/auth0-spa-js/issues">Issues</a> for code-level support</li>
-				<li>Use <a href="https://community.auth0.com/">Community</a> for usage, questions, specific cases</li>
-			</ul>
+			<p>This SDK is in Early Access with selected stakeholders.</p>
+			<p>We process feedback and provide support via private channels.</p>
 			<h2 id="vulnerability-reporting">Vulnerability Reporting</h2>
 			<p>Please do not report security vulnerabilities on the public GitHub issue tracker. The <a href="https://auth0.com/whitehat">Responsible Disclosure Program</a> details the procedure for disclosing security issues.</p>
 			<h2 id="what-is-auth0-">What is Auth0?</h2>
@@ -1057,7 +1054,7 @@ img { max-width: 100%; }
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/auth0/oidc-implicit-flow/blob/dbe9c67/src/index.ts#L7">src/index.ts:7</a></li>
+								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/80fc744/src/index.ts#L7">src/index.ts:7</a></li>
 							</ul>
 						</aside>
 						<h4 class="tsd-parameters-title">Parameters</h4>
