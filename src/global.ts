@@ -30,6 +30,14 @@ interface Auth0ClientOptions extends BaseLoginOptions {
    * The Client ID found on your Application settings page
    */
   client_id: string;
+  /**
+   * The default URL where Auth0 will redirect your browser to with
+   * the authentication result. It must be whitelisted in
+   * the "Allowed Callback URLs" in your Auth0 Application's
+   * settings. If not provided here, should be provided in the other
+   * methods that provide authentication.
+   */
+  redirect_uri?: string;
   leeway?: number;
 }
 
