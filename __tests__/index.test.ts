@@ -123,6 +123,25 @@ describe('Auth0', () => {
         code_challenge_method: 'S256'
       });
     });
+    it('creates correct query params when providing a default redirect_uri', async () => {
+      const redirect_uri = 'https://custom-redirect-uri/callback';
+      const { auth0, utils } = await setup({
+        redirect_uri
+      });
+
+      await auth0.loginWithPopup({});
+      expect(utils.createQueryParams).toHaveBeenCalledWith({
+        client_id: TEST_CLIENT_ID,
+        scope: TEST_SCOPES,
+        response_type: TEST_CODE,
+        response_mode: 'web_message',
+        state: TEST_ENCODED_STATE,
+        nonce: TEST_RANDOM_STRING,
+        redirect_uri,
+        code_challenge: TEST_BASE64_ENCODED_STRING,
+        code_challenge_method: 'S256'
+      });
+    });
     it('creates correct query params with custom params', async () => {
       const { auth0, utils } = await setup();
 
@@ -255,6 +274,25 @@ describe('Auth0', () => {
         state: TEST_ENCODED_STATE,
         nonce: TEST_RANDOM_STRING,
         redirect_uri: REDIRECT_OPTIONS.redirect_uri,
+        code_challenge: TEST_BASE64_ENCODED_STRING,
+        code_challenge_method: 'S256'
+      });
+    });
+    it('creates correct query params when providing a default redirect_uri', async () => {
+      const redirect_uri = 'https://custom-redirect-uri/callback';
+      const { auth0, utils } = await setup({
+        redirect_uri
+      });
+
+      await auth0.loginWithRedirect(REDIRECT_OPTIONS);
+      expect(utils.createQueryParams).toHaveBeenCalledWith({
+        client_id: TEST_CLIENT_ID,
+        scope: TEST_SCOPES,
+        response_type: TEST_CODE,
+        response_mode: 'query',
+        state: TEST_ENCODED_STATE,
+        nonce: TEST_RANDOM_STRING,
+        redirect_uri,
         code_challenge: TEST_BASE64_ENCODED_STRING,
         code_challenge_method: 'S256'
       });
@@ -594,6 +632,26 @@ describe('Auth0', () => {
           state: TEST_ENCODED_STATE,
           nonce: TEST_RANDOM_STRING,
           redirect_uri: 'http://localhost',
+          code_challenge: TEST_BASE64_ENCODED_STRING,
+          code_challenge_method: 'S256'
+        });
+      });
+      it('creates correct query params when providing a default redirect_uri', async () => {
+        const redirect_uri = 'https://custom-redirect-uri/callback';
+        const { auth0, utils } = await setup({
+          redirect_uri
+        });
+
+        await auth0.getTokenSilently();
+        expect(utils.createQueryParams).toHaveBeenCalledWith({
+          client_id: TEST_CLIENT_ID,
+          scope: TEST_SCOPES,
+          response_type: TEST_CODE,
+          response_mode: 'web_message',
+          prompt: 'none',
+          state: TEST_ENCODED_STATE,
+          nonce: TEST_RANDOM_STRING,
+          redirect_uri,
           code_challenge: TEST_BASE64_ENCODED_STRING,
           code_challenge_method: 'S256'
         });
