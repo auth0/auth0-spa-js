@@ -63,7 +63,7 @@ export default class Auth0Client {
       response_mode: 'query',
       state,
       nonce,
-      redirect_uri,
+      redirect_uri: this.options.redirect_uri || redirect_uri,
       code_challenge,
       code_challenge_method: 'S256'
     };
