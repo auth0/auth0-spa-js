@@ -3,9 +3,9 @@
   "name": "@auth0/auth0-spa-js",
   "description": "Auth0 SDK for Single Page Applications using Authorization Code Grant Flow with PKCE",
   "license": "MIT",
-  "version": "0.0.1-alpha.18",
+  "version": "0.0.1-alpha.19",
   "main": "dist/lib/auth0-spa-js.cjs.js",
-  "types": "dist/typings/index.d.ts",
+  "types": "dist/typings/src/index.d.ts",
   "browser": "dist/auth0-spa-js.production.js",
   "module": "dist/auth0-spa-js.production.esm.js",
   "scripts": {
