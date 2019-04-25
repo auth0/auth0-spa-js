@@ -17,6 +17,12 @@ interface BaseLoginOptions {
    * The default audience to be used for requesting API access.
    */
   audience?: string;
+  /**
+   * The name of the connection configured to your application.
+   * If null, it will redirect to the Auth0 Login Page and show
+   * the Login Widget.
+   */
+  connection?: string;
 }
 
 interface Auth0ClientOptions extends BaseLoginOptions {

@@ -110,7 +110,9 @@ describe('Auth0', () => {
     it('creates correct query params', async () => {
       const { auth0, utils } = await setup();
 
-      await auth0.loginWithPopup({});
+      await auth0.loginWithPopup({
+        connection: 'test-connection'
+      });
       expect(utils.createQueryParams).toHaveBeenCalledWith({
         client_id: TEST_CLIENT_ID,
         scope: TEST_SCOPES,
@@ -120,7 +122,8 @@ describe('Auth0', () => {
         nonce: TEST_RANDOM_STRING,
         redirect_uri: 'http://localhost',
         code_challenge: TEST_BASE64_ENCODED_STRING,
-        code_challenge_method: 'S256'
+        code_challenge_method: 'S256',
+        connection: 'test-connection'
       });
     });
     it('creates correct query params when providing a default redirect_uri', async () => {
@@ -245,7 +248,8 @@ describe('Auth0', () => {
   describe('loginWithRedirect()', () => {
     const REDIRECT_OPTIONS = {
       redirect_uri: 'https://redirect.uri',
-      appState: TEST_APP_STATE
+      appState: TEST_APP_STATE,
+      connection: 'test-connection'
     };
     it('encodes state with random string', async () => {
       const { auth0, utils } = await setup();
@@ -275,7 +279,8 @@ describe('Auth0', () => {
         nonce: TEST_RANDOM_STRING,
         redirect_uri: REDIRECT_OPTIONS.redirect_uri,
         code_challenge: TEST_BASE64_ENCODED_STRING,
-        code_challenge_method: 'S256'
+        code_challenge_method: 'S256',
+        connection: 'test-connection'
       });
     });
     it('creates correct query params when providing a default redirect_uri', async () => {
@@ -294,7 +299,8 @@ describe('Auth0', () => {
         nonce: TEST_RANDOM_STRING,
         redirect_uri,
         code_challenge: TEST_BASE64_ENCODED_STRING,
-        code_challenge_method: 'S256'
+        code_challenge_method: 'S256',
+        connection: 'test-connection'
       });
     });
     it('creates correct query params with custom params', async () => {
@@ -311,7 +317,8 @@ describe('Auth0', () => {
         nonce: TEST_RANDOM_STRING,
         redirect_uri: REDIRECT_OPTIONS.redirect_uri,
         code_challenge: TEST_BASE64_ENCODED_STRING,
-        code_challenge_method: 'S256'
+        code_challenge_method: 'S256',
+        connection: 'test-connection'
       });
     });
 
