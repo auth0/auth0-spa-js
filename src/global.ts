@@ -17,6 +17,12 @@ interface BaseLoginOptions {
    * The default audience to be used for requesting API access.
    */
   audience?: string;
+  /**
+   * The name of the connection configured for your application.
+   * If null, it will redirect to the Auth0 Login Page and show
+   * the Login Widget.
+   */
+  connection?: string;
 }
 
 interface Auth0ClientOptions extends BaseLoginOptions {
@@ -33,8 +39,8 @@ interface Auth0ClientOptions extends BaseLoginOptions {
   /**
    * The default URL where Auth0 will redirect your browser to with
    * the authentication result. It must be whitelisted in
-   * the "Allowed Callback URLs" in your Auth0 Application's
-   * settings. If not provided here, should be provided in the other
+   * the "Allowed Callback URLs" field in your Auth0 Application's
+   * settings. If not provided here, it should be provided in the other
    * methods that provide authentication.
    */
   redirect_uri?: string;
@@ -59,7 +65,7 @@ interface RedirectLoginOptions extends BaseLoginOptions {
   /**
    * The URL where Auth0 will redirect your browser to with
    * the authentication result. It must be whitelisted in
-   * the "Allowed Callback URLs" in your Auth0 Application's
+   * the "Allowed Callback URLs" field in your Auth0 Application's
    * settings.
    */
   redirect_uri: string;
