@@ -72,8 +72,8 @@ export const verify = (options: JWTVerifyOptions) => {
   const expDate = new Date(0);
   const iatDate = new Date(0);
   const nbfDate = new Date(0);
-  const leeway = options.leeway || 0;
-  expDate.setUTCSeconds(decoded.claims.exp + leeway);
+  const leeway = options.leeway || 60;
+  expDate.setUTCSeconds(decoded.claims.exp);
   iatDate.setUTCSeconds(decoded.claims.iat - leeway);
   nbfDate.setUTCSeconds(decoded.claims.nbf - leeway);
   if (now > expDate) {
