@@ -44,16 +44,104 @@ yarn add @auth0/auth0-spa-js
 
 ## Getting Started
 
-```js
-import createAuth0Client from '@auth0/auth0-spa-js';
+### Creating the client
 
+> Ideally, you should have only one instance of the client. Create one
+> before rendering / initializing your application.
+
+```js
+//with async/await
 const auth0 = await createAuth0Client({
   domain: '<AUTH0_DOMAIN>',
   client_id: '<AUTH0_CLIENT_ID>'
 });
-await auth0.loginWithPopup();
-const user = await auth0.getUser();
-const accessToken = await auth0.getTokenSilently();
+
+//with promises
+createAuth0Client({
+  domain: '<AUTH0_DOMAIN>',
+  client_id: '<AUTH0_CLIENT_ID>'
+}).then(auth0 => {
+  //...
+});
+```
+
+### 1 - Login
+
+```html
+<button id="login">Click to Login</button>
+```
+
+```js
+//with async/await
+document.getElementById('login').addEventListener('click', async () => {
+  await auth0.loginWithPopup();
+  //logged in. you can get the user profile like this:
+  const user = await auth0.getUser();
+  console.log(user);
+});
+
+//with promises
+document.getElementById('login').addEventListener('click', () => {
+  auth0.loginWithPopup().then(token => {
+    //logged in. you can get the user profile like this:
+    auth0.getUser().then(user => {
+      console.log(user);
+    });
+  });
+});
+```
+
+### 2 - Calling an API
+
+```html
+<button id="call-api">Call an API</button>
+```
+
+```js
+//with async/await
+document.getElementById('call-api').addEventListener('click', async () => {
+  const accessToken = await auth0.getTokenSilently();
+  const result = await fetch('https://myapi.com', {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${accessToken}`
+    }
+  });
+  const data = await result.json();
+  console.log(data);
+});
+
+//with promises
+document.getElementById('call-api').addEventListener('click', () => {
+  auth0
+    .getTokenSilently()
+    .then(accessToken =>
+      fetch('https://myapi.com', {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${accessToken}`
+        }
+      })
+    )
+    .then(result => result.json())
+    .then(data => {
+      console.log(data);
+    });
+});
+```
+
+### 3 - Logout
+
+```html
+<button id="logout">Logout</button>
+```
+
+```js
+import createAuth0Client from '@auth0/auth0-spa-js';
+
+document.getElementById('logout').addEventListener('click', () => {
+  auth0.logout();
+});
 ```
 
 ## Contributing
