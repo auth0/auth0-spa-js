@@ -36,7 +36,7 @@ export default class Auth0Client {
     const telemetry = encodeURIComponent(
       btoa(
         JSON.stringify({
-          name: '@auth0/auth0-spa-js',
+          name: 'auth0-spa-js',
           version: version
         })
       )
