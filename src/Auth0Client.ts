@@ -91,6 +91,10 @@ export default class Auth0Client {
    * parameters will be auto-generated. If the response is successful,
    * results will be valid according to their expiration times.
    *
+   * IMPORTANT: This method has to be called from an event handler
+   * that was started by the user like a button click, for example,
+   * otherwise the popup will be blocked in most browsers.
+   *
    * @param options
    */
   public async loginWithPopup(options: PopupLoginOptions) {
