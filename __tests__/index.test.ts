@@ -25,7 +25,7 @@ const TEST_APP_STATE = { bestPet: 'dog' };
 const TEST_TELEMETRY_QUERY_STRING = `&auth0Client=${encodeURIComponent(
   btoa(
     JSON.stringify({
-      name: '@auth0/auth0-spa-js',
+      name: 'auth0-spa-js',
       version: version
     })
   )
