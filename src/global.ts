@@ -2,11 +2,40 @@
  * @ignore
  */
 interface BaseLoginOptions {
+  /**
+   * - `'page'`: displays the UI with a full page view
+   * - `'popup'`: displays the UI with a popup window
+   * - `'touch'`: displays the UI in a way that leverages a touch interface
+   * - `'wap'`: displays the UI with a "feature phone" type interface
+   */
   display?: 'page' | 'popup' | 'touch' | 'wap';
+  /**
+   * - `'none'`: do not prompt user for login or consent on reauthentication
+   * - `'login'`: prompt user for reauthentication
+   * - `'consent'`: prompt user for consent before processing request
+   * - `'select_account'`: prompt user to select an account
+   */ 
   prompt?: 'none' | 'login' | 'consent' | 'select_account';
+  /**
+   * Maximum allowable elasped time (in seconds) since authentication.
+   * If the last time the user authenticated is greater than this value,
+   * the user must be reauthenticated.
+   */
   max_age?: string;
+  /**
+   * The space-separated list of language tags, ordered by preference.
+   * For example: `'fr-CA fr en'`.
+   */
   ui_locales?: string;
+  /**
+   * Previously issued ID Token.
+   */
   id_token_hint?: string;
+  /**
+   * The user's email address or other identifier. When your app knows
+   * which user is trying to authenticate, you can provide this parameter
+   * to pre-fill the email box or select the right session for sign-in.
+   */
   login_hint?: string;
   acr_values?: string;
   /**
@@ -44,6 +73,10 @@ interface Auth0ClientOptions extends BaseLoginOptions {
    * methods that provide authentication.
    */
   redirect_uri?: string;
+  /**
+   * The value in seconds used to account for clock skew in JWT expirations.
+   * Typically, this value is no more than a minute or two at maximum.
+   */
   leeway?: number;
 }
 
