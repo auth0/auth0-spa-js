@@ -44,6 +44,27 @@ yarn add @auth0/auth0-spa-js
 
 ## Getting Started
 
+### Creating the client
+
+> Ideally, you should have only one instance of the client. Create one
+> before rendering / initializing your application.
+
+```js
+//with async/await
+const auth0 = await createAuth0Client({
+  domain: '<AUTH0_DOMAIN>',
+  client_id: '<AUTH0_CLIENT_ID>'
+});
+
+//with promises
+createAuth0Client({
+  domain: '<AUTH0_DOMAIN>',
+  client_id: '<AUTH0_CLIENT_ID>'
+}).then(auth0 => {
+  //...
+});
+```
+
 ### 1 - Login
 
 ```html
@@ -116,6 +137,8 @@ document.getElementById('call-api').addEventListener('click', () => {
 ```
 
 ```js
+import createAuth0Client from '@auth0/auth0-spa-js';
+
 document.getElementById('logout').addEventListener('click', () => {
   auth0.logout();
 });
