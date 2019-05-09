@@ -967,21 +967,88 @@ img { max-width: 100%; }
 			</ul>
 			<h2 id="installation">Installation</h2>
 			<p>From the CDN:</p>
-			<pre><code class="language-html"><span class="hljs-tag">&lt;<span class="hljs-name">script</span> <span class="hljs-attr">src</span>=<span class="hljs-string">"https://cdn.auth0.com/js/auth0-spa-js/0.0.1-alpha.19/auth0-spa-js.production.js"</span>&gt;</span><span class="undefined"></span><span class="hljs-tag">&lt;/<span class="hljs-name">script</span>&gt;</span></code></pre>
+			<pre><code class="language-html"><span class="hljs-tag">&lt;<span class="hljs-name">script</span> <span class="hljs-attr">src</span>=<span class="hljs-string">"https://cdn.auth0.com/js/auth0-spa-js/1.0.0-beta.1/auth0-spa-js.production.js"</span>&gt;</span><span class="undefined"></span><span class="hljs-tag">&lt;/<span class="hljs-name">script</span>&gt;</span></code></pre>
 			<p>Using <a href="https://npmjs.org">npm</a>:</p>
 			<pre><code class="language-sh">npm install @auth0/auth0-spa-js</code></pre>
 			<p>Using <a href="https://yarnpkg.com">yarn</a>:</p>
 			<pre><code class="language-sh">yarn add @auth0/auth0-spa-js</code></pre>
 			<h2 id="getting-started">Getting Started</h2>
-			<pre><code class="language-js"><span class="hljs-keyword">import</span> createAuth0Client <span class="hljs-keyword">from</span> <span class="hljs-string">'@auth0/auth0-spa-js'</span>;
-
+			<h3 id="creating-the-client">Creating the client</h3>
+			<blockquote>
+				<p>Ideally, you should have only one instance of the client. Create one
+				before rendering / initializing your application.</p>
+			</blockquote>
+			<pre><code class="language-js"><span class="hljs-comment">//with async/await</span>
 <span class="hljs-keyword">const</span> auth0 = <span class="hljs-keyword">await</span> createAuth0Client({
   <span class="hljs-attr">domain</span>: <span class="hljs-string">'&lt;AUTH0_DOMAIN&gt;'</span>,
   <span class="hljs-attr">client_id</span>: <span class="hljs-string">'&lt;AUTH0_CLIENT_ID&gt;'</span>
 });
-<span class="hljs-keyword">await</span> auth0.loginWithPopup();
-<span class="hljs-keyword">const</span> user = <span class="hljs-keyword">await</span> auth0.getUser();
-<span class="hljs-keyword">const</span> accessToken = <span class="hljs-keyword">await</span> auth0.getTokenSilently();</code></pre>
+
+<span class="hljs-comment">//with promises</span>
+createAuth0Client({
+  <span class="hljs-attr">domain</span>: <span class="hljs-string">'&lt;AUTH0_DOMAIN&gt;'</span>,
+  <span class="hljs-attr">client_id</span>: <span class="hljs-string">'&lt;AUTH0_CLIENT_ID&gt;'</span>
+}).then(<span class="hljs-function"><span class="hljs-params">auth0</span> =&gt;</span> {
+  <span class="hljs-comment">//...</span>
+});</code></pre>
+			<h3 id="1-login">1 - Login</h3>
+			<pre><code class="language-html"><span class="hljs-tag">&lt;<span class="hljs-name">button</span> <span class="hljs-attr">id</span>=<span class="hljs-string">"login"</span>&gt;</span>Click to Login<span class="hljs-tag">&lt;/<span class="hljs-name">button</span>&gt;</span></code></pre>
+			<pre><code class="language-js"><span class="hljs-comment">//with async/await</span>
+<span class="hljs-built_in">document</span>.getElementById(<span class="hljs-string">'login'</span>).addEventListener(<span class="hljs-string">'click'</span>, <span class="hljs-keyword">async</span> () =&gt; {
+  <span class="hljs-keyword">await</span> auth0.loginWithPopup();
+  <span class="hljs-comment">//logged in. you can get the user profile like this:</span>
+  <span class="hljs-keyword">const</span> user = <span class="hljs-keyword">await</span> auth0.getUser();
+  <span class="hljs-built_in">console</span>.log(user);
+});
+
+<span class="hljs-comment">//with promises</span>
+<span class="hljs-built_in">document</span>.getElementById(<span class="hljs-string">'login'</span>).addEventListener(<span class="hljs-string">'click'</span>, () =&gt; {
+  auth0.loginWithPopup().then(<span class="hljs-function"><span class="hljs-params">token</span> =&gt;</span> {
+    <span class="hljs-comment">//logged in. you can get the user profile like this:</span>
+    auth0.getUser().then(<span class="hljs-function"><span class="hljs-params">user</span> =&gt;</span> {
+      <span class="hljs-built_in">console</span>.log(user);
+    });
+  });
+});</code></pre>
+			<h3 id="2-calling-an-api">2 - Calling an API</h3>
+			<pre><code class="language-html"><span class="hljs-tag">&lt;<span class="hljs-name">button</span> <span class="hljs-attr">id</span>=<span class="hljs-string">"call-api"</span>&gt;</span>Call an API<span class="hljs-tag">&lt;/<span class="hljs-name">button</span>&gt;</span></code></pre>
+			<pre><code class="language-js"><span class="hljs-comment">//with async/await</span>
+<span class="hljs-built_in">document</span>.getElementById(<span class="hljs-string">'call-api'</span>).addEventListener(<span class="hljs-string">'click'</span>, <span class="hljs-keyword">async</span> () =&gt; {
+  <span class="hljs-keyword">const</span> accessToken = <span class="hljs-keyword">await</span> auth0.getTokenSilently();
+  <span class="hljs-keyword">const</span> result = <span class="hljs-keyword">await</span> fetch(<span class="hljs-string">'https://myapi.com'</span>, {
+    <span class="hljs-attr">method</span>: <span class="hljs-string">'GET'</span>,
+    <span class="hljs-attr">headers</span>: {
+      <span class="hljs-attr">Authorization</span>: <span class="hljs-string">`Bearer <span class="hljs-subst">${accessToken}</span>`</span>
+    }
+  });
+  <span class="hljs-keyword">const</span> data = <span class="hljs-keyword">await</span> result.json();
+  <span class="hljs-built_in">console</span>.log(data);
+});
+
+<span class="hljs-comment">//with promises</span>
+<span class="hljs-built_in">document</span>.getElementById(<span class="hljs-string">'call-api'</span>).addEventListener(<span class="hljs-string">'click'</span>, () =&gt; {
+  auth0
+    .getTokenSilently()
+    .then(<span class="hljs-function"><span class="hljs-params">accessToken</span> =&gt;</span>
+      fetch(<span class="hljs-string">'https://myapi.com'</span>, {
+        <span class="hljs-attr">method</span>: <span class="hljs-string">'GET'</span>,
+        <span class="hljs-attr">headers</span>: {
+          <span class="hljs-attr">Authorization</span>: <span class="hljs-string">`Bearer <span class="hljs-subst">${accessToken}</span>`</span>
+        }
+      })
+    )
+    .then(<span class="hljs-function"><span class="hljs-params">result</span> =&gt;</span> result.json())
+    .then(<span class="hljs-function"><span class="hljs-params">data</span> =&gt;</span> {
+      <span class="hljs-built_in">console</span>.log(data);
+    });
+});</code></pre>
+			<h3 id="3-logout">3 - Logout</h3>
+			<pre><code class="language-html"><span class="hljs-tag">&lt;<span class="hljs-name">button</span> <span class="hljs-attr">id</span>=<span class="hljs-string">"logout"</span>&gt;</span>Logout<span class="hljs-tag">&lt;/<span class="hljs-name">button</span>&gt;</span></code></pre>
+			<pre><code class="language-js"><span class="hljs-keyword">import</span> createAuth0Client <span class="hljs-keyword">from</span> <span class="hljs-string">'@auth0/auth0-spa-js'</span>;
+
+<span class="hljs-built_in">document</span>.getElementById(<span class="hljs-string">'logout'</span>).addEventListener(<span class="hljs-string">'click'</span>, () =&gt; {
+  auth0.logout();
+});</code></pre>
 			<h2 id="contributing">Contributing</h2>
 			<p>We appreciate feedback and contribution to this repo! Before you get started, please see the following:</p>
 			<ul>
@@ -1054,7 +1121,7 @@ img { max-width: 100%; }
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/0d8666d/src/index.ts#L7">src/index.ts:7</a></li>
+								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/c9c4887/src/index.ts#L7">index.ts:7</a></li>
 							</ul>
 						</aside>
 						<h4 class="tsd-parameters-title">Parameters</h4>
