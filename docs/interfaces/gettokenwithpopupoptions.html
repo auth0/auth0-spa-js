@@ -1020,7 +1020,7 @@ img { max-width: 100%; }
 				<aside class="tsd-sources">
 					<p>Inherited from BaseLoginOptions.acr_values</p>
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/0d8666d/src/global.ts#L11">src/global.ts:11</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/c9c4887/src/global.ts#L40">global.ts:40</a></li>
 					</ul>
 				</aside>
 			</section>
@@ -1031,7 +1031,7 @@ img { max-width: 100%; }
 				<aside class="tsd-sources">
 					<p>Inherited from BaseLoginOptions.audience</p>
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/0d8666d/src/global.ts#L19">src/global.ts:19</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/c9c4887/src/global.ts#L48">global.ts:48</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-comment tsd-typography">
@@ -1047,7 +1047,7 @@ img { max-width: 100%; }
 				<aside class="tsd-sources">
 					<p>Inherited from BaseLoginOptions.connection</p>
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/0d8666d/src/global.ts#L25">src/global.ts:25</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/c9c4887/src/global.ts#L54">global.ts:54</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-comment tsd-typography">
@@ -1065,9 +1065,19 @@ img { max-width: 100%; }
 				<aside class="tsd-sources">
 					<p>Inherited from BaseLoginOptions.display</p>
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/0d8666d/src/global.ts#L5">src/global.ts:5</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/c9c4887/src/global.ts#L11">global.ts:11</a></li>
 					</ul>
 				</aside>
+				<div class="tsd-comment tsd-typography">
+					<div class="lead">
+						<ul>
+							<li><code>&#39;page&#39;</code>: displays the UI with a full page view</li>
+							<li><code>&#39;popup&#39;</code>: displays the UI with a popup window</li>
+							<li><code>&#39;touch&#39;</code>: displays the UI in a way that leverages a touch interface</li>
+							<li><code>&#39;wap&#39;</code>: displays the UI with a &quot;feature phone&quot; type interface</li>
+						</ul>
+					</div>
+				</div>
 			</section>
 			<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface tsd-is-inherited tsd-is-not-exported">
 				<a name="id_token_hint" class="tsd-anchor"></a>
@@ -1076,9 +1086,14 @@ img { max-width: 100%; }
 				<aside class="tsd-sources">
 					<p>Inherited from BaseLoginOptions.id_token_hint</p>
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/0d8666d/src/global.ts#L9">src/global.ts:9</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/c9c4887/src/global.ts#L33">global.ts:33</a></li>
 					</ul>
 				</aside>
+				<div class="tsd-comment tsd-typography">
+					<div class="lead">
+						<p>Previously issued ID Token.</p>
+					</div>
+				</div>
 			</section>
 			<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface tsd-is-inherited tsd-is-not-exported">
 				<a name="login_hint" class="tsd-anchor"></a>
@@ -1087,9 +1102,16 @@ img { max-width: 100%; }
 				<aside class="tsd-sources">
 					<p>Inherited from BaseLoginOptions.login_hint</p>
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/0d8666d/src/global.ts#L10">src/global.ts:10</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/c9c4887/src/global.ts#L39">global.ts:39</a></li>
 					</ul>
 				</aside>
+				<div class="tsd-comment tsd-typography">
+					<div class="lead">
+						<p>The user&#39;s email address or other identifier. When your app knows
+							which user is trying to authenticate, you can provide this parameter
+						to pre-fill the email box or select the right session for sign-in.</p>
+					</div>
+				</div>
 			</section>
 			<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface tsd-is-inherited tsd-is-not-exported">
 				<a name="max_age" class="tsd-anchor"></a>
@@ -1098,9 +1120,16 @@ img { max-width: 100%; }
 				<aside class="tsd-sources">
 					<p>Inherited from BaseLoginOptions.max_age</p>
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/0d8666d/src/global.ts#L7">src/global.ts:7</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/c9c4887/src/global.ts#L24">global.ts:24</a></li>
 					</ul>
 				</aside>
+				<div class="tsd-comment tsd-typography">
+					<div class="lead">
+						<p>Maximum allowable elasped time (in seconds) since authentication.
+							If the last time the user authenticated is greater than this value,
+						the user must be reauthenticated.</p>
+					</div>
+				</div>
 			</section>
 			<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface tsd-is-inherited tsd-is-not-exported">
 				<a name="prompt" class="tsd-anchor"></a>
@@ -1109,9 +1138,19 @@ img { max-width: 100%; }
 				<aside class="tsd-sources">
 					<p>Inherited from BaseLoginOptions.prompt</p>
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/0d8666d/src/global.ts#L6">src/global.ts:6</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/c9c4887/src/global.ts#L18">global.ts:18</a></li>
 					</ul>
 				</aside>
+				<div class="tsd-comment tsd-typography">
+					<div class="lead">
+						<ul>
+							<li><code>&#39;none&#39;</code>: do not prompt user for login or consent on reauthentication</li>
+							<li><code>&#39;login&#39;</code>: prompt user for reauthentication</li>
+							<li><code>&#39;consent&#39;</code>: prompt user for consent before processing request</li>
+							<li><code>&#39;select_account&#39;</code>: prompt user to select an account</li>
+						</ul>
+					</div>
+				</div>
 			</section>
 			<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface tsd-is-inherited tsd-is-not-exported">
 				<a name="scope" class="tsd-anchor"></a>
@@ -1120,7 +1159,7 @@ img { max-width: 100%; }
 				<aside class="tsd-sources">
 					<p>Inherited from BaseLoginOptions.scope</p>
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/0d8666d/src/global.ts#L15">src/global.ts:15</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/c9c4887/src/global.ts#L44">global.ts:44</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-comment tsd-typography">
@@ -1136,9 +1175,15 @@ img { max-width: 100%; }
 				<aside class="tsd-sources">
 					<p>Inherited from BaseLoginOptions.ui_locales</p>
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/0d8666d/src/global.ts#L8">src/global.ts:8</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/c9c4887/src/global.ts#L29">global.ts:29</a></li>
 					</ul>
 				</aside>
+				<div class="tsd-comment tsd-typography">
+					<div class="lead">
+						<p>The space-separated list of language tags, ordered by preference.
+						For example: <code>&#39;fr-CA fr en&#39;</code>.</p>
+					</div>
+				</div>
 			</section>
 		</section>
 		<footer>
