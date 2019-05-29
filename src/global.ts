@@ -14,7 +14,7 @@ interface BaseLoginOptions {
    * - `'login'`: prompt user for reauthentication
    * - `'consent'`: prompt user for consent before processing request
    * - `'select_account'`: prompt user to select an account
-   */ 
+   */
   prompt?: 'none' | 'login' | 'consent' | 'select_account';
   /**
    * Maximum allowable elasped time (in seconds) since authentication.
@@ -180,9 +180,19 @@ interface LogoutOptions {
 /**
  * @ignore
  */
+interface AuthenticationErrorOptions {
+  name: string;
+  message?: string;
+}
+
+/**
+ * @ignore
+ */
 interface AuthenticationResult {
   state: string;
   code: string;
+  error?: string;
+  error_description?: string;
 }
 
 /**
