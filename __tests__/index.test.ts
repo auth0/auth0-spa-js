@@ -397,7 +397,7 @@ describe('Auth0', () => {
           AuthenticationError
         );
       });
-      it('throws error with message from error_description', async () => {
+      it('throws AuthenticationError with message from error_description', async () => {
         const { auth0, utils } = await localSetup();
         const queryResult = {
           error: 'unauthorized',
@@ -406,6 +406,28 @@ describe('Auth0', () => {
         utils.parseQueryResult.mockReturnValue(queryResult);
 
         await expect(auth0.handleRedirectCallback()).rejects.toThrow(
+          queryResult.error_description
+        );
+      });
+      it('throws AuthenticationError with state, error, error_description', async () => {
+        const { auth0, utils } = await localSetup();
+        const queryResult = {
+          error: 'unauthorized',
+          error_description: 'Unauthorized user',
+          state: 'abcxyz'
+        };
+        utils.parseQueryResult.mockReturnValue(queryResult);
+
+        let errorThrown: AuthenticationError;
+        try {
+          await auth0.handleRedirectCallback();
+        } catch (error) {
+          errorThrown = error;
+        }
+
+        expect(errorThrown.state).toEqual(queryResult.state);
+        expect(errorThrown.error).toEqual(queryResult.error);
+        expect(errorThrown.error_description).toEqual(
           queryResult.error_description
         );
       });

@@ -180,17 +180,9 @@ interface LogoutOptions {
 /**
  * @ignore
  */
-interface AuthenticationErrorOptions {
-  name: string;
-  message?: string;
-}
-
-/**
- * @ignore
- */
 interface AuthenticationResult {
   state: string;
-  code: string;
+  code?: string;
   error?: string;
   error_description?: string;
 }

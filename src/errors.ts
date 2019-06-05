@@ -1,6 +1,9 @@
 export class AuthenticationError extends Error {
-  constructor(name: string, message: string) {
-    super(message);
-    this.name = name;
+  constructor(
+    public error: string,
+    public error_description: string,
+    public state: string
+  ) {
+    super(error_description);
   }
 }

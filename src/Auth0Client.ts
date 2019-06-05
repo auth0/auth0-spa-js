@@ -235,7 +235,7 @@ export default class Auth0Client {
     );
 
     if (error) {
-      throw new AuthenticationError(error, error_description);
+      throw new AuthenticationError(error, error_description, state);
     }
 
     const transaction = this.transactionManager.get(state);
