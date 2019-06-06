@@ -4,6 +4,8 @@ interface ClientStorageOptions {
   daysUntilExpire: number;
 }
 
+export const getAllKeys = () => Object.keys(Cookies.getAll() || {});
+
 export const get = <T extends Object>(key: string) => {
   const value = Cookies.get(key);
   if (typeof value === 'undefined') {

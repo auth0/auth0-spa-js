@@ -1,5 +1,7 @@
 export const internalStorage = {};
 
+export const getAll = () => ['key1', 'key2'];
+
 export const get = <T extends Object>(key: string) => {
   const value = internalStorage[key];
   if (typeof value === 'undefined') {
