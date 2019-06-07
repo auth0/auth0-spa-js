@@ -15,6 +15,7 @@ import {
 import Cache from './cache';
 import TransactionManager from './transaction-manager';
 import { verify as verifyIdToken } from './jwt';
+import { AuthenticationError } from './errors';
 import * as ClientStorage from './storage';
 import version from './version';
 
@@ -229,19 +230,26 @@ export default class Auth0Client {
         'There are no query params available at `window.location.search`.'
       );
     }
-    const codeResult = parseQueryResult(window.location.search.substr(1));
-    const transaction = this.transactionManager.get(codeResult.state);
+    const { state, code, error, error_description } = parseQueryResult(
+      window.location.search.substr(1)
+    );
+
+    if (error) {
+      throw new AuthenticationError(error, error_description, state);
+    }
+
+    const transaction = this.transactionManager.get(state);
     if (!transaction) {
       throw new Error('Invalid state');
     }
-    this.transactionManager.remove(codeResult.state);
+    this.transactionManager.remove(state);
 
     const authResult = await oauthToken({
       baseUrl: this.domainUrl,
       audience: this.options.audience,
       client_id: this.options.client_id,
       code_verifier: transaction.code_verifier,
-      code: codeResult.code
+      code
     });
 
     const decodedToken = this._verifyIdToken(
