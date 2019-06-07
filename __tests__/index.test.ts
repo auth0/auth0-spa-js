@@ -6,6 +6,7 @@ jest.mock('../src/utils');
 
 import Auth0Client from '../src/Auth0Client';
 import createAuth0Client from '../src/index';
+import { AuthenticationError } from '../src/errors';
 import version from '../src/version';
 
 const TEST_DOMAIN = 'test.auth0.com';
@@ -30,6 +31,7 @@ const TEST_TELEMETRY_QUERY_STRING = `&auth0Client=${encodeURIComponent(
     })
   )
 )}`;
+
 const setup = async (options = {}) => {
   const auth0 = await createAuth0Client({
     domain: TEST_DOMAIN,
@@ -385,6 +387,49 @@ describe('Auth0', () => {
         await auth0.handleRedirectCallback();
 
         expect(transactionManager.get).toHaveBeenCalledWith(queryState);
+      });
+      it('throws error with AuthenticationError', async () => {
+        const { auth0, utils } = await localSetup();
+        const queryResult = { error: 'unauthorized' };
+        utils.parseQueryResult.mockReturnValue(queryResult);
+
+        await expect(auth0.handleRedirectCallback()).rejects.toBeInstanceOf(
+          AuthenticationError
+        );
+      });
+      it('throws AuthenticationError with message from error_description', async () => {
+        const { auth0, utils } = await localSetup();
+        const queryResult = {
+          error: 'unauthorized',
+          error_description: 'Unauthorized user'
+        };
+        utils.parseQueryResult.mockReturnValue(queryResult);
+
+        await expect(auth0.handleRedirectCallback()).rejects.toThrow(
+          queryResult.error_description
+        );
+      });
+      it('throws AuthenticationError with state, error, error_description', async () => {
+        const { auth0, utils } = await localSetup();
+        const queryResult = {
+          error: 'unauthorized',
+          error_description: 'Unauthorized user',
+          state: 'abcxyz'
+        };
+        utils.parseQueryResult.mockReturnValue(queryResult);
+
+        let errorThrown: AuthenticationError;
+        try {
+          await auth0.handleRedirectCallback();
+        } catch (error) {
+          errorThrown = error;
+        }
+
+        expect(errorThrown.state).toEqual(queryResult.state);
+        expect(errorThrown.error).toEqual(queryResult.error);
+        expect(errorThrown.error_description).toEqual(
+          queryResult.error_description
+        );
       });
       it('throws error when there is no transaction', async () => {
         const { auth0, transactionManager } = await localSetup();
