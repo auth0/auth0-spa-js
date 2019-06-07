@@ -36,7 +36,10 @@ describe('transaction manager', () => {
   });
   describe('with empty transactions', () => {
     beforeEach(() => {
-      getStorageMock().getAllKeys.mockReturnValue(['key1', 'key2']);
+      getStorageMock().getAllKeys.mockReturnValue([
+        `${COOKIE_KEY}key1`,
+        `${COOKIE_KEY}key2`
+      ]);
       tm = new TransactionManager();
     });
     it('`create` creates the transaction', () => {
@@ -46,8 +49,8 @@ describe('transaction manager', () => {
     it('`create` saves the transaction in the storage', () => {
       tm.create(transaction);
       expect(getStorageMock().save).toHaveBeenCalledWith(
-        'Auth0.spa-js.transactions.',
-        { [transaction.state]: transaction },
+        `Auth0.spa-js.transactions.${transaction.state}`,
+        transaction,
         {
           daysUntilExpire: 1
         }
@@ -68,14 +71,9 @@ describe('transaction manager', () => {
     it('`remove` saves new transactions in storage', () => {
       const secondState = 'stateIn2';
       tm.create(transaction);
-      tm.create({ ...transaction, state: secondState });
-      tm.remove(secondState);
-      expect(getStorageMock().save).toHaveBeenLastCalledWith(
-        'Auth0.spa-js.transactions.',
-        { [transaction.state]: transaction },
-        {
-          daysUntilExpire: 1
-        }
+      tm.remove(transaction.state);
+      expect(getStorageMock().remove).toHaveBeenLastCalledWith(
+        `Auth0.spa-js.transactions.${transaction.state}`
       );
     });
   });

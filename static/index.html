@@ -45,6 +45,7 @@
         });
         $('#getToken').click(async () => {
           const token = await auth0.getTokenSilently();
+          console.log(auth0, token);
         });
 
         $('#getTokenPopup').click(async () => {
