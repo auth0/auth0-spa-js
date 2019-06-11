@@ -68,8 +68,7 @@ describe('transaction manager', () => {
       tm.remove(transaction.state);
       expect(tm.get(transaction.state)).toBeUndefined();
     });
-    it('`remove` saves new transactions in storage', () => {
-      const secondState = 'stateIn2';
+    it('`remove` removes transaction from storage', () => {
       tm.create(transaction);
       tm.remove(transaction.state);
       expect(getStorageMock().remove).toHaveBeenLastCalledWith(

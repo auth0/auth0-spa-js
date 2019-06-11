@@ -25,7 +25,6 @@ export default class TransactionManager {
         const state = k.replace(COOKIE_KEY, '');
         this.transactions[state] = ClientStorage.get<Transaction>(k);
       });
-    console.log(Object.keys(this.transactions).length);
   }
   public create(transaction: Transaction) {
     this.transactions[transaction.state] = transaction;
