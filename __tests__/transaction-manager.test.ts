@@ -21,7 +21,10 @@ describe('transaction manager', () => {
   });
   describe('constructor', () => {
     it('loads transactions from localStorage (per key)', () => {
-      getStorageMock().getAllKeys.mockReturnValue(['key1', 'key2']);
+      getStorageMock().getAllKeys.mockReturnValue([
+        'Auth0.spa-js.transactions.key1',
+        'Auth0.spa-js.transactions.key2'
+      ]);
       tm = new TransactionManager();
       expect(getStorageMock().getAllKeys).toHaveBeenCalled();
       expect(getStorageMock().get).toHaveBeenCalledWith(`${COOKIE_KEY}key1`);
