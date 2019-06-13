@@ -1,7 +1,7 @@
 import * as storage from '../src/storage';
 jest.mock('es-cookie');
 
-describe('cache', () => {
+describe('storage', () => {
   beforeEach(() => {
     jest.resetAllMocks();
   });
@@ -44,5 +44,22 @@ describe('cache', () => {
     const key = 'key';
     storage.remove(key);
     expect(Cookie.remove).toHaveBeenCalledWith(key);
+  });
+  describe('getAllKeys', () => {
+    it('returns empty array when there is no cookie', () => {
+      const Cookie = require('es-cookie');
+      Cookie.getAll.mockReturnValue(null);
+      const keys = storage.getAllKeys();
+      expect(keys.length).toBe(0);
+      expect(Cookie.getAll).toHaveBeenCalled();
+    });
+    it('gets all keys when there is a cookie', () => {
+      const Cookie = require('es-cookie');
+      Cookie.getAll.mockReturnValue({ key: 'value' });
+      const keys = storage.getAllKeys();
+      expect(keys.length).toBe(1);
+      expect(keys[0]).toBe('key');
+      expect(Cookie.getAll).toHaveBeenCalled();
+    });
   });
 });
