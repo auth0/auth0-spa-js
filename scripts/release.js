@@ -6,7 +6,7 @@ if (!newVersion) {
 }
 
 fs.writeFileSync(
-  '../package.json',
+  './package.json',
   JSON.stringify({ ...pkg, version: newVersion }, null, 2)
 );
-fs.writeFileSync('./version.ts', `export default '${newVersion}';`);
+fs.writeFileSync('./src/version.ts', `export default '${newVersion}';`);
