@@ -69,6 +69,25 @@ describe('utils', () => {
       expect(urlDecodeB64('abc@123-_')).toBe('abc@123+/');
       expect(atob).toHaveBeenCalledWith('abc@123+/');
     });
+    it('decodes string with utf-8 chars', () => {
+      // restore atob to the default atob
+      (<any>global).atob = oldATOB;
+
+      // first we use encodeURIComponent to get percent-encoded UTF-8,
+      // then we convert the percent encodings into raw bytes which
+      // can be fed into btoa.
+      // https://stackoverflow.com/questions/30106476/
+      const b64EncodeUnicode = str =>
+        btoa(
+          encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, (_, p1) =>
+            String.fromCharCode(<any>('0x' + p1))
+          )
+        );
+      const input = 'Błżicz@123!!';
+      const encoded = b64EncodeUnicode(input);
+      const output = urlDecodeB64(encoded);
+      expect(output).toBe(input);
+    });
   });
   describe('bufferToBase64UrlEncoded', () => {
     let oldBTOA;

@@ -96,8 +96,19 @@ const urlEncodeB64 = (input: string) => {
   return input.replace(/[\+\/=]/g, (m: string) => b64Chars[m]);
 };
 
+// https://stackoverflow.com/questions/30106476/
+const decodeB64 = input =>
+  decodeURIComponent(
+    atob(input)
+      .split('')
+      .map(c => {
+        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+      })
+      .join('')
+  );
+
 export const urlDecodeB64 = (input: string) =>
-  atob(input.replace(/_/g, '/').replace(/-/g, '+'));
+  decodeB64(input.replace(/_/g, '/').replace(/-/g, '+'));
 
 export const bufferToBase64UrlEncoded = input =>
   urlEncodeB64(
