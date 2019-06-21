@@ -328,15 +328,16 @@ describe('Auth0', () => {
       const { auth0, transactionManager } = await setup();
 
       await auth0.loginWithRedirect(REDIRECT_OPTIONS);
-      expect(transactionManager.create).toHaveBeenCalledWith({
-        appState: TEST_APP_STATE,
-        audience: 'default',
-        code_challenge: TEST_BASE64_ENCODED_STRING,
-        code_verifier: TEST_RANDOM_STRING,
-        nonce: TEST_RANDOM_STRING,
-        scope: TEST_SCOPES,
-        state: TEST_ENCODED_STATE
-      });
+      expect(transactionManager.create).toHaveBeenCalledWith(
+        TEST_ENCODED_STATE,
+        {
+          appState: TEST_APP_STATE,
+          audience: 'default',
+          code_verifier: TEST_RANDOM_STRING,
+          nonce: TEST_RANDOM_STRING,
+          scope: TEST_SCOPES
+        }
+      );
     });
     it('calls `window.location.assign` with the correct url', async () => {
       const { auth0 } = await setup();

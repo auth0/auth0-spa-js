@@ -1,16 +1,14 @@
 import * as ClientStorage from './storage';
 
-const COOKIE_KEY = 'Auth0.spa-js.transactions.';
+const COOKIE_KEY = 'a0.spajs.txs.';
 const getTransactionKey = (state: string) => `${COOKIE_KEY}${state}`;
 
 interface Transaction {
-  state: string;
   nonce: string;
   scope: string;
   audience: string;
   appState?: any;
   code_verifier: string;
-  code_challenge: string;
 }
 interface Transactions {
   [key: string]: Transaction;
@@ -26,9 +24,9 @@ export default class TransactionManager {
         this.transactions[state] = ClientStorage.get<Transaction>(k);
       });
   }
-  public create(transaction: Transaction) {
-    this.transactions[transaction.state] = transaction;
-    ClientStorage.save(getTransactionKey(transaction.state), transaction, {
+  public create(state: string, transaction: Transaction) {
+    this.transactions[state] = transaction;
+    ClientStorage.save(getTransactionKey(state), transaction, {
       daysUntilExpire: 1
     });
   }
