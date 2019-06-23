@@ -1,12 +1,11 @@
 import TransactionManager from '../src/transaction-manager';
 
-const COOKIE_KEY = 'Auth0.spa-js.transactions.';
+const COOKIE_KEY = 'a0.spajs.txs.';
 
+const stateIn = 'stateIn';
 const transaction = {
-  state: 'stateIn',
   nonce: 'nonceIn',
   code_verifier: 'code_verifierIn',
-  code_challenge: 'code_challengeIn',
   appState: 'appStateIn',
   scope: 'scopeIn',
   audience: ' audienceIn'
@@ -22,8 +21,8 @@ describe('transaction manager', () => {
   describe('constructor', () => {
     it('loads transactions from localStorage (per key)', () => {
       getStorageMock().getAllKeys.mockReturnValue([
-        'Auth0.spa-js.transactions.key1',
-        'Auth0.spa-js.transactions.key2'
+        'a0.spajs.txs.key1',
+        'a0.spajs.txs.key2'
       ]);
       tm = new TransactionManager();
       expect(getStorageMock().getAllKeys).toHaveBeenCalled();
@@ -46,13 +45,13 @@ describe('transaction manager', () => {
       tm = new TransactionManager();
     });
     it('`create` creates the transaction', () => {
-      tm.create(transaction);
-      expect(tm.get(transaction.state)).toMatchObject(transaction);
+      tm.create(stateIn, transaction);
+      expect(tm.get(stateIn)).toMatchObject(transaction);
     });
     it('`create` saves the transaction in the storage', () => {
-      tm.create(transaction);
+      tm.create(stateIn, transaction);
       expect(getStorageMock().save).toHaveBeenCalledWith(
-        `Auth0.spa-js.transactions.${transaction.state}`,
+        `a0.spajs.txs.${stateIn}`,
         transaction,
         {
           daysUntilExpire: 1
@@ -60,22 +59,22 @@ describe('transaction manager', () => {
       );
     });
     it('`get` without a transaction should return undefined', () => {
-      expect(tm.get(transaction.state)).toBeUndefined();
+      expect(tm.get(stateIn)).toBeUndefined();
     });
     it('`get` with a transaction should return the transaction', () => {
-      tm.create(transaction);
-      expect(tm.get(transaction.state)).toMatchObject(transaction);
+      tm.create(stateIn, transaction);
+      expect(tm.get(stateIn)).toMatchObject(transaction);
     });
     it('`remove` removes the transaction', () => {
-      tm.create(transaction);
-      tm.remove(transaction.state);
-      expect(tm.get(transaction.state)).toBeUndefined();
+      tm.create(stateIn, transaction);
+      tm.remove(stateIn);
+      expect(tm.get(stateIn)).toBeUndefined();
     });
     it('`remove` removes transaction from storage', () => {
-      tm.create(transaction);
-      tm.remove(transaction.state);
+      tm.create(stateIn, transaction);
+      tm.remove(stateIn);
       expect(getStorageMock().remove).toHaveBeenLastCalledWith(
-        `Auth0.spa-js.transactions.${transaction.state}`
+        `a0.spajs.txs.${stateIn}`
       );
     });
   });

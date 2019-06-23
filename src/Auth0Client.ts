@@ -206,11 +206,9 @@ export default class Auth0Client {
       redirect_uri
     );
     const url = this._authorizeUrl(params);
-    this.transactionManager.create({
-      state: stateIn,
+    this.transactionManager.create(stateIn, {
       nonce: nonceIn,
       code_verifier,
-      code_challenge: code_challenge,
       appState,
       scope: params.scope,
       audience: params.audience || 'default'
