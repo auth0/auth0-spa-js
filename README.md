@@ -3,7 +3,7 @@
 Auth0 SDK for Single Page Applications using [Authorization Code Grant Flow with PKCE](https://auth0.com/docs/api-auth/tutorials/authorization-code-grant-pkce).
 
 [![CircleCI](https://circleci.com/gh/auth0/auth0-spa-js.svg?style=svg)](https://circleci.com/gh/auth0/auth0-spa-js)
-[![License](http://img.shields.io/:license-mit-blue.svg?style=flat)](https://opensource.org/licenses/MIT)
+[![License](https://img.shields.io/:license-mit-blue.svg?style=flat)](https://opensource.org/licenses/MIT)
 
 ## Table of Contents
 
@@ -27,7 +27,7 @@ Make sure this is updated based on the sections included:
 From the CDN:
 
 ```html
-<script src="https://cdn.auth0.com/js/auth0-spa-js/1.0.0/auth0-spa-js.production.js"></script>
+<script src="https://cdn.auth0.com/js/auth0-spa-js/1.0.1/auth0-spa-js.production.js"></script>
 ```
 
 Using [npm](https://npmjs.org):
