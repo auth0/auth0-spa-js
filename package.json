@@ -30,7 +30,7 @@
     "prepack": "npm run build && npm run test:es-check && npm run test",
     "precommit": "pretty-quick --staged",
     "version": "node ./scripts/release",
-    "publish:cdn": "ccu"
+    "publish:cdn": "ccu --trace"
   },
   "devDependencies": {
     "@auth0/component-cdn-uploader": "github:auth0/component-cdn-uploader#v2.2.1",
