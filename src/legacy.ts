@@ -1,5 +1,4 @@
 import 'ts-polyfill';
-import 'fast-text-encoding';
 import 'unfetch/polyfill/index';
 if (!window.crypto && (<any>window).msCrypto) {
   (<any>window).crypto = (<any>window).msCrypto;

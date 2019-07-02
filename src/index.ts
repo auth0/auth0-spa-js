@@ -1,3 +1,4 @@
+import 'fast-text-encoding';
 import Auth0Client from './Auth0Client';
 import * as ClientStorage from './storage';
 
