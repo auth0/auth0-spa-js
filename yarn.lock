@@ -2,10 +2,9 @@
 # yarn lockfile v1
 
 
-"@auth0/component-cdn-uploader@auth0/component-cdn-uploader#v2.2.1", "@auth0/component-cdn-uploader@github:auth0/component-cdn-uploader#v2.2.1":
-  version "2.2.1"
-  uid db92e90770ec4cd9d59f88db881cfea5c1a5d9af
-  resolved "https://codeload.github.com/auth0/component-cdn-uploader/tar.gz/db92e90770ec4cd9d59f88db881cfea5c1a5d9af"
+"@auth0/component-cdn-uploader@auth0/component-cdn-uploader", "@auth0/component-cdn-uploader@auth0/component-cdn-uploader#v2.2.2":
+  version "2.2.2"
+  resolved "https://codeload.github.com/auth0/component-cdn-uploader/tar.gz/c86a1f043b9f30b3a3407b19b2e6cd9f1ccdc21b"
   dependencies:
     "@auth0/s3" "^1.0.0"
     chalk "^1.1.3"
