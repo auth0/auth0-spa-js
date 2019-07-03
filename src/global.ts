@@ -40,6 +40,7 @@ interface BaseLoginOptions {
   acr_values?: string;
   /**
    * The default scope to be used on authentication requests.
+   * `openid profile email` is always added to all requests.
    */
   scope?: string;
   /**
