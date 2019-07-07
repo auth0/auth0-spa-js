@@ -611,6 +611,47 @@ describe('Auth0', () => {
       );
     });
   });
+  describe('getIdToken()', () => {
+    it('returns undefined if there is no cache', async () => {
+      const { auth0, cache } = await setup();
+      cache.get.mockReturnValue(undefined);
+      const id_token = await auth0.getIdToken();
+      expect(id_token).toBeUndefined();
+    });
+    it('returns actual token if there is a cache entry', async () => {
+      const { auth0, cache } = await setup();
+      cache.get.mockReturnValue({ id_token: TEST_ID_TOKEN });
+      const id_token = await auth0.getIdToken();
+      expect(id_token).toEqual(TEST_ID_TOKEN);
+    });
+    it('uses default options', async () => {
+      const { auth0, utils, cache } = await setup();
+      await auth0.getIdToken();
+      expect(cache.get).toHaveBeenCalledWith({
+        audience: 'default',
+        scope: TEST_SCOPES
+      });
+      expect(utils.getUniqueScopes).toHaveBeenCalledWith(
+        'openid profile email',
+        'openid profile email'
+      );
+    });
+    it('uses custom options when provided', async () => {
+      const { auth0, utils, cache } = await setup();
+      await auth0.getIdToken({
+        audience: 'the-audience',
+        scope: 'the-scope'
+      });
+      expect(cache.get).toHaveBeenCalledWith({
+        audience: 'the-audience',
+        scope: TEST_SCOPES
+      });
+      expect(utils.getUniqueScopes).toHaveBeenCalledWith(
+        'openid profile email',
+        'the-scope'
+      );
+    });
+  });
   describe('isAuthenticated()', () => {
     it('returns true if there is an user', async () => {
       const { auth0 } = await setup();
