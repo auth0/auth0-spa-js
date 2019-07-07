@@ -102,7 +102,7 @@ interface RedirectLoginOptions extends BaseLoginOptions {
    * the "Allowed Callback URLs" field in your Auth0 Application's
    * settings.
    */
-  redirect_uri: string;
+  redirect_uri?: string;
   /**
    * Used to store state before doing the redirect
    */
