@@ -162,10 +162,30 @@ export default class Auth0Client {
 
   /**
    * ```js
+   * const user = await auth0.getIdToken();
+   * ```
+   *
+   * Returns the user information if available.
+   *
+   * @param options
+   */
+  public async getIdToken(
+    options: GetUserOptions = {
+      audience: this.options.audience || 'default',
+      scope: this.options.scope || this.DEFAULT_SCOPE
+    }
+  ) {
+    options.scope = getUniqueScopes(this.DEFAULT_SCOPE, options.scope);
+    const cache = this.cache.get(options);
+    return cache && cache.id_token;
+  }
+
+  /**
+   * ```js
    * const claims = await auth0.getIdTokenClaims();
    * ```
    *
-   * Returns all claims from the id_token if available.
+   * Returns the id_token if available.
    *
    * @param options
    */
