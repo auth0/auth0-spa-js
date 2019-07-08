@@ -14,9 +14,9 @@
     <button id="login_popup">Login popup</button>
     <button id="login_redirect">Login redirect</button>
     <button id="login_redirect_callback">Login redirect callback</button>
-    <button id="login">Login</button>
     <button id="getUser">Get user</button>
     <button id="getIdTokenClaims">Get id_token decoded</button>
+    <button id="getIdToken">Get id_token</button>
     <button id="getToken">Get access token with no interaction</button>
     <button id="getTokenPopup">Get access token with a popup</button>
     <button id="getToken_audience">
@@ -45,6 +45,7 @@
         });
         $('#getToken').click(async () => {
           const token = await auth0.getTokenSilently();
+          console.log(token);
         });
 
         $('#getTokenPopup').click(async () => {
@@ -52,12 +53,19 @@
             audience: 'https://brucke.auth0.com/api/v2/',
             scope: 'read:rules'
           });
+          console.log(token);
         });
         $('#getUser').click(async () => {
           const user = await auth0.getUser();
+          console.log(user);
         });
         $('#getIdTokenClaims').click(async () => {
           const claims = await auth0.getIdTokenClaims();
+          console.log(claims);
+        });
+        $('#getIdToken').click(async () => {
+          const id_token = await auth0.getIdToken();
+          console.log(id_token);
         });
         $('#getToken_audience').click(async () => {
           const differentAudienceOptions = {
@@ -66,6 +74,7 @@
             redirect_uri: 'http://localhost:3000/callback.html'
           };
           const token = await auth0.getTokenSilently(differentAudienceOptions);
+          console.log(token);
         });
         $('#logout').click(async () => {
           auth0.logout({
