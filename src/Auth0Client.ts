@@ -165,7 +165,7 @@ export default class Auth0Client {
    * const user = await auth0.getIdToken();
    * ```
    *
-   * Returns the user information if available.
+   * Returns the id_token if available.
    *
    * @param options
    */
@@ -185,7 +185,7 @@ export default class Auth0Client {
    * const claims = await auth0.getIdTokenClaims();
    * ```
    *
-   * Returns the id_token if available.
+   * Returns all claims from the id_token if available.
    *
    * @param options
    */
