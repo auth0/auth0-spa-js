@@ -246,6 +246,12 @@ describe('Auth0', () => {
         { daysUntilExpire: 1 }
       );
     });
+    it('can be called with no arguments', async () => {
+      const { auth0, utils } = await setup();
+
+      await auth0.loginWithPopup();
+      expect(utils.openPopup).toHaveBeenCalled();
+    });
   });
   describe('loginWithRedirect()', () => {
     const REDIRECT_OPTIONS = {
@@ -343,6 +349,15 @@ describe('Auth0', () => {
       const { auth0 } = await setup();
 
       await auth0.loginWithRedirect(REDIRECT_OPTIONS);
+      expect(window.location.assign).toHaveBeenCalledWith(
+        `https://test.auth0.com/authorize?query=params${TEST_TELEMETRY_QUERY_STRING}`
+      );
+    });
+    it('can be called with no arguments', async () => {
+      const { auth0 } = await setup();
+
+      await auth0.loginWithRedirect();
+
       expect(window.location.assign).toHaveBeenCalledWith(
         `https://test.auth0.com/authorize?query=params${TEST_TELEMETRY_QUERY_STRING}`
       );

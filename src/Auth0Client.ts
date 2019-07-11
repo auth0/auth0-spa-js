@@ -98,7 +98,7 @@ export default class Auth0Client {
    *
    * @param options
    */
-  public async loginWithPopup(options: PopupLoginOptions) {
+  public async loginWithPopup(options: PopupLoginOptions = {}) {
     const popup = await openPopup();
     const { ...authorizeOptions } = options;
     const stateIn = encodeState(createRandomString());
@@ -191,7 +191,7 @@ export default class Auth0Client {
    *
    * @param options
    */
-  public async loginWithRedirect(options: RedirectLoginOptions) {
+  public async loginWithRedirect(options: RedirectLoginOptions = {}) {
     const { redirect_uri, appState, ...authorizeOptions } = options;
     const stateIn = encodeState(createRandomString());
     const nonceIn = createRandomString();
