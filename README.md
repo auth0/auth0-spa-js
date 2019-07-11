@@ -144,6 +144,10 @@ document.getElementById('logout').addEventListener('click', () => {
 });
 ```
 
+## Frequently Asked Questions
+
+For a rundown of common issues you might encounter when using the SDK, please check out [the FAQ](FAQ.md).
+
 ## Contributing
 
 We appreciate feedback and contribution to this repo! Before you get started, please see the following:
