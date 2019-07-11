@@ -14,6 +14,7 @@ Make sure this is updated based on the sections included:
 - [Getting Started](#getting-started)
 - [Contributing](#contributing)
 - [Support + Feedback](#support--feedback)
+- [Frequently Asked Questions](#frequently-asked-questions)
 - [Vulnerability Reporting](#vulnerability-reporting)
 - [What is Auth0](#what-is-auth0)
 - [License](#license)
@@ -157,6 +158,10 @@ We appreciate feedback and contribution to this repo! Before you get started, pl
 This SDK is in Early Access with selected stakeholders.
 
 We process feedback and provide support via private channels.
+
+## Frequently Asked Questions
+
+For a rundown of common issues you might encounter when using the SDK, please check out [the FAQ](FAQ.md).
 
 ## Vulnerability Reporting
 
