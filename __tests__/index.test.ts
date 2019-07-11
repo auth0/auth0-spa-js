@@ -91,19 +91,19 @@ describe('Auth0', () => {
     it('opens popup', async () => {
       const { auth0, utils } = await setup();
 
-      await auth0.loginWithPopup({});
+      await auth0.loginWithPopup();
       expect(utils.openPopup).toHaveBeenCalled();
     });
     it('encodes state with random string', async () => {
       const { auth0, utils } = await setup();
 
-      await auth0.loginWithPopup({});
+      await auth0.loginWithPopup();
       expect(utils.encodeState).toHaveBeenCalledWith(TEST_RANDOM_STRING);
     });
     it('creates `code_challenge` by using `utils.sha256` with the result of `utils.createRandomString`', async () => {
       const { auth0, utils } = await setup();
 
-      await auth0.loginWithPopup({});
+      await auth0.loginWithPopup();
       expect(utils.sha256).toHaveBeenCalledWith(TEST_RANDOM_STRING);
       expect(utils.bufferToBase64UrlEncoded).toHaveBeenCalledWith(
         TEST_ARRAY_BUFFER
@@ -134,7 +134,7 @@ describe('Auth0', () => {
         redirect_uri
       });
 
-      await auth0.loginWithPopup({});
+      await auth0.loginWithPopup();
       expect(utils.createQueryParams).toHaveBeenCalledWith({
         client_id: TEST_CLIENT_ID,
         scope: TEST_SCOPES,
@@ -168,7 +168,7 @@ describe('Auth0', () => {
       const { auth0, utils } = await setup();
       const popup = {};
       utils.openPopup.mockReturnValue(popup);
-      await auth0.loginWithPopup({});
+      await auth0.loginWithPopup();
       expect(utils.runPopup).toHaveBeenCalledWith(
         popup,
         `https://test.auth0.com/authorize?${TEST_QUERY_PARAMS}${TEST_TELEMETRY_QUERY_STRING}`
@@ -182,14 +182,14 @@ describe('Auth0', () => {
           state: 'other-state'
         })
       );
-      await expect(auth0.loginWithPopup({})).rejects.toThrowError(
+      await expect(auth0.loginWithPopup()).rejects.toThrowError(
         'Invalid state'
       );
     });
     it('calls oauth/token with correct params', async () => {
       const { auth0, utils } = await setup();
 
-      await auth0.loginWithPopup({});
+      await auth0.loginWithPopup();
       expect(utils.oauthToken).toHaveBeenCalledWith({
         audience: undefined,
         baseUrl: 'https://test.auth0.com',
@@ -201,7 +201,7 @@ describe('Auth0', () => {
     it('calls `tokenVerifier.verify` with the `id_token` from in the oauth/token response', async () => {
       const { auth0, tokenVerifier } = await setup();
 
-      await auth0.loginWithPopup({});
+      await auth0.loginWithPopup();
       expect(tokenVerifier).toHaveBeenCalledWith({
         id_token: TEST_ID_TOKEN,
         nonce: TEST_RANDOM_STRING,
@@ -212,7 +212,7 @@ describe('Auth0', () => {
     it('calls `tokenVerifier.verify` with the `leeway` from constructor', async () => {
       const { auth0, tokenVerifier } = await setup({ leeway: 10 });
 
-      await auth0.loginWithPopup({});
+      await auth0.loginWithPopup();
       expect(tokenVerifier).toHaveBeenCalledWith({
         id_token: TEST_ID_TOKEN,
         nonce: TEST_RANDOM_STRING,
@@ -224,7 +224,7 @@ describe('Auth0', () => {
     it('saves cache', async () => {
       const { auth0, cache } = await setup();
 
-      await auth0.loginWithPopup({});
+      await auth0.loginWithPopup();
       expect(cache.save).toHaveBeenCalledWith({
         access_token: TEST_ACCESS_TOKEN,
         audience: 'default',
@@ -239,7 +239,7 @@ describe('Auth0', () => {
     it('saves `auth0.is.authenticated` key in storage', async () => {
       const { auth0, storage } = await setup();
 
-      await auth0.loginWithPopup({});
+      await auth0.loginWithPopup();
       expect(storage.save).toHaveBeenCalledWith(
         'auth0.is.authenticated',
         true,
@@ -343,6 +343,15 @@ describe('Auth0', () => {
       const { auth0 } = await setup();
 
       await auth0.loginWithRedirect(REDIRECT_OPTIONS);
+      expect(window.location.assign).toHaveBeenCalledWith(
+        `https://test.auth0.com/authorize?query=params${TEST_TELEMETRY_QUERY_STRING}`
+      );
+    });
+    it('can be called with no arguments', async () => {
+      const { auth0 } = await setup();
+
+      await auth0.loginWithRedirect();
+
       expect(window.location.assign).toHaveBeenCalledWith(
         `https://test.auth0.com/authorize?query=params${TEST_TELEMETRY_QUERY_STRING}`
       );
