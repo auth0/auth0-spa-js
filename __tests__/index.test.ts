@@ -293,11 +293,13 @@ describe('Auth0', () => {
     });
     it('creates correct query params when providing a default redirect_uri', async () => {
       const redirect_uri = 'https://custom-redirect-uri/callback';
+      const { redirect_uri: _ignore, ...options } = REDIRECT_OPTIONS;
       const { auth0, utils } = await setup({
         redirect_uri
       });
 
-      await auth0.loginWithRedirect(REDIRECT_OPTIONS);
+      await auth0.loginWithRedirect(options);
+
       expect(utils.createQueryParams).toHaveBeenCalledWith({
         client_id: TEST_CLIENT_ID,
         scope: TEST_SCOPES,
@@ -306,6 +308,27 @@ describe('Auth0', () => {
         state: TEST_ENCODED_STATE,
         nonce: TEST_RANDOM_STRING,
         redirect_uri,
+        code_challenge: TEST_BASE64_ENCODED_STRING,
+        code_challenge_method: 'S256',
+        connection: 'test-connection'
+      });
+    });
+    it('creates correct query params when overriding redirect_uri', async () => {
+      const redirect_uri = 'https://custom-redirect-uri/callback';
+      const { auth0, utils } = await setup({
+        redirect_uri
+      });
+
+      await auth0.loginWithRedirect(REDIRECT_OPTIONS);
+
+      expect(utils.createQueryParams).toHaveBeenCalledWith({
+        client_id: TEST_CLIENT_ID,
+        scope: TEST_SCOPES,
+        response_type: TEST_CODE,
+        response_mode: 'query',
+        state: TEST_ENCODED_STATE,
+        nonce: TEST_RANDOM_STRING,
+        redirect_uri: REDIRECT_OPTIONS.redirect_uri,
         code_challenge: TEST_BASE64_ENCODED_STRING,
         code_challenge_method: 'S256',
         connection: 'test-connection'

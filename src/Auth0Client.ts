@@ -64,7 +64,7 @@ export default class Auth0Client {
       response_mode: 'query',
       state,
       nonce,
-      redirect_uri: this.options.redirect_uri || redirect_uri,
+      redirect_uri: redirect_uri || this.options.redirect_uri,
       code_challenge,
       code_challenge_method: 'S256'
     };
@@ -111,7 +111,7 @@ export default class Auth0Client {
       stateIn,
       nonceIn,
       code_challenge,
-      window.location.origin
+      this.options.redirect_uri || window.location.origin
     );
     const url = this._authorizeUrl({
       ...params,
@@ -311,7 +311,7 @@ export default class Auth0Client {
       stateIn,
       nonceIn,
       code_challenge,
-      window.location.origin
+      this.options.redirect_uri || window.location.origin
     );
     const url = this._authorizeUrl({
       ...params,
