@@ -1,3 +1,11 @@
+## [v1.1.0](https://github.com/auth0/auth0-spa-js/tree/v1.1.0) (2019-07-15)
+
+**Changed**
+
+- Allow redirect_uri override in loginWithRedirect - https://github.com/auth0/auth0-spa-js/pull/66
+- Make options argument for popup and redirect optional - https://github.com/auth0/auth0-spa-js/pull/61
+- Mark redirect_uri optional in RedirectLoginOptions - https://github.com/auth0/auth0-spa-js/pull/53
+
 ## [v1.0.2](https://github.com/auth0/auth0-spa-js/tree/v1.0.2) (2019-07-02)
 
 **Changed**
