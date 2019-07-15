@@ -28,7 +28,7 @@ Make sure this is updated based on the sections included:
 From the CDN:
 
 ```html
-<script src="https://cdn.auth0.com/js/auth0-spa-js/1.0.2/auth0-spa-js.production.js"></script>
+<script src="https://cdn.auth0.com/js/auth0-spa-js/1.1.0/auth0-spa-js.production.js"></script>
 ```
 
 Using [npm](https://npmjs.org):
