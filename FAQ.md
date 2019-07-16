@@ -4,7 +4,9 @@ Below are a number of questions or issues that have arisen from using the SDK.
 
 ## Why does the `Auth0Client` object take a long time to initialize?
 
-Sometimes the `createAuth0Client` asynchronous method can take over 30 seconds to complete. This is usually down to a configuration problem between your application, and the Auth0 application you're trying to log in with. Things to check:
+Sometimes the `createAuth0Client` asynchronous method can take over 30 seconds to complete. `createAuth0Client` may also return `undefined` and produce an error when you try to access it.
+
+This is usually down to a configuration problem between your application, and the Auth0 application you're trying to log in with. Things to check:
 
 - Make sure that options passed to `createAuth0Client` include the correct client ID and domain values for the app you're using
 - Ensure that the **Allowed Callback URLs**, **Allowed Web Origins**, and **Allowed Logout URLs** are [correctly set up in your Auth0 app settings](https://auth0.com/docs/quickstart/spa/react/#configure-callback-urls) for your application
