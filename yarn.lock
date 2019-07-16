@@ -2,7 +2,7 @@
 # yarn lockfile v1
 
 
-"@auth0/component-cdn-uploader@auth0/component-cdn-uploader", "@auth0/component-cdn-uploader@auth0/component-cdn-uploader#v2.2.2":
+"@auth0/component-cdn-uploader@auth0/component-cdn-uploader#v2.2.2":
   version "2.2.2"
   resolved "https://codeload.github.com/auth0/component-cdn-uploader/tar.gz/c86a1f043b9f30b3a3407b19b2e6cd9f1ccdc21b"
   dependencies:
