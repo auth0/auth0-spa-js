@@ -8,6 +8,11 @@ const table = new Table({
   head: ['File', 'Size', 'GZIP size']
 });
 
+if (!fs.exists('./dist')) {
+  console.log(`Can't print bundle size because ./dist doesn't exist.`);
+  return;
+}
+
 fs.readdirSync('./dist')
   .filter(f => f.endsWith('.js'))
   .forEach(f => {
