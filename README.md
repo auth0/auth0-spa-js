@@ -161,7 +161,7 @@ We process feedback and provide support via private channels.
 
 ## Frequently Asked Questions
 
-For a rundown of common issues you might encounter when using the SDK, please check out [the FAQ](FAQ.md).
+For a rundown of common issues you might encounter when using the SDK, please check out [the FAQ](https://github.com/auth0/auth0-spa-js/blob/master/FAQ.md).
 
 ## Vulnerability Reporting
 
@@ -182,4 +182,4 @@ Auth0 helps you to easily:
 
 ## License
 
-This project is licensed under the MIT license. See the [LICENSE](LICENSE) file for more info.
+This project is licensed under the MIT license. See the [LICENSE](https://github.com/auth0/auth0-spa-js/blob/master/LICENSE) file for more info.
