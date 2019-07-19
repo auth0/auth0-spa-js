@@ -8,13 +8,12 @@ import livereload from 'rollup-plugin-livereload';
 import visualizer from 'rollup-plugin-visualizer';
 
 import pkg from './package.json';
-import { Object } from 'core-js';
 
 const EXPORT_NAME = 'createAuth0Client';
 
 const isProduction = process.env.NODE_ENV === 'production';
 const shouldGenerateStats = process.env.WITH_STATS === 'true';
-const getPlugins = (shouldMinify, tsconfigOverride = {}) => {
+const getPlugins = (shouldMinify, { target }) => {
   return [
     resolve({
       browser: true
@@ -26,7 +25,10 @@ const getPlugins = (shouldMinify, tsconfigOverride = {}) => {
       tsconfigOverride: {
         noEmit: false,
         sourceMap: true,
-        ...tsconfigOverride
+        compilerOptions: {
+          target: target,
+          lib: ['dom', 'es6']
+        }
       }
     }),
     shouldMinify && terser(),
@@ -43,7 +45,7 @@ let bundles = [
       format: 'umd'
     },
     plugins: [
-      ...getPlugins(false),
+      ...getPlugins(false, { target: 'es5' }),
       !isProduction &&
         serve({
           contentBase: ['dist', 'static'],
@@ -70,7 +72,7 @@ if (isProduction) {
         }
       ],
       plugins: [
-        ...getPlugins(isProduction),
+        ...getPlugins(isProduction, { target: 'es5' }),
         shouldGenerateStats && visualizer()
       ]
     },
@@ -82,7 +84,7 @@ if (isProduction) {
           format: 'esm'
         }
       ],
-      plugins: getPlugins(isProduction)
+      plugins: getPlugins(isProduction, { target: 'es2015' })
     },
     {
       input: 'src/index.ts',
@@ -93,7 +95,7 @@ if (isProduction) {
           format: 'cjs'
         }
       ],
-      plugins: getPlugins(false),
+      plugins: getPlugins(false, { target: 'es5' }),
       external: Object.keys(pkg.dependencies)
     },
     {
@@ -103,12 +105,7 @@ if (isProduction) {
         file: pkg.browser.replace('.js', '.legacy.js'),
         format: 'umd'
       },
-      plugins: getPlugins(isProduction, {
-        compilerOptions: {
-          target: 'es5',
-          lib: ['dom', 'es6']
-        }
-      })
+      plugins: getPlugins(isProduction, { target: 'es5' })
     }
   );
 }
