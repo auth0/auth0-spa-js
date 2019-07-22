@@ -1,3 +1,9 @@
+## [v1.1.1](https://github.com/auth0/auth0-spa-js/tree/v1.1.1) (2019-07-22)
+
+**Fixed**
+
+- Make sure the production bundle is ES5 compatible. https://github.com/auth0/auth0-spa-js/pull/98
+
 ## [v1.1.0](https://github.com/auth0/auth0-spa-js/tree/v1.1.0) (2019-07-15)
 
 **Changed**
