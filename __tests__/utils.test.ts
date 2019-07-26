@@ -146,6 +146,19 @@ describe('utils', () => {
       const result = await sha256('test');
       expect(result).toBe(true);
     });
+    it('should return, logging a warning if crypto.digest is undefined', async () => {
+      (<any>global).crypto = {};
+      (<any>window).console = {
+        warn: jest.fn()
+      };
+      const result = await sha256('test');
+      expect(result).toBeUndefined();
+      expect(window.console.warn).toHaveBeenCalledWith(`
+      Auth0 SDK for Single Page Applications is meant to be run on secure origin.
+      See https://github.com/auth0/auth0-spa-js/blob/master/FAQ.md#why-do-i-get-error-invalid-state-in-firefox-when-refreshing-the-page-immediately-after-a-login 
+      for more information.
+    `);
+    });
   });
   describe('openPopup', () => {
     it('opens the popup', () => {
