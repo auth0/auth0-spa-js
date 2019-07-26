@@ -19,12 +19,17 @@ export const parseQueryResult = (hash: string) => {
   };
 };
 
-export const runIframe = (authorizeUrl: string, eventOrigin: string) => {
+export const runIframe = (
+  authorizeUrl: string,
+  state: string,
+  eventOrigin: string
+) => {
   return new Promise<AuthenticationResult>((res, rej) => {
     var iframe = window.document.createElement('iframe');
     iframe.setAttribute('width', '0');
     iframe.setAttribute('height', '0');
     iframe.style.display = 'none';
+    iframe.id = state;
 
     const timeoutSetTimeoutId = setTimeout(() => {
       rej(TIMEOUT_ERROR);
@@ -34,11 +39,15 @@ export const runIframe = (authorizeUrl: string, eventOrigin: string) => {
     const iframeEventHandler = function(e: MessageEvent) {
       if (e.origin != eventOrigin) return;
       if (!e.data || e.data.type !== 'authorization_response') return;
-      (<any>e.source).close();
+      if (e.data.response.state !== state) return;
+
       e.data.response.error ? rej(e.data.response) : res(e.data.response);
       clearTimeout(timeoutSetTimeoutId);
       window.removeEventListener('message', iframeEventHandler, false);
-      window.document.body.removeChild(iframe);
+
+      try {
+        window.document.body.removeChild(document.getElementById(state));
+      } catch (error) {}
     };
     window.addEventListener('message', iframeEventHandler, false);
     window.document.body.appendChild(iframe);
