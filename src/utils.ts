@@ -115,8 +115,22 @@ export const bufferToBase64UrlEncoded = input =>
     window.btoa(String.fromCharCode(...Array.from(new Uint8Array(input))))
   );
 
+const getJSON = async (url, options) => {
+  const response = await fetch(url, options);
+  const { error, error_description, ...success } = await response.json();
+  if (!response.ok) {
+    const errorMessage =
+      error_description || `HTTP error. Unable to fetch ${url}`;
+    const e = <any>new Error(errorMessage);
+    e.error = error || 'request_error';
+    e.error_description = errorMessage;
+    throw e;
+  }
+  return success;
+};
+
 export const oauthToken = async ({ baseUrl, ...options }: OAuthTokenOptions) =>
-  await fetch(`${baseUrl}/oauth/token`, {
+  await getJSON(`${baseUrl}/oauth/token`, {
     method: 'POST',
     body: JSON.stringify({
       grant_type: 'authorization_code',
@@ -126,4 +140,4 @@ export const oauthToken = async ({ baseUrl, ...options }: OAuthTokenOptions) =>
     headers: {
       'Content-type': 'application/json'
     }
-  }).then(r => r.json());
+  });
