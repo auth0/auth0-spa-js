@@ -370,14 +370,13 @@ describe('utils', () => {
       return { iframe, url, origin };
     };
     it('handles iframe correctly', async () => {
-      const state = 'state';
       const origin = 'https://origin.com';
       const message = {
         origin,
         source: { close: jest.fn() },
         data: {
           type: 'authorization_response',
-          response: { id_token: 'id_token', state }
+          response: { id_token: 'id_token' }
         }
       };
       const { iframe, url } = setup(message);
@@ -422,14 +421,13 @@ describe('utils', () => {
       });
     });
     it('returns authorization response message', async () => {
-      const state = 'state';
       const origin = 'https://origin.com';
       const message = {
         origin,
         source: { close: jest.fn() },
         data: {
           type: 'authorization_response',
-          response: { id_token: 'id_token', state }
+          response: { id_token: 'id_token' }
         }
       };
       const { iframe, url } = setup(message);
@@ -439,14 +437,13 @@ describe('utils', () => {
       expect(window.document.body.removeChild).toHaveBeenCalledWith(iframe);
     });
     it('returns authorization error message', async () => {
-      const state = 'state';
       const origin = 'https://origin.com';
       const message = {
         origin,
         source: { close: jest.fn() },
         data: {
           type: 'authorization_response',
-          response: { error: 'error', state }
+          response: { error: 'error' }
         }
       };
       const { iframe, url } = setup(message);
