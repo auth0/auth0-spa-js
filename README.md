@@ -55,14 +55,14 @@ yarn add @auth0/auth0-spa-js
 const auth0 = await createAuth0Client({
   domain: '<AUTH0_DOMAIN>',
   client_id: '<AUTH0_CLIENT_ID>',
-  redirect_uri: 'https://myapp.com/callback'
+  redirect_uri: '<MY_CALLBACK_URL>'
 });
 
 //with promises
 createAuth0Client({
   domain: '<AUTH0_DOMAIN>',
   client_id: '<AUTH0_CLIENT_ID>',
-  redirect_uri: 'https://myapp.com/callback'
+  redirect_uri: '<MY_CALLBACK_URL>'
 }).then(auth0 => {
   //...
 });
@@ -82,7 +82,7 @@ document.getElementById('login').addEventListener('click', async () => {
   await auth0.loginWithRedirect();
 });
 
-//in your callback route (https://myapp.com/callback)
+//in your callback route (<MY_CALLBACK_URL>)
 window.addEventListener('load', async () => {
   const redirectResult = await auth0.handleRedirectCallback();
   //logged in. you can get the user profile like this:
@@ -99,7 +99,7 @@ document.getElementById('login').addEventListener('click', () => {
   });
 });
 
-//in your callback route (https://myapp.com/callback)
+//in your callback route (<MY_CALLBACK_URL>)
 window.addEventListener('load', () => {
   auth0.handleRedirectCallback().then(redirectResult => {
     //logged in. you can get the user profile like this:
