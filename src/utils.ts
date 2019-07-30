@@ -19,17 +19,14 @@ export const parseQueryResult = (hash: string) => {
   };
 };
 
-export const runIframe = (
-  authorizeUrl: string,
-  stateIn: string,
-  eventOrigin: string
-) => {
+export const runIframe = (authorizeUrl: string, eventOrigin: string) => {
   return new Promise<AuthenticationResult>((res, rej) => {
+    const IFRAME_ID = 'a0-spajs-iframe';
     var iframe = window.document.createElement('iframe');
     iframe.setAttribute('width', '0');
     iframe.setAttribute('height', '0');
     iframe.style.display = 'none';
-    iframe.id = stateIn;
+    iframe.id = IFRAME_ID;
 
     const timeoutSetTimeoutId = setTimeout(() => {
       rej(TIMEOUT_ERROR);
@@ -39,14 +36,13 @@ export const runIframe = (
     const iframeEventHandler = function(e: MessageEvent) {
       if (e.origin != eventOrigin) return;
       if (!e.data || e.data.type !== 'authorization_response') return;
-      if (e.data.response.state !== stateIn) return;
 
       e.data.response.error ? rej(e.data.response) : res(e.data.response);
       clearTimeout(timeoutSetTimeoutId);
       window.removeEventListener('message', iframeEventHandler, false);
 
       try {
-        window.document.body.removeChild(document.getElementById(stateIn));
+        window.document.body.removeChild(document.getElementById(IFRAME_ID));
       } catch (error) {}
     };
     window.addEventListener('message', iframeEventHandler, false);
