@@ -94,8 +94,8 @@ window.addEventListener('load', async () => {
 
 //redirect to the Universal Login Page
 document.getElementById('login').addEventListener('click', () => {
-  auth0.loginWithRedirect().then(() => {
-    //continue
+  auth0.loginWithRedirect().catch(() => {
+    //error while redirecting the user
   });
 });
 
