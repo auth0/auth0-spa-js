@@ -167,7 +167,7 @@ describe('utils', () => {
       (<any>global).fetch = jest.fn(
         () =>
           new Promise(res =>
-            res({ json: () => new Promise(ress => ress(true)) })
+            res({ ok: true, json: () => new Promise(ress => ress(true)) })
           )
       );
       await oauthToken({
@@ -182,6 +182,60 @@ describe('utils', () => {
         headers: { 'Content-type': 'application/json' },
         method: 'POST'
       });
+    });
+    it('handles error with error response', async () => {
+      const theError = {
+        error: 'the-error',
+        error_description: 'the-error-description'
+      };
+      (<any>global).fetch = jest.fn(
+        () =>
+          new Promise(res =>
+            res({
+              ok: false,
+              json: () => new Promise(ress => ress(theError))
+            })
+          )
+      );
+      try {
+        await oauthToken({
+          baseUrl: 'https://test.com',
+          client_id: 'client_idIn',
+          code: 'codeIn',
+          code_verifier: 'code_verifierIn'
+        });
+      } catch (error) {
+        expect(error.message).toBe(theError.error_description);
+        expect(error.error).toBe(theError.error);
+        expect(error.error_description).toBe(theError.error_description);
+      }
+    });
+    it('handles error without error response', async () => {
+      (<any>global).fetch = jest.fn(
+        () =>
+          new Promise(res =>
+            res({
+              ok: false,
+              json: () => new Promise(ress => ress(false))
+            })
+          )
+      );
+      try {
+        await oauthToken({
+          baseUrl: 'https://test.com',
+          client_id: 'client_idIn',
+          code: 'codeIn',
+          code_verifier: 'code_verifierIn'
+        });
+      } catch (error) {
+        expect(error.message).toBe(
+          `HTTP error. Unable to fetch https://test.com/oauth/token`
+        );
+        expect(error.error).toBe('request_error');
+        expect(error.error_description).toBe(
+          `HTTP error. Unable to fetch https://test.com/oauth/token`
+        );
+      }
     });
   });
   describe('runPopup', () => {
