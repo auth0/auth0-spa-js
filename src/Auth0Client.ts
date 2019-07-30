@@ -327,7 +327,7 @@ export default class Auth0Client {
       response_mode: 'web_message'
     });
 
-    const codeResult = await runIframe(url, stateIn, this.domainUrl);
+    const codeResult = await runIframe(url, this.domainUrl);
     if (stateIn !== codeResult.state) {
       throw new Error('Invalid state');
     }
