@@ -84,7 +84,7 @@ document.getElementById('login').addEventListener('click', async () => {
 
 //in your callback route (https://myapp.com/callback)
 window.addEventListener('load', async () => {
-  await auth0.handleRedirectCallback();
+  const redirectResult = await auth0.handleRedirectCallback();
   //logged in. you can get the user profile like this:
   const user = await auth0.getUser();
   console.log(user);
