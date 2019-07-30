@@ -54,13 +54,15 @@ yarn add @auth0/auth0-spa-js
 //with async/await
 const auth0 = await createAuth0Client({
   domain: '<AUTH0_DOMAIN>',
-  client_id: '<AUTH0_CLIENT_ID>'
+  client_id: '<AUTH0_CLIENT_ID>',
+  redirect_uri: 'https://myapp.com/callback'
 });
 
 //with promises
 createAuth0Client({
   domain: '<AUTH0_DOMAIN>',
-  client_id: '<AUTH0_CLIENT_ID>'
+  client_id: '<AUTH0_CLIENT_ID>',
+  redirect_uri: 'https://myapp.com/callback'
 }).then(auth0 => {
   //...
 });
@@ -74,16 +76,32 @@ createAuth0Client({
 
 ```js
 //with async/await
+
+//redirect to the Universal Login Page
 document.getElementById('login').addEventListener('click', async () => {
-  await auth0.loginWithPopup();
+  await auth0.loginWithRedirect();
+});
+
+//in your callback route (https://myapp.com/callback)
+window.addEventListener('load', async () => {
+  await auth0.handleRedirectCallback();
   //logged in. you can get the user profile like this:
   const user = await auth0.getUser();
   console.log(user);
 });
 
 //with promises
+
+//redirect to the Universal Login Page
 document.getElementById('login').addEventListener('click', () => {
-  auth0.loginWithPopup().then(token => {
+  auth0.loginWithRedirect().then(() => {
+    //continue
+  });
+});
+
+//in your callback route (https://myapp.com/callback)
+window.addEventListener('load', () => {
+  auth0.handleRedirectCallback().then(redirectResult => {
     //logged in. you can get the user profile like this:
     auth0.getUser().then(user => {
       console.log(user);
