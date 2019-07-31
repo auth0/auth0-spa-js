@@ -25,7 +25,7 @@ export const runIframe = (authorizeUrl: string, eventOrigin: string) => {
   const IFRAME_ID = 'a0-spajs-iframe';
   if (document.getElementById(IFRAME_ID)) {
     throw new InternalError(
-      '`getTokenSilently` can only be called once at a time'
+      "`getTokenSilently` can only be called once at a time. Check your code to make sure you're not calling it multiple times."
     );
   }
   return new Promise<AuthenticationResult>((res, rej) => {

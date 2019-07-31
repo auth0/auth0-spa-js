@@ -411,7 +411,7 @@ describe('utils', () => {
       } catch (error) {
         expect(error).toBeInstanceOf(InternalError);
         expect(error.error_description).toBe(
-          '`getTokenSilently` can only be called once at a time'
+          "`getTokenSilently` can only be called once at a time. Check your code to make sure you're not calling it multiple times."
         );
         expect(window.document.body.appendChild).not.toHaveBeenCalledWith(
           iframe
