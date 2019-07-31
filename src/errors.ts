@@ -9,3 +9,10 @@ export class AuthenticationError extends Error {
     Object.setPrototypeOf(this, AuthenticationError.prototype);
   }
 }
+
+export class InternalError extends Error {
+  public error = 'internal_error';
+  constructor(public error_description: string = 'Internal Error') {
+    super(error_description);
+  }
+}

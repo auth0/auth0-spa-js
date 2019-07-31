@@ -1,9 +1,11 @@
 import * as qs from 'qss';
 import { DEFAULT_AUTHORIZE_TIMEOUT_IN_SECONDS } from './constants';
+import { InternalError } from './errors';
+
+const TIMEOUT_ERROR = { error: 'timeout', error_description: 'Timeout' };
 
 const dedupe = arr => arr.filter((x, i) => arr.indexOf(x) === i);
 
-const TIMEOUT_ERROR = { error: 'timeout', error_description: 'Timeout' };
 export const getUniqueScopes = (...scopes: string[]) => {
   const scopeString = scopes.filter(Boolean).join();
   return dedupe(scopeString.replace(/\s/g, ',').split(','))
@@ -20,8 +22,13 @@ export const parseQueryResult = (hash: string) => {
 };
 
 export const runIframe = (authorizeUrl: string, eventOrigin: string) => {
+  const IFRAME_ID = 'a0-spajs-iframe';
+  if (document.getElementById(IFRAME_ID)) {
+    throw new InternalError(
+      '`getTokenSilently` can only be called once at a time'
+    );
+  }
   return new Promise<AuthenticationResult>((res, rej) => {
-    const IFRAME_ID = 'a0-spajs-iframe';
     var iframe = window.document.createElement('iframe');
     iframe.setAttribute('width', '0');
     iframe.setAttribute('height', '0');

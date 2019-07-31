@@ -15,8 +15,10 @@ import {
   urlDecodeB64
 } from '../src/utils';
 import { DEFAULT_AUTHORIZE_TIMEOUT_IN_SECONDS } from '../src/constants';
+import { InternalError } from '../src/errors';
 
 (<any>global).TextEncoder = TextEncoder;
+const TIMEOUT_ERROR = { error: 'timeout', error_description: 'Timeout' };
 
 describe('utils', () => {
   describe('getUniqueScopes', () => {
@@ -240,7 +242,6 @@ describe('utils', () => {
     });
   });
   describe('runPopup', () => {
-    const TIMEOUT_ERROR = { error: 'timeout', error_description: 'Timeout' };
     const setup = customMessage => {
       const popup = {
         location: { href: '' },
@@ -343,7 +344,6 @@ describe('utils', () => {
     });
   });
   describe('runIframe', () => {
-    const TIMEOUT_ERROR = { error: 'timeout', error_description: 'Timeout' };
     const setup = customMessage => {
       const iframe = {
         setAttribute: jest.fn(),
@@ -362,9 +362,13 @@ describe('utils', () => {
         expect(type).toBe('iframe');
         return iframe;
       });
-      window.document.getElementById = <any>jest.fn(() => {
-        return iframe;
-      });
+      window.document.getElementById = <any>jest
+        .fn()
+        .mockImplementationOnce(id => undefined)
+        .mockImplementationOnce(id => {
+          expect(id).toBe('a0-spajs-iframe');
+          return iframe;
+        });
       window.document.body.appendChild = jest.fn();
       window.document.body.removeChild = jest.fn();
       return { iframe, url, origin };
@@ -391,6 +395,28 @@ describe('utils', () => {
       ]);
       expect(iframe.style.display).toBe('none');
       expect(iframe.id).toBe('a0-spajs-iframe');
+    });
+    it('throws an error when the iframe already exists', async () => {
+      const origin = 'https://origin.com';
+      const { iframe, url } = setup('');
+
+      //the mock returns undefined in the first time
+      //and an object in the second time, so call it
+      //once here so when the method runs, it will
+      //return the object and throw
+      window.document.getElementById('foobar');
+
+      try {
+        await runIframe(url, origin);
+      } catch (error) {
+        expect(error).toBeInstanceOf(InternalError);
+        expect(error.error_description).toBe(
+          '`getTokenSilently` can only be called once at a time'
+        );
+        expect(window.document.body.appendChild).not.toHaveBeenCalledWith(
+          iframe
+        );
+      }
     });
     describe('with invalid messages', () => {
       [
