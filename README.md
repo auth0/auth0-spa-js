@@ -7,8 +7,6 @@ Auth0 SDK for Single Page Applications using [Authorization Code Grant Flow with
 
 ## Table of Contents
 
-Make sure this is updated based on the sections included:
-
 - [Documentation](#documentation)
 - [Installation](#installation)
 - [Getting Started](#getting-started)
@@ -21,7 +19,9 @@ Make sure this is updated based on the sections included:
 
 ## Documentation
 
-- See the [API reference](https://auth0.github.io/auth0-spa-js/)
+- [Documentation](https://auth0.com/docs/libraries/auth0-spa-js)
+- [API reference](https://auth0.github.io/auth0-spa-js/)
+- [Migrate from Auth0.js to the Auth0 Single Page App SDK](https://auth0.com/docs/libraries/auth0-spa-js/migrate-from-auth0js)
 
 ## Installation
 
@@ -47,8 +47,7 @@ yarn add @auth0/auth0-spa-js
 
 ### Creating the client
 
-> Ideally, you should have only one instance of the client. Create one
-> before rendering / initializing your application.
+Create an `Auth0Client` instance before rendering or initializing your application. You should only have one instance of the client.
 
 ```js
 //with async/await
