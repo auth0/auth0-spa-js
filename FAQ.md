@@ -62,3 +62,7 @@ With this change, an immediate refresh after login works as expected.
 Note that even though the workaround doesn't cause any weird side effects in browers, you should ideally remove it after the bug has been fixed in Firefox.
 
 For more context see this [issue](https://github.com/auth0-samples/auth0-react-samples/issues/145).
+
+## Why do I get `auth0_spa_js_1.default is not a function` when using Typescript?
+
+Due to how the type system works in Typescript, if one of your dependencies uses `allowSyntheticDefaultImports: true`, then all the consumers of that dependency must use `allowSyntheticDefaultImports: true` as well. This, of course, is not ideal and might break your app if you depend on this setting being `false`. The Typescript team came up with a new flag that helps in this scenario. If you're hitting this issue, set `esModuleInterop: true` in your `tsconfig.json` (inside `compilerOptions`) file.
