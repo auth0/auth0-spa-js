@@ -54,12 +54,16 @@ export const openPopup = () => {
   return popup;
 };
 
-export const runPopup = (popup: any, authorizeUrl: string) => {
+export const runPopup = (
+  popup: any,
+  authorizeUrl: string,
+  config: PopupConfigOptions
+) => {
   popup.location.href = authorizeUrl;
   return new Promise<AuthenticationResult>((resolve, reject) => {
     const timeoutId = setTimeout(() => {
-      reject(TIMEOUT_ERROR);
-    }, 60 * 1000);
+      reject({ ...TIMEOUT_ERROR, popup });
+    }, config.timeoutInSeconds || 60 * 1000);
     window.addEventListener('message', e => {
       if (!e.data || e.data.type !== 'authorization_response') {
         return;

@@ -117,6 +117,9 @@ interface RedirectLoginResult {
 }
 
 interface PopupLoginOptions extends BaseLoginOptions {}
+interface PopupConfigOptions {
+  timeoutInSeconds?: number;
+}
 
 interface GetUserOptions {
   /**

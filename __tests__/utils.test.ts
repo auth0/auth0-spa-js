@@ -267,7 +267,7 @@ describe('utils', () => {
               jest.runAllTimers();
             }, 10);
             jest.useFakeTimers();
-            await expect(runPopup(popup, url)).rejects.toMatchObject(
+            await expect(runPopup(popup, url, {})).rejects.toMatchObject(
               TIMEOUT_ERROR
             );
             jest.useRealTimers();
@@ -283,7 +283,7 @@ describe('utils', () => {
         }
       };
       const { popup, url } = setup(message);
-      await expect(runPopup(popup, url)).resolves.toMatchObject(
+      await expect(runPopup(popup, url, {})).resolves.toMatchObject(
         message.data.response
       );
       expect(popup.location.href).toBe(url);
@@ -297,13 +297,33 @@ describe('utils', () => {
         }
       };
       const { popup, url } = setup(message);
-      await expect(runPopup(popup, url)).rejects.toMatchObject(
+      await expect(runPopup(popup, url, {})).rejects.toMatchObject(
         message.data.response
       );
       expect(popup.location.href).toBe(url);
       expect(popup.close).toHaveBeenCalled();
     });
-    it('times out after 60s', async () => {
+    it('times out after config.timeoutInSeconds', async () => {
+      const { popup, url } = setup('');
+      const seconds = 10;
+      /**
+       * We need to run the timers after we start `runPopup`, but we also
+       * need to use `jest.useFakeTimers` to trigger the timeout.
+       * That's why we're using a real `setTimeout`, then using fake timers
+       * then rolling back to real timers
+       */
+      setTimeout(() => {
+        jest.runTimersToTime(seconds * 1000);
+      }, 10);
+      jest.useFakeTimers();
+      await expect(
+        runPopup(popup, url, {
+          timeoutInSeconds: seconds
+        })
+      ).rejects.toMatchObject({ ...TIMEOUT_ERROR, popup });
+      jest.useRealTimers();
+    });
+    it('times out after 60s if config is not defined', async () => {
       const { popup, url } = setup('');
       /**
        * We need to run the timers after we start `runPopup`, but we also
@@ -315,7 +335,9 @@ describe('utils', () => {
         jest.runTimersToTime(60 * 1000);
       }, 10);
       jest.useFakeTimers();
-      await expect(runPopup(popup, url)).rejects.toMatchObject(TIMEOUT_ERROR);
+      await expect(runPopup(popup, url, {})).rejects.toMatchObject(
+        TIMEOUT_ERROR
+      );
       jest.useRealTimers();
     });
   });

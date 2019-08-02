@@ -19,6 +19,10 @@ import { AuthenticationError } from './errors';
 import * as ClientStorage from './storage';
 import version from './version';
 
+const DEFAULT_POPUP_CONFIG_OPTIONS: PopupConfigOptions = {
+  timeoutInSeconds: 30
+};
+
 /**
  * Auth0 SDK for Single Page Applications using [Authorization Code Grant Flow with PKCE](https://auth0.com/docs/api-auth/tutorials/authorization-code-grant-pkce).
  */
@@ -98,7 +102,10 @@ export default class Auth0Client {
    *
    * @param options
    */
-  public async loginWithPopup(options: PopupLoginOptions = {}) {
+  public async loginWithPopup(
+    options: PopupLoginOptions = {},
+    config: PopupConfigOptions = DEFAULT_POPUP_CONFIG_OPTIONS
+  ) {
     const popup = await openPopup();
     const { ...authorizeOptions } = options;
     const stateIn = encodeState(createRandomString());
@@ -117,7 +124,7 @@ export default class Auth0Client {
       ...params,
       response_mode: 'web_message'
     });
-    const codeResult = await runPopup(popup, url);
+    const codeResult = await runPopup(popup, url, config);
     if (stateIn !== codeResult.state) {
       throw new Error('Invalid state');
     }
@@ -357,14 +364,15 @@ export default class Auth0Client {
     options: GetTokenWithPopupOptions = {
       audience: this.options.audience,
       scope: this.options.scope || this.DEFAULT_SCOPE
-    }
+    },
+    config: PopupConfigOptions = DEFAULT_POPUP_CONFIG_OPTIONS
   ) {
     options.scope = getUniqueScopes(
       this.DEFAULT_SCOPE,
       this.options.scope,
       options.scope
     );
-    await this.loginWithPopup(options);
+    await this.loginWithPopup(options, config);
     const cache = this.cache.get({
       scope: options.scope,
       audience: options.audience || 'default'
