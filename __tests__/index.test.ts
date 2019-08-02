@@ -86,6 +86,36 @@ describe('Auth0', () => {
   beforeEach(() => {
     jest.resetAllMocks();
     window.location.assign = jest.fn();
+    (<any>global).crypto = {
+      subtle: {
+        digest: () => ''
+      }
+    };
+  });
+  describe('createAuth0Client()', () => {
+    it('should create an Auth0 client', async () => {
+      const auth0 = await createAuth0Client({
+        domain: TEST_DOMAIN,
+        client_id: TEST_CLIENT_ID
+      });
+      expect(auth0).toBeInstanceOf(Auth0Client);
+    });
+    it('should return, logging a warning if crypto.digest is undefined', async () => {
+      (<any>global).crypto = {};
+      (<any>window).console = {
+        error: jest.fn()
+      };
+      const auth0 = await createAuth0Client({
+        domain: TEST_DOMAIN,
+        client_id: TEST_CLIENT_ID
+      });
+      expect(auth0).toBeUndefined();
+      expect(window.console.error).toHaveBeenCalledWith(`
+      auth0-spa-js must run on a secure origin.
+      See https://github.com/auth0/auth0-spa-js/blob/master/FAQ.md#why-do-i-get-error-invalid-state-in-firefox-when-refreshing-the-page-immediately-after-a-login 
+      for more information.
+    `);
+    });
   });
   describe('loginWithPopup()', () => {
     it('opens popup', async () => {
@@ -917,12 +947,26 @@ describe('Auth0', () => {
         returnTo: 'https://return.to'
       });
     });
+    it('creates correct query params when `options.federated` is true', async () => {
+      const { auth0, utils } = await setup();
+
+      auth0.logout({ federated: true, client_id: null });
+      expect(utils.createQueryParams).toHaveBeenCalledWith({});
+    });
     it('calls `window.location.assign` with the correct url', async () => {
       const { auth0 } = await setup();
 
       auth0.logout();
       expect(window.location.assign).toHaveBeenCalledWith(
         `https://test.auth0.com/v2/logout?query=params${TEST_TELEMETRY_QUERY_STRING}`
+      );
+    });
+    it('calls `window.location.assign` with the correct url when `options.federated` is true', async () => {
+      const { auth0 } = await setup();
+
+      auth0.logout({ federated: true });
+      expect(window.location.assign).toHaveBeenCalledWith(
+        `https://test.auth0.com/v2/logout?query=params${TEST_TELEMETRY_QUERY_STRING}&federated`
       );
     });
   });
