@@ -947,12 +947,26 @@ describe('Auth0', () => {
         returnTo: 'https://return.to'
       });
     });
+    it('creates correct query params when `options.federated` is true', async () => {
+      const { auth0, utils } = await setup();
+
+      auth0.logout({ federated: true, client_id: null });
+      expect(utils.createQueryParams).toHaveBeenCalledWith({});
+    });
     it('calls `window.location.assign` with the correct url', async () => {
       const { auth0 } = await setup();
 
       auth0.logout();
       expect(window.location.assign).toHaveBeenCalledWith(
         `https://test.auth0.com/v2/logout?query=params${TEST_TELEMETRY_QUERY_STRING}`
+      );
+    });
+    it('calls `window.location.assign` with the correct url when `options.federated` is true', async () => {
+      const { auth0 } = await setup();
+
+      auth0.logout({ federated: true });
+      expect(window.location.assign).toHaveBeenCalledWith(
+        `https://test.auth0.com/v2/logout?query=params${TEST_TELEMETRY_QUERY_STRING}&federated`
       );
     });
   });
