@@ -228,6 +228,18 @@ describe('Auth0', () => {
         code_verifier: TEST_RANDOM_STRING
       });
     });
+    it('calls oauth/token with correct params', async () => {
+      const { auth0, utils } = await setup();
+
+      await auth0.loginWithPopup({ audience: 'test-audience' });
+      expect(utils.oauthToken).toHaveBeenCalledWith({
+        audience: 'test-audience',
+        baseUrl: 'https://test.auth0.com',
+        client_id: TEST_CLIENT_ID,
+        code: TEST_CODE,
+        code_verifier: TEST_RANDOM_STRING
+      });
+    });
     it('calls `tokenVerifier.verify` with the `id_token` from in the oauth/token response', async () => {
       const { auth0, tokenVerifier } = await setup();
 
