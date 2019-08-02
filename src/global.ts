@@ -176,6 +176,14 @@ interface LogoutOptions {
    * The `client_id` of your application.
    */
   client_id?: string;
+
+  /**
+   * When supported by the upstream identity provider,
+   * forces the user to logout of their identity provider
+   * and from Auth0.
+   * [Read more about how federated logout works at Auth0](https://auth0.com/docs/logout/guides/logout-idps)
+   */
+  federated?: boolean;
 }
 
 /**
