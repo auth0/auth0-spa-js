@@ -63,10 +63,19 @@ Note that even though the workaround doesn't cause any weird side effects in bro
 
 For more context see this [issue](https://github.com/auth0-samples/auth0-react-samples/issues/145).
 
-## Why do I get `Auth0 SDK for Single Page Applications is meant to be run on secure origin?
+## Why do I get `Auth0 SDK for Single Page Applications must run on a secure origin`?
 
 Auth0 SDK for Single Page Applications internally use [Web Cryptography API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Crypto_API) to create [SHA-256 digest](https://developer.mozilla.org/en-US/docs/Web/API/SubtleCrypto/digest).
 
 According to the spec ([via Github issues](https://github.com/w3c/webcrypto/issues/28)), Web Cryptography API requires a secure origin, so that accessing `Crypto.subtle` in a not secure context return undefined.
 
-So be sure to use Auth0 SDK for Single Page Applications only under HTTPS.
+In most browsers, secure origins are origins that match at least one of the following (scheme, host, port) patterns: 
+
+```
+(https, *, *)
+(wss, *, *)
+(*, localhost, *)
+(*, 127/8, *)
+(*, ::1/128, *)
+(file, *, —)
+```
