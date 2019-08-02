@@ -110,7 +110,7 @@ describe('Auth0', () => {
         client_id: TEST_CLIENT_ID
       });
       expect(auth0).toBeUndefined();
-      expect(window.console.warn).toHaveBeenCalledWith(`
+      expect(window.console.error).toHaveBeenCalledWith(`
       auth0-spa-js must run on a secure origin.
       See https://github.com/auth0/auth0-spa-js/blob/master/FAQ.md#why-do-i-get-error-invalid-state-in-firefox-when-refreshing-the-page-immediately-after-a-login 
       for more information.
