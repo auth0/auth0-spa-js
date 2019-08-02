@@ -103,7 +103,7 @@ describe('Auth0', () => {
     it('should return, logging a warning if crypto.digest is undefined', async () => {
       (<any>global).crypto = {};
       (<any>window).console = {
-        warn: jest.fn()
+        error: jest.fn()
       };
       const auth0 = await createAuth0Client({
         domain: TEST_DOMAIN,
