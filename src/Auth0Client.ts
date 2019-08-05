@@ -20,7 +20,7 @@ import * as ClientStorage from './storage';
 import version from './version';
 
 const DEFAULT_POPUP_CONFIG_OPTIONS: PopupConfigOptions = {
-  timeoutInSeconds: 30
+  timeoutInSeconds: 60
 };
 
 /**
