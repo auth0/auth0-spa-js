@@ -33,7 +33,7 @@ const TEST_TELEMETRY_QUERY_STRING = `&auth0Client=${encodeURIComponent(
 )}`;
 
 const DEFAULT_POPUP_CONFIG_OPTIONS: PopupConfigOptions = {
-  timeoutInSeconds: 30
+  timeoutInSeconds: 60
 };
 
 const setup = async (options = {}) => {
