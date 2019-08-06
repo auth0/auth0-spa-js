@@ -228,6 +228,18 @@ describe('Auth0', () => {
         code_verifier: TEST_RANDOM_STRING
       });
     });
+    it('calls oauth/token with correct params', async () => {
+      const { auth0, utils } = await setup();
+
+      await auth0.loginWithPopup({ audience: 'test-audience' });
+      expect(utils.oauthToken).toHaveBeenCalledWith({
+        audience: 'test-audience',
+        baseUrl: 'https://test.auth0.com',
+        client_id: TEST_CLIENT_ID,
+        code: TEST_CODE,
+        code_verifier: TEST_RANDOM_STRING
+      });
+    });
     it('calls `tokenVerifier.verify` with the `id_token` from in the oauth/token response', async () => {
       const { auth0, tokenVerifier } = await setup();
 
@@ -707,7 +719,7 @@ describe('Auth0', () => {
 
         expect(cache.get).toHaveBeenCalledWith({
           audience: 'default',
-          scope: 'unique:scopes'
+          scope: TEST_SCOPES
         });
         expect(utils.getUniqueScopes).toHaveBeenCalledWith(
           'openid profile email',
@@ -722,18 +734,30 @@ describe('Auth0', () => {
 
         expect(token).toBe(TEST_ACCESS_TOKEN);
       });
-    });
-    describe('when `options.ignoreCache` is true', () => {
-      it('encodes state with random string', async () => {
+      it('continues method execution when there is no cache available', async () => {
         const { auth0, utils } = await setup();
 
         await auth0.getTokenSilently();
+        //we only evaluate that the code didn't bail out because of the cache
+        expect(utils.encodeState).toHaveBeenCalledWith(TEST_RANDOM_STRING);
+      });
+    });
+    describe('when `options.ignoreCache` is true', () => {
+      const defaultOptionsIgnoreCacheTrue: GetTokenSilentlyOptions = {
+        audience: 'test:audience',
+        scope: 'test:scope',
+        ignoreCache: true
+      };
+      it('encodes state with random string', async () => {
+        const { auth0, utils } = await setup();
+
+        await auth0.getTokenSilently(defaultOptionsIgnoreCacheTrue);
         expect(utils.encodeState).toHaveBeenCalledWith(TEST_RANDOM_STRING);
       });
       it('creates `code_challenge` by using `utils.sha256` with the result of `utils.createRandomString`', async () => {
         const { auth0, utils } = await setup();
 
-        await auth0.getTokenSilently();
+        await auth0.getTokenSilently(defaultOptionsIgnoreCacheTrue);
         expect(utils.sha256).toHaveBeenCalledWith(TEST_RANDOM_STRING);
         expect(utils.bufferToBase64UrlEncoded).toHaveBeenCalledWith(
           TEST_ARRAY_BUFFER
@@ -742,9 +766,9 @@ describe('Auth0', () => {
       it('creates correct query params', async () => {
         const { auth0, utils } = await setup();
 
-        await auth0.getTokenSilently();
+        await auth0.getTokenSilently(defaultOptionsIgnoreCacheTrue);
         expect(utils.createQueryParams).toHaveBeenCalledWith({
-          audience: undefined,
+          audience: defaultOptionsIgnoreCacheTrue.audience,
           client_id: TEST_CLIENT_ID,
           scope: TEST_SCOPES,
           response_type: TEST_CODE,
@@ -763,8 +787,9 @@ describe('Auth0', () => {
           redirect_uri
         });
 
-        await auth0.getTokenSilently();
+        await auth0.getTokenSilently(defaultOptionsIgnoreCacheTrue);
         expect(utils.createQueryParams).toHaveBeenCalledWith({
+          audience: defaultOptionsIgnoreCacheTrue.audience,
           client_id: TEST_CLIENT_ID,
           scope: TEST_SCOPES,
           response_type: TEST_CODE,
@@ -780,9 +805,9 @@ describe('Auth0', () => {
       it('creates correct query params with custom params', async () => {
         const { auth0, utils } = await setup();
 
-        await auth0.getTokenSilently({ audience: 'test', scope: 'read:test' });
+        await auth0.getTokenSilently(defaultOptionsIgnoreCacheTrue);
         expect(utils.createQueryParams).toHaveBeenCalledWith({
-          audience: 'test',
+          audience: defaultOptionsIgnoreCacheTrue.audience,
           client_id: TEST_CLIENT_ID,
           scope: TEST_SCOPES,
           response_type: TEST_CODE,
@@ -796,12 +821,13 @@ describe('Auth0', () => {
         });
         expect(utils.getUniqueScopes).toHaveBeenCalledWith(
           'openid profile email',
-          'read:test'
+          undefined,
+          defaultOptionsIgnoreCacheTrue.scope
         );
       });
       it('opens iframe with correct urls', async () => {
         const { auth0, utils } = await setup();
-        await auth0.getTokenSilently();
+        await auth0.getTokenSilently(defaultOptionsIgnoreCacheTrue);
         expect(utils.runIframe).toHaveBeenCalledWith(
           `https://test.auth0.com/authorize?${TEST_QUERY_PARAMS}${TEST_TELEMETRY_QUERY_STRING}`,
           'https://test.auth0.com'
@@ -815,16 +841,16 @@ describe('Auth0', () => {
             state: 'other-state'
           })
         );
-        await expect(auth0.getTokenSilently()).rejects.toThrowError(
-          'Invalid state'
-        );
+        await expect(
+          auth0.getTokenSilently(defaultOptionsIgnoreCacheTrue)
+        ).rejects.toThrowError('Invalid state');
       });
       it('calls oauth/token with correct params', async () => {
         const { auth0, utils } = await setup();
 
-        await auth0.getTokenSilently();
+        await auth0.getTokenSilently(defaultOptionsIgnoreCacheTrue);
         expect(utils.oauthToken).toHaveBeenCalledWith({
-          audience: undefined,
+          audience: defaultOptionsIgnoreCacheTrue.audience,
           baseUrl: 'https://test.auth0.com',
           client_id: TEST_CLIENT_ID,
           code: TEST_CODE,
@@ -834,7 +860,7 @@ describe('Auth0', () => {
       it('calls `tokenVerifier.verify` with the `id_token` from in the oauth/token response', async () => {
         const { auth0, tokenVerifier } = await setup();
 
-        await auth0.getTokenSilently();
+        await auth0.getTokenSilently(defaultOptionsIgnoreCacheTrue);
         expect(tokenVerifier).toHaveBeenCalledWith({
           id_token: TEST_ID_TOKEN,
           nonce: TEST_RANDOM_STRING,
@@ -845,10 +871,10 @@ describe('Auth0', () => {
       it('saves cache', async () => {
         const { auth0, cache } = await setup();
 
-        await auth0.getTokenSilently();
+        await auth0.getTokenSilently(defaultOptionsIgnoreCacheTrue);
         expect(cache.save).toHaveBeenCalledWith({
           access_token: TEST_ACCESS_TOKEN,
-          audience: 'default',
+          audience: defaultOptionsIgnoreCacheTrue.audience,
           id_token: TEST_ID_TOKEN,
           scope: TEST_SCOPES,
           decodedToken: {
@@ -860,7 +886,7 @@ describe('Auth0', () => {
       it('saves `auth0.is.authenticated` key in storage', async () => {
         const { auth0, storage } = await setup();
 
-        await auth0.getTokenSilently();
+        await auth0.getTokenSilently(defaultOptionsIgnoreCacheTrue);
         expect(storage.save).toHaveBeenCalledWith(
           'auth0.is.authenticated',
           true,
