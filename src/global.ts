@@ -117,7 +117,12 @@ interface RedirectLoginResult {
 }
 
 interface PopupLoginOptions extends BaseLoginOptions {}
+
 interface PopupConfigOptions {
+  /**
+   * The number of seconds to wait for a popup response before
+   * throwing a timeout error
+   */
   timeoutInSeconds?: number;
 }
 
