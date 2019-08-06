@@ -14,6 +14,7 @@ import {
   runIframe,
   urlDecodeB64
 } from '../src/utils';
+import { DEFAULT_AUTHORIZE_TIMEOUT_IN_SECONDS } from '../src/constants';
 
 (<any>global).TextEncoder = TextEncoder;
 
@@ -323,7 +324,7 @@ describe('utils', () => {
       ).rejects.toMatchObject({ ...TIMEOUT_ERROR, popup });
       jest.useRealTimers();
     });
-    it('times out after 60s if config is not defined', async () => {
+    it('times out after DEFAULT_AUTHORIZE_TIMEOUT_IN_SECONDS if config is not defined', async () => {
       const { popup, url } = setup('');
       /**
        * We need to run the timers after we start `runPopup`, but we also
@@ -332,7 +333,7 @@ describe('utils', () => {
        * then rolling back to real timers
        */
       setTimeout(() => {
-        jest.runTimersToTime(60 * 1000);
+        jest.runTimersToTime(DEFAULT_AUTHORIZE_TIMEOUT_IN_SECONDS * 1000);
       }, 10);
       jest.useFakeTimers();
       await expect(runPopup(popup, url, {})).rejects.toMatchObject(

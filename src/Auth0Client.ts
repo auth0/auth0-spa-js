@@ -17,10 +17,11 @@ import TransactionManager from './transaction-manager';
 import { verify as verifyIdToken } from './jwt';
 import { AuthenticationError } from './errors';
 import * as ClientStorage from './storage';
+import { DEFAULT_AUTHORIZE_TIMEOUT_IN_SECONDS } from './constants';
 import version from './version';
 
 const DEFAULT_POPUP_CONFIG_OPTIONS: PopupConfigOptions = {
-  timeoutInSeconds: 60
+  timeoutInSeconds: DEFAULT_AUTHORIZE_TIMEOUT_IN_SECONDS
 };
 
 /**
