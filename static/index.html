@@ -36,9 +36,19 @@
           });
         });
         $('#login_popup').click(async () => {
-          await auth0.loginWithPopup({
-            redirect_uri: 'http://localhost:3000/callback.html'
-          });
+          try {
+            await auth0.loginWithPopup(
+              {
+                redirect_uri: 'http://localhost:3000/callback.html'
+              },
+              {
+                timeoutInSeconds: 20
+              }
+            );
+          } catch (error) {
+            console.error(error);
+            error.popup.close();
+          }
         });
         $('#login_redirect_callback').click(async () => {
           await auth0.handleRedirectCallback();

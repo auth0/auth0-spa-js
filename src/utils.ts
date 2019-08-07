@@ -1,4 +1,6 @@
 import * as qs from 'qs';
+import { DEFAULT_AUTHORIZE_TIMEOUT_IN_SECONDS } from './constants';
+
 const TIMEOUT_ERROR = { error: 'timeout', error_description: 'Timeout' };
 export const getUniqueScopes = (...scopes: string[]) => {
   const scopeString = scopes.filter(Boolean).join();
@@ -54,12 +56,16 @@ export const openPopup = () => {
   return popup;
 };
 
-export const runPopup = (popup: any, authorizeUrl: string) => {
+export const runPopup = (
+  popup: any,
+  authorizeUrl: string,
+  config: PopupConfigOptions
+) => {
   popup.location.href = authorizeUrl;
   return new Promise<AuthenticationResult>((resolve, reject) => {
     const timeoutId = setTimeout(() => {
-      reject(TIMEOUT_ERROR);
-    }, 60 * 1000);
+      reject({ ...TIMEOUT_ERROR, popup });
+    }, config.timeoutInSeconds || DEFAULT_AUTHORIZE_TIMEOUT_IN_SECONDS * 1000);
     window.addEventListener('message', e => {
       if (!e.data || e.data.type !== 'authorization_response') {
         return;

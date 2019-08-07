@@ -8,6 +8,7 @@ import Auth0Client from '../src/Auth0Client';
 import createAuth0Client from '../src/index';
 import { AuthenticationError } from '../src/errors';
 import version from '../src/version';
+import { DEFAULT_AUTHORIZE_TIMEOUT_IN_SECONDS } from '../src/constants';
 
 const TEST_DOMAIN = 'test.auth0.com';
 const TEST_CLIENT_ID = 'test-client-id';
@@ -31,6 +32,10 @@ const TEST_TELEMETRY_QUERY_STRING = `&auth0Client=${encodeURIComponent(
     })
   )
 )}`;
+
+const DEFAULT_POPUP_CONFIG_OPTIONS: PopupConfigOptions = {
+  timeoutInSeconds: DEFAULT_AUTHORIZE_TIMEOUT_IN_SECONDS
+};
 
 const setup = async (options = {}) => {
   const auth0 = await createAuth0Client({
@@ -194,14 +199,26 @@ describe('Auth0', () => {
         code_challenge_method: 'S256'
       });
     });
-    it('opens popup with correct popup and url', async () => {
+    it('opens popup with correct popup, url and default config', async () => {
       const { auth0, utils } = await setup();
       const popup = {};
       utils.openPopup.mockReturnValue(popup);
-      await auth0.loginWithPopup({});
+      await auth0.loginWithPopup();
       expect(utils.runPopup).toHaveBeenCalledWith(
         popup,
-        `https://test.auth0.com/authorize?${TEST_QUERY_PARAMS}${TEST_TELEMETRY_QUERY_STRING}`
+        `https://test.auth0.com/authorize?${TEST_QUERY_PARAMS}${TEST_TELEMETRY_QUERY_STRING}`,
+        DEFAULT_POPUP_CONFIG_OPTIONS
+      );
+    });
+    it('opens popup with correct popup, url and custom config', async () => {
+      const { auth0, utils } = await setup();
+      const popup = {};
+      utils.openPopup.mockReturnValue(popup);
+      await auth0.loginWithPopup({}, { timeoutInSeconds: 1 });
+      expect(utils.runPopup).toHaveBeenCalledWith(
+        popup,
+        `https://test.auth0.com/authorize?${TEST_QUERY_PARAMS}${TEST_TELEMETRY_QUERY_STRING}`,
+        { timeoutInSeconds: 1 }
       );
     });
     it('throws error if state from popup response is different from the provided state', async () => {
@@ -902,18 +919,40 @@ describe('Auth0', () => {
       result.cache.get.mockReturnValue({ access_token: TEST_ACCESS_TOKEN });
       return result;
     };
-    it('calls `loginWithPopup` with the correct options', async () => {
+    it('calls `loginWithPopup` with the correct default options', async () => {
       const { auth0, utils } = await localSetup();
 
       await auth0.getTokenWithPopup();
-      expect(auth0.loginWithPopup).toHaveBeenCalledWith({
-        audience: undefined,
-        scope: 'unique:scopes'
-      });
+      expect(auth0.loginWithPopup).toHaveBeenCalledWith(
+        {
+          audience: undefined,
+          scope: TEST_SCOPES
+        },
+        DEFAULT_POPUP_CONFIG_OPTIONS
+      );
       expect(utils.getUniqueScopes).toHaveBeenCalledWith(
         'openid profile email',
         undefined,
         'openid profile email'
+      );
+    });
+    it('calls `loginWithPopup` with the correct custom options', async () => {
+      const { auth0, utils } = await localSetup();
+      const loginOptions = {
+        audience: 'other-audience',
+        scope: 'other-scope'
+      };
+      const configOptions = { timeoutInSeconds: 1 };
+
+      await auth0.getTokenWithPopup(loginOptions, configOptions);
+      expect(auth0.loginWithPopup).toHaveBeenCalledWith(
+        loginOptions,
+        configOptions
+      );
+      expect(utils.getUniqueScopes).toHaveBeenCalledWith(
+        'openid profile email',
+        undefined,
+        'other-scope'
       );
     });
     it('calls `cache.get` with the correct options', async () => {
@@ -922,7 +961,7 @@ describe('Auth0', () => {
       await auth0.getTokenWithPopup();
       expect(cache.get).toHaveBeenCalledWith({
         audience: 'default',
-        scope: 'unique:scopes'
+        scope: TEST_SCOPES
       });
       expect(utils.getUniqueScopes).toHaveBeenCalledWith(
         'openid profile email',
