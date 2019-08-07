@@ -8,6 +8,7 @@ import Auth0Client from '../src/Auth0Client';
 import createAuth0Client from '../src/index';
 import { AuthenticationError } from '../src/errors';
 import version from '../src/version';
+import { DEFAULT_AUTHORIZE_TIMEOUT_IN_SECONDS } from '../src/constants';
 
 const TEST_DOMAIN = 'test.auth0.com';
 const TEST_CLIENT_ID = 'test-client-id';
@@ -33,7 +34,7 @@ const TEST_TELEMETRY_QUERY_STRING = `&auth0Client=${encodeURIComponent(
 )}`;
 
 const DEFAULT_POPUP_CONFIG_OPTIONS: PopupConfigOptions = {
-  timeoutInSeconds: 60
+  timeoutInSeconds: DEFAULT_AUTHORIZE_TIMEOUT_IN_SECONDS
 };
 
 const setup = async (options = {}) => {

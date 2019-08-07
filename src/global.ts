@@ -121,7 +121,7 @@ interface PopupLoginOptions extends BaseLoginOptions {}
 interface PopupConfigOptions {
   /**
    * The number of seconds to wait for a popup response before
-   * throwing a timeout error
+   * throwing a timeout error. Defaults to 60s
    */
   timeoutInSeconds?: number;
 }
