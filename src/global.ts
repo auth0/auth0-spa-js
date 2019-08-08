@@ -53,6 +53,12 @@ interface BaseLoginOptions {
    * the Login Widget.
    */
   connection?: string;
+
+  /**
+   * If you need to send custom parameters to the Authorization Server,
+   * make sure to use the original parameter name.
+   */
+  [key: string]: any;
 }
 
 interface Auth0ClientOptions extends BaseLoginOptions {
@@ -164,6 +170,12 @@ interface GetTokenSilentlyOptions extends GetUserOptions {
    * Auth0 Application's settings.
    */
   redirect_uri?: string;
+
+  /**
+   * If you need to send custom parameters to the Authorization Server,
+   * make sure to use the original parameter name.
+   */
+  [key: string]: any;
 }
 interface GetTokenWithPopupOptions extends PopupLoginOptions {}
 
