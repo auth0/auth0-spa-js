@@ -65,7 +65,7 @@ export const runPopup = (
   return new Promise<AuthenticationResult>((resolve, reject) => {
     const timeoutId = setTimeout(() => {
       reject({ ...TIMEOUT_ERROR, popup });
-    }, config.timeoutInSeconds || DEFAULT_AUTHORIZE_TIMEOUT_IN_SECONDS * 1000);
+    }, (config.timeoutInSeconds || DEFAULT_AUTHORIZE_TIMEOUT_IN_SECONDS) * 1000);
     window.addEventListener('message', e => {
       if (!e.data || e.data.type !== 'authorization_response') {
         return;
