@@ -1,7 +1,6 @@
 const excludeFiles = [
   'cache',
   'jwt',
-  'legacy',
   'storage',
   'transaction-manager',
   'utils'

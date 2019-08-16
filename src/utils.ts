@@ -1,16 +1,18 @@
-import * as qs from 'qs';
+import * as qs from 'qss';
 import { DEFAULT_AUTHORIZE_TIMEOUT_IN_SECONDS } from './constants';
+
+const dedupe = arr => arr.filter((x, i) => arr.indexOf(x) === i);
 
 const TIMEOUT_ERROR = { error: 'timeout', error_description: 'Timeout' };
 export const getUniqueScopes = (...scopes: string[]) => {
   const scopeString = scopes.filter(Boolean).join();
-  return Array.from(new Set(scopeString.replace(/\s/g, ',').split(',')))
+  return dedupe(scopeString.replace(/\s/g, ',').split(','))
     .join(' ')
     .trim();
 };
 
 export const parseQueryResult = (hash: string) => {
-  var hashed = qs.parse(hash);
+  var hashed = <any>qs.decode(hash);
   return <AuthenticationResult>{
     ...hashed,
     expires_in: parseInt(hashed.expires_in)
@@ -84,7 +86,7 @@ export const createRandomString = () => {
   const charset =
     '0123456789ABCDEFGHIJKLMNOPQRSTUVXYZabcdefghijklmnopqrstuvwxyz-_~.';
   let random = '';
-  const randomValues = <Uint8Array>crypto.getRandomValues(new Uint8Array(43));
+  const randomValues = Array.from(crypto.getRandomValues(new Uint8Array(43)));
   randomValues.forEach(v => (random += charset[v % charset.length]));
   return random;
 };
@@ -92,7 +94,7 @@ export const createRandomString = () => {
 export const encodeState = (state: string) => btoa(state);
 export const decodeState = (state: string) => atob(state);
 
-export const createQueryParams = (params: any) => qs.stringify(params);
+export const createQueryParams = (params: any) => qs.encode(params);
 
 export const sha256 = (s: string) =>
   window.crypto.subtle.digest({ name: 'SHA-256' }, new TextEncoder().encode(s));
@@ -116,10 +118,12 @@ const decodeB64 = input =>
 export const urlDecodeB64 = (input: string) =>
   decodeB64(input.replace(/_/g, '/').replace(/-/g, '+'));
 
-export const bufferToBase64UrlEncoded = input =>
-  urlEncodeB64(
-    window.btoa(String.fromCharCode(...Array.from(new Uint8Array(input))))
+export const bufferToBase64UrlEncoded = input => {
+  const ie11SafeInput = new Uint8Array(Array.from(input));
+  return urlEncodeB64(
+    window.btoa(String.fromCharCode(...Array.from(ie11SafeInput)))
   );
+};
 
 const getJSON = async (url, options) => {
   const response = await fetch(url, options);

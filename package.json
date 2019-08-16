@@ -9,17 +9,17 @@
   "browser": "dist/auth0-spa-js.production.js",
   "module": "dist/auth0-spa-js.production.esm.js",
   "scripts": {
-    "dev": "rm -rf dist && rollup -c --watch",
+    "dev": "rimraf dist && rollup -c --watch",
     "start": "npm run dev",
     "docs": "typedoc --options ./typedoc.js",
-    "build": "rm -rf dist && rollup -m -c --environment NODE_ENV:production",
+    "build": "rimraf dist && rollup -m -c --environment NODE_ENV:production",
     "build:stats": "npm run build -- --environment WITH_STATS:true && open stats.html",
     "lint:security": "eslint ./src --ext ts --no-eslintrc --config ./.eslintrc.security",
     "test": "jest --coverage",
     "test:watch": "jest --coverage --watch",
     "test:watch:integration": "concurrently --raw npm:dev 'cypress open'",
     "test:es-check": "npm run test:es-check:es5 && npm run test:es-check:es2015:module",
-    "test:es-check:es5": "es-check es5 'dist/auth0-spa-js.production.legacy.js' 'dist/auth0-spa-js.production.js'",
+    "test:es-check:es5": "es-check es5 'dist/auth0-spa-js.production.js'",
     "test:es-check:es2015:module": "es-check es2015 --module 'dist/auth0-spa-js.production.esm.js'",
     "test:integration:server": "cp static/index.html dist/index.html && serve ./dist/ -p 3000 -n",
     "test:integration:tests": "wait-on http://localhost:3000/ && cypress run",
@@ -32,7 +32,6 @@
   },
   "devDependencies": {
     "@auth0/component-cdn-uploader": "auth0/component-cdn-uploader#v2.2.2",
-    "@trust/webcrypto": "^0.9.2",
     "@types/cypress": "^1.1.3",
     "@types/jest": "^24.0.15",
     "@types/qs": "^6.5.3",
@@ -51,6 +50,7 @@
     "pem": "^1.14.2",
     "prettier": "^1.18.2",
     "pretty-quick": "^1.11.1",
+    "rimraf": "^3.0.0",
     "rollup": "^1.17.0",
     "rollup-plugin-commonjs": "^10.0.1",
     "rollup-plugin-livereload": "^1.0.1",
@@ -69,10 +69,11 @@
     "wait-on": "^3.3.0"
   },
   "dependencies": {
+    "core-js": "^3.2.1",
     "es-cookie": "^1.2.0",
     "fast-text-encoding": "^1.0.0",
-    "qs": "^6.7.0",
-    "ts-polyfill": "^3.5.1",
+    "promise-polyfill": "^8.1.3",
+    "qss": "^2.0.3",
     "unfetch": "^4.1.0"
   },
   "files": [

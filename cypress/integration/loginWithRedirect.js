@@ -1,4 +1,4 @@
-import { parse } from 'qs';
+import { decode } from 'qss';
 import {
   shouldBe,
   shouldBeUndefined,
@@ -19,7 +19,7 @@ describe('loginWithRedirect', function() {
     cy.url().then(url => {
       const parsedUrl = new URL(url);
       shouldBe(parsedUrl.host, 'auth.brucke.club');
-      const pageParams = parse(parsedUrl.search.substr(1));
+      const pageParams = decode(parsedUrl.search.substr(1));
       shouldBeUndefined(pageParams.code_verifier);
       shouldNotBeUndefined(pageParams.code_challenge);
       shouldNotBeUndefined(pageParams.code_challenge_method);
@@ -43,7 +43,7 @@ describe('loginWithRedirect', function() {
     });
     cy.wait(2000);
     cy.url().then(url => {
-      const pageParams = parse(new URL(url).search.substr(1));
+      const pageParams = decode(new URL(url).search.substr(1));
       shouldBe(pageParams.scope, 'openid profile email test test2');
     });
   });
