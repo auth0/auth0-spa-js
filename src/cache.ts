@@ -1,3 +1,5 @@
+import { IdToken } from './global';
+
 interface CacheKeyData {
   audience: string;
   scope: string;

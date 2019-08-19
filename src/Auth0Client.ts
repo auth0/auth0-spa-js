@@ -12,6 +12,22 @@ import {
   openPopup
 } from './utils';
 
+import {
+  BaseLoginOptions,
+  Auth0ClientOptions,
+  AuthorizeOptions,
+  RedirectLoginOptions,
+  RedirectLoginResult,
+  PopupLoginOptions,
+  PopupConfigOptions,
+  GetUserOptions,
+  getIdTokenClaimsOptions,
+  GetTokenSilentlyOptions,
+  GetTokenWithPopupOptions,
+  LogoutOptions,
+  IdToken
+} from './global';
+
 import Cache from './cache';
 import TransactionManager from './transaction-manager';
 import { verify as verifyIdToken } from './jwt';
@@ -182,7 +198,7 @@ export default class Auth0Client {
       audience: this.options.audience || 'default',
       scope: this.options.scope || this.DEFAULT_SCOPE
     }
-  ) {
+  ): Promise<IdToken> {
     options.scope = getUniqueScopes(this.DEFAULT_SCOPE, options.scope);
     const cache = this.cache.get(options);
     return cache && cache.decodedToken.claims;

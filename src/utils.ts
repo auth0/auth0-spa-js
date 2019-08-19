@@ -1,5 +1,11 @@
-import * as qs from 'qs';
+import qs from 'qs';
 import { DEFAULT_AUTHORIZE_TIMEOUT_IN_SECONDS } from './constants';
+
+import {
+  PopupConfigOptions,
+  AuthenticationResult,
+  OAuthTokenOptions
+} from './global';
 
 const TIMEOUT_ERROR = { error: 'timeout', error_description: 'Timeout' };
 export const getUniqueScopes = (...scopes: string[]) => {

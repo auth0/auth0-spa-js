@@ -1,5 +1,7 @@
 import { urlDecodeB64 } from './utils';
 
+import { JWTVerifyOptions, IdToken } from './global';
+
 const idTokendecoded = [
   'iss',
   'aud',

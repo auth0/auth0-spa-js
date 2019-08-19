@@ -38,7 +38,7 @@ const getPlugins = (shouldMinify, { target }) => {
 
 let bundles = [
   {
-    input: 'src/index.ts',
+    input: 'src/bundle.ts',
     output: {
       name: EXPORT_NAME,
       file: 'dist/auth0-spa-js.development.js',
@@ -63,7 +63,7 @@ let bundles = [
 if (isProduction) {
   bundles = bundles.concat(
     {
-      input: 'src/index.ts',
+      input: 'src/bundle.ts',
       output: [
         {
           name: EXPORT_NAME,
@@ -77,7 +77,7 @@ if (isProduction) {
       ]
     },
     {
-      input: 'src/index.ts',
+      input: 'src/bundle.ts',
       output: [
         {
           file: pkg.module,
@@ -87,7 +87,7 @@ if (isProduction) {
       plugins: getPlugins(isProduction, { target: 'es2015' })
     },
     {
-      input: 'src/index.ts',
+      input: 'src/bundle.ts',
       output: [
         {
           name: EXPORT_NAME,
