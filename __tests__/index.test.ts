@@ -4,6 +4,8 @@ jest.mock('../src/cache');
 jest.mock('../src/transaction-manager');
 jest.mock('../src/utils');
 
+import { PopupConfigOptions, GetTokenSilentlyOptions } from '../src/global';
+
 import Auth0Client from '../src/Auth0Client';
 import createAuth0Client from '../src/index';
 import { AuthenticationError } from '../src/errors';
@@ -452,7 +454,7 @@ describe('Auth0', () => {
         'There are no query params available at `window.location.search`.'
       );
     });
-    describe('when there is a valid query string', async () => {
+    describe('when there is a valid query string', () => {
       const localSetup = async () => {
         window.history.pushState(
           {},
@@ -727,7 +729,7 @@ describe('Auth0', () => {
     });
   });
   describe('getTokenSilently()', () => {
-    describe('when `options.ignoreCache` is false', async () => {
+    describe('when `options.ignoreCache` is false', () => {
       it('calls `cache.get` with the correct options', async () => {
         const { auth0, cache, utils } = await setup();
         cache.get.mockReturnValue({ access_token: TEST_ACCESS_TOKEN });
@@ -912,7 +914,7 @@ describe('Auth0', () => {
       });
     });
   });
-  describe('getTokenWithPopup()', async () => {
+  describe('getTokenWithPopup()', () => {
     const localSetup = async () => {
       const result = await setup();
       result.auth0.loginWithPopup = jest.fn();
