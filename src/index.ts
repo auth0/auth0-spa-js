@@ -2,7 +2,20 @@ import 'fast-text-encoding';
 import Auth0Client from './Auth0Client';
 import * as ClientStorage from './storage';
 
-import { Auth0ClientOptions } from './global';
+import {
+  BaseLoginOptions,
+  Auth0ClientOptions,
+  RedirectLoginOptions,
+  RedirectLoginResult,
+  PopupLoginOptions,
+  PopupConfigOptions,
+  GetUserOptions,
+  getIdTokenClaimsOptions,
+  GetTokenSilentlyOptions,
+  GetTokenWithPopupOptions,
+  LogoutOptions,
+  IdToken
+} from './global';
 
 export default async function createAuth0Client(options: Auth0ClientOptions) {
   if (typeof window.crypto.subtle === 'undefined') {
@@ -31,4 +44,18 @@ export default async function createAuth0Client(options: Auth0ClientOptions) {
   return auth0;
 }
 
-export { Auth0Client, Auth0ClientOptions };
+export {
+  Auth0Client,
+  BaseLoginOptions,
+  Auth0ClientOptions,
+  RedirectLoginOptions,
+  RedirectLoginResult,
+  PopupLoginOptions,
+  PopupConfigOptions,
+  GetUserOptions,
+  getIdTokenClaimsOptions,
+  GetTokenSilentlyOptions,
+  GetTokenWithPopupOptions,
+  LogoutOptions,
+  IdToken
+};
