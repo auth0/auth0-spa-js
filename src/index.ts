@@ -2,8 +2,8 @@ import 'core-js/es/string/starts-with';
 import 'core-js/es/array/from';
 import 'core-js/es/typed-array/slice';
 import 'core-js/es/array/includes';
+import 'core-js/es/promise';
 import 'fast-text-encoding';
-import 'promise-polyfill/src/polyfill';
 import 'unfetch/polyfill/index';
 
 import Auth0Client from './Auth0Client';
