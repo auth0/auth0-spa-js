@@ -13,7 +13,7 @@ const EXPORT_NAME = 'createAuth0Client';
 
 const isProduction = process.env.NODE_ENV === 'production';
 const shouldGenerateStats = process.env.WITH_STATS === 'true';
-const getPlugins = (shouldMinify, { target }) => {
+const getPlugins = shouldMinify => {
   return [
     resolve({
       browser: true
@@ -26,7 +26,6 @@ const getPlugins = (shouldMinify, { target }) => {
         noEmit: false,
         sourceMap: true,
         compilerOptions: {
-          target: target,
           lib: ['dom', 'es6']
         }
       }
@@ -45,7 +44,7 @@ let bundles = [
       format: 'umd'
     },
     plugins: [
-      ...getPlugins(false, { target: 'es5' }),
+      ...getPlugins(false),
       !isProduction &&
         serve({
           contentBase: ['dist', 'static'],
@@ -72,7 +71,7 @@ if (isProduction) {
         }
       ],
       plugins: [
-        ...getPlugins(isProduction, { target: 'es5' }),
+        ...getPlugins(isProduction),
         shouldGenerateStats && visualizer()
       ]
     },
@@ -84,7 +83,7 @@ if (isProduction) {
           format: 'esm'
         }
       ],
-      plugins: getPlugins(isProduction, { target: 'es2015' })
+      plugins: getPlugins(isProduction)
     },
     {
       input: 'src/index.ts',
@@ -95,17 +94,8 @@ if (isProduction) {
           format: 'cjs'
         }
       ],
-      plugins: getPlugins(false, { target: 'es5' }),
+      plugins: getPlugins(false),
       external: Object.keys(pkg.dependencies)
-    },
-    {
-      input: 'src/legacy.ts',
-      output: {
-        name: EXPORT_NAME,
-        file: pkg.browser.replace('.js', '.legacy.js'),
-        format: 'umd'
-      },
-      plugins: getPlugins(isProduction, { target: 'es5' })
     }
   );
 }

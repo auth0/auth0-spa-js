@@ -14,9 +14,7 @@
     <button id="login_popup">Login popup</button>
     <button id="login_redirect">Login redirect</button>
     <button id="login_redirect_callback">Login redirect callback</button>
-    <button id="login">Login</button>
     <button id="getUser">Get user</button>
-    <button id="getIdTokenClaims">Get id_token decoded</button>
     <button id="getToken">Get access token with no interaction</button>
     <button id="getTokenPopup">Get access token with a popup</button>
     <button id="getToken_audience">
@@ -25,70 +23,90 @@
     <button id="logout">logout (default)</button>
     <button id="logout-no-clientid">logout (no client id)</button>
     <script type="text/javascript">
-      $(async () => {
-        var auth0 = await createAuth0Client({
+      $(function() {
+        createAuth0Client({
           domain: 'auth.brucke.club',
           client_id: 'wLSIP47wM39wKdDmOj6Zb5eSEw3JVhVp'
-        });
-        $('#login_redirect').click(async () => {
-          await auth0.loginWithRedirect({
-            redirect_uri: 'http://localhost:3000/'
-          });
-        });
-        $('#login_popup').click(async () => {
-          try {
-            await auth0.loginWithPopup(
-              {
+        }).then(function(auth0) {
+          window.auth0 = auth0;
+          $('#login_popup').click(function() {
+            auth0
+              .loginWithPopup({
                 redirect_uri: 'http://localhost:3000/callback.html'
-              },
-              {
-                timeoutInSeconds: 20
-              }
-            );
-          } catch (error) {
-            console.error(error);
-            error.popup.close();
-          }
-        });
-        $('#login_redirect_callback').click(async () => {
-          await auth0.handleRedirectCallback();
-        });
-        $('#getToken').click(async () => {
-          const token = await auth0.getTokenSilently();
-        });
+              })
+              .then(function() {
+                auth0.getTokenSilently().then(function(token) {
+                  console.log(token);
+                });
+                auth0.getUser().then(function(user) {
+                  console.log(user);
+                });
+              });
+          });
+          $('#login_redirect').click(function() {
+            auth0.loginWithRedirect({
+              redirect_uri: 'http://localhost:3000/'
+            });
+          });
+          $('#login_redirect_callback').click(function() {
+            auth0.handleRedirectCallback().then(function() {
+              window.history.replaceState(
+                {},
+                document.title,
+                window.location.origin + '/'
+              );
+            });
+          });
+          $('#getToken').click(function() {
+            auth0.getTokenSilently().then(function(token) {
+              alert(token);
+            });
+          });
 
-        $('#getTokenPopup').click(async () => {
-          const token = await auth0.getTokenWithPopup({
-            audience: 'https://brucke.auth0.com/api/v2/',
-            scope: 'read:rules'
+          $('#getTokenPopup').click(function() {
+            auth0
+              .getTokenWithPopup({
+                audience: 'https://brucke.auth0.com/api/v2/',
+                scope: 'read:rules'
+              })
+              .then(function(token) {
+                console.log(token);
+              });
+          });
+          $('#getUser').click(function() {
+            auth0.getUser().then(function(user) {
+              alert(JSON.stringify(user, null, 1));
+            });
+          });
+          $('#getIdTokenClaims').click(function() {
+            auth0.getIdTokenClaims().then(function(claims) {
+              console.log(claims);
+            });
+          });
+          $('#getToken_audience').click(function() {
+            var differentAudienceOptions = {
+              audience: 'https://brucke.auth0.com/api/v2/',
+              scope: 'read:rules',
+              redirect_uri: 'http://localhost:3000/callback.html'
+            };
+            auth0
+              .getTokenSilently(differentAudienceOptions)
+              .then(function(token) {
+                alert(token);
+              });
+          });
+          $('#logout').click(function() {
+            auth0.logout({
+              returnTo: 'http://localhost:3000/'
+            });
+          });
+          $('#logout-no-clientid').click(function() {
+            auth0.logout({
+              client_id: null,
+              returnTo: 'http://localhost:3000/'
+            });
           });
         });
-        $('#getUser').click(async () => {
-          const user = await auth0.getUser();
-        });
-        $('#getIdTokenClaims').click(async () => {
-          const claims = await auth0.getIdTokenClaims();
-        });
-        $('#getToken_audience').click(async () => {
-          const differentAudienceOptions = {
-            audience: 'https://brucke.auth0.com/api/v2/',
-            scope: 'read:rules',
-            redirect_uri: 'http://localhost:3000/callback.html'
-          };
-          const token = await auth0.getTokenSilently(differentAudienceOptions);
-        });
-        $('#logout').click(async () => {
-          auth0.logout({
-            returnTo: 'http://localhost:3000/'
-          });
-        });
-        $('#logout-no-clientid').click(async () => {
-          auth0.logout({
-            client_id: null,
-            returnTo: 'http://localhost:3000/'
-          });
-        });
-        window.auth0 = auth0;
       });
     </script>
   </body>
