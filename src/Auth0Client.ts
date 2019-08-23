@@ -276,6 +276,22 @@ export default class Auth0Client {
   }
 
   /**
+  * Get JWT ID token
+  */
+  public getIdToken(options: GetTokenSilentlyOptions = {
+    audience: this.options.audience,
+    scope: this.options.scope || this.DEFAULT_SCOPE,
+    ignoreCache: false
+  }) {
+    const cache = this.cache.get({
+      scope: options.scope,
+      audience: options.audience || 'default'
+    });
+    return cache.id_token;
+  }
+
+
+  /**
    * ```js
    * const token = await auth0.getTokenSilently(options);
    * ```
