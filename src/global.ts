@@ -242,6 +242,7 @@ interface JWTVerifyOptions {
  * @ignore
  */
 interface IdToken {
+  __raw: string;
   name?: string;
   given_name?: string;
   family_name?: string;
