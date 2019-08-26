@@ -3,7 +3,7 @@
   "name": "@auth0/auth0-spa-js",
   "description": "Auth0 SDK for Single Page Applications using Authorization Code Grant Flow with PKCE",
   "license": "MIT",
-  "version": "1.1.1",
+  "version": "1.2.0",
   "main": "dist/lib/auth0-spa-js.cjs.js",
   "types": "dist/typings/index.d.ts",
   "browser": "dist/auth0-spa-js.production.js",
@@ -11,7 +11,7 @@
   "scripts": {
     "dev": "rimraf dist && rollup -c --watch",
     "start": "npm run dev",
-    "docs": "typedoc --options ./typedoc.js",
+    "docs": "typedoc --options ./typedoc.js --module commonjs",
     "build": "rimraf dist && rollup -m -c --environment NODE_ENV:production",
     "build:stats": "npm run build -- --environment WITH_STATS:true && open stats.html",
     "lint:security": "eslint ./src --ext ts --no-eslintrc --config ./.eslintrc.security",
@@ -27,7 +27,7 @@
     "print-bundle-size": "node ./scripts/print-bundle-size",
     "prepack": "npm run build && npm run test:es-check && npm run test",
     "precommit": "pretty-quick --staged",
-    "version": "node ./scripts/release",
+    "release": "node ./scripts/release",
     "publish:cdn": "ccu --trace"
   },
   "devDependencies": {
