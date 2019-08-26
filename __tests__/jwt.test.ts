@@ -74,6 +74,7 @@ describe('jwt', async () => {
         payload: true
       },
       claims: {
+        __raw: id_token,
         aud: 'k5u3o2fiAA8XweXEEX604KCwCjzjtMU6',
         exp: 1551365990,
         iat: 1551362390,
