@@ -17,12 +17,8 @@ import TransactionManager from './transaction-manager';
 import { verify as verifyIdToken } from './jwt';
 import { AuthenticationError } from './errors';
 import * as ClientStorage from './storage';
-import { DEFAULT_AUTHORIZE_TIMEOUT_IN_SECONDS } from './constants';
+import { DEFAULT_POPUP_CONFIG_OPTIONS } from './constants';
 import version from './version';
-
-const DEFAULT_POPUP_CONFIG_OPTIONS: PopupConfigOptions = {
-  timeoutInSeconds: DEFAULT_AUTHORIZE_TIMEOUT_IN_SECONDS
-};
 
 /**
  * Auth0 SDK for Single Page Applications using [Authorization Code Grant Flow with PKCE](https://auth0.com/docs/api-auth/tutorials/authorization-code-grant-pkce).
