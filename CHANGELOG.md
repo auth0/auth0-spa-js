@@ -1,3 +1,16 @@
+## [v1.2.0](https://github.com/auth0/auth0-spa-js/tree/v1.2.0) (2019-08-26)
+
+**Fixed**
+
+- Expose raw id_token in the getIdTokenClaims method https://github.com/auth0/auth0-spa-js/pull/175
+- Fix bug where oauth/token call ignores `options.audience` https://github.com/auth0/auth0-spa-js/pull/134
+
+**Added**
+
+- Add IE11 polyfills https://github.com/auth0/auth0-spa-js/pull/154
+- Add popup timeout config https://github.com/auth0/auth0-spa-js/pull/133
+- Add ?federated logout param https://github.com/auth0/auth0-spa-js/pull/129
+
 ## [v1.1.1](https://github.com/auth0/auth0-spa-js/tree/v1.1.1) (2019-07-22)
 
 **Fixed**
