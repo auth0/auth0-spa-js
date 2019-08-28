@@ -81,6 +81,8 @@
           $('#getIdTokenClaims').click(function() {
             auth0.getIdTokenClaims().then(function(claims) {
               console.log(claims);
+              //if you need the raw id_token, you can access it in the __raw property
+              const id_token = claims.__raw;
             });
           });
           $('#getToken_audience').click(function() {

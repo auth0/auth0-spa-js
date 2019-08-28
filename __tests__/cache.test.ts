@@ -18,7 +18,7 @@ describe('cache', () => {
       access_token: 'accesstoken',
       expires_in: 1,
       decodedToken: {
-        claims: { exp: 1, name: 'Test' },
+        claims: { __raw: 'idtoken', exp: 1, name: 'Test' },
         user: { name: 'Test' }
       }
     });
@@ -32,7 +32,7 @@ describe('cache', () => {
       access_token: 'accesstoken',
       expires_in: 1,
       decodedToken: {
-        claims: { name: 'Test' },
+        claims: { __raw: 'idtoken', name: 'Test' },
         user: { name: 'Test' }
       }
     });
@@ -46,7 +46,11 @@ describe('cache', () => {
       access_token: 'accesstoken',
       expires_in: 1,
       decodedToken: {
-        claims: { name: 'Test', exp: new Date().getTime() / 1000 + 2 },
+        claims: {
+          __raw: 'idtoken',
+          name: 'Test',
+          exp: new Date().getTime() / 1000 + 2
+        },
         user: { name: 'Test' }
       }
     });
@@ -61,7 +65,11 @@ describe('cache', () => {
       access_token: 'accesstoken',
       expires_in: 2,
       decodedToken: {
-        claims: { name: 'Test', exp: new Date().getTime() / 1000 + 1 },
+        claims: {
+          __raw: 'idtoken',
+          name: 'Test',
+          exp: new Date().getTime() / 1000 + 1
+        },
         user: { name: 'Test' }
       }
     });

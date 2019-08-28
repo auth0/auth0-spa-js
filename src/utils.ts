@@ -1,4 +1,6 @@
 import * as qs from 'qss';
+import fetch from 'unfetch';
+
 import { DEFAULT_AUTHORIZE_TIMEOUT_IN_SECONDS } from './constants';
 import { InternalError } from './errors';
 

@@ -36,7 +36,7 @@ const idTokendecoded = [
 export const decode = (token: string) => {
   const [header, payload, signature] = token.split('.');
   const payloadJSON = JSON.parse(urlDecodeB64(payload));
-  const claims: IdToken = {};
+  const claims: IdToken = { __raw: token };
   const user = {};
   Object.keys(payloadJSON).forEach(k => {
     claims[k] = payloadJSON[k];

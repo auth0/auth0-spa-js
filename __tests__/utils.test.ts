@@ -9,7 +9,6 @@ import {
   decodeState,
   sha256,
   openPopup,
-  oauthToken,
   runPopup,
   runIframe,
   urlDecodeB64
@@ -166,12 +165,19 @@ describe('utils', () => {
     });
   });
   describe('oauthToken', () => {
+    let oauthToken;
+    let mockUnfetch;
+    beforeEach(() => {
+      jest.resetModules();
+      jest.mock('unfetch');
+      mockUnfetch = require('unfetch');
+      oauthToken = require('../src/utils').oauthToken;
+    });
     it('calls oauth/token with the correct url', async () => {
-      (<any>global).fetch = jest.fn(
-        () =>
-          new Promise(res =>
-            res({ ok: true, json: () => new Promise(ress => ress(true)) })
-          )
+      mockUnfetch.mockReturnValue(
+        new Promise(res =>
+          res({ ok: true, json: () => new Promise(ress => ress(true)) })
+        )
       );
       await oauthToken({
         baseUrl: 'https://test.com',
@@ -179,7 +185,7 @@ describe('utils', () => {
         code: 'codeIn',
         code_verifier: 'code_verifierIn'
       });
-      expect(fetch).toHaveBeenCalledWith('https://test.com/oauth/token', {
+      expect(mockUnfetch).toHaveBeenCalledWith('https://test.com/oauth/token', {
         body:
           '{"grant_type":"authorization_code","redirect_uri":"http://localhost","client_id":"client_idIn","code":"codeIn","code_verifier":"code_verifierIn"}',
         headers: { 'Content-type': 'application/json' },
@@ -191,14 +197,13 @@ describe('utils', () => {
         error: 'the-error',
         error_description: 'the-error-description'
       };
-      (<any>global).fetch = jest.fn(
-        () =>
-          new Promise(res =>
-            res({
-              ok: false,
-              json: () => new Promise(ress => ress(theError))
-            })
-          )
+      mockUnfetch.mockReturnValue(
+        new Promise(res =>
+          res({
+            ok: false,
+            json: () => new Promise(ress => ress(theError))
+          })
+        )
       );
       try {
         await oauthToken({
@@ -214,14 +219,13 @@ describe('utils', () => {
       }
     });
     it('handles error without error response', async () => {
-      (<any>global).fetch = jest.fn(
-        () =>
-          new Promise(res =>
-            res({
-              ok: false,
-              json: () => new Promise(ress => ress(false))
-            })
-          )
+      mockUnfetch.mockReturnValue(
+        new Promise(res =>
+          res({
+            ok: false,
+            json: () => new Promise(ress => ress(false))
+          })
+        )
       );
       try {
         await oauthToken({
