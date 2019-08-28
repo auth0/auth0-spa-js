@@ -4,7 +4,6 @@ import 'core-js/es/typed-array/slice';
 import 'core-js/es/array/includes';
 import 'promise-polyfill/src/polyfill';
 import 'fast-text-encoding';
-import 'unfetch/polyfill/index';
 
 import Auth0Client from './Auth0Client';
 import * as ClientStorage from './storage';
