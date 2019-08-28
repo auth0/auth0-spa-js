@@ -1,3 +1,9 @@
+## [v1.2.2](https://github.com/auth0/auth0-spa-js/tree/v1.2.2) (2019-08-28)
+
+**Fixed**
+
+Fix SSR errors with fetch polyfill usage https://github.com/auth0/auth0-spa-js/pull/184
+
 ## [v1.2.1](https://github.com/auth0/auth0-spa-js/tree/v1.2.1) (2019-08-27)
 
 **Fixed**
