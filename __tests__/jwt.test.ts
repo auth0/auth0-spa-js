@@ -11,7 +11,8 @@ interface Certificate {
 const verifyOptions = {
   iss: 'https://brucke.auth0.com/',
   aud: 'k5u3o2fiAA8XweXEEX604KCwCjzjtMU6',
-  nonce: 'omcw.ptjx3~.8VBm3OuMziLdn5PB0uXG'
+  nonce: 'omcw.ptjx3~.8VBm3OuMziLdn5PB0uXG',
+  client_id: 'the_client_id'
 };
 
 const createCertificate = (): Promise<Certificate> =>
@@ -33,7 +34,12 @@ const createCertificate = (): Promise<Certificate> =>
     });
   });
 
-const DEFAULT_PAYLOAD = <any>{ payload: true, nonce: verifyOptions.nonce };
+const DEFAULT_PAYLOAD = <any>{
+  sub: 'id|123',
+  payload: true,
+  nonce: verifyOptions.nonce,
+  azp: verifyOptions.client_id
+};
 const createJWT = async (payload = DEFAULT_PAYLOAD, options = {}) => {
   const cert = await createCertificate();
   return jwt.sign(payload, cert.serviceKey, {
@@ -97,29 +103,108 @@ describe('jwt', async () => {
       done();
     });
   });
+  it('verifies correctly with multiple audiences and azp', async () => {
+    const id_token = await createJWT(DEFAULT_PAYLOAD, {
+      audience: ['item 1', verifyOptions.aud]
+    });
+
+    const { encoded, header, claims } = verify({
+      ...verifyOptions,
+      id_token
+    });
+    expect({ encoded, header, payload: claims }).toMatchObject(
+      verifier.decode(id_token)
+    );
+  });
+  it('validates id_token is present', async () => {
+    expect(() => verify({ ...verifyOptions, id_token: '' })).toThrow(
+      'id_token not present in authentication response'
+    );
+  });
+
+  it('validates algorithm', async () => {
+    const id_token = await createJWT(DEFAULT_PAYLOAD, {
+      algorithm: 'HS256'
+    });
+    expect(() => verify({ ...verifyOptions, id_token })).toThrow(
+      'Invalid algorithm'
+    );
+  });
+  it('validates issuer is present', async () => {
+    const id_token = await createJWT(DEFAULT_PAYLOAD, { issuer: '' });
+    expect(() => verify({ ...verifyOptions, id_token })).toThrow(
+      'id_token does not contain a `iss` claim'
+    );
+  });
   it('validates issuer', async () => {
     const id_token = await createJWT();
     expect(() => verify({ ...verifyOptions, id_token, iss: 'wrong' })).toThrow(
       'Invalid issuer'
     );
   });
-  it('validates audience', async () => {
+  it('validates `sub` is present', async () => {
+    const id_token = await createJWT({ ...DEFAULT_PAYLOAD, sub: undefined });
+    expect(() => verify({ ...verifyOptions, id_token })).toThrow(
+      'id_token does not contain a `sub` claim'
+    );
+  });
+  it('validates aud is present', async () => {
+    const id_token = await createJWT(DEFAULT_PAYLOAD, { audience: '' });
+    expect(() => verify({ ...verifyOptions, id_token })).toThrow(
+      'id_token does not contain an `aud` claim'
+    );
+  });
+  it('validates audience with `aud` is an array', async () => {
+    const id_token = await createJWT(DEFAULT_PAYLOAD, {
+      audience: ['client_id']
+    });
+    expect(() => verify({ ...verifyOptions, id_token, aud: 'wrong' })).toThrow(
+      'Invalid audience'
+    );
+  });
+  it('validates audience with `aud` is a string', async () => {
     const id_token = await createJWT();
     expect(() => verify({ ...verifyOptions, id_token, aud: 'wrong' })).toThrow(
       'Invalid audience'
     );
   });
-  it('validates algorithm', async () => {
-    const id_token = await createJWT(
-      {
-        nonce: verifyOptions.nonce
-      },
-      {
-        algorithm: 'HS256'
-      }
-    );
+  it('validates exp', async () => {
+    const id_token = await createJWT(DEFAULT_PAYLOAD, {
+      expiresIn: '-1h'
+    });
     expect(() => verify({ ...verifyOptions, id_token })).toThrow(
-      'Invalid algorithm'
+      'id_token expired'
+    );
+  });
+  it('validates nbf', async () => {
+    const id_token = await createJWT(DEFAULT_PAYLOAD, {
+      notBefore: '1h'
+    });
+    expect(() => verify({ ...verifyOptions, id_token })).toThrow(
+      'token is not yet valid (invalid notBefore)'
+    );
+  });
+  it('validates iat is present', async () => {
+    const id_token = await createJWT(DEFAULT_PAYLOAD, { noTimestamp: true });
+    expect(() => verify({ ...verifyOptions, id_token })).toThrow(
+      'id_token does not contain an `iat` claim'
+    );
+  });
+  it('validates iat', async () => {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const id_token = await createJWT({
+      ...DEFAULT_PAYLOAD,
+      iat: tomorrow.getTime()
+    });
+    expect(() => verify({ ...verifyOptions, id_token })).toThrow(
+      'id_token was issued in the future (invalid iat)'
+    );
+  });
+  it('validates nonce is present', async () => {
+    const id_token = await createJWT({ ...DEFAULT_PAYLOAD, nonce: undefined });
+    expect(() => verify({ ...verifyOptions, id_token })).toThrow(
+      'id_token does not contain a `nonce` claim'
     );
   });
   it('validates nonce', async () => {
@@ -128,41 +213,51 @@ describe('jwt', async () => {
       verify({ ...verifyOptions, id_token, nonce: 'wrong' })
     ).toThrow('Invalid nonce');
   });
-  it('validates exp', async () => {
-    const id_token = await createJWT(
-      {
-        nonce: verifyOptions.nonce
-      },
-      {
-        expiresIn: '-1h'
-      }
-    );
-    expect(() => verify({ ...verifyOptions, id_token })).toThrow(
-      'id_token expired'
-    );
-  });
-  it('validates nbf', async () => {
-    const id_token = await createJWT(
-      {
-        nonce: verifyOptions.nonce
-      },
-      {
-        notBefore: '1h'
-      }
-    );
-    expect(() => verify({ ...verifyOptions, id_token })).toThrow(
-      'token is not yet valid (invalid notBefore)'
-    );
-  });
-  it('validates iat', async () => {
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    const id_token = await createJWT({
-      nonce: verifyOptions.nonce,
-      iat: tomorrow.getTime()
+  it('does not validate azp is present when `aud` is an array with a single item', async () => {
+    const id_token = await createJWT(DEFAULT_PAYLOAD, {
+      audience: ['item 1']
     });
-    expect(() => verify({ ...verifyOptions, id_token })).toThrow(
-      'id_token was issued in the future (invalid iat)'
+    expect(() =>
+      verify({ ...verifyOptions, id_token, aud: 'item 1' })
+    ).not.toThrow();
+  });
+  it('validates azp is present when `aud` is an array with more than one item', async () => {
+    const id_token = await createJWT(
+      { ...DEFAULT_PAYLOAD, azp: undefined },
+      {
+        audience: ['item 1', 'other_value']
+      }
+    );
+    expect(() =>
+      verify({ ...verifyOptions, id_token, aud: 'other_value' })
+    ).toThrow('id_token does not contain an `azp` claim');
+  });
+  it('validates azp when `aud` is an array with more than one item', async () => {
+    const id_token = await createJWT(
+      { ...DEFAULT_PAYLOAD, azp: 'not_the_client_id' },
+      {
+        audience: ['item 1', 'other_value']
+      }
+    );
+    expect(() =>
+      verify({ ...verifyOptions, id_token, aud: 'other_value' })
+    ).toThrow('Invalid authorized party');
+  });
+  it('validate auth_time is present when max_age is provided', async () => {
+    const id_token = await createJWT({ ...DEFAULT_PAYLOAD });
+    expect(() =>
+      verify({ ...verifyOptions, id_token, max_age: '123' })
+    ).toThrow('id_token does not contain an `auth_time` claim');
+  });
+  it('validate auth_time + max_age is in the future', async () => {
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const id_token = await createJWT({
+      ...DEFAULT_PAYLOAD,
+      auth_time: `${yesterday.getTime()}`
+    });
+    expect(() => verify({ ...verifyOptions, id_token, max_age: '1' })).toThrow(
+      'auth_time error'
     );
   });
 });

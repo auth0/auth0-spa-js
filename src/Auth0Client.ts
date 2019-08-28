@@ -82,13 +82,15 @@ export default class Auth0Client {
   private _authorizeUrl(authorizeOptions: AuthorizeOptions) {
     return this._url(`/authorize?${createQueryParams(authorizeOptions)}`);
   }
-  private _verifyIdToken(id_token: string, nonce?: string) {
+  private _verifyIdToken(id_token: string, nonce?: string, max_age?: string) {
     return verifyIdToken({
       iss: this.tokenIssuer,
       aud: this.options.client_id,
       id_token,
       nonce,
-      leeway: this.options.leeway
+      leeway: this.options.leeway,
+      client_id: this.options.client_id,
+      max_age
     });
   }
 

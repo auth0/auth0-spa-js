@@ -44,7 +44,7 @@
     "gzip-size": "^5.1.1",
     "husky": "^3.0.0",
     "idtoken-verifier": "^1.4.1",
-    "jest": "^24.8.0",
+    "jest": "^24.9.0",
     "jsonwebtoken": "^8.5.1",
     "pem": "^1.14.2",
     "prettier": "^1.18.2",
