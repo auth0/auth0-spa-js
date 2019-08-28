@@ -316,6 +316,20 @@ describe('Auth0', () => {
         max_age: undefined
       });
     });
+    it('calls `tokenVerifier.verify` with the `max_age` from constructor', async () => {
+      const { auth0, tokenVerifier } = await setup({ max_age: '10' });
+
+      await auth0.loginWithPopup({});
+      expect(tokenVerifier).toHaveBeenCalledWith({
+        id_token: TEST_ID_TOKEN,
+        nonce: TEST_RANDOM_STRING,
+        aud: 'test-client-id',
+        iss: 'https://test.auth0.com/',
+        leeway: undefined,
+        client_id: TEST_CLIENT_ID,
+        max_age: '10'
+      });
+    });
     it('saves cache', async () => {
       const { auth0, cache } = await setup();
 
