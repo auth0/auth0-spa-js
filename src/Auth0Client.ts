@@ -52,7 +52,7 @@ export default class Auth0Client {
     code_challenge: string,
     redirect_uri: string
   ): AuthorizeOptions {
-    const { domain, ...withoutDomain } = this.options;
+    const { domain, leeway, ...withoutDomain } = this.options;
     return {
       ...withoutDomain,
       ...authorizeOptions,
