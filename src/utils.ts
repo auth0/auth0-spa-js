@@ -12,17 +12,17 @@ export const getUniqueScopes = (...scopes: string[]) => {
     .trim();
 };
 
-export const parseQueryResult = (hash: string) => {
-  let hashes = hash.split('&');
-  let hashed: any = {};
-  hashes.map(hash => {
-    let [key, val] = hash.split('=');
-    hashed[key] = decodeURIComponent(val);
+export const parseQueryResult = (queryString: string) => {
+  let queryParams = queryString.split('&');
+  let parsedQuery: any = {};
+  queryParams.forEach(qp => {
+    let [key, val] = qp.split('=');
+    parsedQuery[key] = decodeURIComponent(val);
   });
 
   return <AuthenticationResult>{
-    ...hashed,
-    expires_in: parseInt(hashed.expires_in)
+    ...parsedQuery,
+    expires_in: parseInt(parsedQuery.expires_in)
   };
 };
 
