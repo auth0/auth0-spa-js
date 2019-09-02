@@ -49,6 +49,7 @@
     "pem": "^1.14.2",
     "prettier": "^1.18.2",
     "pretty-quick": "^1.11.1",
+    "qss": "^2.0.3",
     "rimraf": "^3.0.0",
     "rollup": "^1.17.0",
     "rollup-plugin-commonjs": "^10.0.1",
