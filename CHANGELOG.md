@@ -1,3 +1,9 @@
+## [v1.2.3](https://github.com/auth0/auth0-spa-js/tree/v1.2.3) (2019-09-02)
+
+**Fixed**
+
+Fix incorrect state extraction from query string https://github.com/auth0/auth0-spa-js/pull/197
+
 ## [v1.2.2](https://github.com/auth0/auth0-spa-js/tree/v1.2.2) (2019-08-28)
 
 **Fixed**
