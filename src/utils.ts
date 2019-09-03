@@ -1,4 +1,3 @@
-import * as qs from 'qss';
 import fetch from 'unfetch';
 
 import { DEFAULT_AUTHORIZE_TIMEOUT_IN_SECONDS } from './constants';
@@ -13,11 +12,17 @@ export const getUniqueScopes = (...scopes: string[]) => {
     .trim();
 };
 
-export const parseQueryResult = (hash: string) => {
-  var hashed = <any>qs.decode(hash);
+export const parseQueryResult = (queryString: string) => {
+  let queryParams = queryString.split('&');
+  let parsedQuery: any = {};
+  queryParams.forEach(qp => {
+    let [key, val] = qp.split('=');
+    parsedQuery[key] = decodeURIComponent(val);
+  });
+
   return <AuthenticationResult>{
-    ...hashed,
-    expires_in: parseInt(hashed.expires_in)
+    ...parsedQuery,
+    expires_in: parseInt(parsedQuery.expires_in)
   };
 };
 
@@ -96,7 +101,12 @@ export const createRandomString = () => {
 export const encodeState = (state: string) => btoa(state);
 export const decodeState = (state: string) => atob(state);
 
-export const createQueryParams = (params: any) => qs.encode(params);
+export const createQueryParams = (params: any) => {
+  return Object.keys(params)
+    .filter(k => typeof params[k] !== 'undefined')
+    .map(k => encodeURIComponent(k) + '=' + encodeURIComponent(params[k]))
+    .join('&');
+};
 
 export const sha256 = (s: string) =>
   window.crypto.subtle.digest({ name: 'SHA-256' }, new TextEncoder().encode(s));

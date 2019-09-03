@@ -52,7 +52,12 @@ describe('utils', () => {
   describe('createQueryParams', () => {
     it('creates query string from object', () => {
       expect(
-        createQueryParams({ id: 1, value: 'test', url: 'http://example.com' })
+        createQueryParams({
+          id: 1,
+          value: 'test',
+          url: 'http://example.com',
+          nope: undefined
+        })
       ).toBe('id=1&value=test&url=http%3A%2F%2Fexample.com');
     });
   });
