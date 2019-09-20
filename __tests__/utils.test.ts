@@ -152,6 +152,12 @@ describe('utils', () => {
       expect(result).toBe(true);
     });
   });
+  describe('bufferToBase64UrlEncoded ', () => {
+    it('generates correct base64 encoded value from a buffer', async () => {
+      const result = await bufferToBase64UrlEncoded([116, 101, 115, 116]);
+      expect(result).toBe('dGVzdA');
+    });
+  });
   describe('openPopup', () => {
     it('opens the popup', () => {
       window.open = <any>jest.fn(() => true);
