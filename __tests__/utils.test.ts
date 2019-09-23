@@ -151,6 +151,25 @@ describe('utils', () => {
       const result = await sha256('test');
       expect(result).toBe(true);
     });
+    it('handles ie11 digest.result scenario', async () => {
+      (<any>global).crypto = {
+        subtle: {
+          digest: jest.fn((alg, encoded) => {
+            expect(alg).toMatchObject({ name: 'SHA-256' });
+            expect(Array.from(encoded)).toMatchObject([116, 101, 115, 116]);
+            return { result: true };
+          })
+        }
+      };
+      const result = await sha256('test');
+      expect(result).toBe(true);
+    });
+  });
+  describe('bufferToBase64UrlEncoded ', () => {
+    it('generates correct base64 encoded value from a buffer', async () => {
+      const result = await bufferToBase64UrlEncoded([116, 101, 115, 116]);
+      expect(result).toBe('dGVzdA');
+    });
   });
   describe('openPopup', () => {
     it('opens the popup', () => {
