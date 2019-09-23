@@ -108,8 +108,22 @@ export const createQueryParams = (params: any) => {
     .join('&');
 };
 
-export const sha256 = (s: string) =>
-  window.crypto.subtle.digest({ name: 'SHA-256' }, new TextEncoder().encode(s));
+export const sha256 = async (s: string) => {
+  const response = await Promise.resolve(
+    window.crypto.subtle.digest(
+      { name: 'SHA-256' },
+      new TextEncoder().encode(s)
+    )
+  );
+  // msCrypto (IE11) uses the old spec, which is not Promise based
+  // https://msdn.microsoft.com/en-us/expression/dn904640(v=vs.71)
+  // Instead of returning a promise, it returns a CryptoOperation
+  // with a `result` property in it
+  if ((<any>response).result) {
+    return (<any>response).result;
+  }
+  return response;
+};
 
 const urlEncodeB64 = (input: string) => {
   const b64Chars = { '+': '-', '/': '_', '=': '' };
