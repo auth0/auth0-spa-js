@@ -1,3 +1,9 @@
+## [v1.2.4](https://github.com/auth0/auth0-spa-js/tree/v1.2.4) (2019-09-24)
+
+**Fixed**
+
+Fix empty PKCE code challenge https://github.com/auth0/auth0-spa-js/pull/221
+
 ## [v1.2.3](https://github.com/auth0/auth0-spa-js/tree/v1.2.3) (2019-09-02)
 
 **Fixed**
