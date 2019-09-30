@@ -116,7 +116,7 @@ describe('utils', () => {
       (<any>global).crypto = {
         getRandomValues: () => [1, 5, 10, 15, 100]
       };
-      expect(createRandomString()).toBe('15AFa');
+      expect(createRandomString()).toBe('15AFY');
     });
     it('creates random string with a length between 43 and 128', () => {
       (<any>global).crypto = {
