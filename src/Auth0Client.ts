@@ -227,13 +227,12 @@ export default class Auth0Client {
    * will be valid according to their expiration times.
    */
   public async handleRedirectCallback(): Promise<RedirectLoginResult> {
-    if (!window.location.search) {
-      throw new Error(
-        'There are no query params available at `window.location.search`.'
-      );
+    const queryStringFragments = window.location.href.split('?').slice(1);
+    if (queryStringFragments.length === 0) {
+      throw new Error('There are no query params available for parsing.');
     }
     const { state, code, error, error_description } = parseQueryResult(
-      window.location.search.substr(1)
+      queryStringFragments.join('')
     );
 
     if (error) {
