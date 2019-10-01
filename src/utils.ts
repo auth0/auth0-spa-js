@@ -91,7 +91,7 @@ export const runPopup = (
 
 export const createRandomString = () => {
   const charset =
-    '0123456789ABCDEFGHIJKLMNOPQRSTUVXYZabcdefghijklmnopqrstuvwxyz-_~.';
+    '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-_~.';
   let random = '';
   const randomValues = Array.from(crypto.getRandomValues(new Uint8Array(43)));
   randomValues.forEach(v => (random += charset[v % charset.length]));
