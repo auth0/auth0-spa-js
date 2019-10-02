@@ -86,4 +86,4 @@ In most browsers, secure origins are origins that match at least one of the foll
 (file, *, —)
 ```
 
-If you're running from a secure origin, it's possible that your browser doesn't support the Web Crypto API. For a compatibility table, please check https://caniuse.com/#feat=mdn-api_subtlecrypto
+If you're running your application from a secure origin, it's possible that your browser doesn't support the Web Crypto API. For a compatibility table, please check https://caniuse.com/#feat=mdn-api_subtlecrypto
