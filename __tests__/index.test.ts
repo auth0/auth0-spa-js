@@ -127,9 +127,19 @@ describe('Auth0', () => {
         })
       ).rejects.toThrowError(`
       auth0-spa-js must run on a secure origin.
-      See https://github.com/auth0/auth0-spa-js/blob/master/FAQ.md#why-do-i-get-error-invalid-state-in-firefox-when-refreshing-the-page-immediately-after-a-login 
+      See https://github.com/auth0/auth0-spa-js/blob/master/FAQ.md#why-do-i-get-auth0-spa-js-must-run-on-a-secure-origin 
       for more information.
     `);
+    });
+    it('should use crypto.webkitSubtle when available', async () => {
+      (<any>global).crypto = { webkitSubtle: 'webkit' };
+
+      const auth0 = await createAuth0Client({
+        domain: TEST_DOMAIN,
+        client_id: TEST_CLIENT_ID
+      });
+      expect(auth0).toBeDefined();
+      expect((<any>global).crypto.subtle).toBe('webkit');
     });
     it('should return, logging a warning if crypto is unavailable', async () => {
       (<any>global).crypto = undefined;

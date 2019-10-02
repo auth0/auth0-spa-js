@@ -12,6 +12,7 @@ import * as ClientStorage from './storage';
 import './global';
 
 export default async function createAuth0Client(options: Auth0ClientOptions) {
+  // ie11 compat
   if (!window.crypto && (<any>window).msCrypto) {
     (<any>window).crypto = (<any>window).msCrypto;
   }
@@ -20,10 +21,14 @@ export default async function createAuth0Client(options: Auth0ClientOptions) {
       'For security reasons, `window.crypto` is required to run `auth0-spa-js`.'
     );
   }
+  // safari 10 compat
+  if ((<any>window.crypto).webkitSubtle) {
+    (<any>window.crypto).subtle = (<any>window.crypto).webkitSubtle;
+  }
   if (typeof window.crypto.subtle === 'undefined') {
     throw new Error(`
       auth0-spa-js must run on a secure origin.
-      See https://github.com/auth0/auth0-spa-js/blob/master/FAQ.md#why-do-i-get-error-invalid-state-in-firefox-when-refreshing-the-page-immediately-after-a-login 
+      See https://github.com/auth0/auth0-spa-js/blob/master/FAQ.md#why-do-i-get-auth0-spa-js-must-run-on-a-secure-origin 
       for more information.
     `);
   }
