@@ -24,7 +24,7 @@ const createKey = (e: CacheKeyData) => `${e.audience}::${e.scope}`;
 const getExpirationTimeoutInMilliseconds = (expiresIn: number, exp: number) => {
   const expTime =
     (new Date(exp * 1000).getTime() - new Date().getTime()) / 1000;
-  return Math.min(expiresIn, expTime) * 1000 - 5000;
+  return Math.min(expiresIn, expTime) * 1000 * 0.8;
 };
 
 export default class Cache {
