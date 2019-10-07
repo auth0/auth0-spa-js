@@ -5,7 +5,10 @@ jest.mock('../src/transaction-manager');
 jest.mock('../src/utils');
 
 import Auth0Client from '../src/Auth0Client';
-import createAuth0Client from '../src/index';
+import createAuth0Client, {
+  GetTokenSilentlyOptions,
+  PopupConfigOptions
+} from '../src/index';
 import { AuthenticationError } from '../src/errors';
 import version from '../src/version';
 import { DEFAULT_AUTHORIZE_TIMEOUT_IN_SECONDS } from '../src/constants';

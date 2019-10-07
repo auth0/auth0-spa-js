@@ -9,7 +9,7 @@ import Auth0Client from './Auth0Client';
 import * as ClientStorage from './storage';
 
 //this is necessary to export the type definitions used in this file
-import './global';
+import { Auth0ClientOptions } from './global';
 
 export default async function createAuth0Client(options: Auth0ClientOptions) {
   if (!window.crypto && (<any>window).msCrypto) {
@@ -44,3 +44,6 @@ export default async function createAuth0Client(options: Auth0ClientOptions) {
   }
   return auth0;
 }
+
+export * from './global';
+export { Auth0Client };

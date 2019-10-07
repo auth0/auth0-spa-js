@@ -19,6 +19,20 @@ import { AuthenticationError } from './errors';
 import * as ClientStorage from './storage';
 import { DEFAULT_POPUP_CONFIG_OPTIONS } from './constants';
 import version from './version';
+import {
+  Auth0ClientOptions,
+  BaseLoginOptions,
+  AuthorizeOptions,
+  PopupConfigOptions,
+  PopupLoginOptions,
+  GetUserOptions,
+  GetIdTokenClaimsOptions,
+  RedirectLoginOptions,
+  RedirectLoginResult,
+  GetTokenSilentlyOptions,
+  GetTokenWithPopupOptions,
+  LogoutOptions
+} from './global';
 
 /**
  * Auth0 SDK for Single Page Applications using [Authorization Code Grant Flow with PKCE](https://auth0.com/docs/api-auth/tutorials/authorization-code-grant-pkce).
@@ -174,7 +188,7 @@ export default class Auth0Client {
    * @param options
    */
   public async getIdTokenClaims(
-    options: getIdTokenClaimsOptions = {
+    options: GetIdTokenClaimsOptions = {
       audience: this.options.audience || 'default',
       scope: this.options.scope || this.DEFAULT_SCOPE
     }

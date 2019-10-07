@@ -1,3 +1,5 @@
+import { PopupConfigOptions } from './global';
+
 /**
  * @ignore
  */
