@@ -54,7 +54,9 @@ describe('cache', () => {
         user: { name: 'Test' }
       }
     });
-    jest.advanceTimersByTime(1001);
+    jest.advanceTimersByTime(799);
+    expect(Object.keys(cache.cache).length).toBe(1);
+    jest.advanceTimersByTime(1);
     expect(Object.keys(cache.cache).length).toBe(0);
   });
   it('expires after `user.exp` when `user.exp` < `expires_in`', () => {
@@ -73,7 +75,9 @@ describe('cache', () => {
         user: { name: 'Test' }
       }
     });
-    jest.advanceTimersByTime(1001);
+    jest.advanceTimersByTime(799);
+    expect(Object.keys(cache.cache).length).toBe(1);
+    jest.advanceTimersByTime(1);
     expect(Object.keys(cache.cache).length).toBe(0);
   });
 });
