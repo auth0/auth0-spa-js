@@ -22,7 +22,7 @@ export default async function createAuth0Client(options: Auth0ClientOptions) {
     );
   }
   // safari 10 compat
-  if ((<any>window.crypto).webkitSubtle) {
+  if (!window.crypto.subtle && (<any>window.crypto).webkitSubtle) {
     (<any>window.crypto).subtle = (<any>window.crypto).webkitSubtle;
   }
   if (typeof window.crypto.subtle === 'undefined') {

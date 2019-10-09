@@ -131,7 +131,7 @@ describe('Auth0', () => {
       for more information.
     `);
     });
-    it('should use crypto.webkitSubtle when available', async () => {
+    it('should use crypto.webkitSubtle when crypto.subtle is not available', async () => {
       (<any>global).crypto = { webkitSubtle: 'webkit' };
 
       const auth0 = await createAuth0Client({
@@ -140,6 +140,16 @@ describe('Auth0', () => {
       });
       expect(auth0).toBeDefined();
       expect((<any>global).crypto.subtle).toBe('webkit');
+    });
+    it('should use crypto.subtle when both crypto.subtle and crypto.webkitSubtle are available', async () => {
+      (<any>global).crypto = { subtle: 'subtle', webkitSubtle: 'webkit' };
+
+      const auth0 = await createAuth0Client({
+        domain: TEST_DOMAIN,
+        client_id: TEST_CLIENT_ID
+      });
+      expect(auth0).toBeDefined();
+      expect((<any>global).crypto.subtle).toBe('subtle');
     });
     it('should return, logging a warning if crypto is unavailable', async () => {
       (<any>global).crypto = undefined;
