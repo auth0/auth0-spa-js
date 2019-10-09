@@ -521,15 +521,172 @@ describe('Auth0', () => {
     it('throws when there is no query string', async () => {
       const { auth0 } = await setup();
       await expect(auth0.handleRedirectCallback()).rejects.toThrow(
-        'There are no query params available at `window.location.search`.'
+        'There are no query params available for parsing.'
       );
     });
-    describe('when there is a valid query string', async () => {
+    describe('when there is a valid query string in the url', async () => {
       const localSetup = async () => {
         window.history.pushState(
           {},
           'Test',
           `?code=${TEST_CODE}&state=${TEST_ENCODED_STATE}`
+        );
+        const result = await setup();
+        result.transactionManager.get.mockReturnValue({
+          code_verifier: TEST_RANDOM_STRING,
+          nonce: TEST_RANDOM_STRING,
+          audience: 'default',
+          scope: TEST_SCOPES,
+          appState: TEST_APP_STATE
+        });
+        result.cache.get.mockReturnValue({ access_token: TEST_ACCESS_TOKEN });
+        return result;
+      };
+      it('calls parseQueryResult correctly', async () => {
+        const { auth0, utils } = await localSetup();
+        await auth0.handleRedirectCallback();
+        expect(utils.parseQueryResult).toHaveBeenCalledWith(
+          `code=${TEST_CODE}&state=${TEST_ENCODED_STATE}`
+        );
+      });
+      it('uses `state` from parsed query to get a transaction', async () => {
+        const { auth0, utils, transactionManager } = await localSetup();
+        const queryState = 'the-state';
+        utils.parseQueryResult.mockReturnValue({ state: queryState });
+
+        await auth0.handleRedirectCallback();
+
+        expect(transactionManager.get).toHaveBeenCalledWith(queryState);
+      });
+      it('throws error with AuthenticationError', async () => {
+        const { auth0, utils } = await localSetup();
+        const queryResult = { error: 'unauthorized' };
+        utils.parseQueryResult.mockReturnValue(queryResult);
+
+        await expect(auth0.handleRedirectCallback()).rejects.toBeInstanceOf(
+          AuthenticationError
+        );
+      });
+      it('throws AuthenticationError with message from error_description', async () => {
+        const { auth0, utils } = await localSetup();
+        const queryResult = {
+          error: 'unauthorized',
+          error_description: 'Unauthorized user'
+        };
+        utils.parseQueryResult.mockReturnValue(queryResult);
+
+        await expect(auth0.handleRedirectCallback()).rejects.toThrow(
+          queryResult.error_description
+        );
+      });
+      it('throws AuthenticationError with state, error, error_description', async () => {
+        const { auth0, utils } = await localSetup();
+        const queryResult = {
+          error: 'unauthorized',
+          error_description: 'Unauthorized user',
+          state: 'abcxyz'
+        };
+        utils.parseQueryResult.mockReturnValue(queryResult);
+
+        let errorThrown: AuthenticationError;
+        try {
+          await auth0.handleRedirectCallback();
+        } catch (error) {
+          errorThrown = error;
+        }
+
+        expect(errorThrown.state).toEqual(queryResult.state);
+        expect(errorThrown.error).toEqual(queryResult.error);
+        expect(errorThrown.error_description).toEqual(
+          queryResult.error_description
+        );
+      });
+      it('throws error when there is no transaction', async () => {
+        const { auth0, transactionManager } = await localSetup();
+        transactionManager.get.mockReturnValue(undefined);
+
+        await expect(auth0.handleRedirectCallback()).rejects.toThrow(
+          'Invalid state'
+        );
+      });
+      it('uses `state` from parsed query to remove the transaction', async () => {
+        const { auth0, utils, transactionManager } = await localSetup();
+        const queryState = 'the-state';
+        utils.parseQueryResult.mockReturnValue({ state: queryState });
+
+        await auth0.handleRedirectCallback();
+
+        expect(transactionManager.remove).toHaveBeenCalledWith(queryState);
+      });
+      it('calls oauth/token with correct params', async () => {
+        const { auth0, utils } = await localSetup();
+
+        await auth0.handleRedirectCallback();
+
+        expect(utils.oauthToken).toHaveBeenCalledWith({
+          audience: undefined,
+          baseUrl: 'https://test.auth0.com',
+          client_id: TEST_CLIENT_ID,
+          code: TEST_CODE,
+          code_verifier: TEST_RANDOM_STRING
+        });
+      });
+      it('calls `tokenVerifier.verify` with the `id_token` from in the oauth/token response', async () => {
+        const { auth0, tokenVerifier } = await localSetup();
+
+        await auth0.handleRedirectCallback();
+
+        expect(tokenVerifier).toHaveBeenCalledWith({
+          id_token: TEST_ID_TOKEN,
+          nonce: TEST_RANDOM_STRING,
+          aud: 'test-client-id',
+          iss: 'https://test.auth0.com/'
+        });
+      });
+      it('saves cache', async () => {
+        const { auth0, cache } = await localSetup();
+
+        await auth0.handleRedirectCallback();
+
+        expect(cache.save).toHaveBeenCalledWith({
+          access_token: TEST_ACCESS_TOKEN,
+          audience: 'default',
+          id_token: TEST_ID_TOKEN,
+          scope: TEST_SCOPES,
+          decodedToken: {
+            claims: { sub: TEST_USER_ID, aud: TEST_CLIENT_ID },
+            user: { sub: TEST_USER_ID }
+          }
+        });
+      });
+      it('saves `auth0.is.authenticated` key in storage', async () => {
+        const { auth0, storage } = await localSetup();
+
+        await auth0.handleRedirectCallback();
+
+        expect(storage.save).toHaveBeenCalledWith(
+          'auth0.is.authenticated',
+          true,
+          { daysUntilExpire: 1 }
+        );
+      });
+      it('returns the transactions appState', async () => {
+        const { auth0 } = await localSetup();
+
+        const response = await auth0.handleRedirectCallback();
+
+        expect(response).toEqual({
+          appState: TEST_APP_STATE
+        });
+      });
+    });
+    describe('when there is a valid query string in a hash', async () => {
+      const localSetup = async () => {
+        window.history.pushState({}, 'Test', `/`);
+        window.history.pushState(
+          {},
+          'Test',
+          `#/callback/?code=${TEST_CODE}&state=${TEST_ENCODED_STATE}`
         );
         const result = await setup();
         result.transactionManager.get.mockReturnValue({
