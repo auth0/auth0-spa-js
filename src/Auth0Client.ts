@@ -41,12 +41,16 @@ export default class Auth0Client {
   private cache: Cache;
   private transactionManager: TransactionManager;
   private domainUrl: string;
+  private tokenIssuer: string;
   private readonly DEFAULT_SCOPE = 'openid profile email';
 
   constructor(private options: Auth0ClientOptions) {
     this.cache = new Cache();
     this.transactionManager = new TransactionManager();
     this.domainUrl = `https://${this.options.domain}`;
+    this.tokenIssuer = this.options.issuer
+      ? `https://${this.options.issuer}/`
+      : `${this.domainUrl}/`;
   }
   private _url(path) {
     const telemetry = encodeURIComponent(
@@ -89,7 +93,7 @@ export default class Auth0Client {
   }
   private _verifyIdToken(id_token: string, nonce?: string) {
     return verifyIdToken({
-      iss: `${this.domainUrl}/`,
+      iss: this.tokenIssuer,
       aud: this.options.client_id,
       id_token,
       nonce,

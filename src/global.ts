@@ -69,6 +69,10 @@ export interface Auth0ClientOptions extends BaseLoginOptions {
    */
   domain: string;
   /**
+   * The issuer to be used for validation of JWTs, optionally defaults to the domain above
+   */
+  issuer?: string;
+  /**
    * The Client ID found on your Application settings page
    */
   client_id: string;

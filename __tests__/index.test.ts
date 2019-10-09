@@ -313,6 +313,19 @@ describe('Auth0', () => {
         iss: 'https://test.auth0.com/'
       });
     });
+    it('calls `tokenVerifier.verify` with the `issuer` from in the oauth/token response', async () => {
+      const { auth0, tokenVerifier } = await setup({
+        issuer: 'test-123.auth0.com'
+      });
+
+      await auth0.loginWithPopup({});
+      expect(tokenVerifier).toHaveBeenCalledWith({
+        aud: 'test-client-id',
+        id_token: TEST_ID_TOKEN,
+        nonce: TEST_RANDOM_STRING,
+        iss: 'https://test-123.auth0.com/'
+      });
+    });
     it('calls `tokenVerifier.verify` with the `leeway` from constructor', async () => {
       const { auth0, tokenVerifier } = await setup({ leeway: 10 });
 
