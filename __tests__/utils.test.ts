@@ -170,7 +170,7 @@ describe('utils', () => {
   });
   describe('bufferToBase64UrlEncoded ', () => {
     it('generates correct base64 encoded value from a buffer', async () => {
-      const result = await bufferToBase64UrlEncoded([116, 101, 115, 116]);
+      const result = bufferToBase64UrlEncoded([116, 101, 115, 116]);
       expect(result).toBe('dGVzdA');
     });
   });
