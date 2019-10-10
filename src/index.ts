@@ -10,23 +10,10 @@ import * as ClientStorage from './storage';
 
 //this is necessary to export the type definitions used in this file
 import './global';
+import { validateCrypto } from './utils';
 
 export default async function createAuth0Client(options: Auth0ClientOptions) {
-  if (!window.crypto && (<any>window).msCrypto) {
-    (<any>window).crypto = (<any>window).msCrypto;
-  }
-  if (!window.crypto) {
-    throw new Error(
-      'For security reasons, `window.crypto` is required to run `auth0-spa-js`.'
-    );
-  }
-  if (typeof window.crypto.subtle === 'undefined') {
-    throw new Error(`
-      auth0-spa-js must run on a secure origin.
-      See https://github.com/auth0/auth0-spa-js/blob/master/FAQ.md#why-do-i-get-error-invalid-state-in-firefox-when-refreshing-the-page-immediately-after-a-login 
-      for more information.
-    `);
-  }
+  validateCrypto();
 
   const auth0 = new Auth0Client(options);
 
