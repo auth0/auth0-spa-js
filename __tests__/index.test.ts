@@ -105,64 +105,9 @@ describe('Auth0', () => {
       });
       expect(auth0).toBeInstanceOf(Auth0Client);
     });
-    it('should use msCrypto when available', async () => {
-      (<any>global).crypto = undefined;
-      (<any>global).msCrypto = { subtle: 'ms' };
-
-      const auth0 = await createAuth0Client({
-        domain: TEST_DOMAIN,
-        client_id: TEST_CLIENT_ID
-      });
-      expect(auth0).toBeDefined();
-      expect((<any>global).crypto.subtle).toBe('ms');
-    });
-
-    it('should return, logging a warning if crypto.digest is undefined', async () => {
-      (<any>global).crypto = {};
-
-      await expect(
-        createAuth0Client({
-          domain: TEST_DOMAIN,
-          client_id: TEST_CLIENT_ID
-        })
-      ).rejects.toThrowError(`
-      auth0-spa-js must run on a secure origin.
-      See https://github.com/auth0/auth0-spa-js/blob/master/FAQ.md#why-do-i-get-auth0-spa-js-must-run-on-a-secure-origin 
-      for more information.
-    `);
-    });
-    it('should use crypto.webkitSubtle when crypto.subtle is not available', async () => {
-      (<any>global).crypto = { webkitSubtle: 'webkit' };
-
-      const auth0 = await createAuth0Client({
-        domain: TEST_DOMAIN,
-        client_id: TEST_CLIENT_ID
-      });
-      expect(auth0).toBeDefined();
-      expect((<any>global).crypto.subtle).toBe('webkit');
-    });
-    it('should use crypto.subtle when both crypto.subtle and crypto.webkitSubtle are available', async () => {
-      (<any>global).crypto = { subtle: 'subtle', webkitSubtle: 'webkit' };
-
-      const auth0 = await createAuth0Client({
-        domain: TEST_DOMAIN,
-        client_id: TEST_CLIENT_ID
-      });
-      expect(auth0).toBeDefined();
-      expect((<any>global).crypto.subtle).toBe('subtle');
-    });
-    it('should return, logging a warning if crypto is unavailable', async () => {
-      (<any>global).crypto = undefined;
-      (<any>global).msCrypto = undefined;
-
-      await expect(
-        createAuth0Client({
-          domain: TEST_DOMAIN,
-          client_id: TEST_CLIENT_ID
-        })
-      ).rejects.toThrowError(
-        'For security reasons, `window.crypto` is required to run `auth0-spa-js`.'
-      );
+    it('should call `utils.validateCrypto`', async () => {
+      const { utils } = await setup();
+      expect(utils.validateCrypto).toHaveBeenCalled();
     });
   });
   describe('loginWithPopup()', () => {

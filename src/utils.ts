@@ -93,7 +93,9 @@ export const createRandomString = () => {
   const charset =
     '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-_~.';
   let random = '';
-  const randomValues = Array.from(crypto.getRandomValues(new Uint8Array(43)));
+  const randomValues = Array.from(
+    getCrypto().getRandomValues(new Uint8Array(43))
+  );
   randomValues.forEach(v => (random += charset[v % charset.length]));
   return random;
 };
@@ -110,10 +112,7 @@ export const createQueryParams = (params: any) => {
 
 export const sha256 = async (s: string) => {
   const response = await Promise.resolve(
-    window.crypto.subtle.digest(
-      { name: 'SHA-256' },
-      new TextEncoder().encode(s)
-    )
+    getCryptoSubtle().digest({ name: 'SHA-256' }, new TextEncoder().encode(s))
   );
   // msCrypto (IE11) uses the old spec, which is not Promise based
   // https://msdn.microsoft.com/en-us/expression/dn904640(v=vs.71)
@@ -177,3 +176,28 @@ export const oauthToken = async ({ baseUrl, ...options }: OAuthTokenOptions) =>
       'Content-type': 'application/json'
     }
   });
+
+export const getCrypto = () => {
+  //ie 11.x uses msCrypto
+  return <Crypto>(window.crypto || (<any>window).msCrypto);
+};
+
+export const getCryptoSubtle = () => {
+  //safari 10.x uses webkitSubtle
+  return window.crypto.subtle || (<any>window.crypto).webkitSubtle;
+};
+
+export const validateCrypto = () => {
+  if (!getCrypto()) {
+    throw new Error(
+      'For security reasons, `window.crypto` is required to run `auth0-spa-js`.'
+    );
+  }
+  if (typeof getCryptoSubtle() === 'undefined') {
+    throw new Error(`
+      auth0-spa-js must run on a secure origin.
+      See https://github.com/auth0/auth0-spa-js/blob/master/FAQ.md#why-do-i-get-auth0-spa-js-must-run-on-a-secure-origin 
+      for more information.
+    `);
+  }
+};
