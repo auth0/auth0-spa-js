@@ -1,3 +1,13 @@
+## [v.1.3.9](https://github.com/auth0/auth0-spa-js/tree/v1.3.0) (2019-10-10)
+
+**Fixed**
+Add missing char for nonce/state generation https://github.com/auth0/auth0-spa-js/pull/230
+Fix query parsing when using hash routing https://github.com/auth0/auth0-spa-js/pull/231
+Fix safari10 initialization error https://github.com/auth0/auth0-spa-js/pull/232
+
+**Changed**
+Add early expiration of Access Token in cache https://github.com/auth0/auth0-spa-js/pull/233
+
 ## [v1.2.4](https://github.com/auth0/auth0-spa-js/tree/v1.2.4) (2019-09-24)
 
 **Fixed**
