@@ -532,7 +532,7 @@ describe('utils', () => {
       (<any>global).msCrypto = { subtle: 'ms' };
 
       const cryptoSubtle = getCryptoSubtle();
-      expect(theSubtle).toBe('ms');
+      expect(cryptoSubtle).toBe('ms');
     });
   });
   describe('validateCrypto', () => {
