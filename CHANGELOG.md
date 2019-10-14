@@ -1,4 +1,9 @@
-## [v.1.3.9](https://github.com/auth0/auth0-spa-js/tree/v1.3.0) (2019-10-10)
+## [v.1.3.1](https://github.com/auth0/auth0-spa-js/tree/v1.3.1) (2019-10-14)
+
+**Fixed**
+Fix IE msCrypto.subtle usage https://github.com/auth0/auth0-spa-js/pull/242
+
+## [v.1.3.0](https://github.com/auth0/auth0-spa-js/tree/v1.3.0) (2019-10-10)
 
 **Fixed**
 Add missing char for nonce/state generation https://github.com/auth0/auth0-spa-js/pull/230
