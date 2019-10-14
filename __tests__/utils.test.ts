@@ -378,7 +378,11 @@ describe('utils', () => {
     const setup = customMessage => {
       const iframe = {
         setAttribute: jest.fn(),
-        style: { display: '' }
+        style: { display: '' },
+        addEventListener: <any>jest.fn((message, callback) => {
+          expect(message).toBe('load');
+          callback();
+        })
       };
       const url = 'https://authorize.com';
       const origin =

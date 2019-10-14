@@ -29,6 +29,8 @@ export const parseQueryResult = (queryString: string) => {
 export const runIframe = (authorizeUrl: string, eventOrigin: string) => {
   return new Promise<AuthenticationResult>((res, rej) => {
     var iframe = window.document.createElement('iframe');
+    var iframeLoaded = false;
+    var iframeMessageReceived = false;
     iframe.setAttribute('width', '0');
     iframe.setAttribute('height', '0');
     iframe.style.display = 'none';
@@ -38,17 +40,28 @@ export const runIframe = (authorizeUrl: string, eventOrigin: string) => {
       window.document.body.removeChild(iframe);
     }, 60 * 1000);
 
+    const iframeOnloadHandler = function() {
+      iframeLoaded = true;
+      if (iframeMessageReceived) {
+        window.document.body.removeChild(iframe);
+      }
+    };
+
     const iframeEventHandler = function(e: MessageEvent) {
       if (e.origin != eventOrigin) return;
       if (!e.data || e.data.type !== 'authorization_response') return;
       (<any>e.source).close();
       e.data.response.error ? rej(e.data.response) : res(e.data.response);
+      iframeMessageReceived = true;
       clearTimeout(timeoutSetTimeoutId);
       window.removeEventListener('message', iframeEventHandler, false);
-      window.document.body.removeChild(iframe);
+      if (iframeLoaded) {
+        window.document.body.removeChild(iframe);
+      }
     };
     window.addEventListener('message', iframeEventHandler, false);
     window.document.body.appendChild(iframe);
+    iframe.addEventListener('load', iframeOnloadHandler, false);
     iframe.setAttribute('src', authorizeUrl);
   });
 };
