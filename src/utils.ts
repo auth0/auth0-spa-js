@@ -183,8 +183,9 @@ export const getCrypto = () => {
 };
 
 export const getCryptoSubtle = () => {
+  const crypto = getCrypto();
   //safari 10.x uses webkitSubtle
-  return window.crypto.subtle || (<any>window.crypto).webkitSubtle;
+  return crypto.subtle || (<any>crypto).webkitSubtle;
 };
 
 export const validateCrypto = () => {

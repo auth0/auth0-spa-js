@@ -527,6 +527,13 @@ describe('utils', () => {
       const theSubtle = getCryptoSubtle();
       expect(theSubtle).toBe('window');
     });
+    it('should use msCrypto.subtle when available', () => {
+      (<any>global).crypto = undefined;
+      (<any>global).msCrypto = { subtle: 'ms' };
+
+      const cryptoSubtle = getCryptoSubtle();
+      expect(cryptoSubtle).toBe('ms');
+    });
   });
   describe('validateCrypto', () => {
     it('should throw error if crypto is unavailable', () => {
