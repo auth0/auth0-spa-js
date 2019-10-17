@@ -1,3 +1,8 @@
+## [v.1.3.2](https://github.com/auth0/auth0-spa-js/tree/v1.3.2) (2019-10-17)
+
+**Fixed**
+`parseQueryString` now removes hash fragment on query before parsing https://github.com/auth0/auth0-spa-js/pull/246
+
 ## [v.1.3.1](https://github.com/auth0/auth0-spa-js/tree/v1.3.1) (2019-10-14)
 
 **Fixed**
