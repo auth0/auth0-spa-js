@@ -13,7 +13,12 @@ export const getUniqueScopes = (...scopes: string[]) => {
 };
 
 export const parseQueryResult = (queryString: string) => {
+  if (queryString.indexOf('#') > -1) {
+    queryString = queryString.substr(0, queryString.indexOf('#'));
+  }
+
   let queryParams = queryString.split('&');
+
   let parsedQuery: any = {};
   queryParams.forEach(qp => {
     let [key, val] = qp.split('=');

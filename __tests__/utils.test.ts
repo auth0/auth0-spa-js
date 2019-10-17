@@ -45,6 +45,14 @@ describe('utils', () => {
         otherValue: 'another-test'
       });
     });
+    it('strips off hash values', () => {
+      expect(
+        parseQueryResult('code=some-code&state=some-state#__')
+      ).toMatchObject({
+        code: 'some-code',
+        state: 'some-state'
+      });
+    });
     it('converts `expires_in` to int', () => {
       expect(parseQueryResult('value=test&expires_in=10')).toMatchObject({
         value: 'test',
