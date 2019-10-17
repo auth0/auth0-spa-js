@@ -65,7 +65,7 @@
     "tslint": "^5.18.0",
     "tslint-config-security": "^1.16.0",
     "typedoc": "^0.15.0",
-    "typescript": "^3.5.3",
+    "typescript": "^3.6.4",
     "wait-on": "^3.3.0"
   },
   "dependencies": {

@@ -299,7 +299,10 @@ describe('Auth0', () => {
         aud: 'test-client-id',
         id_token: TEST_ID_TOKEN,
         nonce: TEST_RANDOM_STRING,
-        iss: 'https://test-123.auth0.com/'
+        iss: 'https://test-123.auth0.com/',
+        client_id: TEST_CLIENT_ID,
+        leeway: undefined,
+        max_age: undefined
       });
     });
     it('calls `tokenVerifier.verify` with the `leeway` from constructor', async () => {
@@ -795,7 +798,10 @@ describe('Auth0', () => {
           id_token: TEST_ID_TOKEN,
           nonce: TEST_RANDOM_STRING,
           aud: 'test-client-id',
-          iss: 'https://test.auth0.com/'
+          iss: 'https://test.auth0.com/',
+          client_id: TEST_CLIENT_ID,
+          leeway: undefined,
+          max_age: undefined
         });
       });
       it('saves cache', async () => {
