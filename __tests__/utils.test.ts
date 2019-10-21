@@ -11,7 +11,10 @@ import {
   openPopup,
   runPopup,
   runIframe,
-  urlDecodeB64
+  urlDecodeB64,
+  getCrypto,
+  getCryptoSubtle,
+  validateCrypto
 } from '../src/utils';
 import { DEFAULT_AUTHORIZE_TIMEOUT_IN_SECONDS } from '../src/constants';
 
@@ -40,6 +43,14 @@ describe('utils', () => {
       ).toMatchObject({
         value: 'test',
         otherValue: 'another-test'
+      });
+    });
+    it('strips off hash values', () => {
+      expect(
+        parseQueryResult('code=some-code&state=some-state#__')
+      ).toMatchObject({
+        code: 'some-code',
+        state: 'some-state'
       });
     });
     it('converts `expires_in` to int', () => {
@@ -167,7 +178,7 @@ describe('utils', () => {
   });
   describe('bufferToBase64UrlEncoded ', () => {
     it('generates correct base64 encoded value from a buffer', async () => {
-      const result = await bufferToBase64UrlEncoded([116, 101, 115, 116]);
+      const result = bufferToBase64UrlEncoded([116, 101, 115, 116]);
       expect(result).toBe('dGVzdA');
     });
   });
@@ -493,6 +504,62 @@ describe('utils', () => {
       await expect(runIframe(url, origin)).rejects.toMatchObject(TIMEOUT_ERROR);
       expect(window.document.body.removeChild).toHaveBeenCalledWith(iframe);
       jest.useRealTimers();
+    });
+  });
+  describe('getCrypto', () => {
+    it('should use msCrypto when window.crypto is unavailable', () => {
+      (<any>global).crypto = undefined;
+      (<any>global).msCrypto = 'ms';
+
+      const theCrypto = getCrypto();
+      expect(theCrypto).toBe('ms');
+    });
+    it('should use window.crypto when available', () => {
+      (<any>global).crypto = 'window';
+      (<any>global).msCrypto = 'ms';
+
+      const theCrypto = getCrypto();
+      expect(theCrypto).toBe('window');
+    });
+  });
+  describe('getCryptoSubtle', () => {
+    it('should use crypto.webkitSubtle when available', () => {
+      (<any>global).crypto = { subtle: undefined, webkitSubtle: 'webkit' };
+
+      const theSubtle = getCryptoSubtle();
+      expect(theSubtle).toBe('webkit');
+    });
+    it('should use crypto.subtle when available', () => {
+      (<any>global).crypto = { subtle: 'window', webkitSubtle: 'webkit' };
+
+      const theSubtle = getCryptoSubtle();
+      expect(theSubtle).toBe('window');
+    });
+    it('should use msCrypto.subtle when available', () => {
+      (<any>global).crypto = undefined;
+      (<any>global).msCrypto = { subtle: 'ms' };
+
+      const cryptoSubtle = getCryptoSubtle();
+      expect(cryptoSubtle).toBe('ms');
+    });
+  });
+  describe('validateCrypto', () => {
+    it('should throw error if crypto is unavailable', () => {
+      (<any>global).crypto = undefined;
+      (<any>global).msCrypto = undefined;
+
+      expect(validateCrypto).toThrowError(
+        'For security reasons, `window.crypto` is required to run `auth0-spa-js`.'
+      );
+    });
+    it('should throw error if crypto.subtle is undefined', () => {
+      (<any>global).crypto = {};
+
+      expect(validateCrypto).toThrowError(`
+      auth0-spa-js must run on a secure origin.
+      See https://github.com/auth0/auth0-spa-js/blob/master/FAQ.md#why-do-i-get-auth0-spa-js-must-run-on-a-secure-origin 
+      for more information.
+    `);
     });
   });
 });

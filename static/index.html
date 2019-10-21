@@ -27,91 +27,94 @@
         createAuth0Client({
           domain: 'auth.brucke.club',
           client_id: 'wLSIP47wM39wKdDmOj6Zb5eSEw3JVhVp'
-        }).then(function(auth0) {
-          window.auth0 = auth0;
-          $('#login_popup').click(function() {
-            auth0
-              .loginWithPopup({
-                redirect_uri: 'http://localhost:3000/callback.html'
-              })
-              .then(function() {
-                auth0.getTokenSilently().then(function(token) {
+        })
+          .then(function(auth0) {
+            window.auth0 = auth0;
+            $('#login_popup').click(function() {
+              auth0
+                .loginWithPopup({
+                  redirect_uri: 'http://localhost:3000/callback.html'
+                })
+                .then(function() {
+                  auth0.getTokenSilently().then(function(token) {
+                    console.log(token);
+                  });
+                  auth0.getUser().then(function(user) {
+                    console.log(user);
+                  });
+                });
+            });
+            $('#login_redirect').click(function() {
+              auth0.loginWithRedirect({
+                redirect_uri: 'http://localhost:3000/'
+              });
+            });
+            $('#login_redirect_callback').click(function() {
+              auth0.handleRedirectCallback().then(function() {
+                window.history.replaceState(
+                  {},
+                  document.title,
+                  window.location.origin + '/'
+                );
+              });
+            });
+            $('#getToken').click(function() {
+              Promise.all([
+                auth0.getTokenSilently({ ignoreCache: true }),
+                auth0.getTokenSilently({ ignoreCache: true })
+              ]).then(function([token1, token2]) {
+                console.log(token1, token2);
+              });
+            });
+            $('#getTokenPopup').click(function() {
+              auth0
+                .getTokenWithPopup({
+                  audience: 'https://brucke.auth0.com/api/v2/',
+                  scope: 'read:rules'
+                })
+                .then(function(token) {
                   console.log(token);
                 });
-                auth0.getUser().then(function(user) {
-                  console.log(user);
-                });
+            });
+            $('#getUser').click(function() {
+              auth0.getUser().then(function(user) {
+                alert(JSON.stringify(user, null, 1));
               });
-          });
-          $('#login_redirect').click(function() {
-            auth0.loginWithRedirect({
-              redirect_uri: 'http://localhost:3000/'
             });
-          });
-          $('#login_redirect_callback').click(function() {
-            auth0.handleRedirectCallback().then(function() {
-              window.history.replaceState(
-                {},
-                document.title,
-                window.location.origin + '/'
-              );
+            $('#getIdTokenClaims').click(function() {
+              auth0.getIdTokenClaims().then(function(claims) {
+                console.log(claims);
+                //if you need the raw id_token, you can access it in the __raw property
+                const id_token = claims.__raw;
+              });
             });
-          });
-          $('#getToken').click(function() {
-            Promise.all([
-              auth0.getTokenSilently({ ignoreCache: true }),
-              auth0.getTokenSilently({ ignoreCache: true })
-            ]).then(function([token1, token2]) {
-              console.log(token1, token2);
-            });
-          });
-
-          $('#getTokenPopup').click(function() {
-            auth0
-              .getTokenWithPopup({
+            $('#getToken_audience').click(function() {
+              var differentAudienceOptions = {
                 audience: 'https://brucke.auth0.com/api/v2/',
-                scope: 'read:rules'
-              })
-              .then(function(token) {
-                console.log(token);
+                scope: 'read:rules',
+                redirect_uri: 'http://localhost:3000/callback.html'
+              };
+              auth0
+                .getTokenSilently(differentAudienceOptions)
+                .then(function(token) {
+                  alert(token);
+                });
+            });
+            $('#logout').click(function() {
+              auth0.logout({
+                returnTo: 'http://localhost:3000/'
               });
-          });
-          $('#getUser').click(function() {
-            auth0.getUser().then(function(user) {
-              alert(JSON.stringify(user, null, 1));
             });
-          });
-          $('#getIdTokenClaims').click(function() {
-            auth0.getIdTokenClaims().then(function(claims) {
-              console.log(claims);
-              //if you need the raw id_token, you can access it in the __raw property
-              const id_token = claims.__raw;
-            });
-          });
-          $('#getToken_audience').click(function() {
-            var differentAudienceOptions = {
-              audience: 'https://brucke.auth0.com/api/v2/',
-              scope: 'read:rules',
-              redirect_uri: 'http://localhost:3000/callback.html'
-            };
-            auth0
-              .getTokenSilently(differentAudienceOptions)
-              .then(function(token) {
-                alert(token);
+            $('#logout-no-clientid').click(function() {
+              auth0.logout({
+                client_id: null,
+                returnTo: 'http://localhost:3000/'
               });
-          });
-          $('#logout').click(function() {
-            auth0.logout({
-              returnTo: 'http://localhost:3000/'
             });
+          })
+          .catch(function(err) {
+            console.error(err);
           });
-          $('#logout-no-clientid').click(function() {
-            auth0.logout({
-              client_id: null,
-              returnTo: 'http://localhost:3000/'
-            });
-          });
-        });
       });
     </script>
   </body>
