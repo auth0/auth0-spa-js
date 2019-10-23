@@ -1,3 +1,4 @@
+jest.mock('browser-tabs-lock');
 jest.mock('../src/jwt');
 jest.mock('../src/storage');
 jest.mock('../src/cache');
@@ -9,6 +10,7 @@ import createAuth0Client from '../src/index';
 import { AuthenticationError } from '../src/errors';
 import version from '../src/version';
 import { DEFAULT_AUTHORIZE_TIMEOUT_IN_SECONDS } from '../src/constants';
+const GET_TOKEN_SILENTLY_LOCK_KEY = 'auth0.lock.getTokenSilently';
 
 const TEST_DOMAIN = 'test.auth0.com';
 const TEST_CLIENT_ID = 'test-client-id';
@@ -49,6 +51,7 @@ const setup = async (options = {}) => {
     save: require('../src/storage').save,
     remove: require('../src/storage').remove
   };
+  const lock = require('browser-tabs-lock');
   const cache = getInstance('../src/cache');
   const tokenVerifier = require('../src/jwt').verify;
   const transactionManager = getInstance('../src/transaction-manager');
@@ -84,7 +87,15 @@ const setup = async (options = {}) => {
       aud: TEST_CLIENT_ID
     }
   });
-  return { auth0, storage, cache, tokenVerifier, transactionManager, utils };
+  return {
+    auth0,
+    storage,
+    cache,
+    tokenVerifier,
+    transactionManager,
+    utils,
+    lock
+  };
 };
 
 describe('Auth0', () => {
@@ -945,6 +956,19 @@ describe('Auth0', () => {
 
         expect(token).toBe(TEST_ACCESS_TOKEN);
       });
+      it('acquires and releases lock when there is a cache', async () => {
+        const { auth0, cache, lock } = await setup();
+        cache.get.mockReturnValue({ access_token: TEST_ACCESS_TOKEN });
+
+        await auth0.getTokenSilently();
+        expect(lock.acquireLockMock).toHaveBeenCalledWith(
+          GET_TOKEN_SILENTLY_LOCK_KEY,
+          5000
+        );
+        expect(lock.releaseLockMock).toHaveBeenCalledWith(
+          GET_TOKEN_SILENTLY_LOCK_KEY
+        );
+      });
       it('continues method execution when there is no cache available', async () => {
         const { auth0, utils } = await setup();
 
@@ -1120,6 +1144,19 @@ describe('Auth0', () => {
           'auth0.is.authenticated',
           true,
           { daysUntilExpire: 1 }
+        );
+      });
+      it('acquires and releases lock', async () => {
+        const { auth0, lock } = await setup();
+
+        await auth0.getTokenSilently(defaultOptionsIgnoreCacheTrue);
+
+        expect(lock.acquireLockMock).toHaveBeenCalledWith(
+          GET_TOKEN_SILENTLY_LOCK_KEY,
+          5000
+        );
+        expect(lock.releaseLockMock).toHaveBeenCalledWith(
+          GET_TOKEN_SILENTLY_LOCK_KEY
         );
       });
     });

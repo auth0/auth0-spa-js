@@ -1,3 +1,5 @@
+import Lock from 'browser-tabs-lock';
+
 import {
   getUniqueScopes,
   createQueryParams,
@@ -19,6 +21,9 @@ import { AuthenticationError } from './errors';
 import * as ClientStorage from './storage';
 import { DEFAULT_POPUP_CONFIG_OPTIONS } from './constants';
 import version from './version';
+
+const lock = new Lock();
+const GET_TOKEN_SILENTLY_LOCK_KEY = 'auth0.lock.getTokenSilently';
 
 /**
  * Auth0 SDK for Single Page Applications using [Authorization Code Grant Flow with PKCE](https://auth0.com/docs/api-auth/tutorials/authorization-code-grant-pkce).
@@ -295,12 +300,15 @@ export default class Auth0Client {
     }
   ) {
     options.scope = getUniqueScopes(this.DEFAULT_SCOPE, options.scope);
+
+    await lock.acquireLock(GET_TOKEN_SILENTLY_LOCK_KEY, 5000);
     if (!options.ignoreCache) {
       const cache = this.cache.get({
         scope: options.scope,
         audience: options.audience || 'default'
       });
       if (cache) {
+        lock.releaseLock(GET_TOKEN_SILENTLY_LOCK_KEY);
         return cache.access_token;
       }
     }
@@ -346,6 +354,7 @@ export default class Auth0Client {
     };
     this.cache.save(cacheEntry);
     ClientStorage.save('auth0.is.authenticated', true, { daysUntilExpire: 1 });
+    lock.releaseLock(GET_TOKEN_SILENTLY_LOCK_KEY);
     return authResult.access_token;
   }
 

@@ -59,11 +59,13 @@
               });
             });
             $('#getToken').click(function() {
-              auth0.getTokenSilently().then(function(token) {
-                alert(token);
+              Promise.all([
+                auth0.getTokenSilently({ ignoreCache: true }),
+                auth0.getTokenSilently({ ignoreCache: true })
+              ]).then(function([token1, token2]) {
+                console.log(token1, token2);
               });
             });
-
             $('#getTokenPopup').click(function() {
               auth0
                 .getTokenWithPopup({
