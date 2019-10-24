@@ -113,7 +113,7 @@ export const verify = (options: JWTVerifyOptions) => {
           'Authorized Party (azp) claim must be a string present in the ID token when Audience (aud) claim has multiple values'
         );
       }
-      if (decoded.claims.azp !== options.aud) {
+      if (decoded.claims.azp !== options.client_id) {
         throw new Error(
           `Authorized Party (azp) claim mismatch in the ID token; expected "${options.aud}", found "${decoded.claims.azp}"`
         );

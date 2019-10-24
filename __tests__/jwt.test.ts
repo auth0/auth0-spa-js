@@ -235,6 +235,14 @@ describe('jwt', async () => {
       `Nonce (nonce) claim mismatch in the ID token; expected "wrong", found "${verifyOptions.nonce}"`
     );
   });
+  it('does not validate azp is present when `aud` is a string', async () => {
+    const id_token = await createJWT(DEFAULT_PAYLOAD, {
+      audience: 'aud'
+    });
+    expect(() =>
+      verify({ ...verifyOptions, id_token, aud: 'aud' })
+    ).not.toThrow();
+  });
   it('does not validate azp is present when `aud` is an array with a single item', async () => {
     const id_token = await createJWT(DEFAULT_PAYLOAD, {
       audience: ['item 1']
