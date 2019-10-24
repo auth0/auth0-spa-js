@@ -125,7 +125,7 @@ export const verify = (options: JWTVerifyOptions) => {
     );
   }
 
-  if (!decoded.claims.nonce) {
+  if (options.nonce && !decoded.claims.nonce) {
     throw new Error(
       'Nonce (nonce) claim must be a string present in the ID token'
     );
