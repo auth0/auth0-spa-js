@@ -89,7 +89,6 @@ export default class Auth0Client {
       id_token,
       nonce,
       leeway: this.options.leeway,
-      client_id: this.options.client_id,
       max_age: this.options.max_age
     });
   }
