@@ -296,7 +296,7 @@ describe('jwt', async () => {
     yesterday.setDate(yesterday.getDate() - 1);
     const id_token = await createJWT({
       ...DEFAULT_PAYLOAD,
-      auth_time: `${yesterday.getTime()}`
+      auth_time: yesterday.getTime()
     });
     expect(() => verify({ ...verifyOptions, id_token, max_age: '1' })).toThrow(
       'Authentication Time (auth_time) claim in the ID token indicates that too much time has passed since the last end-user authentication.'

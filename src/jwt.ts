@@ -1,7 +1,6 @@
 import { urlDecodeB64 } from './utils';
 
 const isNumber = n => typeof n === 'number';
-const isString = n => typeof n === 'string';
 
 const idTokendecoded = [
   'iss',
@@ -140,7 +139,7 @@ export const verify = (options: JWTVerifyOptions) => {
     }
   }
 
-  if (options.max_age && !isString(decoded.claims.auth_time)) {
+  if (options.max_age && !isNumber(decoded.claims.auth_time)) {
     throw new Error(
       'Authentication Time (auth_time) claim must be a number present in the ID token when Max Age (max_age) is specified'
     );
@@ -185,7 +184,7 @@ export const verify = (options: JWTVerifyOptions) => {
       `Not Before time (nbf) claim in the ID token indicates that this token can't be used just yet. Currrent time (${now}) is before ${nbfDate}`
     );
   }
-  if (isString(decoded.claims.auth_time) && now > authTimeDate) {
+  if (isNumber(decoded.claims.auth_time) && now > authTimeDate) {
     throw new Error(
       `Authentication Time (auth_time) claim in the ID token indicates that too much time has passed since the last end-user authentication. Currrent time (${now}) is after last auth at ${authTimeDate}`
     );
