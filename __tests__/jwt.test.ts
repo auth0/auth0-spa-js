@@ -38,7 +38,7 @@ const DEFAULT_PAYLOAD = <any>{
   sub: 'id|123',
   payload: true,
   nonce: verifyOptions.nonce,
-  azp: verifyOptions.client_id
+  azp: verifyOptions.aud
 };
 const createJWT = async (payload = DEFAULT_PAYLOAD, options = {}) => {
   const cert = await createCertificate();
