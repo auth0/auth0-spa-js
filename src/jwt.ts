@@ -124,17 +124,17 @@ export const verify = (options: JWTVerifyOptions) => {
       `Audience (aud) claim mismatch in the ID token; expected "${options.aud}" but found "${decoded.claims.aud}"`
     );
   }
-
-  if (options.nonce && !decoded.claims.nonce) {
-    throw new Error(
-      'Nonce (nonce) claim must be a string present in the ID token'
-    );
-  }
-
-  if (decoded.claims.nonce !== options.nonce) {
-    throw new Error(
-      `Nonce (nonce) claim mismatch in the ID token; expected "${options.nonce}", found "${decoded.claims.nonce}"`
-    );
+  if (options.nonce) {
+    if (!decoded.claims.nonce) {
+      throw new Error(
+        'Nonce (nonce) claim must be a string present in the ID token'
+      );
+    }
+    if (decoded.claims.nonce !== options.nonce) {
+      throw new Error(
+        `Nonce (nonce) claim mismatch in the ID token; expected "${options.nonce}", found "${decoded.claims.nonce}"`
+      );
+    }
   }
 
   if (options.max_age && !decoded.claims.auth_time) {
