@@ -284,7 +284,6 @@ describe('Auth0', () => {
         nonce: TEST_RANDOM_STRING,
         aud: 'test-client-id',
         iss: 'https://test.auth0.com/',
-        client_id: TEST_CLIENT_ID,
         leeway: undefined,
         max_age: undefined
       });
@@ -300,7 +299,6 @@ describe('Auth0', () => {
         id_token: TEST_ID_TOKEN,
         nonce: TEST_RANDOM_STRING,
         iss: 'https://test-123.auth0.com/',
-        client_id: TEST_CLIENT_ID,
         leeway: undefined,
         max_age: undefined
       });
@@ -315,7 +313,6 @@ describe('Auth0', () => {
         aud: 'test-client-id',
         iss: 'https://test.auth0.com/',
         leeway: 10,
-        client_id: TEST_CLIENT_ID,
         max_age: undefined
       });
     });
@@ -329,7 +326,6 @@ describe('Auth0', () => {
         aud: 'test-client-id',
         iss: 'https://test.auth0.com/',
         leeway: undefined,
-        client_id: TEST_CLIENT_ID,
         max_age: '10'
       });
     });
@@ -639,7 +635,6 @@ describe('Auth0', () => {
           nonce: TEST_RANDOM_STRING,
           aud: 'test-client-id',
           iss: 'https://test.auth0.com/',
-          client_id: TEST_CLIENT_ID,
           leeway: undefined,
           max_age: undefined
         });
@@ -799,7 +794,6 @@ describe('Auth0', () => {
           nonce: TEST_RANDOM_STRING,
           aud: 'test-client-id',
           iss: 'https://test.auth0.com/',
-          client_id: TEST_CLIENT_ID,
           leeway: undefined,
           max_age: undefined
         });
@@ -1147,7 +1141,6 @@ describe('Auth0', () => {
           nonce: TEST_RANDOM_STRING,
           aud: 'test-client-id',
           iss: 'https://test.auth0.com/',
-          client_id: TEST_CLIENT_ID,
           leeway: undefined,
           max_age: undefined
         });
