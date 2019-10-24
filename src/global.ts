@@ -240,6 +240,7 @@ interface JWTVerifyOptions {
   id_token: string;
   nonce?: string;
   leeway?: number;
+  max_age?: string;
 }
 
 /**

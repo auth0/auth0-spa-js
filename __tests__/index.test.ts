@@ -283,7 +283,9 @@ describe('Auth0', () => {
         id_token: TEST_ID_TOKEN,
         nonce: TEST_RANDOM_STRING,
         aud: 'test-client-id',
-        iss: 'https://test.auth0.com/'
+        iss: 'https://test.auth0.com/',
+        leeway: undefined,
+        max_age: undefined
       });
     });
     it('calls `tokenVerifier.verify` with the `issuer` from in the oauth/token response', async () => {
@@ -296,7 +298,9 @@ describe('Auth0', () => {
         aud: 'test-client-id',
         id_token: TEST_ID_TOKEN,
         nonce: TEST_RANDOM_STRING,
-        iss: 'https://test-123.auth0.com/'
+        iss: 'https://test-123.auth0.com/',
+        leeway: undefined,
+        max_age: undefined
       });
     });
     it('calls `tokenVerifier.verify` with the `leeway` from constructor', async () => {
@@ -308,7 +312,21 @@ describe('Auth0', () => {
         nonce: TEST_RANDOM_STRING,
         aud: 'test-client-id',
         iss: 'https://test.auth0.com/',
-        leeway: 10
+        leeway: 10,
+        max_age: undefined
+      });
+    });
+    it('calls `tokenVerifier.verify` with the `max_age` from constructor', async () => {
+      const { auth0, tokenVerifier } = await setup({ max_age: '10' });
+
+      await auth0.loginWithPopup({});
+      expect(tokenVerifier).toHaveBeenCalledWith({
+        id_token: TEST_ID_TOKEN,
+        nonce: TEST_RANDOM_STRING,
+        aud: 'test-client-id',
+        iss: 'https://test.auth0.com/',
+        leeway: undefined,
+        max_age: '10'
       });
     });
     it('saves cache', async () => {
@@ -616,7 +634,9 @@ describe('Auth0', () => {
           id_token: TEST_ID_TOKEN,
           nonce: TEST_RANDOM_STRING,
           aud: 'test-client-id',
-          iss: 'https://test.auth0.com/'
+          iss: 'https://test.auth0.com/',
+          leeway: undefined,
+          max_age: undefined
         });
       });
       it('saves cache', async () => {
@@ -773,7 +793,9 @@ describe('Auth0', () => {
           id_token: TEST_ID_TOKEN,
           nonce: TEST_RANDOM_STRING,
           aud: 'test-client-id',
-          iss: 'https://test.auth0.com/'
+          iss: 'https://test.auth0.com/',
+          leeway: undefined,
+          max_age: undefined
         });
       });
       it('saves cache', async () => {
@@ -1118,7 +1140,9 @@ describe('Auth0', () => {
           id_token: TEST_ID_TOKEN,
           nonce: TEST_RANDOM_STRING,
           aud: 'test-client-id',
-          iss: 'https://test.auth0.com/'
+          iss: 'https://test.auth0.com/',
+          leeway: undefined,
+          max_age: undefined
         });
       });
       it('saves cache', async () => {
