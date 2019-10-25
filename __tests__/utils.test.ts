@@ -165,16 +165,14 @@ describe('utils', () => {
     it('handles ie11 digest.result scenario', () => {
       (<any>global).msCrypto = {};
 
-      const digest = {
+      const digestResult = {
         oncomplete: null
       };
 
       (<any>global).crypto = {
         subtle: {
-          digest: jest.fn((alg, encoded) => {
-            expect(alg).toMatchObject({ name: 'SHA-256' });
-            expect(Array.from(encoded)).toMatchObject([116, 101, 115, 116]);
-            return digest;
+          digest: jest.fn(() => {
+            return digestResult;
           })
         }
       };
@@ -183,23 +181,21 @@ describe('utils', () => {
         expect(r).toBe(true);
       });
 
-      digest.oncomplete({ target: { result: true } });
+      digestResult.oncomplete({ target: { result: true } });
 
       return sha;
     });
     it('handles ie11 digest.result error scenario', () => {
       (<any>global).msCrypto = {};
 
-      const digest = {
+      const digestResult = {
         onerror: null
       };
 
       (<any>global).crypto = {
         subtle: {
-          digest: jest.fn((alg, encoded) => {
-            expect(alg).toMatchObject({ name: 'SHA-256' });
-            expect(Array.from(encoded)).toMatchObject([116, 101, 115, 116]);
-            return digest;
+          digest: jest.fn(() => {
+            return digestResult;
           })
         }
       };
@@ -208,7 +204,7 @@ describe('utils', () => {
         expect(e).toBe('An error occurred');
       });
 
-      digest.onerror({ error: 'An error occurred' });
+      digestResult.onerror({ error: 'An error occurred' });
 
       return sha;
     });
@@ -216,16 +212,14 @@ describe('utils', () => {
     it('handles ie11 digest.result abort scenario', () => {
       (<any>global).msCrypto = {};
 
-      const digest = {
+      const digestResult = {
         onabort: null
       };
 
       (<any>global).crypto = {
         subtle: {
-          digest: jest.fn((alg, encoded) => {
-            expect(alg).toMatchObject({ name: 'SHA-256' });
-            expect(Array.from(encoded)).toMatchObject([116, 101, 115, 116]);
-            return digest;
+          digest: jest.fn(() => {
+            return digestResult;
           })
         }
       };
@@ -234,7 +228,7 @@ describe('utils', () => {
         expect(e).toBe('The digest operation was aborted');
       });
 
-      digest.onabort({});
+      digestResult.onabort();
 
       return sha;
     });
