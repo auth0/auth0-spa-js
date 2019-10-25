@@ -134,6 +134,10 @@ export const sha256 = async (s: string) => {
       digestOp.onerror = (e: ErrorEvent) => {
         rej(e.error);
       };
+
+      digestOp.onabort = () => {
+        rej('The digest operation was aborted');
+      };
     });
   }
 

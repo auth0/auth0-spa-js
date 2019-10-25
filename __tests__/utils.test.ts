@@ -166,7 +166,7 @@ describe('utils', () => {
       (<any>global).msCrypto = {};
 
       const digest = {
-        oncomplete: (e: any) => {}
+        oncomplete: null
       };
 
       (<any>global).crypto = {
@@ -191,7 +191,7 @@ describe('utils', () => {
       (<any>global).msCrypto = {};
 
       const digest = {
-        onerror: (e: any) => {}
+        onerror: null
       };
 
       (<any>global).crypto = {
@@ -209,6 +209,32 @@ describe('utils', () => {
       });
 
       digest.onerror({ error: 'An error occurred' });
+
+      return sha;
+    });
+
+    it('handles ie11 digest.result abort scenario', () => {
+      (<any>global).msCrypto = {};
+
+      const digest = {
+        onabort: null
+      };
+
+      (<any>global).crypto = {
+        subtle: {
+          digest: jest.fn((alg, encoded) => {
+            expect(alg).toMatchObject({ name: 'SHA-256' });
+            expect(Array.from(encoded)).toMatchObject([116, 101, 115, 116]);
+            return digest;
+          })
+        }
+      };
+
+      const sha = sha256('test').catch(e => {
+        expect(e).toBe('The digest operation was aborted');
+      });
+
+      digest.onabort({});
 
       return sha;
     });
