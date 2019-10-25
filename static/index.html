@@ -62,8 +62,8 @@
               Promise.all([
                 auth0.getTokenSilently({ ignoreCache: true }),
                 auth0.getTokenSilently({ ignoreCache: true })
-              ]).then(function([token1, token2]) {
-                console.log(token1, token2);
+              ]).then(function(tokens) {
+                console.log(tokens[0], tokens[1]);
               });
             });
             $('#getTokenPopup').click(function() {
