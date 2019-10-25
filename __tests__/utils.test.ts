@@ -187,6 +187,31 @@ describe('utils', () => {
 
       return sha;
     });
+    it('handles ie11 digest.result error scenario', () => {
+      (<any>global).msCrypto = {};
+
+      const digest = {
+        onerror: (e: any) => {}
+      };
+
+      (<any>global).crypto = {
+        subtle: {
+          digest: jest.fn((alg, encoded) => {
+            expect(alg).toMatchObject({ name: 'SHA-256' });
+            expect(Array.from(encoded)).toMatchObject([116, 101, 115, 116]);
+            return digest;
+          })
+        }
+      };
+
+      const sha = sha256('test').catch(e => {
+        expect(e).toBe('An error occurred');
+      });
+
+      digest.onerror({ error: 'An error occurred' });
+
+      return sha;
+    });
   });
   describe('bufferToBase64UrlEncoded ', () => {
     it('generates correct base64 encoded value from a buffer', async () => {

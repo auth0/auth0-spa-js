@@ -126,9 +126,13 @@ export const sha256 = async (s: string) => {
   // Instead of returning a promise, it returns a CryptoOperation
   // with a result property in it
   if ((<any>window).msCrypto) {
-    return new Promise(res => {
-      digestOp.oncomplete = function(e) {
+    return new Promise((res, rej) => {
+      digestOp.oncomplete = e => {
         res(e.target.result);
+      };
+
+      digestOp.onerror = (e: ErrorEvent) => {
+        rej(e.error);
       };
     });
   }
