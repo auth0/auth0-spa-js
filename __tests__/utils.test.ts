@@ -162,18 +162,75 @@ describe('utils', () => {
       const result = await sha256('test');
       expect(result).toBe(true);
     });
-    it('handles ie11 digest.result scenario', async () => {
+    it('handles ie11 digest.result scenario', () => {
+      (<any>global).msCrypto = {};
+
+      const digestResult = {
+        oncomplete: null
+      };
+
       (<any>global).crypto = {
         subtle: {
-          digest: jest.fn((alg, encoded) => {
-            expect(alg).toMatchObject({ name: 'SHA-256' });
-            expect(Array.from(encoded)).toMatchObject([116, 101, 115, 116]);
-            return { result: true };
+          digest: jest.fn(() => {
+            return digestResult;
           })
         }
       };
-      const result = await sha256('test');
-      expect(result).toBe(true);
+
+      const sha = sha256('test').then(r => {
+        expect(r).toBe(true);
+      });
+
+      digestResult.oncomplete({ target: { result: true } });
+
+      return sha;
+    });
+    it('handles ie11 digest.result error scenario', () => {
+      (<any>global).msCrypto = {};
+
+      const digestResult = {
+        onerror: null
+      };
+
+      (<any>global).crypto = {
+        subtle: {
+          digest: jest.fn(() => {
+            return digestResult;
+          })
+        }
+      };
+
+      const sha = sha256('test').catch(e => {
+        expect(e).toBe('An error occurred');
+      });
+
+      digestResult.onerror({ error: 'An error occurred' });
+
+      return sha;
+    });
+
+    it('handles ie11 digest.result abort scenario', () => {
+      (<any>global).msCrypto = {};
+
+      const digestResult = {
+        onabort: null
+      };
+
+      (<any>global).crypto = {
+        subtle: {
+          digest: jest.fn(() => {
+            return digestResult;
+          })
+        }
+      };
+
+      const sha = sha256('test').catch(e => {
+        expect(e).toBe('The digest operation was aborted');
+      });
+
+      digestResult.onabort();
+
+      return sha;
     });
   });
   describe('bufferToBase64UrlEncoded ', () => {
