@@ -86,7 +86,8 @@ interface Auth0ClientOptions extends BaseLoginOptions {
   redirect_uri?: string;
   /**
    * The value in seconds used to account for clock skew in JWT expirations.
-   * Typically, this value is no more than a minute or two at maximum.
+   * Typically, this value is no more than a minute or two at maximum. 
+   * Defaults to 60s.
    */
   leeway?: number;
 }
