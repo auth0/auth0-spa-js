@@ -603,6 +603,19 @@ describe('Auth0', () => {
           'Invalid state'
         );
       });
+      it('clears the transaction data when an error occurs', async () => {
+        const { auth0, utils, transactionManager } = await localSetup();
+        const queryResult = { error: 'unauthorized', state: '897dfuksdfuo' };
+        utils.parseQueryResult.mockReturnValue(queryResult);
+
+        try {
+          await auth0.handleRedirectCallback();
+        } catch (e) {
+          expect(transactionManager.remove).toHaveBeenCalledWith(
+            queryResult.state
+          );
+        }
+      });
       it('uses `state` from parsed query to remove the transaction', async () => {
         const { auth0, utils, transactionManager } = await localSetup();
         const queryState = 'the-state';
@@ -753,6 +766,19 @@ describe('Auth0', () => {
         expect(errorThrown.error_description).toEqual(
           queryResult.error_description
         );
+      });
+      it('clears the transaction data when an error occurs', async () => {
+        const { auth0, utils, transactionManager } = await localSetup();
+        const queryResult = { error: 'unauthorized', state: '897dfuksdfuo' };
+        utils.parseQueryResult.mockReturnValue(queryResult);
+
+        try {
+          await auth0.handleRedirectCallback();
+        } catch (e) {
+          expect(transactionManager.remove).toHaveBeenCalledWith(
+            queryResult.state
+          );
+        }
       });
       it('throws error when there is no transaction', async () => {
         const { auth0, transactionManager } = await localSetup();
