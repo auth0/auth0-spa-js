@@ -164,8 +164,7 @@ export const verify = (options: JWTVerifyOptions) => {
   const nbfDate = new Date(0);
   const authTimeDate = new Date(0);
   authTimeDate.setUTCSeconds(
-    (parseInt(decoded.claims.auth_time) + parseInt(options.max_age)) / 1000 +
-      leeway
+    (parseInt(decoded.claims.auth_time) + options.max_age) / 1000 + leeway
   );
   expDate.setUTCSeconds(decoded.claims.exp + leeway);
   iatDate.setUTCSeconds(decoded.claims.iat - leeway);
