@@ -29,7 +29,7 @@
     "precommit": "pretty-quick --staged",
     "release": "node ./scripts/release",
     "publish:cdn": "ccu --trace",
-    "prepublish": "node ./scripts/prepublish"
+    "prepublishOnly": "node ./scripts/prepublish"
   },
   "devDependencies": {
     "@auth0/component-cdn-uploader": "auth0/component-cdn-uploader#v2.2.2",
