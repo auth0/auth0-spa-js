@@ -316,7 +316,20 @@ describe('Auth0', () => {
         max_age: undefined
       });
     });
-    it('calls `tokenVerifier.verify` with the `max_age` from constructor', async () => {
+    it('calls `tokenVerifier.verify` with undefined `max_age` when value set in constructor is an empty string', async () => {
+      const { auth0, tokenVerifier } = await setup({ max_age: '' });
+
+      await auth0.loginWithPopup({});
+      expect(tokenVerifier).toHaveBeenCalledWith({
+        id_token: TEST_ID_TOKEN,
+        nonce: TEST_RANDOM_STRING,
+        aud: 'test-client-id',
+        iss: 'https://test.auth0.com/',
+        leeway: undefined,
+        max_age: undefined
+      });
+    });
+    it('calls `tokenVerifier.verify` with the parsed `max_age` string from constructor', async () => {
       const { auth0, tokenVerifier } = await setup({ max_age: '10' });
 
       await auth0.loginWithPopup({});
@@ -326,7 +339,20 @@ describe('Auth0', () => {
         aud: 'test-client-id',
         iss: 'https://test.auth0.com/',
         leeway: undefined,
-        max_age: '10'
+        max_age: 10
+      });
+    });
+    it('calls `tokenVerifier.verify` with the parsed `max_age` number from constructor', async () => {
+      const { auth0, tokenVerifier } = await setup({ max_age: 10 });
+
+      await auth0.loginWithPopup({});
+      expect(tokenVerifier).toHaveBeenCalledWith({
+        id_token: TEST_ID_TOKEN,
+        nonce: TEST_RANDOM_STRING,
+        aud: 'test-client-id',
+        iss: 'https://test.auth0.com/',
+        leeway: undefined,
+        max_age: 10
       });
     });
     it('saves cache', async () => {
