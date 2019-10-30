@@ -21,7 +21,7 @@ interface BaseLoginOptions {
    * If the last time the user authenticated is greater than this value,
    * the user must be reauthenticated.
    */
-  max_age?: string;
+  max_age?: number;
   /**
    * The space-separated list of language tags, ordered by preference.
    * For example: `'fr-CA fr en'`.
