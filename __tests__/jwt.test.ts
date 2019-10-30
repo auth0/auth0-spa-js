@@ -285,9 +285,7 @@ describe('jwt', async () => {
   });
   it('validate auth_time is present when max_age is provided', async () => {
     const id_token = await createJWT({ ...DEFAULT_PAYLOAD });
-    expect(() =>
-      verify({ ...verifyOptions, id_token, max_age: '123' })
-    ).toThrow(
+    expect(() => verify({ ...verifyOptions, id_token, max_age: 123 })).toThrow(
       'Authentication Time (auth_time) claim must be a number present in the ID token when Max Age (max_age) is specified'
     );
   });
@@ -298,7 +296,7 @@ describe('jwt', async () => {
       ...DEFAULT_PAYLOAD,
       auth_time: yesterday.getTime()
     });
-    expect(() => verify({ ...verifyOptions, id_token, max_age: '1' })).toThrow(
+    expect(() => verify({ ...verifyOptions, id_token, max_age: 1 })).toThrow(
       'Authentication Time (auth_time) claim in the ID token indicates that too much time has passed since the last end-user authentication.'
     );
   });

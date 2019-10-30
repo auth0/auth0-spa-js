@@ -21,7 +21,7 @@ interface BaseLoginOptions {
    * If the last time the user authenticated is greater than this value,
    * the user must be reauthenticated.
    */
-  max_age?: string;
+  max_age?: string | number;
   /**
    * The space-separated list of language tags, ordered by preference.
    * For example: `'fr-CA fr en'`.
@@ -86,7 +86,7 @@ interface Auth0ClientOptions extends BaseLoginOptions {
   redirect_uri?: string;
   /**
    * The value in seconds used to account for clock skew in JWT expirations.
-   * Typically, this value is no more than a minute or two at maximum. 
+   * Typically, this value is no more than a minute or two at maximum.
    * Defaults to 60s.
    */
   leeway?: number;
@@ -241,7 +241,7 @@ interface JWTVerifyOptions {
   id_token: string;
   nonce?: string;
   leeway?: number;
-  max_age?: string;
+  max_age?: number;
 }
 
 /**
