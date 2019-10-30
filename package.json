@@ -5,7 +5,7 @@
   "license": "MIT",
   "version": "1.4.1",
   "main": "dist/lib/auth0-spa-js.cjs.js",
-  "types": "dist/typings/src/index.d.ts",
+  "types": "dist/typings/index.d.ts",
   "browser": "dist/auth0-spa-js.production.js",
   "module": "dist/auth0-spa-js.production.esm.js",
   "scripts": {
@@ -28,7 +28,8 @@
     "prepack": "npm run build && npm run test:es-check && npm run test",
     "precommit": "pretty-quick --staged",
     "release": "node ./scripts/release",
-    "publish:cdn": "ccu --trace"
+    "publish:cdn": "ccu --trace",
+    "prepublish": "node ./scripts/prepublish"
   },
   "devDependencies": {
     "@auth0/component-cdn-uploader": "auth0/component-cdn-uploader#v2.2.2",
