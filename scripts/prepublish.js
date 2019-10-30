@@ -2,15 +2,15 @@ const fs = require('fs');
 const { join } = require('path');
 const rimraf = require('rimraf');
 
-const files = fs.readdirSync('./dist/typings/src');
+const source = './dist/typings/src';
+const dest = './dist/typings';
+
+const files = fs.readdirSync(source);
 
 files.forEach(file => {
-  const src = join('./dist/typings/src', file);
+  const src = join(source, file);
 
-  fs.copyFileSync(
-    join('./dist/typings/src', file),
-    join('./dist/typings', file)
-  );
+  fs.copyFileSync(join(source, file), join(dest, file));
 });
 
-rimraf.sync('./dist/typings/src');
+rimraf.sync(source);
