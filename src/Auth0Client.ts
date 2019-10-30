@@ -218,6 +218,7 @@ export default class Auth0Client {
     const code_verifier = createRandomString();
     const code_challengeBuffer = await sha256(code_verifier);
     const code_challenge = bufferToBase64UrlEncoded(code_challengeBuffer);
+    const fragment = options.fragment ? `#${options.fragment}` : '';
     const params = this._getParams(
       authorizeOptions,
       stateIn,
@@ -233,7 +234,7 @@ export default class Auth0Client {
       scope: params.scope,
       audience: params.audience || 'default'
     });
-    window.location.assign(url);
+    window.location.assign(url + fragment);
   }
 
   /**
