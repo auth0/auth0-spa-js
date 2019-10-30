@@ -25,11 +25,10 @@
     "test:integration:tests": "wait-on http://localhost:3000/ && cypress run",
     "test:integration": "concurrently --raw --kill-others --success first npm:test:integration:server npm:test:integration:tests",
     "print-bundle-size": "node ./scripts/print-bundle-size",
-    "prepack": "npm run build && npm run test:es-check && npm run test",
+    "prepack": "npm run build && npm run test:es-check && npm run test && node ./scripts/prepack",
     "precommit": "pretty-quick --staged",
     "release": "node ./scripts/release",
-    "publish:cdn": "ccu --trace",
-    "prepublishOnly": "node ./scripts/prepublish"
+    "publish:cdn": "ccu --trace"
   },
   "devDependencies": {
     "@auth0/component-cdn-uploader": "auth0/component-cdn-uploader#v2.2.2",
