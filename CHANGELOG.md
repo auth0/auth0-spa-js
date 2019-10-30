@@ -1,14 +1,26 @@
-## [v.1.3.2](https://github.com/auth0/auth0-spa-js/tree/v1.3.2) (2019-10-17)
+## [v1.4.0](https://github.com/auth0/auth0-spa-js/tree/v1.4.0) (2019-10-30)
+
+**Added**
+Add 'lock' to prevent `getTokenSilently` to be invoked in parallel https://github.com/auth0/auth0-spa-js/pull/238
+Improved OIDC compliance https://github.com/auth0/auth0-spa-js/pull/248
+
+**Fixed**
+Fix for race condition when using `sha256` on IE11 https://github.com/auth0/auth0-spa-js/pull/252
+Fixed the codeowners file with the correct group https://github.com/auth0/auth0-spa-js/pull/253
+Document leeway default value https://github.com/auth0/auth0-spa-js/pull/256
+Clear transaction data on error https://github.com/auth0/auth0-spa-js/pull/254
+
+## [v1.3.2](https://github.com/auth0/auth0-spa-js/tree/v1.3.2) (2019-10-17)
 
 **Fixed**
 `parseQueryString` now removes hash fragment on query before parsing https://github.com/auth0/auth0-spa-js/pull/246
 
-## [v.1.3.1](https://github.com/auth0/auth0-spa-js/tree/v1.3.1) (2019-10-14)
+## [v1.3.1](https://github.com/auth0/auth0-spa-js/tree/v1.3.1) (2019-10-14)
 
 **Fixed**
 Fix IE msCrypto.subtle usage https://github.com/auth0/auth0-spa-js/pull/242
 
-## [v.1.3.0](https://github.com/auth0/auth0-spa-js/tree/v1.3.0) (2019-10-10)
+## [v1.3.0](https://github.com/auth0/auth0-spa-js/tree/v1.3.0) (2019-10-10)
 
 **Fixed**
 Add missing char for nonce/state generation https://github.com/auth0/auth0-spa-js/pull/230
