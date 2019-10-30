@@ -1,3 +1,8 @@
+## [v1.4.1](https://github.com/auth0/auth0-spa-js/tree/v1.4.0) (2019-10-30)
+
+**Fixed**
+Updated types path in package.json https://github.com/auth0/auth0-spa-js/pull/261
+
 ## [v1.4.0](https://github.com/auth0/auth0-spa-js/tree/v1.4.0) (2019-10-30)
 
 **Added**
