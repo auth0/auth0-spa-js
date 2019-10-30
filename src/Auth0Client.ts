@@ -89,8 +89,14 @@ export default class Auth0Client {
       id_token,
       nonce,
       leeway: this.options.leeway,
-      max_age: this.options.max_age
+      max_age: this._parseNumber(this.options.max_age)
     });
+  }
+  private _parseNumber(value: any): number {
+    if (typeof value !== 'string') {
+      return value;
+    }
+    return parseInt(value, 10) || undefined;
   }
 
   /**
