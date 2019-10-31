@@ -1,4 +1,10 @@
-## [v1.4.1](https://github.com/auth0/auth0-spa-js/tree/v1.4.0) (2019-10-30)
+## [v1.4.2](https://github.com/auth0/auth0-spa-js/tree/v1.4.2) (2019-10-30)
+
+**Fixed**
+Update typescript definition for max_age param - https://github.com/auth0/auth0-spa-js/pull/260
+Fix for typings files in packaged SDK - https://github.com/auth0/auth0-spa-js/pull/263
+
+## [v1.4.1](https://github.com/auth0/auth0-spa-js/tree/v1.4.1) (2019-10-30)
 
 **Fixed**
 Updated types path in package.json https://github.com/auth0/auth0-spa-js/pull/261
