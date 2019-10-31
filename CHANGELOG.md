@@ -1,3 +1,8 @@
+## [v1.5.0](https://github.com/auth0/auth0-spa-js/tree/v1.5.0) (2019-10-31)
+
+**Added**
+Add a new property 'fragment' to be appended to the authorize URL on redirect - https://github.com/auth0/auth0-spa-js/pull/249
+
 ## [v1.4.2](https://github.com/auth0/auth0-spa-js/tree/v1.4.2) (2019-10-30)
 
 **Fixed**
