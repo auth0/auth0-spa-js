@@ -118,6 +118,10 @@ interface RedirectLoginOptions extends BaseLoginOptions {
    * Used to store state before doing the redirect
    */
   appState?: any;
+  /**
+   * Used to add to the URL fragment before redirecting
+   */
+  fragment?: string;
 }
 
 interface RedirectLoginResult {

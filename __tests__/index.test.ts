@@ -527,6 +527,17 @@ describe('Auth0', () => {
         `https://test.auth0.com/authorize?query=params${TEST_TELEMETRY_QUERY_STRING}`
       );
     });
+    it('calls `window.location.assign` with the correct url and fragment if provided', async () => {
+      const { auth0 } = await setup();
+
+      await auth0.loginWithRedirect({
+        ...REDIRECT_OPTIONS,
+        fragment: '/reset'
+      });
+      expect(window.location.assign).toHaveBeenCalledWith(
+        `https://test.auth0.com/authorize?query=params${TEST_TELEMETRY_QUERY_STRING}#/reset`
+      );
+    });
     it('can be called with no arguments', async () => {
       const { auth0 } = await setup();
 
