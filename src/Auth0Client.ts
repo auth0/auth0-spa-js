@@ -305,7 +305,8 @@ export default class Auth0Client {
     options: GetTokenSilentlyOptions = {
       audience: this.options.audience,
       scope: this.options.scope || this.DEFAULT_SCOPE,
-      ignoreCache: false
+      ignoreCache: false,
+      tokenType: 'access_token'
     }
   ) {
     options.scope = getUniqueScopes(this.DEFAULT_SCOPE, options.scope);
@@ -318,7 +319,7 @@ export default class Auth0Client {
       });
       if (cache) {
         lock.releaseLock(GET_TOKEN_SILENTLY_LOCK_KEY);
-        return cache.access_token;
+        return cache[options.tokenType];
       }
     }
     const stateIn = encodeState(createRandomString());
@@ -364,7 +365,7 @@ export default class Auth0Client {
     this.cache.save(cacheEntry);
     ClientStorage.save('auth0.is.authenticated', true, { daysUntilExpire: 1 });
     lock.releaseLock(GET_TOKEN_SILENTLY_LOCK_KEY);
-    return authResult.access_token;
+    return authResult[options.tokenType];
   }
 
   /**
