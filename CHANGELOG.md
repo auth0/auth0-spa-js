@@ -1,3 +1,8 @@
+## [v1.5.1](https://github.com/auth0/auth0-spa-js/tree/v1.5.1) (2019-11-8)
+
+**Fixed**
+Released browser lock on getTokenSilently error - https://github.com/auth0/auth0-spa-js/pull/276
+
 ## [v1.5.0](https://github.com/auth0/auth0-spa-js/tree/v1.5.0) (2019-10-31)
 
 **Added**
