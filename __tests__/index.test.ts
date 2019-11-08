@@ -1068,6 +1068,24 @@ describe('Auth0', () => {
         scope: 'test:scope',
         ignoreCache: true
       };
+
+      it('releases the lock when there is an error', async () => {
+        const { auth0, lock, utils } = await setup();
+
+        utils.runIframe.mockReturnValue(Promise.reject(new Error('Failed')));
+
+        await expect(auth0.getTokenSilently()).rejects.toThrowError('Failed');
+
+        expect(lock.acquireLockMock).toHaveBeenCalledWith(
+          GET_TOKEN_SILENTLY_LOCK_KEY,
+          5000
+        );
+
+        expect(lock.releaseLockMock).toHaveBeenCalledWith(
+          GET_TOKEN_SILENTLY_LOCK_KEY
+        );
+      });
+
       it('encodes state with random string', async () => {
         const { auth0, utils } = await setup();
 
@@ -1171,18 +1189,25 @@ describe('Auth0', () => {
           'https://test.auth0.com'
         );
       });
+
       it('throws error if state from popup response is different from the provided state', async () => {
-        const { auth0, utils } = await setup();
+        const { auth0, utils, lock } = await setup();
 
         utils.runIframe.mockReturnValue(
           Promise.resolve({
             state: 'other-state'
           })
         );
+
         await expect(
           auth0.getTokenSilently(defaultOptionsIgnoreCacheTrue)
         ).rejects.toThrowError('Invalid state');
+
+        expect(lock.releaseLockMock).toHaveBeenCalledWith(
+          GET_TOKEN_SILENTLY_LOCK_KEY
+        );
       });
+
       it('calls oauth/token with correct params', async () => {
         const { auth0, utils } = await setup();
 
