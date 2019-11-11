@@ -320,7 +320,7 @@ export default class Auth0Client {
         });
 
         if (cache) {
-          lock.releaseLock(GET_TOKEN_SILENTLY_LOCK_KEY);
+          await lock.releaseLock(GET_TOKEN_SILENTLY_LOCK_KEY);
           return cache.access_token;
         }
       }
@@ -383,7 +383,7 @@ export default class Auth0Client {
     } catch (e) {
       throw e;
     } finally {
-      lock.releaseLock(GET_TOKEN_SILENTLY_LOCK_KEY);
+      await lock.releaseLock(GET_TOKEN_SILENTLY_LOCK_KEY);
     }
   }
 
