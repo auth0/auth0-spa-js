@@ -538,6 +538,29 @@ describe('Auth0', () => {
         `https://test.auth0.com/authorize?query=params${TEST_TELEMETRY_QUERY_STRING}#/reset`
       );
     });
+    it('returns the url', async () => {
+      const { auth0 } = await setup();
+
+      const url = await auth0.loginWithRedirect({
+        ...REDIRECT_OPTIONS
+      });
+
+      expect(url).toBe(
+        `https://test.auth0.com/authorize?query=params${TEST_TELEMETRY_QUERY_STRING}`
+      );
+    });
+    it('returns the url without changing window location', async () => {
+      const { auth0 } = await setup();
+
+      const url = await auth0.loginWithRedirect({
+        ...REDIRECT_OPTIONS,
+        noRedirect: true
+      });
+      expect(window.location.href).toBe('http://localhost/');
+      expect(url).toBe(
+        `https://test.auth0.com/authorize?query=params${TEST_TELEMETRY_QUERY_STRING}`
+      );
+    });
     it('can be called with no arguments', async () => {
       const { auth0 } = await setup();
 
@@ -748,6 +771,14 @@ describe('Auth0', () => {
       it('calls parseQueryResult correctly', async () => {
         const { auth0, utils } = await localSetup();
         await auth0.handleRedirectCallback();
+        expect(utils.parseQueryResult).toHaveBeenCalledWith(
+          `code=${TEST_CODE}&state=${TEST_ENCODED_STATE}`
+        );
+      });
+      it('calls parseQueryResult with a passed URL', async () => {
+        const { auth0, utils } = await localSetup();
+        const customUrl = `https://test.auth0.com?code=${TEST_CODE}&state=${TEST_ENCODED_STATE}`;
+        await auth0.handleRedirectCallback(customUrl);
         expect(utils.parseQueryResult).toHaveBeenCalledWith(
           `code=${TEST_CODE}&state=${TEST_ENCODED_STATE}`
         );

@@ -122,6 +122,10 @@ interface RedirectLoginOptions extends BaseLoginOptions {
    * Used to add to the URL fragment before redirecting
    */
   fragment?: string;
+  /**
+   * Used to cancel browser redirect behavior, in case only URL retrieval is needed
+   */
+  noRedirect?: boolean;
 }
 
 interface RedirectLoginResult {

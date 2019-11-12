@@ -211,7 +211,9 @@ export default class Auth0Client {
    *
    * @param options
    */
-  public async loginWithRedirect(options: RedirectLoginOptions = {}) {
+  public async loginWithRedirect(
+    options: RedirectLoginOptions = {}
+  ): Promise<string> {
     const { redirect_uri, appState, ...authorizeOptions } = options;
     const stateIn = encodeState(createRandomString());
     const nonceIn = createRandomString();
@@ -234,7 +236,8 @@ export default class Auth0Client {
       scope: params.scope,
       audience: params.audience || 'default'
     });
-    window.location.assign(url + fragment);
+    if (!options.noRedirect) window.location.assign(url + fragment);
+    return url;
   }
 
   /**
@@ -243,8 +246,10 @@ export default class Auth0Client {
    * responses from Auth0. If the response is successful, results
    * will be valid according to their expiration times.
    */
-  public async handleRedirectCallback(): Promise<RedirectLoginResult> {
-    const queryStringFragments = window.location.href.split('?').slice(1);
+  public async handleRedirectCallback(
+    url: string = window.location.href
+  ): Promise<RedirectLoginResult> {
+    const queryStringFragments = url.split('?').slice(1);
     if (queryStringFragments.length === 0) {
       throw new Error('There are no query params available for parsing.');
     }
