@@ -69,7 +69,7 @@
     "wait-on": "^3.3.0"
   },
   "dependencies": {
-    "browser-tabs-lock": "^1.1.9",
+    "browser-tabs-lock": "^1.2.1",
     "core-js": "^3.2.1",
     "es-cookie": "^1.2.0",
     "fast-text-encoding": "^1.0.0",
