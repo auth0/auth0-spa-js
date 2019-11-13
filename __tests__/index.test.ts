@@ -387,7 +387,7 @@ describe('Auth0', () => {
       expect(utils.openPopup).toHaveBeenCalled();
     });
   });
-  describe('loginWithRedirect()', () => {
+  describe('buildAuthorizeUrl()', () => {
     const REDIRECT_OPTIONS = {
       redirect_uri: 'https://redirect.uri',
       appState: TEST_APP_STATE,
@@ -396,13 +396,13 @@ describe('Auth0', () => {
     it('encodes state with random string', async () => {
       const { auth0, utils } = await setup();
 
-      await auth0.loginWithRedirect(REDIRECT_OPTIONS);
+      await auth0.buildAuthorizeUrl(REDIRECT_OPTIONS);
       expect(utils.encodeState).toHaveBeenCalledWith(TEST_RANDOM_STRING);
     });
     it('creates `code_challenge` by using `utils.sha256` with the result of `utils.createRandomString`', async () => {
       const { auth0, utils } = await setup();
 
-      await auth0.loginWithRedirect(REDIRECT_OPTIONS);
+      await auth0.buildAuthorizeUrl(REDIRECT_OPTIONS);
       expect(utils.sha256).toHaveBeenCalledWith(TEST_RANDOM_STRING);
       expect(utils.bufferToBase64UrlEncoded).toHaveBeenCalledWith(
         TEST_ARRAY_BUFFER
@@ -411,7 +411,7 @@ describe('Auth0', () => {
     it('creates correct query params', async () => {
       const { auth0, utils } = await setup();
 
-      await auth0.loginWithRedirect(REDIRECT_OPTIONS);
+      await auth0.buildAuthorizeUrl(REDIRECT_OPTIONS);
       expect(utils.createQueryParams).toHaveBeenCalledWith({
         client_id: TEST_CLIENT_ID,
         scope: TEST_SCOPES,
@@ -428,7 +428,7 @@ describe('Auth0', () => {
     it('creates correct query params without leeway', async () => {
       const { auth0, utils } = await setup({ leeway: 10 });
 
-      await auth0.loginWithRedirect(REDIRECT_OPTIONS);
+      await auth0.buildAuthorizeUrl(REDIRECT_OPTIONS);
       expect(utils.createQueryParams).toHaveBeenCalledWith({
         client_id: TEST_CLIENT_ID,
         scope: TEST_SCOPES,
@@ -449,7 +449,7 @@ describe('Auth0', () => {
         redirect_uri
       });
 
-      await auth0.loginWithRedirect(options);
+      await auth0.buildAuthorizeUrl(options);
 
       expect(utils.createQueryParams).toHaveBeenCalledWith({
         client_id: TEST_CLIENT_ID,
@@ -470,7 +470,7 @@ describe('Auth0', () => {
         redirect_uri
       });
 
-      await auth0.loginWithRedirect(REDIRECT_OPTIONS);
+      await auth0.buildAuthorizeUrl(REDIRECT_OPTIONS);
 
       expect(utils.createQueryParams).toHaveBeenCalledWith({
         client_id: TEST_CLIENT_ID,
@@ -488,7 +488,7 @@ describe('Auth0', () => {
     it('creates correct query params with custom params', async () => {
       const { auth0, utils } = await setup();
 
-      await auth0.loginWithRedirect({ ...REDIRECT_OPTIONS, audience: 'test' });
+      await auth0.buildAuthorizeUrl({ ...REDIRECT_OPTIONS, audience: 'test' });
       expect(utils.createQueryParams).toHaveBeenCalledWith({
         audience: 'test',
         client_id: TEST_CLIENT_ID,
@@ -503,11 +503,10 @@ describe('Auth0', () => {
         connection: 'test-connection'
       });
     });
-
     it('calls `transactionManager.create` with new transaction', async () => {
       const { auth0, transactionManager } = await setup();
 
-      await auth0.loginWithRedirect(REDIRECT_OPTIONS);
+      await auth0.buildAuthorizeUrl(REDIRECT_OPTIONS);
       expect(transactionManager.create).toHaveBeenCalledWith(
         TEST_ENCODED_STATE,
         {
@@ -519,6 +518,31 @@ describe('Auth0', () => {
         }
       );
     });
+    it('returns the url', async () => {
+      const { auth0 } = await setup();
+
+      const url = await auth0.buildAuthorizeUrl({
+        ...REDIRECT_OPTIONS
+      });
+      expect(url).toBe(
+        `https://test.auth0.com/authorize?query=params${TEST_TELEMETRY_QUERY_STRING}`
+      );
+    });
+    it('returns the url when no arguments are passed', async () => {
+      const { auth0 } = await setup();
+
+      const url = await auth0.buildAuthorizeUrl();
+      expect(url).toBe(
+        `https://test.auth0.com/authorize?query=params${TEST_TELEMETRY_QUERY_STRING}`
+      );
+    });
+  });
+  describe('loginWithRedirect()', () => {
+    const REDIRECT_OPTIONS = {
+      redirect_uri: 'https://redirect.uri',
+      appState: TEST_APP_STATE,
+      connection: 'test-connection'
+    };
     it('calls `window.location.assign` with the correct url', async () => {
       const { auth0 } = await setup();
 
@@ -536,29 +560,6 @@ describe('Auth0', () => {
       });
       expect(window.location.assign).toHaveBeenCalledWith(
         `https://test.auth0.com/authorize?query=params${TEST_TELEMETRY_QUERY_STRING}#/reset`
-      );
-    });
-    it('returns the url', async () => {
-      const { auth0 } = await setup();
-
-      const url = await auth0.loginWithRedirect({
-        ...REDIRECT_OPTIONS
-      });
-
-      expect(url).toBe(
-        `https://test.auth0.com/authorize?query=params${TEST_TELEMETRY_QUERY_STRING}`
-      );
-    });
-    it('returns the url without changing window location', async () => {
-      const { auth0 } = await setup();
-
-      const url = await auth0.loginWithRedirect({
-        ...REDIRECT_OPTIONS,
-        noRedirect: true
-      });
-      expect(window.location.href).toBe('http://localhost/');
-      expect(url).toBe(
-        `https://test.auth0.com/authorize?query=params${TEST_TELEMETRY_QUERY_STRING}`
       );
     });
     it('can be called with no arguments', async () => {
