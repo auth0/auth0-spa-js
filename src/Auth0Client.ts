@@ -101,6 +101,46 @@ export default class Auth0Client {
 
   /**
    * ```js
+   * await auth0.buildAuthorizeUrl(options);
+   * ```
+   *
+   * Builds an `/authorize` URL for loginWithRedirect using the parameters
+   * provided as arguments. Random and secure `state` and `nonce`
+   * parameters will be auto-generated.
+   *
+   * @param options
+   */
+
+  public async buildAuthorizeUrl(
+    options: RedirectLoginOptions = {}
+  ): Promise<string> {
+    const { redirect_uri, appState, ...authorizeOptions } = options;
+    const stateIn = encodeState(createRandomString());
+    const nonceIn = createRandomString();
+    const code_verifier = createRandomString();
+    const code_challengeBuffer = await sha256(code_verifier);
+    const code_challenge = bufferToBase64UrlEncoded(code_challengeBuffer);
+    const fragment = options.fragment ? `#${options.fragment}` : '';
+    const params = this._getParams(
+      authorizeOptions,
+      stateIn,
+      nonceIn,
+      code_challenge,
+      redirect_uri
+    );
+    const url = this._authorizeUrl(params);
+    this.transactionManager.create(stateIn, {
+      nonce: nonceIn,
+      code_verifier,
+      appState,
+      scope: params.scope,
+      audience: params.audience || 'default'
+    });
+    return url + fragment;
+  }
+
+  /**
+   * ```js
    * await auth0.loginWithPopup(options);
    * ```
    *
@@ -212,29 +252,8 @@ export default class Auth0Client {
    * @param options
    */
   public async loginWithRedirect(options: RedirectLoginOptions = {}) {
-    const { redirect_uri, appState, ...authorizeOptions } = options;
-    const stateIn = encodeState(createRandomString());
-    const nonceIn = createRandomString();
-    const code_verifier = createRandomString();
-    const code_challengeBuffer = await sha256(code_verifier);
-    const code_challenge = bufferToBase64UrlEncoded(code_challengeBuffer);
-    const fragment = options.fragment ? `#${options.fragment}` : '';
-    const params = this._getParams(
-      authorizeOptions,
-      stateIn,
-      nonceIn,
-      code_challenge,
-      redirect_uri
-    );
-    const url = this._authorizeUrl(params);
-    this.transactionManager.create(stateIn, {
-      nonce: nonceIn,
-      code_verifier,
-      appState,
-      scope: params.scope,
-      audience: params.audience || 'default'
-    });
-    window.location.assign(url + fragment);
+    const url = await this.buildAuthorizeUrl(options);
+    window.location.assign(url);
   }
 
   /**
@@ -243,8 +262,10 @@ export default class Auth0Client {
    * responses from Auth0. If the response is successful, results
    * will be valid according to their expiration times.
    */
-  public async handleRedirectCallback(): Promise<RedirectLoginResult> {
-    const queryStringFragments = window.location.href.split('?').slice(1);
+  public async handleRedirectCallback(
+    url: string = window.location.href
+  ): Promise<RedirectLoginResult> {
+    const queryStringFragments = url.split('?').slice(1);
     if (queryStringFragments.length === 0) {
       throw new Error('There are no query params available for parsing.');
     }
