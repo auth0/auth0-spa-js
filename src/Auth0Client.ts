@@ -331,61 +331,81 @@ export default class Auth0Client {
   ) {
     options.scope = getUniqueScopes(this.DEFAULT_SCOPE, options.scope);
 
-    await lock.acquireLock(GET_TOKEN_SILENTLY_LOCK_KEY, 5000);
-    if (!options.ignoreCache) {
-      const cache = this.cache.get({
-        scope: options.scope,
-        audience: options.audience || 'default'
-      });
-      if (cache) {
-        lock.releaseLock(GET_TOKEN_SILENTLY_LOCK_KEY);
-        return cache.access_token;
-      }
-    }
-    const stateIn = encodeState(createRandomString());
-    const nonceIn = createRandomString();
-    const code_verifier = createRandomString();
-    const code_challengeBuffer = await sha256(code_verifier);
-    const code_challenge = bufferToBase64UrlEncoded(code_challengeBuffer);
-    const authorizeOptions = {
-      audience: options.audience,
-      scope: options.scope
-    };
-    const params = this._getParams(
-      authorizeOptions,
-      stateIn,
-      nonceIn,
-      code_challenge,
-      this.options.redirect_uri || window.location.origin
-    );
-    const url = this._authorizeUrl({
-      ...params,
-      prompt: 'none',
-      response_mode: 'web_message'
-    });
+    try {
+      await lock.acquireLock(GET_TOKEN_SILENTLY_LOCK_KEY, 5000);
 
-    const codeResult = await runIframe(url, this.domainUrl);
-    if (stateIn !== codeResult.state) {
-      throw new Error('Invalid state');
+      if (!options.ignoreCache) {
+        const cache = this.cache.get({
+          scope: options.scope,
+          audience: options.audience || 'default'
+        });
+
+        if (cache) {
+          await lock.releaseLock(GET_TOKEN_SILENTLY_LOCK_KEY);
+          return cache.access_token;
+        }
+      }
+
+      const stateIn = encodeState(createRandomString());
+      const nonceIn = createRandomString();
+      const code_verifier = createRandomString();
+      const code_challengeBuffer = await sha256(code_verifier);
+      const code_challenge = bufferToBase64UrlEncoded(code_challengeBuffer);
+
+      const authorizeOptions = {
+        audience: options.audience,
+        scope: options.scope
+      };
+
+      const params = this._getParams(
+        authorizeOptions,
+        stateIn,
+        nonceIn,
+        code_challenge,
+        this.options.redirect_uri || window.location.origin
+      );
+
+      const url = this._authorizeUrl({
+        ...params,
+        prompt: 'none',
+        response_mode: 'web_message'
+      });
+
+      const codeResult = await runIframe(url, this.domainUrl);
+
+      if (stateIn !== codeResult.state) {
+        throw new Error('Invalid state');
+      }
+
+      const authResult = await oauthToken({
+        baseUrl: this.domainUrl,
+        audience: options.audience || this.options.audience,
+        client_id: this.options.client_id,
+        code_verifier,
+        code: codeResult.code
+      });
+
+      const decodedToken = this._verifyIdToken(authResult.id_token, nonceIn);
+
+      const cacheEntry = {
+        ...authResult,
+        decodedToken,
+        scope: params.scope,
+        audience: params.audience || 'default'
+      };
+
+      this.cache.save(cacheEntry);
+
+      ClientStorage.save('auth0.is.authenticated', true, {
+        daysUntilExpire: 1
+      });
+
+      return authResult.access_token;
+    } catch (e) {
+      throw e;
+    } finally {
+      await lock.releaseLock(GET_TOKEN_SILENTLY_LOCK_KEY);
     }
-    const authResult = await oauthToken({
-      baseUrl: this.domainUrl,
-      audience: options.audience || this.options.audience,
-      client_id: this.options.client_id,
-      code_verifier,
-      code: codeResult.code
-    });
-    const decodedToken = this._verifyIdToken(authResult.id_token, nonceIn);
-    const cacheEntry = {
-      ...authResult,
-      decodedToken,
-      scope: params.scope,
-      audience: params.audience || 'default'
-    };
-    this.cache.save(cacheEntry);
-    ClientStorage.save('auth0.is.authenticated', true, { daysUntilExpire: 1 });
-    lock.releaseLock(GET_TOKEN_SILENTLY_LOCK_KEY);
-    return authResult.access_token;
   }
 
   /**
