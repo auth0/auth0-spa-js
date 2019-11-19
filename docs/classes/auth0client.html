@@ -2382,6 +2382,9 @@ img {
 					<a href="auth0client.html#constructor" class="tsd-kind-icon">constructor</a>
 				</li>
 				<li class=" tsd-kind-method tsd-parent-kind-class">
+					<a href="auth0client.html#buildauthorizeurl" class="tsd-kind-icon">build<wbr>Authorize<wbr>Url</a>
+				</li>
+				<li class=" tsd-kind-method tsd-parent-kind-class">
 					<a href="auth0client.html#getidtokenclaims" class="tsd-kind-icon">get<wbr>IdToken<wbr>Claims</a>
 				</li>
 				<li class=" tsd-kind-method tsd-parent-kind-class">
@@ -2493,6 +2496,7 @@ img {
 					<section class="tsd-index-section ">
 						<h3>Methods</h3>
 						<ul class="tsd-index-list">
+							<li class="tsd-kind-method tsd-parent-kind-class"><a href="auth0client.html#buildauthorizeurl" class="tsd-kind-icon">build<wbr>Authorize<wbr>Url</a></li>
 							<li class="tsd-kind-method tsd-parent-kind-class"><a href="auth0client.html#getidtokenclaims" class="tsd-kind-icon">get<wbr>IdToken<wbr>Claims</a></li>
 							<li class="tsd-kind-method tsd-parent-kind-class"><a href="auth0client.html#gettokensilently" class="tsd-kind-icon">get<wbr>Token<wbr>Silently</a></li>
 							<li class="tsd-kind-method tsd-parent-kind-class"><a href="auth0client.html#gettokenwithpopup" class="tsd-kind-icon">get<wbr>Token<wbr>With<wbr>Popup</a></li>
@@ -2519,7 +2523,7 @@ img {
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/9020627/src/Auth0Client.ts#L36">src/Auth0Client.ts:36</a></li>
+								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/2ace866/src/Auth0Client.ts#L36">src/Auth0Client.ts:36</a></li>
 							</ul>
 						</aside>
 						<h4 class="tsd-parameters-title">Parameters</h4>
@@ -2536,6 +2540,39 @@ img {
 		<section class="tsd-panel-group tsd-member-group ">
 			<h2>Methods</h2>
 			<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
+				<a name="buildauthorizeurl" class="tsd-anchor"></a>
+				<h3>build<wbr>Authorize<wbr>Url</h3>
+				<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
+					<li class="tsd-signature tsd-kind-icon">build<wbr>Authorize<wbr>Url<span class="tsd-signature-symbol">(</span>options<span class="tsd-signature-symbol">?: </span><a href="../interfaces/redirectloginoptions.html" class="tsd-signature-type">RedirectLoginOptions</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">&gt;</span></li>
+				</ul>
+				<ul class="tsd-descriptions">
+					<li class="tsd-description">
+						<aside class="tsd-sources">
+							<ul>
+								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/2ace866/src/Auth0Client.ts#L114">src/Auth0Client.ts:114</a></li>
+							</ul>
+						</aside>
+						<div class="tsd-comment tsd-typography">
+							<div class="lead">
+								<pre><code class="language-js"><span class="hljs-keyword">await</span> auth0.buildAuthorizeUrl(options);</code></pre>
+							</div>
+							<p>Builds an <code>/authorize</code> URL for loginWithRedirect using the parameters
+								provided as arguments. Random and secure <code>state</code> and <code>nonce</code>
+							parameters will be auto-generated.</p>
+						</div>
+						<h4 class="tsd-parameters-title">Parameters</h4>
+						<ul class="tsd-parameters">
+							<li>
+								<h5><span class="tsd-flag ts-flagDefault value">Default value</span> options: <a href="../interfaces/redirectloginoptions.html" class="tsd-signature-type">RedirectLoginOptions</a><span class="tsd-signature-symbol"> =&nbsp;{}</span></h5>
+								<div class="tsd-comment tsd-typography">
+								</div>
+							</li>
+						</ul>
+						<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">&gt;</span></h4>
+					</li>
+				</ul>
+			</section>
+			<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
 				<a name="getidtokenclaims" class="tsd-anchor"></a>
 				<h3>get<wbr>IdToken<wbr>Claims</h3>
 				<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
@@ -2545,7 +2582,7 @@ img {
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/9020627/src/Auth0Client.ts#L192">src/Auth0Client.ts:192</a></li>
+								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/2ace866/src/Auth0Client.ts#L232">src/Auth0Client.ts:232</a></li>
 							</ul>
 						</aside>
 						<div class="tsd-comment tsd-typography">
@@ -2576,7 +2613,7 @@ img {
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/9020627/src/Auth0Client.ts#L304">src/Auth0Client.ts:304</a></li>
+								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/2ace866/src/Auth0Client.ts#L325">src/Auth0Client.ts:325</a></li>
 							</ul>
 						</aside>
 						<div class="tsd-comment tsd-typography">
@@ -2611,7 +2648,7 @@ img {
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/9020627/src/Auth0Client.ts#L381">src/Auth0Client.ts:381</a></li>
+								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/2ace866/src/Auth0Client.ts#L422">src/Auth0Client.ts:422</a></li>
 							</ul>
 						</aside>
 						<div class="tsd-comment tsd-typography">
@@ -2648,7 +2685,7 @@ img {
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/9020627/src/Auth0Client.ts#L172">src/Auth0Client.ts:172</a></li>
+								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/2ace866/src/Auth0Client.ts#L212">src/Auth0Client.ts:212</a></li>
 							</ul>
 						</aside>
 						<div class="tsd-comment tsd-typography">
@@ -2674,13 +2711,13 @@ img {
 				<a name="handleredirectcallback" class="tsd-anchor"></a>
 				<h3>handle<wbr>Redirect<wbr>Callback</h3>
 				<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
-					<li class="tsd-signature tsd-kind-icon">handle<wbr>Redirect<wbr>Callback<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><a href="../interfaces/redirectloginresult.html" class="tsd-signature-type">RedirectLoginResult</a><span class="tsd-signature-symbol">&gt;</span></li>
+					<li class="tsd-signature tsd-kind-icon">handle<wbr>Redirect<wbr>Callback<span class="tsd-signature-symbol">(</span>url<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><a href="../interfaces/redirectloginresult.html" class="tsd-signature-type">RedirectLoginResult</a><span class="tsd-signature-symbol">&gt;</span></li>
 				</ul>
 				<ul class="tsd-descriptions">
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/9020627/src/Auth0Client.ts#L246">src/Auth0Client.ts:246</a></li>
+								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/2ace866/src/Auth0Client.ts#L265">src/Auth0Client.ts:265</a></li>
 							</ul>
 						</aside>
 						<div class="tsd-comment tsd-typography">
@@ -2691,6 +2728,12 @@ img {
 								will be valid according to their expiration times.</p>
 							</div>
 						</div>
+						<h4 class="tsd-parameters-title">Parameters</h4>
+						<ul class="tsd-parameters">
+							<li>
+								<h5><span class="tsd-flag ts-flagDefault value">Default value</span> url: <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> =&nbsp;window.location.href</span></h5>
+							</li>
+						</ul>
 						<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><a href="../interfaces/redirectloginresult.html" class="tsd-signature-type">RedirectLoginResult</a><span class="tsd-signature-symbol">&gt;</span></h4>
 					</li>
 				</ul>
@@ -2705,7 +2748,7 @@ img {
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/9020627/src/Auth0Client.ts#L410">src/Auth0Client.ts:410</a></li>
+								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/2ace866/src/Auth0Client.ts#L451">src/Auth0Client.ts:451</a></li>
 							</ul>
 						</aside>
 						<div class="tsd-comment tsd-typography">
@@ -2729,7 +2772,7 @@ img {
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/9020627/src/Auth0Client.ts#L118">src/Auth0Client.ts:118</a></li>
+								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/2ace866/src/Auth0Client.ts#L158">src/Auth0Client.ts:158</a></li>
 							</ul>
 						</aside>
 						<div class="tsd-comment tsd-typography">
@@ -2769,7 +2812,7 @@ img {
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/9020627/src/Auth0Client.ts#L214">src/Auth0Client.ts:214</a></li>
+								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/2ace866/src/Auth0Client.ts#L254">src/Auth0Client.ts:254</a></li>
 							</ul>
 						</aside>
 						<div class="tsd-comment tsd-typography">
@@ -2802,7 +2845,7 @@ img {
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/9020627/src/Auth0Client.ts#L425">src/Auth0Client.ts:425</a></li>
+								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/2ace866/src/Auth0Client.ts#L466">src/Auth0Client.ts:466</a></li>
 							</ul>
 						</aside>
 						<div class="tsd-comment tsd-typography">
