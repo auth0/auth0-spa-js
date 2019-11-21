@@ -1,3 +1,12 @@
+## [v1.6.0](https://github.com/auth0/auth0-spa-js/tree/v1.6.0) (2019-11-19)
+
+**Added**
+Added buildAuthorizeUrl and url parameter to handleRedirectCallback - [austin43](https://github.com/austin43) - https://github.com/auth0/auth0-spa-js/pull/280
+
+**Fixed**
+Released browser lock on getTokenSilently error - https://github.com/auth0/auth0-spa-js/pull/276
+Updates browser-tabs-lock to fix issue of long acquired lock - [super-tokens](https://github.com/super-tokens) - https://github.com/auth0/auth0-spa-js/commit/3413e30bdb5955c818989cdc050079fa6efb6050
+
 ## [v1.5.0](https://github.com/auth0/auth0-spa-js/tree/v1.5.0) (2019-10-31)
 
 **Added**
