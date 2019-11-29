@@ -50,6 +50,8 @@ yarn add @auth0/auth0-spa-js
 Create an `Auth0Client` instance before rendering or initializing your application. You should only have one instance of the client.
 
 ```js
+import createAuth0Client from '@auth0/auth0-spa-js';
+
 //with async/await
 const auth0 = await createAuth0Client({
   domain: '<AUTH0_DOMAIN>',
