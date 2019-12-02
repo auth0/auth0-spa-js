@@ -45,39 +45,52 @@ const setup = async (options = {}) => {
     client_id: TEST_CLIENT_ID,
     ...options
   });
-  const getInstance = m => require(m).default.mock.instances[0];
+
+  // Return the specific instance you want from the module by supplying fn
+  // e.g. getInstance('../module', m => m.SomeInstance)
+  const getInstance = (m, fn) => fn(require(m)).mock.instances[0];
+
+  const getDefaultInstance = m => require(m).default.mock.instances[0];
+
   const storage = {
     get: require('../src/storage').get,
     save: require('../src/storage').save,
     remove: require('../src/storage').remove
   };
+
   const lock = require('browser-tabs-lock');
-  const cache = getInstance('../src/cache');
+  const cache = getInstance('../src/cache', m => m.InMemoryCache);
   const tokenVerifier = require('../src/jwt').verify;
-  const transactionManager = getInstance('../src/transaction-manager');
+  const transactionManager = getDefaultInstance('../src/transaction-manager');
   const utils = require('../src/utils');
+
   utils.createQueryParams.mockReturnValue(TEST_QUERY_PARAMS);
   utils.getUniqueScopes.mockReturnValue(TEST_SCOPES);
   utils.encodeState.mockReturnValue(TEST_ENCODED_STATE);
   utils.createRandomString.mockReturnValue(TEST_RANDOM_STRING);
   utils.sha256.mockReturnValue(Promise.resolve(TEST_ARRAY_BUFFER));
   utils.bufferToBase64UrlEncoded.mockReturnValue(TEST_BASE64_ENCODED_STRING);
+
   utils.parseQueryResult.mockReturnValue({
     state: TEST_ENCODED_STATE,
     code: TEST_CODE
   });
+
   utils.runPopup.mockReturnValue(
     Promise.resolve({ state: TEST_ENCODED_STATE, code: TEST_CODE })
   );
+
   utils.runIframe.mockReturnValue(
     Promise.resolve({ state: TEST_ENCODED_STATE, code: TEST_CODE })
   );
+
   utils.oauthToken.mockReturnValue(
     Promise.resolve({
       id_token: TEST_ID_TOKEN,
       access_token: TEST_ACCESS_TOKEN
     })
   );
+
   tokenVerifier.mockReturnValue({
     user: {
       sub: TEST_USER_ID
@@ -87,6 +100,7 @@ const setup = async (options = {}) => {
       aud: TEST_CLIENT_ID
     }
   });
+
   return {
     auth0,
     storage,

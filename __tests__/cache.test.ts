@@ -1,15 +1,19 @@
-import Cache from '../src/cache';
+import { InMemoryCache, ICache } from '../src/cache';
 
-describe('cache', () => {
-  let cache: Cache;
+describe('InMemoryCache', () => {
+  let cache: InMemoryCache;
+
   beforeEach(() => {
-    cache = new Cache();
+    cache = new InMemoryCache();
     jest.useFakeTimers();
   });
+
   afterEach(jest.useRealTimers);
+
   it('returns undefined when there is no data', () => {
     expect(cache.get({ audience: 'a', scope: 's' })).toBeUndefined();
   });
+
   it('builds key correctly', () => {
     cache.save({
       audience: 'the_audiene',

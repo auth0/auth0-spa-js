@@ -14,7 +14,7 @@ import {
   openPopup
 } from './utils';
 
-import Cache from './cache';
+import { InMemoryCache, ICache } from './cache';
 import TransactionManager from './transaction-manager';
 import { verify as verifyIdToken } from './jwt';
 import { AuthenticationError } from './errors';
@@ -29,20 +29,22 @@ const GET_TOKEN_SILENTLY_LOCK_KEY = 'auth0.lock.getTokenSilently';
  * Auth0 SDK for Single Page Applications using [Authorization Code Grant Flow with PKCE](https://auth0.com/docs/api-auth/tutorials/authorization-code-grant-pkce).
  */
 export default class Auth0Client {
-  private cache: Cache;
+  private cache: ICache;
   private transactionManager: TransactionManager;
   private domainUrl: string;
   private tokenIssuer: string;
   private readonly DEFAULT_SCOPE = 'openid profile email';
 
   constructor(private options: Auth0ClientOptions) {
-    this.cache = new Cache();
+    this.cache = new InMemoryCache();
     this.transactionManager = new TransactionManager();
     this.domainUrl = `https://${this.options.domain}`;
+
     this.tokenIssuer = this.options.issuer
       ? `https://${this.options.issuer}/`
       : `${this.domainUrl}/`;
   }
+
   private _url(path) {
     const telemetry = encodeURIComponent(
       btoa(
@@ -54,6 +56,7 @@ export default class Auth0Client {
     );
     return `${this.domainUrl}${path}&auth0Client=${telemetry}`;
   }
+
   private _getParams(
     authorizeOptions: BaseLoginOptions,
     state: string,
