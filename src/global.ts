@@ -90,6 +90,12 @@ interface Auth0ClientOptions extends BaseLoginOptions {
    * Defaults to 60s.
    */
   leeway?: number;
+
+  /**
+   * The strategy to use when storing cache data. Valid values are `memory` or `localstorage`.
+   * The default setting is `memory`.
+   */
+  cacheStrategy?: 'memory' | 'localstorage';
 }
 
 /**

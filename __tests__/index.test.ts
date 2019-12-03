@@ -122,6 +122,7 @@ describe('Auth0', () => {
       }
     };
   });
+
   describe('createAuth0Client()', () => {
     it('should create an Auth0 client', async () => {
       const auth0 = await createAuth0Client({
@@ -130,11 +131,23 @@ describe('Auth0', () => {
       });
       expect(auth0).toBeInstanceOf(Auth0Client);
     });
+
     it('should call `utils.validateCrypto`', async () => {
       const { utils } = await setup();
       expect(utils.validateCrypto).toHaveBeenCalled();
     });
+
+    it('should fail if an invalid cache strategy was given', async () => {
+      await expect(
+        createAuth0Client({
+          domain: TEST_DOMAIN,
+          client_id: TEST_CLIENT_ID,
+          cacheStrategy: 'dummy'
+        } as any)
+      ).rejects.toThrow(new Error('Invalid cache strategy "dummy"'));
+    });
   });
+
   describe('loginWithPopup()', () => {
     it('opens popup', async () => {
       const { auth0, utils } = await setup();
@@ -401,6 +414,7 @@ describe('Auth0', () => {
       expect(utils.openPopup).toHaveBeenCalled();
     });
   });
+
   describe('buildAuthorizeUrl()', () => {
     const REDIRECT_OPTIONS = {
       redirect_uri: 'https://redirect.uri',
@@ -551,6 +565,7 @@ describe('Auth0', () => {
       );
     });
   });
+
   describe('loginWithRedirect()', () => {
     const REDIRECT_OPTIONS = {
       redirect_uri: 'https://redirect.uri',
@@ -586,6 +601,7 @@ describe('Auth0', () => {
       );
     });
   });
+
   describe('handleRedirectCallback()', () => {
     it('throws when there is no query string', async () => {
       const { auth0 } = await setup();
@@ -945,6 +961,7 @@ describe('Auth0', () => {
       });
     });
   });
+
   describe('getUser()', () => {
     it('returns undefined if there is no cache', async () => {
       const { auth0, cache } = await setup();
@@ -993,6 +1010,7 @@ describe('Auth0', () => {
       );
     });
   });
+
   describe('getIdTokenClaims()', () => {
     it('returns undefined if there is no cache', async () => {
       const { auth0, cache } = await setup();
@@ -1044,6 +1062,7 @@ describe('Auth0', () => {
       );
     });
   });
+
   describe('isAuthenticated()', () => {
     it('returns true if there is an user', async () => {
       const { auth0 } = await setup();
@@ -1062,6 +1081,7 @@ describe('Auth0', () => {
       expect(result).toBe(false);
     });
   });
+
   describe('getTokenSilently()', () => {
     describe('when `options.ignoreCache` is false', async () => {
       it('calls `cache.get` with the correct options', async () => {
@@ -1319,6 +1339,7 @@ describe('Auth0', () => {
       });
     });
   });
+
   describe('getTokenWithPopup()', async () => {
     const localSetup = async () => {
       const result = await setup();
@@ -1383,6 +1404,7 @@ describe('Auth0', () => {
       expect(token).toBe(TEST_ACCESS_TOKEN);
     });
   });
+
   describe('logout()', () => {
     it('removes `auth0.is.authenticated` key from storage', async () => {
       const { auth0, storage } = await setup();
@@ -1443,18 +1465,23 @@ describe('Auth0', () => {
     });
   });
 });
+
 describe('default creation function', () => {
   it('does nothing if there is nothing storage', async () => {
     Auth0Client.prototype.getTokenSilently = jest.fn();
+
     const auth0 = await createAuth0Client({
       domain: TEST_DOMAIN,
       client_id: TEST_CLIENT_ID
     });
+
     expect(require('../src/storage').get).toHaveBeenCalledWith(
       'auth0.is.authenticated'
     );
+
     expect(auth0.getTokenSilently).not.toHaveBeenCalled();
   });
+
   it('calls getTokenSilently if there is a storage item with key `auth0.is.authenticated`', async () => {
     Auth0Client.prototype.getTokenSilently = jest.fn();
     require('../src/storage').get = () => true;

@@ -14,7 +14,7 @@ import {
   openPopup
 } from './utils';
 
-import { InMemoryCache, ICache } from './cache';
+import { InMemoryCache, ICache, LocalStorageCache } from './cache';
 import TransactionManager from './transaction-manager';
 import { verify as verifyIdToken } from './jwt';
 import { AuthenticationError } from './errors';
@@ -24,6 +24,11 @@ import version from './version';
 
 const lock = new Lock();
 const GET_TOKEN_SILENTLY_LOCK_KEY = 'auth0.lock.getTokenSilently';
+
+const cacheStrategies = {
+  memory: () => new InMemoryCache(),
+  localstorage: () => new LocalStorageCache()
+};
 
 /**
  * Auth0 SDK for Single Page Applications using [Authorization Code Grant Flow with PKCE](https://auth0.com/docs/api-auth/tutorials/authorization-code-grant-pkce).
@@ -35,8 +40,16 @@ export default class Auth0Client {
   private tokenIssuer: string;
   private readonly DEFAULT_SCOPE = 'openid profile email';
 
+  cacheStrategy: string;
+
   constructor(private options: Auth0ClientOptions) {
-    this.cache = new InMemoryCache();
+    this.cacheStrategy = options.cacheStrategy || 'memory';
+
+    if (!cacheStrategies[this.cacheStrategy]) {
+      throw new Error(`Invalid cache strategy "${this.cacheStrategy}"`);
+    }
+
+    this.cache = cacheStrategies[this.cacheStrategy]();
     this.transactionManager = new TransactionManager();
     this.domainUrl = `https://${this.options.domain}`;
 

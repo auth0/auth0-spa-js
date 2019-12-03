@@ -34,6 +34,16 @@ const getExpirationTimeoutInMilliseconds = (expiresIn: number, exp: number) => {
   return Math.min(expiresIn, expTime) * 1000 * 0.8;
 };
 
+export class LocalStorageCache implements ICache {
+  public save(entry: CacheEntry): void {
+    throw 'Not implemented';
+  }
+
+  public get(key: CacheKeyData): CacheEntry {
+    throw 'Not implemented';
+  }
+}
+
 export class InMemoryCache implements ICache {
   cache: CachedTokens = {};
 
