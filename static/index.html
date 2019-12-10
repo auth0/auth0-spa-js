@@ -32,7 +32,11 @@
 
         <div class="btn-group mb-3">
           <button class="btn btn-secondary" @click="getToken">
-            Get access token with no interaction
+            Get access token
+          </button>
+
+          <button class="btn btn-secondary" @click="getMultipleTokens">
+            Get multiple tokens (ignoring cache)
           </button>
 
           <button class="btn btn-secondary" @click="getTokenPopup">
@@ -54,10 +58,16 @@
           </button>
         </div>
 
+        <hr />
+
         <div class="card mb-3" v-if="profile">
           <div class="card-header">Profile</div>
           <div class="card-body">
-            {{ JSON.stringify(profile, null, 2) }}
+            <pre>
+              <code>
+                {{ JSON.stringify(profile, null, 2).trim() }}
+              </code>
+            </pre>
           </div>
         </div>
 
@@ -77,13 +87,52 @@
           <div class="card-body">{{ id_token }}</div>
         </div>
       </div>
+
+      <form action="/" @submit.prevent="saveForm">
+        <div class="form-group">
+          <label for="domain">Domain</label>
+          <input
+            type="text"
+            class="form-control"
+            id="domain"
+            v-model="domain"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="client_id">Client ID</label>
+          <input
+            type="text"
+            class="form-control"
+            id="client_id"
+            v-model="clientId"
+          />
+        </div>
+
+        <div class="custom-control custom-switch mb-5">
+          <input
+            type="checkbox"
+            class="custom-control-input"
+            id="storage-switch"
+            v-model="useLocalStorage"
+          />
+          <label for="storage-switch" class="custom-control-label"
+            >Use local storage</label
+          >
+        </div>
+
+        <button type="submit" class="btn btn-primary">Save</button>
+        <button @click="resetForm" class="btn btn-outline-primary">
+          Reset
+        </button>
+      </form>
     </div>
 
     <script src="/auth0-spa-js.development.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
     <script type="text/javascript">
-      var domain = 'brucke.auth0.com';
-      var clientId = 'wLSIP47wM39wKdDmOj6Zb5eSEw3JVhVp';
+      var defaultDomain = 'brucke.auth0.com';
+      var defaultClientId = 'wLSIP47wM39wKdDmOj6Zb5eSEw3JVhVp';
 
       var app = new Vue({
         el: '#app',
@@ -91,25 +140,41 @@
           return {
             auth0: null,
             loading: true,
-            cacheStragegy: 'memory',
+            useLocalStorage: true,
             profile: null,
             access_tokens: [],
             id_token: '',
-            isAuthenticated: false
+            isAuthenticated: false,
+            domain: defaultDomain,
+            clientId: defaultClientId
           };
         },
         created() {
           this.initializeClient();
+
+          var savedData = localStorage.getItem('spa-playground-data');
+
+          if (savedData) {
+            var data = JSON.parse(savedData);
+            this.domain = data.domain;
+            this.clientId = data.clientId;
+            this.useLocalStorage = data.useLocalStorage || false;
+          }
+        },
+        watch: {
+          useLocalStorage() {
+            this.initializeClient();
+          }
         },
         methods: {
           initializeClient() {
             var _self = this;
-            _self.loading = true;
+            // _self.loading = true;
 
             createAuth0Client({
-              domain: domain,
-              client_id: clientId,
-              cacheStragegy: _self.cacheStragegy
+              domain: _self.domain,
+              client_id: _self.clientId,
+              cacheStrategy: _self.useLocalStorage ? 'localstorage' : 'memory'
             }).then(function(auth0) {
               _self.auth0 = auth0;
               _self.loading = false;
@@ -118,6 +183,21 @@
                 _self.isAuthenticated = isAuthenticated;
               });
             });
+          },
+          saveForm() {
+            localStorage.setItem(
+              'spa-playground-data',
+              JSON.stringify({
+                domain: this.domain,
+                clientId: this.clientId,
+                useLocalStorage: this.useLocalStorage
+              })
+            );
+          },
+          resetForm() {
+            this.domain = defaultDomain;
+            this.clientId = defaultClientId;
+            this.saveForm();
           },
           showAuth0Info() {
             var _self = this;
@@ -165,6 +245,13 @@
             });
           },
           getToken() {
+            var _self = this;
+
+            _self.auth0.getTokenSilently().then(function(token) {
+              _self.access_tokens.push(token);
+            });
+          },
+          getMultipleTokens() {
             var _self = this;
 
             Promise.all([
