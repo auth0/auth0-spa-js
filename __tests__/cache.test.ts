@@ -1,4 +1,6 @@
-import { InMemoryCache, ICache } from '../src/cache';
+import { InMemoryCache, LocalStorageCache } from '../src/cache';
+
+const nowSeconds = () => Math.floor(Date.now() / 1000);
 
 describe('InMemoryCache', () => {
   let cache: InMemoryCache;
@@ -30,7 +32,7 @@ describe('InMemoryCache', () => {
   });
   it('builds key correctly', () => {
     cache.save({
-      audience: 'the_audiene',
+      audience: 'the_audience',
       scope: 'the_scope',
       id_token: 'idtoken',
       access_token: 'accesstoken',
@@ -40,7 +42,7 @@ describe('InMemoryCache', () => {
         user: { name: 'Test' }
       }
     });
-    expect(Object.keys(cache.cache)[0]).toBe('the_audiene::the_scope');
+    expect(Object.keys(cache.cache)[0]).toBe('the_audience::the_scope');
   });
   it('expires after `expires_in` when `expires_in` < `user.exp`', () => {
     cache.save({
@@ -83,5 +85,148 @@ describe('InMemoryCache', () => {
     expect(Object.keys(cache.cache).length).toBe(1);
     jest.advanceTimersByTime(1);
     expect(Object.keys(cache.cache).length).toBe(0);
+  });
+});
+
+describe('LocalStorageCache', () => {
+  let cache;
+  let realDateNow;
+  let defaultEntry;
+
+  beforeEach(() => {
+    cache = new LocalStorageCache();
+
+    jest.useFakeTimers();
+
+    Storage.prototype.setItem = jest.fn();
+    Storage.prototype.getItem = jest.fn();
+    Storage.prototype.removeItem = jest.fn();
+
+    const d = new Date();
+    realDateNow = Date.now.bind(global.Date);
+
+    const dateStub = jest.fn(() => d.getTime());
+    global.Date.now = dateStub;
+
+    defaultEntry = {
+      audience: '__TEST_AUDIENCE__',
+      scope: '__TEST_SCOPE__',
+      id_token: '__ID_TOKEN__',
+      access_token: '__ACCESS_TOKEN__',
+      expires_in: 86400,
+      decodedToken: {
+        claims: {
+          __raw: 'idtoken',
+          exp: nowSeconds() + 86500,
+          name: 'Test'
+        },
+        user: { name: 'Test' }
+      }
+    };
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
+
+    global.Date.now = realDateNow;
+  });
+
+  it('can set a value into the cache when expires_in < exp', () => {
+    cache.save(defaultEntry);
+
+    expect(Storage.prototype.setItem).toHaveBeenCalledWith(
+      '__TEST_AUDIENCE__::__TEST_SCOPE__',
+      JSON.stringify({
+        body: defaultEntry,
+        expiresAt: nowSeconds() + 86400 - 60
+      })
+    );
+  });
+
+  it('can set a value into the cache when exp < expires_in', () => {
+    const entry = Object.assign({}, defaultEntry, {
+      expires_in: 86500,
+      decodedToken: {
+        claims: {
+          exp: nowSeconds() + 100
+        }
+      }
+    });
+
+    cache.save(entry);
+
+    expect(Storage.prototype.setItem).toHaveBeenCalledWith(
+      '__TEST_AUDIENCE__::__TEST_SCOPE__',
+      JSON.stringify({
+        body: entry,
+        expiresAt: nowSeconds() + 40
+      })
+    );
+  });
+
+  it('can retrieve an item from the cache', () => {
+    (<any>Storage.prototype.getItem).mockReturnValue(
+      JSON.stringify({
+        body: defaultEntry,
+        expiresAt: nowSeconds() + 86400
+      })
+    );
+
+    expect(
+      cache.get({ audience: '__TEST_AUDIENCE__', scope: '__TEST_SCOPE__' })
+    ).toStrictEqual(defaultEntry);
+  });
+
+  it('returns undefined when there is no data', () => {
+    expect(cache.get({ scope: '', audience: '' })).toBeUndefined();
+  });
+
+  it('expires after cache `expiresAt` when expiresAt < current time', () => {
+    (<any>Storage.prototype.getItem).mockReturnValue(
+      JSON.stringify({
+        body: {
+          audience: '__TEST_AUDIENCE__',
+          scope: '__TEST_SCOPE__',
+          id_token: '__ID_TOKEN__',
+          access_token: '__ACCESS_TOKEN__',
+          expires_in: -10,
+          decodedToken: {
+            claims: {
+              __raw: 'idtoken',
+              exp: nowSeconds() - 5,
+              name: 'Test'
+            },
+            user: { name: 'Test' }
+          }
+        },
+        expiresAt: nowSeconds() - 10
+      })
+    );
+
+    expect(
+      cache.get({ audience: '__TEST_AUDIENCE__', scope: '__TEST_SCOPE__' })
+    ).toBeUndefined();
+
+    expect(Storage.prototype.removeItem).toHaveBeenCalledWith(
+      '__TEST_AUDIENCE__::__TEST_SCOPE__'
+    );
+  });
+
+  it('deletes the cache item once the timeout has been reached', () => {
+    const entry = Object.assign({}, defaultEntry, {
+      expires_in: 120,
+      decodedToken: {
+        claims: {
+          exp: nowSeconds() + 240
+        }
+      }
+    });
+
+    cache.save(entry);
+
+    // 96000, because the timeout time will be calculated at expires_in * 1000 * 0.8
+    jest.advanceTimersByTime(96000);
+
+    expect(Storage.prototype.removeItem).toHaveBeenCalled();
   });
 });

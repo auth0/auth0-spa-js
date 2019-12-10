@@ -36,11 +36,51 @@ const getExpirationTimeoutInMilliseconds = (expiresIn: number, exp: number) => {
 
 export class LocalStorageCache implements ICache {
   public save(entry: CacheEntry): void {
-    throw 'Not implemented';
+    const key = createKey(entry);
+
+    const expiresInTime = Math.floor(Date.now() / 1000) + entry.expires_in;
+
+    const expirySeconds =
+      Math.min(expiresInTime, entry.decodedToken.claims.exp) - 60; // take off a small leeway
+
+    const payload = {
+      body: entry,
+      expiresAt: expirySeconds
+    };
+
+    const timeout = getExpirationTimeoutInMilliseconds(
+      entry.expires_in,
+      entry.decodedToken.claims.exp
+    );
+
+    console.log(timeout);
+
+    setTimeout(() => {
+      window.localStorage.removeItem(key);
+    }, timeout);
+
+    window.localStorage.setItem(key, JSON.stringify(payload));
   }
 
   public get(key: CacheKeyData): CacheEntry {
-    throw 'Not implemented';
+    const cacheKey = createKey(key);
+    const json = window.localStorage.getItem(cacheKey);
+    let payload;
+
+    if (!json) return;
+
+    payload = JSON.parse(json);
+
+    if (!payload) return;
+
+    const nowSeconds = Math.floor(Date.now() / 1000);
+
+    if (payload.expiresAt < nowSeconds) {
+      window.localStorage.removeItem(cacheKey);
+      return;
+    }
+
+    return payload.body;
   }
 }
 
