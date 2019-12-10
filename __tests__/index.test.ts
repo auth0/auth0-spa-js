@@ -1411,6 +1411,7 @@ describe('Auth0', () => {
       auth0.logout();
       expect(storage.remove).toHaveBeenCalledWith('auth0.is.authenticated');
     });
+
     it('creates correct query params with empty options', async () => {
       const { auth0, utils } = await setup();
 
@@ -1419,12 +1420,14 @@ describe('Auth0', () => {
         client_id: TEST_CLIENT_ID
       });
     });
+
     it('creates correct query params with `options.client_id` is null', async () => {
       const { auth0, utils } = await setup();
 
       auth0.logout({ client_id: null });
       expect(utils.createQueryParams).toHaveBeenCalledWith({});
     });
+
     it('creates correct query params with `options.client_id` defined', async () => {
       const { auth0, utils } = await setup();
 
@@ -1433,6 +1436,7 @@ describe('Auth0', () => {
         client_id: 'another-client-id'
       });
     });
+
     it('creates correct query params with `options.returnTo` defined', async () => {
       const { auth0, utils } = await setup();
 
@@ -1441,12 +1445,14 @@ describe('Auth0', () => {
         returnTo: 'https://return.to'
       });
     });
+
     it('creates correct query params when `options.federated` is true', async () => {
       const { auth0, utils } = await setup();
 
       auth0.logout({ federated: true, client_id: null });
       expect(utils.createQueryParams).toHaveBeenCalledWith({});
     });
+
     it('calls `window.location.assign` with the correct url', async () => {
       const { auth0 } = await setup();
 
@@ -1455,6 +1461,7 @@ describe('Auth0', () => {
         `https://test.auth0.com/v2/logout?query=params${TEST_TELEMETRY_QUERY_STRING}`
       );
     });
+
     it('calls `window.location.assign` with the correct url when `options.federated` is true', async () => {
       const { auth0 } = await setup();
 
@@ -1462,6 +1469,14 @@ describe('Auth0', () => {
       expect(window.location.assign).toHaveBeenCalledWith(
         `https://test.auth0.com/v2/logout?query=params${TEST_TELEMETRY_QUERY_STRING}&federated`
       );
+    });
+
+    it('clears the cache', async () => {
+      const { auth0, cache } = await setup();
+
+      auth0.logout();
+
+      expect(cache.clear).toHaveBeenCalled();
     });
   });
 });

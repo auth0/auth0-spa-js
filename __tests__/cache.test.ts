@@ -97,10 +97,8 @@ describe('LocalStorageCache', () => {
     cache = new LocalStorageCache();
 
     jest.useFakeTimers();
-
-    Storage.prototype.setItem = jest.fn();
-    Storage.prototype.getItem = jest.fn();
-    Storage.prototype.removeItem = jest.fn();
+    localStorage.clear();
+    (<any>localStorage.removeItem).mockClear();
 
     const d = new Date();
     realDateNow = Date.now.bind(global.Date);
@@ -134,8 +132,8 @@ describe('LocalStorageCache', () => {
   it('can set a value into the cache when expires_in < exp', () => {
     cache.save(defaultEntry);
 
-    expect(Storage.prototype.setItem).toHaveBeenCalledWith(
-      '__TEST_AUDIENCE__::__TEST_SCOPE__',
+    expect(localStorage.setItem).toHaveBeenCalledWith(
+      '@@auth0@@__TEST_AUDIENCE__::__TEST_SCOPE__',
       JSON.stringify({
         body: defaultEntry,
         expiresAt: nowSeconds() + 86400 - 60
@@ -155,8 +153,8 @@ describe('LocalStorageCache', () => {
 
     cache.save(entry);
 
-    expect(Storage.prototype.setItem).toHaveBeenCalledWith(
-      '__TEST_AUDIENCE__::__TEST_SCOPE__',
+    expect(localStorage.setItem).toHaveBeenCalledWith(
+      '@@auth0@@__TEST_AUDIENCE__::__TEST_SCOPE__',
       JSON.stringify({
         body: entry,
         expiresAt: nowSeconds() + 40
@@ -165,7 +163,8 @@ describe('LocalStorageCache', () => {
   });
 
   it('can retrieve an item from the cache', () => {
-    (<any>Storage.prototype.getItem).mockReturnValue(
+    localStorage.setItem(
+      '@@auth0@@__TEST_AUDIENCE__::__TEST_SCOPE__',
       JSON.stringify({
         body: defaultEntry,
         expiresAt: nowSeconds() + 86400
@@ -182,7 +181,8 @@ describe('LocalStorageCache', () => {
   });
 
   it('expires after cache `expiresAt` when expiresAt < current time', () => {
-    (<any>Storage.prototype.getItem).mockReturnValue(
+    localStorage.setItem(
+      '@@auth0@@__TEST_AUDIENCE__::__TEST_SCOPE__',
       JSON.stringify({
         body: {
           audience: '__TEST_AUDIENCE__',
@@ -207,8 +207,8 @@ describe('LocalStorageCache', () => {
       cache.get({ audience: '__TEST_AUDIENCE__', scope: '__TEST_SCOPE__' })
     ).toBeUndefined();
 
-    expect(Storage.prototype.removeItem).toHaveBeenCalledWith(
-      '__TEST_AUDIENCE__::__TEST_SCOPE__'
+    expect(localStorage.removeItem).toHaveBeenCalledWith(
+      '@@auth0@@__TEST_AUDIENCE__::__TEST_SCOPE__'
     );
   });
 
@@ -227,6 +227,20 @@ describe('LocalStorageCache', () => {
     // 96000, because the timeout time will be calculated at expires_in * 1000 * 0.8
     jest.advanceTimersByTime(96000);
 
-    expect(Storage.prototype.removeItem).toHaveBeenCalled();
+    expect(localStorage.removeItem).toHaveBeenCalled();
+  });
+
+  it('removes the correct items when the cache is cleared', () => {
+    const keys = ['some-key', '@@auth0@@key-1', 'some-key-2', '@@auth0@@key-2'];
+
+    for (const key of keys) {
+      localStorage.setItem(key, "doesn't matter what the data is");
+    }
+
+    cache.clear();
+
+    expect(localStorage.removeItem).toHaveBeenCalledTimes(2);
+    expect(localStorage.removeItem).toHaveBeenCalledWith('@@auth0@@key-1');
+    expect(localStorage.removeItem).toHaveBeenCalledWith('@@auth0@@key-2');
   });
 });

@@ -24,6 +24,7 @@ interface CachedTokens {
 export interface ICache {
   save(entry: CacheEntry): void;
   get(key: CacheKeyData): CacheEntry;
+  clear(): void;
 }
 
 const createKey = (e: CacheKeyData) => `${e.audience}::${e.scope}`;
@@ -36,8 +37,7 @@ const getExpirationTimeoutInMilliseconds = (expiresIn: number, exp: number) => {
 
 export class LocalStorageCache implements ICache {
   public save(entry: CacheEntry): void {
-    const key = createKey(entry);
-
+    const cacheKey = `@@auth0@@${createKey(entry)}`;
     const expiresInTime = Math.floor(Date.now() / 1000) + entry.expires_in;
 
     const expirySeconds =
@@ -53,17 +53,15 @@ export class LocalStorageCache implements ICache {
       entry.decodedToken.claims.exp
     );
 
-    console.log(timeout);
-
     setTimeout(() => {
-      window.localStorage.removeItem(key);
+      window.localStorage.removeItem(cacheKey);
     }, timeout);
 
-    window.localStorage.setItem(key, JSON.stringify(payload));
+    window.localStorage.setItem(cacheKey, JSON.stringify(payload));
   }
 
   public get(key: CacheKeyData): CacheEntry {
-    const cacheKey = createKey(key);
+    const cacheKey = `@@auth0@@${createKey(key)}`;
     const json = window.localStorage.getItem(cacheKey);
     let payload;
 
@@ -81,6 +79,20 @@ export class LocalStorageCache implements ICache {
     }
 
     return payload.body;
+  }
+
+  public clear() {
+    const keysToDelete = [];
+
+    for (var i = 0; i < localStorage.length; i++) {
+      if (localStorage.key(i).startsWith('@@auth0@@')) {
+        keysToDelete.push(localStorage.key(i));
+      }
+    }
+
+    for (var key of keysToDelete) {
+      localStorage.removeItem(key);
+    }
   }
 }
 
@@ -103,5 +115,9 @@ export class InMemoryCache implements ICache {
 
   public get(key: CacheKeyData) {
     return this.cache[createKey(key)];
+  }
+
+  public clear() {
+    this.cache = {};
   }
 }
