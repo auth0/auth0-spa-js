@@ -45,7 +45,7 @@ export default class Auth0Client {
   constructor(private options: Auth0ClientOptions) {
     this.cacheStrategy = options.cacheStrategy || 'memory';
 
-    if (!cacheStrategies[this.cacheStrategy]) {
+    if (!(this.cacheStrategy in cacheStrategies)) {
       throw new Error(`Invalid cache strategy "${this.cacheStrategy}"`);
     }
 
