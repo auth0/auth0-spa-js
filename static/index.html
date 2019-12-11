@@ -13,6 +13,10 @@
 
   <body>
     <div id="app" class="container">
+      <div style="visibility: hidden">
+        <span id="loaded">loaded</span>
+      </div>
+
       <h1 class="mb-5">Auth0 SPA JS Playground</h1>
 
       <div v-if="!loading">
@@ -21,7 +25,11 @@
             Login popup
           </button>
 
-          <button class="btn btn-primary" @click="loginRedirect">
+          <button
+            class="btn btn-primary"
+            @click="loginRedirect"
+            id="login_redirect"
+          >
             Login redirect
           </button>
 
@@ -49,7 +57,7 @@
         </div>
 
         <div class="btn-group mb-3">
-          <button class="btn btn-outline-primary" @click="logout">
+          <button class="btn btn-outline-primary" @click="logout" id="logout">
             logout (default)
           </button>
 
@@ -140,7 +148,7 @@
           return {
             auth0: null,
             loading: true,
-            useLocalStorage: true,
+            useLocalStorage: false,
             profile: null,
             access_tokens: [],
             id_token: '',
@@ -169,7 +177,6 @@
         methods: {
           initializeClient() {
             var _self = this;
-            // _self.loading = true;
 
             createAuth0Client({
               domain: _self.domain,
@@ -177,6 +184,7 @@
               cacheStrategy: _self.useLocalStorage ? 'localstorage' : 'memory'
             }).then(function(auth0) {
               _self.auth0 = auth0;
+              window.auth0 = auth0; // Cypress integration tests support
               _self.loading = false;
 
               auth0.isAuthenticated().then(function(isAuthenticated) {
