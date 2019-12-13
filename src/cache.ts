@@ -82,16 +82,10 @@ export class LocalStorageCache implements ICache {
   }
 
   public clear() {
-    const keysToDelete = [];
-
-    for (var i = 0; i < localStorage.length; i++) {
+    for (var i = localStorage.length - 1; i >= 0; i--) {
       if (localStorage.key(i).startsWith('@@auth0@@')) {
-        keysToDelete.push(localStorage.key(i));
+        localStorage.removeItem(localStorage.key(i));
       }
-    }
-
-    for (var key of keysToDelete) {
-      localStorage.removeItem(key);
     }
   }
 }
