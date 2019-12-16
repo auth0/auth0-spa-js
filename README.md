@@ -166,7 +166,7 @@ document.getElementById('logout').addEventListener('click', () => {
 
 ### Caching strategy
 
-The SDK can be configured to cache data either in memory or in local storage. The default is in memory. This setting can be controlled using the `cacheStrategy` option when creating the Auth0 client.
+The SDK can be configured to cache ID tokens and access tokens either in memory or in local storage. The default is in memory. This setting can be controlled using the `cacheStrategy` option when creating the Auth0 client.
 
 To use the in-memory mode, no additional options need are required as this is the default setting. To configure the SDK to cache data using local storage, set `cacheStrategy` as follows:
 
