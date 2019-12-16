@@ -18,7 +18,7 @@ describe('InMemoryCache', () => {
 
   it('builds key correctly', () => {
     cache.save({
-      audience: 'the_audiene',
+      audience: 'the_audience',
       scope: 'the_scope',
       id_token: 'idtoken',
       access_token: 'accesstoken',
@@ -28,22 +28,11 @@ describe('InMemoryCache', () => {
         user: { name: 'Test' }
       }
     });
-    expect(Object.keys(cache.cache)[0]).toBe('the_audiene::the_scope');
+    expect(Object.keys(cache.cache)[0]).toBe(
+      '@@auth0spajs@@::the_audience::the_scope'
+    );
   });
-  it('builds key correctly', () => {
-    cache.save({
-      audience: 'the_audience',
-      scope: 'the_scope',
-      id_token: 'idtoken',
-      access_token: 'accesstoken',
-      expires_in: 1,
-      decodedToken: {
-        claims: { __raw: 'idtoken', name: 'Test' },
-        user: { name: 'Test' }
-      }
-    });
-    expect(Object.keys(cache.cache)[0]).toBe('the_audience::the_scope');
-  });
+
   it('expires after `expires_in` when `expires_in` < `user.exp`', () => {
     cache.save({
       audience: 'the_audiene',
@@ -133,7 +122,7 @@ describe('LocalStorageCache', () => {
     cache.save(defaultEntry);
 
     expect(localStorage.setItem).toHaveBeenCalledWith(
-      '@@auth0@@__TEST_AUDIENCE__::__TEST_SCOPE__',
+      '@@auth0spajs@@::__TEST_AUDIENCE__::__TEST_SCOPE__',
       JSON.stringify({
         body: defaultEntry,
         expiresAt: nowSeconds() + 86400 - 60
@@ -154,7 +143,7 @@ describe('LocalStorageCache', () => {
     cache.save(entry);
 
     expect(localStorage.setItem).toHaveBeenCalledWith(
-      '@@auth0@@__TEST_AUDIENCE__::__TEST_SCOPE__',
+      '@@auth0spajs@@::__TEST_AUDIENCE__::__TEST_SCOPE__',
       JSON.stringify({
         body: entry,
         expiresAt: nowSeconds() + 40
@@ -164,7 +153,7 @@ describe('LocalStorageCache', () => {
 
   it('can retrieve an item from the cache', () => {
     localStorage.setItem(
-      '@@auth0@@__TEST_AUDIENCE__::__TEST_SCOPE__',
+      '@@auth0spajs@@::__TEST_AUDIENCE__::__TEST_SCOPE__',
       JSON.stringify({
         body: defaultEntry,
         expiresAt: nowSeconds() + 86400
@@ -182,7 +171,7 @@ describe('LocalStorageCache', () => {
 
   it('expires after cache `expiresAt` when expiresAt < current time', () => {
     localStorage.setItem(
-      '@@auth0@@__TEST_AUDIENCE__::__TEST_SCOPE__',
+      '@@auth0spajs@@::__TEST_AUDIENCE__::__TEST_SCOPE__',
       JSON.stringify({
         body: {
           audience: '__TEST_AUDIENCE__',
@@ -208,7 +197,7 @@ describe('LocalStorageCache', () => {
     ).toBeUndefined();
 
     expect(localStorage.removeItem).toHaveBeenCalledWith(
-      '@@auth0@@__TEST_AUDIENCE__::__TEST_SCOPE__'
+      '@@auth0spajs@@::__TEST_AUDIENCE__::__TEST_SCOPE__'
     );
   });
 
@@ -231,7 +220,12 @@ describe('LocalStorageCache', () => {
   });
 
   it('removes the correct items when the cache is cleared', () => {
-    const keys = ['some-key', '@@auth0@@key-1', 'some-key-2', '@@auth0@@key-2'];
+    const keys = [
+      'some-key',
+      '@@auth0spajs@@::key-1',
+      'some-key-2',
+      '@@auth0spajs@@::key-2'
+    ];
 
     for (const key of keys) {
       localStorage.setItem(key, "doesn't matter what the data is");
@@ -240,7 +234,11 @@ describe('LocalStorageCache', () => {
     cache.clear();
 
     expect(localStorage.removeItem).toHaveBeenCalledTimes(2);
-    expect(localStorage.removeItem).toHaveBeenCalledWith('@@auth0@@key-1');
-    expect(localStorage.removeItem).toHaveBeenCalledWith('@@auth0@@key-2');
+    expect(localStorage.removeItem).toHaveBeenCalledWith(
+      '@@auth0spajs@@::key-1'
+    );
+    expect(localStorage.removeItem).toHaveBeenCalledWith(
+      '@@auth0spajs@@::key-2'
+    );
   });
 });

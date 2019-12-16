@@ -27,7 +27,9 @@ export interface ICache {
   clear(): void;
 }
 
-const createKey = (e: CacheKeyData) => `${e.audience}::${e.scope}`;
+const keyPrefix = '@@auth0spajs@@';
+const createKey = (e: CacheKeyData) =>
+  `${keyPrefix}::${e.audience}::${e.scope}`;
 
 const getExpirationTimeoutInMilliseconds = (expiresIn: number, exp: number) => {
   const expTime =
@@ -37,7 +39,7 @@ const getExpirationTimeoutInMilliseconds = (expiresIn: number, exp: number) => {
 
 export class LocalStorageCache implements ICache {
   public save(entry: CacheEntry): void {
-    const cacheKey = `@@auth0@@${createKey(entry)}`;
+    const cacheKey = createKey(entry);
     const expiresInTime = Math.floor(Date.now() / 1000) + entry.expires_in;
 
     const expirySeconds =
@@ -61,7 +63,7 @@ export class LocalStorageCache implements ICache {
   }
 
   public get(key: CacheKeyData): CacheEntry {
-    const cacheKey = `@@auth0@@${createKey(key)}`;
+    const cacheKey = createKey(key);
     const json = window.localStorage.getItem(cacheKey);
     let payload;
 
@@ -83,7 +85,7 @@ export class LocalStorageCache implements ICache {
 
   public clear() {
     for (var i = localStorage.length - 1; i >= 0; i--) {
-      if (localStorage.key(i).startsWith('@@auth0@@')) {
+      if (localStorage.key(i).startsWith(keyPrefix)) {
         localStorage.removeItem(localStorage.key(i));
       }
     }
