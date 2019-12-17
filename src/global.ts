@@ -92,10 +92,16 @@ interface Auth0ClientOptions extends BaseLoginOptions {
   leeway?: number;
 
   /**
-   * The strategy to use when storing cache data. Valid values are `memory` or `localstorage`.
+   * The location to use when storing cache data. Valid values are `memory` or `localstorage`.
    * The default setting is `memory`.
    */
   cacheLocation?: 'memory' | 'localstorage';
+
+  /**
+   * If true, refresh tokens are used to fetch new access tokens from the Auth0 server.
+   * The default setting is 'false'.
+   */
+  useRefreshTokens?: boolean;
 }
 
 /**

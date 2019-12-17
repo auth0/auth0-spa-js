@@ -416,18 +416,20 @@ describe('Auth0', () => {
     });
   });
 
-  describe('buildAuthorizeUrl()', () => {
+  describe('buildAuthorizeUrl', () => {
     const REDIRECT_OPTIONS = {
       redirect_uri: 'https://redirect.uri',
       appState: TEST_APP_STATE,
       connection: 'test-connection'
     };
+
     it('encodes state with random string', async () => {
       const { auth0, utils } = await setup();
 
       await auth0.buildAuthorizeUrl(REDIRECT_OPTIONS);
       expect(utils.encodeState).toHaveBeenCalledWith(TEST_RANDOM_STRING);
     });
+
     it('creates `code_challenge` by using `utils.sha256` with the result of `utils.createRandomString`', async () => {
       const { auth0, utils } = await setup();
 
@@ -437,10 +439,19 @@ describe('Auth0', () => {
         TEST_ARRAY_BUFFER
       );
     });
+
     it('creates correct query params', async () => {
       const { auth0, utils } = await setup();
 
       await auth0.buildAuthorizeUrl(REDIRECT_OPTIONS);
+
+      expect(utils.getUniqueScopes).toHaveBeenCalledWith(
+        'openid profile email',
+        undefined,
+        undefined,
+        undefined
+      );
+
       expect(utils.createQueryParams).toHaveBeenCalledWith({
         client_id: TEST_CLIENT_ID,
         scope: TEST_SCOPES,
@@ -454,6 +465,35 @@ describe('Auth0', () => {
         connection: 'test-connection'
       });
     });
+
+    it('creates correct query params when using refresh tokens', async () => {
+      const { auth0, utils } = await setup({
+        useRefreshTokens: true
+      });
+
+      await auth0.buildAuthorizeUrl(REDIRECT_OPTIONS);
+
+      expect(utils.getUniqueScopes).toHaveBeenCalledWith(
+        'openid profile email',
+        undefined,
+        undefined,
+        'offline_access'
+      );
+
+      expect(utils.createQueryParams).toHaveBeenCalledWith({
+        client_id: TEST_CLIENT_ID,
+        scope: `${TEST_SCOPES}`,
+        response_type: TEST_CODE,
+        response_mode: 'query',
+        state: TEST_ENCODED_STATE,
+        nonce: TEST_RANDOM_STRING,
+        redirect_uri: REDIRECT_OPTIONS.redirect_uri,
+        code_challenge: TEST_BASE64_ENCODED_STRING,
+        code_challenge_method: 'S256',
+        connection: 'test-connection'
+      });
+    });
+
     it('creates correct query params without leeway', async () => {
       const { auth0, utils } = await setup({ leeway: 10 });
 
@@ -471,6 +511,7 @@ describe('Auth0', () => {
         connection: 'test-connection'
       });
     });
+
     it('creates correct query params when providing a default redirect_uri', async () => {
       const redirect_uri = 'https://custom-redirect-uri/callback';
       const { redirect_uri: _ignore, ...options } = REDIRECT_OPTIONS;
@@ -493,6 +534,7 @@ describe('Auth0', () => {
         connection: 'test-connection'
       });
     });
+
     it('creates correct query params when overriding redirect_uri', async () => {
       const redirect_uri = 'https://custom-redirect-uri/callback';
       const { auth0, utils } = await setup({
@@ -514,10 +556,12 @@ describe('Auth0', () => {
         connection: 'test-connection'
       });
     });
+
     it('creates correct query params with custom params', async () => {
       const { auth0, utils } = await setup();
 
       await auth0.buildAuthorizeUrl({ ...REDIRECT_OPTIONS, audience: 'test' });
+
       expect(utils.createQueryParams).toHaveBeenCalledWith({
         audience: 'test',
         client_id: TEST_CLIENT_ID,
@@ -532,6 +576,7 @@ describe('Auth0', () => {
         connection: 'test-connection'
       });
     });
+
     it('calls `transactionManager.create` with new transaction', async () => {
       const { auth0, transactionManager } = await setup();
 
@@ -547,20 +592,24 @@ describe('Auth0', () => {
         }
       );
     });
+
     it('returns the url', async () => {
       const { auth0 } = await setup();
 
       const url = await auth0.buildAuthorizeUrl({
         ...REDIRECT_OPTIONS
       });
+
       expect(url).toBe(
         `https://test.auth0.com/authorize?query=params${TEST_TELEMETRY_QUERY_STRING}`
       );
     });
+
     it('returns the url when no arguments are passed', async () => {
       const { auth0 } = await setup();
 
       const url = await auth0.buildAuthorizeUrl();
+
       expect(url).toBe(
         `https://test.auth0.com/authorize?query=params${TEST_TELEMETRY_QUERY_STRING}`
       );
@@ -573,6 +622,7 @@ describe('Auth0', () => {
       appState: TEST_APP_STATE,
       connection: 'test-connection'
     };
+
     it('calls `window.location.assign` with the correct url', async () => {
       const { auth0 } = await setup();
 
@@ -581,6 +631,7 @@ describe('Auth0', () => {
         `https://test.auth0.com/authorize?query=params${TEST_TELEMETRY_QUERY_STRING}`
       );
     });
+
     it('calls `window.location.assign` with the correct url and fragment if provided', async () => {
       const { auth0 } = await setup();
 
@@ -592,6 +643,7 @@ describe('Auth0', () => {
         `https://test.auth0.com/authorize?query=params${TEST_TELEMETRY_QUERY_STRING}#/reset`
       );
     });
+
     it('can be called with no arguments', async () => {
       const { auth0 } = await setup();
 
@@ -1105,51 +1157,76 @@ describe('Auth0', () => {
 
   describe('getTokenSilently()', () => {
     describe('when `options.ignoreCache` is false', async () => {
-      it('calls `cache.get` with the correct options', async () => {
-        const { auth0, cache, utils } = await setup();
-        cache.get.mockReturnValue({ access_token: TEST_ACCESS_TOKEN });
+      describe('when refresh tokens are not used', () => {
+        it('calls `cache.get` with the correct options', async () => {
+          const { auth0, cache, utils } = await setup();
+          cache.get.mockReturnValue({ access_token: TEST_ACCESS_TOKEN });
 
-        await auth0.getTokenSilently();
+          await auth0.getTokenSilently();
 
-        expect(cache.get).toHaveBeenCalledWith({
-          audience: 'default',
-          scope: TEST_SCOPES,
-          client_id: TEST_CLIENT_ID
+          expect(cache.get).toHaveBeenCalledWith({
+            audience: 'default',
+            scope: TEST_SCOPES
+          });
+          expect(utils.getUniqueScopes).toHaveBeenCalledWith(
+            'openid profile email',
+            'openid profile email',
+            undefined
+          );
         });
 
-        expect(utils.getUniqueScopes).toHaveBeenCalledWith(
-          'openid profile email',
-          'openid profile email'
-        );
+        it('returns cached access_token when there is a cache', async () => {
+          const { auth0, cache } = await setup();
+          cache.get.mockReturnValue({ access_token: TEST_ACCESS_TOKEN });
+
+          const token = await auth0.getTokenSilently();
+
+          expect(token).toBe(TEST_ACCESS_TOKEN);
+        });
+
+        it('acquires and releases lock when there is a cache', async () => {
+          const { auth0, cache, lock } = await setup();
+          cache.get.mockReturnValue({ access_token: TEST_ACCESS_TOKEN });
+
+          await auth0.getTokenSilently();
+          expect(lock.acquireLockMock).toHaveBeenCalledWith(
+            GET_TOKEN_SILENTLY_LOCK_KEY,
+            5000
+          );
+          expect(lock.releaseLockMock).toHaveBeenCalledWith(
+            GET_TOKEN_SILENTLY_LOCK_KEY
+          );
+        });
+
+        it('continues method execution when there is no cache available', async () => {
+          const { auth0, utils } = await setup();
+
+          await auth0.getTokenSilently();
+          //we only evaluate that the code didn't bail out because of the cache
+          expect(utils.encodeState).toHaveBeenCalledWith(TEST_RANDOM_STRING);
+        });
       });
 
-      it('returns cached access_token when there is a cache', async () => {
-        const { auth0, cache } = await setup();
-        cache.get.mockReturnValue({ access_token: TEST_ACCESS_TOKEN });
+      describe('when refresh tokens are used', () => {
+        it('calls `cache.get` with the correct options', async () => {
+          const { auth0, cache, utils } = await setup({
+            useRefreshTokens: true
+          });
 
-        const token = await auth0.getTokenSilently();
+          cache.get.mockReturnValue({ access_token: TEST_ACCESS_TOKEN });
 
-        expect(token).toBe(TEST_ACCESS_TOKEN);
-      });
-      it('acquires and releases lock when there is a cache', async () => {
-        const { auth0, cache, lock } = await setup();
-        cache.get.mockReturnValue({ access_token: TEST_ACCESS_TOKEN });
+          await auth0.getTokenSilently();
 
-        await auth0.getTokenSilently();
-        expect(lock.acquireLockMock).toHaveBeenCalledWith(
-          GET_TOKEN_SILENTLY_LOCK_KEY,
-          5000
-        );
-        expect(lock.releaseLockMock).toHaveBeenCalledWith(
-          GET_TOKEN_SILENTLY_LOCK_KEY
-        );
-      });
-      it('continues method execution when there is no cache available', async () => {
-        const { auth0, utils } = await setup();
-
-        await auth0.getTokenSilently();
-        //we only evaluate that the code didn't bail out because of the cache
-        expect(utils.encodeState).toHaveBeenCalledWith(TEST_RANDOM_STRING);
+          expect(cache.get).toHaveBeenCalledWith({
+            audience: 'default',
+            scope: TEST_SCOPES
+          });
+          expect(utils.getUniqueScopes).toHaveBeenCalledWith(
+            'openid profile email',
+            'openid profile email',
+            'offline_access'
+          );
+        });
       });
     });
 
@@ -1258,6 +1335,7 @@ describe('Auth0', () => {
         const { auth0, utils } = await setup();
 
         await auth0.getTokenSilently(defaultOptionsIgnoreCacheTrue);
+
         expect(utils.createQueryParams).toHaveBeenCalledWith({
           audience: defaultOptionsIgnoreCacheTrue.audience,
           client_id: TEST_CLIENT_ID,
@@ -1271,10 +1349,11 @@ describe('Auth0', () => {
           code_challenge: TEST_BASE64_ENCODED_STRING,
           code_challenge_method: 'S256'
         });
+
         expect(utils.getUniqueScopes).toHaveBeenCalledWith(
           'openid profile email',
-          undefined,
-          defaultOptionsIgnoreCacheTrue.scope
+          defaultOptionsIgnoreCacheTrue.scope,
+          undefined
         );
       });
 
