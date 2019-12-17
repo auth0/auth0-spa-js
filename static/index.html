@@ -153,6 +153,10 @@
           >
         </div>
 
+        <button @click="saveForm" class="btn btn-primary">
+          Save
+        </button>
+
         <button @click="resetForm" class="btn btn-outline-primary">
           Reset
         </button>
@@ -254,6 +258,7 @@
             });
 
             _self.auth0.getIdTokenClaims().then(function(claims) {
+              console.log(claims);
               _self.id_token = claims.__raw;
             });
           },
