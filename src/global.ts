@@ -5,7 +5,7 @@ export interface BaseLoginOptions {
   /**
    * - `'page'`: displays the UI with a full page view
    * - `'popup'`: displays the UI with a popup window
-   * - `'touch'`: displays the UI in a way that leverages a touch export interface
+   * - `'touch'`: displays the UI in a way that leverages a touch interface
    * - `'wap'`: displays the UI with a "feature phone" type interface
    */
   display?: 'page' | 'popup' | 'touch' | 'wap';
