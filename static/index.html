@@ -129,7 +129,30 @@
           >
         </div>
 
-        <button type="submit" class="btn btn-primary">Save</button>
+        <div class="custom-control custom-switch mb-5">
+          <input
+            type="checkbox"
+            class="custom-control-input"
+            id="refresh_token_switch"
+            v-model="useRefreshTokens"
+          />
+          <label for="refresh_token_switch" class="custom-control-label"
+            >Use refresh tokens</label
+          >
+        </div>
+
+        <div class="custom-control custom-switch mb-5">
+          <input
+            type="checkbox"
+            class="custom-control-input"
+            id="cache-switch"
+            v-model="useCache"
+          />
+          <label for="cache-switch" class="custom-control-label"
+            >Use token cache when fetching new tokens</label
+          >
+        </div>
+
         <button @click="resetForm" class="btn btn-outline-primary">
           Reset
         </button>
@@ -145,33 +168,38 @@
       var app = new Vue({
         el: '#app',
         data() {
+          var savedData = localStorage.getItem('spa-playground-data');
+
+          var data = savedData ? JSON.parse(savedData) : {};
+
           return {
             auth0: null,
             loading: true,
-            useLocalStorage: false,
+            useLocalStorage: data.useLocalStorage || false,
+            useRefreshTokens: data.useRefreshTokens || false,
+            useCache: data.useCache === false ? false : true,
             profile: null,
             access_tokens: [],
             id_token: '',
             isAuthenticated: false,
-            domain: defaultDomain,
-            clientId: defaultClientId
+            domain: data.domain || defaultDomain,
+            clientId: data.clientId || defaultClientId
           };
         },
         created() {
           this.initializeClient();
-
-          var savedData = localStorage.getItem('spa-playground-data');
-
-          if (savedData) {
-            var data = JSON.parse(savedData);
-            this.domain = data.domain;
-            this.clientId = data.clientId;
-            this.useLocalStorage = data.useLocalStorage || false;
-          }
         },
         watch: {
           useLocalStorage() {
             this.initializeClient();
+            this.saveForm();
+          },
+          useRefreshTokens() {
+            this.initializeClient();
+            this.saveForm();
+          },
+          useCache() {
+            this.saveForm();
           }
         },
         methods: {
@@ -181,7 +209,8 @@
             createAuth0Client({
               domain: _self.domain,
               client_id: _self.clientId,
-              cacheLocation: _self.useLocalStorage ? 'localstorage' : 'memory'
+              cacheLocation: _self.useLocalStorage ? 'localstorage' : 'memory',
+              useRefreshTokens: _self.useRefreshTokens
             }).then(function(auth0) {
               _self.auth0 = auth0;
               window.auth0 = auth0; // Cypress integration tests support
@@ -198,13 +227,18 @@
               JSON.stringify({
                 domain: this.domain,
                 clientId: this.clientId,
-                useLocalStorage: this.useLocalStorage
+                useLocalStorage: this.useLocalStorage,
+                useRefreshTokens: this.useRefreshTokens,
+                useCache: this.useCache
               })
             );
           },
           resetForm() {
             this.domain = defaultDomain;
             this.clientId = defaultClientId;
+            this.useLocalStorage = false;
+            this.useRefreshTokens = false;
+            this.useCache = true;
             this.saveForm();
           },
           showAuth0Info() {
@@ -255,9 +289,11 @@
           getToken() {
             var _self = this;
 
-            _self.auth0.getTokenSilently().then(function(token) {
-              _self.access_tokens.push(token);
-            });
+            _self.auth0
+              .getTokenSilently({ ignoreCache: !_self.useCache })
+              .then(function(token) {
+                _self.access_tokens.push(token);
+              });
           },
           getMultipleTokens() {
             var _self = this;
@@ -287,7 +323,8 @@
             var differentAudienceOptions = {
               audience: 'https://brucke.auth0.com/api/v2/',
               scope: 'read:rules',
-              redirect_uri: 'http://localhost:3000/callback.html'
+              redirect_uri: 'http://localhost:3000/callback.html',
+              ignoreCache: !_self.useCache
             };
 
             _self.auth0
