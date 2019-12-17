@@ -1,6 +1,8 @@
 import { urlDecodeB64 } from './utils';
 import { JWTVerifyOptions, IdToken } from './global';
 
+const isNumber = n => typeof n === 'number';
+
 const idTokendecoded = [
   'iss',
   'aud',
@@ -35,10 +37,15 @@ const idTokendecoded = [
 ];
 
 export const decode = (token: string) => {
-  const [header, payload, signature] = token.split('.');
+  const parts = token.split('.');
+  const [header, payload, signature] = parts;
+
+  if (parts.length !== 3 || !header || !payload || !signature) {
+    throw new Error('ID token could not be decoded');
+  }
   const payloadJSON = JSON.parse(urlDecodeB64(payload));
   const claims: IdToken = { __raw: token };
-  const user = {};
+  const user: any = {};
   Object.keys(payloadJSON).forEach(k => {
     claims[k] = payloadJSON[k];
     if (!idTokendecoded.includes(k)) {
@@ -54,37 +61,135 @@ export const decode = (token: string) => {
 };
 
 export const verify = (options: JWTVerifyOptions) => {
+  if (!options.id_token) {
+    throw new Error('ID token is required but missing');
+  }
+
   const decoded = decode(options.id_token);
 
-  if (decoded.claims.iss !== options.iss) {
-    throw new Error('Invalid issuer');
-  }
-  if (decoded.claims.aud !== options.aud) {
-    throw new Error('Invalid audience');
-  }
-  if (decoded.header.alg !== 'RS256') {
-    throw new Error('Invalid algorithm');
-  }
-  if (decoded.claims.nonce !== options.nonce) {
-    throw new Error('Invalid nonce');
+  if (!decoded.claims.iss) {
+    throw new Error(
+      'Issuer (iss) claim must be a string present in the ID token'
+    );
   }
 
+  if (decoded.claims.iss !== options.iss) {
+    throw new Error(
+      `Issuer (iss) claim mismatch in the ID token; expected "${options.iss}", found "${decoded.claims.iss}"`
+    );
+  }
+
+  if (!decoded.user.sub) {
+    throw new Error(
+      'Subject (sub) claim must be a string present in the ID token'
+    );
+  }
+
+  if (decoded.header.alg !== 'RS256') {
+    throw new Error(
+      `Signature algorithm of "${decoded.header.alg}" is not supported. Expected the ID token to be signed with "RS256".`
+    );
+  }
+
+  if (
+    !decoded.claims.aud ||
+    !(
+      typeof decoded.claims.aud === 'string' ||
+      Array.isArray(decoded.claims.aud)
+    )
+  ) {
+    throw new Error(
+      'Audience (aud) claim must be a string or array of strings present in the ID token'
+    );
+  }
+  if (Array.isArray(decoded.claims.aud)) {
+    if (!decoded.claims.aud.includes(options.aud)) {
+      throw new Error(
+        `Audience (aud) claim mismatch in the ID token; expected "${
+          options.aud
+        }" but was not one of "${decoded.claims.aud.join(', ')}"`
+      );
+    }
+    if (decoded.claims.aud.length > 1) {
+      if (!decoded.claims.azp) {
+        throw new Error(
+          'Authorized Party (azp) claim must be a string present in the ID token when Audience (aud) claim has multiple values'
+        );
+      }
+      if (decoded.claims.azp !== options.aud) {
+        throw new Error(
+          `Authorized Party (azp) claim mismatch in the ID token; expected "${options.aud}", found "${decoded.claims.azp}"`
+        );
+      }
+    }
+  } else if (decoded.claims.aud !== options.aud) {
+    throw new Error(
+      `Audience (aud) claim mismatch in the ID token; expected "${options.aud}" but found "${decoded.claims.aud}"`
+    );
+  }
+  if (options.nonce) {
+    if (!decoded.claims.nonce) {
+      throw new Error(
+        'Nonce (nonce) claim must be a string present in the ID token'
+      );
+    }
+    if (decoded.claims.nonce !== options.nonce) {
+      throw new Error(
+        `Nonce (nonce) claim mismatch in the ID token; expected "${options.nonce}", found "${decoded.claims.nonce}"`
+      );
+    }
+  }
+
+  if (options.max_age && !isNumber(decoded.claims.auth_time)) {
+    throw new Error(
+      'Authentication Time (auth_time) claim must be a number present in the ID token when Max Age (max_age) is specified'
+    );
+  }
+
+  /* istanbul ignore next */
+  if (!isNumber(decoded.claims.exp)) {
+    throw new Error(
+      'Expiration Time (exp) claim must be a number present in the ID token'
+    );
+  }
+  if (!isNumber(decoded.claims.iat)) {
+    throw new Error(
+      'Issued At (iat) claim must be a number present in the ID token'
+    );
+  }
+
+  const leeway = options.leeway || 60;
   const now = new Date();
   const expDate = new Date(0);
   const iatDate = new Date(0);
   const nbfDate = new Date(0);
-  const leeway = options.leeway || 60;
+  const authTimeDate = new Date(0);
+  authTimeDate.setUTCSeconds(
+    (parseInt(decoded.claims.auth_time) + options.max_age) / 1000 + leeway
+  );
   expDate.setUTCSeconds(decoded.claims.exp + leeway);
   iatDate.setUTCSeconds(decoded.claims.iat - leeway);
   nbfDate.setUTCSeconds(decoded.claims.nbf - leeway);
+
   if (now > expDate) {
-    throw new Error('id_token expired');
+    throw new Error(
+      `Expiration Time (exp) claim error in the ID token; current time (${now}) is after expiration time (${expDate})`
+    );
   }
   if (now < iatDate) {
-    throw new Error('id_token was issued in the future (invalid iat)');
+    throw new Error(
+      `Issued At (iat) claim error in the ID token; current time (${now}) is before issued at time (${iatDate})`
+    );
   }
-  if (typeof decoded.claims.nbf !== 'undefined' && now < nbfDate) {
-    throw new Error('token is not yet valid (invalid notBefore)');
+  if (isNumber(decoded.claims.nbf) && now < nbfDate) {
+    throw new Error(
+      `Not Before time (nbf) claim in the ID token indicates that this token can't be used just yet. Currrent time (${now}) is before ${nbfDate}`
+    );
+  }
+  if (isNumber(decoded.claims.auth_time) && now > authTimeDate) {
+    throw new Error(
+      `Authentication Time (auth_time) claim in the ID token indicates that too much time has passed since the last end-user authentication. Currrent time (${now}) is after last auth at ${authTimeDate}`
+    );
   }
   return decoded;
 };

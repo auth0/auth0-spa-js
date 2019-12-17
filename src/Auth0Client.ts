@@ -1,3 +1,5 @@
+import Lock from 'browser-tabs-lock';
+
 import {
   getUniqueScopes,
   createQueryParams,
@@ -33,6 +35,9 @@ import {
   GetTokenWithPopupOptions,
   LogoutOptions
 } from './global';
+
+const lock = new Lock();
+const GET_TOKEN_SILENTLY_LOCK_KEY = 'auth0.lock.getTokenSilently';
 
 /**
  * Auth0 SDK for Single Page Applications using [Authorization Code Grant Flow with PKCE](https://auth0.com/docs/api-auth/tutorials/authorization-code-grant-pkce).
@@ -97,8 +102,55 @@ export default class Auth0Client {
       aud: this.options.client_id,
       id_token,
       nonce,
-      leeway: this.options.leeway
+      leeway: this.options.leeway,
+      max_age: this._parseNumber(this.options.max_age)
     });
+  }
+  private _parseNumber(value: any): number {
+    if (typeof value !== 'string') {
+      return value;
+    }
+    return parseInt(value, 10) || undefined;
+  }
+
+  /**
+   * ```js
+   * await auth0.buildAuthorizeUrl(options);
+   * ```
+   *
+   * Builds an `/authorize` URL for loginWithRedirect using the parameters
+   * provided as arguments. Random and secure `state` and `nonce`
+   * parameters will be auto-generated.
+   *
+   * @param options
+   */
+
+  public async buildAuthorizeUrl(
+    options: RedirectLoginOptions = {}
+  ): Promise<string> {
+    const { redirect_uri, appState, ...authorizeOptions } = options;
+    const stateIn = encodeState(createRandomString());
+    const nonceIn = createRandomString();
+    const code_verifier = createRandomString();
+    const code_challengeBuffer = await sha256(code_verifier);
+    const code_challenge = bufferToBase64UrlEncoded(code_challengeBuffer);
+    const fragment = options.fragment ? `#${options.fragment}` : '';
+    const params = this._getParams(
+      authorizeOptions,
+      stateIn,
+      nonceIn,
+      code_challenge,
+      redirect_uri
+    );
+    const url = this._authorizeUrl(params);
+    this.transactionManager.create(stateIn, {
+      nonce: nonceIn,
+      code_verifier,
+      appState,
+      scope: params.scope,
+      audience: params.audience || 'default'
+    });
+    return url + fragment;
   }
 
   /**
@@ -214,27 +266,7 @@ export default class Auth0Client {
    * @param options
    */
   public async loginWithRedirect(options: RedirectLoginOptions = {}) {
-    const { redirect_uri, appState, ...authorizeOptions } = options;
-    const stateIn = encodeState(createRandomString());
-    const nonceIn = createRandomString();
-    const code_verifier = createRandomString();
-    const code_challengeBuffer = await sha256(code_verifier);
-    const code_challenge = bufferToBase64UrlEncoded(code_challengeBuffer);
-    const params = this._getParams(
-      authorizeOptions,
-      stateIn,
-      nonceIn,
-      code_challenge,
-      redirect_uri
-    );
-    const url = this._authorizeUrl(params);
-    this.transactionManager.create(stateIn, {
-      nonce: nonceIn,
-      code_verifier,
-      appState,
-      scope: params.scope,
-      audience: params.audience || 'default'
-    });
+    const url = await this.buildAuthorizeUrl(options);
     window.location.assign(url);
   }
 
@@ -244,8 +276,10 @@ export default class Auth0Client {
    * responses from Auth0. If the response is successful, results
    * will be valid according to their expiration times.
    */
-  public async handleRedirectCallback(): Promise<RedirectLoginResult> {
-    const queryStringFragments = window.location.href.split('?').slice(1);
+  public async handleRedirectCallback(
+    url: string = window.location.href
+  ): Promise<RedirectLoginResult> {
+    const queryStringFragments = url.split('?').slice(1);
     if (queryStringFragments.length === 0) {
       throw new Error('There are no query params available for parsing.');
     }
@@ -254,6 +288,7 @@ export default class Auth0Client {
     );
 
     if (error) {
+      this.transactionManager.remove(state);
       throw new AuthenticationError(error, error_description, state);
     }
 
@@ -309,58 +344,82 @@ export default class Auth0Client {
     }
   ) {
     options.scope = getUniqueScopes(this.DEFAULT_SCOPE, options.scope);
-    if (!options.ignoreCache) {
-      const cache = this.cache.get({
-        scope: options.scope,
-        audience: options.audience || 'default'
-      });
-      if (cache) {
-        return cache.access_token;
-      }
-    }
-    const stateIn = encodeState(createRandomString());
-    const nonceIn = createRandomString();
-    const code_verifier = createRandomString();
-    const code_challengeBuffer = await sha256(code_verifier);
-    const code_challenge = bufferToBase64UrlEncoded(code_challengeBuffer);
-    const authorizeOptions = {
-      audience: options.audience,
-      scope: options.scope
-    };
-    const params = this._getParams(
-      authorizeOptions,
-      stateIn,
-      nonceIn,
-      code_challenge,
-      this.options.redirect_uri || window.location.origin
-    );
-    const url = this._authorizeUrl({
-      ...params,
-      prompt: 'none',
-      response_mode: 'web_message'
-    });
 
-    const codeResult = await runIframe(url, this.domainUrl);
-    if (stateIn !== codeResult.state) {
-      throw new Error('Invalid state');
+    try {
+      await lock.acquireLock(GET_TOKEN_SILENTLY_LOCK_KEY, 5000);
+
+      if (!options.ignoreCache) {
+        const cache = this.cache.get({
+          scope: options.scope,
+          audience: options.audience || 'default'
+        });
+
+        if (cache) {
+          await lock.releaseLock(GET_TOKEN_SILENTLY_LOCK_KEY);
+          return cache.access_token;
+        }
+      }
+
+      const stateIn = encodeState(createRandomString());
+      const nonceIn = createRandomString();
+      const code_verifier = createRandomString();
+      const code_challengeBuffer = await sha256(code_verifier);
+      const code_challenge = bufferToBase64UrlEncoded(code_challengeBuffer);
+
+      const authorizeOptions = {
+        audience: options.audience,
+        scope: options.scope
+      };
+
+      const params = this._getParams(
+        authorizeOptions,
+        stateIn,
+        nonceIn,
+        code_challenge,
+        this.options.redirect_uri || window.location.origin
+      );
+
+      const url = this._authorizeUrl({
+        ...params,
+        prompt: 'none',
+        response_mode: 'web_message'
+      });
+
+      const codeResult = await runIframe(url, this.domainUrl);
+
+      if (stateIn !== codeResult.state) {
+        throw new Error('Invalid state');
+      }
+
+      const authResult = await oauthToken({
+        baseUrl: this.domainUrl,
+        audience: options.audience || this.options.audience,
+        client_id: this.options.client_id,
+        code_verifier,
+        code: codeResult.code
+      });
+
+      const decodedToken = this._verifyIdToken(authResult.id_token, nonceIn);
+
+      const cacheEntry = {
+        ...authResult,
+        decodedToken,
+        scope: params.scope,
+        audience: params.audience || 'default'
+      };
+
+      this.cache.save(cacheEntry);
+
+      ClientStorage.save('auth0.is.authenticated', true, {
+        daysUntilExpire: 1
+      });
+
+      return authResult.access_token;
+    } catch (e) {
+      throw e;
+    } finally {
+      await lock.releaseLock(GET_TOKEN_SILENTLY_LOCK_KEY);
     }
-    const authResult = await oauthToken({
-      baseUrl: this.domainUrl,
-      audience: options.audience || this.options.audience,
-      client_id: this.options.client_id,
-      code_verifier,
-      code: codeResult.code
-    });
-    const decodedToken = this._verifyIdToken(authResult.id_token, nonceIn);
-    const cacheEntry = {
-      ...authResult,
-      decodedToken,
-      scope: params.scope,
-      audience: params.audience || 'default'
-    };
-    this.cache.save(cacheEntry);
-    ClientStorage.save('auth0.is.authenticated', true, { daysUntilExpire: 1 });
-    return authResult.access_token;
   }
 
   /**

@@ -11,7 +11,10 @@ import {
   openPopup,
   runPopup,
   runIframe,
-  urlDecodeB64
+  urlDecodeB64,
+  getCrypto,
+  getCryptoSubtle,
+  validateCrypto
 } from '../src/utils';
 import { DEFAULT_AUTHORIZE_TIMEOUT_IN_SECONDS } from '../src/constants';
 
@@ -40,6 +43,14 @@ describe('utils', () => {
       ).toMatchObject({
         value: 'test',
         otherValue: 'another-test'
+      });
+    });
+    it('strips off hash values', () => {
+      expect(
+        parseQueryResult('code=some-code&state=some-state#__')
+      ).toMatchObject({
+        code: 'some-code',
+        state: 'some-state'
       });
     });
     it('converts `expires_in` to int', () => {
@@ -151,18 +162,75 @@ describe('utils', () => {
       const result = await sha256('test');
       expect(result).toBe(true);
     });
-    it('handles ie11 digest.result scenario', async () => {
+    it('handles ie11 digest.result scenario', () => {
+      (<any>global).msCrypto = {};
+
+      const digestResult = {
+        oncomplete: null
+      };
+
       (<any>global).crypto = {
         subtle: {
-          digest: jest.fn((alg, encoded) => {
-            expect(alg).toMatchObject({ name: 'SHA-256' });
-            expect(Array.from(encoded)).toMatchObject([116, 101, 115, 116]);
-            return { result: true };
+          digest: jest.fn(() => {
+            return digestResult;
           })
         }
       };
-      const result = await sha256('test');
-      expect(result).toBe(true);
+
+      const sha = sha256('test').then(r => {
+        expect(r).toBe(true);
+      });
+
+      digestResult.oncomplete({ target: { result: true } });
+
+      return sha;
+    });
+    it('handles ie11 digest.result error scenario', () => {
+      (<any>global).msCrypto = {};
+
+      const digestResult = {
+        onerror: null
+      };
+
+      (<any>global).crypto = {
+        subtle: {
+          digest: jest.fn(() => {
+            return digestResult;
+          })
+        }
+      };
+
+      const sha = sha256('test').catch(e => {
+        expect(e).toBe('An error occurred');
+      });
+
+      digestResult.onerror({ error: 'An error occurred' });
+
+      return sha;
+    });
+
+    it('handles ie11 digest.result abort scenario', () => {
+      (<any>global).msCrypto = {};
+
+      const digestResult = {
+        onabort: null
+      };
+
+      (<any>global).crypto = {
+        subtle: {
+          digest: jest.fn(() => {
+            return digestResult;
+          })
+        }
+      };
+
+      const sha = sha256('test').catch(e => {
+        expect(e).toBe('The digest operation was aborted');
+      });
+
+      digestResult.onabort();
+
+      return sha;
     });
   });
   describe('bufferToBase64UrlEncoded ', () => {
@@ -493,6 +561,62 @@ describe('utils', () => {
       await expect(runIframe(url, origin)).rejects.toMatchObject(TIMEOUT_ERROR);
       expect(window.document.body.removeChild).toHaveBeenCalledWith(iframe);
       jest.useRealTimers();
+    });
+  });
+  describe('getCrypto', () => {
+    it('should use msCrypto when window.crypto is unavailable', () => {
+      (<any>global).crypto = undefined;
+      (<any>global).msCrypto = 'ms';
+
+      const theCrypto = getCrypto();
+      expect(theCrypto).toBe('ms');
+    });
+    it('should use window.crypto when available', () => {
+      (<any>global).crypto = 'window';
+      (<any>global).msCrypto = 'ms';
+
+      const theCrypto = getCrypto();
+      expect(theCrypto).toBe('window');
+    });
+  });
+  describe('getCryptoSubtle', () => {
+    it('should use crypto.webkitSubtle when available', () => {
+      (<any>global).crypto = { subtle: undefined, webkitSubtle: 'webkit' };
+
+      const theSubtle = getCryptoSubtle();
+      expect(theSubtle).toBe('webkit');
+    });
+    it('should use crypto.subtle when available', () => {
+      (<any>global).crypto = { subtle: 'window', webkitSubtle: 'webkit' };
+
+      const theSubtle = getCryptoSubtle();
+      expect(theSubtle).toBe('window');
+    });
+    it('should use msCrypto.subtle when available', () => {
+      (<any>global).crypto = undefined;
+      (<any>global).msCrypto = { subtle: 'ms' };
+
+      const cryptoSubtle = getCryptoSubtle();
+      expect(cryptoSubtle).toBe('ms');
+    });
+  });
+  describe('validateCrypto', () => {
+    it('should throw error if crypto is unavailable', () => {
+      (<any>global).crypto = undefined;
+      (<any>global).msCrypto = undefined;
+
+      expect(validateCrypto).toThrowError(
+        'For security reasons, `window.crypto` is required to run `auth0-spa-js`.'
+      );
+    });
+    it('should throw error if crypto.subtle is undefined', () => {
+      (<any>global).crypto = {};
+
+      expect(validateCrypto).toThrowError(`
+      auth0-spa-js must run on a secure origin.
+      See https://github.com/auth0/auth0-spa-js/blob/master/FAQ.md#why-do-i-get-auth0-spa-js-must-run-on-a-secure-origin 
+      for more information.
+    `);
     });
   });
 });
