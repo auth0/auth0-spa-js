@@ -175,7 +175,7 @@ interface getIdTokenClaimsOptions {
   audience: string;
 }
 
-interface GetTokenSilentlyOptions extends GetUserOptions {
+interface GetTokenSilentlyOptions {
   /**
    * When `true`, ignores the cache and always sends a
    * request to Auth0.
@@ -191,6 +191,16 @@ interface GetTokenSilentlyOptions extends GetUserOptions {
    * Auth0 Application's settings.
    */
   redirect_uri?: string;
+
+  /**
+   * The scope that was used in the authentication request
+   */
+  scope?: string;
+
+  /**
+   * The audience that was used in the authentication request
+   */
+  audience?: string;
 
   /**
    * If you need to send custom parameters to the Authorization Server,
@@ -237,15 +247,26 @@ interface AuthenticationResult {
   error_description?: string;
 }
 
+interface TokenEndpointOptions {
+  baseUrl: string;
+  client_id: string;
+  grant_type: string;
+}
+
 /**
  * @ignore
  */
-interface OAuthTokenOptions {
-  baseUrl: string;
-  client_id: string;
+interface OAuthTokenOptions extends TokenEndpointOptions {
   audience?: string;
   code_verifier: string;
   code: string;
+}
+
+/**
+ * @ignore
+ */
+interface RefreshTokenOptions extends TokenEndpointOptions {
+  refresh_token: string;
 }
 
 /**

@@ -10,7 +10,7 @@ import * as ClientStorage from './storage';
 
 //this is necessary to export the type definitions used in this file
 import './global';
-import { validateCrypto } from './utils';
+import { validateCrypto, getUniqueScopes } from './utils';
 
 export default async function createAuth0Client(options: Auth0ClientOptions) {
   validateCrypto();
@@ -21,10 +21,15 @@ export default async function createAuth0Client(options: Auth0ClientOptions) {
     return auth0;
   }
 
+  const scope = getUniqueScopes(
+    options.scope,
+    options.useRefreshTokens ? 'offline_access' : undefined
+  );
+
   try {
     await auth0.getTokenSilently({
       audience: options.audience,
-      scope: options.scope,
+      scope,
       ignoreCache: true
     });
   } catch (error) {

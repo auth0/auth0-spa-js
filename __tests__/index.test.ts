@@ -23,6 +23,7 @@ const TEST_BASE64_ENCODED_STRING = 'base64-url-encoded-string';
 const TEST_CODE = 'code';
 const TEST_ID_TOKEN = 'id-token';
 const TEST_ACCESS_TOKEN = 'access-token';
+const TEST_REFRESH_TOKEN = 'refresh-token';
 const TEST_USER_ID = 'user-id';
 const TEST_USER_EMAIL = 'user@email.com';
 const TEST_APP_STATE = { bestPet: 'dog' };
@@ -287,7 +288,8 @@ describe('Auth0', () => {
         baseUrl: 'https://test.auth0.com',
         client_id: TEST_CLIENT_ID,
         code: TEST_CODE,
-        code_verifier: TEST_RANDOM_STRING
+        code_verifier: TEST_RANDOM_STRING,
+        grant_type: 'authorization_code'
       });
     });
     it('calls oauth/token with correct params', async () => {
@@ -299,7 +301,8 @@ describe('Auth0', () => {
         baseUrl: 'https://test.auth0.com',
         client_id: TEST_CLIENT_ID,
         code: TEST_CODE,
-        code_verifier: TEST_RANDOM_STRING
+        code_verifier: TEST_RANDOM_STRING,
+        grant_type: 'authorization_code'
       });
     });
     it('calls `tokenVerifier.verify` with the `id_token` from in the oauth/token response', async () => {
@@ -780,7 +783,8 @@ describe('Auth0', () => {
           baseUrl: 'https://test.auth0.com',
           client_id: TEST_CLIENT_ID,
           code: TEST_CODE,
-          code_verifier: TEST_RANDOM_STRING
+          code_verifier: TEST_RANDOM_STRING,
+          grant_type: 'authorization_code'
         });
       });
       it('calls `tokenVerifier.verify` with the `id_token` from in the oauth/token response', async () => {
@@ -961,7 +965,8 @@ describe('Auth0', () => {
           baseUrl: 'https://test.auth0.com',
           client_id: TEST_CLIENT_ID,
           code: TEST_CODE,
-          code_verifier: TEST_RANDOM_STRING
+          code_verifier: TEST_RANDOM_STRING,
+          grant_type: 'authorization_code'
         });
       });
       it('calls `tokenVerifier.verify` with the `id_token` from in the oauth/token response', async () => {
@@ -1202,6 +1207,7 @@ describe('Auth0', () => {
           const { auth0, utils } = await setup();
 
           await auth0.getTokenSilently();
+
           //we only evaluate that the code didn't bail out because of the cache
           expect(utils.encodeState).toHaveBeenCalledWith(TEST_RANDOM_STRING);
         });
@@ -1213,19 +1219,69 @@ describe('Auth0', () => {
             useRefreshTokens: true
           });
 
+          utils.getUniqueScopes.mockReturnValue(
+            `${TEST_SCOPES} offline_access`
+          );
           cache.get.mockReturnValue({ access_token: TEST_ACCESS_TOKEN });
 
           await auth0.getTokenSilently();
 
           expect(cache.get).toHaveBeenCalledWith({
             audience: 'default',
-            scope: TEST_SCOPES
+            scope: `${TEST_SCOPES} offline_access`
           });
+
           expect(utils.getUniqueScopes).toHaveBeenCalledWith(
             'openid profile email',
             'openid profile email',
             'offline_access'
           );
+        });
+
+        it('calls the token endpoint with the correct params', async () => {
+          const { auth0, cache, utils } = await setup({
+            useRefreshTokens: true
+          });
+
+          utils.getUniqueScopes.mockReturnValue(
+            `${TEST_SCOPES} offline_access`
+          );
+
+          utils.oauthToken.mockReturnValue(
+            Promise.resolve({
+              id_token: TEST_ID_TOKEN,
+              access_token: TEST_ACCESS_TOKEN,
+              refresh_token: TEST_REFRESH_TOKEN
+            })
+          );
+
+          cache.get.mockReturnValue({ refresh_token: TEST_REFRESH_TOKEN });
+
+          await auth0.getTokenSilently({ ignoreCache: true });
+
+          expect(cache.get).toHaveBeenCalledWith({
+            audience: 'default',
+            scope: `${TEST_SCOPES} offline_access`
+          });
+
+          expect(utils.oauthToken).toHaveBeenCalledWith({
+            baseUrl: 'https://test.auth0.com',
+            refresh_token: TEST_REFRESH_TOKEN,
+            client_id: TEST_CLIENT_ID,
+            grant_type: 'refresh_token'
+          });
+
+          expect(cache.save).toHaveBeenCalledWith({
+            refresh_token: TEST_REFRESH_TOKEN,
+            access_token: TEST_ACCESS_TOKEN,
+            id_token: TEST_ID_TOKEN,
+            scope: `${TEST_SCOPES} offline_access`,
+            audience: 'default',
+            decodedToken: {
+              claims: { sub: TEST_USER_ID, aud: TEST_CLIENT_ID },
+              user: { sub: TEST_USER_ID }
+            }
+          });
         });
       });
     });
@@ -1393,7 +1449,8 @@ describe('Auth0', () => {
           baseUrl: 'https://test.auth0.com',
           client_id: TEST_CLIENT_ID,
           code: TEST_CODE,
-          code_verifier: TEST_RANDOM_STRING
+          code_verifier: TEST_RANDOM_STRING,
+          grant_type: 'authorization_code'
         });
       });
       it('calls `tokenVerifier.verify` with the `id_token` from in the oauth/token response', async () => {
