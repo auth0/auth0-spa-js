@@ -1,11 +1,11 @@
 /**
  * @ignore
  */
-interface BaseLoginOptions {
+export interface BaseLoginOptions {
   /**
    * - `'page'`: displays the UI with a full page view
    * - `'popup'`: displays the UI with a popup window
-   * - `'touch'`: displays the UI in a way that leverages a touch interface
+   * - `'touch'`: displays the UI in a way that leverages a touch export interface
    * - `'wap'`: displays the UI with a "feature phone" type interface
    */
   display?: 'page' | 'popup' | 'touch' | 'wap';
@@ -61,7 +61,7 @@ interface BaseLoginOptions {
   [key: string]: any;
 }
 
-interface Auth0ClientOptions extends BaseLoginOptions {
+export interface Auth0ClientOptions extends BaseLoginOptions {
   /**
    * Your Auth0 account domain such as `'example.auth0.com'`,
    * `'example.eu.auth0.com'` or , `'example.mycompany.com'`
@@ -95,7 +95,7 @@ interface Auth0ClientOptions extends BaseLoginOptions {
 /**
  * @ignore
  */
-interface AuthorizeOptions extends BaseLoginOptions {
+export interface AuthorizeOptions extends BaseLoginOptions {
   response_type: string;
   response_mode: string;
   redirect_uri: string;
@@ -106,7 +106,7 @@ interface AuthorizeOptions extends BaseLoginOptions {
   code_challenge_method: string;
 }
 
-interface RedirectLoginOptions extends BaseLoginOptions {
+export interface RedirectLoginOptions extends BaseLoginOptions {
   /**
    * The URL where Auth0 will redirect your browser to with
    * the authentication result. It must be whitelisted in
@@ -124,16 +124,16 @@ interface RedirectLoginOptions extends BaseLoginOptions {
   fragment?: string;
 }
 
-interface RedirectLoginResult {
+export interface RedirectLoginResult {
   /**
    * State stored when the redirect request was made
    */
   appState?: any;
 }
 
-interface PopupLoginOptions extends BaseLoginOptions {}
+export interface PopupLoginOptions extends BaseLoginOptions {}
 
-interface PopupConfigOptions {
+export interface PopupConfigOptions {
   /**
    * The number of seconds to wait for a popup response before
    * throwing a timeout error. Defaults to 60s
@@ -141,7 +141,7 @@ interface PopupConfigOptions {
   timeoutInSeconds?: number;
 }
 
-interface GetUserOptions {
+export interface GetUserOptions {
   /**
    * The scope that was used in the authentication request
    */
@@ -152,7 +152,7 @@ interface GetUserOptions {
   audience: string;
 }
 
-interface getIdTokenClaimsOptions {
+export interface GetIdTokenClaimsOptions {
   /**
    * The scope that was used in the authentication request
    */
@@ -163,7 +163,7 @@ interface getIdTokenClaimsOptions {
   audience: string;
 }
 
-interface GetTokenSilentlyOptions extends GetUserOptions {
+export interface GetTokenSilentlyOptions extends GetUserOptions {
   /**
    * When `true`, ignores the cache and always sends a
    * request to Auth0.
@@ -186,9 +186,9 @@ interface GetTokenSilentlyOptions extends GetUserOptions {
    */
   [key: string]: any;
 }
-interface GetTokenWithPopupOptions extends PopupLoginOptions {}
+export interface GetTokenWithPopupOptions extends PopupLoginOptions {}
 
-interface LogoutOptions {
+export interface LogoutOptions {
   /**
    * The URL where Auth0 will redirect your browser to after the logout.
    *
@@ -218,7 +218,7 @@ interface LogoutOptions {
 /**
  * @ignore
  */
-interface AuthenticationResult {
+export interface AuthenticationResult {
   state: string;
   code?: string;
   error?: string;
@@ -228,7 +228,7 @@ interface AuthenticationResult {
 /**
  * @ignore
  */
-interface OAuthTokenOptions {
+export interface OAuthTokenOptions {
   baseUrl: string;
   client_id: string;
   audience?: string;
@@ -239,7 +239,7 @@ interface OAuthTokenOptions {
 /**
  * @ignore
  */
-interface JWTVerifyOptions {
+export interface JWTVerifyOptions {
   iss: string;
   aud: string;
   id_token: string;
@@ -251,7 +251,7 @@ interface JWTVerifyOptions {
 /**
  * @ignore
  */
-interface IdToken {
+export interface IdToken {
   __raw: string;
   name?: string;
   given_name?: string;

@@ -1,6 +1,11 @@
 import fetch from 'unfetch';
 
 import { DEFAULT_AUTHORIZE_TIMEOUT_IN_SECONDS } from './constants';
+import {
+  AuthenticationResult,
+  PopupConfigOptions,
+  OAuthTokenOptions
+} from './global';
 
 const dedupe = arr => arr.filter((x, i) => arr.indexOf(x) === i);
 

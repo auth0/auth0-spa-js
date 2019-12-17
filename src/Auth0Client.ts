@@ -21,6 +21,20 @@ import { AuthenticationError } from './errors';
 import * as ClientStorage from './storage';
 import { DEFAULT_POPUP_CONFIG_OPTIONS } from './constants';
 import version from './version';
+import {
+  Auth0ClientOptions,
+  BaseLoginOptions,
+  AuthorizeOptions,
+  RedirectLoginOptions,
+  PopupLoginOptions,
+  PopupConfigOptions,
+  GetUserOptions,
+  GetIdTokenClaimsOptions,
+  RedirectLoginResult,
+  GetTokenSilentlyOptions,
+  GetTokenWithPopupOptions,
+  LogoutOptions
+} from './global';
 
 const lock = new Lock();
 const GET_TOKEN_SILENTLY_LOCK_KEY = 'auth0.lock.getTokenSilently';
@@ -230,7 +244,7 @@ export default class Auth0Client {
    * @param options
    */
   public async getIdTokenClaims(
-    options: getIdTokenClaimsOptions = {
+    options: GetIdTokenClaimsOptions = {
       audience: this.options.audience || 'default',
       scope: this.options.scope || this.DEFAULT_SCOPE
     }
