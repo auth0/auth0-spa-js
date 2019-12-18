@@ -1,0 +1,14 @@
+#!/bin/bash
+
+# Delete existing bundle
+rm -rf bundle
+git add bundle
+
+npm run pack
+
+if [ $? -ne 0 ]
+then
+    exit 1
+fi
+
+git add bundle/*

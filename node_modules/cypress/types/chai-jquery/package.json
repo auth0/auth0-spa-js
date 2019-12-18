@@ -1,0 +1,55 @@
+{
+  "_from": "@types/chai-jquery@1.1.38",
+  "_id": "@types/chai-jquery@1.1.38",
+  "_inBundle": false,
+  "_integrity": "sha512-j/b++tOoQtkqXdkUWnojd+dM+YxkMiWJ193mToN/vv+rkBLv3MSSNwyDxFSXDwdi82Y+J2Js4fvdVkv/JiVeow==",
+  "_location": "/@types/chai-jquery",
+  "_phantomChildren": {},
+  "_requested": {
+    "type": "version",
+    "registry": true,
+    "raw": "@types/chai-jquery@1.1.38",
+    "name": "@types/chai-jquery",
+    "escapedName": "@types%2fchai-jquery",
+    "scope": "@types",
+    "rawSpec": "1.1.38",
+    "saveSpec": null,
+    "fetchSpec": "1.1.38"
+  },
+  "_requiredBy": [
+    "#DEV:/"
+  ],
+  "_resolved": "https://registry.npmjs.org/@types/chai-jquery/-/chai-jquery-1.1.38.tgz",
+  "_shasum": "bbab052200871e1b26b9a239caa63b2a2eaa00bc",
+  "_spec": "@types/chai-jquery@1.1.38",
+  "_where": "/root/cypress/cli",
+  "bugs": {
+    "url": "https://github.com/DefinitelyTyped/DefinitelyTyped/issues"
+  },
+  "bundleDependencies": false,
+  "contributors": [
+    {
+      "name": "Kazi Manzur Rashid",
+      "url": "https://github.com/kazimanzurrashid"
+    }
+  ],
+  "dependencies": {
+    "@types/chai": "*",
+    "@types/jquery": "*"
+  },
+  "deprecated": false,
+  "description": "TypeScript definitions for chai-jquery",
+  "homepage": "https://github.com/DefinitelyTyped/DefinitelyTyped#readme",
+  "license": "MIT",
+  "main": "",
+  "name": "@types/chai-jquery",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DefinitelyTyped/DefinitelyTyped.git"
+  },
+  "scripts": {},
+  "typeScriptVersion": "2.3",
+  "types": "index",
+  "typesPublisherContentHash": "e12e44b47bd00c6f4a82ba74968fe19edad29fdcd0ffc07a23da854653181f17",
+  "version": "1.1.38"
+}

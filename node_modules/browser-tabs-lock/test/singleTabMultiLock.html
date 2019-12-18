@@ -1,0 +1,56 @@
+<html>
+    <script>
+        let didAcquireLock = false;
+        let lockingKey = "testing-lock-4";
+        let localCounterValues = [];
+        let shouldStop = false;
+        let didStopValues = [];
+
+        function doTask(index) {
+            let lock = new supertokenslock.getNewInstance();
+            lock.acquireLock(lockingKey)
+                .then(success => {
+                    if (success) {
+                        if(shouldStop) {
+                            lock.releaseLock(lockingKey).then(() => {
+                                didStopValues[index] = true;
+                            });
+                            return;
+                        }
+
+                        let currentLocalCounter = localCounterValues[index];
+                        let counterInStorage = parseInt(window.localStorage.getItem("tabs-global-counter"));
+
+                        localCounterValues[index] = currentLocalCounter + 1;
+
+                        setTimeout(() => {
+                            window.localStorage.setItem("tabs-global-counter", `${counterInStorage + 1}`);
+
+                            lock.releaseLock(lockingKey)
+                            .then(() => {
+                                setTimeout(() => {
+                                    doTask(index);
+                                }, Math.ceil(Math.random() * 10));
+                            });
+                        }, 0)
+                    } else {
+                        doTask(index);
+                    }
+                });
+        }
+
+        function start() {
+            for(let i = 0; i < 15; i++) {
+                didStopValues[i] = false;
+                localCounterValues[i] = 0;
+                doTask(i);
+            }
+        }
+
+    </script>
+    <body>
+        <div>
+            HI
+        </div>
+    </body>
+</html>
