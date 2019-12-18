@@ -230,7 +230,7 @@ export default class Auth0Client {
    * @param options
    */
   public async getIdTokenClaims(
-    options: getIdTokenClaimsOptions = {
+    options: GetIdTokenClaimsOptions = {
       audience: this.options.audience || 'default',
       scope: this.options.scope || this.DEFAULT_SCOPE
     }

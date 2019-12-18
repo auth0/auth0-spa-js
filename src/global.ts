@@ -152,7 +152,7 @@ interface GetUserOptions {
   audience: string;
 }
 
-interface getIdTokenClaimsOptions {
+interface GetIdTokenClaimsOptions {
   /**
    * The scope that was used in the authentication request
    */
