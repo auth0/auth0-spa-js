@@ -17,7 +17,7 @@ import {
 import { InMemoryCache, ICache, LocalStorageCache } from './cache';
 import TransactionManager from './transaction-manager';
 import { verify as verifyIdToken } from './jwt';
-import { AuthenticationError } from './errors';
+import { AuthenticationError, GenericError } from './errors';
 import * as ClientStorage from './storage';
 import { DEFAULT_POPUP_CONFIG_OPTIONS } from './constants';
 import version from './version';
@@ -571,6 +571,13 @@ export default class Auth0Client {
       client_id: this.options.client_id
     });
 
+    if (!cache || !cache.refresh_token) {
+      throw new GenericError(
+        'missing_refresh_token',
+        'No refresh token is available to fetch a new access token. The user should be reauthenticated.'
+      );
+    }
+
     const tokenResult = await oauthToken({
       baseUrl: this.domainUrl,
       client_id: this.options.client_id,
@@ -578,11 +585,7 @@ export default class Auth0Client {
       refresh_token: cache.refresh_token
     } as RefreshTokenOptions);
 
-    console.log(tokenResult);
-
     const decodedToken = this._verifyIdToken(tokenResult.id_token);
-
-    console.log(decodedToken);
 
     return {
       ...tokenResult,

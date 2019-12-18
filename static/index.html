@@ -66,6 +66,12 @@
           </button>
         </div>
 
+        <template v-if="error">
+          <hr />
+          <h3>Last error</h3>
+          <pre><code>{{JSON.stringify(error, null, 2)}}</code></pre>
+        </template>
+
         <hr />
 
         <div class="card mb-3" v-if="profile">
@@ -187,7 +193,8 @@
             id_token: '',
             isAuthenticated: false,
             domain: data.domain || defaultDomain,
-            clientId: data.clientId || defaultClientId
+            clientId: data.clientId || defaultClientId,
+            error: null
           };
         },
         created() {
@@ -298,7 +305,9 @@
               .getTokenSilently({ ignoreCache: !_self.useCache })
               .then(function(token) {
                 _self.access_tokens.push(token);
-              });
+                _self.error = null;
+              })
+              .catch(e => (_self.error = e));
           },
           getMultipleTokens() {
             var _self = this;
