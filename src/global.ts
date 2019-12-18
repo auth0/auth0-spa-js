@@ -163,6 +163,8 @@ export interface GetIdTokenClaimsOptions {
   audience: string;
 }
 
+export type getIdTokenClaimsOptions = GetIdTokenClaimsOptions;
+
 export interface GetTokenSilentlyOptions extends GetUserOptions {
   /**
    * When `true`, ignores the cache and always sends a

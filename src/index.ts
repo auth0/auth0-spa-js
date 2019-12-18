@@ -8,6 +8,7 @@ import 'fast-text-encoding';
 import Auth0Client from './Auth0Client';
 import * as ClientStorage from './storage';
 import { Auth0ClientOptions } from './global';
+import './global';
 
 import { validateCrypto } from './utils';
 
