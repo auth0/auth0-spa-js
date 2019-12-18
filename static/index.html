@@ -24,10 +24,11 @@
     <button id="logout-no-clientid">logout (no client id)</button>
     <script type="text/javascript">
       $(function() {
-        createAuth0Client({
-          domain: 'auth.brucke.club',
-          client_id: 'wLSIP47wM39wKdDmOj6Zb5eSEw3JVhVp'
-        })
+        createAuth0Client
+          .default({
+            domain: 'auth.brucke.club',
+            client_id: 'wLSIP47wM39wKdDmOj6Zb5eSEw3JVhVp'
+          })
           .then(function(auth0) {
             window.auth0 = auth0;
             $('#login_popup').click(function() {

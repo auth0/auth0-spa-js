@@ -11,7 +11,7 @@ import { Auth0ClientOptions } from './global';
 
 import { validateCrypto } from './utils';
 
-export * from './Auth0Client';
+export { Auth0Client };
 export * from './global';
 
 export default async function createAuth0Client(options: Auth0ClientOptions) {
