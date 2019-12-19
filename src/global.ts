@@ -95,7 +95,7 @@ interface Auth0ClientOptions extends BaseLoginOptions {
    * The strategy to use when storing cache data. Valid values are `memory` or `localstorage`.
    * The default setting is `memory`.
    */
-  cacheStrategy?: 'memory' | 'localstorage';
+  cacheLocation?: 'memory' | 'localstorage';
 }
 
 /**

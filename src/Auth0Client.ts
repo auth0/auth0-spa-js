@@ -25,9 +25,13 @@ import version from './version';
 const lock = new Lock();
 const GET_TOKEN_SILENTLY_LOCK_KEY = 'auth0.lock.getTokenSilently';
 
-const cacheStrategies = {
-  memory: () => new InMemoryCache(),
-  localstorage: () => new LocalStorageCache()
+const cacheFactory = location => {
+  const builders = {
+    memory: () => new InMemoryCache(),
+    localstorage: () => new LocalStorageCache()
+  };
+
+  return builders[location];
 };
 
 /**
@@ -40,16 +44,16 @@ export default class Auth0Client {
   private tokenIssuer: string;
   private readonly DEFAULT_SCOPE = 'openid profile email';
 
-  cacheStrategy: string;
+  cacheLocation: string;
 
   constructor(private options: Auth0ClientOptions) {
-    this.cacheStrategy = options.cacheStrategy || 'memory';
+    this.cacheLocation = options.cacheLocation || 'memory';
 
-    if (!(this.cacheStrategy in cacheStrategies)) {
-      throw new Error(`Invalid cache strategy "${this.cacheStrategy}"`);
+    if (!cacheFactory(this.cacheLocation)) {
+      throw new Error(`Invalid cache location "${this.cacheLocation}"`);
     }
 
-    this.cache = cacheStrategies[this.cacheStrategy]();
+    this.cache = cacheFactory(this.cacheLocation)();
     this.transactionManager = new TransactionManager();
     this.domainUrl = `https://${this.options.domain}`;
 

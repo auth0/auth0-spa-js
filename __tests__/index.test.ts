@@ -137,14 +137,14 @@ describe('Auth0', () => {
       expect(utils.validateCrypto).toHaveBeenCalled();
     });
 
-    it('should fail if an invalid cache strategy was given', async () => {
+    it('should fail if an invalid cache location was given', async () => {
       await expect(
         createAuth0Client({
           domain: TEST_DOMAIN,
           client_id: TEST_CLIENT_ID,
-          cacheStrategy: 'dummy'
+          cacheLocation: 'dummy'
         } as any)
-      ).rejects.toThrow(new Error('Invalid cache strategy "dummy"'));
+      ).rejects.toThrow(new Error('Invalid cache location "dummy"'));
     });
   });
 
