@@ -41,8 +41,7 @@ let bundles = [
     output: {
       name: EXPORT_NAME,
       file: 'dist/auth0-spa-js.development.js',
-      format: 'umd',
-      exports: 'named'
+      format: 'umd'
     },
     plugins: [
       ...getPlugins(false),
@@ -68,8 +67,7 @@ if (isProduction) {
         {
           name: EXPORT_NAME,
           file: pkg.browser,
-          format: 'umd',
-          exports: 'named'
+          format: 'umd'
         }
       ],
       plugins: [
@@ -82,8 +80,7 @@ if (isProduction) {
       output: [
         {
           file: pkg.module,
-          format: 'esm',
-          exports: 'named'
+          format: 'esm'
         }
       ],
       plugins: getPlugins(isProduction)
@@ -94,8 +91,7 @@ if (isProduction) {
         {
           name: EXPORT_NAME,
           file: pkg.main,
-          format: 'cjs',
-          exports: 'named'
+          format: 'cjs'
         }
       ],
       plugins: getPlugins(false),

@@ -5,6 +5,7 @@ import 'core-js/es/array/includes';
 import 'promise-polyfill/src/polyfill';
 import 'fast-text-encoding';
 
+// @ts-ignore
 import Auth0Client from './Auth0Client';
 import * as ClientStorage from './storage';
 import { Auth0ClientOptions } from './global';
@@ -12,7 +13,6 @@ import './global';
 
 import { validateCrypto } from './utils';
 
-export { Auth0Client };
 export * from './global';
 
 export default async function createAuth0Client(options: Auth0ClientOptions) {
@@ -34,3 +34,5 @@ export default async function createAuth0Client(options: Auth0ClientOptions) {
   }
   return auth0;
 }
+
+export type Auth0Client = Auth0Client;
