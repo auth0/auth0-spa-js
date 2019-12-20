@@ -213,7 +213,8 @@ export default class Auth0Client {
       ...authResult,
       decodedToken,
       scope: params.scope,
-      audience: params.audience || 'default'
+      audience: params.audience || 'default',
+      client_id: this.options.client_id
     };
     this.cache.save(cacheEntry);
     ClientStorage.save('auth0.is.authenticated', true, { daysUntilExpire: 1 });
@@ -236,7 +237,12 @@ export default class Auth0Client {
     }
   ) {
     options.scope = getUniqueScopes(this.DEFAULT_SCOPE, options.scope);
-    const cache = this.cache.get(options);
+
+    const cache = this.cache.get({
+      client_id: this.options.client_id,
+      ...options
+    });
+
     return cache && cache.decodedToken.user;
   }
 
@@ -256,7 +262,12 @@ export default class Auth0Client {
     }
   ) {
     options.scope = getUniqueScopes(this.DEFAULT_SCOPE, options.scope);
-    const cache = this.cache.get(options);
+
+    const cache = this.cache.get({
+      client_id: this.options.client_id,
+      ...options
+    });
+
     return cache && cache.decodedToken.claims;
   }
 
@@ -316,14 +327,19 @@ export default class Auth0Client {
       authResult.id_token,
       transaction.nonce
     );
+
     const cacheEntry = {
       ...authResult,
       decodedToken,
       audience: transaction.audience,
-      scope: transaction.scope
+      scope: transaction.scope,
+      client_id: this.options.client_id
     };
+
     this.cache.save(cacheEntry);
+
     ClientStorage.save('auth0.is.authenticated', true, { daysUntilExpire: 1 });
+
     return {
       appState: transaction.appState
     };
@@ -357,7 +373,8 @@ export default class Auth0Client {
       if (!options.ignoreCache) {
         const cache = this.cache.get({
           scope: options.scope,
-          audience: options.audience || 'default'
+          audience: options.audience || 'default',
+          client_id: this.options.client_id
         });
 
         if (cache) {
@@ -411,7 +428,8 @@ export default class Auth0Client {
         ...authResult,
         decodedToken,
         scope: params.scope,
-        audience: params.audience || 'default'
+        audience: params.audience || 'default',
+        client_id: this.options.client_id
       };
 
       this.cache.save(cacheEntry);
@@ -451,11 +469,15 @@ export default class Auth0Client {
       this.options.scope,
       options.scope
     );
+
     await this.loginWithPopup(options, config);
+
     const cache = this.cache.get({
       scope: options.scope,
-      audience: options.audience || 'default'
+      audience: options.audience || 'default',
+      client_id: this.options.client_id
     });
+
     return cache.access_token;
   }
 

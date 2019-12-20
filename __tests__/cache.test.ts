@@ -13,11 +13,14 @@ describe('InMemoryCache', () => {
   afterEach(jest.useRealTimers);
 
   it('returns undefined when there is no data', () => {
-    expect(cache.get({ audience: 'a', scope: 's' })).toBeUndefined();
+    expect(
+      cache.get({ client_id: 'test-client', audience: 'a', scope: 's' })
+    ).toBeUndefined();
   });
 
   it('builds key correctly', () => {
     cache.save({
+      client_id: 'test-client',
       audience: 'the_audience',
       scope: 'the_scope',
       id_token: 'idtoken',
@@ -28,13 +31,15 @@ describe('InMemoryCache', () => {
         user: { name: 'Test' }
       }
     });
+
     expect(Object.keys(cache.cache)[0]).toBe(
-      '@@auth0spajs@@::the_audience::the_scope'
+      '@@auth0spajs@@::test-client::the_audience::the_scope'
     );
   });
 
   it('expires after `expires_in` when `expires_in` < `user.exp`', () => {
     cache.save({
+      client_id: 'test-client',
       audience: 'the_audiene',
       scope: 'the_scope',
       id_token: 'idtoken',
@@ -51,11 +56,14 @@ describe('InMemoryCache', () => {
     });
     jest.advanceTimersByTime(799);
     expect(Object.keys(cache.cache).length).toBe(1);
+
     jest.advanceTimersByTime(1);
     expect(Object.keys(cache.cache).length).toBe(0);
   });
+
   it('expires after `user.exp` when `user.exp` < `expires_in`', () => {
     cache.save({
+      client_id: 'test-client',
       audience: 'the_audiene',
       scope: 'the_scope',
       id_token: 'idtoken',
@@ -96,6 +104,7 @@ describe('LocalStorageCache', () => {
     global.Date.now = dateStub;
 
     defaultEntry = {
+      client_id: '__TEST_CLIENT_ID__',
       audience: '__TEST_AUDIENCE__',
       scope: '__TEST_SCOPE__',
       id_token: '__ID_TOKEN__',
@@ -122,7 +131,7 @@ describe('LocalStorageCache', () => {
     cache.save(defaultEntry);
 
     expect(localStorage.setItem).toHaveBeenCalledWith(
-      '@@auth0spajs@@::__TEST_AUDIENCE__::__TEST_SCOPE__',
+      '@@auth0spajs@@::__TEST_CLIENT_ID__::__TEST_AUDIENCE__::__TEST_SCOPE__',
       JSON.stringify({
         body: defaultEntry,
         expiresAt: nowSeconds() + 86400 - 60
@@ -143,7 +152,7 @@ describe('LocalStorageCache', () => {
     cache.save(entry);
 
     expect(localStorage.setItem).toHaveBeenCalledWith(
-      '@@auth0spajs@@::__TEST_AUDIENCE__::__TEST_SCOPE__',
+      '@@auth0spajs@@::__TEST_CLIENT_ID__::__TEST_AUDIENCE__::__TEST_SCOPE__',
       JSON.stringify({
         body: entry,
         expiresAt: nowSeconds() + 40
@@ -153,7 +162,7 @@ describe('LocalStorageCache', () => {
 
   it('can retrieve an item from the cache', () => {
     localStorage.setItem(
-      '@@auth0spajs@@::__TEST_AUDIENCE__::__TEST_SCOPE__',
+      '@@auth0spajs@@::__TEST_CLIENT_ID__::__TEST_AUDIENCE__::__TEST_SCOPE__',
       JSON.stringify({
         body: defaultEntry,
         expiresAt: nowSeconds() + 86400
@@ -161,7 +170,11 @@ describe('LocalStorageCache', () => {
     );
 
     expect(
-      cache.get({ audience: '__TEST_AUDIENCE__', scope: '__TEST_SCOPE__' })
+      cache.get({
+        client_id: '__TEST_CLIENT_ID__',
+        audience: '__TEST_AUDIENCE__',
+        scope: '__TEST_SCOPE__'
+      })
     ).toStrictEqual(defaultEntry);
   });
 
@@ -171,9 +184,10 @@ describe('LocalStorageCache', () => {
 
   it('expires after cache `expiresAt` when expiresAt < current time', () => {
     localStorage.setItem(
-      '@@auth0spajs@@::__TEST_AUDIENCE__::__TEST_SCOPE__',
+      '@@auth0spajs@@::__TEST_CLIENT_ID__::__TEST_AUDIENCE__::__TEST_SCOPE__',
       JSON.stringify({
         body: {
+          client_id: '__TEST_CLIENT_ID__',
           audience: '__TEST_AUDIENCE__',
           scope: '__TEST_SCOPE__',
           id_token: '__ID_TOKEN__',
@@ -193,11 +207,15 @@ describe('LocalStorageCache', () => {
     );
 
     expect(
-      cache.get({ audience: '__TEST_AUDIENCE__', scope: '__TEST_SCOPE__' })
+      cache.get({
+        client_id: '__TEST_CLIENT_ID__',
+        audience: '__TEST_AUDIENCE__',
+        scope: '__TEST_SCOPE__'
+      })
     ).toBeUndefined();
 
     expect(localStorage.removeItem).toHaveBeenCalledWith(
-      '@@auth0spajs@@::__TEST_AUDIENCE__::__TEST_SCOPE__'
+      '@@auth0spajs@@::__TEST_CLIENT_ID__::__TEST_AUDIENCE__::__TEST_SCOPE__'
     );
   });
 

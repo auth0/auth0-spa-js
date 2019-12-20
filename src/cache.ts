@@ -1,6 +1,7 @@
 interface CacheKeyData {
   audience: string;
   scope: string;
+  client_id: string;
 }
 
 interface DecodedToken {
@@ -15,6 +16,7 @@ interface CacheEntry {
   decodedToken: DecodedToken;
   audience: string;
   scope: string;
+  client_id: string;
 }
 
 interface CachedTokens {
@@ -29,7 +31,7 @@ export interface ICache {
 
 const keyPrefix = '@@auth0spajs@@';
 const createKey = (e: CacheKeyData) =>
-  `${keyPrefix}::${e.audience}::${e.scope}`;
+  `${keyPrefix}::${e.client_id}::${e.audience}::${e.scope}`;
 
 const getExpirationTimeoutInMilliseconds = (expiresIn: number, exp: number) => {
   const expTime =

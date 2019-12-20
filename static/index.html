@@ -181,7 +181,7 @@
             createAuth0Client({
               domain: _self.domain,
               client_id: _self.clientId,
-              cacheStrategy: _self.useLocalStorage ? 'localstorage' : 'memory'
+              cacheLocation: _self.useLocalStorage ? 'localstorage' : 'memory'
             }).then(function(auth0) {
               _self.auth0 = auth0;
               window.auth0 = auth0; // Cypress integration tests support

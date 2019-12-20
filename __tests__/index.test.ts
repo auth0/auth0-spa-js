@@ -387,6 +387,7 @@ describe('Auth0', () => {
 
       await auth0.loginWithPopup({});
       expect(cache.save).toHaveBeenCalledWith({
+        client_id: TEST_CLIENT_ID,
         access_token: TEST_ACCESS_TOKEN,
         audience: 'default',
         id_token: TEST_ID_TOKEN,
@@ -609,6 +610,7 @@ describe('Auth0', () => {
         'There are no query params available for parsing.'
       );
     });
+
     describe('when there is a valid query string in the url', async () => {
       const localSetup = async () => {
         window.history.pushState(
@@ -749,6 +751,7 @@ describe('Auth0', () => {
         await auth0.handleRedirectCallback();
 
         expect(cache.save).toHaveBeenCalledWith({
+          client_id: TEST_CLIENT_ID,
           access_token: TEST_ACCESS_TOKEN,
           audience: 'default',
           id_token: TEST_ID_TOKEN,
@@ -929,6 +932,7 @@ describe('Auth0', () => {
         await auth0.handleRedirectCallback();
 
         expect(cache.save).toHaveBeenCalledWith({
+          client_id: TEST_CLIENT_ID,
           access_token: TEST_ACCESS_TOKEN,
           audience: 'default',
           id_token: TEST_ID_TOKEN,
@@ -987,23 +991,31 @@ describe('Auth0', () => {
     });
     it('uses default options', async () => {
       const { auth0, utils, cache } = await setup();
+
       await auth0.getUser();
+
       expect(cache.get).toHaveBeenCalledWith({
         audience: 'default',
-        scope: TEST_SCOPES
+        scope: TEST_SCOPES,
+        client_id: TEST_CLIENT_ID
       });
+
       expect(utils.getUniqueScopes).toHaveBeenCalledWith(
         'openid profile email',
         'openid profile email'
       );
     });
+
     it('uses custom options when provided', async () => {
       const { auth0, utils, cache } = await setup();
       await auth0.getUser({ audience: 'the-audience', scope: 'the-scope' });
+
       expect(cache.get).toHaveBeenCalledWith({
         audience: 'the-audience',
-        scope: TEST_SCOPES
+        scope: TEST_SCOPES,
+        client_id: TEST_CLIENT_ID
       });
+
       expect(utils.getUniqueScopes).toHaveBeenCalledWith(
         'openid profile email',
         'the-scope'
@@ -1036,26 +1048,35 @@ describe('Auth0', () => {
     });
     it('uses default options', async () => {
       const { auth0, utils, cache } = await setup();
+
       await auth0.getIdTokenClaims();
+
       expect(cache.get).toHaveBeenCalledWith({
         audience: 'default',
-        scope: TEST_SCOPES
+        scope: TEST_SCOPES,
+        client_id: TEST_CLIENT_ID
       });
+
       expect(utils.getUniqueScopes).toHaveBeenCalledWith(
         'openid profile email',
         'openid profile email'
       );
     });
+
     it('uses custom options when provided', async () => {
       const { auth0, utils, cache } = await setup();
+
       await auth0.getIdTokenClaims({
         audience: 'the-audience',
         scope: 'the-scope'
       });
+
       expect(cache.get).toHaveBeenCalledWith({
         audience: 'the-audience',
-        scope: TEST_SCOPES
+        scope: TEST_SCOPES,
+        client_id: TEST_CLIENT_ID
       });
+
       expect(utils.getUniqueScopes).toHaveBeenCalledWith(
         'openid profile email',
         'the-scope'
@@ -1092,13 +1113,16 @@ describe('Auth0', () => {
 
         expect(cache.get).toHaveBeenCalledWith({
           audience: 'default',
-          scope: TEST_SCOPES
+          scope: TEST_SCOPES,
+          client_id: TEST_CLIENT_ID
         });
+
         expect(utils.getUniqueScopes).toHaveBeenCalledWith(
           'openid profile email',
           'openid profile email'
         );
       });
+
       it('returns cached access_token when there is a cache', async () => {
         const { auth0, cache } = await setup();
         cache.get.mockReturnValue({ access_token: TEST_ACCESS_TOKEN });
@@ -1128,6 +1152,7 @@ describe('Auth0', () => {
         expect(utils.encodeState).toHaveBeenCalledWith(TEST_RANDOM_STRING);
       });
     });
+
     describe('when `options.ignoreCache` is true', () => {
       const defaultOptionsIgnoreCacheTrue: GetTokenSilentlyOptions = {
         audience: 'test:audience',
@@ -1158,6 +1183,7 @@ describe('Auth0', () => {
         await auth0.getTokenSilently(defaultOptionsIgnoreCacheTrue);
         expect(utils.encodeState).toHaveBeenCalledWith(TEST_RANDOM_STRING);
       });
+
       it('creates `code_challenge` by using `utils.sha256` with the result of `utils.createRandomString`', async () => {
         const { auth0, utils } = await setup();
 
@@ -1167,6 +1193,7 @@ describe('Auth0', () => {
           TEST_ARRAY_BUFFER
         );
       });
+
       it('creates correct query params', async () => {
         const { auth0, utils } = await setup();
 
@@ -1185,6 +1212,7 @@ describe('Auth0', () => {
           code_challenge_method: 'S256'
         });
       });
+
       it('creates correct query params without leeway', async () => {
         const { auth0, utils } = await setup({ leeway: 10 });
 
@@ -1203,6 +1231,7 @@ describe('Auth0', () => {
           code_challenge_method: 'S256'
         });
       });
+
       it('creates correct query params when providing a default redirect_uri', async () => {
         const redirect_uri = 'https://custom-redirect-uri/callback';
         const { auth0, utils } = await setup({
@@ -1224,6 +1253,7 @@ describe('Auth0', () => {
           code_challenge_method: 'S256'
         });
       });
+
       it('creates correct query params with custom params', async () => {
         const { auth0, utils } = await setup();
 
@@ -1247,6 +1277,7 @@ describe('Auth0', () => {
           defaultOptionsIgnoreCacheTrue.scope
         );
       });
+
       it('opens iframe with correct urls', async () => {
         const { auth0, utils } = await setup();
         await auth0.getTokenSilently(defaultOptionsIgnoreCacheTrue);
@@ -1304,6 +1335,7 @@ describe('Auth0', () => {
 
         await auth0.getTokenSilently(defaultOptionsIgnoreCacheTrue);
         expect(cache.save).toHaveBeenCalledWith({
+          client_id: TEST_CLIENT_ID,
           access_token: TEST_ACCESS_TOKEN,
           audience: defaultOptionsIgnoreCacheTrue.audience,
           id_token: TEST_ID_TOKEN,
@@ -1364,6 +1396,7 @@ describe('Auth0', () => {
         'openid profile email'
       );
     });
+
     it('calls `loginWithPopup` with the correct custom options', async () => {
       const { auth0, utils } = await localSetup();
       const loginOptions = {
@@ -1383,20 +1416,25 @@ describe('Auth0', () => {
         'other-scope'
       );
     });
+
     it('calls `cache.get` with the correct options', async () => {
       const { auth0, cache, utils } = await localSetup();
 
       await auth0.getTokenWithPopup();
+
       expect(cache.get).toHaveBeenCalledWith({
         audience: 'default',
-        scope: TEST_SCOPES
+        scope: TEST_SCOPES,
+        client_id: TEST_CLIENT_ID
       });
+
       expect(utils.getUniqueScopes).toHaveBeenCalledWith(
         'openid profile email',
         undefined,
         'openid profile email'
       );
     });
+
     it('returns cached access_token', async () => {
       const { auth0 } = await localSetup();
 
