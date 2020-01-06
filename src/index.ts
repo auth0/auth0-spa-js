@@ -21,6 +21,7 @@ export default async function createAuth0Client(options: Auth0ClientOptions) {
   if (!ClientStorage.get('auth0.is.authenticated')) {
     return auth0;
   }
+
   try {
     await auth0.getTokenSilently({
       audience: options.audience,
@@ -30,5 +31,6 @@ export default async function createAuth0Client(options: Auth0ClientOptions) {
   } catch (error) {
     // ignore
   }
+
   return auth0;
 }

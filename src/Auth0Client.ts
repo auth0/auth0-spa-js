@@ -14,7 +14,7 @@ import {
   openPopup
 } from './utils';
 
-import Cache from './cache';
+import { InMemoryCache, ICache, LocalStorageCache } from './cache';
 import TransactionManager from './transaction-manager';
 import { verify as verifyIdToken } from './jwt';
 import { AuthenticationError } from './errors';
@@ -25,24 +25,43 @@ import version from './version';
 const lock = new Lock();
 const GET_TOKEN_SILENTLY_LOCK_KEY = 'auth0.lock.getTokenSilently';
 
+const cacheFactory = location => {
+  const builders = {
+    memory: () => new InMemoryCache(),
+    localstorage: () => new LocalStorageCache()
+  };
+
+  return builders[location];
+};
+
 /**
  * Auth0 SDK for Single Page Applications using [Authorization Code Grant Flow with PKCE](https://auth0.com/docs/api-auth/tutorials/authorization-code-grant-pkce).
  */
 export default class Auth0Client {
-  private cache: Cache;
+  private cache: ICache;
   private transactionManager: TransactionManager;
   private domainUrl: string;
   private tokenIssuer: string;
   private readonly DEFAULT_SCOPE = 'openid profile email';
 
+  cacheLocation: string;
+
   constructor(private options: Auth0ClientOptions) {
-    this.cache = new Cache();
+    this.cacheLocation = options.cacheLocation || 'memory';
+
+    if (!cacheFactory(this.cacheLocation)) {
+      throw new Error(`Invalid cache location "${this.cacheLocation}"`);
+    }
+
+    this.cache = cacheFactory(this.cacheLocation)();
     this.transactionManager = new TransactionManager();
     this.domainUrl = `https://${this.options.domain}`;
+
     this.tokenIssuer = this.options.issuer
       ? `https://${this.options.issuer}/`
       : `${this.domainUrl}/`;
   }
+
   private _url(path) {
     const telemetry = encodeURIComponent(
       btoa(
@@ -54,6 +73,7 @@ export default class Auth0Client {
     );
     return `${this.domainUrl}${path}&auth0Client=${telemetry}`;
   }
+
   private _getParams(
     authorizeOptions: BaseLoginOptions,
     state: string,
@@ -193,7 +213,8 @@ export default class Auth0Client {
       ...authResult,
       decodedToken,
       scope: params.scope,
-      audience: params.audience || 'default'
+      audience: params.audience || 'default',
+      client_id: this.options.client_id
     };
     this.cache.save(cacheEntry);
     ClientStorage.save('auth0.is.authenticated', true, { daysUntilExpire: 1 });
@@ -216,7 +237,12 @@ export default class Auth0Client {
     }
   ) {
     options.scope = getUniqueScopes(this.DEFAULT_SCOPE, options.scope);
-    const cache = this.cache.get(options);
+
+    const cache = this.cache.get({
+      client_id: this.options.client_id,
+      ...options
+    });
+
     return cache && cache.decodedToken.user;
   }
 
@@ -236,7 +262,12 @@ export default class Auth0Client {
     }
   ) {
     options.scope = getUniqueScopes(this.DEFAULT_SCOPE, options.scope);
-    const cache = this.cache.get(options);
+
+    const cache = this.cache.get({
+      client_id: this.options.client_id,
+      ...options
+    });
+
     return cache && cache.decodedToken.claims;
   }
 
@@ -296,14 +327,19 @@ export default class Auth0Client {
       authResult.id_token,
       transaction.nonce
     );
+
     const cacheEntry = {
       ...authResult,
       decodedToken,
       audience: transaction.audience,
-      scope: transaction.scope
+      scope: transaction.scope,
+      client_id: this.options.client_id
     };
+
     this.cache.save(cacheEntry);
+
     ClientStorage.save('auth0.is.authenticated', true, { daysUntilExpire: 1 });
+
     return {
       appState: transaction.appState
     };
@@ -341,8 +377,9 @@ export default class Auth0Client {
 
       if (!ignoreCache) {
         const cache = this.cache.get({
-          scope,
-          audience: audience || 'default'
+          scope: options.scope,
+          audience: options.audience || 'default',
+          client_id: this.options.client_id
         });
 
         if (cache) {
@@ -398,7 +435,8 @@ export default class Auth0Client {
         ...authResult,
         decodedToken,
         scope: params.scope,
-        audience: params.audience || 'default'
+        audience: params.audience || 'default',
+        client_id: this.options.client_id
       };
 
       this.cache.save(cacheEntry);
@@ -438,11 +476,15 @@ export default class Auth0Client {
       this.options.scope,
       options.scope
     );
+
     await this.loginWithPopup(options, config);
+
     const cache = this.cache.get({
       scope: options.scope,
-      audience: options.audience || 'default'
+      audience: options.audience || 'default',
+      client_id: this.options.client_id
     });
+
     return cache.access_token;
   }
 
@@ -476,7 +518,9 @@ export default class Auth0Client {
     } else {
       delete options.client_id;
     }
+
     ClientStorage.remove('auth0.is.authenticated');
+    this.cache.clear();
     const { federated, ...logoutOptions } = options;
     const federatedQuery = federated ? `&federated` : '';
     const url = this._url(`/v2/logout?${createQueryParams(logoutOptions)}`);

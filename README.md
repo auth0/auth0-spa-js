@@ -164,6 +164,25 @@ document.getElementById('logout').addEventListener('click', () => {
 });
 ```
 
+### Caching strategy
+
+The SDK can be configured to cache ID tokens and access tokens either in memory or in local storage. The default is in memory. This setting can be controlled using the `cacheStrategy` option when creating the Auth0 client.
+
+To use the in-memory mode, no additional options need are required as this is the default setting. To configure the SDK to cache data using local storage, set `cacheStrategy` as follows:
+
+```js
+await createAuth0Client({
+  domain: '<AUTH0_DOMAIN>',
+  client_id: '<AUTH0_CLIENT_ID>',
+  redirect_uri: '<MY_CALLBACK_URL>',
+  cacheStrategy: 'localstorage' // valid values are: 'memory' or 'localstorage'
+}).then(auth0 => {
+  // ...
+});
+```
+
+**Important:** This feature will allow the caching of data **such as ID and access tokens** to be stored in local storage. Exercising this option changes the security characteristics of your application and **should not be used lightly**. Extra care should be taken to mitigate against XSS attacks and minimize the risk of tokens being stolen from local storage.
+
 ## Contributing
 
 We appreciate feedback and contribution to this repo! Before you get started, please see the following:

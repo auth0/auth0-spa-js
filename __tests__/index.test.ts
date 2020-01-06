@@ -45,39 +45,52 @@ const setup = async (options = {}) => {
     client_id: TEST_CLIENT_ID,
     ...options
   });
-  const getInstance = m => require(m).default.mock.instances[0];
+
+  // Return the specific instance you want from the module by supplying fn
+  // e.g. getInstance('../module', m => m.SomeInstance)
+  const getInstance = (m, fn) => fn(require(m)).mock.instances[0];
+
+  const getDefaultInstance = m => require(m).default.mock.instances[0];
+
   const storage = {
     get: require('../src/storage').get,
     save: require('../src/storage').save,
     remove: require('../src/storage').remove
   };
+
   const lock = require('browser-tabs-lock');
-  const cache = getInstance('../src/cache');
+  const cache = getInstance('../src/cache', m => m.InMemoryCache);
   const tokenVerifier = require('../src/jwt').verify;
-  const transactionManager = getInstance('../src/transaction-manager');
+  const transactionManager = getDefaultInstance('../src/transaction-manager');
   const utils = require('../src/utils');
+
   utils.createQueryParams.mockReturnValue(TEST_QUERY_PARAMS);
   utils.getUniqueScopes.mockReturnValue(TEST_SCOPES);
   utils.encodeState.mockReturnValue(TEST_ENCODED_STATE);
   utils.createRandomString.mockReturnValue(TEST_RANDOM_STRING);
   utils.sha256.mockReturnValue(Promise.resolve(TEST_ARRAY_BUFFER));
   utils.bufferToBase64UrlEncoded.mockReturnValue(TEST_BASE64_ENCODED_STRING);
+
   utils.parseQueryResult.mockReturnValue({
     state: TEST_ENCODED_STATE,
     code: TEST_CODE
   });
+
   utils.runPopup.mockReturnValue(
     Promise.resolve({ state: TEST_ENCODED_STATE, code: TEST_CODE })
   );
+
   utils.runIframe.mockReturnValue(
     Promise.resolve({ state: TEST_ENCODED_STATE, code: TEST_CODE })
   );
+
   utils.oauthToken.mockReturnValue(
     Promise.resolve({
       id_token: TEST_ID_TOKEN,
       access_token: TEST_ACCESS_TOKEN
     })
   );
+
   tokenVerifier.mockReturnValue({
     user: {
       sub: TEST_USER_ID
@@ -87,6 +100,7 @@ const setup = async (options = {}) => {
       aud: TEST_CLIENT_ID
     }
   });
+
   return {
     auth0,
     storage,
@@ -108,6 +122,7 @@ describe('Auth0', () => {
       }
     };
   });
+
   describe('createAuth0Client()', () => {
     it('should create an Auth0 client', async () => {
       const auth0 = await createAuth0Client({
@@ -116,11 +131,23 @@ describe('Auth0', () => {
       });
       expect(auth0).toBeInstanceOf(Auth0Client);
     });
+
     it('should call `utils.validateCrypto`', async () => {
       const { utils } = await setup();
       expect(utils.validateCrypto).toHaveBeenCalled();
     });
+
+    it('should fail if an invalid cache location was given', async () => {
+      await expect(
+        createAuth0Client({
+          domain: TEST_DOMAIN,
+          client_id: TEST_CLIENT_ID,
+          cacheLocation: 'dummy'
+        } as any)
+      ).rejects.toThrow(new Error('Invalid cache location "dummy"'));
+    });
   });
+
   describe('loginWithPopup()', () => {
     it('opens popup', async () => {
       const { auth0, utils } = await setup();
@@ -360,6 +387,7 @@ describe('Auth0', () => {
 
       await auth0.loginWithPopup({});
       expect(cache.save).toHaveBeenCalledWith({
+        client_id: TEST_CLIENT_ID,
         access_token: TEST_ACCESS_TOKEN,
         audience: 'default',
         id_token: TEST_ID_TOKEN,
@@ -387,6 +415,7 @@ describe('Auth0', () => {
       expect(utils.openPopup).toHaveBeenCalled();
     });
   });
+
   describe('buildAuthorizeUrl()', () => {
     const REDIRECT_OPTIONS = {
       redirect_uri: 'https://redirect.uri',
@@ -537,6 +566,7 @@ describe('Auth0', () => {
       );
     });
   });
+
   describe('loginWithRedirect()', () => {
     const REDIRECT_OPTIONS = {
       redirect_uri: 'https://redirect.uri',
@@ -572,6 +602,7 @@ describe('Auth0', () => {
       );
     });
   });
+
   describe('handleRedirectCallback()', () => {
     it('throws when there is no query string', async () => {
       const { auth0 } = await setup();
@@ -579,6 +610,7 @@ describe('Auth0', () => {
         'There are no query params available for parsing.'
       );
     });
+
     describe('when there is a valid query string in the url', async () => {
       const localSetup = async () => {
         window.history.pushState(
@@ -719,6 +751,7 @@ describe('Auth0', () => {
         await auth0.handleRedirectCallback();
 
         expect(cache.save).toHaveBeenCalledWith({
+          client_id: TEST_CLIENT_ID,
           access_token: TEST_ACCESS_TOKEN,
           audience: 'default',
           id_token: TEST_ID_TOKEN,
@@ -899,6 +932,7 @@ describe('Auth0', () => {
         await auth0.handleRedirectCallback();
 
         expect(cache.save).toHaveBeenCalledWith({
+          client_id: TEST_CLIENT_ID,
           access_token: TEST_ACCESS_TOKEN,
           audience: 'default',
           id_token: TEST_ID_TOKEN,
@@ -931,6 +965,7 @@ describe('Auth0', () => {
       });
     });
   });
+
   describe('getUser()', () => {
     it('returns undefined if there is no cache', async () => {
       const { auth0, cache } = await setup();
@@ -956,29 +991,38 @@ describe('Auth0', () => {
     });
     it('uses default options', async () => {
       const { auth0, utils, cache } = await setup();
+
       await auth0.getUser();
+
       expect(cache.get).toHaveBeenCalledWith({
         audience: 'default',
-        scope: TEST_SCOPES
+        scope: TEST_SCOPES,
+        client_id: TEST_CLIENT_ID
       });
+
       expect(utils.getUniqueScopes).toHaveBeenCalledWith(
         'openid profile email',
         'openid profile email'
       );
     });
+
     it('uses custom options when provided', async () => {
       const { auth0, utils, cache } = await setup();
       await auth0.getUser({ audience: 'the-audience', scope: 'the-scope' });
+
       expect(cache.get).toHaveBeenCalledWith({
         audience: 'the-audience',
-        scope: TEST_SCOPES
+        scope: TEST_SCOPES,
+        client_id: TEST_CLIENT_ID
       });
+
       expect(utils.getUniqueScopes).toHaveBeenCalledWith(
         'openid profile email',
         'the-scope'
       );
     });
   });
+
   describe('getIdTokenClaims()', () => {
     it('returns undefined if there is no cache', async () => {
       const { auth0, cache } = await setup();
@@ -1004,32 +1048,42 @@ describe('Auth0', () => {
     });
     it('uses default options', async () => {
       const { auth0, utils, cache } = await setup();
+
       await auth0.getIdTokenClaims();
+
       expect(cache.get).toHaveBeenCalledWith({
         audience: 'default',
-        scope: TEST_SCOPES
+        scope: TEST_SCOPES,
+        client_id: TEST_CLIENT_ID
       });
+
       expect(utils.getUniqueScopes).toHaveBeenCalledWith(
         'openid profile email',
         'openid profile email'
       );
     });
+
     it('uses custom options when provided', async () => {
       const { auth0, utils, cache } = await setup();
+
       await auth0.getIdTokenClaims({
         audience: 'the-audience',
         scope: 'the-scope'
       });
+
       expect(cache.get).toHaveBeenCalledWith({
         audience: 'the-audience',
-        scope: TEST_SCOPES
+        scope: TEST_SCOPES,
+        client_id: TEST_CLIENT_ID
       });
+
       expect(utils.getUniqueScopes).toHaveBeenCalledWith(
         'openid profile email',
         'the-scope'
       );
     });
   });
+
   describe('isAuthenticated()', () => {
     it('returns true if there is an user', async () => {
       const { auth0 } = await setup();
@@ -1048,6 +1102,7 @@ describe('Auth0', () => {
       expect(result).toBe(false);
     });
   });
+
   describe('getTokenSilently()', () => {
     describe('when `options.ignoreCache` is false', async () => {
       it('calls `cache.get` with the correct options', async () => {
@@ -1058,13 +1113,16 @@ describe('Auth0', () => {
 
         expect(cache.get).toHaveBeenCalledWith({
           audience: 'default',
-          scope: TEST_SCOPES
+          scope: TEST_SCOPES,
+          client_id: TEST_CLIENT_ID
         });
+
         expect(utils.getUniqueScopes).toHaveBeenCalledWith(
           'openid profile email',
           'openid profile email'
         );
       });
+
       it('returns cached access_token when there is a cache', async () => {
         const { auth0, cache } = await setup();
         cache.get.mockReturnValue({ access_token: TEST_ACCESS_TOKEN });
@@ -1089,6 +1147,7 @@ describe('Auth0', () => {
         expect(utils.encodeState).toHaveBeenCalledWith(TEST_RANDOM_STRING);
       });
     });
+
     describe('when `options.ignoreCache` is true', () => {
       const defaultOptionsIgnoreCacheTrue: GetTokenSilentlyOptions = {
         audience: 'test:audience',
@@ -1119,6 +1178,7 @@ describe('Auth0', () => {
         await auth0.getTokenSilently(defaultOptionsIgnoreCacheTrue);
         expect(utils.encodeState).toHaveBeenCalledWith(TEST_RANDOM_STRING);
       });
+
       it('creates `code_challenge` by using `utils.sha256` with the result of `utils.createRandomString`', async () => {
         const { auth0, utils } = await setup();
 
@@ -1128,6 +1188,7 @@ describe('Auth0', () => {
           TEST_ARRAY_BUFFER
         );
       });
+
       it('creates correct query params', async () => {
         const { auth0, utils } = await setup();
 
@@ -1146,6 +1207,7 @@ describe('Auth0', () => {
           code_challenge_method: 'S256'
         });
       });
+
       it('creates correct query params without leeway', async () => {
         const { auth0, utils } = await setup({ leeway: 10 });
 
@@ -1164,6 +1226,7 @@ describe('Auth0', () => {
           code_challenge_method: 'S256'
         });
       });
+
       it('creates correct query params when providing a default redirect_uri', async () => {
         const redirect_uri = 'https://custom-redirect-uri/callback';
         const { auth0, utils } = await setup({
@@ -1185,6 +1248,7 @@ describe('Auth0', () => {
           code_challenge_method: 'S256'
         });
       });
+
       it('creates correct query params with custom params', async () => {
         const { auth0, utils } = await setup();
 
@@ -1208,6 +1272,7 @@ describe('Auth0', () => {
           defaultOptionsIgnoreCacheTrue.scope
         );
       });
+
       it('creates correct query params when providing user specified custom query params', async () => {
         const { auth0, utils } = await setup();
 
@@ -1231,6 +1296,7 @@ describe('Auth0', () => {
           foo: 'bar'
         });
       });
+
       it('opens iframe with correct urls', async () => {
         const { auth0, utils } = await setup();
         await auth0.getTokenSilently(defaultOptionsIgnoreCacheTrue);
@@ -1288,6 +1354,7 @@ describe('Auth0', () => {
 
         await auth0.getTokenSilently(defaultOptionsIgnoreCacheTrue);
         expect(cache.save).toHaveBeenCalledWith({
+          client_id: TEST_CLIENT_ID,
           access_token: TEST_ACCESS_TOKEN,
           audience: defaultOptionsIgnoreCacheTrue.audience,
           id_token: TEST_ID_TOKEN,
@@ -1323,6 +1390,7 @@ describe('Auth0', () => {
       });
     });
   });
+
   describe('getTokenWithPopup()', async () => {
     const localSetup = async () => {
       const result = await setup();
@@ -1347,6 +1415,7 @@ describe('Auth0', () => {
         'openid profile email'
       );
     });
+
     it('calls `loginWithPopup` with the correct custom options', async () => {
       const { auth0, utils } = await localSetup();
       const loginOptions = {
@@ -1366,20 +1435,25 @@ describe('Auth0', () => {
         'other-scope'
       );
     });
+
     it('calls `cache.get` with the correct options', async () => {
       const { auth0, cache, utils } = await localSetup();
 
       await auth0.getTokenWithPopup();
+
       expect(cache.get).toHaveBeenCalledWith({
         audience: 'default',
-        scope: TEST_SCOPES
+        scope: TEST_SCOPES,
+        client_id: TEST_CLIENT_ID
       });
+
       expect(utils.getUniqueScopes).toHaveBeenCalledWith(
         'openid profile email',
         undefined,
         'openid profile email'
       );
     });
+
     it('returns cached access_token', async () => {
       const { auth0 } = await localSetup();
 
@@ -1387,12 +1461,14 @@ describe('Auth0', () => {
       expect(token).toBe(TEST_ACCESS_TOKEN);
     });
   });
+
   describe('logout()', () => {
     it('removes `auth0.is.authenticated` key from storage', async () => {
       const { auth0, storage } = await setup();
       auth0.logout();
       expect(storage.remove).toHaveBeenCalledWith('auth0.is.authenticated');
     });
+
     it('creates correct query params with empty options', async () => {
       const { auth0, utils } = await setup();
 
@@ -1401,12 +1477,14 @@ describe('Auth0', () => {
         client_id: TEST_CLIENT_ID
       });
     });
+
     it('creates correct query params with `options.client_id` is null', async () => {
       const { auth0, utils } = await setup();
 
       auth0.logout({ client_id: null });
       expect(utils.createQueryParams).toHaveBeenCalledWith({});
     });
+
     it('creates correct query params with `options.client_id` defined', async () => {
       const { auth0, utils } = await setup();
 
@@ -1415,6 +1493,7 @@ describe('Auth0', () => {
         client_id: 'another-client-id'
       });
     });
+
     it('creates correct query params with `options.returnTo` defined', async () => {
       const { auth0, utils } = await setup();
 
@@ -1423,12 +1502,14 @@ describe('Auth0', () => {
         returnTo: 'https://return.to'
       });
     });
+
     it('creates correct query params when `options.federated` is true', async () => {
       const { auth0, utils } = await setup();
 
       auth0.logout({ federated: true, client_id: null });
       expect(utils.createQueryParams).toHaveBeenCalledWith({});
     });
+
     it('calls `window.location.assign` with the correct url', async () => {
       const { auth0 } = await setup();
 
@@ -1437,6 +1518,7 @@ describe('Auth0', () => {
         `https://test.auth0.com/v2/logout?query=params${TEST_TELEMETRY_QUERY_STRING}`
       );
     });
+
     it('calls `window.location.assign` with the correct url when `options.federated` is true', async () => {
       const { auth0 } = await setup();
 
@@ -1445,20 +1527,33 @@ describe('Auth0', () => {
         `https://test.auth0.com/v2/logout?query=params${TEST_TELEMETRY_QUERY_STRING}&federated`
       );
     });
+
+    it('clears the cache', async () => {
+      const { auth0, cache } = await setup();
+
+      auth0.logout();
+
+      expect(cache.clear).toHaveBeenCalled();
+    });
   });
 });
+
 describe('default creation function', () => {
   it('does nothing if there is nothing storage', async () => {
     Auth0Client.prototype.getTokenSilently = jest.fn();
+
     const auth0 = await createAuth0Client({
       domain: TEST_DOMAIN,
       client_id: TEST_CLIENT_ID
     });
+
     expect(require('../src/storage').get).toHaveBeenCalledWith(
       'auth0.is.authenticated'
     );
+
     expect(auth0.getTokenSilently).not.toHaveBeenCalled();
   });
+
   it('calls getTokenSilently if there is a storage item with key `auth0.is.authenticated`', async () => {
     Auth0Client.prototype.getTokenSilently = jest.fn();
     require('../src/storage').get = () => true;
