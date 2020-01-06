@@ -257,7 +257,6 @@ interface TokenEndpointOptions {
  * @ignore
  */
 interface OAuthTokenOptions extends TokenEndpointOptions {
-  audience?: string;
   code_verifier: string;
   code: string;
 }

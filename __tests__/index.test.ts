@@ -283,8 +283,8 @@ describe('Auth0', () => {
       const { auth0, utils } = await setup();
 
       await auth0.loginWithPopup({});
+
       expect(utils.oauthToken).toHaveBeenCalledWith({
-        audience: undefined,
         baseUrl: 'https://test.auth0.com',
         client_id: TEST_CLIENT_ID,
         code: TEST_CODE,
@@ -297,7 +297,6 @@ describe('Auth0', () => {
 
       await auth0.loginWithPopup({ audience: 'test-audience' });
       expect(utils.oauthToken).toHaveBeenCalledWith({
-        audience: 'test-audience',
         baseUrl: 'https://test.auth0.com',
         client_id: TEST_CLIENT_ID,
         code: TEST_CODE,
@@ -777,7 +776,6 @@ describe('Auth0', () => {
         await auth0.handleRedirectCallback();
 
         expect(utils.oauthToken).toHaveBeenCalledWith({
-          audience: undefined,
           baseUrl: 'https://test.auth0.com',
           client_id: TEST_CLIENT_ID,
           code: TEST_CODE,
@@ -959,7 +957,6 @@ describe('Auth0', () => {
         await auth0.handleRedirectCallback();
 
         expect(utils.oauthToken).toHaveBeenCalledWith({
-          audience: undefined,
           baseUrl: 'https://test.auth0.com',
           client_id: TEST_CLIENT_ID,
           code: TEST_CODE,
@@ -1520,8 +1517,8 @@ describe('Auth0', () => {
         const { auth0, utils } = await setup();
 
         await auth0.getTokenSilently(defaultOptionsIgnoreCacheTrue);
+
         expect(utils.oauthToken).toHaveBeenCalledWith({
-          audience: defaultOptionsIgnoreCacheTrue.audience,
           baseUrl: 'https://test.auth0.com',
           client_id: TEST_CLIENT_ID,
           code: TEST_CODE,
@@ -1529,6 +1526,7 @@ describe('Auth0', () => {
           grant_type: 'authorization_code'
         });
       });
+
       it('calls `tokenVerifier.verify` with the `id_token` from in the oauth/token response', async () => {
         const { auth0, tokenVerifier } = await setup();
 

@@ -224,7 +224,6 @@ export default class Auth0Client {
 
     const authResult = await oauthToken({
       baseUrl: this.domainUrl,
-      audience: options.audience || this.options.audience,
       client_id: this.options.client_id,
       code_verifier,
       code: codeResult.code,
@@ -347,7 +346,6 @@ export default class Auth0Client {
 
     const authResult = await oauthToken({
       baseUrl: this.domainUrl,
-      audience: this.options.audience,
       client_id: this.options.client_id,
       code_verifier: transaction.code_verifier,
       code,
@@ -545,7 +543,6 @@ export default class Auth0Client {
 
     const tokenResult = await oauthToken({
       baseUrl: this.domainUrl,
-      audience: options.audience || this.options.audience,
       client_id: this.options.client_id,
       code_verifier,
       code: codeResult.code,
