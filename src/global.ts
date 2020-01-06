@@ -98,7 +98,7 @@ interface Auth0ClientOptions extends BaseLoginOptions {
   cacheLocation?: 'memory' | 'localstorage';
 
   /**
-   * If true, refresh tokens are used to fetch new access tokens from the Auth0 server.
+   * If true, refresh tokens are used to fetch new access tokens from the Auth0 server. If false, the legacy technique of using a hidden iframe and the `authorization_code` grant with `prompt=none` is used.
    * The default setting is 'false'.
    */
   useRefreshTokens?: boolean;
