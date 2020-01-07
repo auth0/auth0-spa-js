@@ -177,7 +177,7 @@
 
       var app = new Vue({
         el: '#app',
-        data() {
+        data: function() {
           var savedData = localStorage.getItem('spa-playground-data');
 
           var data = savedData ? JSON.parse(savedData) : {};
@@ -197,24 +197,24 @@
             error: null
           };
         },
-        created() {
+        created: function() {
           this.initializeClient();
         },
         watch: {
-          useLocalStorage() {
+          useLocalStorage: function() {
             this.initializeClient();
             this.saveForm();
           },
-          useRefreshTokens() {
+          useRefreshTokens: function() {
             this.initializeClient();
             this.saveForm();
           },
-          useCache() {
+          useCache: function() {
             this.saveForm();
           }
         },
         methods: {
-          initializeClient() {
+          initializeClient: function() {
             var _self = this;
 
             createAuth0Client({
@@ -232,7 +232,7 @@
               });
             });
           },
-          saveForm() {
+          saveForm: function() {
             localStorage.setItem(
               'spa-playground-data',
               JSON.stringify({
@@ -244,7 +244,7 @@
               })
             );
           },
-          resetForm() {
+          resetForm: function() {
             this.domain = defaultDomain;
             this.clientId = defaultClientId;
             this.useLocalStorage = false;
@@ -252,7 +252,7 @@
             this.useCache = true;
             this.saveForm();
           },
-          showAuth0Info() {
+          showAuth0Info: function() {
             var _self = this;
             _self.access_tokens = [];
 
@@ -269,7 +269,7 @@
               _self.id_token = claims.__raw;
             });
           },
-          loginPopup() {
+          loginPopup: function() {
             var _self = this;
 
             _self.auth0
@@ -280,12 +280,12 @@
                 _self.showAuth0Info();
               });
           },
-          loginRedirect() {
+          loginRedirect: function() {
             this.auth0.loginWithRedirect({
               redirect_uri: 'http://localhost:3000/'
             });
           },
-          loginHandleRedirectCallback() {
+          loginHandleRedirectCallback: function() {
             var _self = this;
 
             _self.auth0.handleRedirectCallback().then(function() {
@@ -298,7 +298,7 @@
               _self.showAuth0Info();
             });
           },
-          getToken() {
+          getToken: function() {
             var _self = this;
 
             _self.auth0
@@ -307,9 +307,11 @@
                 _self.access_tokens.push(token);
                 _self.error = null;
               })
-              .catch(e => (_self.error = e));
+              .catch(function(e) {
+                _self.error = e;
+              });
           },
-          getMultipleTokens() {
+          getMultipleTokens: function() {
             var _self = this;
 
             Promise.all([
@@ -319,7 +321,7 @@
               _self.access_tokens = [tokens[0], tokens[1]];
             });
           },
-          getTokenPopup() {
+          getTokenPopup: function() {
             var _self = this;
 
             _self.auth0
@@ -331,7 +333,7 @@
                 _self.access_tokens = [token];
               });
           },
-          getTokenAudience() {
+          getTokenAudience: function() {
             var _self = this;
 
             var differentAudienceOptions = {
@@ -347,12 +349,12 @@
                 _self.access_tokens = [token];
               });
           },
-          logout() {
+          logout: function() {
             this.auth0.logout({
               returnTo: 'http://localhost:3000/'
             });
           },
-          logoutNoClient() {
+          logoutNoClient: function() {
             this.auth0.logout({
               client_id: null,
               returnTo: 'http://localhost:3000/'
