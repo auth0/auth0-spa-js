@@ -229,6 +229,10 @@
 
               auth0.isAuthenticated().then(function(isAuthenticated) {
                 _self.isAuthenticated = isAuthenticated;
+
+                if (isAuthenticated) {
+                  _self.showAuth0Info();
+                }
               });
             });
           },
@@ -265,7 +269,6 @@
             });
 
             _self.auth0.getIdTokenClaims().then(function(claims) {
-              console.log(claims);
               _self.id_token = claims.__raw;
             });
           },
@@ -295,7 +298,10 @@
                 window.location.origin + '/'
               );
 
-              _self.showAuth0Info();
+              auth0.isAuthenticated().then(function(isAuthenticated) {
+                _self.isAuthenticated = isAuthenticated;
+                _self.showAuth0Info();
+              });
             });
           },
           getToken: function() {
