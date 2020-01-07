@@ -468,9 +468,14 @@ describe('Auth0', () => {
     });
 
     it('creates correct query params when using refresh tokens', async () => {
-      const { auth0, utils } = await setup({
+      const utils = require('../src/utils');
+      utils.getUniqueScopes.mockReturnValue('offline_access');
+
+      const { auth0 } = await setup({
         useRefreshTokens: true
       });
+
+      // utils.getUniqueScopes.mockReturnValue(`${TEST_SCOPES} offline_access`);
 
       await auth0.buildAuthorizeUrl(REDIRECT_OPTIONS);
 
@@ -482,7 +487,7 @@ describe('Auth0', () => {
 
       expect(utils.createQueryParams).toHaveBeenCalledWith({
         client_id: TEST_CLIENT_ID,
-        scope: `${TEST_SCOPES}`,
+        scope: TEST_SCOPES,
         response_type: TEST_CODE,
         response_mode: 'query',
         state: TEST_ENCODED_STATE,
@@ -1102,7 +1107,10 @@ describe('Auth0', () => {
 
     describe('when using refresh tokens', () => {
       it('uses default options with offine_access', async () => {
-        const { auth0, utils, cache } = await setup({
+        const utils = require('../src/utils');
+        utils.getUniqueScopes.mockReturnValue('offline_access');
+
+        const { auth0, cache } = await setup({
           useRefreshTokens: true
         });
 
@@ -1122,7 +1130,10 @@ describe('Auth0', () => {
       });
 
       it('uses custom options when provided with offline_access', async () => {
-        const { auth0, utils, cache } = await setup({
+        const utils = require('../src/utils');
+        utils.getUniqueScopes.mockReturnValue('offline_access');
+
+        const { auth0, cache } = await setup({
           useRefreshTokens: true
         });
 
@@ -1263,7 +1274,10 @@ describe('Auth0', () => {
 
       describe('when refresh tokens are used', () => {
         it('calls `cache.get` with the correct options', async () => {
-          const { auth0, cache, utils } = await setup({
+          const utils = require('../src/utils');
+          utils.getUniqueScopes.mockReturnValue('offline_access');
+
+          const { auth0, cache } = await setup({
             useRefreshTokens: true
           });
 

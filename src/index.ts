@@ -16,9 +16,7 @@ export default async function createAuth0Client(options: Auth0ClientOptions) {
   validateCrypto();
 
   if (options.useRefreshTokens) {
-    options.scope = options.scope
-      ? getUniqueScopes(options.scope, 'offline_access')
-      : 'offline_access';
+    options.scope = getUniqueScopes(options.scope, 'offline_access');
   }
 
   const auth0 = new Auth0Client(options);
