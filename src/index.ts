@@ -10,10 +10,14 @@ import * as ClientStorage from './storage';
 
 //this is necessary to export the type definitions used in this file
 import './global';
-import { validateCrypto } from './utils';
+import { validateCrypto, getUniqueScopes } from './utils';
 
 export default async function createAuth0Client(options: Auth0ClientOptions) {
   validateCrypto();
+
+  if (options.useRefreshTokens) {
+    options.scope = getUniqueScopes(options.scope, 'offline_access');
+  }
 
   const auth0 = new Auth0Client(options);
 

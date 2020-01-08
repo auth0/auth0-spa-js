@@ -92,10 +92,16 @@ interface Auth0ClientOptions extends BaseLoginOptions {
   leeway?: number;
 
   /**
-   * The strategy to use when storing cache data. Valid values are `memory` or `localstorage`.
+   * The location to use when storing cache data. Valid values are `memory` or `localstorage`.
    * The default setting is `memory`.
    */
   cacheLocation?: 'memory' | 'localstorage';
+
+  /**
+   * If true, refresh tokens are used to fetch new access tokens from the Auth0 server. If false, the legacy technique of using a hidden iframe and the `authorization_code` grant with `prompt=none` is used.
+   * The default setting is 'false'.
+   */
+  useRefreshTokens?: boolean;
 }
 
 /**
@@ -169,7 +175,7 @@ interface getIdTokenClaimsOptions {
   audience: string;
 }
 
-interface GetTokenSilentlyOptions extends GetUserOptions {
+interface GetTokenSilentlyOptions {
   /**
    * When `true`, ignores the cache and always sends a
    * request to Auth0.
@@ -185,6 +191,16 @@ interface GetTokenSilentlyOptions extends GetUserOptions {
    * Auth0 Application's settings.
    */
   redirect_uri?: string;
+
+  /**
+   * The scope that was used in the authentication request
+   */
+  scope?: string;
+
+  /**
+   * The audience that was used in the authentication request
+   */
+  audience?: string;
 
   /**
    * If you need to send custom parameters to the Authorization Server,
@@ -231,15 +247,25 @@ interface AuthenticationResult {
   error_description?: string;
 }
 
+interface TokenEndpointOptions {
+  baseUrl: string;
+  client_id: string;
+  grant_type: string;
+}
+
 /**
  * @ignore
  */
-interface OAuthTokenOptions {
-  baseUrl: string;
-  client_id: string;
-  audience?: string;
+interface OAuthTokenOptions extends TokenEndpointOptions {
   code_verifier: string;
   code: string;
+}
+
+/**
+ * @ignore
+ */
+interface RefreshTokenOptions extends TokenEndpointOptions {
+  refresh_token: string;
 }
 
 /**
