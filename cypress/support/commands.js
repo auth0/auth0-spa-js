@@ -38,6 +38,10 @@ Cypress.Commands.add('handleRedirectCallback', () => {
 
 Cypress.Commands.add('logout', () => cy.get('[data-cy=logout]').click());
 
+Cypress.Commands.add('toggleSwitch', name =>
+  cy.get(`[data-cy=switch-${name}]`).click()
+);
+
 Cypress.Commands.add('loginNoCallback', () => {
   cy.get('#login_redirect').click();
 

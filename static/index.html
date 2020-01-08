@@ -43,7 +43,11 @@
         </div>
 
         <div class="btn-group mb-3">
-          <button class="btn btn-secondary" @click="getToken" id="getToken">
+          <button
+            class="btn btn-secondary"
+            @click="getToken"
+            data-cy="get-token"
+          >
             Get access token
           </button>
 
@@ -139,7 +143,10 @@
             id="storage-switch"
             v-model="useLocalStorage"
           />
-          <label for="storage-switch" class="custom-control-label"
+          <label
+            for="storage-switch"
+            class="custom-control-label"
+            data-cy="switch-local-storage"
             >Use local storage</label
           >
         </div>
@@ -151,7 +158,10 @@
             id="refresh_token_switch"
             v-model="useRefreshTokens"
           />
-          <label for="refresh_token_switch" class="custom-control-label"
+          <label
+            for="refresh_token_switch"
+            class="custom-control-label"
+            data-cy="switch-refresh-tokens"
             >Use refresh tokens</label
           >
         </div>
@@ -163,7 +173,10 @@
             id="cache-switch"
             v-model="useCache"
           />
-          <label for="cache-switch" class="custom-control-label"
+          <label
+            for="cache-switch"
+            class="custom-control-label"
+            data-cy="switch-use-cache"
             >Use token cache when fetching new tokens</label
           >
         </div>
@@ -242,10 +255,6 @@
 
               auth0.isAuthenticated().then(function(isAuthenticated) {
                 _self.isAuthenticated = isAuthenticated;
-
-                if (isAuthenticated) {
-                  _self.showAuth0Info();
-                }
               });
             });
           },
