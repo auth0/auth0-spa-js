@@ -82,9 +82,7 @@ describe('getTokenSilently', function() {
             cy.toggleSwitch('use-cache');
 
             cy.login().then(() => {
-              cy.reload();
-
-              cy.toggleSwitch('refresh-tokens').wait(500);
+              cy.toggleSwitch('refresh-tokens').wait(250);
 
               cy.get('[data-cy=get-token]')
                 .click()
