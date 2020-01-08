@@ -92,7 +92,7 @@ describe('getTokenSilently', function() {
 
               cy.get('[data-cy=error]').should(
                 'contain',
-                'missing_refresh_token'
+                'No refresh token is available to fetch a new access token'
               );
             });
           });
