@@ -33,13 +33,17 @@
             Login redirect
           </button>
 
-          <button class="btn btn-success" @click="loginHandleRedirectCallback">
+          <button
+            class="btn btn-success"
+            @click="loginHandleRedirectCallback"
+            id="handle_redirect_callback"
+          >
             Login redirect callback
           </button>
         </div>
 
         <div class="btn-group mb-3">
-          <button class="btn btn-secondary" @click="getToken">
+          <button class="btn btn-secondary" @click="getToken" id="getToken">
             Get access token
           </button>
 
@@ -57,7 +61,12 @@
         </div>
 
         <div class="btn-group mb-3">
-          <button class="btn btn-outline-primary" @click="logout" id="logout">
+          <button
+            class="btn btn-outline-primary"
+            @click="logout"
+            id="logout"
+            data-cy="logout"
+          >
             logout (default)
           </button>
 
@@ -69,7 +78,7 @@
         <template v-if="error">
           <hr />
           <h3>Last error</h3>
-          <pre><code>{{JSON.stringify(error, null, 2)}}</code></pre>
+          <pre><code data-cy="error">{{JSON.stringify(error, null, 2)}}</code></pre>
         </template>
 
         <hr />
@@ -89,7 +98,7 @@
           <div class="card-header">Access Tokens</div>
           <div class="card-body">
             <ul v-for="token in access_tokens">
-              <li>{{token}}</li>
+              <li data-cy="access-token">{{token}}</li>
             </ul>
           </div>
         </div>
@@ -163,7 +172,11 @@
           Save
         </button>
 
-        <button @click="resetForm" class="btn btn-outline-primary">
+        <button
+          @click="resetForm"
+          class="btn btn-outline-primary"
+          id="reset-config"
+        >
           Reset
         </button>
       </form>
