@@ -5,8 +5,8 @@ import {
   createQueryParams,
   bufferToBase64UrlEncoded,
   createRandomString,
-  encodeState,
-  decodeState,
+  encode,
+  decode,
   sha256,
   openPopup,
   runPopup,
@@ -138,14 +138,14 @@ describe('utils', () => {
       expect(result.length).toBeLessThanOrEqual(128);
     });
   });
-  describe('encodeState', () => {
+  describe('encode', () => {
     it('encodes state', () => {
-      expect(encodeState('test')).toBe('dGVzdA==');
+      expect(encode('test')).toBe('dGVzdA==');
     });
   });
-  describe('decodeState', () => {
+  describe('decode', () => {
     it('decodes state', () => {
-      expect(decodeState('dGVzdA==')).toBe('test');
+      expect(decode('dGVzdA==')).toBe('test');
     });
   });
   describe('sha256', () => {
@@ -270,14 +270,16 @@ describe('utils', () => {
         )
       );
       await oauthToken({
+        grant_type: 'authorization_code',
         baseUrl: 'https://test.com',
         client_id: 'client_idIn',
         code: 'codeIn',
         code_verifier: 'code_verifierIn'
       });
+
       expect(mockUnfetch).toHaveBeenCalledWith('https://test.com/oauth/token', {
         body:
-          '{"grant_type":"authorization_code","redirect_uri":"http://localhost","client_id":"client_idIn","code":"codeIn","code_verifier":"code_verifierIn"}',
+          '{"redirect_uri":"http://localhost","grant_type":"authorization_code","client_id":"client_idIn","code":"codeIn","code_verifier":"code_verifierIn"}',
         headers: { 'Content-type': 'application/json' },
         method: 'POST'
       });
