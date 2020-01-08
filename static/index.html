@@ -336,7 +336,13 @@
                 _self.error = null;
               })
               .catch(function(e) {
-                _self.error = e;
+                console.error(e);
+
+                if (e.message) {
+                  _self.error = e.message;
+                } else {
+                  _self.error = e;
+                }
               });
           },
           getMultipleTokens: function() {

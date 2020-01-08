@@ -183,7 +183,7 @@ describe('Auth0', () => {
         response_type: TEST_CODE,
         response_mode: 'web_message',
         state: TEST_ENCODED_STATE,
-        nonce: TEST_RANDOM_STRING,
+        nonce: TEST_ENCODED_STATE,
         redirect_uri: 'http://localhost',
         code_challenge: TEST_BASE64_ENCODED_STRING,
         code_challenge_method: 'S256',
@@ -202,7 +202,7 @@ describe('Auth0', () => {
         response_type: TEST_CODE,
         response_mode: 'web_message',
         state: TEST_ENCODED_STATE,
-        nonce: TEST_RANDOM_STRING,
+        nonce: TEST_ENCODED_STATE,
         redirect_uri: 'http://localhost',
         code_challenge: TEST_BASE64_ENCODED_STRING,
         code_challenge_method: 'S256',
@@ -222,7 +222,7 @@ describe('Auth0', () => {
         response_type: TEST_CODE,
         response_mode: 'web_message',
         state: TEST_ENCODED_STATE,
-        nonce: TEST_RANDOM_STRING,
+        nonce: TEST_ENCODED_STATE,
         redirect_uri,
         code_challenge: TEST_BASE64_ENCODED_STRING,
         code_challenge_method: 'S256'
@@ -239,7 +239,7 @@ describe('Auth0', () => {
         response_type: TEST_CODE,
         response_mode: 'web_message',
         state: TEST_ENCODED_STATE,
-        nonce: TEST_RANDOM_STRING,
+        nonce: TEST_ENCODED_STATE,
         redirect_uri: 'http://localhost',
         code_challenge: TEST_BASE64_ENCODED_STRING,
         code_challenge_method: 'S256'
@@ -310,7 +310,7 @@ describe('Auth0', () => {
       await auth0.loginWithPopup({});
       expect(tokenVerifier).toHaveBeenCalledWith({
         id_token: TEST_ID_TOKEN,
-        nonce: TEST_RANDOM_STRING,
+        nonce: TEST_ENCODED_STATE,
         aud: 'test-client-id',
         iss: 'https://test.auth0.com/',
         leeway: undefined,
@@ -326,7 +326,7 @@ describe('Auth0', () => {
       expect(tokenVerifier).toHaveBeenCalledWith({
         aud: 'test-client-id',
         id_token: TEST_ID_TOKEN,
-        nonce: TEST_RANDOM_STRING,
+        nonce: TEST_ENCODED_STATE,
         iss: 'https://test-123.auth0.com/',
         leeway: undefined,
         max_age: undefined
@@ -338,7 +338,7 @@ describe('Auth0', () => {
       await auth0.loginWithPopup({});
       expect(tokenVerifier).toHaveBeenCalledWith({
         id_token: TEST_ID_TOKEN,
-        nonce: TEST_RANDOM_STRING,
+        nonce: TEST_ENCODED_STATE,
         aud: 'test-client-id',
         iss: 'https://test.auth0.com/',
         leeway: 10,
@@ -351,7 +351,7 @@ describe('Auth0', () => {
       await auth0.loginWithPopup({});
       expect(tokenVerifier).toHaveBeenCalledWith({
         id_token: TEST_ID_TOKEN,
-        nonce: TEST_RANDOM_STRING,
+        nonce: TEST_ENCODED_STATE,
         aud: 'test-client-id',
         iss: 'https://test.auth0.com/',
         leeway: undefined,
@@ -364,7 +364,7 @@ describe('Auth0', () => {
       await auth0.loginWithPopup({});
       expect(tokenVerifier).toHaveBeenCalledWith({
         id_token: TEST_ID_TOKEN,
-        nonce: TEST_RANDOM_STRING,
+        nonce: TEST_ENCODED_STATE,
         aud: 'test-client-id',
         iss: 'https://test.auth0.com/',
         leeway: undefined,
@@ -377,7 +377,7 @@ describe('Auth0', () => {
       await auth0.loginWithPopup({});
       expect(tokenVerifier).toHaveBeenCalledWith({
         id_token: TEST_ID_TOKEN,
-        nonce: TEST_RANDOM_STRING,
+        nonce: TEST_ENCODED_STATE,
         aud: 'test-client-id',
         iss: 'https://test.auth0.com/',
         leeway: undefined,
@@ -459,7 +459,7 @@ describe('Auth0', () => {
         response_type: TEST_CODE,
         response_mode: 'query',
         state: TEST_ENCODED_STATE,
-        nonce: TEST_RANDOM_STRING,
+        nonce: TEST_ENCODED_STATE,
         redirect_uri: REDIRECT_OPTIONS.redirect_uri,
         code_challenge: TEST_BASE64_ENCODED_STRING,
         code_challenge_method: 'S256',
@@ -491,7 +491,7 @@ describe('Auth0', () => {
         response_type: TEST_CODE,
         response_mode: 'query',
         state: TEST_ENCODED_STATE,
-        nonce: TEST_RANDOM_STRING,
+        nonce: TEST_ENCODED_STATE,
         redirect_uri: REDIRECT_OPTIONS.redirect_uri,
         code_challenge: TEST_BASE64_ENCODED_STRING,
         code_challenge_method: 'S256',
@@ -509,7 +509,7 @@ describe('Auth0', () => {
         response_type: TEST_CODE,
         response_mode: 'query',
         state: TEST_ENCODED_STATE,
-        nonce: TEST_RANDOM_STRING,
+        nonce: TEST_ENCODED_STATE,
         redirect_uri: REDIRECT_OPTIONS.redirect_uri,
         code_challenge: TEST_BASE64_ENCODED_STRING,
         code_challenge_method: 'S256',
@@ -532,7 +532,7 @@ describe('Auth0', () => {
         response_type: TEST_CODE,
         response_mode: 'query',
         state: TEST_ENCODED_STATE,
-        nonce: TEST_RANDOM_STRING,
+        nonce: TEST_ENCODED_STATE,
         redirect_uri,
         code_challenge: TEST_BASE64_ENCODED_STRING,
         code_challenge_method: 'S256',
@@ -554,7 +554,7 @@ describe('Auth0', () => {
         response_type: TEST_CODE,
         response_mode: 'query',
         state: TEST_ENCODED_STATE,
-        nonce: TEST_RANDOM_STRING,
+        nonce: TEST_ENCODED_STATE,
         redirect_uri: REDIRECT_OPTIONS.redirect_uri,
         code_challenge: TEST_BASE64_ENCODED_STRING,
         code_challenge_method: 'S256',
@@ -574,7 +574,7 @@ describe('Auth0', () => {
         response_type: TEST_CODE,
         response_mode: 'query',
         state: TEST_ENCODED_STATE,
-        nonce: TEST_RANDOM_STRING,
+        nonce: TEST_ENCODED_STATE,
         redirect_uri: REDIRECT_OPTIONS.redirect_uri,
         code_challenge: TEST_BASE64_ENCODED_STRING,
         code_challenge_method: 'S256',
@@ -592,7 +592,7 @@ describe('Auth0', () => {
           appState: TEST_APP_STATE,
           audience: 'default',
           code_verifier: TEST_RANDOM_STRING,
-          nonce: TEST_RANDOM_STRING,
+          nonce: TEST_ENCODED_STATE,
           scope: TEST_SCOPES
         }
       );
@@ -678,7 +678,7 @@ describe('Auth0', () => {
         const result = await setup();
         result.transactionManager.get.mockReturnValue({
           code_verifier: TEST_RANDOM_STRING,
-          nonce: TEST_RANDOM_STRING,
+          nonce: TEST_ENCODED_STATE,
           audience: 'default',
           scope: TEST_SCOPES,
           appState: TEST_APP_STATE
@@ -795,7 +795,7 @@ describe('Auth0', () => {
 
         expect(tokenVerifier).toHaveBeenCalledWith({
           id_token: TEST_ID_TOKEN,
-          nonce: TEST_RANDOM_STRING,
+          nonce: TEST_ENCODED_STATE,
           aud: 'test-client-id',
           iss: 'https://test.auth0.com/',
           leeway: undefined,
@@ -851,7 +851,7 @@ describe('Auth0', () => {
         const result = await setup();
         result.transactionManager.get.mockReturnValue({
           code_verifier: TEST_RANDOM_STRING,
-          nonce: TEST_RANDOM_STRING,
+          nonce: TEST_ENCODED_STATE,
           audience: 'default',
           scope: TEST_SCOPES,
           appState: TEST_APP_STATE
@@ -976,7 +976,7 @@ describe('Auth0', () => {
 
         expect(tokenVerifier).toHaveBeenCalledWith({
           id_token: TEST_ID_TOKEN,
-          nonce: TEST_RANDOM_STRING,
+          nonce: TEST_ENCODED_STATE,
           aud: 'test-client-id',
           iss: 'https://test.auth0.com/',
           leeway: undefined,
@@ -1426,7 +1426,7 @@ describe('Auth0', () => {
           response_mode: 'web_message',
           prompt: 'none',
           state: TEST_ENCODED_STATE,
-          nonce: TEST_RANDOM_STRING,
+          nonce: TEST_ENCODED_STATE,
           redirect_uri: 'http://localhost',
           code_challenge: TEST_BASE64_ENCODED_STRING,
           code_challenge_method: 'S256'
@@ -1445,7 +1445,7 @@ describe('Auth0', () => {
           response_mode: 'web_message',
           prompt: 'none',
           state: TEST_ENCODED_STATE,
-          nonce: TEST_RANDOM_STRING,
+          nonce: TEST_ENCODED_STATE,
           redirect_uri: 'http://localhost',
           code_challenge: TEST_BASE64_ENCODED_STRING,
           code_challenge_method: 'S256'
@@ -1467,7 +1467,7 @@ describe('Auth0', () => {
           response_mode: 'web_message',
           prompt: 'none',
           state: TEST_ENCODED_STATE,
-          nonce: TEST_RANDOM_STRING,
+          nonce: TEST_ENCODED_STATE,
           redirect_uri,
           code_challenge: TEST_BASE64_ENCODED_STRING,
           code_challenge_method: 'S256'
@@ -1487,7 +1487,7 @@ describe('Auth0', () => {
           response_mode: 'web_message',
           prompt: 'none',
           state: TEST_ENCODED_STATE,
-          nonce: TEST_RANDOM_STRING,
+          nonce: TEST_ENCODED_STATE,
           redirect_uri: 'http://localhost',
           code_challenge: TEST_BASE64_ENCODED_STRING,
           code_challenge_method: 'S256'
@@ -1547,7 +1547,7 @@ describe('Auth0', () => {
         await auth0.getTokenSilently(defaultOptionsIgnoreCacheTrue);
         expect(tokenVerifier).toHaveBeenCalledWith({
           id_token: TEST_ID_TOKEN,
-          nonce: TEST_RANDOM_STRING,
+          nonce: TEST_ENCODED_STATE,
           aud: 'test-client-id',
           iss: 'https://test.auth0.com/',
           leeway: undefined,
