@@ -105,8 +105,8 @@ export const createRandomString = () => {
   return random;
 };
 
-export const encodeState = (state: string) => btoa(state);
-export const decodeState = (state: string) => atob(state);
+export const encode = (value: string) => btoa(value);
+export const decode = (value: string) => atob(value);
 
 export const createQueryParams = (params: any) => {
   return Object.keys(params)

@@ -5,7 +5,7 @@ import {
   createQueryParams,
   runPopup,
   parseQueryResult,
-  encodeState,
+  encode,
   createRandomString,
   runIframe,
   sha256,
@@ -147,8 +147,8 @@ export default class Auth0Client {
       ...authorizeOptions
     } = options;
 
-    const stateIn = encodeState(createRandomString());
-    const nonceIn = encodeState(createRandomString());
+    const stateIn = encode(createRandomString());
+    const nonceIn = encode(createRandomString());
     const code_verifier = createRandomString();
     const code_challengeBuffer = await sha256(code_verifier);
     const code_challenge = bufferToBase64UrlEncoded(code_challengeBuffer);
@@ -197,8 +197,8 @@ export default class Auth0Client {
   ) {
     const popup = await openPopup();
     const { ...authorizeOptions } = options;
-    const stateIn = encodeState(createRandomString());
-    const nonceIn = encodeState(createRandomString());
+    const stateIn = encode(createRandomString());
+    const nonceIn = encode(createRandomString());
     const code_verifier = createRandomString();
     const code_challengeBuffer = await sha256(code_verifier);
     const code_challenge = bufferToBase64UrlEncoded(code_challengeBuffer);
@@ -510,8 +510,8 @@ export default class Auth0Client {
   private async _getTokenFromIFrame(
     options: GetTokenSilentlyOptions
   ): Promise<any> {
-    const stateIn = encodeState(createRandomString());
-    const nonceIn = encodeState(createRandomString());
+    const stateIn = encode(createRandomString());
+    const nonceIn = encode(createRandomString());
     const code_verifier = createRandomString();
     const code_challengeBuffer = await sha256(code_verifier);
     const code_challenge = bufferToBase64UrlEncoded(code_challengeBuffer);

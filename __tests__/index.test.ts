@@ -67,7 +67,7 @@ const setup = async (options = {}) => {
 
   utils.createQueryParams.mockReturnValue(TEST_QUERY_PARAMS);
   utils.getUniqueScopes.mockReturnValue(TEST_SCOPES);
-  utils.encodeState.mockReturnValue(TEST_ENCODED_STATE);
+  utils.encode.mockReturnValue(TEST_ENCODED_STATE);
   utils.createRandomString.mockReturnValue(TEST_RANDOM_STRING);
   utils.sha256.mockReturnValue(Promise.resolve(TEST_ARRAY_BUFFER));
   utils.bufferToBase64UrlEncoded.mockReturnValue(TEST_BASE64_ENCODED_STRING);
@@ -160,7 +160,7 @@ describe('Auth0', () => {
       const { auth0, utils } = await setup();
 
       await auth0.loginWithPopup({});
-      expect(utils.encodeState).toHaveBeenCalledWith(TEST_RANDOM_STRING);
+      expect(utils.encode).toHaveBeenCalledWith(TEST_RANDOM_STRING);
     });
     it('creates `code_challenge` by using `utils.sha256` with the result of `utils.createRandomString`', async () => {
       const { auth0, utils } = await setup();
@@ -429,7 +429,7 @@ describe('Auth0', () => {
       const { auth0, utils } = await setup();
 
       await auth0.buildAuthorizeUrl(REDIRECT_OPTIONS);
-      expect(utils.encodeState).toHaveBeenCalledWith(TEST_RANDOM_STRING);
+      expect(utils.encode).toHaveBeenCalledWith(TEST_RANDOM_STRING);
     });
 
     it('creates `code_challenge` by using `utils.sha256` with the result of `utils.createRandomString`', async () => {
@@ -1268,7 +1268,7 @@ describe('Auth0', () => {
           await auth0.getTokenSilently();
 
           //we only evaluate that the code didn't bail out because of the cache
-          expect(utils.encodeState).toHaveBeenCalledWith(TEST_RANDOM_STRING);
+          expect(utils.encode).toHaveBeenCalledWith(TEST_RANDOM_STRING);
         });
       });
 
@@ -1400,7 +1400,7 @@ describe('Auth0', () => {
         const { auth0, utils } = await setup();
 
         await auth0.getTokenSilently(defaultOptionsIgnoreCacheTrue);
-        expect(utils.encodeState).toHaveBeenCalledWith(TEST_RANDOM_STRING);
+        expect(utils.encode).toHaveBeenCalledWith(TEST_RANDOM_STRING);
       });
 
       it('creates `code_challenge` by using `utils.sha256` with the result of `utils.createRandomString`', async () => {

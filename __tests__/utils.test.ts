@@ -5,8 +5,8 @@ import {
   createQueryParams,
   bufferToBase64UrlEncoded,
   createRandomString,
-  encodeState,
-  decodeState,
+  encode,
+  decode,
   sha256,
   openPopup,
   runPopup,
@@ -138,14 +138,14 @@ describe('utils', () => {
       expect(result.length).toBeLessThanOrEqual(128);
     });
   });
-  describe('encodeState', () => {
+  describe('encode', () => {
     it('encodes state', () => {
-      expect(encodeState('test')).toBe('dGVzdA==');
+      expect(encode('test')).toBe('dGVzdA==');
     });
   });
-  describe('decodeState', () => {
+  describe('decode', () => {
     it('decodes state', () => {
-      expect(decodeState('dGVzdA==')).toBe('test');
+      expect(decode('dGVzdA==')).toBe('test');
     });
   });
   describe('sha256', () => {
