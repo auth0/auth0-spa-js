@@ -99,7 +99,9 @@ interface Auth0ClientOptions extends BaseLoginOptions {
 
   /**
    * If true, refresh tokens are used to fetch new access tokens from the Auth0 server. If false, the legacy technique of using a hidden iframe and the `authorization_code` grant with `prompt=none` is used.
-   * The default setting is 'false'.
+   * The default setting is `false`.
+   *
+   * *Note*: Use of refresh tokens must be enabled by an administrator on your Auth0 client application.
    */
   useRefreshTokens?: boolean;
 }
