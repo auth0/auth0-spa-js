@@ -1,6 +1,7 @@
 const fs = require('fs');
 const pkg = require('../package.json');
 const exec = require('./exec');
+const writeChangelog = require('./changelog');
 
 const newVersion = process.argv[2];
 if (!newVersion) {
@@ -32,4 +33,6 @@ const branch = process.argv[3];
   fs.writeFileSync('./src/version.ts', `export default '${newVersion}';`);
 
   await exec('npm run docs');
+
+  await writeChangelog();
 })();
