@@ -4,11 +4,16 @@ const exec = require('./exec');
 
 const newVersion = process.argv[2];
 if (!newVersion) {
-  throw new Error('usage: `release new_version`');
+  throw new Error('usage: `release new_version [branch]`');
 }
 
+const branch = process.argv[3];
+
 (async () => {
-  await exec('git checkout master');
+  if (branch) {
+    await exec(`git checkout ${branch}`);
+  }
+
   await exec('git pull');
   await exec(`git checkout -b prepare/${newVersion}`);
 
@@ -23,6 +28,7 @@ if (!newVersion) {
     './package.json',
     JSON.stringify({ ...pkg, version: newVersion }, null, 2)
   );
+
   fs.writeFileSync('./src/version.ts', `export default '${newVersion}';`);
 
   await exec('npm run docs');
