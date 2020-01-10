@@ -10,22 +10,26 @@ const path = require('path');
 const execSync = require('child_process').execSync;
 const moment = require('moment');
 
-const tmp = fs.readFileSync('.release', 'utf-8');
-const currentVersion = fs.readFileSync(
-  path.resolve(tmp, 'current-version'),
-  'utf-8'
-);
-
-const changelogPath = path.resolve(tmp, 'CHANGELOG.md');
-const stream = fs.createWriteStream(changelogPath);
-
-const webtask = `https://webtask.it.auth0.com/api/run/wt-hernan-auth0_com-0/oss-changelog.js?webtask_no_cache=1&repo=${repo}&milestone=v${library.version}`;
-const command = `curl -f -s -H "Accept: text/markdown" "${webtask}"`;
-const changes = execSync(command, { encoding: 'utf-8' });
-const previous = execSync('sed "s/# Change Log//" CHANGELOG.md | sed \'1,2d\'');
-
 module.exports = function() {
   return new Promise((resolve, reject) => {
+    const tmp = fs.readFileSync('.release', 'utf-8');
+
+    const currentVersion = fs.readFileSync(
+      path.resolve(tmp, 'current-version'),
+      'utf-8'
+    );
+
+    const changelogPath = path.resolve(tmp, 'CHANGELOG.md');
+    const stream = fs.createWriteStream(changelogPath);
+    library.version = '1.6.2';
+    const webtask = `https://webtask.it.auth0.com/api/run/wt-hernan-auth0_com-0/oss-changelog.js?webtask_no_cache=1&repo=${repo}&milestone=v${library.version}`;
+    const command = `curl -f -s -H "Accept: text/markdown" "${webtask}"`;
+    const changes = execSync(command, { encoding: 'utf-8' });
+
+    const previous = execSync(
+      'sed "s/# Change Log//" CHANGELOG.md | sed \'1,2d\''
+    );
+
     stream.once('open', function(fd) {
       stream.write('# Change Log');
       stream.write('\n');
