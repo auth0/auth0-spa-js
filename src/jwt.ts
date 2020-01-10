@@ -160,24 +160,17 @@ export const verify = (options: JWTVerifyOptions) => {
   const leeway = options.leeway || 60;
   const now = new Date();
   const expDate = new Date(0);
-  const iatDate = new Date(0);
   const nbfDate = new Date(0);
   const authTimeDate = new Date(0);
   authTimeDate.setUTCSeconds(
     (parseInt(decoded.claims.auth_time) + options.max_age) / 1000 + leeway
   );
   expDate.setUTCSeconds(decoded.claims.exp + leeway);
-  iatDate.setUTCSeconds(decoded.claims.iat - leeway);
   nbfDate.setUTCSeconds(decoded.claims.nbf - leeway);
 
   if (now > expDate) {
     throw new Error(
       `Expiration Time (exp) claim error in the ID token; current time (${now}) is after expiration time (${expDate})`
-    );
-  }
-  if (now < iatDate) {
-    throw new Error(
-      `Issued At (iat) claim error in the ID token; current time (${now}) is before issued at time (${iatDate})`
     );
   }
   if (isNumber(decoded.claims.nbf) && now < nbfDate) {
