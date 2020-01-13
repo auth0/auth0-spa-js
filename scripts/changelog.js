@@ -4,13 +4,12 @@ if (process.platform === 'win32') {
 }
 
 const repo = 'auth0-spa-js';
-const library = require('../package.json');
 const fs = require('fs');
 const path = require('path');
 const execSync = require('child_process').execSync;
 const moment = require('moment');
 
-module.exports = function() {
+module.exports = function(newVersion) {
   return new Promise((resolve, reject) => {
     const tmp = fs.readFileSync('.release', 'utf-8');
 
@@ -21,8 +20,7 @@ module.exports = function() {
 
     const changelogPath = path.resolve(tmp, 'CHANGELOG.md');
     const stream = fs.createWriteStream(changelogPath);
-    library.version = '1.6.2';
-    const webtask = `https://webtask.it.auth0.com/api/run/wt-hernan-auth0_com-0/oss-changelog.js?webtask_no_cache=1&repo=${repo}&milestone=v${library.version}`;
+    const webtask = `https://webtask.it.auth0.com/api/run/wt-hernan-auth0_com-0/oss-changelog.js?webtask_no_cache=1&repo=${repo}&milestone=v${newVersion}`;
     const command = `curl -f -s -H "Accept: text/markdown" "${webtask}"`;
     const changes = execSync(command, { encoding: 'utf-8' });
 
@@ -36,15 +34,15 @@ module.exports = function() {
       stream.write('\n');
 
       stream.write(
-        `## [v${library.version}](https://github.com/auth0/${repo}/tree/v${
-          library.version
-        }) (${moment().format('YYYY-MM-DD')})`
+        `## [v${newVersion}](https://github.com/auth0/${repo}/tree/v${newVersion}) (${moment().format(
+          'YYYY-MM-DD'
+        )})`
       );
 
       stream.write('\n');
 
       stream.write(
-        `[Full Changelog](https://github.com/auth0/${repo}/compare/v${currentVersion}...v${library.version})`
+        `[Full Changelog](https://github.com/auth0/${repo}/compare/v${currentVersion}...v${newVersion})`
       );
 
       stream.write('\n');

@@ -18,7 +18,7 @@ if (!newVersion) {
 }
 
 var lastVersionFile = path.resolve(tmp, 'current-version');
-fs.writeFileSync(lastVersionFile, newVersion);
+fs.writeFileSync(lastVersionFile, pkg.version);
 
 const branch = process.argv[3];
 
@@ -46,5 +46,5 @@ const branch = process.argv[3];
 
   await exec('npm run docs');
 
-  await writeChangelog();
+  await writeChangelog(newVersion);
 })();
