@@ -1,6 +1,7 @@
 import { InMemoryCache, LocalStorageCache } from '../src/cache';
 
 const nowSeconds = () => Math.floor(Date.now() / 1000);
+const dayInSeconds = 86400;
 
 describe('InMemoryCache', () => {
   let cache: InMemoryCache;
@@ -141,11 +142,11 @@ describe('LocalStorageCache', () => {
       scope: '__TEST_SCOPE__',
       id_token: '__ID_TOKEN__',
       access_token: '__ACCESS_TOKEN__',
-      expires_in: 86400,
+      expires_in: dayInSeconds,
       decodedToken: {
         claims: {
           __raw: 'idtoken',
-          exp: nowSeconds() + 86500,
+          exp: nowSeconds() + dayInSeconds + 100,
           name: 'Test'
         },
         user: { name: 'Test' }
@@ -165,7 +166,7 @@ describe('LocalStorageCache', () => {
         '@@auth0spajs@@::__TEST_CLIENT_ID__::__TEST_AUDIENCE__::__TEST_SCOPE__',
         JSON.stringify({
           body: defaultEntry,
-          expiresAt: nowSeconds() + 86400
+          expiresAt: nowSeconds() + dayInSeconds
         })
       );
 
@@ -264,14 +265,14 @@ describe('LocalStorageCache', () => {
         '@@auth0spajs@@::__TEST_CLIENT_ID__::__TEST_AUDIENCE__::__TEST_SCOPE__',
         JSON.stringify({
           body: defaultEntry,
-          expiresAt: nowSeconds() + 86400 - 60
+          expiresAt: nowSeconds() + dayInSeconds - 60
         })
       );
     });
 
     it('can set a value into the cache when exp < expires_in', () => {
       const entry = Object.assign({}, defaultEntry, {
-        expires_in: 86500,
+        expires_in: dayInSeconds + 100,
         decodedToken: {
           claims: {
             exp: nowSeconds() + 100
