@@ -66,7 +66,9 @@ export class LocalStorageCache implements ICache {
     setTimeout(() => {
       const payload = this.getPayload(cacheKey);
 
-      if (!payload || !payload.body) return;
+      if (!payload || !payload.body) {
+        return;
+      }
 
       if (payload.body.refresh_token) {
         const newPayload = this.stripPayload(payload);
