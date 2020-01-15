@@ -1,5 +1,4 @@
 import { InMemoryCache, LocalStorageCache } from '../src/cache';
-import { _ } from 'core-js';
 
 const nowSeconds = () => Math.floor(Date.now() / 1000);
 
