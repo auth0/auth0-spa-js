@@ -194,19 +194,22 @@ describe('LocalStorageCache', () => {
             id_token: '__ID_TOKEN__',
             access_token: '__ACCESS_TOKEN__',
             refresh_token: '__REFRESH_TOKEN__',
-            expires_in: -10,
+            expires_in: 10,
             decodedToken: {
               claims: {
                 __raw: 'idtoken',
-                exp: nowSeconds() - 5,
+                exp: nowSeconds() + 15,
                 name: 'Test'
               },
               user: { name: 'Test' }
             }
           },
-          expiresAt: nowSeconds() - 10
+          expiresAt: nowSeconds() + 10
         })
       );
+
+      const now = nowSeconds();
+      global.Date.now = jest.fn(() => (now + 30) * 1000);
 
       expect(
         cache.get({
@@ -230,19 +233,22 @@ describe('LocalStorageCache', () => {
           scope: '__TEST_SCOPE__',
           id_token: '__ID_TOKEN__',
           access_token: '__ACCESS_TOKEN__',
-          expires_in: -10,
+          expires_in: 10,
           decodedToken: {
             claims: {
               __raw: 'idtoken',
-              exp: nowSeconds() - 5,
+              exp: nowSeconds() + 15,
               name: 'Test'
             },
             user: { name: 'Test' }
           }
         },
-        expiresAt: nowSeconds() - 10
+        expiresAt: nowSeconds() + 10
       })
     );
+
+    const now = nowSeconds();
+    global.Date.now = jest.fn(() => (now + 30) * 1000);
 
     expect(
       cache.get({
