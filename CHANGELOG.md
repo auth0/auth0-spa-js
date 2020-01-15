@@ -1,3 +1,9 @@
+## [v1.6.2](https://github.com/auth0/auth0-spa-js/tree/v1.6.2) (2020-01-13)
+
+**Removed**
+
+Removed future issued-at claim check [stevehobbsdev](https://github.com/stevehobbsdev) - https://github.com/auth0/auth0-spa-js/pull/329
+
 ## [v1.6.1](https://github.com/auth0/auth0-spa-js/tree/v1.6.1) (2020-01-07)
 
 **Fixed**
