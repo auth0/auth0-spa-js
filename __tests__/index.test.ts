@@ -1270,6 +1270,16 @@ describe('Auth0', () => {
           //we only evaluate that the code didn't bail out because of the cache
           expect(utils.encode).toHaveBeenCalledWith(TEST_RANDOM_STRING);
         });
+
+        it('continues method execution when there is a value from the cache but no access token', async () => {
+          const { auth0, utils, cache } = await setup();
+
+          cache.get.mockReturnValue({});
+
+          await auth0.getTokenSilently();
+
+          expect(utils.encode).toHaveBeenCalledWith(TEST_RANDOM_STRING);
+        });
       });
 
       describe('when refresh tokens are used', () => {

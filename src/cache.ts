@@ -21,12 +21,12 @@ interface CacheEntry {
 }
 
 interface CachedTokens {
-  [key: string]: CacheEntry;
+  [key: string]: Partial<CacheEntry>;
 }
 
 export interface ICache {
   save(entry: CacheEntry): void;
-  get(key: CacheKeyData): CacheEntry;
+  get(key: CacheKeyData): Partial<CacheEntry>;
   clear(): void;
 }
 
@@ -40,6 +40,11 @@ const getExpirationTimeoutInMilliseconds = (expiresIn: number, exp: number) => {
   return Math.min(expiresIn, expTime) * 1000 * 0.8;
 };
 
+type LocalStorageCachePayload = {
+  body: Partial<CacheEntry>;
+  expiresAt: number;
+};
+
 export class LocalStorageCache implements ICache {
   public save(entry: CacheEntry): void {
     const cacheKey = createKey(entry);
@@ -48,7 +53,7 @@ export class LocalStorageCache implements ICache {
     const expirySeconds =
       Math.min(expiresInTime, entry.decodedToken.claims.exp) - 60; // take off a small leeway
 
-    const payload = {
+    const payload: LocalStorageCachePayload = {
       body: entry,
       expiresAt: expirySeconds
     };
@@ -59,27 +64,39 @@ export class LocalStorageCache implements ICache {
     );
 
     setTimeout(() => {
-      window.localStorage.removeItem(cacheKey);
+      const payload = this.getPayload(cacheKey);
+
+      if (!payload || !payload.body) return;
+
+      if (payload.body.refresh_token) {
+        const newPayload = this.stripPayload(payload);
+        localStorage.setItem(cacheKey, JSON.stringify(newPayload));
+
+        return;
+      }
+
+      localStorage.removeItem(cacheKey);
     }, timeout);
 
     window.localStorage.setItem(cacheKey, JSON.stringify(payload));
   }
 
-  public get(key: CacheKeyData): CacheEntry {
+  public get(key: CacheKeyData): Partial<CacheEntry> {
     const cacheKey = createKey(key);
-    const json = window.localStorage.getItem(cacheKey);
-    let payload;
-
-    if (!json) return;
-
-    payload = JSON.parse(json);
+    const payload = this.getPayload(cacheKey);
+    const nowSeconds = Math.floor(Date.now() / 1000);
 
     if (!payload) return;
 
-    const nowSeconds = Math.floor(Date.now() / 1000);
-
     if (payload.expiresAt < nowSeconds) {
-      window.localStorage.removeItem(cacheKey);
+      if (payload.body.refresh_token) {
+        const newPayload = this.stripPayload(payload);
+        localStorage.setItem(cacheKey, JSON.stringify(newPayload));
+
+        return newPayload.body;
+      }
+
+      localStorage.removeItem(cacheKey);
       return;
     }
 
@@ -92,6 +109,40 @@ export class LocalStorageCache implements ICache {
         localStorage.removeItem(localStorage.key(i));
       }
     }
+  }
+
+  /**
+   * Retrieves data from local storage and parses it into the correct format
+   * @param cacheKey The cache key
+   */
+  private getPayload(cacheKey: string): LocalStorageCachePayload {
+    const json = window.localStorage.getItem(cacheKey);
+    let payload;
+
+    if (!json) return;
+
+    payload = JSON.parse(json);
+
+    if (!payload) return;
+
+    return payload;
+  }
+
+  /**
+   * Produce a copy of the payload with everything removed except the refresh token
+   * @param payload The payload
+   */
+  private stripPayload(
+    payload: LocalStorageCachePayload
+  ): LocalStorageCachePayload {
+    const { refresh_token } = payload.body;
+
+    const newPayload: LocalStorageCachePayload = {
+      body: { refresh_token: refresh_token },
+      expiresAt: payload.expiresAt
+    };
+
+    return newPayload;
   }
 }
 
@@ -108,6 +159,15 @@ export class InMemoryCache implements ICache {
     );
 
     setTimeout(() => {
+      const payload = this.cache[key];
+
+      if (!payload) return;
+
+      if (payload.refresh_token) {
+        this.cache[key] = { refresh_token: payload.refresh_token };
+        return;
+      }
+
       delete this.cache[key];
     }, timeout);
   }

@@ -19,6 +19,8 @@
 
       <h1 class="mb-5">Auth0 SPA JS Playground</h1>
 
+      <p><strong>Is authenticated:</strong>&nbsp;{{ isAuthenticated }}</p>
+
       <div v-if="!loading">
         <div class="btn-group mb-3">
           <button class="btn btn-primary" @click="loginPopup">
@@ -136,6 +138,16 @@
           />
         </div>
 
+        <div class="form-group">
+          <label for="audience">Audience</label>
+          <input
+            type="text"
+            class="form-control"
+            id="audience"
+            v-model="audience"
+          />
+        </div>
+
         <div class="custom-control custom-switch mb-5">
           <input
             type="checkbox"
@@ -200,6 +212,7 @@
     <script type="text/javascript">
       var defaultDomain = 'brucke.auth0.com';
       var defaultClientId = 'wLSIP47wM39wKdDmOj6Zb5eSEw3JVhVp';
+      var defaultAudience = '';
 
       var app = new Vue({
         el: '#app',
@@ -220,6 +233,7 @@
             isAuthenticated: false,
             domain: data.domain || defaultDomain,
             clientId: data.clientId || defaultClientId,
+            audience: data.audience || defaultAudience,
             error: null
           };
         },
@@ -247,7 +261,8 @@
               domain: _self.domain,
               client_id: _self.clientId,
               cacheLocation: _self.useLocalStorage ? 'localstorage' : 'memory',
-              useRefreshTokens: _self.useRefreshTokens
+              useRefreshTokens: _self.useRefreshTokens,
+              audience: _self.audience
             }).then(function(auth0) {
               _self.auth0 = auth0;
               window.auth0 = auth0; // Cypress integration tests support
@@ -266,7 +281,8 @@
                 clientId: this.clientId,
                 useLocalStorage: this.useLocalStorage,
                 useRefreshTokens: this.useRefreshTokens,
-                useCache: this.useCache
+                useCache: this.useCache,
+                audience: this.audience
               })
             );
           },
@@ -276,6 +292,7 @@
             this.useLocalStorage = false;
             this.useRefreshTokens = false;
             this.useCache = true;
+            this.audience = defaultAudience;
             this.saveForm();
           },
           showAuth0Info: function() {
@@ -302,7 +319,10 @@
                 redirect_uri: 'http://localhost:3000/callback.html'
               })
               .then(function() {
-                _self.showAuth0Info();
+                auth0.isAuthenticated().then(function(isAuthenticated) {
+                  _self.isAuthenticated = isAuthenticated;
+                  _self.showAuth0Info();
+                });
               });
           },
           loginRedirect: function() {
@@ -332,8 +352,12 @@
             _self.auth0
               .getTokenSilently({ ignoreCache: !_self.useCache })
               .then(function(token) {
-                _self.access_tokens.push(token);
+                _self.access_tokens = [token];
                 _self.error = null;
+
+                auth0.isAuthenticated().then(function(isAuthenticated) {
+                  _self.isAuthenticated = isAuthenticated;
+                });
               })
               .catch(function(e) {
                 console.error(e);

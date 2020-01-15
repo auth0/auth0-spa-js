@@ -1,4 +1,5 @@
 import { InMemoryCache, LocalStorageCache } from '../src/cache';
+import { _ } from 'core-js';
 
 const nowSeconds = () => Math.floor(Date.now() / 1000);
 
@@ -54,6 +55,7 @@ describe('InMemoryCache', () => {
         user: { name: 'Test' }
       }
     });
+
     jest.advanceTimersByTime(799);
     expect(Object.keys(cache.cache).length).toBe(1);
 
@@ -61,10 +63,40 @@ describe('InMemoryCache', () => {
     expect(Object.keys(cache.cache).length).toBe(0);
   });
 
+  it('strips everything except the refresh token when expiry has been reached', () => {
+    cache.save({
+      client_id: 'test-client',
+      audience: 'the_audience',
+      scope: 'the_scope',
+      id_token: 'idtoken',
+      access_token: 'accesstoken',
+      refresh_token: 'refreshtoken',
+      expires_in: 1,
+      decodedToken: {
+        claims: {
+          __raw: 'idtoken',
+          name: 'Test',
+          exp: new Date().getTime() / 1000 + 2
+        },
+        user: { name: 'Test' }
+      }
+    });
+
+    jest.advanceTimersByTime(799);
+    expect(Object.keys(cache.cache).length).toBe(1);
+
+    jest.advanceTimersByTime(1);
+    expect(cache.cache).toStrictEqual({
+      '@@auth0spajs@@::test-client::the_audience::the_scope': {
+        refresh_token: 'refreshtoken'
+      }
+    });
+  });
+
   it('expires after `user.exp` when `user.exp` < `expires_in`', () => {
     cache.save({
       client_id: 'test-client',
-      audience: 'the_audiene',
+      audience: 'the_audience',
       scope: 'the_scope',
       id_token: 'idtoken',
       access_token: 'accesstoken',
@@ -93,6 +125,7 @@ describe('LocalStorageCache', () => {
   beforeEach(() => {
     cache = new LocalStorageCache();
 
+    jest.clearAllMocks();
     jest.useFakeTimers();
     localStorage.clear();
     (<any>localStorage.removeItem).mockClear();
@@ -127,59 +160,64 @@ describe('LocalStorageCache', () => {
     global.Date.now = realDateNow;
   });
 
-  it('can set a value into the cache when expires_in < exp', () => {
-    cache.save(defaultEntry);
+  describe('cache.get', () => {
+    it('can retrieve an item from the cache', () => {
+      localStorage.setItem(
+        '@@auth0spajs@@::__TEST_CLIENT_ID__::__TEST_AUDIENCE__::__TEST_SCOPE__',
+        JSON.stringify({
+          body: defaultEntry,
+          expiresAt: nowSeconds() + 86400
+        })
+      );
 
-    expect(localStorage.setItem).toHaveBeenCalledWith(
-      '@@auth0spajs@@::__TEST_CLIENT_ID__::__TEST_AUDIENCE__::__TEST_SCOPE__',
-      JSON.stringify({
-        body: defaultEntry,
-        expiresAt: nowSeconds() + 86400 - 60
-      })
-    );
-  });
-
-  it('can set a value into the cache when exp < expires_in', () => {
-    const entry = Object.assign({}, defaultEntry, {
-      expires_in: 86500,
-      decodedToken: {
-        claims: {
-          exp: nowSeconds() + 100
-        }
-      }
+      expect(
+        cache.get({
+          client_id: '__TEST_CLIENT_ID__',
+          audience: '__TEST_AUDIENCE__',
+          scope: '__TEST_SCOPE__'
+        })
+      ).toStrictEqual(defaultEntry);
     });
 
-    cache.save(entry);
+    it('returns undefined when there is no data', () => {
+      expect(cache.get({ scope: '', audience: '' })).toBeUndefined();
+    });
 
-    expect(localStorage.setItem).toHaveBeenCalledWith(
-      '@@auth0spajs@@::__TEST_CLIENT_ID__::__TEST_AUDIENCE__::__TEST_SCOPE__',
-      JSON.stringify({
-        body: entry,
-        expiresAt: nowSeconds() + 40
-      })
-    );
-  });
+    it('strips the data, leaving the refresh token, when the expiry has been reached', () => {
+      localStorage.setItem(
+        '@@auth0spajs@@::__TEST_CLIENT_ID__::__TEST_AUDIENCE__::__TEST_SCOPE__',
+        JSON.stringify({
+          body: {
+            client_id: '__TEST_CLIENT_ID__',
+            audience: '__TEST_AUDIENCE__',
+            scope: '__TEST_SCOPE__',
+            id_token: '__ID_TOKEN__',
+            access_token: '__ACCESS_TOKEN__',
+            refresh_token: '__REFRESH_TOKEN__',
+            expires_in: -10,
+            decodedToken: {
+              claims: {
+                __raw: 'idtoken',
+                exp: nowSeconds() - 5,
+                name: 'Test'
+              },
+              user: { name: 'Test' }
+            }
+          },
+          expiresAt: nowSeconds() - 10
+        })
+      );
 
-  it('can retrieve an item from the cache', () => {
-    localStorage.setItem(
-      '@@auth0spajs@@::__TEST_CLIENT_ID__::__TEST_AUDIENCE__::__TEST_SCOPE__',
-      JSON.stringify({
-        body: defaultEntry,
-        expiresAt: nowSeconds() + 86400
-      })
-    );
-
-    expect(
-      cache.get({
-        client_id: '__TEST_CLIENT_ID__',
-        audience: '__TEST_AUDIENCE__',
-        scope: '__TEST_SCOPE__'
-      })
-    ).toStrictEqual(defaultEntry);
-  });
-
-  it('returns undefined when there is no data', () => {
-    expect(cache.get({ scope: '', audience: '' })).toBeUndefined();
+      expect(
+        cache.get({
+          client_id: '__TEST_CLIENT_ID__',
+          audience: '__TEST_AUDIENCE__',
+          scope: '__TEST_SCOPE__'
+        })
+      ).toStrictEqual({
+        refresh_token: '__REFRESH_TOKEN__'
+      });
+    });
   });
 
   it('expires after cache `expiresAt` when expiresAt < current time', () => {
@@ -219,22 +257,85 @@ describe('LocalStorageCache', () => {
     );
   });
 
-  it('deletes the cache item once the timeout has been reached', () => {
-    const entry = Object.assign({}, defaultEntry, {
-      expires_in: 120,
-      decodedToken: {
-        claims: {
-          exp: nowSeconds() + 240
-        }
-      }
+  describe('cache.save', () => {
+    it('can set a value into the cache when expires_in < exp', () => {
+      cache.save(defaultEntry);
+
+      expect(localStorage.setItem).toHaveBeenCalledWith(
+        '@@auth0spajs@@::__TEST_CLIENT_ID__::__TEST_AUDIENCE__::__TEST_SCOPE__',
+        JSON.stringify({
+          body: defaultEntry,
+          expiresAt: nowSeconds() + 86400 - 60
+        })
+      );
     });
 
-    cache.save(entry);
+    it('can set a value into the cache when exp < expires_in', () => {
+      const entry = Object.assign({}, defaultEntry, {
+        expires_in: 86500,
+        decodedToken: {
+          claims: {
+            exp: nowSeconds() + 100
+          }
+        }
+      });
 
-    // 96000, because the timeout time will be calculated at expires_in * 1000 * 0.8
-    jest.advanceTimersByTime(96000);
+      cache.save(entry);
 
-    expect(localStorage.removeItem).toHaveBeenCalled();
+      expect(localStorage.setItem).toHaveBeenCalledWith(
+        '@@auth0spajs@@::__TEST_CLIENT_ID__::__TEST_AUDIENCE__::__TEST_SCOPE__',
+        JSON.stringify({
+          body: entry,
+          expiresAt: nowSeconds() + 40
+        })
+      );
+    });
+
+    it('deletes the cache item once the timeout has been reached', () => {
+      const entry = Object.assign({}, defaultEntry, {
+        expires_in: 120,
+        decodedToken: {
+          claims: {
+            exp: nowSeconds() + 240
+          }
+        }
+      });
+
+      cache.save(entry);
+
+      // 96000, because the timeout time will be calculated at expires_in * 1000 * 0.8
+      jest.advanceTimersByTime(96000);
+
+      expect(localStorage.removeItem).toHaveBeenCalled();
+    });
+
+    it('strips the cache data, leaving the refresh token, once the timeout has been reached', () => {
+      const exp = nowSeconds() + 240;
+      const expiresIn = nowSeconds() + 120;
+
+      const entry = Object.assign({}, defaultEntry, {
+        expires_in: 120,
+        refresh_token: 'refresh-token',
+        decodedToken: {
+          claims: {
+            exp
+          }
+        }
+      });
+
+      cache.save(entry);
+
+      // 96000, because the timeout time will be calculated at expires_in * 1000 * 0.8
+      jest.advanceTimersByTime(96000);
+
+      const payload = JSON.parse(
+        localStorage.getItem(
+          '@@auth0spajs@@::__TEST_CLIENT_ID__::__TEST_AUDIENCE__::__TEST_SCOPE__'
+        )
+      );
+
+      expect(payload.body).toStrictEqual({ refresh_token: 'refresh-token' });
+    });
   });
 
   it('removes the correct items when the cache is cleared', () => {

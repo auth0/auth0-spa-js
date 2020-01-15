@@ -268,7 +268,7 @@ export default class Auth0Client {
       ...options
     });
 
-    return cache && cache.decodedToken.user;
+    return cache && cache.decodedToken && cache.decodedToken.user;
   }
 
   /**
@@ -297,7 +297,7 @@ export default class Auth0Client {
       ...options
     });
 
-    return cache && cache.decodedToken.claims;
+    return cache && cache.decodedToken && cache.decodedToken.claims;
   }
 
   /**
@@ -409,7 +409,7 @@ export default class Auth0Client {
           client_id: this.options.client_id
         });
 
-        if (cache) {
+        if (cache && cache.access_token) {
           await lock.releaseLock(GET_TOKEN_SILENTLY_LOCK_KEY);
           return cache.access_token;
         }
@@ -562,6 +562,12 @@ export default class Auth0Client {
   private async _getTokenUsingRefreshToken(
     options: GetTokenSilentlyOptions
   ): Promise<any> {
+    options.scope = getUniqueScopes(
+      this.DEFAULT_SCOPE,
+      this.options.scope,
+      options.scope
+    );
+
     const cache = this.cache.get({
       scope: options.scope,
       audience: options.audience || 'default',
