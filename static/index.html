@@ -352,7 +352,7 @@
             _self.auth0
               .getTokenSilently({ ignoreCache: !_self.useCache })
               .then(function(token) {
-                _self.access_tokens = [token];
+                _self.access_tokens.push(token);
                 _self.error = null;
 
                 auth0.isAuthenticated().then(function(isAuthenticated) {
