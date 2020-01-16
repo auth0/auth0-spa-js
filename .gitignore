@@ -5,3 +5,4 @@ coverage
 stats.html
 cypress/screenshots
 cypress/videos
+.release
