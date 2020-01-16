@@ -56,10 +56,14 @@ describe('InMemoryCache', () => {
       }
     });
 
+    // Test that the cache state is normal up until just before the expiry time..
     jest.advanceTimersByTime(799);
     expect(Object.keys(cache.cache).length).toBe(1);
 
+    // Advance the time to match the expiry time..
     jest.advanceTimersByTime(1);
+
+    // and test that the cache has been emptied.
     expect(Object.keys(cache.cache).length).toBe(0);
   });
 
@@ -82,10 +86,14 @@ describe('InMemoryCache', () => {
       }
     });
 
+    // Test that the cache state is normal up until just before the expiry time..
     jest.advanceTimersByTime(799);
     expect(Object.keys(cache.cache).length).toBe(1);
 
+    // Advance the time to just past the expiry..
     jest.advanceTimersByTime(1);
+
+    // And test that the cache has been emptied, except for the refresh token
     expect(cache.cache).toStrictEqual({
       '@@auth0spajs@@::test-client::the_audience::the_scope': {
         refresh_token: 'refreshtoken'
@@ -110,9 +118,15 @@ describe('InMemoryCache', () => {
         user: { name: 'Test' }
       }
     });
+
+    // Test that the cache state is normal up until just before the expiry time..
     jest.advanceTimersByTime(799);
     expect(Object.keys(cache.cache).length).toBe(1);
+
+    // Advance the time to just past the expiry..
     jest.advanceTimersByTime(1);
+
+    // And test that the cache has been emptied
     expect(Object.keys(cache.cache).length).toBe(0);
   });
 });
