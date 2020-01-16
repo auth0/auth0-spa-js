@@ -28,6 +28,7 @@
     "prepack": "npm run build && npm run test:es-check && npm run test && node ./scripts/prepack",
     "precommit": "pretty-quick --staged",
     "release": "node ./scripts/release",
+    "release:clean": "node ./scripts/cleanup",
     "publish:cdn": "ccu --trace"
   },
   "devDependencies": {
