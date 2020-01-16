@@ -121,11 +121,15 @@ export class LocalStorageCache implements ICache {
     const json = window.localStorage.getItem(cacheKey);
     let payload;
 
-    if (!json) return;
+    if (!json) {
+      return;
+    }
 
     payload = JSON.parse(json);
 
-    if (!payload) return;
+    if (!payload) {
+      return;
+    }
 
     return payload;
   }
