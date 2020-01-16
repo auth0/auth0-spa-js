@@ -1,4 +1,12 @@
-<<<<<<< HEAD
+# Change Log
+
+## [v1.7.0-beta.2](https://github.com/auth0/auth0-spa-js/tree/v1.7.0-beta.2) (2020-01-16)
+
+[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v1.7.0-beta.1...v1.7.0-beta.2)
+
+**Changed**
+
+- Fixed issue with cache not retaining refresh token [\#333](https://github.com/auth0/auth0-spa-js/pull/333) ([stevehobbsdev](https://github.com/stevehobbsdev))
 
 ## [v1.7.0-beta.1](https://github.com/auth0/auth0-spa-js/tree/v1.7.0-beta.1) (2020-01-08)
 
@@ -19,8 +27,6 @@ Removed future issued-at claim check [stevehobbsdev](https://github.com/stevehob
 
 Included core-js polyfill for `String.includes` to fix an issue with browser-tabs-lock in IE11 [stevehobbsdev](https://github.com/stevehobbsdev) - https://github.com/auth0/auth0-spa-js/pull/325
 Added import definition to Getting Started section in the Readme for clarity [thundermiracle](https://github.com/thundermiracle) - https://github.com/auth0/auth0-spa-js/pull/294
-
-> > > > > > > origin/master
 
 ## [v1.6.0](https://github.com/auth0/auth0-spa-js/tree/v1.6.0) (2019-11-19)
 
