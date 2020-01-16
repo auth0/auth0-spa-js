@@ -55,7 +55,7 @@ describe('getTokenSilently', function() {
           cy.toggleSwitch('local-storage');
 
           cy.login().then(() => {
-            cy.reload();
+            cy.reload().wait(5000);
 
             cy.get('[data-cy=get-token]')
               .click()
@@ -82,7 +82,8 @@ describe('getTokenSilently', function() {
             cy.toggleSwitch('use-cache');
 
             cy.login().then(() => {
-              cy.toggleSwitch('refresh-tokens').wait(250);
+              cy.toggleSwitch('refresh-tokens').wait(1000);
+              win.localStorage.clear();
 
               cy.get('[data-cy=get-token]')
                 .click()
