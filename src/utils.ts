@@ -222,8 +222,8 @@ const getJSON = async (url, options) => {
 export const oauthToken = async ({
   baseUrl,
   ...options
-}: TokenEndpointOptions) => {
-  return await getJSON(`${baseUrl}/oauth/token`, {
+}: TokenEndpointOptions) =>
+  await getJSON(`${baseUrl}/oauth/token`, {
     method: 'POST',
     body: JSON.stringify({
       redirect_uri: window.location.origin,
@@ -233,7 +233,6 @@ export const oauthToken = async ({
       'Content-type': 'application/json'
     }
   });
-};
 
 export const getCrypto = () => {
   //ie 11.x uses msCrypto
