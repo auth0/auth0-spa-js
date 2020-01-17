@@ -16,7 +16,11 @@ import {
   getCryptoSubtle,
   validateCrypto
 } from '../src/utils';
-import { DEFAULT_AUTHORIZE_TIMEOUT_IN_SECONDS } from '../src/constants';
+
+import {
+  DEFAULT_AUTHORIZE_TIMEOUT_IN_SECONDS,
+  DEFAULT_SILENT_TOKEN_RETRY_COUNT
+} from '../src/constants';
 
 (<any>global).TextEncoder = TextEncoder;
 
@@ -361,7 +365,10 @@ describe('utils', () => {
         });
       } catch (error) {
         expect(error.message).toBe('Network failure');
-        expect(mockUnfetch).toHaveBeenCalledTimes(5);
+
+        expect(mockUnfetch).toHaveBeenCalledTimes(
+          DEFAULT_SILENT_TOKEN_RETRY_COUNT
+        );
       }
     });
 
