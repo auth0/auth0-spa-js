@@ -179,24 +179,47 @@ export const bufferToBase64UrlEncoded = input => {
 };
 
 const getJSON = async (url, options) => {
-  const response = await fetch(url, options);
+  let fetchError, response;
+
+  for (let i = 0; i < 5; i++) {
+    try {
+      response = await fetch(url, options);
+      fetchError = null;
+      break;
+    } catch (e) {
+      // Fetch only fails in the case of a network issue, so should be
+      // retried here. Failure status (4xx, 5xx, etc) return a resolved Promise
+      // with the failure in the body.
+      // https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API
+      fetchError = e;
+    }
+  }
+
+  if (fetchError) {
+    throw fetchError;
+  }
+
   const { error, error_description, ...success } = await response.json();
+
   if (!response.ok) {
     const errorMessage =
       error_description || `HTTP error. Unable to fetch ${url}`;
     const e = <any>new Error(errorMessage);
+
     e.error = error || 'request_error';
     e.error_description = errorMessage;
+
     throw e;
   }
+
   return success;
 };
 
 export const oauthToken = async ({
   baseUrl,
   ...options
-}: TokenEndpointOptions) =>
-  await getJSON(`${baseUrl}/oauth/token`, {
+}: TokenEndpointOptions) => {
+  return await getJSON(`${baseUrl}/oauth/token`, {
     method: 'POST',
     body: JSON.stringify({
       redirect_uri: window.location.origin,
@@ -206,6 +229,7 @@ export const oauthToken = async ({
       'Content-type': 'application/json'
     }
   });
+};
 
 export const getCrypto = () => {
   //ie 11.x uses msCrypto

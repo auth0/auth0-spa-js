@@ -254,15 +254,18 @@ describe('utils', () => {
       expect(openPopup).toThrowError('Could not open popup');
     });
   });
+
   describe('oauthToken', () => {
     let oauthToken;
     let mockUnfetch;
+
     beforeEach(() => {
       jest.resetModules();
       jest.mock('unfetch');
       mockUnfetch = require('unfetch');
       oauthToken = require('../src/utils').oauthToken;
     });
+
     it('calls oauth/token with the correct url', async () => {
       mockUnfetch.mockReturnValue(
         new Promise(res =>
@@ -284,11 +287,13 @@ describe('utils', () => {
         method: 'POST'
       });
     });
+
     it('handles error with error response', async () => {
       const theError = {
         error: 'the-error',
         error_description: 'the-error-description'
       };
+
       mockUnfetch.mockReturnValue(
         new Promise(res =>
           res({
@@ -297,6 +302,7 @@ describe('utils', () => {
           })
         )
       );
+
       try {
         await oauthToken({
           baseUrl: 'https://test.com',
@@ -310,6 +316,7 @@ describe('utils', () => {
         expect(error.error_description).toBe(theError.error_description);
       }
     });
+
     it('handles error without error response', async () => {
       mockUnfetch.mockReturnValue(
         new Promise(res =>
@@ -319,6 +326,7 @@ describe('utils', () => {
           })
         )
       );
+
       try {
         await oauthToken({
           baseUrl: 'https://test.com',
@@ -336,7 +344,54 @@ describe('utils', () => {
         );
       }
     });
+
+    it('retries the request in the event of a network failure', async () => {
+      // Fetch only fails in the case of a network issue, so should be
+      // retried here. Failure status (4xx, 5xx, etc) return a resolved Promise
+      // with the failure in the body.
+      // https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API
+      mockUnfetch.mockReturnValue(Promise.reject(new Error('Network failure')));
+
+      try {
+        await oauthToken({
+          baseUrl: 'https://test.com',
+          client_id: 'client_idIn',
+          code: 'codeIn',
+          code_verifier: 'code_verifierIn'
+        });
+      } catch (error) {
+        expect(error.message).toBe('Network failure');
+        expect(mockUnfetch).toHaveBeenCalledTimes(5);
+      }
+    });
+
+    it('continues the program after failing a couple of times then succeeding', async () => {
+      // Fetch only fails in the case of a network issue, so should be
+      // retried here. Failure status (4xx, 5xx, etc) return a resolved Promise
+      // with the failure in the body.
+      // https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API
+      mockUnfetch
+        .mockReturnValueOnce(Promise.reject(new Error('Network failure')))
+        .mockReturnValueOnce(Promise.reject(new Error('Network failure')))
+        .mockReturnValue(
+          Promise.resolve({
+            ok: true,
+            json: () => Promise.resolve({ access_token: 'access-token' })
+          })
+        );
+
+      const result = await oauthToken({
+        baseUrl: 'https://test.com',
+        client_id: 'client_idIn',
+        code: 'codeIn',
+        code_verifier: 'code_verifierIn'
+      });
+
+      expect(result.access_token).toBe('access-token');
+      expect(mockUnfetch).toHaveBeenCalledTimes(3);
+    });
   });
+
   describe('runPopup', () => {
     const TIMEOUT_ERROR = { error: 'timeout', error_description: 'Timeout' };
     const setup = customMessage => {
