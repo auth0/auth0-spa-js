@@ -210,17 +210,6 @@ describe('jwt', async () => {
       'Issued At (iat) claim must be a number present in the ID token'
     );
   });
-  it('validates iat', async () => {
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    const id_token = await createJWT({
-      ...DEFAULT_PAYLOAD,
-      iat: tomorrow.getTime()
-    });
-    expect(() => verify({ ...verifyOptions, id_token })).toThrow(
-      'Issued At (iat) claim error in the ID token'
-    );
-  });
   it('does not validate nonce is present when options.nonce is undefined', async () => {
     const id_token = await createJWT({ ...DEFAULT_PAYLOAD, nonce: undefined });
     expect(() =>

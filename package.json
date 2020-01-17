@@ -3,7 +3,7 @@
   "name": "@auth0/auth0-spa-js",
   "description": "Auth0 SDK for Single Page Applications using Authorization Code Grant Flow with PKCE",
   "license": "MIT",
-  "version": "1.6.0",
+  "version": "1.6.2",
   "main": "dist/lib/auth0-spa-js.cjs.js",
   "types": "dist/typings/index.d.ts",
   "browser": "dist/auth0-spa-js.production.js",
@@ -28,6 +28,7 @@
     "prepack": "npm run build && npm run test:es-check && npm run test && node ./scripts/prepack",
     "precommit": "pretty-quick --staged",
     "release": "node ./scripts/release",
+    "release:clean": "node ./scripts/cleanup",
     "publish:cdn": "ccu --trace"
   },
   "devDependencies": {
