@@ -1,7 +1,6 @@
 jest.mock('browser-tabs-lock');
 jest.mock('../src/jwt');
 jest.mock('../src/storage');
-jest.mock('../src/cache');
 jest.mock('../src/transaction-manager');
 jest.mock('../src/utils');
 
@@ -40,16 +39,24 @@ const DEFAULT_POPUP_CONFIG_OPTIONS: PopupConfigOptions = {
   timeoutInSeconds: DEFAULT_AUTHORIZE_TIMEOUT_IN_SECONDS
 };
 
+const mockEnclosedCache = {
+  get: jest.fn(),
+  save: jest.fn(),
+  clear: jest.fn()
+};
+
+jest.mock('../src/cache', () => ({
+  InMemoryCache: () => ({
+    enclosedCache: mockEnclosedCache
+  })
+}));
+
 const setup = async (options = {}) => {
   const auth0 = await createAuth0Client({
     domain: TEST_DOMAIN,
     client_id: TEST_CLIENT_ID,
     ...options
   });
-
-  // Return the specific instance you want from the module by supplying fn
-  // e.g. getInstance('../module', m => m.SomeInstance)
-  const getInstance = (m, fn) => fn(require(m)).mock.instances[0];
 
   const getDefaultInstance = m => require(m).default.mock.instances[0];
 
@@ -60,7 +67,8 @@ const setup = async (options = {}) => {
   };
 
   const lock = require('browser-tabs-lock');
-  const cache = getInstance('../src/cache', m => m.InMemoryCache);
+  const cache = mockEnclosedCache;
+
   const tokenVerifier = require('../src/jwt').verify;
   const transactionManager = getDefaultInstance('../src/transaction-manager');
   const utils = require('../src/utils');
@@ -1615,6 +1623,7 @@ describe('Auth0', () => {
       result.cache.get.mockReturnValue({ access_token: TEST_ACCESS_TOKEN });
       return result;
     };
+
     it('calls `loginWithPopup` with the correct default options', async () => {
       const { auth0, utils } = await localSetup();
 
@@ -1626,6 +1635,7 @@ describe('Auth0', () => {
         },
         DEFAULT_POPUP_CONFIG_OPTIONS
       );
+
       expect(utils.getUniqueScopes).toHaveBeenCalledWith(
         'openid profile email',
         undefined,
