@@ -134,7 +134,8 @@ export default class Auth0Client {
       code_verifier,
       appState,
       scope: params.scope,
-      audience: params.audience || 'default'
+      audience: params.audience || 'default',
+      redirect_uri: params.redirect_uri
     });
     return url + fragment;
   }
@@ -186,7 +187,8 @@ export default class Auth0Client {
       audience: options.audience || this.options.audience,
       client_id: this.options.client_id,
       code_verifier,
-      code: codeResult.code
+      code: codeResult.code,
+      redirect_uri: params.redirect_uri
     });
     const decodedToken = this._verifyIdToken(authResult.id_token, nonceIn);
     const cacheEntry = {
@@ -289,7 +291,8 @@ export default class Auth0Client {
       audience: this.options.audience,
       client_id: this.options.client_id,
       code_verifier: transaction.code_verifier,
-      code
+      code,
+      redirect_uri: transaction.redirect_uri
     });
 
     const decodedToken = this._verifyIdToken(
@@ -389,7 +392,8 @@ export default class Auth0Client {
         audience: options.audience || this.options.audience,
         client_id: this.options.client_id,
         code_verifier,
-        code: codeResult.code
+        code: codeResult.code,
+        redirect_uri: params.redirect_uri
       });
 
       const decodedToken = this._verifyIdToken(authResult.id_token, nonceIn);

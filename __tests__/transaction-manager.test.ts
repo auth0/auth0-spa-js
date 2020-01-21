@@ -8,7 +8,8 @@ const transaction = {
   code_verifier: 'code_verifierIn',
   appState: 'appStateIn',
   scope: 'scopeIn',
-  audience: ' audienceIn'
+  audience: ' audienceIn',
+  redirect_uri: 'http://localhost'
 };
 
 jest.mock('../src/storage');

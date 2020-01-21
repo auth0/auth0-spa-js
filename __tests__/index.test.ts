@@ -260,10 +260,11 @@ describe('Auth0', () => {
         baseUrl: 'https://test.auth0.com',
         client_id: TEST_CLIENT_ID,
         code: TEST_CODE,
-        code_verifier: TEST_RANDOM_STRING
+        code_verifier: TEST_RANDOM_STRING,
+        redirect_uri: 'http://localhost'
       });
     });
-    it('calls oauth/token with correct params', async () => {
+    it('calls oauth/token with correct params and a different audience', async () => {
       const { auth0, utils } = await setup();
 
       await auth0.loginWithPopup({ audience: 'test-audience' });
@@ -272,7 +273,8 @@ describe('Auth0', () => {
         baseUrl: 'https://test.auth0.com',
         client_id: TEST_CLIENT_ID,
         code: TEST_CODE,
-        code_verifier: TEST_RANDOM_STRING
+        code_verifier: TEST_RANDOM_STRING,
+        redirect_uri: 'http://localhost'
       });
     });
     it('calls `tokenVerifier.verify` with the `id_token` from in the oauth/token response', async () => {
@@ -514,7 +516,8 @@ describe('Auth0', () => {
           audience: 'default',
           code_verifier: TEST_RANDOM_STRING,
           nonce: TEST_RANDOM_STRING,
-          scope: TEST_SCOPES
+          scope: TEST_SCOPES,
+          redirect_uri: 'https://redirect.uri'
         }
       );
     });
@@ -1267,7 +1270,8 @@ describe('Auth0', () => {
           baseUrl: 'https://test.auth0.com',
           client_id: TEST_CLIENT_ID,
           code: TEST_CODE,
-          code_verifier: TEST_RANDOM_STRING
+          code_verifier: TEST_RANDOM_STRING,
+          redirect_uri: 'http://localhost'
         });
       });
       it('calls `tokenVerifier.verify` with the `id_token` from in the oauth/token response', async () => {
