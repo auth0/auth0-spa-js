@@ -1073,18 +1073,13 @@ describe('Auth0', () => {
 
         expect(token).toBe(TEST_ACCESS_TOKEN);
       });
-      it('acquires and releases lock when there is a cache', async () => {
+      it('does not acquire a lock when the cache is available', async () => {
         const { auth0, cache, lock } = await setup();
         cache.get.mockReturnValue({ access_token: TEST_ACCESS_TOKEN });
 
         await auth0.getTokenSilently();
-        expect(lock.acquireLockMock).toHaveBeenCalledWith(
-          GET_TOKEN_SILENTLY_LOCK_KEY,
-          5000
-        );
-        expect(lock.releaseLockMock).toHaveBeenCalledWith(
-          GET_TOKEN_SILENTLY_LOCK_KEY
-        );
+
+        expect(lock.acquireLockMock).not.toHaveBeenCalled();
       });
       it('continues method execution when there is no cache available', async () => {
         const { auth0, utils } = await setup();
