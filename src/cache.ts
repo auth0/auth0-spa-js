@@ -152,37 +152,41 @@ export class LocalStorageCache implements ICache {
   }
 }
 
-export class InMemoryCache implements ICache {
-  cache: CachedTokens = {};
+export class InMemoryCache {
+  public enclosedCache: ICache = (function() {
+    let cache: CachedTokens = {};
 
-  public save(entry: CacheEntry) {
-    const key = createKey(entry);
-    this.cache[key] = entry;
+    return {
+      save(entry: CacheEntry) {
+        const key = createKey(entry);
+        cache[key] = entry;
 
-    const timeout = getExpirationTimeoutInMilliseconds(
-      entry.expires_in,
-      entry.decodedToken.claims.exp
-    );
+        const timeout = getExpirationTimeoutInMilliseconds(
+          entry.expires_in,
+          entry.decodedToken.claims.exp
+        );
 
-    setTimeout(() => {
-      const payload = this.cache[key];
+        setTimeout(() => {
+          const payload = cache[key];
 
-      if (!payload) return;
+          if (!payload) return;
 
-      if (payload.refresh_token) {
-        this.cache[key] = { refresh_token: payload.refresh_token };
-        return;
+          if (payload.refresh_token) {
+            cache[key] = { refresh_token: payload.refresh_token };
+            return;
+          }
+
+          delete cache[key];
+        }, timeout);
+      },
+
+      get(key: CacheKeyData) {
+        return cache[createKey(key)];
+      },
+
+      clear() {
+        cache = {};
       }
-
-      delete this.cache[key];
-    }, timeout);
-  }
-
-  public get(key: CacheKeyData) {
-    return this.cache[createKey(key)];
-  }
-
-  public clear() {
-    this.cache = {};
-  }
+    };
+  })();
 }

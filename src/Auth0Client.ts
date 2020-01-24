@@ -27,7 +27,7 @@ const GET_TOKEN_SILENTLY_LOCK_KEY = 'auth0.lock.getTokenSilently';
 
 const cacheFactory = location => {
   const builders = {
-    memory: () => new InMemoryCache(),
+    memory: () => new InMemoryCache().enclosedCache,
     localstorage: () => new LocalStorageCache()
   };
 
