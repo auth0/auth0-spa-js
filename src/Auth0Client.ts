@@ -332,8 +332,6 @@ export default class Auth0Client {
     options.scope = getUniqueScopes(this.DEFAULT_SCOPE, options.scope);
 
     try {
-      await lock.acquireLock(GET_TOKEN_SILENTLY_LOCK_KEY, 5000);
-
       const {
         audience,
         scope,
@@ -348,10 +346,11 @@ export default class Auth0Client {
         });
 
         if (cache) {
-          await lock.releaseLock(GET_TOKEN_SILENTLY_LOCK_KEY);
           return cache.access_token;
         }
       }
+
+      await lock.acquireLock(GET_TOKEN_SILENTLY_LOCK_KEY, 5000);
 
       const stateIn = encodeState(createRandomString());
       const nonceIn = createRandomString();
