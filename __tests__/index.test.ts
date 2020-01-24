@@ -1208,6 +1208,29 @@ describe('Auth0', () => {
           defaultOptionsIgnoreCacheTrue.scope
         );
       });
+      it('creates correct query params when providing user specified custom query params', async () => {
+        const { auth0, utils } = await setup();
+
+        const customQueryParameterOptions = {
+          ...defaultOptionsIgnoreCacheTrue,
+          foo: 'bar'
+        };
+        await auth0.getTokenSilently(customQueryParameterOptions);
+        expect(utils.createQueryParams).toHaveBeenCalledWith({
+          audience: defaultOptionsIgnoreCacheTrue.audience,
+          client_id: TEST_CLIENT_ID,
+          scope: TEST_SCOPES,
+          response_type: TEST_CODE,
+          response_mode: 'web_message',
+          prompt: 'none',
+          state: TEST_ENCODED_STATE,
+          nonce: TEST_RANDOM_STRING,
+          redirect_uri: 'http://localhost',
+          code_challenge: TEST_BASE64_ENCODED_STRING,
+          code_challenge_method: 'S256',
+          foo: 'bar'
+        });
+      });
       it('opens iframe with correct urls', async () => {
         const { auth0, utils } = await setup();
         await auth0.getTokenSilently(defaultOptionsIgnoreCacheTrue);

@@ -332,10 +332,17 @@ export default class Auth0Client {
     options.scope = getUniqueScopes(this.DEFAULT_SCOPE, options.scope);
 
     try {
-      if (!options.ignoreCache) {
+      const {
+        audience,
+        scope,
+        ignoreCache,
+        ...additionalQueryParams
+      } = options;
+
+      if (!ignoreCache) {
         const cache = this.cache.get({
-          scope: options.scope,
-          audience: options.audience || 'default'
+          scope,
+          audience: audience || 'default'
         });
 
         if (cache) {
@@ -352,8 +359,9 @@ export default class Auth0Client {
       const code_challenge = bufferToBase64UrlEncoded(code_challengeBuffer);
 
       const authorizeOptions = {
-        audience: options.audience,
-        scope: options.scope
+        audience,
+        scope,
+        ...additionalQueryParams
       };
 
       const params = this._getParams(
