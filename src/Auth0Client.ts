@@ -33,7 +33,9 @@ import {
   RedirectLoginResult,
   GetTokenSilentlyOptions,
   GetTokenWithPopupOptions,
-  LogoutOptions
+  LogoutOptions,
+  RefreshTokenOptions,
+  OAuthTokenOptions
 } from './global';
 
 const lock = new Lock();

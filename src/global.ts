@@ -183,7 +183,6 @@ export interface GetIdTokenClaimsOptions {
 export type getIdTokenClaimsOptions = GetIdTokenClaimsOptions;
 
 export interface GetTokenSilentlyOptions {
-
   /**
    * When `true`, ignores the cache and always sends a
    * request to Auth0.
@@ -255,7 +254,10 @@ export interface AuthenticationResult {
   error_description?: string;
 }
 
-interface TokenEndpointOptions {
+/**
+ * @ignore
+ */
+export interface TokenEndpointOptions {
   baseUrl: string;
   client_id: string;
   grant_type: string;
@@ -272,7 +274,7 @@ export interface OAuthTokenOptions extends TokenEndpointOptions {
 /**
  * @ignore
  */
-interface RefreshTokenOptions extends TokenEndpointOptions {
+export interface RefreshTokenOptions extends TokenEndpointOptions {
   refresh_token: string;
 }
 

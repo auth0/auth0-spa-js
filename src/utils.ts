@@ -4,7 +4,7 @@ import { DEFAULT_AUTHORIZE_TIMEOUT_IN_SECONDS } from './constants';
 import {
   AuthenticationResult,
   PopupConfigOptions,
-  OAuthTokenOptions
+  TokenEndpointOptions
 } from './global';
 
 const dedupe = arr => arr.filter((x, i) => arr.indexOf(x) === i);
