@@ -414,6 +414,8 @@ export default class Auth0Client {
         }
       }
 
+      await lock.acquireLock(GET_TOKEN_SILENTLY_LOCK_KEY, 5000);
+
       const authResult = this.options.useRefreshTokens
         ? await this._getTokenUsingRefreshToken(options)
         : await this._getTokenFromIFrame(options);
