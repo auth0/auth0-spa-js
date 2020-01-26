@@ -3,7 +3,7 @@
 <head>
 	<meta charset="utf-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<title>getIdTokenClaimsOptions | @auth0/auth0-spa-js</title>
+	<title>TokenEndpointOptions | @auth0/auth0-spa-js</title>
 	<meta name="description" content="">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<style type="text/css">/*! normalize.css v1.1.3 | MIT License | git.io/normalize */
@@ -2414,19 +2414,22 @@ img {
 		<li class=" tsd-kind-interface tsd-is-not-exported">
 			<a href="redirectloginresult.html" class="tsd-kind-icon">Redirect<wbr>Login<wbr>Result</a>
 		</li>
-		<li class=" tsd-kind-interface tsd-is-not-exported">
-			<a href="tokenendpointoptions.html" class="tsd-kind-icon">Token<wbr>Endpoint<wbr>Options</a>
-		</li>
 		<li class="current tsd-kind-interface tsd-is-not-exported">
-			<a href="getidtokenclaimsoptions.html" class="tsd-kind-icon">get<wbr>IdToken<wbr>Claims<wbr>Options</a>
+			<a href="tokenendpointoptions.html" class="tsd-kind-icon">Token<wbr>Endpoint<wbr>Options</a>
 			<ul>
 				<li class=" tsd-kind-property tsd-parent-kind-interface tsd-is-not-exported">
-					<a href="getidtokenclaimsoptions.html#audience" class="tsd-kind-icon">audience</a>
+					<a href="tokenendpointoptions.html#baseurl" class="tsd-kind-icon">base<wbr>Url</a>
 				</li>
 				<li class=" tsd-kind-property tsd-parent-kind-interface tsd-is-not-exported">
-					<a href="getidtokenclaimsoptions.html#scope" class="tsd-kind-icon">scope</a>
+					<a href="tokenendpointoptions.html#client_id" class="tsd-kind-icon">client_<wbr>id</a>
+				</li>
+				<li class=" tsd-kind-property tsd-parent-kind-interface tsd-is-not-exported">
+					<a href="tokenendpointoptions.html#grant_type" class="tsd-kind-icon">grant_<wbr>type</a>
 				</li>
 			</ul>
+		</li>
+		<li class=" tsd-kind-interface tsd-is-not-exported">
+			<a href="getidtokenclaimsoptions.html" class="tsd-kind-icon">get<wbr>IdToken<wbr>Claims<wbr>Options</a>
 		</li>
 		<li class=" tsd-kind-variable tsd-is-not-exported">
 			<a href="../globals.html#get_token_silently_lock_key" class="tsd-kind-icon">GET_<wbr>TOKEN_<wbr>SILENTLY_<wbr>LOCK_<wbr>KEY</a>
@@ -2454,7 +2457,7 @@ img {
 			<h3>Hierarchy</h3>
 			<ul class="tsd-hierarchy">
 				<li>
-					<span class="target">getIdTokenClaimsOptions</span>
+					<span class="target">TokenEndpointOptions</span>
 				</li>
 			</ul>
 		</section>
@@ -2465,8 +2468,9 @@ img {
 					<section class="tsd-index-section tsd-is-not-exported">
 						<h3>Properties</h3>
 						<ul class="tsd-index-list">
-							<li class="tsd-kind-property tsd-parent-kind-interface tsd-is-not-exported"><a href="getidtokenclaimsoptions.html#audience" class="tsd-kind-icon">audience</a></li>
-							<li class="tsd-kind-property tsd-parent-kind-interface tsd-is-not-exported"><a href="getidtokenclaimsoptions.html#scope" class="tsd-kind-icon">scope</a></li>
+							<li class="tsd-kind-property tsd-parent-kind-interface tsd-is-not-exported"><a href="tokenendpointoptions.html#baseurl" class="tsd-kind-icon">base<wbr>Url</a></li>
+							<li class="tsd-kind-property tsd-parent-kind-interface tsd-is-not-exported"><a href="tokenendpointoptions.html#client_id" class="tsd-kind-icon">client_<wbr>id</a></li>
+							<li class="tsd-kind-property tsd-parent-kind-interface tsd-is-not-exported"><a href="tokenendpointoptions.html#grant_type" class="tsd-kind-icon">grant_<wbr>type</a></li>
 						</ul>
 					</section>
 				</div>
@@ -2475,34 +2479,34 @@ img {
 		<section class="tsd-panel-group tsd-member-group tsd-is-not-exported">
 			<h2>Properties</h2>
 			<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface tsd-is-not-exported">
-				<a name="audience" class="tsd-anchor"></a>
-				<h3>audience</h3>
-				<div class="tsd-signature tsd-kind-icon">audience<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
+				<a name="baseurl" class="tsd-anchor"></a>
+				<h3>base<wbr>Url</h3>
+				<div class="tsd-signature tsd-kind-icon">base<wbr>Url<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/e06e3c3/src/global.ts#L177">src/global.ts:177</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/e06e3c3/src/global.ts#L253">src/global.ts:253</a></li>
 					</ul>
 				</aside>
-				<div class="tsd-comment tsd-typography">
-					<div class="lead">
-						<p>The audience that was used in the authentication request</p>
-					</div>
-				</div>
 			</section>
 			<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface tsd-is-not-exported">
-				<a name="scope" class="tsd-anchor"></a>
-				<h3>scope</h3>
-				<div class="tsd-signature tsd-kind-icon">scope<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
+				<a name="client_id" class="tsd-anchor"></a>
+				<h3>client_<wbr>id</h3>
+				<div class="tsd-signature tsd-kind-icon">client_<wbr>id<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/e06e3c3/src/global.ts#L173">src/global.ts:173</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/e06e3c3/src/global.ts#L254">src/global.ts:254</a></li>
 					</ul>
 				</aside>
-				<div class="tsd-comment tsd-typography">
-					<div class="lead">
-						<p>The scope that was used in the authentication request</p>
-					</div>
-				</div>
+			</section>
+			<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface tsd-is-not-exported">
+				<a name="grant_type" class="tsd-anchor"></a>
+				<h3>grant_<wbr>type</h3>
+				<div class="tsd-signature tsd-kind-icon">grant_<wbr>type<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
+				<aside class="tsd-sources">
+					<ul>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/e06e3c3/src/global.ts#L255">src/global.ts:255</a></li>
+					</ul>
+				</aside>
 			</section>
 		</section>
 		<footer>

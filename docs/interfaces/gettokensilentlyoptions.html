@@ -2384,13 +2384,16 @@ img {
 		<li class=" tsd-kind-class">
 			<a href="../classes/fakelock.html" class="tsd-kind-icon">Fake<wbr>Lock</a>
 		</li>
+		<li class=" tsd-kind-class">
+			<a href="../classes/genericerror.html" class="tsd-kind-icon">Generic<wbr>Error</a>
+		</li>
 		<li class=" tsd-kind-interface tsd-is-not-exported">
 			<a href="auth0clientoptions.html" class="tsd-kind-icon">Auth0<wbr>Client<wbr>Options</a>
 		</li>
 		<li class="current tsd-kind-interface tsd-is-not-exported">
 			<a href="gettokensilentlyoptions.html" class="tsd-kind-icon">Get<wbr>Token<wbr>Silently<wbr>Options</a>
 			<ul>
-				<li class=" tsd-kind-property tsd-parent-kind-interface tsd-is-inherited tsd-is-not-exported">
+				<li class=" tsd-kind-property tsd-parent-kind-interface tsd-is-not-exported">
 					<a href="gettokensilentlyoptions.html#audience" class="tsd-kind-icon">audience</a>
 				</li>
 				<li class=" tsd-kind-property tsd-parent-kind-interface tsd-is-not-exported">
@@ -2399,7 +2402,7 @@ img {
 				<li class=" tsd-kind-property tsd-parent-kind-interface tsd-is-not-exported">
 					<a href="gettokensilentlyoptions.html#redirect_uri" class="tsd-kind-icon">redirect_<wbr>uri</a>
 				</li>
-				<li class=" tsd-kind-property tsd-parent-kind-interface tsd-is-inherited tsd-is-not-exported">
+				<li class=" tsd-kind-property tsd-parent-kind-interface tsd-is-not-exported">
 					<a href="gettokensilentlyoptions.html#scope" class="tsd-kind-icon">scope</a>
 				</li>
 			</ul>
@@ -2426,6 +2429,9 @@ img {
 			<a href="redirectloginresult.html" class="tsd-kind-icon">Redirect<wbr>Login<wbr>Result</a>
 		</li>
 		<li class=" tsd-kind-interface tsd-is-not-exported">
+			<a href="tokenendpointoptions.html" class="tsd-kind-icon">Token<wbr>Endpoint<wbr>Options</a>
+		</li>
+		<li class=" tsd-kind-interface tsd-is-not-exported">
 			<a href="getidtokenclaimsoptions.html" class="tsd-kind-icon">get<wbr>IdToken<wbr>Claims<wbr>Options</a>
 		</li>
 		<li class=" tsd-kind-variable tsd-is-not-exported">
@@ -2440,6 +2446,9 @@ img {
 		<li class=" tsd-kind-variable">
 			<a href="../globals.html#releaselockmock" class="tsd-kind-icon">release<wbr>Lock<wbr>Mock</a>
 		</li>
+		<li class=" tsd-kind-function tsd-is-not-exported">
+			<a href="../globals.html#cachefactory" class="tsd-kind-icon">cache<wbr>Factory</a>
+		</li>
 		<li class=" tsd-kind-function">
 			<a href="../globals.html#createauth0client" class="tsd-kind-icon">create<wbr>Auth0<wbr>Client</a>
 		</li>
@@ -2451,12 +2460,7 @@ img {
 			<h3>Hierarchy</h3>
 			<ul class="tsd-hierarchy">
 				<li>
-					<a href="getuseroptions.html" class="tsd-signature-type">GetUserOptions</a>
-					<ul class="tsd-hierarchy">
-						<li>
-							<span class="target">GetTokenSilentlyOptions</span>
-						</li>
-					</ul>
+					<span class="target">GetTokenSilentlyOptions</span>
 				</li>
 			</ul>
 		</section>
@@ -2477,10 +2481,10 @@ img {
 					<section class="tsd-index-section tsd-is-not-exported">
 						<h3>Properties</h3>
 						<ul class="tsd-index-list">
-							<li class="tsd-kind-property tsd-parent-kind-interface tsd-is-inherited tsd-is-not-exported"><a href="gettokensilentlyoptions.html#audience" class="tsd-kind-icon">audience</a></li>
+							<li class="tsd-kind-property tsd-parent-kind-interface tsd-is-not-exported"><a href="gettokensilentlyoptions.html#audience" class="tsd-kind-icon">audience</a></li>
 							<li class="tsd-kind-property tsd-parent-kind-interface tsd-is-not-exported"><a href="gettokensilentlyoptions.html#ignorecache" class="tsd-kind-icon">ignore<wbr>Cache</a></li>
 							<li class="tsd-kind-property tsd-parent-kind-interface tsd-is-not-exported"><a href="gettokensilentlyoptions.html#redirect_uri" class="tsd-kind-icon">redirect_<wbr>uri</a></li>
-							<li class="tsd-kind-property tsd-parent-kind-interface tsd-is-inherited tsd-is-not-exported"><a href="gettokensilentlyoptions.html#scope" class="tsd-kind-icon">scope</a></li>
+							<li class="tsd-kind-property tsd-parent-kind-interface tsd-is-not-exported"><a href="gettokensilentlyoptions.html#scope" class="tsd-kind-icon">scope</a></li>
 						</ul>
 					</section>
 				</div>
@@ -2488,14 +2492,13 @@ img {
 		</section>
 		<section class="tsd-panel-group tsd-member-group tsd-is-not-exported">
 			<h2>Properties</h2>
-			<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface tsd-is-inherited tsd-is-not-exported">
+			<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface tsd-is-not-exported">
 				<a name="audience" class="tsd-anchor"></a>
-				<h3>audience</h3>
+				<h3><span class="tsd-flag ts-flagOptional">Optional</span> audience</h3>
 				<div class="tsd-signature tsd-kind-icon">audience<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
 				<aside class="tsd-sources">
-					<p>Inherited from <a href="getuseroptions.html">GetUserOptions</a>.<a href="getuseroptions.html#audience">audience</a></p>
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/8d810ea/src/global.ts#L152">src/global.ts:152</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/e06e3c3/src/global.ts#L205">src/global.ts:205</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-comment tsd-typography">
@@ -2510,7 +2513,7 @@ img {
 				<div class="tsd-signature tsd-kind-icon">ignore<wbr>Cache<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">boolean</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/8d810ea/src/global.ts#L171">src/global.ts:171</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/e06e3c3/src/global.ts#L185">src/global.ts:185</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-comment tsd-typography">
@@ -2526,7 +2529,7 @@ img {
 				<div class="tsd-signature tsd-kind-icon">redirect_<wbr>uri<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/8d810ea/src/global.ts#L181">src/global.ts:181</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/e06e3c3/src/global.ts#L195">src/global.ts:195</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-comment tsd-typography">
@@ -2540,14 +2543,13 @@ img {
 					</div>
 				</div>
 			</section>
-			<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface tsd-is-inherited tsd-is-not-exported">
+			<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface tsd-is-not-exported">
 				<a name="scope" class="tsd-anchor"></a>
-				<h3>scope</h3>
+				<h3><span class="tsd-flag ts-flagOptional">Optional</span> scope</h3>
 				<div class="tsd-signature tsd-kind-icon">scope<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
 				<aside class="tsd-sources">
-					<p>Inherited from <a href="getuseroptions.html">GetUserOptions</a>.<a href="getuseroptions.html#scope">scope</a></p>
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/8d810ea/src/global.ts#L148">src/global.ts:148</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/e06e3c3/src/global.ts#L200">src/global.ts:200</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-comment tsd-typography">

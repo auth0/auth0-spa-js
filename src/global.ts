@@ -90,6 +90,20 @@ export interface Auth0ClientOptions extends BaseLoginOptions {
    * Defaults to 60s.
    */
   leeway?: number;
+
+  /**
+   * The location to use when storing cache data. Valid values are `memory` or `localstorage`.
+   * The default setting is `memory`.
+   */
+  cacheLocation?: 'memory' | 'localstorage';
+
+  /**
+   * If true, refresh tokens are used to fetch new access tokens from the Auth0 server. If false, the legacy technique of using a hidden iframe and the `authorization_code` grant with `prompt=none` is used.
+   * The default setting is `false`.
+   *
+   * *Note*: Use of refresh tokens must be enabled by an administrator on your Auth0 client application.
+   */
+  useRefreshTokens?: boolean;
 }
 
 /**
@@ -163,9 +177,13 @@ export interface GetIdTokenClaimsOptions {
   audience: string;
 }
 
+/*
+ * TODO: Remove this on the next major
+ */
 export type getIdTokenClaimsOptions = GetIdTokenClaimsOptions;
 
-export interface GetTokenSilentlyOptions extends GetUserOptions {
+export interface GetTokenSilentlyOptions {
+
   /**
    * When `true`, ignores the cache and always sends a
    * request to Auth0.
@@ -181,6 +199,16 @@ export interface GetTokenSilentlyOptions extends GetUserOptions {
    * Auth0 Application's settings.
    */
   redirect_uri?: string;
+
+  /**
+   * The scope that was used in the authentication request
+   */
+  scope?: string;
+
+  /**
+   * The audience that was used in the authentication request
+   */
+  audience?: string;
 
   /**
    * If you need to send custom parameters to the Authorization Server,
@@ -227,15 +255,25 @@ export interface AuthenticationResult {
   error_description?: string;
 }
 
+interface TokenEndpointOptions {
+  baseUrl: string;
+  client_id: string;
+  grant_type: string;
+}
+
 /**
  * @ignore
  */
-export interface OAuthTokenOptions {
-  baseUrl: string;
-  client_id: string;
-  audience?: string;
+export interface OAuthTokenOptions extends TokenEndpointOptions {
   code_verifier: string;
   code: string;
+}
+
+/**
+ * @ignore
+ */
+interface RefreshTokenOptions extends TokenEndpointOptions {
+  refresh_token: string;
 }
 
 /**

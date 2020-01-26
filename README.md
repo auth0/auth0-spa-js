@@ -28,7 +28,7 @@ Auth0 SDK for Single Page Applications using [Authorization Code Grant Flow with
 From the CDN:
 
 ```html
-<script src="https://cdn.auth0.com/js/auth0-spa-js/1.2/auth0-spa-js.production.js"></script>
+<script src="https://cdn.auth0.com/js/auth0-spa-js/1.7.0-beta.2/auth0-spa-js.production.js"></script>
 ```
 
 Using [npm](https://npmjs.org):
@@ -163,6 +163,25 @@ document.getElementById('logout').addEventListener('click', () => {
   auth0.logout();
 });
 ```
+
+### Caching strategy
+
+The SDK can be configured to cache ID tokens and access tokens either in memory or in local storage. The default is in memory. This setting can be controlled using the `cacheStrategy` option when creating the Auth0 client.
+
+To use the in-memory mode, no additional options need are required as this is the default setting. To configure the SDK to cache data using local storage, set `cacheStrategy` as follows:
+
+```js
+await createAuth0Client({
+  domain: '<AUTH0_DOMAIN>',
+  client_id: '<AUTH0_CLIENT_ID>',
+  redirect_uri: '<MY_CALLBACK_URL>',
+  cacheStrategy: 'localstorage' // valid values are: 'memory' or 'localstorage'
+}).then(auth0 => {
+  // ...
+});
+```
+
+**Important:** This feature will allow the caching of data **such as ID and access tokens** to be stored in local storage. Exercising this option changes the security characteristics of your application and **should not be used lightly**. Extra care should be taken to mitigate against XSS attacks and minimize the risk of tokens being stolen from local storage.
 
 ## Contributing
 

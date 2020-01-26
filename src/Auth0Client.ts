@@ -5,7 +5,7 @@ import {
   createQueryParams,
   runPopup,
   parseQueryResult,
-  encodeState,
+  encode,
   createRandomString,
   runIframe,
   sha256,
@@ -14,10 +14,10 @@ import {
   openPopup
 } from './utils';
 
-import Cache from './cache';
+import { InMemoryCache, ICache, LocalStorageCache } from './cache';
 import TransactionManager from './transaction-manager';
 import { verify as verifyIdToken } from './jwt';
-import { AuthenticationError } from './errors';
+import { AuthenticationError, GenericError } from './errors';
 import * as ClientStorage from './storage';
 import { DEFAULT_POPUP_CONFIG_OPTIONS } from './constants';
 import version from './version';
@@ -39,24 +39,43 @@ import {
 const lock = new Lock();
 const GET_TOKEN_SILENTLY_LOCK_KEY = 'auth0.lock.getTokenSilently';
 
+const cacheFactory = location => {
+  const builders = {
+    memory: () => new InMemoryCache().enclosedCache,
+    localstorage: () => new LocalStorageCache()
+  };
+
+  return builders[location];
+};
+
 /**
  * Auth0 SDK for Single Page Applications using [Authorization Code Grant Flow with PKCE](https://auth0.com/docs/api-auth/tutorials/authorization-code-grant-pkce).
  */
 export default class Auth0Client {
-  private cache: Cache;
+  private cache: ICache;
   private transactionManager: TransactionManager;
   private domainUrl: string;
   private tokenIssuer: string;
   private readonly DEFAULT_SCOPE = 'openid profile email';
 
+  cacheLocation: string;
+
   constructor(private options: Auth0ClientOptions) {
-    this.cache = new Cache();
+    this.cacheLocation = options.cacheLocation || 'memory';
+
+    if (!cacheFactory(this.cacheLocation)) {
+      throw new Error(`Invalid cache location "${this.cacheLocation}"`);
+    }
+
+    this.cache = cacheFactory(this.cacheLocation)();
     this.transactionManager = new TransactionManager();
     this.domainUrl = `https://${this.options.domain}`;
+
     this.tokenIssuer = this.options.issuer
       ? `https://${this.options.issuer}/`
       : `${this.domainUrl}/`;
   }
+
   private _url(path) {
     const telemetry = encodeURIComponent(
       btoa(
@@ -68,6 +87,7 @@ export default class Auth0Client {
     );
     return `${this.domainUrl}${path}&auth0Client=${telemetry}`;
   }
+
   private _getParams(
     authorizeOptions: BaseLoginOptions,
     state: string,
@@ -75,7 +95,14 @@ export default class Auth0Client {
     code_challenge: string,
     redirect_uri: string
   ): AuthorizeOptions {
-    const { domain, leeway, ...withoutDomain } = this.options;
+    const {
+      domain,
+      leeway,
+      useRefreshTokens,
+      cacheLocation,
+      ...withoutDomain
+    } = this.options;
+
     return {
       ...withoutDomain,
       ...authorizeOptions,
@@ -128,13 +155,20 @@ export default class Auth0Client {
   public async buildAuthorizeUrl(
     options: RedirectLoginOptions = {}
   ): Promise<string> {
-    const { redirect_uri, appState, ...authorizeOptions } = options;
-    const stateIn = encodeState(createRandomString());
-    const nonceIn = createRandomString();
+    const {
+      redirect_uri,
+      appState,
+      cacheStrategy,
+      ...authorizeOptions
+    } = options;
+
+    const stateIn = encode(createRandomString());
+    const nonceIn = encode(createRandomString());
     const code_verifier = createRandomString();
     const code_challengeBuffer = await sha256(code_verifier);
     const code_challenge = bufferToBase64UrlEncoded(code_challengeBuffer);
     const fragment = options.fragment ? `#${options.fragment}` : '';
+
     const params = this._getParams(
       authorizeOptions,
       stateIn,
@@ -142,7 +176,9 @@ export default class Auth0Client {
       code_challenge,
       redirect_uri
     );
+
     const url = this._authorizeUrl(params);
+
     this.transactionManager.create(stateIn, {
       nonce: nonceIn,
       code_verifier,
@@ -150,6 +186,7 @@ export default class Auth0Client {
       scope: params.scope,
       audience: params.audience || 'default'
     });
+
     return url + fragment;
   }
 
@@ -175,11 +212,12 @@ export default class Auth0Client {
   ) {
     const popup = await openPopup();
     const { ...authorizeOptions } = options;
-    const stateIn = encodeState(createRandomString());
-    const nonceIn = createRandomString();
+    const stateIn = encode(createRandomString());
+    const nonceIn = encode(createRandomString());
     const code_verifier = createRandomString();
     const code_challengeBuffer = await sha256(code_verifier);
     const code_challenge = bufferToBase64UrlEncoded(code_challengeBuffer);
+
     const params = this._getParams(
       authorizeOptions,
       stateIn,
@@ -187,29 +225,38 @@ export default class Auth0Client {
       code_challenge,
       this.options.redirect_uri || window.location.origin
     );
+
     const url = this._authorizeUrl({
       ...params,
       response_mode: 'web_message'
     });
+
     const codeResult = await runPopup(popup, url, config);
+
     if (stateIn !== codeResult.state) {
       throw new Error('Invalid state');
     }
+
     const authResult = await oauthToken({
       baseUrl: this.domainUrl,
-      audience: options.audience || this.options.audience,
       client_id: this.options.client_id,
       code_verifier,
-      code: codeResult.code
-    });
+      code: codeResult.code,
+      grant_type: 'authorization_code'
+    } as OAuthTokenOptions);
+
     const decodedToken = this._verifyIdToken(authResult.id_token, nonceIn);
+
     const cacheEntry = {
       ...authResult,
       decodedToken,
       scope: params.scope,
-      audience: params.audience || 'default'
+      audience: params.audience || 'default',
+      client_id: this.options.client_id
     };
+
     this.cache.save(cacheEntry);
+
     ClientStorage.save('auth0.is.authenticated', true, { daysUntilExpire: 1 });
   }
 
@@ -230,8 +277,13 @@ export default class Auth0Client {
     }
   ) {
     options.scope = getUniqueScopes(this.DEFAULT_SCOPE, options.scope);
-    const cache = this.cache.get(options);
-    return cache && cache.decodedToken.user;
+
+    const cache = this.cache.get({
+      client_id: this.options.client_id,
+      ...options
+    });
+
+    return cache && cache.decodedToken && cache.decodedToken.user;
   }
 
   /**
@@ -249,9 +301,18 @@ export default class Auth0Client {
       scope: this.options.scope || this.DEFAULT_SCOPE
     }
   ) {
-    options.scope = getUniqueScopes(this.DEFAULT_SCOPE, options.scope);
-    const cache = this.cache.get(options);
-    return cache && cache.decodedToken.claims;
+    options.scope = getUniqueScopes(
+      this.DEFAULT_SCOPE,
+      this.options.scope,
+      options.scope
+    );
+
+    const cache = this.cache.get({
+      client_id: this.options.client_id,
+      ...options
+    });
+
+    return cache && cache.decodedToken && cache.decodedToken.claims;
   }
 
   /**
@@ -300,24 +361,29 @@ export default class Auth0Client {
 
     const authResult = await oauthToken({
       baseUrl: this.domainUrl,
-      audience: this.options.audience,
       client_id: this.options.client_id,
       code_verifier: transaction.code_verifier,
-      code
-    });
+      code,
+      grant_type: 'authorization_code'
+    } as OAuthTokenOptions);
 
     const decodedToken = this._verifyIdToken(
       authResult.id_token,
       transaction.nonce
     );
+
     const cacheEntry = {
       ...authResult,
       decodedToken,
       audience: transaction.audience,
-      scope: transaction.scope
+      scope: transaction.scope,
+      client_id: this.options.client_id
     };
+
     this.cache.save(cacheEntry);
+
     ClientStorage.save('auth0.is.authenticated', true, { daysUntilExpire: 1 });
+
     return {
       appState: transaction.appState
     };
@@ -336,78 +402,38 @@ export default class Auth0Client {
    *
    * @param options
    */
-  public async getTokenSilently(
-    options: GetTokenSilentlyOptions = {
+  public async getTokenSilently(options: GetTokenSilentlyOptions = {}) {
+    const { ignoreCache, ...refreshTokenOptions } = {
       audience: this.options.audience,
-      scope: this.options.scope || this.DEFAULT_SCOPE,
-      ignoreCache: false
-    }
-  ) {
-    options.scope = getUniqueScopes(this.DEFAULT_SCOPE, options.scope);
+      scope: getUniqueScopes(
+        this.DEFAULT_SCOPE,
+        this.options.scope,
+        options.scope
+      ),
+      ignoreCache: false,
+      ...options
+    };
 
     try {
-      if (!options.ignoreCache) {
+      if (!ignoreCache) {
         const cache = this.cache.get({
-          scope: options.scope,
-          audience: options.audience || 'default'
+          scope: refreshTokenOptions.scope,
+          audience: refreshTokenOptions.audience || 'default',
+          client_id: this.options.client_id
         });
 
-        if (cache) {
+        if (cache && cache.access_token) {
           return cache.access_token;
         }
       }
 
       await lock.acquireLock(GET_TOKEN_SILENTLY_LOCK_KEY, 5000);
 
-      const stateIn = encodeState(createRandomString());
-      const nonceIn = createRandomString();
-      const code_verifier = createRandomString();
-      const code_challengeBuffer = await sha256(code_verifier);
-      const code_challenge = bufferToBase64UrlEncoded(code_challengeBuffer);
+      const authResult = this.options.useRefreshTokens
+        ? await this._getTokenUsingRefreshToken(refreshTokenOptions)
+        : await this._getTokenFromIFrame(refreshTokenOptions);
 
-      const authorizeOptions = {
-        audience: options.audience,
-        scope: options.scope
-      };
-
-      const params = this._getParams(
-        authorizeOptions,
-        stateIn,
-        nonceIn,
-        code_challenge,
-        this.options.redirect_uri || window.location.origin
-      );
-
-      const url = this._authorizeUrl({
-        ...params,
-        prompt: 'none',
-        response_mode: 'web_message'
-      });
-
-      const codeResult = await runIframe(url, this.domainUrl);
-
-      if (stateIn !== codeResult.state) {
-        throw new Error('Invalid state');
-      }
-
-      const authResult = await oauthToken({
-        baseUrl: this.domainUrl,
-        audience: options.audience || this.options.audience,
-        client_id: this.options.client_id,
-        code_verifier,
-        code: codeResult.code
-      });
-
-      const decodedToken = this._verifyIdToken(authResult.id_token, nonceIn);
-
-      const cacheEntry = {
-        ...authResult,
-        decodedToken,
-        scope: params.scope,
-        audience: params.audience || 'default'
-      };
-
-      this.cache.save(cacheEntry);
+      this.cache.save({ client_id: this.options.client_id, ...authResult });
 
       ClientStorage.save('auth0.is.authenticated', true, {
         daysUntilExpire: 1
@@ -444,11 +470,15 @@ export default class Auth0Client {
       this.options.scope,
       options.scope
     );
+
     await this.loginWithPopup(options, config);
+
     const cache = this.cache.get({
       scope: options.scope,
-      audience: options.audience || 'default'
+      audience: options.audience || 'default',
+      client_id: this.options.client_id
     });
+
     return cache.access_token;
   }
 
@@ -482,10 +512,98 @@ export default class Auth0Client {
     } else {
       delete options.client_id;
     }
+
     ClientStorage.remove('auth0.is.authenticated');
+    this.cache.clear();
     const { federated, ...logoutOptions } = options;
     const federatedQuery = federated ? `&federated` : '';
     const url = this._url(`/v2/logout?${createQueryParams(logoutOptions)}`);
     window.location.assign(`${url}${federatedQuery}`);
+  }
+
+  private async _getTokenFromIFrame(
+    options: GetTokenSilentlyOptions
+  ): Promise<any> {
+    const stateIn = encode(createRandomString());
+    const nonceIn = encode(createRandomString());
+    const code_verifier = createRandomString();
+    const code_challengeBuffer = await sha256(code_verifier);
+    const code_challenge = bufferToBase64UrlEncoded(code_challengeBuffer);
+
+    const params = this._getParams(
+      options,
+      stateIn,
+      nonceIn,
+      code_challenge,
+      this.options.redirect_uri || window.location.origin
+    );
+
+    const url = this._authorizeUrl({
+      ...params,
+      prompt: 'none',
+      response_mode: 'web_message'
+    });
+
+    const codeResult = await runIframe(url, this.domainUrl);
+
+    if (stateIn !== codeResult.state) {
+      throw new Error('Invalid state');
+    }
+
+    const tokenResult = await oauthToken({
+      baseUrl: this.domainUrl,
+      client_id: this.options.client_id,
+      code_verifier,
+      code: codeResult.code,
+      grant_type: 'authorization_code'
+    } as OAuthTokenOptions);
+
+    const decodedToken = this._verifyIdToken(tokenResult.id_token, nonceIn);
+
+    return {
+      ...tokenResult,
+      decodedToken,
+      scope: params.scope,
+      audience: params.audience || 'default'
+    };
+  }
+
+  private async _getTokenUsingRefreshToken(
+    options: GetTokenSilentlyOptions
+  ): Promise<any> {
+    options.scope = getUniqueScopes(
+      this.DEFAULT_SCOPE,
+      this.options.scope,
+      options.scope
+    );
+
+    const cache = this.cache.get({
+      scope: options.scope,
+      audience: options.audience || 'default',
+      client_id: this.options.client_id
+    });
+
+    if (!cache || !cache.refresh_token) {
+      throw new GenericError(
+        'missing_refresh_token',
+        'No refresh token is available to fetch a new access token. The user should be reauthenticated.'
+      );
+    }
+
+    const tokenResult = await oauthToken({
+      baseUrl: this.domainUrl,
+      client_id: this.options.client_id,
+      grant_type: 'refresh_token',
+      refresh_token: cache.refresh_token
+    } as RefreshTokenOptions);
+
+    const decodedToken = this._verifyIdToken(tokenResult.id_token);
+
+    return {
+      ...tokenResult,
+      decodedToken,
+      scope: options.scope,
+      audience: options.audience || 'default'
+    };
   }
 }

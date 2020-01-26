@@ -12,18 +12,23 @@ import * as ClientStorage from './storage';
 import { Auth0ClientOptions } from './global';
 import './global';
 
-import { validateCrypto } from './utils';
+import { validateCrypto, getUniqueScopes } from './utils';
 
 export * from './global';
 
 export default async function createAuth0Client(options: Auth0ClientOptions) {
   validateCrypto();
 
+  if (options.useRefreshTokens) {
+    options.scope = getUniqueScopes(options.scope, 'offline_access');
+  }
+
   const auth0 = new Auth0Client(options);
 
   if (!ClientStorage.get('auth0.is.authenticated')) {
     return auth0;
   }
+
   try {
     await auth0.getTokenSilently({
       audience: options.audience,
@@ -33,6 +38,7 @@ export default async function createAuth0Client(options: Auth0ClientOptions) {
   } catch (error) {
     // ignore
   }
+
   return auth0;
 }
 
