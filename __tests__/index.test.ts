@@ -1256,20 +1256,6 @@ describe('Auth0', () => {
           expect(token).toBe(TEST_ACCESS_TOKEN);
         });
 
-        it('acquires and releases lock when there is a cache', async () => {
-          const { auth0, cache, lock } = await setup();
-          cache.get.mockReturnValue({ access_token: TEST_ACCESS_TOKEN });
-
-          await auth0.getTokenSilently();
-          expect(lock.acquireLockMock).toHaveBeenCalledWith(
-            GET_TOKEN_SILENTLY_LOCK_KEY,
-            5000
-          );
-          expect(lock.releaseLockMock).toHaveBeenCalledWith(
-            GET_TOKEN_SILENTLY_LOCK_KEY
-          );
-        });
-
         it('continues method execution when there is no cache available', async () => {
           const { auth0, utils } = await setup();
 
@@ -1536,7 +1522,7 @@ describe('Auth0', () => {
           response_mode: 'web_message',
           prompt: 'none',
           state: TEST_ENCODED_STATE,
-          nonce: TEST_RANDOM_STRING,
+          nonce: TEST_ENCODED_STATE,
           redirect_uri: 'http://localhost',
           code_challenge: TEST_BASE64_ENCODED_STRING,
           code_challenge_method: 'S256',

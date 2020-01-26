@@ -85,9 +85,10 @@ export default class Auth0Client {
       domain,
       leeway,
       useRefreshTokens,
-      cacheStrategy,
+      cacheLocation,
       ...withoutDomain
     } = this.options;
+
     return {
       ...withoutDomain,
       ...authorizeOptions,
@@ -388,9 +389,7 @@ export default class Auth0Client {
    * @param options
    */
   public async getTokenSilently(options: GetTokenSilentlyOptions = {}) {
-    const { ignoreCache, ...additionalOptions } = options;
-
-    options = {
+    const { ignoreCache, ...refreshTokenOptions } = {
       audience: this.options.audience,
       scope: getUniqueScopes(
         this.DEFAULT_SCOPE,
@@ -398,14 +397,14 @@ export default class Auth0Client {
         options.scope
       ),
       ignoreCache: false,
-      ...additionalOptions
+      ...options
     };
 
     try {
       if (!ignoreCache) {
         const cache = this.cache.get({
-          scope: options.scope,
-          audience: options.audience || 'default',
+          scope: refreshTokenOptions.scope,
+          audience: refreshTokenOptions.audience || 'default',
           client_id: this.options.client_id
         });
 
@@ -417,8 +416,8 @@ export default class Auth0Client {
       await lock.acquireLock(GET_TOKEN_SILENTLY_LOCK_KEY, 5000);
 
       const authResult = this.options.useRefreshTokens
-        ? await this._getTokenUsingRefreshToken(options)
-        : await this._getTokenFromIFrame(options);
+        ? await this._getTokenUsingRefreshToken(refreshTokenOptions)
+        : await this._getTokenFromIFrame(refreshTokenOptions);
 
       this.cache.save({ client_id: this.options.client_id, ...authResult });
 
