@@ -264,6 +264,38 @@ describe('Auth0', () => {
         redirect_uri: 'http://localhost'
       });
     });
+
+    it('calls oauth/token with the same custom redirect_uri as /authorize', async () => {
+      const redirect_uri = 'http://another.uri';
+
+      const { auth0, utils } = await setup({
+        redirect_uri
+      });
+
+      await auth0.loginWithPopup();
+
+      expect(utils.createQueryParams).toHaveBeenCalledWith({
+        client_id: TEST_CLIENT_ID,
+        scope: TEST_SCOPES,
+        response_type: TEST_CODE,
+        response_mode: 'web_message',
+        state: TEST_ENCODED_STATE,
+        nonce: TEST_RANDOM_STRING,
+        redirect_uri,
+        code_challenge: TEST_BASE64_ENCODED_STRING,
+        code_challenge_method: 'S256'
+      });
+
+      expect(utils.oauthToken).toHaveBeenCalledWith({
+        audience: undefined,
+        baseUrl: 'https://test.auth0.com',
+        client_id: TEST_CLIENT_ID,
+        code: TEST_CODE,
+        code_verifier: TEST_RANDOM_STRING,
+        redirect_uri
+      });
+    });
+
     it('calls oauth/token with correct params and a different audience', async () => {
       const { auth0, utils } = await setup();
 
