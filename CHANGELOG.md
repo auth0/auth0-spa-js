@@ -10,6 +10,10 @@
 - No longer acquires a browser lock if there was a hit on the cache [\#339](https://github.com/auth0/auth0-spa-js/pull/339) ([stevehobbsdev](https://github.com/stevehobbsdev))
 - Use user provided params on silent login [\#318](https://github.com/auth0/auth0-spa-js/pull/318) ([nkete](https://github.com/nkete))
 
+## [v1.6.2](https://github.com/auth0/auth0-spa-js/tree/v1.6.2) (2020-01-13)
+
+[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v1.6.1...v1.6.2)
+
 **Removed**
 
 Removed future issued-at claim check [stevehobbsdev](https://github.com/stevehobbsdev) - https://github.com/auth0/auth0-spa-js/pull/329
