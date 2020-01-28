@@ -280,11 +280,17 @@ const getJSON = async (url, timeout, options, worker) => {
   }
 
   const {
-    json: { error, error_description, ...success },
+    json: { error, error_description, status, ...success },
     ok
   } = response;
 
   if (!ok) {
+    if (status === 429) {
+      const e = <any>new Error('too_many_requests');
+      e.error_description = 'Too Many Requests';
+      throw e;
+    }
+
     const errorMessage =
       error_description || `HTTP error. Unable to fetch ${url}`;
     const e = <any>new Error(errorMessage);
