@@ -90,6 +90,11 @@ interface Auth0ClientOptions extends BaseLoginOptions {
    * Defaults to 60s.
    */
   leeway?: number;
+  /**
+   * A maximum number of seconds to wait before declaring background calls to /authorize as failed for timeout
+   * Defaults to 60s.
+   */
+  authorizeTimeoutInSeconds?: number;
 }
 
 /**
