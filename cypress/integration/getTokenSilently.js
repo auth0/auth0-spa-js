@@ -28,7 +28,7 @@ describe('getTokenSilently', function() {
         );
         return win.auth0.getTokenSilently().then(() => {
           const parsedUrl = new URL(iframe.src);
-          shouldBe(parsedUrl.host, 'auth.brucke.club');
+          shouldBe(parsedUrl.host, 'brucke.auth0.com');
           const pageParams = decode(parsedUrl.search.substr(1));
           shouldBeUndefined(pageParams.code_verifier);
           shouldNotBeUndefined(pageParams.code_challenge);
