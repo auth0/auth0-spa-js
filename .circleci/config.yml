@@ -13,4 +13,4 @@ jobs:
       - run: npm run test:es-check
       - run: npm run print-bundle-size
       - store_artifacts:
-        path: ~/repo/cypress/screenshots
+          path: ~/repo/cypress/screenshots
