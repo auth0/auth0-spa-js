@@ -669,6 +669,7 @@ describe('Auth0', () => {
           queryResult.error_description
         );
       });
+
       it('throws AuthenticationError with state, error, error_description', async () => {
         const { auth0, utils } = await localSetup();
         const queryResult = {
@@ -691,6 +692,35 @@ describe('Auth0', () => {
           queryResult.error_description
         );
       });
+
+      it('throws AuthenticationError and includes the transaction state', async () => {
+        const { auth0, utils, transactionManager } = await localSetup();
+
+        const appState = {
+          key: 'property'
+        };
+
+        transactionManager.get.mockReturnValue({ appState });
+
+        const queryResult = {
+          error: 'unauthorized',
+          error_description: 'Unauthorized user',
+          state: 'abcxyz'
+        };
+
+        utils.parseQueryResult.mockReturnValue(queryResult);
+
+        let errorThrown: AuthenticationError;
+
+        try {
+          await auth0.handleRedirectCallback();
+        } catch (error) {
+          errorThrown = error;
+        }
+
+        expect(errorThrown.appState).toEqual(appState);
+      });
+
       it('throws error when there is no transaction', async () => {
         const { auth0, transactionManager } = await localSetup();
         transactionManager.get.mockReturnValue(undefined);

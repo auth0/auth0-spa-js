@@ -275,15 +275,23 @@ export default class Auth0Client {
       queryStringFragments.join('')
     );
 
-    if (error) {
-      this.transactionManager.remove(state);
-      throw new AuthenticationError(error, error_description, state);
-    }
-
     const transaction = this.transactionManager.get(state);
+
     if (!transaction) {
       throw new Error('Invalid state');
     }
+
+    if (error) {
+      this.transactionManager.remove(state);
+
+      throw new AuthenticationError(
+        error,
+        error_description,
+        state,
+        transaction.appState
+      );
+    }
+
     this.transactionManager.remove(state);
 
     const authResult = await oauthToken({
