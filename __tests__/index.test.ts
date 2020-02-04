@@ -1301,7 +1301,8 @@ describe('Auth0', () => {
         await auth0.getTokenSilently(defaultOptionsIgnoreCacheTrue);
         expect(utils.runIframe).toHaveBeenCalledWith(
           `https://test.auth0.com/authorize?${TEST_QUERY_PARAMS}${TEST_TELEMETRY_QUERY_STRING}`,
-          'https://test.auth0.com'
+          'https://test.auth0.com',
+          defaultOptionsIgnoreCacheTrue.timeoutInSeconds
         );
       });
 

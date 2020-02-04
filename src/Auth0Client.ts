@@ -347,6 +347,7 @@ export default class Auth0Client {
         audience,
         scope,
         ignoreCache,
+        timeoutInSeconds,
         ...additionalQueryParams
       } = options;
 
@@ -389,7 +390,7 @@ export default class Auth0Client {
         response_mode: 'web_message'
       });
 
-      const codeResult = await runIframe(url, this.domainUrl);
+      const codeResult = await runIframe(url, this.domainUrl, timeoutInSeconds);
 
       if (stateIn !== codeResult.state) {
         throw new Error('Invalid state');
