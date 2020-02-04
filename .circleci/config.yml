@@ -12,5 +12,11 @@ jobs:
       - run: npm run test:integration
       - run: npm run test:es-check
       - run: npm run print-bundle-size
+      - run:
+          name: Copy screenshots
+          command: |
+            ls ~/repo/cypress/screenshots
+            mkdir /tmp/screenshots
+            cp -R ~/repo/cypress/screenshots/*/*.png /tmp/screenshots
       - store_artifacts:
-          path: ~/repo/cypress/screenshots
+          path: /tmp/screenshots
