@@ -276,15 +276,20 @@ export default class Auth0Client {
     );
 
     const transaction = this.transactionManager.get(state);
-    const appState = transaction ? transaction.appState : null;
-
-    if (error) {
-      this.transactionManager.remove(state);
-      throw new AuthenticationError(error, error_description, state, appState);
-    }
 
     if (!transaction) {
       throw new Error('Invalid state');
+    }
+
+    if (error) {
+      this.transactionManager.remove(state);
+
+      throw new AuthenticationError(
+        error,
+        error_description,
+        state,
+        transaction.appState
+      );
     }
 
     this.transactionManager.remove(state);

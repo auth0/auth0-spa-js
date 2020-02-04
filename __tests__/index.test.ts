@@ -693,7 +693,7 @@ describe('Auth0', () => {
         );
       });
 
-      it('throws AuthenticationError and includes the transation state', async () => {
+      it('throws AuthenticationError and includes the transaction state', async () => {
         const { auth0, utils, transactionManager } = await localSetup();
 
         const appState = {
