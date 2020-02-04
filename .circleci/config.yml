@@ -15,8 +15,12 @@ jobs:
       - run:
           name: Copy screenshots
           command: |
-            ls ~/repo/cypress/screenshots
             mkdir /tmp/screenshots
-            cp -R ~/repo/cypress/screenshots/*/*.png /tmp/screenshots
+            cp -R ~/repo/cypress/screenshots/*/*.png ~/tmp/screenshots 2>/dev/null || :
+      - run:
+          name: Copy videos
+          command: |
+            mkdir /tmp/videos
+            cp -R ~/repo/cypress/videos/*.mp4 ~/tmp/videos 2>/dev/null || :
       - store_artifacts:
-          path: /tmp/screenshots
+          path: /tmp
