@@ -8,7 +8,8 @@ import {
 
 import {
   DEFAULT_AUTHORIZE_TIMEOUT_IN_SECONDS,
-  DEFAULT_SILENT_TOKEN_RETRY_COUNT
+  DEFAULT_SILENT_TOKEN_RETRY_COUNT,
+  DEFAULT_FETCH_TIMEOUT_MS
 } from './constants';
 
 const dedupe = arr => arr.filter((x, i) => arr.indexOf(x) === i);
@@ -183,7 +184,7 @@ export const bufferToBase64UrlEncoded = input => {
   );
 };
 
-const fetchWithTimeout = (url, options, timeout) => {
+const fetchWithTimeout = (url, options, timeout = DEFAULT_FETCH_TIMEOUT_MS) => {
   // The promise will resolve with one of these two promises (the fetch and the timeout), whichever completes first.
   return Promise.race([
     fetch(url, options),

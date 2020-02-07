@@ -584,8 +584,7 @@ export default class Auth0Client {
       code_verifier,
       code: codeResult.code,
       grant_type: 'authorization_code',
-      redirect_uri: params.redirect_uri,
-      timeout: DEFAULT_FETCH_TIMEOUT_MS
+      redirect_uri: params.redirect_uri
     } as OAuthTokenOptions);
 
     const decodedToken = this._verifyIdToken(tokenResult.id_token, nonceIn);
@@ -630,8 +629,7 @@ export default class Auth0Client {
       client_id: this.options.client_id,
       grant_type: 'refresh_token',
       refresh_token: cache.refresh_token,
-      redirect_uri,
-      timeout: DEFAULT_FETCH_TIMEOUT_MS
+      redirect_uri
     } as RefreshTokenOptions);
 
     const decodedToken = this._verifyIdToken(tokenResult.id_token);
