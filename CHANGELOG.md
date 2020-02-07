@@ -15,7 +15,19 @@
 - Ability to use either an in-memory cache (the default) or localstorage to store tokens - [stevehobbsdev](https://github.com/stevehobbsdev) - https://github.com/auth0/auth0-spa-js/pull/303
 - Added support for rotating refresh tokens - [stevehobbsdev](https://github.com/stevehobbsdev) - https://github.com/auth0/auth0-spa-js/pull/315
 
+## [v1.6.3](https://github.com/auth0/auth0-spa-js/tree/v1.6.3) (2020-01-28)
+
+[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v1.6.2...v1.6.3)
+
+**Fixed**
+
+- Send same redirect_uri as /authorize to /token [\#341](https://github.com/auth0/auth0-spa-js/pull/341) ([stevehobbsdev](https://github.com/stevehobbsdev))
+- No longer acquires a browser lock if there was a hit on the cache [\#339](https://github.com/auth0/auth0-spa-js/pull/339) ([stevehobbsdev](https://github.com/stevehobbsdev))
+- Use user provided params on silent login [\#318](https://github.com/auth0/auth0-spa-js/pull/318) ([nkete](https://github.com/nkete))
+
 ## [v1.6.2](https://github.com/auth0/auth0-spa-js/tree/v1.6.2) (2020-01-13)
+
+[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v1.6.1...v1.6.2)
 
 **Removed**
 

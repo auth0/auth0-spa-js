@@ -186,7 +186,8 @@ export default class Auth0Client {
       code_verifier,
       appState,
       scope: params.scope,
-      audience: params.audience || 'default'
+      audience: params.audience || 'default',
+      redirect_uri: params.redirect_uri
     });
 
     return url + fragment;
@@ -244,7 +245,8 @@ export default class Auth0Client {
       client_id: this.options.client_id,
       code_verifier,
       code: codeResult.code,
-      grant_type: 'authorization_code'
+      grant_type: 'authorization_code',
+      redirect_uri: params.redirect_uri
     } as OAuthTokenOptions);
 
     const decodedToken = this._verifyIdToken(authResult.id_token, nonceIn);
@@ -350,15 +352,23 @@ export default class Auth0Client {
       queryStringFragments.join('')
     );
 
-    if (error) {
-      this.transactionManager.remove(state);
-      throw new AuthenticationError(error, error_description, state);
-    }
-
     const transaction = this.transactionManager.get(state);
+
     if (!transaction) {
       throw new Error('Invalid state');
     }
+
+    if (error) {
+      this.transactionManager.remove(state);
+
+      throw new AuthenticationError(
+        error,
+        error_description,
+        state,
+        transaction.appState
+      );
+    }
+
     this.transactionManager.remove(state);
 
     const authResult = await oauthToken({
@@ -366,7 +376,8 @@ export default class Auth0Client {
       client_id: this.options.client_id,
       code_verifier: transaction.code_verifier,
       code,
-      grant_type: 'authorization_code'
+      grant_type: 'authorization_code',
+      redirect_uri: transaction.redirect_uri
     } as OAuthTokenOptions);
 
     const decodedToken = this._verifyIdToken(
@@ -537,7 +548,9 @@ export default class Auth0Client {
       stateIn,
       nonceIn,
       code_challenge,
-      this.options.redirect_uri || window.location.origin
+      options.redirect_uri ||
+        this.options.redirect_uri ||
+        window.location.origin
     );
 
     const url = this._authorizeUrl({
@@ -557,7 +570,8 @@ export default class Auth0Client {
       client_id: this.options.client_id,
       code_verifier,
       code: codeResult.code,
-      grant_type: 'authorization_code'
+      grant_type: 'authorization_code',
+      redirect_uri: params.redirect_uri
     } as OAuthTokenOptions);
 
     const decodedToken = this._verifyIdToken(tokenResult.id_token, nonceIn);
@@ -592,11 +606,17 @@ export default class Auth0Client {
       );
     }
 
+    const redirect_uri =
+      options.redirect_uri ||
+      this.options.redirect_uri ||
+      window.location.origin;
+
     const tokenResult = await oauthToken({
       baseUrl: this.domainUrl,
       client_id: this.options.client_id,
       grant_type: 'refresh_token',
-      refresh_token: cache.refresh_token
+      refresh_token: cache.refresh_token,
+      redirect_uri
     } as RefreshTokenOptions);
 
     const decodedToken = this._verifyIdToken(tokenResult.id_token);

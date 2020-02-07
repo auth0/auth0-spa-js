@@ -300,10 +300,44 @@ describe('Auth0', () => {
         client_id: TEST_CLIENT_ID,
         code: TEST_CODE,
         code_verifier: TEST_RANDOM_STRING,
-        grant_type: 'authorization_code'
+        grant_type: 'authorization_code',
+        redirect_uri: 'http://localhost'
       });
     });
-    it('calls oauth/token with correct params', async () => {
+
+    it('calls oauth/token with the same custom redirect_uri as /authorize', async () => {
+      const redirect_uri = 'http://another.uri';
+
+      const { auth0, utils } = await setup({
+        redirect_uri
+      });
+
+      await auth0.loginWithPopup();
+
+      expect(utils.createQueryParams).toHaveBeenCalledWith({
+        client_id: TEST_CLIENT_ID,
+        scope: TEST_SCOPES,
+        response_type: TEST_CODE,
+        response_mode: 'web_message',
+        state: TEST_ENCODED_STATE,
+        nonce: TEST_ENCODED_STATE,
+        redirect_uri,
+        code_challenge: TEST_BASE64_ENCODED_STRING,
+        code_challenge_method: 'S256'
+      });
+
+      expect(utils.oauthToken).toHaveBeenCalledWith({
+        audience: undefined,
+        baseUrl: 'https://test.auth0.com',
+        client_id: TEST_CLIENT_ID,
+        code: TEST_CODE,
+        code_verifier: TEST_RANDOM_STRING,
+        grant_type: 'authorization_code',
+        redirect_uri
+      });
+    });
+
+    it('calls oauth/token with correct params and a different audience', async () => {
       const { auth0, utils } = await setup();
 
       await auth0.loginWithPopup({ audience: 'test-audience' });
@@ -312,7 +346,8 @@ describe('Auth0', () => {
         client_id: TEST_CLIENT_ID,
         code: TEST_CODE,
         code_verifier: TEST_RANDOM_STRING,
-        grant_type: 'authorization_code'
+        grant_type: 'authorization_code',
+        redirect_uri: 'http://localhost'
       });
     });
     it('calls `tokenVerifier.verify` with the `id_token` from in the oauth/token response', async () => {
@@ -604,7 +639,8 @@ describe('Auth0', () => {
           audience: 'default',
           code_verifier: TEST_RANDOM_STRING,
           nonce: TEST_ENCODED_STATE,
-          scope: TEST_SCOPES
+          scope: TEST_SCOPES,
+          redirect_uri: 'https://redirect.uri'
         }
       );
     });
@@ -734,6 +770,7 @@ describe('Auth0', () => {
           queryResult.error_description
         );
       });
+
       it('throws AuthenticationError with state, error, error_description', async () => {
         const { auth0, utils } = await localSetup();
         const queryResult = {
@@ -756,6 +793,35 @@ describe('Auth0', () => {
           queryResult.error_description
         );
       });
+
+      it('throws AuthenticationError and includes the transaction state', async () => {
+        const { auth0, utils, transactionManager } = await localSetup();
+
+        const appState = {
+          key: 'property'
+        };
+
+        transactionManager.get.mockReturnValue({ appState });
+
+        const queryResult = {
+          error: 'unauthorized',
+          error_description: 'Unauthorized user',
+          state: 'abcxyz'
+        };
+
+        utils.parseQueryResult.mockReturnValue(queryResult);
+
+        let errorThrown: AuthenticationError;
+
+        try {
+          await auth0.handleRedirectCallback();
+        } catch (error) {
+          errorThrown = error;
+        }
+
+        expect(errorThrown.appState).toEqual(appState);
+      });
+
       it('throws error when there is no transaction', async () => {
         const { auth0, transactionManager } = await localSetup();
         transactionManager.get.mockReturnValue(undefined);
@@ -1342,7 +1408,8 @@ describe('Auth0', () => {
             baseUrl: 'https://test.auth0.com',
             refresh_token: TEST_REFRESH_TOKEN,
             client_id: TEST_CLIENT_ID,
-            grant_type: 'refresh_token'
+            grant_type: 'refresh_token',
+            redirect_uri: 'http://localhost'
           });
 
           expect(cache.save).toHaveBeenCalledWith({
@@ -1570,7 +1637,8 @@ describe('Auth0', () => {
           client_id: TEST_CLIENT_ID,
           code: TEST_CODE,
           code_verifier: TEST_RANDOM_STRING,
-          grant_type: 'authorization_code'
+          grant_type: 'authorization_code',
+          redirect_uri: 'http://localhost'
         });
       });
 

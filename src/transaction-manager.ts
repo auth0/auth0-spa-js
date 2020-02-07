@@ -9,6 +9,7 @@ interface Transaction {
   audience: string;
   appState?: any;
   code_verifier: string;
+  redirect_uri: string;
 }
 interface Transactions {
   [key: string]: Transaction;
