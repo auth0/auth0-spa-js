@@ -11,7 +11,10 @@ import createAuth0Client, {
 } from '../src/index';
 import { AuthenticationError } from '../src/errors';
 import version from '../src/version';
-import { DEFAULT_AUTHORIZE_TIMEOUT_IN_SECONDS } from '../src/constants';
+import {
+  DEFAULT_AUTHORIZE_TIMEOUT_IN_SECONDS,
+  DEFAULT_FETCH_TIMEOUT_MS
+} from '../src/constants';
 const GET_TOKEN_SILENTLY_LOCK_KEY = 'auth0.lock.getTokenSilently';
 
 const TEST_DOMAIN = 'test.auth0.com';
@@ -1409,7 +1412,8 @@ describe('Auth0', () => {
             refresh_token: TEST_REFRESH_TOKEN,
             client_id: TEST_CLIENT_ID,
             grant_type: 'refresh_token',
-            redirect_uri: 'http://localhost'
+            redirect_uri: 'http://localhost',
+            timeout: DEFAULT_FETCH_TIMEOUT_MS
           });
 
           expect(cache.save).toHaveBeenCalledWith({
@@ -1638,7 +1642,8 @@ describe('Auth0', () => {
           code: TEST_CODE,
           code_verifier: TEST_RANDOM_STRING,
           grant_type: 'authorization_code',
-          redirect_uri: 'http://localhost'
+          redirect_uri: 'http://localhost',
+          timeout: DEFAULT_FETCH_TIMEOUT_MS
         });
       });
 

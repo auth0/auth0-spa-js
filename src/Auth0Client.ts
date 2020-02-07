@@ -19,7 +19,10 @@ import TransactionManager from './transaction-manager';
 import { verify as verifyIdToken } from './jwt';
 import { AuthenticationError, GenericError } from './errors';
 import * as ClientStorage from './storage';
-import { DEFAULT_POPUP_CONFIG_OPTIONS } from './constants';
+import {
+  DEFAULT_POPUP_CONFIG_OPTIONS,
+  DEFAULT_FETCH_TIMEOUT_MS
+} from './constants';
 import version from './version';
 import {
   Auth0ClientOptions,
@@ -581,7 +584,8 @@ export default class Auth0Client {
       code_verifier,
       code: codeResult.code,
       grant_type: 'authorization_code',
-      redirect_uri: params.redirect_uri
+      redirect_uri: params.redirect_uri,
+      timeout: DEFAULT_FETCH_TIMEOUT_MS
     } as OAuthTokenOptions);
 
     const decodedToken = this._verifyIdToken(tokenResult.id_token, nonceIn);
@@ -626,7 +630,8 @@ export default class Auth0Client {
       client_id: this.options.client_id,
       grant_type: 'refresh_token',
       refresh_token: cache.refresh_token,
-      redirect_uri
+      redirect_uri,
+      timeout: DEFAULT_FETCH_TIMEOUT_MS
     } as RefreshTokenOptions);
 
     const decodedToken = this._verifyIdToken(tokenResult.id_token);

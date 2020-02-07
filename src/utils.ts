@@ -14,6 +14,7 @@ import {
 const dedupe = arr => arr.filter((x, i) => arr.indexOf(x) === i);
 
 const TIMEOUT_ERROR = { error: 'timeout', error_description: 'Timeout' };
+
 export const getUniqueScopes = (...scopes: string[]) => {
   const scopeString = scopes.filter(Boolean).join();
   return dedupe(scopeString.replace(/\s/g, ',').split(','))
@@ -182,12 +183,25 @@ export const bufferToBase64UrlEncoded = input => {
   );
 };
 
-const getJSON = async (url, options) => {
+const fetchWithTimeout = (url, options, timeout) => {
+  // The promise will resolve with one of these two promises (the fetch and the timeout), whichever completes first.
+  return Promise.race([
+    fetch(url, options),
+    new Promise((_, reject) => {
+      setTimeout(
+        () => reject(new Error("Timeout when executing 'fetch'")),
+        timeout
+      );
+    })
+  ]);
+};
+
+const getJSON = async (url, timeout, options) => {
   let fetchError, response;
 
   for (let i = 0; i < DEFAULT_SILENT_TOKEN_RETRY_COUNT; i++) {
     try {
-      response = await fetch(url, options);
+      response = await fetchWithTimeout(url, options, timeout);
       fetchError = null;
       break;
     } catch (e) {
@@ -221,9 +235,10 @@ const getJSON = async (url, options) => {
 
 export const oauthToken = async ({
   baseUrl,
+  timeout,
   ...options
 }: TokenEndpointOptions) =>
-  await getJSON(`${baseUrl}/oauth/token`, {
+  await getJSON(`${baseUrl}/oauth/token`, timeout, {
     method: 'POST',
     body: JSON.stringify({
       redirect_uri: window.location.origin,

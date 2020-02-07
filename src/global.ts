@@ -261,6 +261,7 @@ export interface TokenEndpointOptions {
   baseUrl: string;
   client_id: string;
   grant_type: string;
+  timeout: number;
 }
 
 /**

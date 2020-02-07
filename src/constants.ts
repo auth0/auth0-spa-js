@@ -16,3 +16,8 @@ export const DEFAULT_POPUP_CONFIG_OPTIONS: PopupConfigOptions = {
  * @ignore
  */
 export const DEFAULT_SILENT_TOKEN_RETRY_COUNT = 3;
+
+/**
+ * @ignore
+ */
+export const DEFAULT_FETCH_TIMEOUT_MS = 10000;

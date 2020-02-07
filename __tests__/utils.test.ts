@@ -21,6 +21,7 @@ import {
   DEFAULT_AUTHORIZE_TIMEOUT_IN_SECONDS,
   DEFAULT_SILENT_TOKEN_RETRY_COUNT
 } from '../src/constants';
+import { ExportConverter } from 'typedoc/dist/lib/converter/nodes';
 
 (<any>global).TextEncoder = TextEncoder;
 
@@ -396,6 +397,61 @@ describe('utils', () => {
 
       expect(result.access_token).toBe('access-token');
       expect(mockUnfetch).toHaveBeenCalledTimes(3);
+    });
+
+    it('surfaces a timeout error when the fetch continuously times out', async () => {
+      const createPromise = () =>
+        new Promise((resolve, _) => {
+          setTimeout(
+            () =>
+              resolve({
+                ok: true,
+                json: () => Promise.resolve({ access_token: 'access-token' })
+              }),
+            500
+          );
+        });
+
+      mockUnfetch.mockReturnValue(createPromise());
+
+      try {
+        await oauthToken({
+          baseUrl: 'https://test.com',
+          client_id: 'client_idIn',
+          code: 'codeIn',
+          code_verifier: 'code_verifierIn',
+          timeout: 100
+        });
+      } catch (e) {
+        expect(e.message).toBe("Timeout when executing 'fetch'");
+        expect(mockUnfetch).toHaveBeenCalledTimes(3);
+      }
+    });
+
+    it('retries the request in the event of a timeout', async () => {
+      const fetchResult = {
+        ok: true,
+        json: () => Promise.resolve({ access_token: 'access-token' })
+      };
+
+      mockUnfetch.mockReturnValueOnce(
+        new Promise((resolve, _) => {
+          setTimeout(() => resolve(fetchResult), 1000);
+        })
+      );
+
+      mockUnfetch.mockReturnValue(Promise.resolve(fetchResult));
+
+      const result = await oauthToken({
+        baseUrl: 'https://test.com',
+        client_id: 'client_idIn',
+        code: 'codeIn',
+        code_verifier: 'code_verifierIn',
+        timeout: 500
+      });
+
+      expect(result.access_token).toBe('access-token');
+      expect(mockUnfetch).toHaveBeenCalledTimes(2);
     });
   });
 
