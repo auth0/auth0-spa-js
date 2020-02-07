@@ -95,7 +95,7 @@ export interface Auth0ClientOptions extends BaseLoginOptions {
    * The location to use when storing cache data. Valid values are `memory` or `localstorage`.
    * The default setting is `memory`.
    */
-  cacheLocation?: 'memory' | 'localstorage';
+  cacheLocation?: CacheLocation;
 
   /**
    * If true, refresh tokens are used to fetch new access tokens from the Auth0 server. If false, the legacy technique of using a hidden iframe and the `authorization_code` grant with `prompt=none` is used.
@@ -111,6 +111,11 @@ export interface Auth0ClientOptions extends BaseLoginOptions {
    */
   authorizeTimeoutInSeconds?: number;
 }
+
+/**
+ * The possible locations where tokens can be stored
+ */
+export type CacheLocation = 'memory' | 'localstorage';
 
 /**
  * @ignore

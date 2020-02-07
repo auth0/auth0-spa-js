@@ -22,3 +22,6 @@ export const DEFAULT_SILENT_TOKEN_RETRY_COUNT = 3;
  * @ignore
  */
 export const DEFAULT_FETCH_TIMEOUT_MS = 10000;
+
+export const CACHE_LOCATION_MEMORY = 'memory';
+export const CACHE_LOCATION_LOCAL_STORAGE = 'localstorage';

@@ -11,6 +11,8 @@ import 'abortcontroller-polyfill/dist/abortcontroller-polyfill-only';
 import Auth0Client from './Auth0Client';
 import * as ClientStorage from './storage';
 import { Auth0ClientOptions } from './global';
+import { CACHE_LOCATION_MEMORY } from './constants';
+
 import './global';
 
 import { validateCrypto, getUniqueScopes } from './utils';
@@ -26,16 +28,15 @@ export default async function createAuth0Client(options: Auth0ClientOptions) {
 
   const auth0 = new Auth0Client(options);
 
-  if (!ClientStorage.get('auth0.is.authenticated')) {
+  if (
+    auth0.cacheLocation === CACHE_LOCATION_MEMORY &&
+    !ClientStorage.get('auth0.is.authenticated')
+  ) {
     return auth0;
   }
 
   try {
-    await auth0.getTokenSilently({
-      audience: options.audience,
-      scope: options.scope,
-      ignoreCache: true
-    });
+    await auth0.getTokenSilently();
   } catch (error) {
     // ignore
   }
