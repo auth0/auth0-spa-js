@@ -38,9 +38,19 @@ import {
   OAuthTokenOptions
 } from './global';
 
+/**
+ * @ignore
+ */
 const lock = new Lock();
+
+/**
+ * @ignore
+ */
 const GET_TOKEN_SILENTLY_LOCK_KEY = 'auth0.lock.getTokenSilently';
 
+/**
+ * @ignore
+ */
 const cacheFactory = location => {
   const builders = {
     memory: () => new InMemoryCache().enclosedCache,
