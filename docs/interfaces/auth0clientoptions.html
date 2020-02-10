@@ -2394,6 +2394,9 @@ img {
 					<a href="auth0clientoptions.html#audience" class="tsd-kind-icon">audience</a>
 				</li>
 				<li class=" tsd-kind-property tsd-parent-kind-interface tsd-is-not-exported">
+					<a href="auth0clientoptions.html#authorizetimeoutinseconds" class="tsd-kind-icon">authorize<wbr>Timeout<wbr>InSeconds</a>
+				</li>
+				<li class=" tsd-kind-property tsd-parent-kind-interface tsd-is-not-exported">
 					<a href="auth0clientoptions.html#client_id" class="tsd-kind-icon">client_<wbr>id</a>
 				</li>
 				<li class=" tsd-kind-property tsd-parent-kind-interface tsd-is-inherited tsd-is-not-exported">
@@ -2512,6 +2515,7 @@ img {
 						<ul class="tsd-index-list">
 							<li class="tsd-kind-property tsd-parent-kind-interface tsd-is-inherited tsd-is-not-exported"><a href="auth0clientoptions.html#acr_values" class="tsd-kind-icon">acr_<wbr>values</a></li>
 							<li class="tsd-kind-property tsd-parent-kind-interface tsd-is-inherited tsd-is-not-exported"><a href="auth0clientoptions.html#audience" class="tsd-kind-icon">audience</a></li>
+							<li class="tsd-kind-property tsd-parent-kind-interface tsd-is-not-exported"><a href="auth0clientoptions.html#authorizetimeoutinseconds" class="tsd-kind-icon">authorize<wbr>Timeout<wbr>InSeconds</a></li>
 							<li class="tsd-kind-property tsd-parent-kind-interface tsd-is-not-exported"><a href="auth0clientoptions.html#client_id" class="tsd-kind-icon">client_<wbr>id</a></li>
 							<li class="tsd-kind-property tsd-parent-kind-interface tsd-is-inherited tsd-is-not-exported"><a href="auth0clientoptions.html#connection" class="tsd-kind-icon">connection</a></li>
 							<li class="tsd-kind-property tsd-parent-kind-interface tsd-is-inherited tsd-is-not-exported"><a href="auth0clientoptions.html#display" class="tsd-kind-icon">display</a></li>
@@ -2539,7 +2543,7 @@ img {
 				<aside class="tsd-sources">
 					<p>Inherited from BaseLoginOptions.acr_values</p>
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/4e8663d/src/global.ts#L40">src/global.ts:40</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/fb984a6/src/global.ts#L40">src/global.ts:40</a></li>
 					</ul>
 				</aside>
 			</section>
@@ -2550,7 +2554,7 @@ img {
 				<aside class="tsd-sources">
 					<p>Inherited from BaseLoginOptions.audience</p>
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/4e8663d/src/global.ts#L49">src/global.ts:49</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/fb984a6/src/global.ts#L49">src/global.ts:49</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-comment tsd-typography">
@@ -2560,12 +2564,28 @@ img {
 				</div>
 			</section>
 			<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface tsd-is-not-exported">
+				<a name="authorizetimeoutinseconds" class="tsd-anchor"></a>
+				<h3><span class="tsd-flag ts-flagOptional">Optional</span> authorize<wbr>Timeout<wbr>InSeconds</h3>
+				<div class="tsd-signature tsd-kind-icon">authorize<wbr>Timeout<wbr>InSeconds<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div>
+				<aside class="tsd-sources">
+					<ul>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/fb984a6/src/global.ts#L97">src/global.ts:97</a></li>
+					</ul>
+				</aside>
+				<div class="tsd-comment tsd-typography">
+					<div class="lead">
+						<p>A maximum number of seconds to wait before declaring background calls to /authorize as failed for timeout
+						Defaults to 60s.</p>
+					</div>
+				</div>
+			</section>
+			<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface tsd-is-not-exported">
 				<a name="client_id" class="tsd-anchor"></a>
 				<h3>client_<wbr>id</h3>
 				<div class="tsd-signature tsd-kind-icon">client_<wbr>id<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/4e8663d/src/global.ts#L78">src/global.ts:78</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/fb984a6/src/global.ts#L78">src/global.ts:78</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-comment tsd-typography">
@@ -2581,7 +2601,7 @@ img {
 				<aside class="tsd-sources">
 					<p>Inherited from BaseLoginOptions.connection</p>
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/4e8663d/src/global.ts#L55">src/global.ts:55</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/fb984a6/src/global.ts#L55">src/global.ts:55</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-comment tsd-typography">
@@ -2599,7 +2619,7 @@ img {
 				<aside class="tsd-sources">
 					<p>Inherited from BaseLoginOptions.display</p>
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/4e8663d/src/global.ts#L11">src/global.ts:11</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/fb984a6/src/global.ts#L11">src/global.ts:11</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-comment tsd-typography">
@@ -2619,7 +2639,7 @@ img {
 				<div class="tsd-signature tsd-kind-icon">domain<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/4e8663d/src/global.ts#L70">src/global.ts:70</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/fb984a6/src/global.ts#L70">src/global.ts:70</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-comment tsd-typography">
@@ -2637,7 +2657,7 @@ img {
 				<aside class="tsd-sources">
 					<p>Inherited from BaseLoginOptions.id_token_hint</p>
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/4e8663d/src/global.ts#L33">src/global.ts:33</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/fb984a6/src/global.ts#L33">src/global.ts:33</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-comment tsd-typography">
@@ -2652,7 +2672,7 @@ img {
 				<div class="tsd-signature tsd-kind-icon">issuer<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/4e8663d/src/global.ts#L74">src/global.ts:74</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/fb984a6/src/global.ts#L74">src/global.ts:74</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-comment tsd-typography">
@@ -2667,7 +2687,7 @@ img {
 				<div class="tsd-signature tsd-kind-icon">leeway<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/4e8663d/src/global.ts#L92">src/global.ts:92</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/fb984a6/src/global.ts#L92">src/global.ts:92</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-comment tsd-typography">
@@ -2685,7 +2705,7 @@ img {
 				<aside class="tsd-sources">
 					<p>Inherited from BaseLoginOptions.login_hint</p>
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/4e8663d/src/global.ts#L39">src/global.ts:39</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/fb984a6/src/global.ts#L39">src/global.ts:39</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-comment tsd-typography">
@@ -2703,7 +2723,7 @@ img {
 				<aside class="tsd-sources">
 					<p>Inherited from BaseLoginOptions.max_age</p>
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/4e8663d/src/global.ts#L24">src/global.ts:24</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/fb984a6/src/global.ts#L24">src/global.ts:24</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-comment tsd-typography">
@@ -2721,7 +2741,7 @@ img {
 				<aside class="tsd-sources">
 					<p>Inherited from BaseLoginOptions.prompt</p>
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/4e8663d/src/global.ts#L18">src/global.ts:18</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/fb984a6/src/global.ts#L18">src/global.ts:18</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-comment tsd-typography">
@@ -2741,7 +2761,7 @@ img {
 				<div class="tsd-signature tsd-kind-icon">redirect_<wbr>uri<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/4e8663d/src/global.ts#L86">src/global.ts:86</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/fb984a6/src/global.ts#L86">src/global.ts:86</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-comment tsd-typography">
@@ -2761,7 +2781,7 @@ img {
 				<aside class="tsd-sources">
 					<p>Inherited from BaseLoginOptions.scope</p>
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/4e8663d/src/global.ts#L45">src/global.ts:45</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/fb984a6/src/global.ts#L45">src/global.ts:45</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-comment tsd-typography">
@@ -2778,7 +2798,7 @@ img {
 				<aside class="tsd-sources">
 					<p>Inherited from BaseLoginOptions.ui_locales</p>
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/4e8663d/src/global.ts#L29">src/global.ts:29</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/fb984a6/src/global.ts#L29">src/global.ts:29</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-comment tsd-typography">
