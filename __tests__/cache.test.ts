@@ -30,9 +30,13 @@ describe('InMemoryCache', () => {
       scope: 'the_scope',
       id_token: 'idtoken',
       access_token: 'accesstoken',
-      expires_in: 1,
+      expires_in: dayInSeconds,
       decodedToken: {
-        claims: { __raw: 'idtoken', exp: 1, name: 'Test' },
+        claims: {
+          __raw: 'idtoken',
+          exp: nowSeconds() + dayInSeconds,
+          name: 'Test'
+        },
         user: { name: 'Test' }
       }
     };
@@ -48,95 +52,68 @@ describe('InMemoryCache', () => {
     ).toStrictEqual(data);
   });
 
-  it('expires after `expires_in` when `expires_in` < `user.exp`', () => {
-    const data = {
-      client_id: 'test-client',
-      audience: 'the_audience',
-      scope: 'the_scope',
-      id_token: 'idtoken',
-      access_token: 'accesstoken',
-      expires_in: 1,
-      decodedToken: {
-        claims: {
-          __raw: 'idtoken',
-          name: 'Test',
-          exp: new Date().getTime() / 1000 + 2
-        },
-        user: { name: 'Test' }
-      }
-    };
+  describe('when refresh tokens are used', () => {
+    it('strips everything except the refresh token when expiry has been reached', () => {
+      const now = Date.now();
+      const realDateNow = Date.now.bind(global.Date);
 
-    const cacheEntry = {
-      client_id: 'test-client',
-      audience: 'the_audience',
-      scope: 'the_scope'
-    };
+      const data = {
+        client_id: 'test-client',
+        audience: 'the_audience',
+        scope: 'the_scope',
+        id_token: 'idtoken',
+        access_token: 'accesstoken',
+        refresh_token: 'refreshtoken',
+        expires_in: dayInSeconds,
+        decodedToken: {
+          claims: {
+            __raw: 'idtoken',
+            name: 'Test',
+            exp: nowSeconds() + dayInSeconds * 2
+          },
+          user: { name: 'Test' }
+        }
+      };
 
-    cache.save(data);
+      cache.save(data);
 
-    // Test that the cache state is normal up until just before the expiry time..
-    jest.advanceTimersByTime(799);
-    expect(cache.get(cacheEntry)).toStrictEqual(data);
+      const cacheEntry = {
+        client_id: 'test-client',
+        audience: 'the_audience',
+        scope: 'the_scope'
+      };
 
-    // Advance the time to match the expiry time..
-    jest.advanceTimersByTime(1);
+      // Test that the cache state is normal up until just before the expiry time..
+      expect(cache.get(cacheEntry)).toStrictEqual(data);
 
-    // and test that the cache has been emptied.
-    expect(cache.get(cacheEntry)).toBeUndefined();
-  });
+      // Advance the time to just past the expiry..
+      const dateNowStub = jest.fn(() => now + (dayInSeconds + 60) * 1000);
+      global.Date.now = dateNowStub;
 
-  it('strips everything except the refresh token when expiry has been reached', () => {
-    const data = {
-      client_id: 'test-client',
-      audience: 'the_audience',
-      scope: 'the_scope',
-      id_token: 'idtoken',
-      access_token: 'accesstoken',
-      refresh_token: 'refreshtoken',
-      expires_in: 1,
-      decodedToken: {
-        claims: {
-          __raw: 'idtoken',
-          name: 'Test',
-          exp: new Date().getTime() / 1000 + 2
-        },
-        user: { name: 'Test' }
-      }
-    };
+      expect(cache.get(cacheEntry)).toStrictEqual({
+        refresh_token: 'refreshtoken'
+      });
 
-    cache.save(data);
-
-    const cacheEntry = {
-      client_id: 'test-client',
-      audience: 'the_audience',
-      scope: 'the_scope'
-    };
-
-    // Test that the cache state is normal up until just before the expiry time..
-    jest.advanceTimersByTime(799);
-    expect(cache.get(cacheEntry)).toStrictEqual(data);
-
-    // Advance the time to just past the expiry..
-    jest.advanceTimersByTime(1);
-
-    expect(cache.get(cacheEntry)).toStrictEqual({
-      refresh_token: 'refreshtoken'
+      global.Date.now = realDateNow;
     });
   });
 
-  it('expires after `user.exp` when `user.exp` < `expires_in`', () => {
+  it('expires the cache on read when the date.now > expires_in', () => {
+    const now = Date.now();
+    const realDateNow = Date.now.bind(global.Date);
+
     const data = {
       client_id: 'test-client',
       audience: 'the_audience',
       scope: 'the_scope',
       id_token: 'idtoken',
       access_token: 'accesstoken',
-      expires_in: 2,
+      expires_in: dayInSeconds,
       decodedToken: {
         claims: {
           __raw: 'idtoken',
           name: 'Test',
-          exp: new Date().getTime() / 1000 + 1
+          exp: nowSeconds() + dayInSeconds * 2
         },
         user: { name: 'Test' }
       }
@@ -150,15 +127,59 @@ describe('InMemoryCache', () => {
       scope: 'the_scope'
     };
 
-    // Test that the cache state is normal up until just before the expiry time..
-    jest.advanceTimersByTime(799);
+    // Test that the cache state is normal before we expire the data
     expect(cache.get(cacheEntry)).toStrictEqual(data);
 
     // Advance the time to just past the expiry..
-    jest.advanceTimersByTime(1);
+    const dateNowStub = jest.fn(() => now + 86500 * 1000);
+    global.Date.now = dateNowStub;
 
     // And test that the cache has been emptied
     expect(cache.get(cacheEntry)).toBeUndefined();
+
+    global.Date.now = realDateNow;
+  });
+
+  it('expires the cache on read when the date.now > token.exp', () => {
+    const now = Date.now();
+    const realDateNow = Date.now.bind(global.Date);
+
+    const data = {
+      client_id: 'test-client',
+      audience: 'the_audience',
+      scope: 'the_scope',
+      id_token: 'idtoken',
+      access_token: 'accesstoken',
+      expires_in: dayInSeconds * 2,
+      decodedToken: {
+        claims: {
+          __raw: 'idtoken',
+          name: 'Test',
+          exp: nowSeconds() + dayInSeconds
+        },
+        user: { name: 'Test' }
+      }
+    };
+
+    cache.save(data);
+
+    const cacheEntry = {
+      client_id: 'test-client',
+      audience: 'the_audience',
+      scope: 'the_scope'
+    };
+
+    // Test that the cache state is normal before we expire the data
+    expect(cache.get(cacheEntry)).toStrictEqual(data);
+
+    // Advance the time to just past the expiry..
+    const dateNowStub = jest.fn(() => now + 86500 * 1000);
+    global.Date.now = dateNowStub;
+
+    // And test that the cache has been emptied
+    expect(cache.get(cacheEntry)).toBeUndefined();
+
+    global.Date.now = realDateNow;
   });
 });
 
@@ -340,52 +361,6 @@ describe('LocalStorageCache', () => {
           expiresAt: nowSeconds() + 40
         })
       );
-    });
-
-    it('deletes the cache item once the timeout has been reached', () => {
-      const entry = Object.assign({}, defaultEntry, {
-        expires_in: 120,
-        decodedToken: {
-          claims: {
-            exp: nowSeconds() + 240
-          }
-        }
-      });
-
-      cache.save(entry);
-
-      // 96000, because the timeout time will be calculated at expires_in * 1000 * 0.8
-      jest.advanceTimersByTime(96000);
-
-      expect(localStorage.removeItem).toHaveBeenCalled();
-    });
-
-    it('strips the cache data, leaving the refresh token, once the timeout has been reached', () => {
-      const exp = nowSeconds() + 240;
-      const expiresIn = nowSeconds() + 120;
-
-      const entry = Object.assign({}, defaultEntry, {
-        expires_in: 120,
-        refresh_token: 'refresh-token',
-        decodedToken: {
-          claims: {
-            exp
-          }
-        }
-      });
-
-      cache.save(entry);
-
-      // 96000, because the timeout time will be calculated at expires_in * 1000 * 0.8
-      jest.advanceTimersByTime(96000);
-
-      const payload = JSON.parse(
-        localStorage.getItem(
-          '@@auth0spajs@@::__TEST_CLIENT_ID__::__TEST_AUDIENCE__::__TEST_SCOPE__'
-        )
-      );
-
-      expect(payload.body).toStrictEqual({ refresh_token: 'refresh-token' });
     });
   });
 
