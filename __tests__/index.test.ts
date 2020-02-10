@@ -9,7 +9,6 @@ import Auth0Client from '../src/Auth0Client';
 import createAuth0Client from '../src/index';
 import { AuthenticationError } from '../src/errors';
 import version from '../src/version';
-import { DEFAULT_AUTHORIZE_TIMEOUT_IN_SECONDS } from '../src/constants';
 const GET_TOKEN_SILENTLY_LOCK_KEY = 'auth0.lock.getTokenSilently';
 
 const TEST_DOMAIN = 'test.auth0.com';
@@ -35,9 +34,7 @@ const TEST_TELEMETRY_QUERY_STRING = `&auth0Client=${encodeURIComponent(
   )
 )}`;
 
-const DEFAULT_POPUP_CONFIG_OPTIONS: PopupConfigOptions = {
-  timeoutInSeconds: DEFAULT_AUTHORIZE_TIMEOUT_IN_SECONDS
-};
+const DEFAULT_POPUP_CONFIG_OPTIONS: PopupConfigOptions = {};
 
 const setup = async (options = {}) => {
   const auth0 = await createAuth0Client({
@@ -239,6 +236,19 @@ describe('Auth0', () => {
         { timeoutInSeconds: 1 }
       );
     });
+
+    it('opens popup with correct popup, url and timeout from client options', async () => {
+      const { auth0, utils } = await setup({ authorizeTimeoutInSeconds: 1 });
+      const popup = {};
+      utils.openPopup.mockReturnValue(popup);
+      await auth0.loginWithPopup({}, DEFAULT_POPUP_CONFIG_OPTIONS);
+      expect(utils.runPopup).toHaveBeenCalledWith(
+        popup,
+        `https://test.auth0.com/authorize?${TEST_QUERY_PARAMS}${TEST_TELEMETRY_QUERY_STRING}`,
+        { timeoutInSeconds: 1 }
+      );
+    });
+
     it('throws error if state from popup response is different from the provided state', async () => {
       const { auth0, utils } = await setup();
 
@@ -1301,7 +1311,31 @@ describe('Auth0', () => {
         await auth0.getTokenSilently(defaultOptionsIgnoreCacheTrue);
         expect(utils.runIframe).toHaveBeenCalledWith(
           `https://test.auth0.com/authorize?${TEST_QUERY_PARAMS}${TEST_TELEMETRY_QUERY_STRING}`,
-          'https://test.auth0.com'
+          'https://test.auth0.com',
+          defaultOptionsIgnoreCacheTrue.timeoutInSeconds
+        );
+      });
+
+      it('opens iframe with correct urls and timeout from client options', async () => {
+        const { auth0, utils } = await setup({ authorizeTimeoutInSeconds: 1 });
+        await auth0.getTokenSilently(defaultOptionsIgnoreCacheTrue);
+        expect(utils.runIframe).toHaveBeenCalledWith(
+          `https://test.auth0.com/authorize?${TEST_QUERY_PARAMS}${TEST_TELEMETRY_QUERY_STRING}`,
+          'https://test.auth0.com',
+          1
+        );
+      });
+
+      it('opens iframe with correct urls and custom timeout', async () => {
+        const { auth0, utils } = await setup();
+        await auth0.getTokenSilently({
+          ...defaultOptionsIgnoreCacheTrue,
+          timeoutInSeconds: 1
+        });
+        expect(utils.runIframe).toHaveBeenCalledWith(
+          `https://test.auth0.com/authorize?${TEST_QUERY_PARAMS}${TEST_TELEMETRY_QUERY_STRING}`,
+          'https://test.auth0.com',
+          1
         );
       });
 

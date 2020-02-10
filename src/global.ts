@@ -90,6 +90,11 @@ interface Auth0ClientOptions extends BaseLoginOptions {
    * Defaults to 60s.
    */
   leeway?: number;
+  /**
+   * A maximum number of seconds to wait before declaring background calls to /authorize as failed for timeout
+   * Defaults to 60s.
+   */
+  authorizeTimeoutInSeconds?: number;
 }
 
 /**
@@ -179,6 +184,12 @@ interface GetTokenSilentlyOptions extends GetUserOptions {
    * Auth0 Application's settings.
    */
   redirect_uri?: string;
+
+  /**
+   * A maximum number of seconds to wait before declaring the background /authorize call as failed for timeout
+   * Defaults to 60s.
+   */
+  timeoutInSeconds?: number;
 
   /**
    * If you need to send custom parameters to the Authorization Server,
