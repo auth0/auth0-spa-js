@@ -548,8 +548,9 @@ describe('utils', () => {
       expect(message.source.close).toHaveBeenCalled();
       expect(window.document.body.removeChild).toHaveBeenCalledWith(iframe);
     });
-    it('times out after 60s', async () => {
+    it('times out after timeoutInSeconds', async () => {
       const { iframe, url, origin } = setup('');
+      const seconds = 10;
       /**
        * We need to run the timers after we start `runIframe` to simulate
        * the window event listener, but we also need to use `jest.useFakeTimers`
@@ -557,10 +558,12 @@ describe('utils', () => {
        * then using fake timers then rolling back to real timers
        */
       setTimeout(() => {
-        jest.runAllTimers();
+        jest.runTimersToTime(seconds * 1000);
       }, 10);
       jest.useFakeTimers();
-      await expect(runIframe(url, origin)).rejects.toMatchObject(TIMEOUT_ERROR);
+      await expect(runIframe(url, origin, seconds)).rejects.toMatchObject(
+        TIMEOUT_ERROR
+      );
       expect(window.document.body.removeChild).toHaveBeenCalledWith(iframe);
       jest.useRealTimers();
     });

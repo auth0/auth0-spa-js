@@ -15,6 +15,15 @@
 - Ability to use either an in-memory cache (the default) or localstorage to store tokens - [stevehobbsdev](https://github.com/stevehobbsdev) - https://github.com/auth0/auth0-spa-js/pull/303
 - Added support for rotating refresh tokens - [stevehobbsdev](https://github.com/stevehobbsdev) - https://github.com/auth0/auth0-spa-js/pull/315
 
+## [v1.6.4](https://github.com/auth0/auth0-spa-js/tree/v1.6.4) (2020-02-10)
+
+[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v1.6.3...v1.6.4)
+
+**Changed**
+
+- [SDK-1308] Return appState value on error from handleRedirectCallback [\#348](https://github.com/auth0/auth0-spa-js/pull/348) ([stevehobbsdev](https://github.com/stevehobbsdev))
+- Configurable timeout for getTokenSilently() [\#347](https://github.com/auth0/auth0-spa-js/pull/347) ([Serjlee](https://github.com/Serjlee))
+
 ## [v1.6.3](https://github.com/auth0/auth0-spa-js/tree/v1.6.3) (2020-01-28)
 
 [Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v1.6.2...v1.6.3)
