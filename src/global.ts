@@ -104,6 +104,12 @@ export interface Auth0ClientOptions extends BaseLoginOptions {
    * *Note*: Use of refresh tokens must be enabled by an administrator on your Auth0 client application.
    */
   useRefreshTokens?: boolean;
+
+  /**
+   * A maximum number of seconds to wait before declaring background calls to /authorize as failed for timeout
+   * Defaults to 60s.
+   */
+  authorizeTimeoutInSeconds?: number;
 }
 
 /**
@@ -209,12 +215,18 @@ export interface GetTokenSilentlyOptions {
    */
   audience?: string;
 
+  /** A maximum number of seconds to wait before declaring the background /authorize call as failed for timeout
+   * Defaults to 60s.
+   */
+  timeoutInSeconds?: number;
+
   /**
    * If you need to send custom parameters to the Authorization Server,
    * make sure to use the original parameter name.
    */
   [key: string]: any;
 }
+
 export interface GetTokenWithPopupOptions extends PopupLoginOptions {}
 
 export interface LogoutOptions {
