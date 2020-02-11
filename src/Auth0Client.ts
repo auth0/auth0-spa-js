@@ -21,7 +21,7 @@ import { AuthenticationError, GenericError } from './errors';
 import * as ClientStorage from './storage';
 import {
   DEFAULT_POPUP_CONFIG_OPTIONS,
-  DEFAULT_FETCH_TIMEOUT_MS
+  DEFAULT_AUTHORIZE_TIMEOUT_IN_SECONDS
 } from './constants';
 import version from './version';
 import {
@@ -224,7 +224,7 @@ export default class Auth0Client {
    */
   public async loginWithPopup(
     options: PopupLoginOptions = {},
-    config: PopupConfigOptions = DEFAULT_POPUP_CONFIG_OPTIONS
+    config: PopupConfigOptions = {}
   ) {
     const popup = await openPopup();
     const { ...authorizeOptions } = options;
@@ -250,7 +250,9 @@ export default class Auth0Client {
     const codeResult = await runPopup(popup, url, {
       ...config,
       timeoutInSeconds:
-        config.timeoutInSeconds || this.options.authorizeTimeoutInSeconds
+        config.timeoutInSeconds ||
+        this.options.authorizeTimeoutInSeconds ||
+        DEFAULT_AUTHORIZE_TIMEOUT_IN_SECONDS
     });
 
     if (stateIn !== codeResult.state) {
