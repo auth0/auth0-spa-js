@@ -2385,6 +2385,9 @@ img {
 					<a href="authenticationerror.html#constructor" class="tsd-kind-icon">constructor</a>
 				</li>
 				<li class=" tsd-kind-property tsd-parent-kind-class">
+					<a href="authenticationerror.html#appstate" class="tsd-kind-icon">app<wbr>State</a>
+				</li>
+				<li class=" tsd-kind-property tsd-parent-kind-class">
 					<a href="authenticationerror.html#error" class="tsd-kind-icon">error</a>
 				</li>
 				<li class=" tsd-kind-property tsd-parent-kind-class">
@@ -2485,6 +2488,7 @@ img {
 					<section class="tsd-index-section ">
 						<h3>Properties</h3>
 						<ul class="tsd-index-list">
+							<li class="tsd-kind-property tsd-parent-kind-class"><a href="authenticationerror.html#appstate" class="tsd-kind-icon">app<wbr>State</a></li>
 							<li class="tsd-kind-property tsd-parent-kind-class"><a href="authenticationerror.html#error" class="tsd-kind-icon">error</a></li>
 							<li class="tsd-kind-property tsd-parent-kind-class"><a href="authenticationerror.html#error_description" class="tsd-kind-icon">error_<wbr>description</a></li>
 							<li class="tsd-kind-property tsd-parent-kind-class tsd-is-inherited"><a href="authenticationerror.html#message" class="tsd-kind-icon">message</a></li>
@@ -2503,13 +2507,13 @@ img {
 				<a name="constructor" class="tsd-anchor"></a>
 				<h3>constructor</h3>
 				<ul class="tsd-signatures tsd-kind-constructor tsd-parent-kind-class">
-					<li class="tsd-signature tsd-kind-icon">new <wbr>Authentication<wbr>Error<span class="tsd-signature-symbol">(</span>error<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span>, error_description<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span>, state<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="authenticationerror.html" class="tsd-signature-type">AuthenticationError</a></li>
+					<li class="tsd-signature tsd-kind-icon">new <wbr>Authentication<wbr>Error<span class="tsd-signature-symbol">(</span>error<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span>, error_description<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span>, state<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span>, appState<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="authenticationerror.html" class="tsd-signature-type">AuthenticationError</a></li>
 				</ul>
 				<ul class="tsd-descriptions">
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/4e8663d/src/errors.ts#L1">src/errors.ts:1</a></li>
+								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/fb984a6/src/errors.ts#L1">src/errors.ts:1</a></li>
 							</ul>
 						</aside>
 						<h4 class="tsd-parameters-title">Parameters</h4>
@@ -2523,6 +2527,9 @@ img {
 							<li>
 								<h5>state: <span class="tsd-signature-type">string</span></h5>
 							</li>
+							<li>
+								<h5><span class="tsd-flag ts-flagDefault value">Default value</span> appState: <span class="tsd-signature-type">any</span><span class="tsd-signature-symbol"> =&nbsp;null</span></h5>
+							</li>
 						</ul>
 						<h4 class="tsd-returns-title">Returns <a href="authenticationerror.html" class="tsd-signature-type">AuthenticationError</a></h4>
 					</li>
@@ -2532,12 +2539,22 @@ img {
 		<section class="tsd-panel-group tsd-member-group ">
 			<h2>Properties</h2>
 			<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class">
+				<a name="appstate" class="tsd-anchor"></a>
+				<h3>app<wbr>State</h3>
+				<div class="tsd-signature tsd-kind-icon">app<wbr>State<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">any</span></div>
+				<aside class="tsd-sources">
+					<ul>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/fb984a6/src/errors.ts#L6">src/errors.ts:6</a></li>
+					</ul>
+				</aside>
+			</section>
+			<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class">
 				<a name="error" class="tsd-anchor"></a>
 				<h3>error</h3>
 				<div class="tsd-signature tsd-kind-icon">error<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/4e8663d/src/errors.ts#L3">src/errors.ts:3</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/fb984a6/src/errors.ts#L3">src/errors.ts:3</a></li>
 					</ul>
 				</aside>
 			</section>
@@ -2547,7 +2564,7 @@ img {
 				<div class="tsd-signature tsd-kind-icon">error_<wbr>description<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/4e8663d/src/errors.ts#L4">src/errors.ts:4</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/fb984a6/src/errors.ts#L4">src/errors.ts:4</a></li>
 					</ul>
 				</aside>
 			</section>
@@ -2591,7 +2608,7 @@ img {
 				<div class="tsd-signature tsd-kind-icon">state<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/4e8663d/src/errors.ts#L5">src/errors.ts:5</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/fb984a6/src/errors.ts#L5">src/errors.ts:5</a></li>
 					</ul>
 				</aside>
 			</section>
