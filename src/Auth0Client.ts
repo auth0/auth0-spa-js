@@ -247,7 +247,11 @@ export default class Auth0Client {
       response_mode: 'web_message'
     });
 
-    const codeResult = await runPopup(popup, url, config);
+    const codeResult = await runPopup(popup, url, {
+      ...config,
+      timeoutInSeconds:
+        config.timeoutInSeconds || this.options.authorizeTimeoutInSeconds
+    });
 
     if (stateIn !== codeResult.state) {
       throw new Error('Invalid state');
@@ -572,7 +576,9 @@ export default class Auth0Client {
       response_mode: 'web_message'
     });
 
-    const codeResult = await runIframe(url, this.domainUrl);
+    const timeout =
+      options.timeoutInSeconds || this.options.authorizeTimeoutInSeconds;
+    const codeResult = await runIframe(url, this.domainUrl, timeout);
 
     if (stateIn !== codeResult.state) {
       throw new Error('Invalid state');

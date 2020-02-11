@@ -42,7 +42,11 @@ export const parseQueryResult = (queryString: string) => {
   };
 };
 
-export const runIframe = (authorizeUrl: string, eventOrigin: string) => {
+export const runIframe = (
+  authorizeUrl: string,
+  eventOrigin: string,
+  timeoutInSeconds: number = DEFAULT_AUTHORIZE_TIMEOUT_IN_SECONDS
+) => {
   return new Promise<AuthenticationResult>((res, rej) => {
     var iframe = window.document.createElement('iframe');
     iframe.setAttribute('width', '0');
@@ -52,7 +56,7 @@ export const runIframe = (authorizeUrl: string, eventOrigin: string) => {
     const timeoutSetTimeoutId = setTimeout(() => {
       rej(TIMEOUT_ERROR);
       window.document.body.removeChild(iframe);
-    }, 60 * 1000);
+    }, timeoutInSeconds * 1000);
 
     const iframeEventHandler = function(e: MessageEvent) {
       if (e.origin != eventOrigin) return;

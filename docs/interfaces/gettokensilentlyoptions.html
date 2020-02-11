@@ -2405,6 +2405,9 @@ img {
 				<li class=" tsd-kind-property tsd-parent-kind-interface">
 					<a href="gettokensilentlyoptions.html#scope" class="tsd-kind-icon">scope</a>
 				</li>
+				<li class=" tsd-kind-property tsd-parent-kind-interface">
+					<a href="gettokensilentlyoptions.html#timeoutinseconds" class="tsd-kind-icon">timeout<wbr>InSeconds</a>
+				</li>
 			</ul>
 		</li>
 		<li class=" tsd-kind-interface">
@@ -2467,6 +2470,7 @@ img {
 							<li class="tsd-kind-property tsd-parent-kind-interface"><a href="gettokensilentlyoptions.html#ignorecache" class="tsd-kind-icon">ignore<wbr>Cache</a></li>
 							<li class="tsd-kind-property tsd-parent-kind-interface"><a href="gettokensilentlyoptions.html#redirect_uri" class="tsd-kind-icon">redirect_<wbr>uri</a></li>
 							<li class="tsd-kind-property tsd-parent-kind-interface"><a href="gettokensilentlyoptions.html#scope" class="tsd-kind-icon">scope</a></li>
+							<li class="tsd-kind-property tsd-parent-kind-interface"><a href="gettokensilentlyoptions.html#timeoutinseconds" class="tsd-kind-icon">timeout<wbr>InSeconds</a></li>
 						</ul>
 					</section>
 				</div>
@@ -2480,7 +2484,7 @@ img {
 				<div class="tsd-signature tsd-kind-icon">audience<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/53509dc/src/global.ts#L210">global.ts:210</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/3b4cf56/src/global.ts#L216">global.ts:216</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-comment tsd-typography">
@@ -2495,7 +2499,7 @@ img {
 				<div class="tsd-signature tsd-kind-icon">ignore<wbr>Cache<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">boolean</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/53509dc/src/global.ts#L190">global.ts:190</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/3b4cf56/src/global.ts#L196">global.ts:196</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-comment tsd-typography">
@@ -2511,7 +2515,7 @@ img {
 				<div class="tsd-signature tsd-kind-icon">redirect_<wbr>uri<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/53509dc/src/global.ts#L200">global.ts:200</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/3b4cf56/src/global.ts#L206">global.ts:206</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-comment tsd-typography">
@@ -2531,12 +2535,28 @@ img {
 				<div class="tsd-signature tsd-kind-icon">scope<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/53509dc/src/global.ts#L205">global.ts:205</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/3b4cf56/src/global.ts#L211">global.ts:211</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-comment tsd-typography">
 					<div class="lead">
 						<p>The scope that was used in the authentication request</p>
+					</div>
+				</div>
+			</section>
+			<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
+				<a name="timeoutinseconds" class="tsd-anchor"></a>
+				<h3><span class="tsd-flag ts-flagOptional">Optional</span> timeout<wbr>InSeconds</h3>
+				<div class="tsd-signature tsd-kind-icon">timeout<wbr>InSeconds<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div>
+				<aside class="tsd-sources">
+					<ul>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/3b4cf56/src/global.ts#L221">global.ts:221</a></li>
+					</ul>
+				</aside>
+				<div class="tsd-comment tsd-typography">
+					<div class="lead">
+						<p>A maximum number of seconds to wait before declaring the background /authorize call as failed for timeout
+						Defaults to 60s.</p>
 					</div>
 				</div>
 			</section>
