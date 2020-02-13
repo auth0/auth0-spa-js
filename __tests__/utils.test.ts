@@ -21,7 +21,6 @@ import {
   DEFAULT_AUTHORIZE_TIMEOUT_IN_SECONDS,
   DEFAULT_SILENT_TOKEN_RETRY_COUNT
 } from '../src/constants';
-import { ExportConverter } from 'typedoc/dist/lib/converter/nodes';
 
 (<any>global).TextEncoder = TextEncoder;
 
@@ -285,12 +284,18 @@ describe('utils', () => {
         code_verifier: 'code_verifierIn'
       });
 
-      expect(mockUnfetch).toHaveBeenCalledWith('https://test.com/oauth/token', {
-        body:
-          '{"redirect_uri":"http://localhost","grant_type":"authorization_code","client_id":"client_idIn","code":"codeIn","code_verifier":"code_verifierIn"}',
-        headers: { 'Content-type': 'application/json' },
-        method: 'POST'
-      });
+      expect(mockUnfetch.mock.calls[0][0]).toBe('https://test.com/oauth/token');
+
+      expect(mockUnfetch.mock.calls[0][1]).toEqual(
+        expect.objectContaining({
+          body:
+            '{"redirect_uri":"http://localhost","grant_type":"authorization_code","client_id":"client_idIn","code":"codeIn","code_verifier":"code_verifierIn"}',
+          headers: { 'Content-type': 'application/json' },
+          method: 'POST'
+        })
+      );
+
+      expect(mockUnfetch.mock.calls[0][1].signal).not.toBeUndefined();
     });
 
     it('handles error with error response', async () => {

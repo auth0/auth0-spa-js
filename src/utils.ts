@@ -189,14 +189,22 @@ export const bufferToBase64UrlEncoded = input => {
 };
 
 const fetchWithTimeout = (url, options, timeout = DEFAULT_FETCH_TIMEOUT_MS) => {
+  const controller = new AbortController();
+  const signal = controller.signal;
+
+  const fetchOptions = {
+    ...options,
+    signal
+  };
+
   // The promise will resolve with one of these two promises (the fetch and the timeout), whichever completes first.
   return Promise.race([
-    fetch(url, options),
+    fetch(url, fetchOptions),
     new Promise((_, reject) => {
-      setTimeout(
-        () => reject(new Error("Timeout when executing 'fetch'")),
-        timeout
-      );
+      setTimeout(() => {
+        controller.abort();
+        reject(new Error("Timeout when executing 'fetch'"));
+      }, timeout);
     })
   ]);
 };
