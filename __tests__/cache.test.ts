@@ -131,7 +131,7 @@ describe('InMemoryCache', () => {
     expect(cache.get(cacheEntry)).toStrictEqual(data);
 
     // Advance the time to just past the expiry..
-    const dateNowStub = jest.fn(() => now + 86500 * 1000);
+    const dateNowStub = jest.fn(() => (now + dayInSeconds + 100) * 1000);
     global.Date.now = dateNowStub;
 
     // And test that the cache has been emptied
@@ -173,7 +173,7 @@ describe('InMemoryCache', () => {
     expect(cache.get(cacheEntry)).toStrictEqual(data);
 
     // Advance the time to just past the expiry..
-    const dateNowStub = jest.fn(() => now + 86500 * 1000);
+    const dateNowStub = jest.fn(() => (now + dayInSeconds + 100) * 1000);
     global.Date.now = dateNowStub;
 
     // And test that the cache has been emptied
