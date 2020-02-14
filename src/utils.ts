@@ -63,10 +63,15 @@ export const runIframe = (
 };
 
 export const openPopup = () => {
+  const width = 400;
+  const height = 600;
+  const left = window.screenX + (window.innerWidth - width) / 2;
+  const top = window.screenY + (window.innerHeight - height) / 2;
+
   const popup = window.open(
     '',
     'auth0:authorize:popup',
-    'left=100,top=100,width=400,height=600,resizable,scrollbars=yes,status=1'
+    `left=${left},top=${top},width=${width},height=${height},resizable,scrollbars=yes,status=1`
   );
   if (!popup) {
     throw new Error('Could not open popup');
