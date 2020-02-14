@@ -16,6 +16,8 @@ const dedupe = arr => arr.filter((x, i) => arr.indexOf(x) === i);
 
 const TIMEOUT_ERROR = { error: 'timeout', error_description: 'Timeout' };
 
+export const createAbortController = () => new AbortController();
+
 export const getUniqueScopes = (...scopes: string[]) => {
   const scopeString = scopes.filter(Boolean).join();
   return dedupe(scopeString.replace(/\s/g, ',').split(','))
@@ -189,7 +191,7 @@ export const bufferToBase64UrlEncoded = input => {
 };
 
 const fetchWithTimeout = (url, options, timeout = DEFAULT_FETCH_TIMEOUT_MS) => {
-  const controller = new AbortController();
+  const controller = createAbortController();
   const signal = controller.signal;
 
   const fetchOptions = {

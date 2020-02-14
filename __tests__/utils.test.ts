@@ -262,12 +262,20 @@ describe('utils', () => {
   describe('oauthToken', () => {
     let oauthToken;
     let mockUnfetch;
+    let abortController;
 
     beforeEach(() => {
       jest.resetModules();
       jest.mock('unfetch');
       mockUnfetch = require('unfetch');
-      oauthToken = require('../src/utils').oauthToken;
+
+      const utils = require('../src/utils');
+      oauthToken = utils.oauthToken;
+
+      // Set up an AbortController that we can test has been called in the event of a timeout
+      abortController = new AbortController();
+      jest.spyOn(abortController, 'abort');
+      utils.createAbortController = jest.fn(() => abortController);
     });
 
     it('calls oauth/token with the correct url', async () => {
@@ -276,6 +284,7 @@ describe('utils', () => {
           res({ ok: true, json: () => new Promise(ress => ress(true)) })
         )
       );
+
       await oauthToken({
         grant_type: 'authorization_code',
         baseUrl: 'https://test.com',
@@ -284,16 +293,13 @@ describe('utils', () => {
         code_verifier: 'code_verifierIn'
       });
 
-      expect(mockUnfetch.mock.calls[0][0]).toBe('https://test.com/oauth/token');
-
-      expect(mockUnfetch.mock.calls[0][1]).toEqual(
-        expect.objectContaining({
-          body:
-            '{"redirect_uri":"http://localhost","grant_type":"authorization_code","client_id":"client_idIn","code":"codeIn","code_verifier":"code_verifierIn"}',
-          headers: { 'Content-type': 'application/json' },
-          method: 'POST'
-        })
-      );
+      expect(mockUnfetch).toBeCalledWith('https://test.com/oauth/token', {
+        body:
+          '{"redirect_uri":"http://localhost","grant_type":"authorization_code","client_id":"client_idIn","code":"codeIn","code_verifier":"code_verifierIn"}',
+        headers: { 'Content-type': 'application/json' },
+        method: 'POST',
+        signal: abortController.signal
+      });
 
       expect(mockUnfetch.mock.calls[0][1].signal).not.toBeUndefined();
     });
@@ -402,6 +408,7 @@ describe('utils', () => {
 
       expect(result.access_token).toBe('access-token');
       expect(mockUnfetch).toHaveBeenCalledTimes(3);
+      expect(abortController.abort).not.toHaveBeenCalled();
     });
 
     it('surfaces a timeout error when the fetch continuously times out', async () => {
@@ -430,6 +437,7 @@ describe('utils', () => {
       } catch (e) {
         expect(e.message).toBe("Timeout when executing 'fetch'");
         expect(mockUnfetch).toHaveBeenCalledTimes(3);
+        expect(abortController.abort).toHaveBeenCalledTimes(3);
       }
     });
 
@@ -457,6 +465,7 @@ describe('utils', () => {
 
       expect(result.access_token).toBe('access-token');
       expect(mockUnfetch).toHaveBeenCalledTimes(2);
+      expect(abortController.abort).toHaveBeenCalled();
     });
   });
 
