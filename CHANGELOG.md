@@ -1,5 +1,19 @@
 # Change Log
 
+## [v1.7.0-beta.3](https://github.com/auth0/auth0-spa-js/tree/v1.7.0-beta.3) (2020-02-17)
+
+[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v1.7.0-beta.2...v1.7.0-beta.3)
+
+**Added**
+
+- Export types from global TypeScript file. [\#310](https://github.com/auth0/auth0-spa-js/pull/310) ([maxswa](https://github.com/maxswa))
+
+**Changed**
+
+- [SDK-1352] Removed setTimeout cache removal in favour of removal-on-read [\#354](https://github.com/auth0/auth0-spa-js/pull/354) ([stevehobbsdev](https://github.com/stevehobbsdev))
+- [SDK-1352] Stop checking `isAuthenticated` cookie on initialization when using local storage [\#352](https://github.com/auth0/auth0-spa-js/pull/352) ([stevehobbsdev](https://github.com/stevehobbsdev))
+- [SDK-1279] getTokenSilently retry logic [\#336](https://github.com/auth0/auth0-spa-js/pull/336) ([stevehobbsdev](https://github.com/stevehobbsdev))
+
 ## [v1.7.0-beta.2](https://github.com/auth0/auth0-spa-js/tree/v1.7.0-beta.2) (2020-01-16)
 
 [Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v1.7.0-beta.1...v1.7.0-beta.2)

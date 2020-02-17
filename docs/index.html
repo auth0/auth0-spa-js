@@ -2415,7 +2415,16 @@ img {
 			<a href="interfaces/redirectloginresult.html" class="tsd-kind-icon">Redirect<wbr>Login<wbr>Result</a>
 		</li>
 		<li class=" tsd-kind-type-alias">
+			<a href="globals.html#cachelocation" class="tsd-kind-icon">Cache<wbr>Location</a>
+		</li>
+		<li class=" tsd-kind-type-alias">
 			<a href="globals.html#getidtokenclaimsoptions" class="tsd-kind-icon">get<wbr>IdToken<wbr>Claims<wbr>Options</a>
+		</li>
+		<li class=" tsd-kind-variable">
+			<a href="globals.html#cache_location_local_storage" class="tsd-kind-icon">CACHE_<wbr>LOCATION_<wbr>LOCAL_<wbr>STORAGE</a>
+		</li>
+		<li class=" tsd-kind-variable">
+			<a href="globals.html#cache_location_memory" class="tsd-kind-icon">CACHE_<wbr>LOCATION_<wbr>MEMORY</a>
 		</li>
 		<li class=" tsd-kind-function">
 			<a href="globals.html#createauth0client" class="tsd-kind-icon">create<wbr>Auth0<wbr>Client</a>
@@ -2457,7 +2466,7 @@ img {
 				<h2>Installation</h2>
 			</a>
 			<p>From the CDN:</p>
-			<pre><code class="language-html"><span class="hljs-tag">&lt;<span class="hljs-name">script</span> <span class="hljs-attr">src</span>=<span class="hljs-string">"https://cdn.auth0.com/js/auth0-spa-js/1.7.0-beta.2/auth0-spa-js.production.js"</span>&gt;</span><span class="hljs-tag">&lt;/<span class="hljs-name">script</span>&gt;</span></code></pre>
+			<pre><code class="language-html"><span class="hljs-tag">&lt;<span class="hljs-name">script</span> <span class="hljs-attr">src</span>=<span class="hljs-string">"https://cdn.auth0.com/js/auth0-spa-js/1.7.0-beta.3/auth0-spa-js.production.js"</span>&gt;</span><span class="hljs-tag">&lt;/<span class="hljs-name">script</span>&gt;</span></code></pre>
 			<p>Using <a href="https://npmjs.org">npm</a>:</p>
 			<pre><code class="language-sh">npm install @auth0/auth0-spa-js</code></pre>
 			<p>Using <a href="https://yarnpkg.com">yarn</a>:</p>
@@ -2651,7 +2660,15 @@ createAuth0Client({
 					<section class="tsd-index-section ">
 						<h3>Type aliases</h3>
 						<ul class="tsd-index-list">
+							<li class="tsd-kind-type-alias"><a href="globals.html#cachelocation" class="tsd-kind-icon">Cache<wbr>Location</a></li>
 							<li class="tsd-kind-type-alias"><a href="globals.html#getidtokenclaimsoptions" class="tsd-kind-icon">get<wbr>IdToken<wbr>Claims<wbr>Options</a></li>
+						</ul>
+					</section>
+					<section class="tsd-index-section ">
+						<h3>Variables</h3>
+						<ul class="tsd-index-list">
+							<li class="tsd-kind-variable"><a href="globals.html#cache_location_local_storage" class="tsd-kind-icon">CACHE_<wbr>LOCATION_<wbr>LOCAL_<wbr>STORAGE</a></li>
+							<li class="tsd-kind-variable"><a href="globals.html#cache_location_memory" class="tsd-kind-icon">CACHE_<wbr>LOCATION_<wbr>MEMORY</a></li>
 						</ul>
 					</section>
 					<section class="tsd-index-section ">
@@ -2666,12 +2683,50 @@ createAuth0Client({
 		<section class="tsd-panel-group tsd-member-group ">
 			<h2>Type aliases</h2>
 			<section class="tsd-panel tsd-member tsd-kind-type-alias">
+				<a name="cachelocation" class="tsd-anchor"></a>
+				<h3>Cache<wbr>Location</h3>
+				<div class="tsd-signature tsd-kind-icon">Cache<wbr>Location<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">"memory"</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">"localstorage"</span></div>
+				<aside class="tsd-sources">
+					<ul>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/4e5ad57/src/global.ts#L118">global.ts:118</a></li>
+					</ul>
+				</aside>
+				<div class="tsd-comment tsd-typography">
+					<div class="lead">
+						<p>The possible locations where tokens can be stored</p>
+					</div>
+				</div>
+			</section>
+			<section class="tsd-panel tsd-member tsd-kind-type-alias">
 				<a name="getidtokenclaimsoptions" class="tsd-anchor"></a>
 				<h3>get<wbr>IdToken<wbr>Claims<wbr>Options</h3>
 				<div class="tsd-signature tsd-kind-icon">get<wbr>IdToken<wbr>Claims<wbr>Options<span class="tsd-signature-symbol">:</span> <a href="interfaces/getidtokenclaimsoptions.html" class="tsd-signature-type">GetIdTokenClaimsOptions</a></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/3b4cf56/src/global.ts#L189">global.ts:189</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/4e5ad57/src/global.ts#L194">global.ts:194</a></li>
+					</ul>
+				</aside>
+			</section>
+		</section>
+		<section class="tsd-panel-group tsd-member-group ">
+			<h2>Variables</h2>
+			<section class="tsd-panel tsd-member tsd-kind-variable">
+				<a name="cache_location_local_storage" class="tsd-anchor"></a>
+				<h3><span class="tsd-flag ts-flagConst">Const</span> CACHE_<wbr>LOCATION_<wbr>LOCAL_<wbr>STORAGE</h3>
+				<div class="tsd-signature tsd-kind-icon">CACHE_<wbr>LOCATION_<wbr>LOCAL_<wbr>STORAGE<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">"localstorage"</span><span class="tsd-signature-symbol"> =&nbsp;&quot;localstorage&quot;</span></div>
+				<aside class="tsd-sources">
+					<ul>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/4e5ad57/src/constants.ts#L27">constants.ts:27</a></li>
+					</ul>
+				</aside>
+			</section>
+			<section class="tsd-panel tsd-member tsd-kind-variable">
+				<a name="cache_location_memory" class="tsd-anchor"></a>
+				<h3><span class="tsd-flag ts-flagConst">Const</span> CACHE_<wbr>LOCATION_<wbr>MEMORY</h3>
+				<div class="tsd-signature tsd-kind-icon">CACHE_<wbr>LOCATION_<wbr>MEMORY<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">"memory"</span><span class="tsd-signature-symbol"> =&nbsp;&quot;memory&quot;</span></div>
+				<aside class="tsd-sources">
+					<ul>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/4e5ad57/src/constants.ts#L26">constants.ts:26</a></li>
 					</ul>
 				</aside>
 			</section>
@@ -2688,7 +2743,7 @@ createAuth0Client({
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/3b4cf56/src/index.ts#L19">index.ts:19</a></li>
+								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/4e5ad57/src/index.ts#L22">index.ts:22</a></li>
 							</ul>
 						</aside>
 						<h4 class="tsd-parameters-title">Parameters</h4>
