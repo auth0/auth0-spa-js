@@ -5,10 +5,9 @@ jest.mock('../src/transaction-manager');
 jest.mock('../src/utils');
 
 import Auth0Client from '../src/Auth0Client';
-import createAuth0Client, {
-  PopupConfigOptions,
-  GetTokenSilentlyOptions
-} from '../src/index';
+import { CacheLocation } from '../src/global';
+
+import createAuth0Client, { GetTokenSilentlyOptions } from '../src/index';
 
 import { AuthenticationError } from '../src/errors';
 import version from '../src/version';
@@ -55,7 +54,8 @@ const mockEnclosedCache = {
 jest.mock('../src/cache', () => ({
   InMemoryCache: () => ({
     enclosedCache: mockEnclosedCache
-  })
+  }),
+  LocalStorageCache: () => mockEnclosedCache
 }));
 
 const setup = async (options = {}) => {
@@ -1913,14 +1913,11 @@ describe('default creation function', () => {
       client_id: TEST_CLIENT_ID
     });
 
-    expect(auth0.getTokenSilently).toHaveBeenCalledWith({
-      audience: undefined,
-      ignoreCache: true
-    });
+    expect(auth0.getTokenSilently).toHaveBeenCalledWith();
   });
 
   describe('when refresh tokens are not used', () => {
-    it('calls getTokenSilently with audience and scope', async () => {
+    it('calls getTokenSilently', async () => {
       const utils = require('../src/utils');
 
       const options = {
@@ -1939,10 +1936,7 @@ describe('default creation function', () => {
         ...options
       });
 
-      expect(auth0.getTokenSilently).toHaveBeenCalledWith({
-        ignoreCache: true,
-        ...options
-      });
+      expect(auth0.getTokenSilently).toHaveBeenCalledWith();
     });
   });
 
@@ -1972,11 +1966,31 @@ describe('default creation function', () => {
         'offline_access'
       );
 
-      expect(auth0.getTokenSilently).toHaveBeenCalledWith({
-        ignoreCache: true,
-        scope: 'the-scope offline_access',
-        audience: 'the-audience'
+      expect(auth0.getTokenSilently).toHaveBeenCalledWith();
+    });
+  });
+
+  describe('when localstorage is used', () => {
+    it('refreshes token state regardless of isauthenticated cookie', async () => {
+      const cacheLocation: CacheLocation = 'localstorage';
+
+      const options = {
+        audience: 'the-audience',
+        scope: 'the-scope',
+        cacheLocation
+      };
+
+      Auth0Client.prototype.getTokenSilently = jest.fn();
+
+      require('../src/storage').get = () => false;
+
+      const auth0 = await createAuth0Client({
+        domain: TEST_DOMAIN,
+        client_id: TEST_CLIENT_ID,
+        ...options
       });
+
+      expect(auth0.getTokenSilently).toHaveBeenCalledWith();
     });
   });
 });

@@ -38,7 +38,8 @@ import {
   GetTokenWithPopupOptions,
   LogoutOptions,
   RefreshTokenOptions,
-  OAuthTokenOptions
+  OAuthTokenOptions,
+  CacheLocation
 } from './global';
 
 /**
@@ -54,13 +55,16 @@ const GET_TOKEN_SILENTLY_LOCK_KEY = 'auth0.lock.getTokenSilently';
 /**
  * @ignore
  */
-const cacheFactory = location => {
-  const builders = {
-    memory: () => new InMemoryCache().enclosedCache,
-    localstorage: () => new LocalStorageCache()
-  };
+const cacheLocationBuilders = {
+  memory: () => new InMemoryCache().enclosedCache,
+  localstorage: () => new LocalStorageCache()
+};
 
-  return builders[location];
+/**
+ * @ignore
+ */
+const cacheFactory = (location: string) => {
+  return cacheLocationBuilders[location];
 };
 
 /**
@@ -73,7 +77,7 @@ export default class Auth0Client {
   private tokenIssuer: string;
   private readonly DEFAULT_SCOPE = 'openid profile email';
 
-  cacheLocation: string;
+  cacheLocation: CacheLocation;
 
   constructor(private options: Auth0ClientOptions) {
     this.cacheLocation = options.cacheLocation || 'memory';
