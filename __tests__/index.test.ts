@@ -9,8 +9,15 @@ import createAuth0Client, {
   PopupConfigOptions,
   GetTokenSilentlyOptions
 } from '../src/index';
+
 import { AuthenticationError } from '../src/errors';
 import version from '../src/version';
+
+import {
+  DEFAULT_AUTHORIZE_TIMEOUT_IN_SECONDS,
+  DEFAULT_FETCH_TIMEOUT_MS
+} from '../src/constants';
+
 const GET_TOKEN_SILENTLY_LOCK_KEY = 'auth0.lock.getTokenSilently';
 
 const TEST_DOMAIN = 'test.auth0.com';
@@ -37,7 +44,7 @@ const TEST_TELEMETRY_QUERY_STRING = `&auth0Client=${encodeURIComponent(
   )
 )}`;
 
-const DEFAULT_POPUP_CONFIG_OPTIONS: PopupConfigOptions = {};
+import { DEFAULT_POPUP_CONFIG_OPTIONS } from '../src/constants';
 
 const mockEnclosedCache = {
   get: jest.fn(),
@@ -280,7 +287,7 @@ describe('Auth0', () => {
       const { auth0, utils } = await setup({ authorizeTimeoutInSeconds: 1 });
       const popup = {};
       utils.openPopup.mockReturnValue(popup);
-      await auth0.loginWithPopup({}, DEFAULT_POPUP_CONFIG_OPTIONS);
+      await auth0.loginWithPopup({});
       expect(utils.runPopup).toHaveBeenCalledWith(
         popup,
         `https://test.auth0.com/authorize?${TEST_QUERY_PARAMS}${TEST_TELEMETRY_QUERY_STRING}`,

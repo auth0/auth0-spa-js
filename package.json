@@ -71,6 +71,7 @@
     "wait-on": "^3.3.0"
   },
   "dependencies": {
+    "abortcontroller-polyfill": "^1.4.0",
     "browser-tabs-lock": "^1.2.1",
     "core-js": "^3.2.1",
     "es-cookie": "^1.2.0",
