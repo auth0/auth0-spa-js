@@ -625,10 +625,7 @@ export default class Auth0Client {
     });
 
     if (!cache || !cache.refresh_token) {
-      throw new GenericError(
-        'missing_refresh_token',
-        'No refresh token is available to fetch a new access token. The user should be reauthenticated.'
-      );
+      return await this._getTokenFromIFrame(options);
     }
 
     const redirect_uri =
