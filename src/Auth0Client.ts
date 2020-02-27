@@ -498,7 +498,10 @@ export default class Auth0Client {
       delete options.client_id;
     }
     ClientStorage.remove('auth0.is.authenticated');
-    const { federated, ...logoutOptions } = options;
+    const { federated, localOnly, ...logoutOptions } = options;
+    if (localOnly) {
+      return;
+    }
     const federatedQuery = federated ? `&federated` : '';
     const url = this._url(`/v2/logout?${createQueryParams(logoutOptions)}`);
     window.location.assign(`${url}${federatedQuery}`);
