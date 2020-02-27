@@ -7,9 +7,16 @@ daysUntilStale: 90
 daysUntilClose: 7
 
 # Issues or Pull Requests with these labels will never be considered stale. Set to `[]` to disable
-exemptLabels: []
+onlyLabels:
+  - "waiting for customer"
+  
+# Ignore issues in projects
+exemptProjects: true
 
-# Set to true to ignore issues with an assignee (defaults to false)
+# Ignore issues and PRs in milestones
+exemptMilestones: true
+
+# Set to true to ignore issues with an assignee
 exemptAssignees: true
 
 # Label to use when marking as stale
