@@ -144,6 +144,13 @@ interface PopupConfigOptions {
    * throwing a timeout error. Defaults to 60s
    */
   timeoutInSeconds?: number;
+
+  /**
+   * Accepts an already-created popup window to use. If not specified, the SDK
+   * will create its own. This may be useful for platforms like iOS that have
+   * security restrictions around when popups can be invoked (e.g. from a user click event)
+   */
+  popup?: any;
 }
 
 interface GetUserOptions {

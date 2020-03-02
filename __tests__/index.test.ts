@@ -42,39 +42,48 @@ const setup = async (options = {}) => {
     client_id: TEST_CLIENT_ID,
     ...options
   });
+
   const getInstance = m => require(m).default.mock.instances[0];
+
   const storage = {
     get: require('../src/storage').get,
     save: require('../src/storage').save,
     remove: require('../src/storage').remove
   };
+
   const lock = require('browser-tabs-lock');
   const cache = getInstance('../src/cache');
   const tokenVerifier = require('../src/jwt').verify;
   const transactionManager = getInstance('../src/transaction-manager');
   const utils = require('../src/utils');
+
   utils.createQueryParams.mockReturnValue(TEST_QUERY_PARAMS);
   utils.getUniqueScopes.mockReturnValue(TEST_SCOPES);
   utils.encodeState.mockReturnValue(TEST_ENCODED_STATE);
   utils.createRandomString.mockReturnValue(TEST_RANDOM_STRING);
   utils.sha256.mockReturnValue(Promise.resolve(TEST_ARRAY_BUFFER));
   utils.bufferToBase64UrlEncoded.mockReturnValue(TEST_BASE64_ENCODED_STRING);
+
   utils.parseQueryResult.mockReturnValue({
     state: TEST_ENCODED_STATE,
     code: TEST_CODE
   });
+
   utils.runPopup.mockReturnValue(
     Promise.resolve({ state: TEST_ENCODED_STATE, code: TEST_CODE })
   );
+
   utils.runIframe.mockReturnValue(
     Promise.resolve({ state: TEST_ENCODED_STATE, code: TEST_CODE })
   );
+
   utils.oauthToken.mockReturnValue(
     Promise.resolve({
       id_token: TEST_ID_TOKEN,
       access_token: TEST_ACCESS_TOKEN
     })
   );
+
   tokenVerifier.mockReturnValue({
     user: {
       sub: TEST_USER_ID
@@ -84,6 +93,12 @@ const setup = async (options = {}) => {
       aud: TEST_CLIENT_ID
     }
   });
+
+  const popup = {
+    location: { href: '' },
+    close: jest.fn()
+  };
+
   return {
     auth0,
     storage,
@@ -91,7 +106,8 @@ const setup = async (options = {}) => {
     tokenVerifier,
     transactionManager,
     utils,
-    lock
+    lock,
+    popup
   };
 };
 
@@ -118,19 +134,34 @@ describe('Auth0', () => {
       expect(utils.validateCrypto).toHaveBeenCalled();
     });
   });
+
   describe('loginWithPopup()', () => {
     it('opens popup', async () => {
-      const { auth0, utils } = await setup();
+      const { auth0 } = await setup();
 
       await auth0.loginWithPopup({});
-      expect(utils.openPopup).toHaveBeenCalled();
     });
+
+    it('uses a custom popup specified in the configuration', async () => {
+      const { auth0, popup, utils } = await setup();
+
+      await auth0.loginWithPopup({}, { popup });
+
+      expect(utils.runPopup).toHaveBeenCalledWith(
+        `https://test.auth0.com/authorize?${TEST_QUERY_PARAMS}${TEST_TELEMETRY_QUERY_STRING}`,
+        {
+          popup
+        }
+      );
+    });
+
     it('encodes state with random string', async () => {
       const { auth0, utils } = await setup();
 
       await auth0.loginWithPopup({});
       expect(utils.encodeState).toHaveBeenCalledWith(TEST_RANDOM_STRING);
     });
+
     it('creates `code_challenge` by using `utils.sha256` with the result of `utils.createRandomString`', async () => {
       const { auth0, utils } = await setup();
 
@@ -140,6 +171,7 @@ describe('Auth0', () => {
         TEST_ARRAY_BUFFER
       );
     });
+
     it('creates correct query params', async () => {
       const { auth0, utils } = await setup();
 
@@ -159,12 +191,14 @@ describe('Auth0', () => {
         connection: 'test-connection'
       });
     });
+
     it('creates correct query params without leeway', async () => {
       const { auth0, utils } = await setup({ leeway: 10 });
 
       await auth0.loginWithPopup({
         connection: 'test-connection'
       });
+
       expect(utils.createQueryParams).toHaveBeenCalledWith({
         client_id: TEST_CLIENT_ID,
         scope: TEST_SCOPES,
@@ -178,6 +212,7 @@ describe('Auth0', () => {
         connection: 'test-connection'
       });
     });
+
     it('creates correct query params when providing a default redirect_uri', async () => {
       const redirect_uri = 'https://custom-redirect-uri/callback';
       const { auth0, utils } = await setup({
@@ -185,6 +220,7 @@ describe('Auth0', () => {
       });
 
       await auth0.loginWithPopup({});
+
       expect(utils.createQueryParams).toHaveBeenCalledWith({
         client_id: TEST_CLIENT_ID,
         scope: TEST_SCOPES,
@@ -197,10 +233,12 @@ describe('Auth0', () => {
         code_challenge_method: 'S256'
       });
     });
+
     it('creates correct query params with custom params', async () => {
       const { auth0, utils } = await setup();
 
       await auth0.loginWithPopup({ audience: 'test' });
+
       expect(utils.createQueryParams).toHaveBeenCalledWith({
         audience: 'test',
         client_id: TEST_CLIENT_ID,
@@ -214,24 +252,20 @@ describe('Auth0', () => {
         code_challenge_method: 'S256'
       });
     });
+
     it('opens popup with correct popup, url and default config', async () => {
       const { auth0, utils } = await setup();
-      const popup = {};
-      utils.openPopup.mockReturnValue(popup);
       await auth0.loginWithPopup();
+
       expect(utils.runPopup).toHaveBeenCalledWith(
-        popup,
         `https://test.auth0.com/authorize?${TEST_QUERY_PARAMS}${TEST_TELEMETRY_QUERY_STRING}`,
         DEFAULT_POPUP_CONFIG_OPTIONS
       );
     });
     it('opens popup with correct popup, url and custom config', async () => {
       const { auth0, utils } = await setup();
-      const popup = {};
-      utils.openPopup.mockReturnValue(popup);
       await auth0.loginWithPopup({}, { timeoutInSeconds: 1 });
       expect(utils.runPopup).toHaveBeenCalledWith(
-        popup,
         `https://test.auth0.com/authorize?${TEST_QUERY_PARAMS}${TEST_TELEMETRY_QUERY_STRING}`,
         { timeoutInSeconds: 1 }
       );
@@ -239,11 +273,8 @@ describe('Auth0', () => {
 
     it('opens popup with correct popup, url and timeout from client options', async () => {
       const { auth0, utils } = await setup({ authorizeTimeoutInSeconds: 1 });
-      const popup = {};
-      utils.openPopup.mockReturnValue(popup);
       await auth0.loginWithPopup({}, DEFAULT_POPUP_CONFIG_OPTIONS);
       expect(utils.runPopup).toHaveBeenCalledWith(
-        popup,
         `https://test.auth0.com/authorize?${TEST_QUERY_PARAMS}${TEST_TELEMETRY_QUERY_STRING}`,
         { timeoutInSeconds: 1 }
       );
@@ -265,6 +296,7 @@ describe('Auth0', () => {
       const { auth0, utils } = await setup();
 
       await auth0.loginWithPopup({});
+
       expect(utils.oauthToken).toHaveBeenCalledWith({
         audience: undefined,
         baseUrl: 'https://test.auth0.com',
@@ -428,7 +460,6 @@ describe('Auth0', () => {
       const { auth0, utils } = await setup();
 
       await auth0.loginWithPopup();
-      expect(utils.openPopup).toHaveBeenCalled();
     });
   });
   describe('buildAuthorizeUrl()', () => {
