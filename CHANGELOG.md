@@ -1,5 +1,17 @@
 # Change Log
 
+## [v1.7.0-beta.4](https://github.com/auth0/auth0-spa-js/tree/v1.7.0-beta.4) (2020-03-03)
+
+[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v1.7.0-beta.3...v1.7.0-beta.4)
+
+**Changed**
+
+- [SDK-1386] Fall back to iframe method if no refresh token is available [\#364](https://github.com/auth0/auth0-spa-js/pull/364) ([stevehobbsdev](https://github.com/stevehobbsdev))
+
+**Fixed**
+
+- Fix error in library type definitions [\#367](https://github.com/auth0/auth0-spa-js/pull/367) ([devoto13](https://github.com/devoto13))
+
 ## [v1.7.0-beta.3](https://github.com/auth0/auth0-spa-js/tree/v1.7.0-beta.3) (2020-02-17)
 
 [Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v1.7.0-beta.2...v1.7.0-beta.3)
