@@ -1,11 +1,4 @@
-import { decode } from 'qss';
-import {
-  shouldBe,
-  shouldNotBe,
-  shouldBeUndefined,
-  shouldNotBeUndefined,
-  whenReady
-} from '../support/utils';
+import { shouldBe, whenReady } from '../support/utils';
 
 describe('getTokenSilently', function() {
   beforeEach(cy.resetTests);
@@ -76,7 +69,11 @@ describe('getTokenSilently', function() {
       });
 
       describe('when using refresh tokens', () => {
-        it('displays an error when trying to get an access token when the RT is missing', () => {
+        /**
+         * This test will fail with a 'consent_required' error when running on localhost, but the fact that it does
+         * proves that the iframe method was attempted even though we're supposed to be using refresh tokens.
+         */
+        it.only('attempts to retrieve an access token by falling back to the iframe method', () => {
           return whenReady().then(win => {
             cy.toggleSwitch('local-storage');
             cy.toggleSwitch('use-cache');
@@ -87,12 +84,11 @@ describe('getTokenSilently', function() {
 
               cy.get('[data-cy=get-token]')
                 .click()
-                .wait(500);
+                .wait(500)
+                .get('[data-cy=access-token]')
+                .should('have.length', 1);
 
-              cy.get('[data-cy=error]').should(
-                'contain',
-                'No refresh token is available to fetch a new access token'
-              );
+              cy.get('[data-cy=error]').should('contain', 'consent_required');
             });
           });
         });

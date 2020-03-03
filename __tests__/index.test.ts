@@ -1442,26 +1442,6 @@ describe('Auth0', () => {
             }
           });
         });
-
-        it('fails with an error when no refresh token is available in the cache', async () => {
-          const { auth0, cache, utils } = await setup({
-            useRefreshTokens: true
-          });
-
-          utils.getUniqueScopes.mockReturnValue(
-            `${TEST_SCOPES} offline_access`
-          );
-
-          cache.get.mockReturnValue({ access_token: TEST_ACCESS_TOKEN });
-
-          await auth0.getTokenSilently({ ignoreCache: true }).catch(e => {
-            expect(e.error).toBe('missing_refresh_token');
-            expect(e.error_description).toBe(
-              'No refresh token is available to fetch a new access token. The user should be reauthenticated.'
-            );
-            expect(utils.oauthToken).not.toHaveBeenCalled();
-          });
-        });
       });
     });
 
@@ -1734,6 +1714,23 @@ describe('Auth0', () => {
         expect(lock.releaseLockMock).toHaveBeenCalledWith(
           GET_TOKEN_SILENTLY_LOCK_KEY
         );
+      });
+    });
+
+    describe('when refresh tokens are used', () => {
+      it('falls back to using a hidden iframe when no refresh token is available', async () => {
+        const { auth0, cache, utils } = await setup({
+          useRefreshTokens: true
+        });
+
+        utils.getUniqueScopes.mockReturnValue(`${TEST_SCOPES} offline_access`);
+
+        cache.get.mockReturnValue({ access_token: TEST_ACCESS_TOKEN });
+
+        const result = await auth0.getTokenSilently({ ignoreCache: true });
+
+        expect(result).toEqual(TEST_ACCESS_TOKEN);
+        expect(utils.runIframe).toHaveBeenCalled();
       });
     });
   });
