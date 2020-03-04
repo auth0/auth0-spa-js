@@ -1563,6 +1563,12 @@ describe('Auth0', () => {
       auth0.logout({ localOnly: false });
       expect(window.location.assign).toHaveBeenCalled();
     });
+    it('throws when both `options.localOnly` and `options.federated` are true', async () => {
+      const { auth0 } = await setup();
+
+      const fn = () => auth0.logout({ localOnly: true, federated: true });
+      expect(fn).toThrow();
+    });
   });
 });
 describe('default creation function', () => {

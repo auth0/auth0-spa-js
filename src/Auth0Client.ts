@@ -486,8 +486,11 @@ export default class Auth0Client {
    * auth0.logout();
    * ```
    *
-   * Performs a redirect to `/v2/logout` using the parameters provided
-   * as arguments. [Read more about how Logout works at Auth0](https://auth0.com/docs/logout).
+   * Clears the application session and performs a redirect to `/v2/logout`, using
+   * the parameters provided as arguments, to clear the Auth0 session.
+   * If the `federated` option is specified it also clears the Identity Provider session.
+   * If the `localOnly` option is specified, only clears the application session.
+   * [Read more about how Logout works at Auth0](https://auth0.com/docs/logout).
    *
    * @param options
    */
@@ -497,13 +500,24 @@ export default class Auth0Client {
     } else {
       delete options.client_id;
     }
-    ClientStorage.remove('auth0.is.authenticated');
+
     const { federated, localOnly, ...logoutOptions } = options;
+
+    if (localOnly && federated) {
+      throw new Error(
+        `Logging out of identity providers using the 'federated' option will not work when specifying a local logout using 'localOnly'`
+      );
+    }
+
+    ClientStorage.remove('auth0.is.authenticated');
+
     if (localOnly) {
       return;
     }
+
     const federatedQuery = federated ? `&federated` : '';
     const url = this._url(`/v2/logout?${createQueryParams(logoutOptions)}`);
+
     window.location.assign(`${url}${federatedQuery}`);
   }
 }
