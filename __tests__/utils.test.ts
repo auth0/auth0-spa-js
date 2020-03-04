@@ -246,7 +246,7 @@ describe('utils', () => {
       expect(window.open).toHaveBeenCalledWith(
         '',
         'auth0:authorize:popup',
-        'left=100,top=100,width=400,height=600,resizable,scrollbars=yes,status=1'
+        'left=312,top=84,width=400,height=600,resizable,scrollbars=yes,status=1'
       );
     });
     it('throws error when the popup is blocked', () => {

@@ -28,7 +28,9 @@ export default async function createAuth0Client(options: Auth0ClientOptions) {
       ignoreCache: true
     });
   } catch (error) {
-    // ignore
+    if (error.error !== 'login_required') {
+      throw error;
+    }
   }
   return auth0;
 }
