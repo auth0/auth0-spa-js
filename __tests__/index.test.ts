@@ -111,13 +111,64 @@ describe('Auth0', () => {
         domain: TEST_DOMAIN,
         client_id: TEST_CLIENT_ID
       });
+
       expect(auth0).toBeInstanceOf(Auth0Client);
     });
+
     it('should call `utils.validateCrypto`', async () => {
       const { utils } = await setup();
+
       expect(utils.validateCrypto).toHaveBeenCalled();
     });
+
+    it('should absorb "login_required" errors', async () => {
+      const { utils, storage } = await setup();
+
+      utils.runIframe.mockImplementation(() => {
+        throw {
+          error: 'login_required',
+          error_message: 'Login required'
+        };
+      });
+
+      storage.get.mockReturnValue(true);
+
+      const auth0 = await createAuth0Client({
+        domain: TEST_DOMAIN,
+        client_id: TEST_CLIENT_ID
+      });
+
+      expect(auth0).toBeInstanceOf(Auth0Client);
+      expect(utils.runIframe).toHaveBeenCalled();
+    });
+
+    it('should throw other errors that are not "login_required"', async () => {
+      const { utils, storage } = await setup();
+
+      utils.runIframe.mockImplementation(() => {
+        throw {
+          error: 'some_other_error',
+          error_message: 'This is a different error to login_required'
+        };
+      });
+
+      storage.get.mockReturnValue(true);
+
+      // We expect one assertion, meaning that if the function under test
+      // does not throw, it will still fail the test.
+      expect.assertions(1);
+
+      try {
+        await createAuth0Client({
+          domain: TEST_DOMAIN,
+          client_id: TEST_CLIENT_ID
+        });
+      } catch (e) {
+        expect(e.error).toEqual('some_other_error');
+      }
+    });
   });
+
   describe('loginWithPopup()', () => {
     it('opens popup', async () => {
       const { auth0, utils } = await setup();
