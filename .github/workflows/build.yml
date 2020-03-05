@@ -5,7 +5,7 @@ jobs:
   default:
     name: Build & Test
     runs-on: ubuntu-latest
-    container: cypress/browsers:chrome69
+    # container: cypress/browsers:chrome69
 
     steps:
       - uses: actions/checkout@v2
