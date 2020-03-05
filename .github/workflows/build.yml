@@ -1,0 +1,31 @@
+name: Build & Test
+on: [push]
+
+jobs:
+  default:
+    name: Build & Test
+    runs-on: ubuntu-latest
+    container: cypress/browsers:chrome67
+
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v1
+        with:
+          node-version: '12.x'
+
+      - name: Build
+        run: |
+          npm ci
+          npm run build
+
+      - name: Lint
+        run: npm run test:es-check
+
+      - name: Unit tests
+        run: npm run test
+
+      - name: Integration tests
+        run: npm run test:integration
+
+      - name: Bundle size
+        run: npm run print-bundle-size
