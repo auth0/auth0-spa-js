@@ -1,11 +1,11 @@
-name: Build & Test
+name: SDK Build
 on: [push]
 
 jobs:
   default:
     name: Build & Test
     runs-on: ubuntu-latest
-    container: cypress/browsers:chrome67
+    container: cypress/browsers:chrome69
 
     steps:
       - uses: actions/checkout@v2
@@ -13,10 +13,11 @@ jobs:
         with:
           node-version: '12.x'
 
+      - name: Install dependencies
+      - run: npm ci
+
       - name: Build
-        run: |
-          npm ci
-          npm run build
+        run: npm run build
 
       - name: Lint
         run: npm run test:es-check
