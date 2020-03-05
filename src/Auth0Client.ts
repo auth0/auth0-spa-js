@@ -490,6 +490,8 @@ export default class Auth0Client {
    * the parameters provided as arguments, to clear the Auth0 session.
    * If the `federated` option is specified it also clears the Identity Provider session.
    * If the `localOnly` option is specified, it only clears the application session.
+   * It is invalid to set both the `federated` and `localOnly` options to `true`,
+   * and an error will be thrown if you do.
    * [Read more about how Logout works at Auth0](https://auth0.com/docs/logout).
    *
    * @param options
@@ -505,7 +507,7 @@ export default class Auth0Client {
 
     if (localOnly && federated) {
       throw new Error(
-        `Logging out of identity providers using the 'federated' option will not work when specifying a local logout using 'localOnly'`
+        'It is invalid to set both the `federated` and `localOnly` options to `true`'
       );
     }
 
