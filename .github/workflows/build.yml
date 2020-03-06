@@ -9,24 +9,13 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
-      - uses: actions/setup-node@v1
-        with:
-          node-version: '12.x'
+      # - uses: actions/setup-node@v1
+      #   with:
+      #     node-version: '12.x'
 
-      - name: Install dependencies
-        run: npm install
-
-      - name: Build
-        run: npm run build
-
-      - name: Lint
-        run: npm run test:es-check
-
-      - name: Unit tests
-        run: npm run test
-
-      - name: Integration tests
-        run: npm run test:integration
-
-      - name: Bundle size
-        run: npm run print-bundle-size
+      - run: npm install
+      - run: npm run build
+      - run: npm run test:es-check
+      - run: npm run test
+      - run: npm run test:integration
+      - run: npm run print-bundle-size
