@@ -221,9 +221,18 @@ interface LogoutOptions {
    * When supported by the upstream identity provider,
    * forces the user to logout of their identity provider
    * and from Auth0.
+   * This option cannot be specified along with the `localOnly` option.
    * [Read more about how federated logout works at Auth0](https://auth0.com/docs/logout/guides/logout-idps)
    */
   federated?: boolean;
+
+  /**
+   * When `true`, this skips the request to the logout endpoint on the authorization server,
+   * effectively performing a "local" logout of the application. No redirect should take place,
+   * you should update local logged in state.
+   * This option cannot be specified along with the `federated` option.
+   */
+  localOnly?: boolean;
 }
 
 /**
