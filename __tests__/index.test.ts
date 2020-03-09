@@ -1596,6 +1596,30 @@ describe('Auth0', () => {
         `https://test.auth0.com/v2/logout?query=params${TEST_TELEMETRY_QUERY_STRING}&federated`
       );
     });
+    it('removes `auth0.is.authenticated` key from storage when `options.localOnly` is true', async () => {
+      const { auth0, storage } = await setup();
+
+      auth0.logout({ localOnly: true });
+      expect(storage.remove).toHaveBeenCalledWith('auth0.is.authenticated');
+    });
+    it('skips `window.location.assign` when `options.localOnly` is true', async () => {
+      const { auth0 } = await setup();
+
+      auth0.logout({ localOnly: true });
+      expect(window.location.assign).not.toHaveBeenCalledWith();
+    });
+    it('calls `window.location.assign` when `options.localOnly` is false', async () => {
+      const { auth0 } = await setup();
+
+      auth0.logout({ localOnly: false });
+      expect(window.location.assign).toHaveBeenCalled();
+    });
+    it('throws when both `options.localOnly` and `options.federated` are true', async () => {
+      const { auth0 } = await setup();
+
+      const fn = () => auth0.logout({ localOnly: true, federated: true });
+      expect(fn).toThrow();
+    });
   });
 });
 describe('default creation function', () => {
