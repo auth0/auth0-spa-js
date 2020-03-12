@@ -298,14 +298,21 @@ export default class Auth0Client {
 
     this.transactionManager.remove(state);
 
-    const authResult = await oauthToken({
+    const tokenOptions = {
       baseUrl: this.domainUrl,
       audience: this.options.audience,
       client_id: this.options.client_id,
       code_verifier: transaction.code_verifier,
-      code,
-      redirect_uri: transaction.redirect_uri
-    });
+      code
+    } as OAuthTokenOptions;
+
+    // some old versions of the SDK might not have added redirect_uri to the
+    // transaction, we dont want the key to be set to undefined.
+    if (undefined !== transaction.redirect_uri) {
+      tokenOptions.redirect_uri = transaction.redirect_uri;
+    }
+
+    const authResult = await oauthToken(tokenOptions);
 
     const decodedToken = this._verifyIdToken(
       authResult.id_token,
