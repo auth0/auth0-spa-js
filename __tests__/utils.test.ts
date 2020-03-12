@@ -502,8 +502,9 @@ describe('utils', () => {
         }
       };
       const { iframe, url } = setup(message);
+      jest.useFakeTimers();
       await runIframe(url, origin);
-
+      jest.runAllTimers();
       expect(message.source.close).toHaveBeenCalled();
       expect(window.document.body.appendChild).toHaveBeenCalledWith(iframe);
       expect(window.document.body.removeChild).toHaveBeenCalledWith(iframe);
@@ -524,20 +525,10 @@ describe('utils', () => {
       ].forEach(m => {
         it(`ignores invalid messages: ${JSON.stringify(m)}`, async () => {
           const { iframe, url, origin } = setup(m);
-          /**
-           * We need to run the timers after we start `runIframe` to simulate
-           * the window event listener, but we also need to use `jest.useFakeTimers`
-           * to trigger the timeout. That's why we're using a real `setTimeout`,
-           * then using fake timers then rolling back to real timers
-           */
-          setTimeout(() => {
-            jest.runAllTimers();
-          }, 10);
           jest.useFakeTimers();
-          await expect(runIframe(url, origin)).rejects.toMatchObject(
-            TIMEOUT_ERROR
-          );
-          jest.useRealTimers();
+          const promise = runIframe(url, origin);
+          jest.runAllTimers();
+          await expect(promise).rejects.toMatchObject(TIMEOUT_ERROR);
           expect(window.document.body.removeChild).toHaveBeenCalledWith(iframe);
         });
       });
@@ -553,9 +544,11 @@ describe('utils', () => {
         }
       };
       const { iframe, url } = setup(message);
+      jest.useFakeTimers();
       await expect(runIframe(url, origin)).resolves.toMatchObject(
         message.data.response
       );
+      jest.runAllTimers();
       expect(message.source.close).toHaveBeenCalled();
       expect(window.document.body.removeChild).toHaveBeenCalledWith(iframe);
     });
@@ -570,30 +563,22 @@ describe('utils', () => {
         }
       };
       const { iframe, url } = setup(message);
+      jest.useFakeTimers();
       await expect(runIframe(url, origin)).rejects.toMatchObject(
         message.data.response
       );
+      jest.runAllTimers();
       expect(message.source.close).toHaveBeenCalled();
       expect(window.document.body.removeChild).toHaveBeenCalledWith(iframe);
     });
     it('times out after timeoutInSeconds', async () => {
       const { iframe, url, origin } = setup('');
       const seconds = 10;
-      /**
-       * We need to run the timers after we start `runIframe` to simulate
-       * the window event listener, but we also need to use `jest.useFakeTimers`
-       * to trigger the timeout. That's why we're using a real `setTimeout`,
-       * then using fake timers then rolling back to real timers
-       */
-      setTimeout(() => {
-        jest.runTimersToTime(seconds * 1000);
-      }, 10);
       jest.useFakeTimers();
-      await expect(runIframe(url, origin, seconds)).rejects.toMatchObject(
-        TIMEOUT_ERROR
-      );
+      const promise = runIframe(url, origin, seconds);
+      jest.runTimersToTime(seconds * 1000);
+      await expect(promise).rejects.toMatchObject(TIMEOUT_ERROR);
       expect(window.document.body.removeChild).toHaveBeenCalledWith(iframe);
-      jest.useRealTimers();
     });
   });
   describe('getCrypto', () => {
