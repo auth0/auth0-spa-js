@@ -12,6 +12,7 @@
       <span id="loaded">loaded</span>
     </div>
     <button id="login_popup">Login popup</button>
+    <button id="login_popup_custom">Login popup (custom)</button>
     <button id="login_redirect">Login redirect</button>
     <button id="login_redirect_callback">Login redirect callback</button>
     <button id="getUser">Get user</button>
@@ -30,6 +31,7 @@
         })
           .then(function(auth0) {
             window.auth0 = auth0;
+
             $('#login_popup').click(function() {
               auth0
                 .loginWithPopup({
@@ -44,6 +46,33 @@
                   });
                 });
             });
+
+            $('#login_popup_custom').click(function() {
+              var popup = window.open(
+                '',
+                'auth0:authorize:popup',
+                'left=100,top=100,width=400,height=600,resizable,scrollbars=yes,status=1'
+              );
+
+              auth0
+                .loginWithPopup(
+                  {
+                    redirect_uri: 'http://localhost:3000/callback.html'
+                  },
+                  {
+                    popup: popup
+                  }
+                )
+                .then(function() {
+                  auth0.getTokenSilently().then(function(token) {
+                    console.log(token);
+                  });
+                  auth0.getUser().then(function(user) {
+                    console.log(user);
+                  });
+                });
+            });
+
             $('#login_redirect').click(function() {
               auth0.loginWithRedirect({
                 redirect_uri: 'http://localhost:3000/'
