@@ -62,29 +62,32 @@ export const runIframe = (
   });
 };
 
-export const openPopup = () => {
+const openPopup = url => {
   const width = 400;
   const height = 600;
   const left = window.screenX + (window.innerWidth - width) / 2;
   const top = window.screenY + (window.innerHeight - height) / 2;
 
-  const popup = window.open(
-    '',
+  return window.open(
+    url,
     'auth0:authorize:popup',
     `left=${left},top=${top},width=${width},height=${height},resizable,scrollbars=yes,status=1`
   );
+};
+
+export const runPopup = (authorizeUrl: string, config: PopupConfigOptions) => {
+  let popup = config.popup;
+
+  if (popup) {
+    popup.location.href = authorizeUrl;
+  } else {
+    popup = openPopup(authorizeUrl);
+  }
+
   if (!popup) {
     throw new Error('Could not open popup');
   }
-  return popup;
-};
 
-export const runPopup = (
-  popup: any,
-  authorizeUrl: string,
-  config: PopupConfigOptions
-) => {
-  popup.location.href = authorizeUrl;
   return new Promise<AuthenticationResult>((resolve, reject) => {
     const timeoutId = setTimeout(() => {
       reject({ ...TIMEOUT_ERROR, popup });

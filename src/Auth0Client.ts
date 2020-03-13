@@ -10,8 +10,7 @@ import {
   runIframe,
   sha256,
   bufferToBase64UrlEncoded,
-  oauthToken,
-  openPopup
+  oauthToken
 } from './utils';
 
 import Cache from './cache';
@@ -160,7 +159,6 @@ export default class Auth0Client {
     options: PopupLoginOptions = {},
     config: PopupConfigOptions = DEFAULT_POPUP_CONFIG_OPTIONS
   ) {
-    const popup = await openPopup();
     const { ...authorizeOptions } = options;
     const stateIn = encodeState(createRandomString());
     const nonceIn = createRandomString();
@@ -178,7 +176,7 @@ export default class Auth0Client {
       ...params,
       response_mode: 'web_message'
     });
-    const codeResult = await runPopup(popup, url, {
+    const codeResult = await runPopup(url, {
       ...config,
       timeoutInSeconds:
         config.timeoutInSeconds || this.options.authorizeTimeoutInSeconds
