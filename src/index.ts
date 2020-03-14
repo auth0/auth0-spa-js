@@ -34,3 +34,5 @@ export default async function createAuth0Client(options: Auth0ClientOptions) {
   }
   return auth0;
 }
+
+export { Auth0Client };

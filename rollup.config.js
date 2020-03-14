@@ -34,13 +34,15 @@ const getPlugins = shouldMinify => {
     sourcemaps()
   ];
 };
+const footer = `this && this.${EXPORT_NAME} && (this.Auth0Client = this.${EXPORT_NAME}.Auth0Client);`;
 
 let bundles = [
   {
-    input: 'src/index.ts',
+    input: 'src/index.cjs.ts',
     output: {
       name: EXPORT_NAME,
       file: 'dist/auth0-spa-js.development.js',
+      footer,
       format: 'umd'
     },
     plugins: [
@@ -62,11 +64,12 @@ let bundles = [
 if (isProduction) {
   bundles = bundles.concat(
     {
-      input: 'src/index.ts',
+      input: 'src/index.cjs.ts',
       output: [
         {
           name: EXPORT_NAME,
-          file: pkg.browser,
+          file: 'dist/auth0-spa-js.production.js',
+          footer,
           format: 'umd'
         }
       ],
@@ -86,7 +89,7 @@ if (isProduction) {
       plugins: getPlugins(isProduction)
     },
     {
-      input: 'src/index.ts',
+      input: 'src/index.cjs.ts',
       output: [
         {
           name: EXPORT_NAME,
