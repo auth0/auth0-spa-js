@@ -11,11 +11,8 @@ import * as ClientStorage from './storage';
 
 //this is necessary to export the type definitions used in this file
 import './global';
-import { validateCrypto } from './utils';
 
 export default async function createAuth0Client(options: Auth0ClientOptions) {
-  validateCrypto();
-
   const auth0 = new Auth0Client(options);
 
   if (!ClientStorage.get('auth0.is.authenticated')) {
