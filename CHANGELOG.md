@@ -8,12 +8,12 @@
 
 - [SDK-1379] Export constructor [\#377](https://github.com/auth0/auth0-spa-js/pull/377) ([adamjmcgrath](https://github.com/adamjmcgrath))
 - [SDK-1395] Refactor loginWithPopup to optionally accept an existing popup window [\#368](https://github.com/auth0/auth0-spa-js/pull/368) ([stevehobbsdev](https://github.com/stevehobbsdev))
+- [SDK-1099] Add `localOnly` logout option [\#362](https://github.com/auth0/auth0-spa-js/pull/362) ([adamjmcgrath](https://github.com/adamjmcgrath))
 
 **Changed**
 
 - handleRedirectCallback wont pass redirect_uri undefined if not set in transaction [\#374](https://github.com/auth0/auth0-spa-js/pull/374) ([albertlockett](https://github.com/albertlockett))
 - Update dependencies within semver ranges [\#371](https://github.com/auth0/auth0-spa-js/pull/371) ([stevehobbsdev](https://github.com/stevehobbsdev))
-- [SDK-1099] Add `localOnly` logout option [\#362](https://github.com/auth0/auth0-spa-js/pull/362) ([adamjmcgrath](https://github.com/adamjmcgrath))
 - center popup over owner window [\#356](https://github.com/auth0/auth0-spa-js/pull/356) ([ggascoigne](https://github.com/ggascoigne))
 
 **Fixed**
