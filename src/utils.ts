@@ -1,6 +1,9 @@
 import fetch from 'unfetch';
 
-import { DEFAULT_AUTHORIZE_TIMEOUT_IN_SECONDS } from './constants';
+import {
+  DEFAULT_AUTHORIZE_TIMEOUT_IN_SECONDS,
+  CLEANUP_IFRAME_TIMEOUT_IN_SECONDS
+} from './constants';
 
 const dedupe = arr => arr.filter((x, i) => arr.indexOf(x) === i);
 
@@ -54,7 +57,12 @@ export const runIframe = (
       e.data.response.error ? rej(e.data.response) : res(e.data.response);
       clearTimeout(timeoutSetTimeoutId);
       window.removeEventListener('message', iframeEventHandler, false);
-      window.document.body.removeChild(iframe);
+      // Delay the removal of the iframe to prevent hanging loading status
+      // in Chrome: https://github.com/auth0/auth0-spa-js/issues/240
+      setTimeout(
+        () => window.document.body.removeChild(iframe),
+        CLEANUP_IFRAME_TIMEOUT_IN_SECONDS * 1000
+      );
     };
     window.addEventListener('message', iframeEventHandler, false);
     window.document.body.appendChild(iframe);
