@@ -2,6 +2,24 @@ import Cache from '../src/cache';
 
 describe('cache', () => {
   let cache: Cache;
+  let OriginalDate: Date;
+
+  beforeEach(() => {
+    OriginalDate = (<any>global).Date;
+    (<any>global).Date = class {
+      time: number;
+      constructor(time: number) {
+        this.time = time;
+      }
+      getTime() {
+        return this.time || 0;
+      }
+    };
+  });
+  afterEach(() => {
+    (<any>global).Date = OriginalDate;
+  });
+
   beforeEach(() => {
     cache = new Cache();
     jest.useFakeTimers();
