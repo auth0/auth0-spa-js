@@ -190,9 +190,7 @@ We appreciate feedback and contribution to this repo! Before you get started, pl
 
 ## Support + Feedback
 
-This SDK is in Early Access with selected stakeholders.
-
-We process feedback and provide support via private channels.
+For support or to provide feedback, please [raise an issue on our issue tracker](https://github.com/auth0/auth0-spa-js/issues).
 
 ## Frequently Asked Questions
 
