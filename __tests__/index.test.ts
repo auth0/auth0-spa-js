@@ -858,6 +858,34 @@ describe('Auth0', () => {
           code_verifier: TEST_RANDOM_STRING
         });
       });
+      it('calls oauth/token with redirect uri from transaction if set', async () => {
+        const { auth0, utils, transactionManager } = await localSetup();
+        const txn = transactionManager.get.mockReturnValue({
+          code_verifier: TEST_RANDOM_STRING,
+          nonce: TEST_RANDOM_STRING,
+          audience: 'default',
+          scope: TEST_SCOPES,
+          appState: TEST_APP_STATE,
+          redirect_uri: 'http://localhost'
+        });
+        await auth0.handleRedirectCallback();
+        const arg = utils.oauthToken.mock.calls[0][0];
+        expect(arg.hasOwnProperty('redirect_uri')).toBeTruthy();
+        expect(arg.redirect_uri).toEqual('http://localhost');
+      });
+      it('calls oauth/token without redirect uri if not set in transaction', async () => {
+        const { auth0, utils, transactionManager } = await localSetup();
+        const txn = transactionManager.get.mockReturnValue({
+          code_verifier: TEST_RANDOM_STRING,
+          nonce: TEST_RANDOM_STRING,
+          audience: 'default',
+          scope: TEST_SCOPES,
+          appState: TEST_APP_STATE
+        });
+        await auth0.handleRedirectCallback();
+        const arg = utils.oauthToken.mock.calls[0][0];
+        expect(arg.hasOwnProperty('redirect_uri')).toBeFalsy();
+      });
       it('calls `tokenVerifier.verify` with the `id_token` from in the oauth/token response', async () => {
         const { auth0, tokenVerifier } = await localSetup();
 
