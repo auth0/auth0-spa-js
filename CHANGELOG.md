@@ -1,5 +1,22 @@
 # Change Log
 
+## [v1.6.5](https://github.com/auth0/auth0-spa-js/tree/v1.6.5) (2020-03-19)
+
+[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v1.6.4...v1.6.5)
+
+**Changed**
+
+- [SDK-1395] Refactor loginWithPopup to optionally accept an existing popup window [\#368](https://github.com/auth0/auth0-spa-js/pull/368) ([stevehobbsdev](https://github.com/stevehobbsdev))
+- handleRedirectCallback wont pass redirect_uri undefined if not set in transaction [\#374](https://github.com/auth0/auth0-spa-js/pull/374) ([albertlockett](https://github.com/albertlockett))
+- Update dependencies within semver ranges [\#371](https://github.com/auth0/auth0-spa-js/pull/371) ([stevehobbsdev](https://github.com/stevehobbsdev))
+- [SDK-1099] Add `localOnly` logout option [\#362](https://github.com/auth0/auth0-spa-js/pull/362) ([adamjmcgrath](https://github.com/adamjmcgrath))
+- center popup over owner window [\#356](https://github.com/auth0/auth0-spa-js/pull/356) ([ggascoigne](https://github.com/ggascoigne))
+
+**Fixed**
+
+- [SDK-1127] Delay removal of iframe to prevent Chrome hanging status bug #240 [\#376](https://github.com/auth0/auth0-spa-js/pull/376) ([adamjmcgrath](https://github.com/adamjmcgrath))
+- [SDK-1125] createAuth0Client now throws errors that are not login_required [\#369](https://github.com/auth0/auth0-spa-js/pull/369) ([stevehobbsdev](https://github.com/stevehobbsdev))
+
 ## [v1.6.4](https://github.com/auth0/auth0-spa-js/tree/v1.6.4) (2020-02-10)
 
 [Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v1.6.3...v1.6.4)
