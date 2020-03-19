@@ -34,16 +34,13 @@ const getPlugins = shouldMinify => {
     sourcemaps()
   ];
 };
-const footer = `('Auth0Client' in this) && this.console && this.console.warn && this.console.warn('Auth0Client already declared on the global namespace');
-this && this.${EXPORT_NAME} && (this.Auth0Client = this.Auth0Client || this.${EXPORT_NAME}.Auth0Client);`;
 
 let bundles = [
   {
-    input: 'src/index.cjs.ts',
+    input: 'src/index.ts',
     output: {
       name: EXPORT_NAME,
       file: 'dist/auth0-spa-js.development.js',
-      footer,
       format: 'umd'
     },
     plugins: [
@@ -65,12 +62,11 @@ let bundles = [
 if (isProduction) {
   bundles = bundles.concat(
     {
-      input: 'src/index.cjs.ts',
+      input: 'src/index.ts',
       output: [
         {
           name: EXPORT_NAME,
-          file: 'dist/auth0-spa-js.production.js',
-          footer,
+          file: pkg.browser,
           format: 'umd'
         }
       ],
@@ -90,7 +86,7 @@ if (isProduction) {
       plugins: getPlugins(isProduction)
     },
     {
-      input: 'src/index.cjs.ts',
+      input: 'src/index.ts',
       output: [
         {
           name: EXPORT_NAME,

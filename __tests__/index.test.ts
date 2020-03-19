@@ -5,7 +5,8 @@ jest.mock('../src/cache');
 jest.mock('../src/transaction-manager');
 jest.mock('../src/utils');
 
-import createAuth0Client, { Auth0Client } from '../src/index';
+import Auth0Client from '../src/Auth0Client';
+import createAuth0Client from '../src/index';
 import { AuthenticationError } from '../src/errors';
 import version from '../src/version';
 const GET_TOKEN_SILENTLY_LOCK_KEY = 'auth0.lock.getTokenSilently';
@@ -314,9 +315,7 @@ describe('Auth0', () => {
     it('opens popup with correct popup, url and custom config', async () => {
       const { auth0, utils } = await setup();
       await auth0.loginWithPopup({}, { timeoutInSeconds: 1 });
-      expect(
-        utils.runPopup
-      ).toHaveBeenCalledWith(
+      expect(utils.runPopup).toHaveBeenCalledWith(
         `https://test.auth0.com/authorize?${TEST_QUERY_PARAMS}${TEST_TELEMETRY_QUERY_STRING}`,
         { timeoutInSeconds: 1 }
       );
@@ -325,9 +324,7 @@ describe('Auth0', () => {
     it('opens popup with correct popup, url and timeout from client options', async () => {
       const { auth0, utils } = await setup({ authorizeTimeoutInSeconds: 1 });
       await auth0.loginWithPopup({}, DEFAULT_POPUP_CONFIG_OPTIONS);
-      expect(
-        utils.runPopup
-      ).toHaveBeenCalledWith(
+      expect(utils.runPopup).toHaveBeenCalledWith(
         `https://test.auth0.com/authorize?${TEST_QUERY_PARAMS}${TEST_TELEMETRY_QUERY_STRING}`,
         { timeoutInSeconds: 1 }
       );
