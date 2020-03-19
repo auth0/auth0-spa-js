@@ -67,6 +67,22 @@ createAuth0Client({
 }).then(auth0 => {
   //...
 });
+
+//or, you can just instantiate the client on it's own
+import { Auth0Client } from '@auth0/auth0-spa-js';
+const auth0 = new Auth0Client({
+  domain: '<AUTH0_DOMAIN>',
+  client_id: '<AUTH0_CLIENT_ID>',
+  redirect_uri: '<MY_CALLBACK_URL>'
+});
+//if you do this, you'll need to check the session yourself
+try {
+  await getTokenSilently();
+} catch (error) {
+  if (error.error !== 'login_required') {
+    throw error;
+  }
+}
 ```
 
 ### 1 - Login
@@ -193,9 +209,7 @@ We appreciate feedback and contribution to this repo! Before you get started, pl
 
 ## Support + Feedback
 
-This SDK is in Early Access with selected stakeholders.
-
-We process feedback and provide support via private channels.
+For support or to provide feedback, please [raise an issue on our issue tracker](https://github.com/auth0/auth0-spa-js/issues).
 
 ## Frequently Asked Questions
 

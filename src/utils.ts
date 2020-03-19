@@ -9,7 +9,8 @@ import {
 import {
   DEFAULT_AUTHORIZE_TIMEOUT_IN_SECONDS,
   DEFAULT_SILENT_TOKEN_RETRY_COUNT,
-  DEFAULT_FETCH_TIMEOUT_MS
+  DEFAULT_FETCH_TIMEOUT_MS,
+  CLEANUP_IFRAME_TIMEOUT_IN_SECONDS
 } from './constants';
 
 const dedupe = arr => arr.filter((x, i) => arr.indexOf(x) === i);
@@ -67,7 +68,12 @@ export const runIframe = (
       e.data.response.error ? rej(e.data.response) : res(e.data.response);
       clearTimeout(timeoutSetTimeoutId);
       window.removeEventListener('message', iframeEventHandler, false);
-      window.document.body.removeChild(iframe);
+      // Delay the removal of the iframe to prevent hanging loading status
+      // in Chrome: https://github.com/auth0/auth0-spa-js/issues/240
+      setTimeout(
+        () => window.document.body.removeChild(iframe),
+        CLEANUP_IFRAME_TIMEOUT_IN_SECONDS * 1000
+      );
     };
     window.addEventListener('message', iframeEventHandler, false);
     window.document.body.appendChild(iframe);
@@ -75,24 +81,32 @@ export const runIframe = (
   });
 };
 
-export const openPopup = () => {
-  const popup = window.open(
-    '',
+const openPopup = url => {
+  const width = 400;
+  const height = 600;
+  const left = window.screenX + (window.innerWidth - width) / 2;
+  const top = window.screenY + (window.innerHeight - height) / 2;
+
+  return window.open(
+    url,
     'auth0:authorize:popup',
-    'left=100,top=100,width=400,height=600,resizable,scrollbars=yes,status=1'
+    `left=${left},top=${top},width=${width},height=${height},resizable,scrollbars=yes,status=1`
   );
+};
+
+export const runPopup = (authorizeUrl: string, config: PopupConfigOptions) => {
+  let popup = config.popup;
+
+  if (popup) {
+    popup.location.href = authorizeUrl;
+  } else {
+    popup = openPopup(authorizeUrl);
+  }
+
   if (!popup) {
     throw new Error('Could not open popup');
   }
-  return popup;
-};
 
-export const runPopup = (
-  popup: any,
-  authorizeUrl: string,
-  config: PopupConfigOptions
-) => {
-  popup.location.href = authorizeUrl;
   return new Promise<AuthenticationResult>((resolve, reject) => {
     const timeoutId = setTimeout(() => {
       reject({ ...TIMEOUT_ERROR, popup });

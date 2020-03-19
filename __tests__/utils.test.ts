@@ -8,7 +8,6 @@ import {
   encode,
   decode,
   sha256,
-  openPopup,
   runPopup,
   runIframe,
   urlDecodeB64,
@@ -243,21 +242,6 @@ describe('utils', () => {
       expect(result).toBe('dGVzdA');
     });
   });
-  describe('openPopup', () => {
-    it('opens the popup', () => {
-      window.open = <any>jest.fn(() => true);
-      expect(openPopup()).toBe(true);
-      expect(window.open).toHaveBeenCalledWith(
-        '',
-        'auth0:authorize:popup',
-        'left=100,top=100,width=400,height=600,resizable,scrollbars=yes,status=1'
-      );
-    });
-    it('throws error when the popup is blocked', () => {
-      window.open = jest.fn(() => undefined);
-      expect(openPopup).toThrowError('Could not open popup');
-    });
-  });
 
   describe('oauthToken', () => {
     let oauthToken;
@@ -471,18 +455,23 @@ describe('utils', () => {
 
   describe('runPopup', () => {
     const TIMEOUT_ERROR = { error: 'timeout', error_description: 'Timeout' };
+
+    const url = 'https://authorize.com';
+
     const setup = customMessage => {
       const popup = {
-        location: { href: '' },
+        location: { href: url },
         close: jest.fn()
       };
-      const url = 'https://authorize.com';
+
       window.addEventListener = <any>jest.fn((message, callback) => {
         expect(message).toBe('message');
         callback(customMessage);
       });
+
       return { popup, url };
     };
+
     describe('with invalid messages', () => {
       ['', {}, { data: 'test' }, { data: { type: 'other-type' } }].forEach(
         m => {
@@ -498,7 +487,7 @@ describe('utils', () => {
               jest.runAllTimers();
             }, 10);
             jest.useFakeTimers();
-            await expect(runPopup(popup, url, {})).rejects.toMatchObject(
+            await expect(runPopup(url, { popup })).rejects.toMatchObject(
               TIMEOUT_ERROR
             );
             jest.useRealTimers();
@@ -506,6 +495,7 @@ describe('utils', () => {
         }
       );
     });
+
     it('returns authorization response message', async () => {
       const message = {
         data: {
@@ -513,13 +503,17 @@ describe('utils', () => {
           response: { id_token: 'id_token' }
         }
       };
+
       const { popup, url } = setup(message);
-      await expect(runPopup(popup, url, {})).resolves.toMatchObject(
+
+      await expect(runPopup(url, { popup })).resolves.toMatchObject(
         message.data.response
       );
+
       expect(popup.location.href).toBe(url);
       expect(popup.close).toHaveBeenCalled();
     });
+
     it('returns authorization error message', async () => {
       const message = {
         data: {
@@ -527,16 +521,21 @@ describe('utils', () => {
           response: { error: 'error' }
         }
       };
+
       const { popup, url } = setup(message);
-      await expect(runPopup(popup, url, {})).rejects.toMatchObject(
+
+      await expect(runPopup(url, { popup })).rejects.toMatchObject(
         message.data.response
       );
+
       expect(popup.location.href).toBe(url);
       expect(popup.close).toHaveBeenCalled();
     });
+
     it('times out after config.timeoutInSeconds', async () => {
       const { popup, url } = setup('');
       const seconds = 10;
+
       /**
        * We need to run the timers after we start `runPopup`, but we also
        * need to use `jest.useFakeTimers` to trigger the timeout.
@@ -546,16 +545,21 @@ describe('utils', () => {
       setTimeout(() => {
         jest.runTimersToTime(seconds * 1000);
       }, 10);
+
       jest.useFakeTimers();
+
       await expect(
-        runPopup(popup, url, {
-          timeoutInSeconds: seconds
+        runPopup(url, {
+          timeoutInSeconds: seconds,
+          popup
         })
       ).rejects.toMatchObject({ ...TIMEOUT_ERROR, popup });
+
       jest.useRealTimers();
     });
     it('times out after DEFAULT_AUTHORIZE_TIMEOUT_IN_SECONDS if config is not defined', async () => {
       const { popup, url } = setup('');
+
       /**
        * We need to run the timers after we start `runPopup`, but we also
        * need to use `jest.useFakeTimers` to trigger the timeout.
@@ -565,11 +569,37 @@ describe('utils', () => {
       setTimeout(() => {
         jest.runTimersToTime(DEFAULT_AUTHORIZE_TIMEOUT_IN_SECONDS * 1000);
       }, 10);
+
       jest.useFakeTimers();
-      await expect(runPopup(popup, url, {})).rejects.toMatchObject(
+
+      await expect(runPopup(url, { popup })).rejects.toMatchObject(
         TIMEOUT_ERROR
       );
+
       jest.useRealTimers();
+    });
+
+    it('creates and uses a popup window if none was given', async () => {
+      const message = {
+        data: {
+          type: 'authorization_response',
+          response: { id_token: 'id_token' }
+        }
+      };
+
+      const { popup, url } = setup(message);
+      const oldOpenFn = window.open;
+
+      window.open = <any>jest.fn(() => popup);
+
+      await expect(runPopup(url, {})).resolves.toMatchObject(
+        message.data.response
+      );
+
+      expect(popup.location.href).toBe(url);
+      expect(popup.close).toHaveBeenCalled();
+
+      window.open = oldOpenFn;
     });
   });
   describe('runIframe', () => {
@@ -606,8 +636,9 @@ describe('utils', () => {
         }
       };
       const { iframe, url } = setup(message);
+      jest.useFakeTimers();
       await runIframe(url, origin);
-
+      jest.runAllTimers();
       expect(message.source.close).toHaveBeenCalled();
       expect(window.document.body.appendChild).toHaveBeenCalledWith(iframe);
       expect(window.document.body.removeChild).toHaveBeenCalledWith(iframe);
@@ -628,20 +659,10 @@ describe('utils', () => {
       ].forEach(m => {
         it(`ignores invalid messages: ${JSON.stringify(m)}`, async () => {
           const { iframe, url, origin } = setup(m);
-          /**
-           * We need to run the timers after we start `runIframe` to simulate
-           * the window event listener, but we also need to use `jest.useFakeTimers`
-           * to trigger the timeout. That's why we're using a real `setTimeout`,
-           * then using fake timers then rolling back to real timers
-           */
-          setTimeout(() => {
-            jest.runAllTimers();
-          }, 10);
           jest.useFakeTimers();
-          await expect(runIframe(url, origin)).rejects.toMatchObject(
-            TIMEOUT_ERROR
-          );
-          jest.useRealTimers();
+          const promise = runIframe(url, origin);
+          jest.runAllTimers();
+          await expect(promise).rejects.toMatchObject(TIMEOUT_ERROR);
           expect(window.document.body.removeChild).toHaveBeenCalledWith(iframe);
         });
       });
@@ -657,9 +678,11 @@ describe('utils', () => {
         }
       };
       const { iframe, url } = setup(message);
+      jest.useFakeTimers();
       await expect(runIframe(url, origin)).resolves.toMatchObject(
         message.data.response
       );
+      jest.runAllTimers();
       expect(message.source.close).toHaveBeenCalled();
       expect(window.document.body.removeChild).toHaveBeenCalledWith(iframe);
     });
@@ -674,30 +697,22 @@ describe('utils', () => {
         }
       };
       const { iframe, url } = setup(message);
+      jest.useFakeTimers();
       await expect(runIframe(url, origin)).rejects.toMatchObject(
         message.data.response
       );
+      jest.runAllTimers();
       expect(message.source.close).toHaveBeenCalled();
       expect(window.document.body.removeChild).toHaveBeenCalledWith(iframe);
     });
     it('times out after timeoutInSeconds', async () => {
       const { iframe, url, origin } = setup('');
       const seconds = 10;
-      /**
-       * We need to run the timers after we start `runIframe` to simulate
-       * the window event listener, but we also need to use `jest.useFakeTimers`
-       * to trigger the timeout. That's why we're using a real `setTimeout`,
-       * then using fake timers then rolling back to real timers
-       */
-      setTimeout(() => {
-        jest.runTimersToTime(seconds * 1000);
-      }, 10);
       jest.useFakeTimers();
-      await expect(runIframe(url, origin, seconds)).rejects.toMatchObject(
-        TIMEOUT_ERROR
-      );
+      const promise = runIframe(url, origin, seconds);
+      jest.runTimersToTime(seconds * 1000);
+      await expect(promise).rejects.toMatchObject(TIMEOUT_ERROR);
       expect(window.document.body.removeChild).toHaveBeenCalledWith(iframe);
-      jest.useRealTimers();
     });
   });
   describe('getCrypto', () => {

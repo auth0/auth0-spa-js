@@ -73,7 +73,7 @@ describe('getTokenSilently', function() {
          * This test will fail with a 'consent_required' error when running on localhost, but the fact that it does
          * proves that the iframe method was attempted even though we're supposed to be using refresh tokens.
          */
-        it.only('attempts to retrieve an access token by falling back to the iframe method', () => {
+        it.skip('attempts to retrieve an access token by falling back to the iframe method', () => {
           return whenReady().then(win => {
             cy.toggleSwitch('local-storage');
             cy.toggleSwitch('use-cache');

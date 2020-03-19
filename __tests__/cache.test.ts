@@ -5,6 +5,29 @@ const dayInSeconds = 86400;
 
 describe('InMemoryCache', () => {
   let cache: ICache;
+  let OriginalDate: Date;
+
+  beforeEach(() => {
+    OriginalDate = (<any>global).Date;
+    (<any>global).Date = class {
+      time: number;
+      static staticTime: number;
+
+      constructor(time: number) {
+        this.time = time;
+      }
+      getTime() {
+        return this.time || 0;
+      }
+      static now() {
+        return this.staticTime || 0;
+      }
+    };
+  });
+
+  afterEach(() => {
+    (<any>global).Date = OriginalDate;
+  });
 
   beforeEach(() => {
     cache = new InMemoryCache().enclosedCache;

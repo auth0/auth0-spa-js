@@ -11,7 +11,7 @@ import {
   sha256,
   bufferToBase64UrlEncoded,
   oauthToken,
-  openPopup
+  validateCrypto
 } from './utils';
 
 import { InMemoryCache, ICache, LocalStorageCache } from './cache';
@@ -80,6 +80,8 @@ export default class Auth0Client {
   cacheLocation: CacheLocation;
 
   constructor(private options: Auth0ClientOptions) {
+    validateCrypto();
+
     this.cacheLocation = options.cacheLocation || 'memory';
 
     if (!cacheFactory(this.cacheLocation)) {
@@ -87,6 +89,7 @@ export default class Auth0Client {
     }
 
     this.cache = cacheFactory(this.cacheLocation)();
+
     this.transactionManager = new TransactionManager();
     this.domainUrl = `https://${this.options.domain}`;
 
@@ -230,7 +233,6 @@ export default class Auth0Client {
     options: PopupLoginOptions = {},
     config: PopupConfigOptions = {}
   ) {
-    const popup = await openPopup();
     const { ...authorizeOptions } = options;
     const stateIn = encode(createRandomString());
     const nonceIn = encode(createRandomString());
@@ -251,7 +253,7 @@ export default class Auth0Client {
       response_mode: 'web_message'
     });
 
-    const codeResult = await runPopup(popup, url, {
+    const codeResult = await runPopup(url, {
       ...config,
       timeoutInSeconds:
         config.timeoutInSeconds ||
@@ -394,14 +396,21 @@ export default class Auth0Client {
 
     this.transactionManager.remove(state);
 
-    const authResult = await oauthToken({
+    const tokenOptions = {
       baseUrl: this.domainUrl,
       client_id: this.options.client_id,
       code_verifier: transaction.code_verifier,
-      code,
       grant_type: 'authorization_code',
-      redirect_uri: transaction.redirect_uri
-    } as OAuthTokenOptions);
+      code
+    } as OAuthTokenOptions;
+
+    // some old versions of the SDK might not have added redirect_uri to the
+    // transaction, we dont want the key to be set to undefined.
+    if (undefined !== transaction.redirect_uri) {
+      tokenOptions.redirect_uri = transaction.redirect_uri;
+    }
+
+    const authResult = await oauthToken(tokenOptions);
 
     const decodedToken = this._verifyIdToken(
       authResult.id_token,
@@ -537,8 +546,13 @@ export default class Auth0Client {
    * auth0.logout();
    * ```
    *
-   * Performs a redirect to `/v2/logout` using the parameters provided
-   * as arguments. [Read more about how Logout works at Auth0](https://auth0.com/docs/logout).
+   * Clears the application session and performs a redirect to `/v2/logout`, using
+   * the parameters provided as arguments, to clear the Auth0 session.
+   * If the `federated` option is specified it also clears the Identity Provider session.
+   * If the `localOnly` option is specified, it only clears the application session.
+   * It is invalid to set both the `federated` and `localOnly` options to `true`,
+   * and an error will be thrown if you do.
+   * [Read more about how Logout works at Auth0](https://auth0.com/docs/logout).
    *
    * @param options
    */
@@ -549,11 +563,24 @@ export default class Auth0Client {
       delete options.client_id;
     }
 
-    ClientStorage.remove('auth0.is.authenticated');
+    const { federated, localOnly, ...logoutOptions } = options;
+
+    if (localOnly && federated) {
+      throw new Error(
+        'It is invalid to set both the `federated` and `localOnly` options to `true`'
+      );
+    }
+
     this.cache.clear();
-    const { federated, ...logoutOptions } = options;
+    ClientStorage.remove('auth0.is.authenticated');
+
+    if (localOnly) {
+      return;
+    }
+
     const federatedQuery = federated ? `&federated` : '';
     const url = this._url(`/v2/logout?${createQueryParams(logoutOptions)}`);
+
     window.location.assign(`${url}${federatedQuery}`);
   }
 
