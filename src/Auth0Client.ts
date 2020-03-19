@@ -10,8 +10,7 @@ import {
   runIframe,
   sha256,
   bufferToBase64UrlEncoded,
-  oauthToken,
-  validateCrypto
+  oauthToken
 } from './utils';
 
 import Cache from './cache';
@@ -36,7 +35,6 @@ export default class Auth0Client {
   private readonly DEFAULT_SCOPE = 'openid profile email';
 
   constructor(private options: Auth0ClientOptions) {
-    validateCrypto();
     this.cache = new Cache();
     this.transactionManager = new TransactionManager();
     this.domainUrl = `https://${this.options.domain}`;
