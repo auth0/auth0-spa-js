@@ -6,7 +6,6 @@
   "version": "1.7.0-beta.4",
   "main": "dist/lib/auth0-spa-js.cjs.js",
   "types": "dist/typings/index.d.ts",
-  "browser": "dist/auth0-spa-js.production.js",
   "module": "dist/auth0-spa-js.production.esm.js",
   "scripts": {
     "dev": "rimraf dist && rollup -c --watch",
