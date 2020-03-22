@@ -1,5 +1,3 @@
-import fetch from 'unfetch';
-
 import {
   AuthenticationResult,
   PopupConfigOptions,
@@ -12,6 +10,9 @@ import {
   DEFAULT_FETCH_TIMEOUT_MS,
   CLEANUP_IFRAME_TIMEOUT_IN_SECONDS
 } from './constants';
+
+// @ts-ignore
+import FetchWorker from 'web-worker:./fetch.worker.ts';
 
 const dedupe = arr => arr.filter((x, i) => arr.indexOf(x) === i);
 
@@ -209,13 +210,14 @@ const fetchWithTimeout = (url, options, timeout = DEFAULT_FETCH_TIMEOUT_MS) => {
   const signal = controller.signal;
 
   const fetchOptions = {
-    ...options,
-    signal
+    ...options
+    // TODO: move into webworker
+    // signal
   };
 
   // The promise will resolve with one of these two promises (the fetch and the timeout), whichever completes first.
   return Promise.race([
-    fetch(url, fetchOptions),
+    fetchWithWorker(url, fetchOptions),
     new Promise((_, reject) => {
       setTimeout(() => {
         controller.abort();
@@ -246,9 +248,11 @@ const getJSON = async (url, timeout, options) => {
     throw fetchError;
   }
 
-  const { error, error_description, ...success } = await response.json();
+  const {
+    data: [ok, { error, error_description, ...success }]
+  } = response;
 
-  if (!response.ok) {
+  if (!ok) {
     const errorMessage =
       error_description || `HTTP error. Unable to fetch ${url}`;
     const e = <any>new Error(errorMessage);
@@ -277,6 +281,28 @@ export const oauthToken = async ({
       'Content-type': 'application/json'
     }
   });
+
+const messageWaiter = (target, timeout: number) => {
+  let _resolve, _reject, _timeout;
+  return new Promise((resolve, reject) => {
+    _timeout = setTimeout(reject, timeout);
+    target.addEventListener('message', (_resolve = resolve));
+    target.addEventListener('error', (_reject = reject));
+  }).finally(() => {
+    clearTimeout(_timeout);
+    target.removeEventListener('message', _resolve);
+    target.removeEventListener('error', _reject);
+  });
+};
+
+const sendReceive = (target, message, timeout: number = 5000) => {
+  const waiter = messageWaiter(target, timeout);
+  target.postMessage(message);
+  return waiter;
+};
+
+export const fetchWithWorker = (url, opts, worker = new FetchWorker()) =>
+  sendReceive(worker, [url, opts]);
 
 export const getCrypto = () => {
   //ie 11.x uses msCrypto
