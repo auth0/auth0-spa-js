@@ -164,18 +164,18 @@ document.getElementById('logout').addEventListener('click', () => {
 });
 ```
 
-### Caching strategy
+### Data caching
 
-The SDK can be configured to cache ID tokens and access tokens either in memory or in local storage. The default is in memory. This setting can be controlled using the `cacheStrategy` option when creating the Auth0 client.
+The SDK can be configured to cache ID tokens and access tokens either in memory or in local storage. The default is in memory. This setting can be controlled using the `cacheLocation` option when creating the Auth0 client.
 
-To use the in-memory mode, no additional options need are required as this is the default setting. To configure the SDK to cache data using local storage, set `cacheStrategy` as follows:
+To use the in-memory mode, no additional options need are required as this is the default setting. To configure the SDK to cache data using local storage, set `cacheLocation` as follows:
 
 ```js
 await createAuth0Client({
   domain: '<AUTH0_DOMAIN>',
   client_id: '<AUTH0_CLIENT_ID>',
   redirect_uri: '<MY_CALLBACK_URL>',
-  cacheStrategy: 'localstorage' // valid values are: 'memory' or 'localstorage'
+  cacheLocation: 'localstorage' // valid values are: 'memory' or 'localstorage'
 }).then(auth0 => {
   // ...
 });
