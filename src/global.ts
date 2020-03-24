@@ -40,7 +40,8 @@ export interface BaseLoginOptions {
   acr_values?: string;
   /**
    * The default scope to be used on authentication requests.
-   * `openid profile email` is always added to all requests.
+   * The defaultScope defined in the Auth0Client is included
+   * along with this scope
    */
   scope?: string;
   /**
@@ -59,6 +60,14 @@ export interface BaseLoginOptions {
    * make sure to use the original parameter name.
    */
   [key: string]: any;
+}
+
+interface AdvancedOptions {
+  /**
+   * The default scope to be included with all request.
+   * If not provided, 'openid profile email' is used.
+   */
+  defaultScope?: string;
 }
 
 export interface Auth0ClientOptions extends BaseLoginOptions {
@@ -110,6 +119,11 @@ export interface Auth0ClientOptions extends BaseLoginOptions {
    * Defaults to 60s.
    */
   authorizeTimeoutInSeconds?: number;
+
+  /**
+   * Changes to recommeded defaults, like defaultScope
+   */
+  advancedOptions?: AdvancedOptions;
 }
 
 /**
