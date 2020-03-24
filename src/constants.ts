@@ -12,3 +12,8 @@ export const CLEANUP_IFRAME_TIMEOUT_IN_SECONDS = 2;
  * @ignore
  */
 export const DEFAULT_POPUP_CONFIG_OPTIONS: PopupConfigOptions = {};
+
+/**
+ * @ignore
+ */
+export const DEFAULT_SCOPE = 'openid profile email';

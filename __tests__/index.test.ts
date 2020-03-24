@@ -183,6 +183,24 @@ describe('Auth0', () => {
         expect(e.error).toEqual('some_other_error');
       }
     });
+
+    it('should respect advanced defaultScope option when provided', async () => {
+      const { auth0, utils, cache } = await setup({
+        advancedOptions: { defaultScope: 'openid jaffa' }
+      });
+      await auth0.getIdTokenClaims({
+        audience: 'the-audience',
+        scope: 'the-scope'
+      });
+      expect(cache.get).toHaveBeenCalledWith({
+        audience: 'the-audience',
+        scope: TEST_SCOPES
+      });
+      expect(utils.getUniqueScopes).toHaveBeenCalledWith(
+        'openid jaffa',
+        'the-scope'
+      );
+    });
   });
 
   describe('loginWithPopup()', () => {
@@ -315,7 +333,9 @@ describe('Auth0', () => {
     it('opens popup with correct popup, url and custom config', async () => {
       const { auth0, utils } = await setup();
       await auth0.loginWithPopup({}, { timeoutInSeconds: 1 });
-      expect(utils.runPopup).toHaveBeenCalledWith(
+      expect(
+        utils.runPopup
+      ).toHaveBeenCalledWith(
         `https://test.auth0.com/authorize?${TEST_QUERY_PARAMS}${TEST_TELEMETRY_QUERY_STRING}`,
         { timeoutInSeconds: 1 }
       );
@@ -324,7 +344,9 @@ describe('Auth0', () => {
     it('opens popup with correct popup, url and timeout from client options', async () => {
       const { auth0, utils } = await setup({ authorizeTimeoutInSeconds: 1 });
       await auth0.loginWithPopup({}, DEFAULT_POPUP_CONFIG_OPTIONS);
-      expect(utils.runPopup).toHaveBeenCalledWith(
+      expect(
+        utils.runPopup
+      ).toHaveBeenCalledWith(
         `https://test.auth0.com/authorize?${TEST_QUERY_PARAMS}${TEST_TELEMETRY_QUERY_STRING}`,
         { timeoutInSeconds: 1 }
       );

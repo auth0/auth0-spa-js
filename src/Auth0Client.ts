@@ -18,7 +18,7 @@ import TransactionManager from './transaction-manager';
 import { verify as verifyIdToken } from './jwt';
 import { AuthenticationError } from './errors';
 import * as ClientStorage from './storage';
-import { DEFAULT_POPUP_CONFIG_OPTIONS } from './constants';
+import { DEFAULT_POPUP_CONFIG_OPTIONS, DEFAULT_SCOPE } from './constants';
 import version from './version';
 
 const lock = new Lock();
@@ -32,7 +32,7 @@ export default class Auth0Client {
   private transactionManager: TransactionManager;
   private domainUrl: string;
   private tokenIssuer: string;
-  private readonly DEFAULT_SCOPE = 'openid profile email';
+  private defaultScope: string;
 
   constructor(private options: Auth0ClientOptions) {
     this.cache = new Cache();
@@ -41,6 +41,10 @@ export default class Auth0Client {
     this.tokenIssuer = this.options.issuer
       ? `https://${this.options.issuer}/`
       : `${this.domainUrl}/`;
+    this.defaultScope =
+      this.options.advancedOptions && this.options.advancedOptions.defaultScope
+        ? this.options.advancedOptions.defaultScope
+        : DEFAULT_SCOPE;
   }
   private _url(path) {
     const telemetry = encodeURIComponent(
@@ -65,7 +69,7 @@ export default class Auth0Client {
       ...withoutDomain,
       ...authorizeOptions,
       scope: getUniqueScopes(
-        this.DEFAULT_SCOPE,
+        this.defaultScope,
         this.options.scope,
         authorizeOptions.scope
       ),
@@ -216,10 +220,10 @@ export default class Auth0Client {
   public async getUser(
     options: GetUserOptions = {
       audience: this.options.audience || 'default',
-      scope: this.options.scope || this.DEFAULT_SCOPE
+      scope: this.options.scope || this.defaultScope
     }
   ) {
-    options.scope = getUniqueScopes(this.DEFAULT_SCOPE, options.scope);
+    options.scope = getUniqueScopes(this.defaultScope, options.scope);
     const cache = this.cache.get(options);
     return cache && cache.decodedToken.user;
   }
@@ -236,10 +240,10 @@ export default class Auth0Client {
   public async getIdTokenClaims(
     options: getIdTokenClaimsOptions = {
       audience: this.options.audience || 'default',
-      scope: this.options.scope || this.DEFAULT_SCOPE
+      scope: this.options.scope || this.defaultScope
     }
   ) {
-    options.scope = getUniqueScopes(this.DEFAULT_SCOPE, options.scope);
+    options.scope = getUniqueScopes(this.defaultScope, options.scope);
     const cache = this.cache.get(options);
     return cache && cache.decodedToken.claims;
   }
@@ -345,11 +349,11 @@ export default class Auth0Client {
   public async getTokenSilently(
     options: GetTokenSilentlyOptions = {
       audience: this.options.audience,
-      scope: this.options.scope || this.DEFAULT_SCOPE,
+      scope: this.options.scope || this.defaultScope,
       ignoreCache: false
     }
   ) {
-    options.scope = getUniqueScopes(this.DEFAULT_SCOPE, options.scope);
+    options.scope = getUniqueScopes(this.defaultScope, options.scope);
 
     try {
       const {
@@ -455,12 +459,12 @@ export default class Auth0Client {
   public async getTokenWithPopup(
     options: GetTokenWithPopupOptions = {
       audience: this.options.audience,
-      scope: this.options.scope || this.DEFAULT_SCOPE
+      scope: this.options.scope || this.defaultScope
     },
     config: PopupConfigOptions = DEFAULT_POPUP_CONFIG_OPTIONS
   ) {
     options.scope = getUniqueScopes(
-      this.DEFAULT_SCOPE,
+      this.defaultScope,
       this.options.scope,
       options.scope
     );
