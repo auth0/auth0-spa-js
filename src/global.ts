@@ -316,4 +316,5 @@ interface IdToken {
   sub_jwk?: string;
   cnf?: string;
   sid?: string;
+  [key: string]: any;
 }
