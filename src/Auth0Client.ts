@@ -19,6 +19,7 @@ import { verify as verifyIdToken } from './jwt';
 import { AuthenticationError, GenericError } from './errors';
 import * as ClientStorage from './storage';
 import {
+  CACHE_LOCATION_MEMORY,
   DEFAULT_POPUP_CONFIG_OPTIONS,
   DEFAULT_AUTHORIZE_TIMEOUT_IN_SECONDS
 } from './constants';
@@ -275,7 +276,8 @@ export default class Auth0Client {
         code_verifier,
         code: codeResult.code,
         grant_type: 'authorization_code',
-        redirect_uri: params.redirect_uri
+        redirect_uri: params.redirect_uri,
+        storeToken: this.cacheLocation === CACHE_LOCATION_MEMORY
       } as OAuthTokenOptions,
       this.worker
     );
@@ -407,7 +409,8 @@ export default class Auth0Client {
       client_id: this.options.client_id,
       code_verifier: transaction.code_verifier,
       grant_type: 'authorization_code',
-      code
+      code,
+      storeToken: this.cacheLocation === CACHE_LOCATION_MEMORY
     } as OAuthTokenOptions;
 
     // some old versions of the SDK might not have added redirect_uri to the
@@ -630,7 +633,8 @@ export default class Auth0Client {
         code_verifier,
         code: codeResult.code,
         grant_type: 'authorization_code',
-        redirect_uri: params.redirect_uri
+        redirect_uri: params.redirect_uri,
+        storeToken: this.cacheLocation === CACHE_LOCATION_MEMORY
       } as OAuthTokenOptions,
       this.worker
     );
@@ -660,7 +664,10 @@ export default class Auth0Client {
       client_id: this.options.client_id
     });
 
-    if (!cache || !cache.refresh_token) {
+    if (
+      (!cache || !cache.refresh_token) &&
+      this.cacheLocation !== CACHE_LOCATION_MEMORY
+    ) {
       return await this._getTokenFromIFrame(options);
     }
 
@@ -674,8 +681,9 @@ export default class Auth0Client {
         baseUrl: this.domainUrl,
         client_id: this.options.client_id,
         grant_type: 'refresh_token',
-        refresh_token: cache.refresh_token,
-        redirect_uri
+        refresh_token: cache && cache.refresh_token,
+        redirect_uri,
+        storeToken: this.cacheLocation === CACHE_LOCATION_MEMORY
       } as RefreshTokenOptions,
       this.worker
     );

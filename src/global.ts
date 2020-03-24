@@ -304,6 +304,7 @@ export interface OAuthTokenOptions extends TokenEndpointOptions {
   code_verifier: string;
   code: string;
   redirect_uri: string;
+  storeToken: boolean;
 }
 
 /**

@@ -5,6 +5,8 @@ import {
 } from './constants';
 import { TokenEndpointOptions } from './global';
 
+let refreshToken;
+
 export const createAbortController = () => new AbortController();
 
 const fetchWithTimeout = (url, options, timeout = DEFAULT_FETCH_TIMEOUT_MS) => {
@@ -81,11 +83,26 @@ export const oauthToken = async ({
     }
   });
 
-addEventListener('message', async ({ data: opts }) => {
+addEventListener('message', async ({ data: { storeToken, ...opts } }) => {
+  if (
+    storeToken &&
+    !opts.refresh_token &&
+    opts.grant_type === 'refresh_token'
+  ) {
+    if (!refreshToken) {
+      throw new Error(
+        'The web worker is missing the refresh token, you need to get it using the authorization_code grant_type first'
+      );
+    }
+    opts.refresh_token = refreshToken;
+  }
+
   const response = await oauthToken(opts);
 
-  // TODO: remove/store refresh_token
-  console.log('response', response);
+  if (storeToken && response.refresh_token) {
+    refreshToken = response.refresh_token;
+    delete response.refresh_token;
+  }
 
   // @ts-ignore Need separate tsconfig https://github.com/microsoft/vscode/issues/90642
   postMessage(response);
