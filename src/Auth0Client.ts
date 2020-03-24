@@ -174,12 +174,7 @@ export default class Auth0Client {
   public async buildAuthorizeUrl(
     options: RedirectLoginOptions = {}
   ): Promise<string> {
-    const {
-      redirect_uri,
-      appState,
-      cacheStrategy,
-      ...authorizeOptions
-    } = options;
+    const { redirect_uri, appState, ...authorizeOptions } = options;
 
     const stateIn = encode(createRandomString());
     const nonceIn = encode(createRandomString());
