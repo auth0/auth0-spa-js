@@ -41,6 +41,9 @@ import {
   CacheLocation
 } from './global';
 
+// @ts-ignore
+import TokenWorker from 'web-worker:./token.worker.ts';
+
 /**
  * @ignore
  */
@@ -77,6 +80,7 @@ export default class Auth0Client {
   private readonly DEFAULT_SCOPE = 'openid profile email';
 
   cacheLocation: CacheLocation;
+  private worker: Worker;
 
   constructor(private options: Auth0ClientOptions) {
     this.cacheLocation = options.cacheLocation || 'memory';
@@ -93,6 +97,8 @@ export default class Auth0Client {
     this.tokenIssuer = this.options.issuer
       ? `https://${this.options.issuer}/`
       : `${this.domainUrl}/`;
+
+    this.worker = new TokenWorker();
   }
 
   private _url(path) {
@@ -262,14 +268,17 @@ export default class Auth0Client {
       throw new Error('Invalid state');
     }
 
-    const authResult = await oauthToken({
-      baseUrl: this.domainUrl,
-      client_id: this.options.client_id,
-      code_verifier,
-      code: codeResult.code,
-      grant_type: 'authorization_code',
-      redirect_uri: params.redirect_uri
-    } as OAuthTokenOptions);
+    const authResult = await oauthToken(
+      {
+        baseUrl: this.domainUrl,
+        client_id: this.options.client_id,
+        code_verifier,
+        code: codeResult.code,
+        grant_type: 'authorization_code',
+        redirect_uri: params.redirect_uri
+      } as OAuthTokenOptions,
+      this.worker
+    );
 
     const decodedToken = this._verifyIdToken(authResult.id_token, nonceIn);
 
@@ -407,7 +416,7 @@ export default class Auth0Client {
       tokenOptions.redirect_uri = transaction.redirect_uri;
     }
 
-    const authResult = await oauthToken(tokenOptions);
+    const authResult = await oauthToken(tokenOptions, this.worker);
 
     const decodedToken = this._verifyIdToken(
       authResult.id_token,
@@ -614,14 +623,17 @@ export default class Auth0Client {
       throw new Error('Invalid state');
     }
 
-    const tokenResult = await oauthToken({
-      baseUrl: this.domainUrl,
-      client_id: this.options.client_id,
-      code_verifier,
-      code: codeResult.code,
-      grant_type: 'authorization_code',
-      redirect_uri: params.redirect_uri
-    } as OAuthTokenOptions);
+    const tokenResult = await oauthToken(
+      {
+        baseUrl: this.domainUrl,
+        client_id: this.options.client_id,
+        code_verifier,
+        code: codeResult.code,
+        grant_type: 'authorization_code',
+        redirect_uri: params.redirect_uri
+      } as OAuthTokenOptions,
+      this.worker
+    );
 
     const decodedToken = this._verifyIdToken(tokenResult.id_token, nonceIn);
 
@@ -657,14 +669,16 @@ export default class Auth0Client {
       this.options.redirect_uri ||
       window.location.origin;
 
-    const tokenResult = await oauthToken({
-      baseUrl: this.domainUrl,
-      client_id: this.options.client_id,
-      grant_type: 'refresh_token',
-      refresh_token: cache.refresh_token,
-      redirect_uri
-    } as RefreshTokenOptions);
-
+    const tokenResult = await oauthToken(
+      {
+        baseUrl: this.domainUrl,
+        client_id: this.options.client_id,
+        grant_type: 'refresh_token',
+        refresh_token: cache.refresh_token,
+        redirect_uri
+      } as RefreshTokenOptions,
+      this.worker
+    );
     const decodedToken = this._verifyIdToken(tokenResult.id_token);
 
     return {

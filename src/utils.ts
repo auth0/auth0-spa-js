@@ -1,24 +1,13 @@
-import {
-  AuthenticationResult,
-  PopupConfigOptions,
-  TokenEndpointOptions
-} from './global';
+import { AuthenticationResult, PopupConfigOptions } from './global';
 
 import {
   DEFAULT_AUTHORIZE_TIMEOUT_IN_SECONDS,
-  DEFAULT_SILENT_TOKEN_RETRY_COUNT,
-  DEFAULT_FETCH_TIMEOUT_MS,
   CLEANUP_IFRAME_TIMEOUT_IN_SECONDS
 } from './constants';
-
-// @ts-ignore
-import FetchWorker from 'web-worker:./fetch.worker.ts';
 
 const dedupe = arr => arr.filter((x, i) => arr.indexOf(x) === i);
 
 const TIMEOUT_ERROR = { error: 'timeout', error_description: 'Timeout' };
-
-export const createAbortController = () => new AbortController();
 
 export const getUniqueScopes = (...scopes: string[]) => {
   const scopeString = scopes.filter(Boolean).join();
@@ -205,84 +194,8 @@ export const bufferToBase64UrlEncoded = input => {
   );
 };
 
-const fetchWithTimeout = (url, options, timeout = DEFAULT_FETCH_TIMEOUT_MS) => {
-  const controller = createAbortController();
-  const signal = controller.signal;
-
-  const fetchOptions = {
-    ...options
-    // TODO: move into webworker
-    // signal
-  };
-
-  // The promise will resolve with one of these two promises (the fetch and the timeout), whichever completes first.
-  return Promise.race([
-    fetchWithWorker(url, fetchOptions),
-    new Promise((_, reject) => {
-      setTimeout(() => {
-        controller.abort();
-        reject(new Error("Timeout when executing 'fetch'"));
-      }, timeout);
-    })
-  ]);
-};
-
-const getJSON = async (url, timeout, options) => {
-  let fetchError, response;
-
-  for (let i = 0; i < DEFAULT_SILENT_TOKEN_RETRY_COUNT; i++) {
-    try {
-      response = await fetchWithTimeout(url, options, timeout);
-      fetchError = null;
-      break;
-    } catch (e) {
-      // Fetch only fails in the case of a network issue, so should be
-      // retried here. Failure status (4xx, 5xx, etc) return a resolved Promise
-      // with the failure in the body.
-      // https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API
-      fetchError = e;
-    }
-  }
-
-  if (fetchError) {
-    throw fetchError;
-  }
-
-  const {
-    data: [ok, { error, error_description, ...success }]
-  } = response;
-
-  if (!ok) {
-    const errorMessage =
-      error_description || `HTTP error. Unable to fetch ${url}`;
-    const e = <any>new Error(errorMessage);
-
-    e.error = error || 'request_error';
-    e.error_description = errorMessage;
-
-    throw e;
-  }
-
-  return success;
-};
-
-export const oauthToken = async ({
-  baseUrl,
-  timeout,
-  ...options
-}: TokenEndpointOptions) =>
-  await getJSON(`${baseUrl}/oauth/token`, timeout, {
-    method: 'POST',
-    body: JSON.stringify({
-      redirect_uri: window.location.origin,
-      ...options
-    }),
-    headers: {
-      'Content-type': 'application/json'
-    }
-  });
-
-const messageWaiter = (target, timeout: number) => {
+// TODO: figure out TS here
+const messageWaiter = (target, timeout: number): any => {
   let _resolve, _reject, _timeout;
   return new Promise((resolve, reject) => {
     _timeout = setTimeout(reject, timeout);
@@ -295,14 +208,14 @@ const messageWaiter = (target, timeout: number) => {
   });
 };
 
-const sendReceive = (target, message, timeout: number = 5000) => {
+const sendReceive = async (target, message, timeout: number = 5000) => {
   const waiter = messageWaiter(target, timeout);
   target.postMessage(message);
-  return waiter;
+  const { data } = await waiter;
+  return data;
 };
 
-export const fetchWithWorker = (url, opts, worker = new FetchWorker()) =>
-  sendReceive(worker, [url, opts]);
+export const oauthToken = (opts, worker) => sendReceive(worker, opts);
 
 export const getCrypto = () => {
   //ie 11.x uses msCrypto
