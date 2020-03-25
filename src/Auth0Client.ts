@@ -676,17 +676,22 @@ export default class Auth0Client {
       this.options.redirect_uri ||
       window.location.origin;
 
-    const tokenResult = await oauthToken(
-      {
-        baseUrl: this.domainUrl,
-        client_id: this.options.client_id,
-        grant_type: 'refresh_token',
-        refresh_token: cache && cache.refresh_token,
-        redirect_uri,
-        storeToken: this.cacheLocation === CACHE_LOCATION_MEMORY
-      } as RefreshTokenOptions,
-      this.worker
-    );
+    let tokenResult;
+    try {
+      tokenResult = await oauthToken(
+        {
+          baseUrl: this.domainUrl,
+          client_id: this.options.client_id,
+          grant_type: 'refresh_token',
+          refresh_token: cache && cache.refresh_token,
+          redirect_uri,
+          storeToken: this.cacheLocation === CACHE_LOCATION_MEMORY
+        } as RefreshTokenOptions,
+        this.worker
+      );
+    } catch (e) {
+      return await this._getTokenFromIFrame(options);
+    }
     const decodedToken = this._verifyIdToken(tokenResult.id_token);
 
     return {

@@ -212,6 +212,9 @@ const sendReceive = async (target, message, timeout: number = 5000) => {
   const waiter = messageWaiter(target, timeout);
   target.postMessage(message);
   const { data } = await waiter;
+  if (data.error) {
+    throw data.error;
+  }
   return data;
 };
 
