@@ -5,9 +5,11 @@ jest.mock('../src/transaction-manager');
 jest.mock('../src/utils');
 
 import { CacheLocation } from '../src/global';
-import Auth0Client from '../src/Auth0Client';
 
-import createAuth0Client, { GetTokenSilentlyOptions } from '../src/index';
+import createAuth0Client, {
+  Auth0Client,
+  GetTokenSilentlyOptions
+} from '../src/index';
 
 import { AuthenticationError } from '../src/errors';
 import version from '../src/version';
@@ -351,9 +353,7 @@ describe('Auth0', () => {
     it('opens popup with correct popup, url and custom config', async () => {
       const { auth0, utils } = await setup();
       await auth0.loginWithPopup({}, { timeoutInSeconds: 1 });
-      expect(
-        utils.runPopup
-      ).toHaveBeenCalledWith(
+      expect(utils.runPopup).toHaveBeenCalledWith(
         `https://test.auth0.com/authorize?${TEST_QUERY_PARAMS}${TEST_TELEMETRY_QUERY_STRING}`,
         { timeoutInSeconds: 1 }
       );
@@ -369,9 +369,7 @@ describe('Auth0', () => {
         }
       );
 
-      expect(
-        utils.runPopup
-      ).toHaveBeenCalledWith(
+      expect(utils.runPopup).toHaveBeenCalledWith(
         `https://test.auth0.com/authorize?${TEST_QUERY_PARAMS}${TEST_TELEMETRY_QUERY_STRING}`,
         { timeoutInSeconds: 25 }
       );

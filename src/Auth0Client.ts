@@ -10,7 +10,8 @@ import {
   runIframe,
   sha256,
   bufferToBase64UrlEncoded,
-  oauthToken
+  oauthToken,
+  validateCrypto
 } from './utils';
 
 import { InMemoryCache, ICache, LocalStorageCache } from './cache';
@@ -79,6 +80,7 @@ export default class Auth0Client {
   cacheLocation: CacheLocation;
 
   constructor(private options: Auth0ClientOptions) {
+    validateCrypto();
     this.cacheLocation = options.cacheLocation || 'memory';
 
     if (!cacheFactory(this.cacheLocation)) {
