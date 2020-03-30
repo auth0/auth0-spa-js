@@ -47,4 +47,6 @@ const branch = process.argv[3];
   await exec('npm run docs');
 
   await writeChangelog(newVersion);
+
+  await exec('npm run release:clean');
 })();
