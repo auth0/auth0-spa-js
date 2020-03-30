@@ -1,3 +1,5 @@
+import 'abortcontroller-polyfill/dist/abortcontroller-polyfill-only';
+import 'promise-polyfill/src/polyfill';
 import fetch from 'unfetch';
 import {
   DEFAULT_FETCH_TIMEOUT_MS,
@@ -7,10 +9,8 @@ import { TokenEndpointOptions } from './global';
 
 let refreshToken;
 
-export const createAbortController = () => new AbortController();
-
 const fetchWithTimeout = (url, options, timeout = DEFAULT_FETCH_TIMEOUT_MS) => {
-  const controller = createAbortController();
+  const controller = new AbortController();
   const signal = controller.signal;
 
   const fetchOptions = {
@@ -67,7 +67,7 @@ const getJSON = async (url, timeout, options) => {
   return success;
 };
 
-export const oauthToken = async ({
+const oauthToken = async ({
   baseUrl,
   timeout,
   ...options
@@ -83,7 +83,9 @@ export const oauthToken = async ({
     }
   });
 
-addEventListener('message', async ({ data: { storeToken, ...opts } }) => {
+export const createMessageHandler = cb => async ({
+  data: { storeToken, ...opts }
+}) => {
   try {
     if (
       storeToken &&
@@ -98,6 +100,7 @@ addEventListener('message', async ({ data: { storeToken, ...opts } }) => {
       opts.refresh_token = refreshToken;
     }
 
+    // @ts-ignore
     const response = await oauthToken(opts);
 
     if (storeToken && response.refresh_token) {
@@ -105,10 +108,11 @@ addEventListener('message', async ({ data: { storeToken, ...opts } }) => {
       delete response.refresh_token;
     }
 
-    // @ts-ignore Need separate tsconfig https://github.com/microsoft/vscode/issues/90642
-    postMessage(response);
+    cb(response);
   } catch (error) {
-    // @ts-ignore Make sure the error bubbles up to the worker's onerror handler
-    postMessage({ error });
+    cb({ error });
   }
-});
+};
+
+// TODO: if testing don't execute this line
+addEventListener('message', createMessageHandler(postMessage));

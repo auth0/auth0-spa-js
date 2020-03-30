@@ -12,11 +12,6 @@ import createAuth0Client, { GetTokenSilentlyOptions } from '../src/index';
 import { AuthenticationError } from '../src/errors';
 import version from '../src/version';
 
-import {
-  DEFAULT_AUTHORIZE_TIMEOUT_IN_SECONDS,
-  DEFAULT_FETCH_TIMEOUT_MS
-} from '../src/constants';
-
 const GET_TOKEN_SILENTLY_LOCK_KEY = 'auth0.lock.getTokenSilently';
 
 const TEST_DOMAIN = 'test.auth0.com';
@@ -58,6 +53,13 @@ jest.mock('../src/cache', () => ({
   LocalStorageCache: () => mockEnclosedCache
 }));
 
+jest.mock('../src/token.worker');
+
+const webWorkerMatcher = expect.objectContaining({
+  postMessage: expect.any(Function),
+  addEventListener: expect.any(Function)
+});
+
 const setup = async (options = {}) => {
   const auth0 = await createAuth0Client({
     domain: TEST_DOMAIN,
@@ -66,7 +68,6 @@ const setup = async (options = {}) => {
   });
 
   const getDefaultInstance = m => require(m).default.mock.instances[0];
-  const getInstance = m => require(m).default.mock.instances[0];
 
   const storage = {
     get: require('../src/storage').get,
@@ -394,14 +395,18 @@ describe('Auth0', () => {
 
       await auth0.loginWithPopup({});
 
-      expect(utils.oauthToken).toHaveBeenCalledWith({
-        baseUrl: 'https://test.auth0.com',
-        client_id: TEST_CLIENT_ID,
-        code: TEST_CODE,
-        code_verifier: TEST_RANDOM_STRING,
-        grant_type: 'authorization_code',
-        redirect_uri: 'http://localhost'
-      });
+      expect(utils.oauthToken).toHaveBeenCalledWith(
+        {
+          baseUrl: 'https://test.auth0.com',
+          client_id: TEST_CLIENT_ID,
+          code: TEST_CODE,
+          code_verifier: TEST_RANDOM_STRING,
+          grant_type: 'authorization_code',
+          redirect_uri: 'http://localhost',
+          storeToken: true
+        },
+        webWorkerMatcher
+      );
     });
 
     it('calls oauth/token with the same custom redirect_uri as /authorize', async () => {
@@ -425,29 +430,37 @@ describe('Auth0', () => {
         code_challenge_method: 'S256'
       });
 
-      expect(utils.oauthToken).toHaveBeenCalledWith({
-        audience: undefined,
-        baseUrl: 'https://test.auth0.com',
-        client_id: TEST_CLIENT_ID,
-        code: TEST_CODE,
-        code_verifier: TEST_RANDOM_STRING,
-        grant_type: 'authorization_code',
-        redirect_uri
-      });
+      expect(utils.oauthToken).toHaveBeenCalledWith(
+        {
+          audience: undefined,
+          baseUrl: 'https://test.auth0.com',
+          client_id: TEST_CLIENT_ID,
+          code: TEST_CODE,
+          code_verifier: TEST_RANDOM_STRING,
+          grant_type: 'authorization_code',
+          redirect_uri,
+          storeToken: true
+        },
+        webWorkerMatcher
+      );
     });
 
     it('calls oauth/token with correct params and a different audience', async () => {
       const { auth0, utils } = await setup();
 
       await auth0.loginWithPopup({ audience: 'test-audience' });
-      expect(utils.oauthToken).toHaveBeenCalledWith({
-        baseUrl: 'https://test.auth0.com',
-        client_id: TEST_CLIENT_ID,
-        code: TEST_CODE,
-        code_verifier: TEST_RANDOM_STRING,
-        grant_type: 'authorization_code',
-        redirect_uri: 'http://localhost'
-      });
+      expect(utils.oauthToken).toHaveBeenCalledWith(
+        {
+          baseUrl: 'https://test.auth0.com',
+          client_id: TEST_CLIENT_ID,
+          code: TEST_CODE,
+          code_verifier: TEST_RANDOM_STRING,
+          grant_type: 'authorization_code',
+          redirect_uri: 'http://localhost',
+          storeToken: true
+        },
+        webWorkerMatcher
+      );
     });
     it('calls `tokenVerifier.verify` with the `id_token` from in the oauth/token response', async () => {
       const { auth0, tokenVerifier } = await setup();
@@ -955,13 +968,17 @@ describe('Auth0', () => {
 
         await auth0.handleRedirectCallback();
 
-        expect(utils.oauthToken).toHaveBeenCalledWith({
-          baseUrl: 'https://test.auth0.com',
-          client_id: TEST_CLIENT_ID,
-          code: TEST_CODE,
-          code_verifier: TEST_RANDOM_STRING,
-          grant_type: 'authorization_code'
-        });
+        expect(utils.oauthToken).toHaveBeenCalledWith(
+          {
+            baseUrl: 'https://test.auth0.com',
+            client_id: TEST_CLIENT_ID,
+            code: TEST_CODE,
+            code_verifier: TEST_RANDOM_STRING,
+            grant_type: 'authorization_code',
+            storeToken: true
+          },
+          webWorkerMatcher
+        );
       });
       it('calls oauth/token with redirect uri from transaction if set', async () => {
         const { auth0, utils, transactionManager } = await localSetup();
@@ -1164,13 +1181,17 @@ describe('Auth0', () => {
 
         await auth0.handleRedirectCallback();
 
-        expect(utils.oauthToken).toHaveBeenCalledWith({
-          baseUrl: 'https://test.auth0.com',
-          client_id: TEST_CLIENT_ID,
-          code: TEST_CODE,
-          code_verifier: TEST_RANDOM_STRING,
-          grant_type: 'authorization_code'
-        });
+        expect(utils.oauthToken).toHaveBeenCalledWith(
+          {
+            baseUrl: 'https://test.auth0.com',
+            client_id: TEST_CLIENT_ID,
+            code: TEST_CODE,
+            code_verifier: TEST_RANDOM_STRING,
+            grant_type: 'authorization_code',
+            storeToken: true
+          },
+          webWorkerMatcher
+        );
       });
       it('calls `tokenVerifier.verify` with the `id_token` from in the oauth/token response', async () => {
         const { auth0, tokenVerifier } = await localSetup();
@@ -1530,13 +1551,17 @@ describe('Auth0', () => {
             client_id: TEST_CLIENT_ID
           });
 
-          expect(utils.oauthToken).toHaveBeenCalledWith({
-            baseUrl: 'https://test.auth0.com',
-            refresh_token: TEST_REFRESH_TOKEN,
-            client_id: TEST_CLIENT_ID,
-            grant_type: 'refresh_token',
-            redirect_uri: 'http://localhost'
-          });
+          expect(utils.oauthToken).toHaveBeenCalledWith(
+            {
+              baseUrl: 'https://test.auth0.com',
+              refresh_token: TEST_REFRESH_TOKEN,
+              client_id: TEST_CLIENT_ID,
+              grant_type: 'refresh_token',
+              redirect_uri: 'http://localhost',
+              storeToken: true
+            },
+            webWorkerMatcher
+          );
 
           expect(cache.save).toHaveBeenCalledWith({
             client_id: TEST_CLIENT_ID,
@@ -1762,14 +1787,18 @@ describe('Auth0', () => {
 
         await auth0.getTokenSilently(defaultOptionsIgnoreCacheTrue);
 
-        expect(utils.oauthToken).toHaveBeenCalledWith({
-          baseUrl: 'https://test.auth0.com',
-          client_id: TEST_CLIENT_ID,
-          code: TEST_CODE,
-          code_verifier: TEST_RANDOM_STRING,
-          grant_type: 'authorization_code',
-          redirect_uri: 'http://localhost'
-        });
+        expect(utils.oauthToken).toHaveBeenCalledWith(
+          {
+            baseUrl: 'https://test.auth0.com',
+            client_id: TEST_CLIENT_ID,
+            code: TEST_CODE,
+            code_verifier: TEST_RANDOM_STRING,
+            grant_type: 'authorization_code',
+            redirect_uri: 'http://localhost',
+            storeToken: true
+          },
+          webWorkerMatcher
+        );
       });
 
       it('calls `tokenVerifier.verify` with the `id_token` from in the oauth/token response', async () => {
@@ -1823,23 +1852,6 @@ describe('Auth0', () => {
         expect(lock.releaseLockMock).toHaveBeenCalledWith(
           GET_TOKEN_SILENTLY_LOCK_KEY
         );
-      });
-    });
-
-    describe('when refresh tokens are used', () => {
-      it('falls back to using a hidden iframe when no refresh token is available', async () => {
-        const { auth0, cache, utils } = await setup({
-          useRefreshTokens: true
-        });
-
-        utils.getUniqueScopes.mockReturnValue(`${TEST_SCOPES} offline_access`);
-
-        cache.get.mockReturnValue({ access_token: TEST_ACCESS_TOKEN });
-
-        const result = await auth0.getTokenSilently({ ignoreCache: true });
-
-        expect(result).toEqual(TEST_ACCESS_TOKEN);
-        expect(utils.runIframe).toHaveBeenCalled();
       });
     });
   });

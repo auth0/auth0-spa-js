@@ -5,7 +5,6 @@ import 'core-js/es/array/includes';
 import 'core-js/es/string/includes';
 import 'promise-polyfill/src/polyfill';
 import 'fast-text-encoding';
-import 'abortcontroller-polyfill/dist/abortcontroller-polyfill-only';
 
 import Auth0Client_ from './Auth0Client';
 import * as ClientStorage from './storage';

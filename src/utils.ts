@@ -41,7 +41,7 @@ export const runIframe = (
   timeoutInSeconds: number = DEFAULT_AUTHORIZE_TIMEOUT_IN_SECONDS
 ) => {
   return new Promise<AuthenticationResult>((res, rej) => {
-    var iframe = window.document.createElement('iframe');
+    const iframe = window.document.createElement('iframe');
     iframe.setAttribute('width', '0');
     iframe.setAttribute('height', '0');
     iframe.style.display = 'none';
@@ -208,7 +208,7 @@ const messageWaiter = (target, timeout: number): any => {
   });
 };
 
-const sendReceive = async (target, message, timeout: number = 5000) => {
+const transceive = async (target, message, timeout: number = 5000) => {
   const waiter = messageWaiter(target, timeout);
   target.postMessage(message);
   const { data } = await waiter;
@@ -218,7 +218,7 @@ const sendReceive = async (target, message, timeout: number = 5000) => {
   return data;
 };
 
-export const oauthToken = (opts, worker) => sendReceive(worker, opts);
+export const oauthToken = (opts, worker) => transceive(worker, opts);
 
 export const getCrypto = () => {
   //ie 11.x uses msCrypto

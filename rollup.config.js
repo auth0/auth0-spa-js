@@ -22,7 +22,8 @@ const getPlugins = shouldMinify => {
     commonjs(),
     webWorkerLoader({
       sourceMap: !isProduction,
-      preserveSource: !isProduction
+      preserveSource: !isProduction,
+      pattern: /.+\.worker.ts$/
     }),
     typescript({
       clean: true,
@@ -63,45 +64,45 @@ let bundles = [
     }
   }
 ];
-
-if (isProduction) {
-  bundles = bundles.concat(
-    {
-      input: 'src/index.ts',
-      output: [
-        {
-          name: EXPORT_NAME,
-          file: pkg.browser,
-          format: 'umd'
-        }
-      ],
-      plugins: [
-        ...getPlugins(isProduction),
-        shouldGenerateStats && visualizer()
-      ]
-    },
-    {
-      input: 'src/index.ts',
-      output: [
-        {
-          file: pkg.module,
-          format: 'esm'
-        }
-      ],
-      plugins: getPlugins(isProduction)
-    },
-    {
-      input: 'src/index.ts',
-      output: [
-        {
-          name: EXPORT_NAME,
-          file: pkg.main,
-          format: 'cjs'
-        }
-      ],
-      plugins: getPlugins(false),
-      external: Object.keys(pkg.dependencies)
-    }
-  );
-}
+//
+// if (isProduction) {
+//   bundles = bundles.concat(
+//     {
+//       input: 'src/index.ts',
+//       output: [
+//         {
+//           name: EXPORT_NAME,
+//           file: pkg.browser,
+//           format: 'umd'
+//         }
+//       ],
+//       plugins: [
+//         ...getPlugins(isProduction),
+//         shouldGenerateStats && visualizer()
+//       ]
+//     },
+//     {
+//       input: 'src/index.ts',
+//       output: [
+//         {
+//           file: pkg.module,
+//           format: 'esm'
+//         }
+//       ],
+//       plugins: getPlugins(isProduction)
+//     },
+//     {
+//       input: 'src/index.ts',
+//       output: [
+//         {
+//           name: EXPORT_NAME,
+//           file: pkg.main,
+//           format: 'cjs'
+//         }
+//       ],
+//       plugins: getPlugins(false),
+//       external: Object.keys(pkg.dependencies)
+//     }
+//   );
+// }
 export default bundles;

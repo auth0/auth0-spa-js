@@ -43,7 +43,7 @@ import {
 } from './global';
 
 // @ts-ignore
-import TokenWorker from 'web-worker:./token.worker.ts';
+import TokenWorker from './token.worker.ts';
 
 /**
  * @ignore
