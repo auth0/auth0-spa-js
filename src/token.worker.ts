@@ -1,6 +1,6 @@
-import 'abortcontroller-polyfill/dist/abortcontroller-polyfill-only';
 import 'promise-polyfill/src/polyfill';
 import fetch from 'unfetch';
+import 'abortcontroller-polyfill/dist/abortcontroller-polyfill-only';
 import {
   DEFAULT_FETCH_TIMEOUT_MS,
   DEFAULT_SILENT_TOKEN_RETRY_COUNT
@@ -48,7 +48,7 @@ const getJSON = async (url, timeout, options) => {
   }
 
   if (fetchError) {
-    throw fetchError;
+    throw new Error(fetchError);
   }
 
   const { error, error_description, ...success } = await response.json();
@@ -83,6 +83,8 @@ const oauthToken = async ({
     }
   });
 
+const serializable = obj => JSON.parse(JSON.stringify(obj));
+
 export const createMessageHandler = cb => async ({
   data: { storeToken, ...opts }
 }) => {
@@ -108,9 +110,9 @@ export const createMessageHandler = cb => async ({
       delete response.refresh_token;
     }
 
-    cb(response);
+    cb(serializable(response));
   } catch (error) {
-    cb({ error });
+    cb(serializable({ error: error.message }));
   }
 };
 

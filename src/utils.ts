@@ -210,7 +210,7 @@ const messageWaiter = (target, timeout: number): any => {
 
 const transceive = async (target, message, timeout: number = 5000) => {
   const waiter = messageWaiter(target, timeout);
-  target.postMessage(message);
+  target.postMessage(JSON.parse(JSON.stringify(message)));
   const { data } = await waiter;
   if (data.error) {
     throw data.error;
