@@ -28,7 +28,7 @@ export default async function createAuth0Client(options: Auth0ClientOptions) {
       ignoreCache: true
     });
   } catch (error) {
-    if (error.error !== 'login_required') {
+    if (error.error !== 'login_required' && error.error !== 'consent_required') {
       throw error;
     }
   }
