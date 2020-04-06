@@ -10,7 +10,8 @@ import {
   runIframe,
   sha256,
   bufferToBase64UrlEncoded,
-  oauthToken
+  oauthToken,
+  validateCrypto
 } from './utils';
 
 import { InMemoryCache, ICache, LocalStorageCache } from './cache';
@@ -84,6 +85,7 @@ export default class Auth0Client {
   private worker: Worker;
 
   constructor(private options: Auth0ClientOptions) {
+    validateCrypto();
     this.cacheLocation = options.cacheLocation || 'memory';
 
     if (!cacheFactory(this.cacheLocation)) {
@@ -181,12 +183,7 @@ export default class Auth0Client {
   public async buildAuthorizeUrl(
     options: RedirectLoginOptions = {}
   ): Promise<string> {
-    const {
-      redirect_uri,
-      appState,
-      cacheStrategy,
-      ...authorizeOptions
-    } = options;
+    const { redirect_uri, appState, ...authorizeOptions } = options;
 
     const stateIn = encode(createRandomString());
     const nonceIn = encode(createRandomString());

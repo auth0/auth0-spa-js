@@ -5,9 +5,11 @@ jest.mock('../src/transaction-manager');
 jest.mock('../src/utils');
 
 import { CacheLocation } from '../src/global';
-import Auth0Client from '../src/Auth0Client';
 
-import createAuth0Client, { GetTokenSilentlyOptions } from '../src/index';
+import createAuth0Client, {
+  Auth0Client,
+  GetTokenSilentlyOptions
+} from '../src/index';
 
 import { AuthenticationError } from '../src/errors';
 import version from '../src/version';
