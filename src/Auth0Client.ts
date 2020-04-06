@@ -103,6 +103,14 @@ export default class Auth0Client {
       ? `https://${this.options.issuer}/`
       : `${this.domainUrl}/`;
 
+    // If using refresh tokens, automatically specify the `offline_access` scope
+    if (this.options.useRefreshTokens) {
+      this.options.scope = getUniqueScopes(
+        this.options.scope,
+        'offline_access'
+      );
+    }
+
     // Don't use web workers unless using refresh tokens in memory and not IE11
     if (
       this.options.useRefreshTokens &&
