@@ -16,15 +16,15 @@ const isProduction = process.env.NODE_ENV === 'production';
 const shouldGenerateStats = process.env.WITH_STATS === 'true';
 const getPlugins = shouldMinify => {
   return [
+    webWorkerLoader({
+      sourceMap: !isProduction,
+      preserveSource: !isProduction,
+      pattern: /^[^\/].+\.worker\.ts$/
+    }),
     resolve({
       browser: true
     }),
     commonjs(),
-    webWorkerLoader({
-      sourceMap: !isProduction,
-      preserveSource: !isProduction
-      // pattern: /^[^\/].+\.worker\.ts$/
-    }),
     typescript({
       clean: true,
       useTsconfigDeclarationDir: true,

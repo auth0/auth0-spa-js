@@ -1,13 +1,23 @@
-import { AuthenticationResult, PopupConfigOptions } from './global';
+import fetch from 'unfetch';
+
+import {
+  AuthenticationResult,
+  PopupConfigOptions,
+  TokenEndpointOptions
+} from './global';
 
 import {
   DEFAULT_AUTHORIZE_TIMEOUT_IN_SECONDS,
+  DEFAULT_SILENT_TOKEN_RETRY_COUNT,
+  DEFAULT_FETCH_TIMEOUT_MS,
   CLEANUP_IFRAME_TIMEOUT_IN_SECONDS
 } from './constants';
 
 const dedupe = arr => arr.filter((x, i) => arr.indexOf(x) === i);
 
 const TIMEOUT_ERROR = { error: 'timeout', error_description: 'Timeout' };
+
+export const createAbortController = () => new AbortController();
 
 export const getUniqueScopes = (...scopes: string[]) => {
   const scopeString = scopes.filter(Boolean).join();
@@ -41,7 +51,7 @@ export const runIframe = (
   timeoutInSeconds: number = DEFAULT_AUTHORIZE_TIMEOUT_IN_SECONDS
 ) => {
   return new Promise<AuthenticationResult>((res, rej) => {
-    const iframe = window.document.createElement('iframe');
+    var iframe = window.document.createElement('iframe');
     iframe.setAttribute('width', '0');
     iframe.setAttribute('height', '0');
     iframe.style.display = 'none';
@@ -194,31 +204,115 @@ export const bufferToBase64UrlEncoded = input => {
   );
 };
 
-// TODO: figure out TS here
-const messageWaiter = (target, timeout: number): any => {
-  let _resolve, _reject, _timeout;
-  return new Promise((resolve, reject) => {
-    _timeout = setTimeout(reject, timeout);
-    target.addEventListener('message', (_resolve = resolve));
-    target.addEventListener('error', (_reject = reject));
-  }).finally(() => {
-    clearTimeout(_timeout);
-    target.removeEventListener('message', _resolve);
-    target.removeEventListener('error', _reject);
+const sendMessage = (message, to) =>
+  new Promise(function(resolve, reject) {
+    const messageChannel = new MessageChannel();
+    messageChannel.port1.onmessage = function(event) {
+      if (event.data.error) {
+        reject(event.data.error);
+      } else {
+        resolve(event.data);
+      }
+    };
+    to.postMessage(message, [messageChannel.port2]);
   });
-};
 
-const transceive = async (target, message, timeout: number = 5000) => {
-  const waiter = messageWaiter(target, timeout);
-  target.postMessage(JSON.parse(JSON.stringify(message)));
-  const { data } = await waiter;
-  if (data.error) {
-    throw data.error;
+const switchFetch = async (url, opts, worker) => {
+  if (worker) {
+    // AbortSignal is not serializable, need to implement in the Web Worker
+    delete opts.signal;
+    return sendMessage({ url, ...opts }, worker);
+  } else {
+    const response = await fetch(url, opts);
+    return {
+      ok: response.ok,
+      json: await response.json()
+    };
   }
-  return data;
 };
 
-export const oauthToken = (opts, worker) => transceive(worker, opts);
+const fetchWithTimeout = (
+  url,
+  options,
+  worker,
+  timeout = DEFAULT_FETCH_TIMEOUT_MS
+) => {
+  const controller = createAbortController();
+  const signal = controller.signal;
+
+  const fetchOptions = {
+    ...options,
+    signal
+  };
+
+  // The promise will resolve with one of these two promises (the fetch or the timeout), whichever completes first.
+  return Promise.race([
+    switchFetch(url, fetchOptions, worker),
+    new Promise((_, reject) => {
+      setTimeout(() => {
+        controller.abort();
+        reject(new Error("Timeout when executing 'fetch'"));
+      }, timeout);
+    })
+  ]);
+};
+
+const getJSON = async (url, timeout, options, worker) => {
+  let fetchError, response;
+
+  for (let i = 0; i < DEFAULT_SILENT_TOKEN_RETRY_COUNT; i++) {
+    try {
+      response = await fetchWithTimeout(url, options, worker, timeout);
+      fetchError = null;
+      break;
+    } catch (e) {
+      // Fetch only fails in the case of a network issue, so should be
+      // retried here. Failure status (4xx, 5xx, etc) return a resolved Promise
+      // with the failure in the body.
+      // https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API
+      fetchError = e;
+    }
+  }
+
+  if (fetchError) {
+    throw fetchError;
+  }
+
+  const { error, error_description, json, ok } = response;
+
+  if (!ok) {
+    const errorMessage =
+      error_description || `HTTP error. Unable to fetch ${url}`;
+    const e = <any>new Error(errorMessage);
+
+    e.error = error || 'request_error';
+    e.error_description = errorMessage;
+
+    throw e;
+  }
+
+  return json;
+};
+
+export const oauthToken = async (
+  { baseUrl, timeout, ...options }: TokenEndpointOptions,
+  worker
+) =>
+  await getJSON(
+    `${baseUrl}/oauth/token`,
+    timeout,
+    {
+      method: 'POST',
+      body: JSON.stringify({
+        redirect_uri: window.location.origin,
+        ...options
+      }),
+      headers: {
+        'Content-type': 'application/json'
+      }
+    },
+    worker
+  );
 
 export const getCrypto = () => {
   //ie 11.x uses msCrypto

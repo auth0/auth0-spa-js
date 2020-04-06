@@ -1,6 +1,5 @@
 {
   "compilerOptions": {
-    "lib": ["dom", "webworker"],
     "target": "es5",
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,

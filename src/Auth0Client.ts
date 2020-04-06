@@ -44,7 +44,7 @@ import {
 } from './global';
 
 // @ts-ignore
-import TokenWorker from 'web-worker:./token.worker.ts';
+import TokenWorker from './token.worker.ts';
 
 /**
  * @ignore
@@ -71,6 +71,8 @@ const cacheFactory = (location: string) => {
   return cacheLocationBuilders[location];
 };
 
+const isIE11 = () => window.navigator.userAgent.includes('Trident/7.0');
+
 /**
  * Auth0 SDK for Single Page Applications using [Authorization Code Grant Flow with PKCE](https://auth0.com/docs/api-auth/tutorials/authorization-code-grant-pkce).
  */
@@ -86,7 +88,7 @@ export default class Auth0Client {
 
   constructor(private options: Auth0ClientOptions) {
     validateCrypto();
-    this.cacheLocation = options.cacheLocation || 'memory';
+    this.cacheLocation = options.cacheLocation || CACHE_LOCATION_MEMORY;
 
     if (!cacheFactory(this.cacheLocation)) {
       throw new Error(`Invalid cache location "${this.cacheLocation}"`);
@@ -101,7 +103,14 @@ export default class Auth0Client {
       ? `https://${this.options.issuer}/`
       : `${this.domainUrl}/`;
 
-    this.worker = new TokenWorker();
+    // Don't use web workers unless using refresh tokens in memory and not IE11
+    if (
+      this.options.useRefreshTokens &&
+      this.cacheLocation === CACHE_LOCATION_MEMORY &&
+      !isIE11()
+    ) {
+      this.worker = new TokenWorker();
+    }
   }
 
   private _url(path) {
@@ -273,8 +282,7 @@ export default class Auth0Client {
         code_verifier,
         code: codeResult.code,
         grant_type: 'authorization_code',
-        redirect_uri: params.redirect_uri,
-        storeToken: this.cacheLocation === CACHE_LOCATION_MEMORY
+        redirect_uri: params.redirect_uri
       } as OAuthTokenOptions,
       this.worker
     );
@@ -406,8 +414,7 @@ export default class Auth0Client {
       client_id: this.options.client_id,
       code_verifier: transaction.code_verifier,
       grant_type: 'authorization_code',
-      code,
-      storeToken: this.cacheLocation === CACHE_LOCATION_MEMORY
+      code
     } as OAuthTokenOptions;
 
     // some old versions of the SDK might not have added redirect_uri to the
@@ -630,8 +637,7 @@ export default class Auth0Client {
         code_verifier,
         code: codeResult.code,
         grant_type: 'authorization_code',
-        redirect_uri: params.redirect_uri,
-        storeToken: this.cacheLocation === CACHE_LOCATION_MEMORY
+        redirect_uri: params.redirect_uri
       } as OAuthTokenOptions,
       this.worker
     );
@@ -681,8 +687,7 @@ export default class Auth0Client {
           client_id: this.options.client_id,
           grant_type: 'refresh_token',
           refresh_token: cache && cache.refresh_token,
-          redirect_uri,
-          storeToken: this.cacheLocation === CACHE_LOCATION_MEMORY
+          redirect_uri
         } as RefreshTokenOptions,
         this.worker
       );

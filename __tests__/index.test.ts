@@ -404,8 +404,7 @@ describe('Auth0', () => {
           code: TEST_CODE,
           code_verifier: TEST_RANDOM_STRING,
           grant_type: 'authorization_code',
-          redirect_uri: 'http://localhost',
-          storeToken: true
+          redirect_uri: 'http://localhost'
         },
         webWorkerMatcher
       );
@@ -440,8 +439,7 @@ describe('Auth0', () => {
           code: TEST_CODE,
           code_verifier: TEST_RANDOM_STRING,
           grant_type: 'authorization_code',
-          redirect_uri,
-          storeToken: true
+          redirect_uri
         },
         webWorkerMatcher
       );
@@ -458,8 +456,7 @@ describe('Auth0', () => {
           code: TEST_CODE,
           code_verifier: TEST_RANDOM_STRING,
           grant_type: 'authorization_code',
-          redirect_uri: 'http://localhost',
-          storeToken: true
+          redirect_uri: 'http://localhost'
         },
         webWorkerMatcher
       );
@@ -976,8 +973,7 @@ describe('Auth0', () => {
             client_id: TEST_CLIENT_ID,
             code: TEST_CODE,
             code_verifier: TEST_RANDOM_STRING,
-            grant_type: 'authorization_code',
-            storeToken: true
+            grant_type: 'authorization_code'
           },
           webWorkerMatcher
         );
@@ -1189,8 +1185,7 @@ describe('Auth0', () => {
             client_id: TEST_CLIENT_ID,
             code: TEST_CODE,
             code_verifier: TEST_RANDOM_STRING,
-            grant_type: 'authorization_code',
-            storeToken: true
+            grant_type: 'authorization_code'
           },
           webWorkerMatcher
         );
@@ -1559,8 +1554,7 @@ describe('Auth0', () => {
               refresh_token: TEST_REFRESH_TOKEN,
               client_id: TEST_CLIENT_ID,
               grant_type: 'refresh_token',
-              redirect_uri: 'http://localhost',
-              storeToken: true
+              redirect_uri: 'http://localhost'
             },
             webWorkerMatcher
           );
@@ -1796,8 +1790,7 @@ describe('Auth0', () => {
             code: TEST_CODE,
             code_verifier: TEST_RANDOM_STRING,
             grant_type: 'authorization_code',
-            redirect_uri: 'http://localhost',
-            storeToken: true
+            redirect_uri: 'http://localhost'
           },
           webWorkerMatcher
         );

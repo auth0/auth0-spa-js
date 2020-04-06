@@ -1,12 +1,14 @@
 import { DEFAULT_SILENT_TOKEN_RETRY_COUNT } from '../src/constants';
-import { createMessageHandler } from '../src/token.worker';
+import { messageHandler } from '../src/token.worker';
 import mockUnfetch from 'unfetch';
 
 jest.mock('unfetch');
 
 const oauthToken = (opts): any =>
   new Promise(resolve => {
-    createMessageHandler(resolve)({ data: opts });
+    messageHandler({
+      data: { url: '', ports: [{ postMessage: resolve }], ...opts }
+    });
   });
 
 describe('oauthToken', () => {
