@@ -278,7 +278,10 @@ const getJSON = async (url, timeout, options, worker) => {
     throw fetchError;
   }
 
-  const { error, error_description, json, ok } = response;
+  const {
+    json: { error, error_description, ...success },
+    ok
+  } = response;
 
   if (!ok) {
     const errorMessage =
@@ -291,7 +294,7 @@ const getJSON = async (url, timeout, options, worker) => {
     throw e;
   }
 
-  return json;
+  return success;
 };
 
 export const oauthToken = async (

@@ -5,6 +5,7 @@ export const messageHandler = async ({
   data: { url, ...opts },
   ports: [port]
 }) => {
+  let json;
   try {
     const body = JSON.parse(opts.body);
     if (!body.refresh_token && body.grant_type === 'refresh_token') {
@@ -19,7 +20,7 @@ export const messageHandler = async ({
     }
 
     const response = await fetch(url, opts);
-    const json = await response.json();
+    json = await response.json();
 
     if (json.refresh_token) {
       refreshToken = json.refresh_token;
@@ -31,7 +32,12 @@ export const messageHandler = async ({
       json
     });
   } catch (error) {
-    port.postMessage({ error: error.message });
+    port.postMessage({
+      ok: false,
+      json: {
+        error_description: error.message
+      }
+    });
   }
 };
 

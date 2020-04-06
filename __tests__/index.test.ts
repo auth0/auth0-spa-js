@@ -406,7 +406,7 @@ describe('Auth0', () => {
           grant_type: 'authorization_code',
           redirect_uri: 'http://localhost'
         },
-        webWorkerMatcher
+        undefined
       );
     });
 
@@ -441,7 +441,7 @@ describe('Auth0', () => {
           grant_type: 'authorization_code',
           redirect_uri
         },
-        webWorkerMatcher
+        undefined
       );
     });
 
@@ -458,7 +458,7 @@ describe('Auth0', () => {
           grant_type: 'authorization_code',
           redirect_uri: 'http://localhost'
         },
-        webWorkerMatcher
+        undefined
       );
     });
     it('calls `tokenVerifier.verify` with the `id_token` from in the oauth/token response', async () => {
@@ -975,7 +975,7 @@ describe('Auth0', () => {
             code_verifier: TEST_RANDOM_STRING,
             grant_type: 'authorization_code'
           },
-          webWorkerMatcher
+          undefined
         );
       });
       it('calls oauth/token with redirect uri from transaction if set', async () => {
@@ -1187,7 +1187,7 @@ describe('Auth0', () => {
             code_verifier: TEST_RANDOM_STRING,
             grant_type: 'authorization_code'
           },
-          webWorkerMatcher
+          undefined
         );
       });
       it('calls `tokenVerifier.verify` with the `id_token` from in the oauth/token response', async () => {
@@ -1792,7 +1792,7 @@ describe('Auth0', () => {
             grant_type: 'authorization_code',
             redirect_uri: 'http://localhost'
           },
-          webWorkerMatcher
+          undefined
         );
       });
 
