@@ -1,4 +1,5 @@
 import unfetch from 'unfetch';
+import { MISSING_REFRESH_TOKEN_ERROR_MESSAGE } from '../src/constants';
 
 jest.mock('unfetch');
 
@@ -80,7 +81,7 @@ describe('token worker', () => {
       })
     });
     expect(response.json.error_description).toEqual(
-      'The web worker is missing the refresh token, you need to get it using the authorization_code grant_type first'
+      MISSING_REFRESH_TOKEN_ERROR_MESSAGE
     );
   });
 
@@ -91,7 +92,7 @@ describe('token worker', () => {
       method: 'POST',
       body: JSON.stringify({})
     });
-    expect(response.json.error_description).toEqual('fail');
+    expect(response.error).toEqual('fail');
   });
 
   it('removes the stored refresh token if none was returned from the server', async () => {
