@@ -2,7 +2,7 @@ version: 2
 jobs:
   build:
     docker:
-      - image: cypress/browsers:chrome67
+      - image: cypress/browsers:node12.13.0-chrome80-ff74
     working_directory: ~/repo
     steps:
       - checkout
