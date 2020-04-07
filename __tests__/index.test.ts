@@ -353,7 +353,9 @@ describe('Auth0', () => {
     it('opens popup with correct popup, url and custom config', async () => {
       const { auth0, utils } = await setup();
       await auth0.loginWithPopup({}, { timeoutInSeconds: 1 });
-      expect(utils.runPopup).toHaveBeenCalledWith(
+      expect(
+        utils.runPopup
+      ).toHaveBeenCalledWith(
         `https://test.auth0.com/authorize?${TEST_QUERY_PARAMS}${TEST_TELEMETRY_QUERY_STRING}`,
         { timeoutInSeconds: 1 }
       );
@@ -369,7 +371,9 @@ describe('Auth0', () => {
         }
       );
 
-      expect(utils.runPopup).toHaveBeenCalledWith(
+      expect(
+        utils.runPopup
+      ).toHaveBeenCalledWith(
         `https://test.auth0.com/authorize?${TEST_QUERY_PARAMS}${TEST_TELEMETRY_QUERY_STRING}`,
         { timeoutInSeconds: 25 }
       );
@@ -811,7 +815,7 @@ describe('Auth0', () => {
       );
     });
 
-    describe('when there is a valid query string in the url', async () => {
+    describe('when there is a valid query string in the url', () => {
       const localSetup = async () => {
         window.history.pushState(
           {},
@@ -1041,7 +1045,7 @@ describe('Auth0', () => {
         });
       });
     });
-    describe('when there is a valid query string in a hash', async () => {
+    describe('when there is a valid query string in a hash', () => {
       const localSetup = async () => {
         window.history.pushState({}, 'Test', `/`);
         window.history.pushState(
@@ -1419,7 +1423,7 @@ describe('Auth0', () => {
   });
 
   describe('getTokenSilently()', () => {
-    describe('when `options.ignoreCache` is false', async () => {
+    describe('when `options.ignoreCache` is false', () => {
       describe('when refresh tokens are not used', () => {
         it('calls `cache.get` with the correct options', async () => {
           const { auth0, cache, utils } = await setup();
@@ -1842,7 +1846,7 @@ describe('Auth0', () => {
     });
   });
 
-  describe('getTokenWithPopup()', async () => {
+  describe('getTokenWithPopup()', () => {
     const localSetup = async () => {
       const result = await setup();
       result.auth0.loginWithPopup = jest.fn();
