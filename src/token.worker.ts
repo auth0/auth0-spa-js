@@ -1,3 +1,5 @@
+import { MISSING_REFRESH_TOKEN_ERROR_MESSAGE } from './constants';
+
 let refreshToken;
 
 const wait: any = time => new Promise(resolve => setTimeout(resolve, time));
@@ -11,19 +13,28 @@ export const messageHandler = async ({
     const body = JSON.parse(opts.body);
     if (!body.refresh_token && body.grant_type === 'refresh_token') {
       if (!refreshToken) {
-        throw new Error(
-          'The web worker is missing the refresh token, you need to get it using the authorization_code grant_type first'
-        );
+        throw new Error(MISSING_REFRESH_TOKEN_ERROR_MESSAGE);
       }
       opts.body = JSON.stringify({ ...body, refresh_token: refreshToken });
     }
 
     const abortController = new AbortController();
     const { signal } = abortController;
-    const response = await Promise.race([
-      wait(timeout),
-      fetch(url, { ...opts, signal })
-    ]);
+
+    let response;
+    try {
+      response = await Promise.race([
+        wait(timeout),
+        fetch(url, { ...opts, signal })
+      ]);
+    } catch (error) {
+      // fetch error, reject `sendMessage` using `error` key so that we retry.
+      port.postMessage({
+        error: error.message
+      });
+      return;
+    }
+
     if (!response) {
       // If the request times out, abort it and let `fetchWithTimeout` raise the error.
       abortController.abort();

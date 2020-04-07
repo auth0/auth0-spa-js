@@ -22,7 +22,8 @@ import * as ClientStorage from './storage';
 import {
   CACHE_LOCATION_MEMORY,
   DEFAULT_POPUP_CONFIG_OPTIONS,
-  DEFAULT_AUTHORIZE_TIMEOUT_IN_SECONDS
+  DEFAULT_AUTHORIZE_TIMEOUT_IN_SECONDS,
+  MISSING_REFRESH_TOKEN_ERROR_MESSAGE
 } from './constants';
 import version from './version';
 import {
@@ -700,8 +701,10 @@ export default class Auth0Client {
         this.worker
       );
     } catch (e) {
-      // TODO - only try _getTokenFromIFrame when error is missing refresh token
-      return await this._getTokenFromIFrame(options);
+      if (e.message === MISSING_REFRESH_TOKEN_ERROR_MESSAGE) {
+        return await this._getTokenFromIFrame(options);
+      }
+      throw e;
     }
     const decodedToken = this._verifyIdToken(tokenResult.id_token);
 
