@@ -93,4 +93,51 @@ describe('token worker', () => {
     });
     expect(response.json.error_description).toEqual('fail');
   });
+
+  it('removes the stored refresh token if none was returned from the server', async () => {
+    mockFetch
+      .mockReturnValueOnce(
+        Promise.resolve({
+          ok: true,
+          json: () => ({ refresh_token: 'foo' })
+        })
+      )
+      .mockReturnValue(
+        Promise.resolve({
+          ok: true,
+          json: () => ({})
+        })
+      );
+
+    await messageHandlerAsync({
+      url: '/foo',
+      method: 'POST',
+      body: JSON.stringify({
+        grant_type: 'authorization_code'
+      })
+    });
+
+    await messageHandlerAsync({
+      url: '/foo',
+      method: 'POST',
+      body: JSON.stringify({
+        grant_type: 'refresh_token'
+      })
+    });
+
+    const result = await messageHandlerAsync({
+      url: '/foo',
+      method: 'POST',
+      body: JSON.stringify({
+        grant_type: 'refresh_token'
+      })
+    });
+
+    expect(result.ok).toBe(false);
+    expect(mockFetch.mock.calls.length).toBe(2);
+
+    expect(result.json.error_description).toContain(
+      'The web worker is missing the refresh token'
+    );
+  });
 });

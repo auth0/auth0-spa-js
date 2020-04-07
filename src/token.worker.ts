@@ -23,6 +23,8 @@ export const messageHandler = async ({
     if (json.refresh_token) {
       refreshToken = json.refresh_token;
       delete json.refresh_token;
+    } else {
+      refreshToken = null;
     }
 
     port.postMessage({

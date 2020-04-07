@@ -149,6 +149,22 @@ describe('Auth0', () => {
     };
   });
 
+  describe('The Auth0Client constructor', () => {
+    describe('when using refresh tokens', () => {
+      it('automatically adds the offline_access scope', async () => {
+        const { utils } = await setup({
+          useRefreshTokens: true,
+          scope: TEST_SCOPES
+        });
+
+        expect(utils.getUniqueScopes).toHaveBeenCalledWith(
+          TEST_SCOPES,
+          'offline_access'
+        );
+      });
+    });
+  });
+
   describe('createAuth0Client()', () => {
     it('should create an Auth0 client', async () => {
       const auth0 = await createAuth0Client({

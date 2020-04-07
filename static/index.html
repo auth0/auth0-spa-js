@@ -193,6 +193,21 @@
           >
         </div>
 
+        <div class="custom-control custom-switch mb-5">
+          <input
+            type="checkbox"
+            class="custom-control-input"
+            id="constructor-switch"
+            v-model="useConstructor"
+          />
+          <label
+            for="constructor-switch"
+            class="custom-control-label"
+            data-cy="switch-use-constructor"
+            >Use Auth0Client constructor</label
+          >
+        </div>
+
         <button @click="saveForm" class="btn btn-primary">
           Save
         </button>
@@ -227,6 +242,7 @@
             useLocalStorage: data.useLocalStorage || false,
             useRefreshTokens: data.useRefreshTokens || false,
             useCache: data.useCache === false ? false : true,
+            useConstructor: data.useConstructor === false ? false : true,
             profile: null,
             access_tokens: [],
             id_token: '',
@@ -251,19 +267,17 @@
           },
           useCache: function() {
             this.saveForm();
+          },
+          useConstructor: function() {
+            this.initializeClient();
+            this.saveForm();
           }
         },
         methods: {
           initializeClient: function() {
             var _self = this;
 
-            createAuth0Client({
-              domain: _self.domain,
-              client_id: _self.clientId,
-              cacheLocation: _self.useLocalStorage ? 'localstorage' : 'memory',
-              useRefreshTokens: _self.useRefreshTokens,
-              audience: _self.audience
-            }).then(function(auth0) {
+            const _init = function(auth0) {
               _self.auth0 = auth0;
               window.auth0 = auth0; // Cypress integration tests support
               _self.loading = false;
@@ -271,7 +285,35 @@
               auth0.isAuthenticated().then(function(isAuthenticated) {
                 _self.isAuthenticated = isAuthenticated;
               });
-            });
+            };
+
+            if (_self.useConstructor) {
+              console.log('Initializing using the constructor');
+
+              _init(
+                new Auth0Client({
+                  domain: _self.domain,
+                  client_id: _self.clientId,
+                  cacheLocation: _self.useLocalStorage
+                    ? 'localstorage'
+                    : 'memory',
+                  useRefreshTokens: _self.useRefreshTokens,
+                  audience: _self.audience
+                })
+              );
+            } else {
+              console.log('Initializing using the factory function');
+
+              createAuth0Client({
+                domain: _self.domain,
+                client_id: _self.clientId,
+                cacheLocation: _self.useLocalStorage
+                  ? 'localstorage'
+                  : 'memory',
+                useRefreshTokens: _self.useRefreshTokens,
+                audience: _self.audience
+              }).then(_init);
+            }
           },
           saveForm: function() {
             localStorage.setItem(
@@ -281,6 +323,7 @@
                 clientId: this.clientId,
                 useLocalStorage: this.useLocalStorage,
                 useRefreshTokens: this.useRefreshTokens,
+                useConstructor: this.useConstructor,
                 useCache: this.useCache,
                 audience: this.audience
               })
@@ -293,6 +336,7 @@
             this.useRefreshTokens = false;
             this.useCache = true;
             this.audience = defaultAudience;
+            this.useConstructor = false;
             this.saveForm();
           },
           showAuth0Info: function() {
