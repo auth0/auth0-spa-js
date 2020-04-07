@@ -58,8 +58,7 @@ jest.mock('../src/cache', () => ({
 jest.mock('../src/token.worker');
 
 const webWorkerMatcher = expect.objectContaining({
-  postMessage: expect.any(Function),
-  addEventListener: expect.any(Function)
+  postMessage: expect.any(Function)
 });
 
 const setup = async (options = {}) => {

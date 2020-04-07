@@ -1,11 +1,10 @@
-const { createMessageHandler } = jest.requireActual('../token.worker');
+const { messageHandler } = jest.requireActual('../token.worker');
 
 export default class {
-  private handler: any;
-  addEventListener(type, cb) {
-    this.handler = createMessageHandler(cb);
-  }
-  postMessage(message) {
-    this.handler(message);
+  postMessage(data, ports) {
+    messageHandler({
+      data,
+      ports
+    });
   }
 }
