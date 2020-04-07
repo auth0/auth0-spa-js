@@ -14,9 +14,7 @@ export const messageHandler = async ({
           'The web worker is missing the refresh token, you need to get it using the authorization_code grant_type first'
         );
       }
-      opts.body = JSON.stringify(
-        Object.assign(body, { refresh_token: refreshToken })
-      );
+      opts.body = JSON.stringify({ ...body, refresh_token: refreshToken });
     }
 
     const response = await fetch(url, opts);

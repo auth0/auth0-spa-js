@@ -1,6 +1,8 @@
 import createAuth0Client, { Auth0Client } from './index';
 
-export default Object.assign(createAuth0Client, {
-  Auth0Client,
-  createAuth0Client
-});
+const wrapper = createAuth0Client as any;
+
+wrapper.Auth0Client = Auth0Client;
+wrapper.createAuth0Client = createAuth0Client;
+
+export default wrapper;
