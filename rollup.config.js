@@ -26,6 +26,7 @@ const getPlugins = shouldMinify => {
     }),
     commonjs(),
     typescript({
+      check: false,
       clean: true,
       useTsconfigDeclarationDir: true,
       include: [
