@@ -62,7 +62,7 @@
     "rollup-plugin-visualizer": "^4.0.3",
     "serve": "^11.3.0",
     "ts-jest": "^24.3.0",
-    "tslint": "^5.20.1",
+    "tslint": "^6.1.1",
     "tslint-config-security": "^1.16.0",
     "typedoc": "^0.17.4",
     "typescript": "^3.8.3",
