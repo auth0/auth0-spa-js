@@ -700,6 +700,7 @@ export default class Auth0Client {
         this.worker
       );
     } catch (e) {
+      // TODO - only try _getTokenFromIFrame when error is missing refresh token
       return await this._getTokenFromIFrame(options);
     }
     const decodedToken = this._verifyIdToken(tokenResult.id_token);

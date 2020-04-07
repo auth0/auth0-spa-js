@@ -56,7 +56,8 @@ let bundles = [
       name: EXPORT_NAME,
       file: 'dist/auth0-spa-js.development.js',
       footer,
-      format: 'umd'
+      format: 'umd',
+      sourcemap: true
     },
     plugins: [
       ...getPlugins(false),

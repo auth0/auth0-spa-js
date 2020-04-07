@@ -217,11 +217,11 @@ const sendMessage = (message, to) =>
     to.postMessage(message, [messageChannel.port2]);
   });
 
-const switchFetch = async (url, opts, worker) => {
+const switchFetch = async (url, opts, timeout, worker) => {
   if (worker) {
     // AbortSignal is not serializable, need to implement in the Web Worker
     delete opts.signal;
-    return sendMessage({ url, ...opts }, worker);
+    return sendMessage({ url, timeout, ...opts }, worker);
   } else {
     const response = await fetch(url, opts);
     return {
@@ -247,7 +247,7 @@ const fetchWithTimeout = (
 
   // The promise will resolve with one of these two promises (the fetch or the timeout), whichever completes first.
   return Promise.race([
-    switchFetch(url, fetchOptions, worker),
+    switchFetch(url, fetchOptions, timeout, worker),
     new Promise((_, reject) => {
       setTimeout(() => {
         controller.abort();

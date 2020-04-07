@@ -1,8 +1,9 @@
 let refreshToken;
 
-// TODO abort after timeout
+const wait: any = time => new Promise(resolve => setTimeout(resolve, time));
+
 export const messageHandler = async ({
-  data: { url, ...opts },
+  data: { url, timeout, ...opts },
   ports: [port]
 }) => {
   let json;
@@ -17,7 +18,18 @@ export const messageHandler = async ({
       opts.body = JSON.stringify({ ...body, refresh_token: refreshToken });
     }
 
-    const response = await fetch(url, opts);
+    const abortController = new AbortController();
+    const { signal } = abortController;
+    const response = await Promise.race([
+      wait(timeout),
+      fetch(url, { ...opts, signal })
+    ]);
+    if (!response) {
+      // If the request times out, abort it and let `fetchWithTimeout` raise the error.
+      abortController.abort();
+      return;
+    }
+
     json = await response.json();
 
     if (json.refresh_token) {
