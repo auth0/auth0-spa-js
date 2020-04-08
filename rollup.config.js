@@ -7,6 +7,7 @@ import serve from 'rollup-plugin-serve';
 import livereload from 'rollup-plugin-livereload';
 import visualizer from 'rollup-plugin-visualizer';
 import webWorkerLoader from 'rollup-plugin-web-worker-loader';
+import replace from '@rollup/plugin-replace';
 
 import pkg from './package.json';
 
@@ -14,15 +15,15 @@ const EXPORT_NAME = 'createAuth0Client';
 
 const isProduction = process.env.NODE_ENV === 'production';
 const shouldGenerateStats = process.env.WITH_STATS === 'true';
-const getPlugins = shouldMinify => {
+const getPlugins = (shouldMinify) => {
   return [
     webWorkerLoader({
       sourceMap: !isProduction,
       preserveSource: !isProduction,
-      pattern: /^[^\/].+\.worker\.ts$/
+      pattern: /^[^\/].+\.worker\.ts$/,
     }),
     resolve({
-      browser: true
+      browser: true,
     }),
     commonjs(),
     typescript({
@@ -32,18 +33,19 @@ const getPlugins = shouldMinify => {
       include: [
         'src/**/*.ts',
         'src/**/*.js',
-        'node_modules/rollup-plugin-web-worker-loader/**/*'
+        'node_modules/rollup-plugin-web-worker-loader/**/*',
       ],
       tsconfigOverride: {
         noEmit: false,
         sourceMap: true,
         compilerOptions: {
-          lib: ['dom', 'es6']
-        }
-      }
+          lib: ['dom', 'es6'],
+        },
+      },
     }),
+    replace({ 'process.env.NODE_ENV': `'${process.env.NODE_ENV}'` }),
     shouldMinify && terser(),
-    sourcemaps()
+    sourcemaps(),
   ];
 };
 const footer = `('Auth0Client' in this) && this.console && this.console.warn && this.console.warn('Auth0Client already declared on the global namespace');
@@ -57,7 +59,7 @@ let bundles = [
       file: 'dist/auth0-spa-js.development.js',
       footer,
       format: 'umd',
-      sourcemap: true
+      sourcemap: true,
     },
     plugins: [
       ...getPlugins(false),
@@ -65,14 +67,14 @@ let bundles = [
         serve({
           contentBase: ['dist', 'static'],
           open: true,
-          port: 3000
+          port: 3000,
         }),
-      !isProduction && livereload()
+      !isProduction && livereload(),
     ],
     watch: {
-      clearScreen: false
-    }
-  }
+      clearScreen: false,
+    },
+  },
 ];
 
 if (isProduction) {
@@ -84,23 +86,23 @@ if (isProduction) {
           name: EXPORT_NAME,
           file: 'dist/auth0-spa-js.production.js',
           footer,
-          format: 'umd'
-        }
+          format: 'umd',
+        },
       ],
       plugins: [
         ...getPlugins(isProduction),
-        shouldGenerateStats && visualizer()
-      ]
+        shouldGenerateStats && visualizer(),
+      ],
     },
     {
       input: 'src/index.ts',
       output: [
         {
           file: pkg.module,
-          format: 'esm'
-        }
+          format: 'esm',
+        },
       ],
-      plugins: getPlugins(isProduction)
+      plugins: getPlugins(isProduction),
     },
     {
       input: 'src/index.cjs.ts',
@@ -108,11 +110,11 @@ if (isProduction) {
         {
           name: EXPORT_NAME,
           file: pkg.main,
-          format: 'cjs'
-        }
+          format: 'cjs',
+        },
       ],
       plugins: getPlugins(false),
-      external: Object.keys(pkg.dependencies)
+      external: Object.keys(pkg.dependencies),
     }
   );
 }

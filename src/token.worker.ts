@@ -2,11 +2,11 @@ import { MISSING_REFRESH_TOKEN_ERROR_MESSAGE } from './constants';
 
 let refreshToken;
 
-const wait: any = time => new Promise(resolve => setTimeout(resolve, time));
+const wait: any = (time) => new Promise((resolve) => setTimeout(resolve, time));
 
 export const messageHandler = async ({
   data: { url, timeout, ...opts },
-  ports: [port]
+  ports: [port],
 }) => {
   let json;
   try {
@@ -25,12 +25,12 @@ export const messageHandler = async ({
     try {
       response = await Promise.race([
         wait(timeout),
-        fetch(url, { ...opts, signal })
+        fetch(url, { ...opts, signal }),
       ]);
     } catch (error) {
       // fetch error, reject `sendMessage` using `error` key so that we retry.
       port.postMessage({
-        error: error.message
+        error: error.message,
       });
       return;
     }
@@ -52,17 +52,20 @@ export const messageHandler = async ({
 
     port.postMessage({
       ok: response.ok,
-      json
+      json,
     });
   } catch (error) {
     port.postMessage({
       ok: false,
       json: {
-        error_description: error.message
-      }
+        error_description: error.message,
+      },
     });
   }
 };
 
-// @ts-ignore
-addEventListener('message', messageHandler); // TODO: if testing don't execute this line
+// Don't run `addEventListener` in our tests (this is replaced in rollup)
+if (process.env.NODE_ENV !== 'test') {
+  // @ts-ignore
+  addEventListener('message', messageHandler);
+}
