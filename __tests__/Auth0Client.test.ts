@@ -11,7 +11,7 @@ jest.mock('../src/jwt');
 jest.mock('../src/token.worker');
 
 const mockWindow = <any>global;
-const mockFetch = <jest.Mock>unfetch;
+const mockFetch = (mockWindow.fetch = <jest.Mock>unfetch);
 const mockVerify = <jest.Mock>verify;
 
 const assertUrlEquals = (actualUrl, host, path, queryParams) => {
@@ -47,9 +47,41 @@ const setup: any = (config?, claims?) => {
     )
   );
   mockVerify.mockReturnValue({
-    claims: Object.assign({}, claims)
+    claims: Object.assign(
+      {
+        exp: Date.now() / 1000 + 86400
+      },
+      claims
+    )
   });
   return auth0;
+};
+
+const login: any = async (
+  auth0,
+  tokenSuccess = true,
+  tokenResponse?,
+  code = 'my_code',
+  state = 'MTIz'
+) => {
+  await auth0.loginWithRedirect();
+  expect(mockWindow.location.assign).toHaveBeenCalled();
+  window.history.pushState({}, '', `/?code=${code}&state=${state}`);
+  mockFetch.mockResolvedValue(
+    fetchResponse(
+      tokenSuccess,
+      Object.assign(
+        {
+          id_token: 'my_id_token',
+          refresh_token: 'my_refresh_token',
+          access_token: 'my_access_token',
+          expires_in: 86400
+        },
+        tokenResponse
+      )
+    )
+  );
+  await auth0.handleRedirectCallback();
 };
 
 describe('Auth0Client', () => {
@@ -64,17 +96,15 @@ describe('Auth0Client', () => {
       }
     };
     mockWindow.MessageChannel = MessageChannel;
-    // The web worker uses native fetch.
-    mockWindow.fetch = mockFetch;
   });
 
   afterEach(() => {
-    jest.resetAllMocks();
+    jest.clearAllMocks();
   });
 
   it('should log the user in and get the token', async () => {
     const auth0 = setup();
-    await auth0.loginWithRedirect();
+    await login(auth0);
     const url = new URL(mockWindow.location.assign.mock.calls[0][0]);
     assertUrlEquals(url, 'auth0_domain', '/authorize', {
       client_id: 'auth0_client_id',
@@ -87,13 +117,6 @@ describe('Auth0Client', () => {
       code_challenge: '',
       code_challenge_method: 'S256'
     });
-    window.history.pushState({}, '', '/?code=my_code&state=MTIz');
-    mockFetch.mockResolvedValue(
-      fetchResponse(true, {
-        id_token: 'foo'
-      })
-    );
-    await auth0.handleRedirectCallback();
     assertPost('https://auth0_domain/oauth/token', {
       redirect_uri: 'my_callback_url',
       client_id: 'auth0_client_id',
@@ -108,24 +131,8 @@ describe('Auth0Client', () => {
       useRefreshTokens: true
     });
     expect(auth0.worker).toBeDefined();
-    await auth0.loginWithRedirect();
-    expect(mockWindow.location.assign).toHaveBeenCalled();
-    window.history.pushState({}, '', '/?code=my_code&state=MTIz');
-    mockFetch.mockResolvedValue(
-      fetchResponse(true, {
-        id_token: 'my_id_token',
-        refresh_token: 'my_refresh_token'
-      })
-    );
-    await auth0.handleRedirectCallback();
-    assertPost('https://auth0_domain/oauth/token', {
-      redirect_uri: 'my_callback_url',
-      client_id: 'auth0_client_id',
-      code_verifier: '123',
-      grant_type: 'authorization_code',
-      code: 'my_code'
-    });
-    await auth0.getTokenSilently();
+    await login(auth0);
+    const access_token = await auth0.getTokenSilently({ ignoreCache: true });
     assertPost(
       'https://auth0_domain/oauth/token',
       {
@@ -136,5 +143,34 @@ describe('Auth0Client', () => {
       },
       1
     );
+    expect(access_token).toEqual('my_access_token');
+  });
+
+  it('refreshes the token from the main page', async () => {
+    const auth0 = setup({
+      useRefreshTokens: true,
+      cacheLocation: 'localstorage'
+    });
+    expect(auth0.worker).toBeUndefined();
+    await login(auth0);
+    assertPost('https://auth0_domain/oauth/token', {
+      redirect_uri: 'my_callback_url',
+      client_id: 'auth0_client_id',
+      code_verifier: '123',
+      grant_type: 'authorization_code',
+      code: 'my_code'
+    });
+    const access_token = await auth0.getTokenSilently({ ignoreCache: true });
+    assertPost(
+      'https://auth0_domain/oauth/token',
+      {
+        client_id: 'auth0_client_id',
+        grant_type: 'refresh_token',
+        redirect_uri: 'my_callback_url',
+        refresh_token: 'my_refresh_token'
+      },
+      1
+    );
+    expect(access_token).toEqual('my_access_token');
   });
 });
