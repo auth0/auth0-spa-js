@@ -2,8 +2,6 @@ import 'fast-text-encoding';
 import Auth0Client from '../src/Auth0Client';
 import unfetch from 'unfetch';
 import { verify } from '../src/jwt';
-// @ts-ignore
-import TokenWorker from '../src/token.worker';
 import { MessageChannel } from 'worker_threads';
 import * as utils from '../src/utils';
 
