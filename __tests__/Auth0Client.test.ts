@@ -222,6 +222,45 @@ describe('Auth0Client', () => {
     expect(mockFetch).toBeCalledTimes(1);
   });
 
+  it('handles timeout errors from the worker', async () => {
+    const constants = require('../src/constants');
+    const originalDefaultFetchTimeoutMs = constants.DEFAULT_FETCH_TIMEOUT_MS;
+    Object.defineProperty(constants, 'DEFAULT_FETCH_TIMEOUT_MS', {
+      get: () => 100,
+    });
+    const auth0 = setup({
+      useRefreshTokens: true,
+    });
+    expect(auth0.worker).toBeDefined();
+    await login(auth0);
+    mockFetch.mockReset();
+    mockFetch.mockImplementation(
+      () =>
+        new Promise((resolve) =>
+          setTimeout(
+            () =>
+              resolve({
+                ok: true,
+                json: () => Promise.resolve({ access_token: 'access-token' }),
+              }),
+            500
+          )
+        )
+    );
+    jest.spyOn(AbortController.prototype, 'abort');
+    await expect(auth0.getTokenSilently({ ignoreCache: true })).rejects.toThrow(
+      `Timeout when executing 'fetch'`
+    );
+    // Called once for the authorization grant (noop)
+    // Called thrice for the refresh token grant in utils (noop)
+    // Called thrice for the refresh token grant in token worker
+    expect(AbortController.prototype.abort).toBeCalledTimes(7);
+    expect(mockFetch).toBeCalledTimes(3);
+    Object.defineProperty(constants, 'DEFAULT_FETCH_TIMEOUT_MS', {
+      get: () => originalDefaultFetchTimeoutMs,
+    });
+  });
+
   it('falls back to iframe when missing refresh token errors from the worker', async () => {
     const auth0 = setup({
       useRefreshTokens: true,
@@ -278,6 +317,45 @@ describe('Auth0Client', () => {
       'my_error_description'
     );
     expect(mockFetch).toBeCalledTimes(1);
+  });
+
+  it('handles timeout errors without the worker', async () => {
+    const constants = require('../src/constants');
+    const originalDefaultFetchTimeoutMs = constants.DEFAULT_FETCH_TIMEOUT_MS;
+    Object.defineProperty(constants, 'DEFAULT_FETCH_TIMEOUT_MS', {
+      get: () => 100,
+    });
+    const auth0 = setup({
+      useRefreshTokens: true,
+      cacheLocation: 'localstorage',
+    });
+    expect(auth0.worker).toBeUndefined();
+    await login(auth0);
+    mockFetch.mockReset();
+    mockFetch.mockImplementation(
+      () =>
+        new Promise((resolve) =>
+          setTimeout(
+            () =>
+              resolve({
+                ok: true,
+                json: () => Promise.resolve({ access_token: 'access-token' }),
+              }),
+            500
+          )
+        )
+    );
+    jest.spyOn(AbortController.prototype, 'abort');
+    await expect(auth0.getTokenSilently({ ignoreCache: true })).rejects.toThrow(
+      `Timeout when executing 'fetch'`
+    );
+    // Called once for the authorization grant (noop)
+    // Called thrice for the refresh token grant in utils
+    expect(AbortController.prototype.abort).toBeCalledTimes(4);
+    expect(mockFetch).toBeCalledTimes(3);
+    Object.defineProperty(constants, 'DEFAULT_FETCH_TIMEOUT_MS', {
+      get: () => originalDefaultFetchTimeoutMs,
+    });
   });
 
   it('falls back to iframe when missing refresh token errors without the worker', async () => {
