@@ -210,7 +210,7 @@ const sendMessage = (message, to) =>
     messageChannel.port1.onmessage = function(event) {
       // Only for fetch errors, as these get retried
       if (event.data.error) {
-        reject(event.data.error);
+        reject(new Error(event.data.error));
       } else {
         resolve(event.data);
       }

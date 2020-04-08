@@ -5,6 +5,7 @@ import { verify } from '../src/jwt';
 // @ts-ignore
 import TokenWorker from '../src/token.worker';
 import { MessageChannel } from 'worker_threads';
+import * as utils from '../src/utils';
 
 jest.mock('unfetch');
 jest.mock('../src/jwt');
@@ -67,7 +68,7 @@ const login: any = async (
   await auth0.loginWithRedirect();
   expect(mockWindow.location.assign).toHaveBeenCalled();
   window.history.pushState({}, '', `/?code=${code}&state=${state}`);
-  mockFetch.mockResolvedValue(
+  mockFetch.mockResolvedValueOnce(
     fetchResponse(
       tokenSuccess,
       Object.assign(
@@ -132,6 +133,14 @@ describe('Auth0Client', () => {
     });
     expect(auth0.worker).toBeDefined();
     await login(auth0);
+    mockFetch.mockResolvedValueOnce(
+      fetchResponse(true, {
+        id_token: 'my_id_token',
+        refresh_token: 'my_refresh_token',
+        access_token: 'my_access_token',
+        expires_in: 86400
+      })
+    );
     const access_token = await auth0.getTokenSilently({ ignoreCache: true });
     assertPost(
       'https://auth0_domain/oauth/token',
@@ -146,7 +155,7 @@ describe('Auth0Client', () => {
     expect(access_token).toEqual('my_access_token');
   });
 
-  it('refreshes the token from the main page', async () => {
+  it('refreshes the token without the worker', async () => {
     const auth0 = setup({
       useRefreshTokens: true,
       cacheLocation: 'localstorage'
@@ -160,6 +169,14 @@ describe('Auth0Client', () => {
       grant_type: 'authorization_code',
       code: 'my_code'
     });
+    mockFetch.mockResolvedValueOnce(
+      fetchResponse(true, {
+        id_token: 'my_id_token',
+        refresh_token: 'my_refresh_token',
+        access_token: 'my_access_token',
+        expires_in: 86400
+      })
+    );
     const access_token = await auth0.getTokenSilently({ ignoreCache: true });
     assertPost(
       'https://auth0_domain/oauth/token',
@@ -172,5 +189,96 @@ describe('Auth0Client', () => {
       1
     );
     expect(access_token).toEqual('my_access_token');
+  });
+
+  it('handles fetch errors from the worker', async () => {
+    const auth0 = setup({
+      useRefreshTokens: true
+    });
+    expect(auth0.worker).toBeDefined();
+    await login(auth0);
+    mockFetch.mockReset();
+    mockFetch.mockImplementation(() => Promise.reject(new Error('my_error')));
+    await expect(auth0.getTokenSilently({ ignoreCache: true })).rejects.toThrow(
+      'my_error'
+    );
+    expect(mockFetch).toBeCalledTimes(3);
+  });
+
+  it('handles api errors from the worker', async () => {
+    const auth0 = setup({
+      useRefreshTokens: true
+    });
+    expect(auth0.worker).toBeDefined();
+    await login(auth0);
+    mockFetch.mockReset();
+    mockFetch.mockResolvedValue(
+      fetchResponse(false, {
+        error: 'my_api_error',
+        error_description: 'my_error_description'
+      })
+    );
+    await expect(auth0.getTokenSilently({ ignoreCache: true })).rejects.toThrow(
+      'my_error_description'
+    );
+    expect(mockFetch).toBeCalledTimes(1);
+  });
+
+  it('falls back to iframe when missing refresh token errors from the worker', async () => {
+    const auth0 = setup({
+      useRefreshTokens: true
+    });
+    expect(auth0.worker).toBeDefined();
+    await login(auth0, true, { refresh_token: '' });
+    jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
+      access_token: 'my_access_token',
+      state: 'MTIz'
+    });
+    mockFetch.mockResolvedValueOnce(
+      fetchResponse(true, {
+        id_token: 'my_id_token',
+        refresh_token: 'my_refresh_token',
+        access_token: 'my_access_token',
+        expires_in: 86400
+      })
+    );
+    const access_token = await auth0.getTokenSilently({ ignoreCache: true });
+    expect(access_token).toEqual('my_access_token');
+    expect(utils.runIframe).toHaveBeenCalled();
+  });
+
+  it('handles fetch errors without the worker', async () => {
+    const auth0 = setup({
+      useRefreshTokens: true,
+      cacheLocation: 'localstorage'
+    });
+    expect(auth0.worker).toBeUndefined();
+    await login(auth0);
+    mockFetch.mockReset();
+    mockFetch.mockImplementation(() => Promise.reject(new Error('my_error')));
+    await expect(auth0.getTokenSilently({ ignoreCache: true })).rejects.toThrow(
+      'my_error'
+    );
+    expect(mockFetch).toBeCalledTimes(3);
+  });
+
+  it('handles api errors without the worker', async () => {
+    const auth0 = setup({
+      useRefreshTokens: true,
+      cacheLocation: 'localstorage'
+    });
+    expect(auth0.worker).toBeUndefined();
+    await login(auth0);
+    mockFetch.mockReset();
+    mockFetch.mockResolvedValue(
+      fetchResponse(false, {
+        error: 'my_api_error',
+        error_description: 'my_error_description'
+      })
+    );
+    await expect(auth0.getTokenSilently({ ignoreCache: true })).rejects.toThrow(
+      'my_error_description'
+    );
+    expect(mockFetch).toBeCalledTimes(1);
   });
 });
