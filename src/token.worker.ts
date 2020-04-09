@@ -4,7 +4,7 @@ let refreshToken;
 
 const wait: any = (time) => new Promise((resolve) => setTimeout(resolve, time));
 
-export const messageHandler = async ({
+const messageHandler = async ({
   data: { url, timeout, ...opts },
   ports: [port],
 }) => {
@@ -65,8 +65,10 @@ export const messageHandler = async ({
 };
 
 // Don't run `addEventListener` in our tests (this is replaced in rollup)
-/* istanbul ignore if  */
-if (process.env.NODE_ENV !== 'test') {
+/* istanbul ignore else  */
+if (process.env.NODE_ENV === 'test') {
+  module.exports = { messageHandler };
+} else {
   // @ts-ignore
   addEventListener('message', messageHandler);
 }
