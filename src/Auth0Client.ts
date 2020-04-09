@@ -72,7 +72,7 @@ const cacheFactory = (location: string) => {
   return cacheLocationBuilders[location];
 };
 
-const isIE11 = () => window.navigator.userAgent.includes('Trident/7.0');
+const isIE11 = () => /Trident.*rv:11\.0/.test(navigator.userAgent);
 
 /**
  * Auth0 SDK for Single Page Applications using [Authorization Code Grant Flow with PKCE](https://auth0.com/docs/api-auth/tutorials/authorization-code-grant-pkce).
@@ -676,6 +676,9 @@ export default class Auth0Client {
       client_id: this.options.client_id,
     });
 
+    // If you don't have a refresh token in memory
+    // and you don't have a refresh token in web worker memory
+    // fallback to an iframe.
     if ((!cache || !cache.refresh_token) && !this.worker) {
       return await this._getTokenFromIFrame(options);
     }
@@ -698,6 +701,8 @@ export default class Auth0Client {
         this.worker
       );
     } catch (e) {
+      // The web worker didn't have a refresh token in memory so
+      // fallback to an iframe.
       if (e.message === MISSING_REFRESH_TOKEN_ERROR_MESSAGE) {
         return await this._getTokenFromIFrame(options);
       }

@@ -358,7 +358,7 @@ describe('Auth0Client', () => {
     });
   });
 
-  it('falls back to iframe when missing refresh token errors without the worker', async () => {
+  it('falls back to iframe when missing refresh token without the worker', async () => {
     const auth0 = setup({
       useRefreshTokens: true,
       cacheLocation: 'localstorage',
@@ -380,5 +380,37 @@ describe('Auth0Client', () => {
     const access_token = await auth0.getTokenSilently({ ignoreCache: true });
     expect(access_token).toEqual('my_access_token');
     expect(utils.runIframe).toHaveBeenCalled();
+  });
+
+  it('falls back to iframe when missing refresh token in ie11', async () => {
+    const originalUserAgent = window.navigator.userAgent;
+    Object.defineProperty(window.navigator, 'userAgent', {
+      value:
+        'Mozilla/5.0 (Windows NT 6.1; WOW64; Trident/7.0; AS; rv:11.0) like Gecko',
+      configurable: true,
+    });
+    const auth0 = setup({
+      useRefreshTokens: true,
+    });
+    expect(auth0.worker).toBeUndefined();
+    await login(auth0, true, { refresh_token: '' });
+    jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
+      access_token: 'my_access_token',
+      state: 'MTIz',
+    });
+    mockFetch.mockResolvedValueOnce(
+      fetchResponse(true, {
+        id_token: 'my_id_token',
+        refresh_token: 'my_refresh_token',
+        access_token: 'my_access_token',
+        expires_in: 86400,
+      })
+    );
+    const access_token = await auth0.getTokenSilently({ ignoreCache: true });
+    expect(access_token).toEqual('my_access_token');
+    expect(utils.runIframe).toHaveBeenCalled();
+    Object.defineProperty(window.navigator, 'userAgent', {
+      value: originalUserAgent,
+    });
   });
 });
