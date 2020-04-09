@@ -9,14 +9,17 @@ if (!fs.existsSync(source)) {
   return;
 }
 
-const files = fs.readdirSync(source);
+const files = fs.readdirSync(source, {
+  withFileTypes: true,
+});
+
 let fileCount = 0;
 
-files.forEach(file => {
-  const src = join(source, file);
-
-  fs.copyFileSync(join(source, file), join(dest, file));
-  fileCount++;
+files.forEach((file) => {
+  if (file.isFile()) {
+    fs.copyFileSync(join(source, file.name), join(dest, file.name));
+    fileCount++;
+  }
 });
 
 rimraf.sync(source);
