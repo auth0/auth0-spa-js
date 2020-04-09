@@ -2,15 +2,15 @@ pipeline {
   agent {
     label 'crew-brucke'
   }
-   
+
   tools {
-    nodejs '10.15.1'
+    nodejs '12.9.1'
   }
- 
+
   options {
     timeout(time: 10, unit: 'MINUTES')
   }
- 
+
   stages {
     stage('SharedLibs') {
       steps {
@@ -52,7 +52,7 @@ pipeline {
       }
     }
   }
-   
+
   post {
     cleanup {
       deleteDir()
