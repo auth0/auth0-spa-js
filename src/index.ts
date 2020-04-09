@@ -13,7 +13,6 @@ import { Auth0ClientOptions } from './global';
 import { CACHE_LOCATION_MEMORY } from './constants';
 
 import './global';
-import { getUniqueScopes } from './utils';
 
 export * from './global';
 
