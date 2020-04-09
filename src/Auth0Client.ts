@@ -11,7 +11,7 @@ import {
   sha256,
   bufferToBase64UrlEncoded,
   oauthToken,
-  validateCrypto
+  validateCrypto,
 } from './utils';
 
 import { InMemoryCache, ICache, LocalStorageCache } from './cache';
@@ -23,7 +23,7 @@ import {
   CACHE_LOCATION_MEMORY,
   DEFAULT_POPUP_CONFIG_OPTIONS,
   DEFAULT_AUTHORIZE_TIMEOUT_IN_SECONDS,
-  MISSING_REFRESH_TOKEN_ERROR_MESSAGE
+  MISSING_REFRESH_TOKEN_ERROR_MESSAGE,
 } from './constants';
 import version from './version';
 import {
@@ -41,7 +41,7 @@ import {
   LogoutOptions,
   RefreshTokenOptions,
   OAuthTokenOptions,
-  CacheLocation
+  CacheLocation,
 } from './global';
 
 // @ts-ignore
@@ -62,7 +62,7 @@ const GET_TOKEN_SILENTLY_LOCK_KEY = 'auth0.lock.getTokenSilently';
  */
 const cacheLocationBuilders = {
   memory: () => new InMemoryCache().enclosedCache,
-  localstorage: () => new LocalStorageCache()
+  localstorage: () => new LocalStorageCache(),
 };
 
 /**
@@ -127,7 +127,7 @@ export default class Auth0Client {
       btoa(
         JSON.stringify({
           name: 'auth0-spa-js',
-          version: version
+          version: version,
         })
       )
     );
@@ -163,7 +163,7 @@ export default class Auth0Client {
       nonce,
       redirect_uri: redirect_uri || this.options.redirect_uri,
       code_challenge,
-      code_challenge_method: 'S256'
+      code_challenge_method: 'S256',
     };
   }
   private _authorizeUrl(authorizeOptions: AuthorizeOptions) {
@@ -176,7 +176,7 @@ export default class Auth0Client {
       id_token,
       nonce,
       leeway: this.options.leeway,
-      max_age: this._parseNumber(this.options.max_age)
+      max_age: this._parseNumber(this.options.max_age),
     });
   }
   private _parseNumber(value: any): number {
@@ -226,7 +226,7 @@ export default class Auth0Client {
       appState,
       scope: params.scope,
       audience: params.audience || 'default',
-      redirect_uri: params.redirect_uri
+      redirect_uri: params.redirect_uri,
     });
 
     return url + fragment;
@@ -269,7 +269,7 @@ export default class Auth0Client {
 
     const url = this._authorizeUrl({
       ...params,
-      response_mode: 'web_message'
+      response_mode: 'web_message',
     });
 
     const codeResult = await runPopup(url, {
@@ -277,7 +277,7 @@ export default class Auth0Client {
       timeoutInSeconds:
         config.timeoutInSeconds ||
         this.options.authorizeTimeoutInSeconds ||
-        DEFAULT_AUTHORIZE_TIMEOUT_IN_SECONDS
+        DEFAULT_AUTHORIZE_TIMEOUT_IN_SECONDS,
     });
 
     if (stateIn !== codeResult.state) {
@@ -291,7 +291,7 @@ export default class Auth0Client {
         code_verifier,
         code: codeResult.code,
         grant_type: 'authorization_code',
-        redirect_uri: params.redirect_uri
+        redirect_uri: params.redirect_uri,
       } as OAuthTokenOptions,
       this.worker
     );
@@ -303,7 +303,7 @@ export default class Auth0Client {
       decodedToken,
       scope: params.scope,
       audience: params.audience || 'default',
-      client_id: this.options.client_id
+      client_id: this.options.client_id,
     };
 
     this.cache.save(cacheEntry);
@@ -324,14 +324,14 @@ export default class Auth0Client {
   public async getUser(
     options: GetUserOptions = {
       audience: this.options.audience || 'default',
-      scope: this.options.scope || this.DEFAULT_SCOPE
+      scope: this.options.scope || this.DEFAULT_SCOPE,
     }
   ) {
     options.scope = getUniqueScopes(this.DEFAULT_SCOPE, options.scope);
 
     const cache = this.cache.get({
       client_id: this.options.client_id,
-      ...options
+      ...options,
     });
 
     return cache && cache.decodedToken && cache.decodedToken.user;
@@ -349,7 +349,7 @@ export default class Auth0Client {
   public async getIdTokenClaims(
     options: GetIdTokenClaimsOptions = {
       audience: this.options.audience || 'default',
-      scope: this.options.scope || this.DEFAULT_SCOPE
+      scope: this.options.scope || this.DEFAULT_SCOPE,
     }
   ) {
     options.scope = getUniqueScopes(
@@ -360,7 +360,7 @@ export default class Auth0Client {
 
     const cache = this.cache.get({
       client_id: this.options.client_id,
-      ...options
+      ...options,
     });
 
     return cache && cache.decodedToken && cache.decodedToken.claims;
@@ -423,7 +423,7 @@ export default class Auth0Client {
       client_id: this.options.client_id,
       code_verifier: transaction.code_verifier,
       grant_type: 'authorization_code',
-      code
+      code,
     } as OAuthTokenOptions;
 
     // some old versions of the SDK might not have added redirect_uri to the
@@ -444,7 +444,7 @@ export default class Auth0Client {
       decodedToken,
       audience: transaction.audience,
       scope: transaction.scope,
-      client_id: this.options.client_id
+      client_id: this.options.client_id,
     };
 
     this.cache.save(cacheEntry);
@@ -452,7 +452,7 @@ export default class Auth0Client {
     ClientStorage.save('auth0.is.authenticated', true, { daysUntilExpire: 1 });
 
     return {
-      appState: transaction.appState
+      appState: transaction.appState,
     };
   }
 
@@ -478,7 +478,7 @@ export default class Auth0Client {
         options.scope
       ),
       ignoreCache: false,
-      ...options
+      ...options,
     };
 
     try {
@@ -486,7 +486,7 @@ export default class Auth0Client {
         const cache = this.cache.get({
           scope: getTokenOptions.scope,
           audience: getTokenOptions.audience || 'default',
-          client_id: this.options.client_id
+          client_id: this.options.client_id,
         });
 
         if (cache && cache.access_token) {
@@ -503,7 +503,7 @@ export default class Auth0Client {
       this.cache.save({ client_id: this.options.client_id, ...authResult });
 
       ClientStorage.save('auth0.is.authenticated', true, {
-        daysUntilExpire: 1
+        daysUntilExpire: 1,
       });
 
       return authResult.access_token;
@@ -528,7 +528,7 @@ export default class Auth0Client {
   public async getTokenWithPopup(
     options: GetTokenWithPopupOptions = {
       audience: this.options.audience,
-      scope: this.options.scope || this.DEFAULT_SCOPE
+      scope: this.options.scope || this.DEFAULT_SCOPE,
     },
     config: PopupConfigOptions = DEFAULT_POPUP_CONFIG_OPTIONS
   ) {
@@ -543,7 +543,7 @@ export default class Auth0Client {
     const cache = this.cache.get({
       scope: options.scope,
       audience: options.audience || 'default',
-      client_id: this.options.client_id
+      client_id: this.options.client_id,
     });
 
     return cache.access_token;
@@ -628,7 +628,7 @@ export default class Auth0Client {
     const url = this._authorizeUrl({
       ...params,
       prompt: 'none',
-      response_mode: 'web_message'
+      response_mode: 'web_message',
     });
 
     const timeout =
@@ -646,7 +646,7 @@ export default class Auth0Client {
         code_verifier,
         code: codeResult.code,
         grant_type: 'authorization_code',
-        redirect_uri: params.redirect_uri
+        redirect_uri: params.redirect_uri,
       } as OAuthTokenOptions,
       this.worker
     );
@@ -657,7 +657,7 @@ export default class Auth0Client {
       ...tokenResult,
       decodedToken,
       scope: params.scope,
-      audience: params.audience || 'default'
+      audience: params.audience || 'default',
     };
   }
 
@@ -673,13 +673,10 @@ export default class Auth0Client {
     const cache = this.cache.get({
       scope: options.scope,
       audience: options.audience || 'default',
-      client_id: this.options.client_id
+      client_id: this.options.client_id,
     });
 
-    if (
-      (!cache || !cache.refresh_token) &&
-      this.cacheLocation !== CACHE_LOCATION_MEMORY
-    ) {
+    if ((!cache || !cache.refresh_token) && !this.worker) {
       return await this._getTokenFromIFrame(options);
     }
 
@@ -696,7 +693,7 @@ export default class Auth0Client {
           client_id: this.options.client_id,
           grant_type: 'refresh_token',
           refresh_token: cache && cache.refresh_token,
-          redirect_uri
+          redirect_uri,
         } as RefreshTokenOptions,
         this.worker
       );
@@ -712,7 +709,7 @@ export default class Auth0Client {
       ...tokenResult,
       decodedToken,
       scope: options.scope,
-      audience: options.audience || 'default'
+      audience: options.audience || 'default',
     };
   }
 }
