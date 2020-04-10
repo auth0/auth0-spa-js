@@ -95,12 +95,24 @@ describe('Auth0Client', () => {
       },
     };
     mockWindow.MessageChannel = MessageChannel;
-
     mockWindow.Worker = {};
+    jest.spyOn(utils, 'getUniqueScopes');
   });
 
   afterEach(() => {
     jest.clearAllMocks();
+  });
+
+  it('automatically adds the offline_access scope during construction', async () => {
+    setup({
+      useRefreshTokens: true,
+      scope: 'test-scope',
+    });
+
+    expect(utils.getUniqueScopes).toHaveBeenCalledWith(
+      'test-scope',
+      'offline_access'
+    );
   });
 
   it('should log the user in and get the token', async () => {
