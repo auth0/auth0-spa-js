@@ -95,6 +95,8 @@ describe('Auth0Client', () => {
       },
     };
     mockWindow.MessageChannel = MessageChannel;
+
+    mockWindow.Worker = {};
   });
 
   afterEach(() => {
@@ -186,6 +188,51 @@ describe('Auth0Client', () => {
       },
       1
     );
+    expect(access_token).toEqual('my_access_token');
+  });
+
+  it('refreshes the token without the worker, when window.Worker is undefined', async () => {
+    mockWindow.Worker = undefined;
+
+    const auth0 = setup({
+      useRefreshTokens: true,
+      cacheLocation: 'memory',
+    });
+
+    expect(auth0.worker).toBeUndefined();
+
+    await login(auth0);
+
+    assertPost('https://auth0_domain/oauth/token', {
+      redirect_uri: 'my_callback_url',
+      client_id: 'auth0_client_id',
+      code_verifier: '123',
+      grant_type: 'authorization_code',
+      code: 'my_code',
+    });
+
+    mockFetch.mockResolvedValueOnce(
+      fetchResponse(true, {
+        id_token: 'my_id_token',
+        refresh_token: 'my_refresh_token',
+        access_token: 'my_access_token',
+        expires_in: 86400,
+      })
+    );
+
+    const access_token = await auth0.getTokenSilently({ ignoreCache: true });
+
+    assertPost(
+      'https://auth0_domain/oauth/token',
+      {
+        client_id: 'auth0_client_id',
+        grant_type: 'refresh_token',
+        redirect_uri: 'my_callback_url',
+        refresh_token: 'my_refresh_token',
+      },
+      1
+    );
+
     expect(access_token).toEqual('my_access_token');
   });
 
