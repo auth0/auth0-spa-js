@@ -497,9 +497,13 @@ export default class Auth0Client {
 
       await lock.acquireLock(GET_TOKEN_SILENTLY_LOCK_KEY, 5000);
 
-      const authResult = this.options.useRefreshTokens
-        ? await this._getTokenUsingRefreshToken(getTokenOptions)
-        : await this._getTokenFromIFrame(getTokenOptions);
+      // Only get an access token using a refresh token if:
+      // * refresh tokens are enabled
+      // * no audience has been specified to getTokenSilently (we can only get a token for a new audience when using an iframe)
+      const authResult =
+        this.options.useRefreshTokens && !options.audience
+          ? await this._getTokenUsingRefreshToken(getTokenOptions)
+          : await this._getTokenFromIFrame(getTokenOptions);
 
       this.cache.save({ client_id: this.options.client_id, ...authResult });
 

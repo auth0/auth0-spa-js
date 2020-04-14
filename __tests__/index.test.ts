@@ -1574,6 +1574,26 @@ describe('Auth0', () => {
             },
           });
         });
+
+        it('falls back to the iframe method when an audience is specified', async () => {
+          const utils = require('../src/utils');
+          utils.getUniqueScopes.mockReturnValue('offline_access');
+
+          const { auth0 } = await setup({
+            useRefreshTokens: true,
+          });
+
+          await auth0.getTokenSilently({
+            audience: 'other-audience',
+            ignoreCache: true,
+          });
+
+          expect(utils.runIframe).toHaveBeenCalledWith(
+            `https://test.auth0.com/authorize?${TEST_QUERY_PARAMS}${TEST_TELEMETRY_QUERY_STRING}`,
+            'https://test.auth0.com',
+            undefined
+          );
+        });
       });
     });
 
