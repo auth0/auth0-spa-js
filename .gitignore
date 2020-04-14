@@ -6,3 +6,4 @@ stats.html
 cypress/screenshots
 cypress/videos
 .release
+.idea

@@ -204,7 +204,40 @@ export const bufferToBase64UrlEncoded = input => {
   );
 };
 
-const fetchWithTimeout = (url, options, timeout = DEFAULT_FETCH_TIMEOUT_MS) => {
+const sendMessage = (message, to) =>
+  new Promise(function(resolve, reject) {
+    const messageChannel = new MessageChannel();
+    messageChannel.port1.onmessage = function(event) {
+      // Only for fetch errors, as these get retried
+      if (event.data.error) {
+        reject(new Error(event.data.error));
+      } else {
+        resolve(event.data);
+      }
+    };
+    to.postMessage(message, [messageChannel.port2]);
+  });
+
+const switchFetch = async (url, opts, timeout, worker) => {
+  if (worker) {
+    // AbortSignal is not serializable, need to implement in the Web Worker
+    delete opts.signal;
+    return sendMessage({ url, timeout, ...opts }, worker);
+  } else {
+    const response = await fetch(url, opts);
+    return {
+      ok: response.ok,
+      json: await response.json()
+    };
+  }
+};
+
+const fetchWithTimeout = (
+  url,
+  options,
+  worker,
+  timeout = DEFAULT_FETCH_TIMEOUT_MS
+) => {
   const controller = createAbortController();
   const signal = controller.signal;
 
@@ -213,9 +246,9 @@ const fetchWithTimeout = (url, options, timeout = DEFAULT_FETCH_TIMEOUT_MS) => {
     signal
   };
 
-  // The promise will resolve with one of these two promises (the fetch and the timeout), whichever completes first.
+  // The promise will resolve with one of these two promises (the fetch or the timeout), whichever completes first.
   return Promise.race([
-    fetch(url, fetchOptions),
+    switchFetch(url, fetchOptions, timeout, worker),
     new Promise((_, reject) => {
       setTimeout(() => {
         controller.abort();
@@ -225,12 +258,12 @@ const fetchWithTimeout = (url, options, timeout = DEFAULT_FETCH_TIMEOUT_MS) => {
   ]);
 };
 
-const getJSON = async (url, timeout, options) => {
+const getJSON = async (url, timeout, options, worker) => {
   let fetchError, response;
 
   for (let i = 0; i < DEFAULT_SILENT_TOKEN_RETRY_COUNT; i++) {
     try {
-      response = await fetchWithTimeout(url, options, timeout);
+      response = await fetchWithTimeout(url, options, worker, timeout);
       fetchError = null;
       break;
     } catch (e) {
@@ -246,9 +279,12 @@ const getJSON = async (url, timeout, options) => {
     throw fetchError;
   }
 
-  const { error, error_description, ...success } = await response.json();
+  const {
+    json: { error, error_description, ...success },
+    ok
+  } = response;
 
-  if (!response.ok) {
+  if (!ok) {
     const errorMessage =
       error_description || `HTTP error. Unable to fetch ${url}`;
     const e = <any>new Error(errorMessage);
@@ -262,21 +298,25 @@ const getJSON = async (url, timeout, options) => {
   return success;
 };
 
-export const oauthToken = async ({
-  baseUrl,
-  timeout,
-  ...options
-}: TokenEndpointOptions) =>
-  await getJSON(`${baseUrl}/oauth/token`, timeout, {
-    method: 'POST',
-    body: JSON.stringify({
-      redirect_uri: window.location.origin,
-      ...options
-    }),
-    headers: {
-      'Content-type': 'application/json'
-    }
-  });
+export const oauthToken = async (
+  { baseUrl, timeout, ...options }: TokenEndpointOptions,
+  worker
+) =>
+  await getJSON(
+    `${baseUrl}/oauth/token`,
+    timeout,
+    {
+      method: 'POST',
+      body: JSON.stringify({
+        redirect_uri: window.location.origin,
+        ...options
+      }),
+      headers: {
+        'Content-type': 'application/json'
+      }
+    },
+    worker
+  );
 
 export const getCrypto = () => {
   //ie 11.x uses msCrypto

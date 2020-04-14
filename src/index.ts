@@ -13,15 +13,10 @@ import { Auth0ClientOptions } from './global';
 import { CACHE_LOCATION_MEMORY } from './constants';
 
 import './global';
-import { getUniqueScopes } from './utils';
 
 export * from './global';
 
 export default async function createAuth0Client(options: Auth0ClientOptions) {
-  if (options.useRefreshTokens) {
-    options.scope = getUniqueScopes(options.scope, 'offline_access');
-  }
-
   const auth0 = new Auth0Client(options);
 
   if (
