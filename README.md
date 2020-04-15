@@ -28,7 +28,7 @@ Auth0 SDK for Single Page Applications using [Authorization Code Grant Flow with
 From the CDN:
 
 ```html
-<script src="https://cdn.auth0.com/js/auth0-spa-js/1.7.0-beta.5/auth0-spa-js.production.js"></script>
+<script src="https://cdn.auth0.com/js/auth0-spa-js/1.7/auth0-spa-js.production.js"></script>
 ```
 
 Using [npm](https://npmjs.org):
@@ -56,25 +56,27 @@ import createAuth0Client from '@auth0/auth0-spa-js';
 const auth0 = await createAuth0Client({
   domain: '<AUTH0_DOMAIN>',
   client_id: '<AUTH0_CLIENT_ID>',
-  redirect_uri: '<MY_CALLBACK_URL>'
+  redirect_uri: '<MY_CALLBACK_URL>',
 });
 
 //with promises
 createAuth0Client({
   domain: '<AUTH0_DOMAIN>',
   client_id: '<AUTH0_CLIENT_ID>',
-  redirect_uri: '<MY_CALLBACK_URL>'
-}).then(auth0 => {
+  redirect_uri: '<MY_CALLBACK_URL>',
+}).then((auth0) => {
   //...
 });
 
 //or, you can just instantiate the client on it's own
 import { Auth0Client } from '@auth0/auth0-spa-js';
+
 const auth0 = new Auth0Client({
   domain: '<AUTH0_DOMAIN>',
   client_id: '<AUTH0_CLIENT_ID>',
-  redirect_uri: '<MY_CALLBACK_URL>'
+  redirect_uri: '<MY_CALLBACK_URL>',
 });
+
 //if you do this, you'll need to check the session yourself
 try {
   await getTokenSilently();
@@ -118,9 +120,9 @@ document.getElementById('login').addEventListener('click', () => {
 
 //in your callback route (<MY_CALLBACK_URL>)
 window.addEventListener('load', () => {
-  auth0.handleRedirectCallback().then(redirectResult => {
+  auth0.handleRedirectCallback().then((redirectResult) => {
     //logged in. you can get the user profile like this:
-    auth0.getUser().then(user => {
+    auth0.getUser().then((user) => {
       console.log(user);
     });
   });
@@ -140,8 +142,8 @@ document.getElementById('call-api').addEventListener('click', async () => {
   const result = await fetch('https://myapi.com', {
     method: 'GET',
     headers: {
-      Authorization: `Bearer ${accessToken}`
-    }
+      Authorization: `Bearer ${accessToken}`,
+    },
   });
   const data = await result.json();
   console.log(data);
@@ -151,16 +153,16 @@ document.getElementById('call-api').addEventListener('click', async () => {
 document.getElementById('call-api').addEventListener('click', () => {
   auth0
     .getTokenSilently()
-    .then(accessToken =>
+    .then((accessToken) =>
       fetch('https://myapi.com', {
         method: 'GET',
         headers: {
-          Authorization: `Bearer ${accessToken}`
-        }
+          Authorization: `Bearer ${accessToken}`,
+        },
       })
     )
-    .then(result => result.json())
-    .then(data => {
+    .then((result) => result.json())
+    .then((data) => {
       console.log(data);
     });
 });
@@ -180,7 +182,7 @@ document.getElementById('logout').addEventListener('click', () => {
 });
 ```
 
-### Data caching
+### Data caching options
 
 The SDK can be configured to cache ID tokens and access tokens either in memory or in local storage. The default is in memory. This setting can be controlled using the `cacheLocation` option when creating the Auth0 client.
 
@@ -191,13 +193,30 @@ await createAuth0Client({
   domain: '<AUTH0_DOMAIN>',
   client_id: '<AUTH0_CLIENT_ID>',
   redirect_uri: '<MY_CALLBACK_URL>',
-  cacheLocation: 'localstorage' // valid values are: 'memory' or 'localstorage'
-}).then(auth0 => {
-  // ...
+  cacheLocation: 'localstorage', // valid values are: 'memory' or 'localstorage'
 });
 ```
 
 **Important:** This feature will allow the caching of data **such as ID and access tokens** to be stored in local storage. Exercising this option changes the security characteristics of your application and **should not be used lightly**. Extra care should be taken to mitigate against XSS attacks and minimize the risk of tokens being stolen from local storage.
+
+### Refresh Tokens
+
+Refresh tokens can be used to request new access tokens. [Read more about how our refresh tokens work for browser-based applications](https://auth0.com/docs/tokens/concepts/refresh-token-rotation) to help you decide whether or not you need to use them.
+
+To enable the use of refresh tokens, set the `useRefreshTokens` option to `true`:
+
+```js
+await createAuth0Client({
+  domain: '<AUTH0_DOMAIN>',
+  client_id: '<AUTH0_CLIENT_ID>',
+  redirect_uri: '<MY_CALLBACK_URL>',
+  useRefreshTokens: true,
+});
+```
+
+Using this setting will cause the SDK to automatically send the `offline_access` scope to the authorization server. Refresh tokens will then be used to exchange for new access tokens instead of using a hidden iframe, and calls the `/oauth/token` endpoint directly. This means that the SDK does not rely on third-party cookies when using refresh tokens.
+
+**Note** This configuration option requires Rotating Refresh Tokens to be [enabled for your Auth0 Tenant](https://auth0.com/docs/tokens/guides/configure-refresh-token-rotation).
 
 ## Contributing
 
