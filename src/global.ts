@@ -1,7 +1,7 @@
 /**
  * @ignore
  */
-interface BaseLoginOptions {
+export interface BaseLoginOptions {
   /**
    * - `'page'`: displays the UI with a full page view
    * - `'popup'`: displays the UI with a popup window
@@ -61,7 +61,7 @@ interface BaseLoginOptions {
   [key: string]: any;
 }
 
-interface Auth0ClientOptions extends BaseLoginOptions {
+export interface Auth0ClientOptions extends BaseLoginOptions {
   /**
    * Your Auth0 account domain such as `'example.auth0.com'`,
    * `'example.eu.auth0.com'` or , `'example.mycompany.com'`
@@ -90,6 +90,21 @@ interface Auth0ClientOptions extends BaseLoginOptions {
    * Defaults to 60s.
    */
   leeway?: number;
+
+  /**
+   * The location to use when storing cache data. Valid values are `memory` or `localstorage`.
+   * The default setting is `memory`.
+   */
+  cacheLocation?: CacheLocation;
+
+  /**
+   * If true, refresh tokens are used to fetch new access tokens from the Auth0 server. If false, the legacy technique of using a hidden iframe and the `authorization_code` grant with `prompt=none` is used.
+   * The default setting is `false`.
+   *
+   * *Note*: Use of refresh tokens must be enabled by an administrator on your Auth0 client application.
+   */
+  useRefreshTokens?: boolean;
+
   /**
    * A maximum number of seconds to wait before declaring background calls to /authorize as failed for timeout
    * Defaults to 60s.
@@ -98,9 +113,14 @@ interface Auth0ClientOptions extends BaseLoginOptions {
 }
 
 /**
+ * The possible locations where tokens can be stored
+ */
+export type CacheLocation = 'memory' | 'localstorage';
+
+/**
  * @ignore
  */
-interface AuthorizeOptions extends BaseLoginOptions {
+export interface AuthorizeOptions extends BaseLoginOptions {
   response_type: string;
   response_mode: string;
   redirect_uri: string;
@@ -111,7 +131,7 @@ interface AuthorizeOptions extends BaseLoginOptions {
   code_challenge_method: string;
 }
 
-interface RedirectLoginOptions extends BaseLoginOptions {
+export interface RedirectLoginOptions extends BaseLoginOptions {
   /**
    * The URL where Auth0 will redirect your browser to with
    * the authentication result. It must be whitelisted in
@@ -129,16 +149,16 @@ interface RedirectLoginOptions extends BaseLoginOptions {
   fragment?: string;
 }
 
-interface RedirectLoginResult {
+export interface RedirectLoginResult {
   /**
    * State stored when the redirect request was made
    */
   appState?: any;
 }
 
-interface PopupLoginOptions extends BaseLoginOptions {}
+export interface PopupLoginOptions extends BaseLoginOptions {}
 
-interface PopupConfigOptions {
+export interface PopupConfigOptions {
   /**
    * The number of seconds to wait for a popup response before
    * throwing a timeout error. Defaults to 60s
@@ -153,7 +173,7 @@ interface PopupConfigOptions {
   popup?: any;
 }
 
-interface GetUserOptions {
+export interface GetUserOptions {
   /**
    * The scope that was used in the authentication request
    */
@@ -164,7 +184,7 @@ interface GetUserOptions {
   audience: string;
 }
 
-interface getIdTokenClaimsOptions {
+export interface GetIdTokenClaimsOptions {
   /**
    * The scope that was used in the authentication request
    */
@@ -175,7 +195,12 @@ interface getIdTokenClaimsOptions {
   audience: string;
 }
 
-interface GetTokenSilentlyOptions extends GetUserOptions {
+/*
+ * TODO: Remove this on the next major
+ */
+export type getIdTokenClaimsOptions = GetIdTokenClaimsOptions;
+
+export interface GetTokenSilentlyOptions {
   /**
    * When `true`, ignores the cache and always sends a
    * request to Auth0.
@@ -193,7 +218,16 @@ interface GetTokenSilentlyOptions extends GetUserOptions {
   redirect_uri?: string;
 
   /**
-   * A maximum number of seconds to wait before declaring the background /authorize call as failed for timeout
+   * The scope that was used in the authentication request
+   */
+  scope?: string;
+
+  /**
+   * The audience that was used in the authentication request
+   */
+  audience?: string;
+
+  /** A maximum number of seconds to wait before declaring the background /authorize call as failed for timeout
    * Defaults to 60s.
    */
   timeoutInSeconds?: number;
@@ -204,9 +238,10 @@ interface GetTokenSilentlyOptions extends GetUserOptions {
    */
   [key: string]: any;
 }
-interface GetTokenWithPopupOptions extends PopupLoginOptions {}
 
-interface LogoutOptions {
+export interface GetTokenWithPopupOptions extends PopupLoginOptions {}
+
+export interface LogoutOptions {
   /**
    * The URL where Auth0 will redirect your browser to after the logout.
    *
@@ -245,7 +280,7 @@ interface LogoutOptions {
 /**
  * @ignore
  */
-interface AuthenticationResult {
+export interface AuthenticationResult {
   state: string;
   code?: string;
   error?: string;
@@ -255,10 +290,17 @@ interface AuthenticationResult {
 /**
  * @ignore
  */
-interface OAuthTokenOptions {
+export interface TokenEndpointOptions {
   baseUrl: string;
   client_id: string;
-  audience?: string;
+  grant_type: string;
+  timeout?: number;
+}
+
+/**
+ * @ignore
+ */
+export interface OAuthTokenOptions extends TokenEndpointOptions {
   code_verifier: string;
   code: string;
   redirect_uri: string;
@@ -267,7 +309,14 @@ interface OAuthTokenOptions {
 /**
  * @ignore
  */
-interface JWTVerifyOptions {
+export interface RefreshTokenOptions extends TokenEndpointOptions {
+  refresh_token: string;
+}
+
+/**
+ * @ignore
+ */
+export interface JWTVerifyOptions {
   iss: string;
   aud: string;
   id_token: string;
@@ -279,7 +328,7 @@ interface JWTVerifyOptions {
 /**
  * @ignore
  */
-interface IdToken {
+export interface IdToken {
   __raw: string;
   name?: string;
   given_name?: string;

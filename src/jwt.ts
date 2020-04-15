@@ -1,4 +1,5 @@
 import { urlDecodeB64 } from './utils';
+import { IdToken, JWTVerifyOptions } from './global';
 
 const isNumber = n => typeof n === 'number';
 

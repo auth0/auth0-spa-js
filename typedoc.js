@@ -14,6 +14,7 @@ module.exports = {
     '**/__tests__/**/*',
     '**/cypress/**/*',
     '**/node_modules/**/*',
+    '**/__mocks__/**/*',
     ...excludeFiles.map(f => `./src/${f}.ts`)
   ],
   mode: 'file',

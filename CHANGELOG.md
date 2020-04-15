@@ -1,5 +1,54 @@
 # Change Log
 
+## [v1.7.0-beta.5](https://github.com/auth0/auth0-spa-js/tree/v1.7.0-beta.5) (2020-03-26)
+
+[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v1.7.0-beta.4...v1.7.0-beta.5)
+
+**Changed**
+
+- [SDK-1379] Export constructor [\#385](https://github.com/auth0/auth0-spa-js/pull/385) ([adamjmcgrath](https://github.com/adamjmcgrath))
+
+## [v1.7.0-beta.4](https://github.com/auth0/auth0-spa-js/tree/v1.7.0-beta.4) (2020-03-03)
+
+[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v1.7.0-beta.3...v1.7.0-beta.4)
+
+**Changed**
+
+- [SDK-1386] Fall back to iframe method if no refresh token is available [\#364](https://github.com/auth0/auth0-spa-js/pull/364) ([stevehobbsdev](https://github.com/stevehobbsdev))
+
+**Fixed**
+
+- Fix error in library type definitions [\#367](https://github.com/auth0/auth0-spa-js/pull/367) ([devoto13](https://github.com/devoto13))
+
+## [v1.7.0-beta.3](https://github.com/auth0/auth0-spa-js/tree/v1.7.0-beta.3) (2020-02-17)
+
+[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v1.7.0-beta.2...v1.7.0-beta.3)
+
+**Added**
+
+- Export types from global TypeScript file. [\#310](https://github.com/auth0/auth0-spa-js/pull/310) ([maxswa](https://github.com/maxswa))
+
+**Changed**
+
+- [SDK-1352] Removed setTimeout cache removal in favour of removal-on-read [\#354](https://github.com/auth0/auth0-spa-js/pull/354) ([stevehobbsdev](https://github.com/stevehobbsdev))
+- [SDK-1352] Stop checking `isAuthenticated` cookie on initialization when using local storage [\#352](https://github.com/auth0/auth0-spa-js/pull/352) ([stevehobbsdev](https://github.com/stevehobbsdev))
+- [SDK-1279] getTokenSilently retry logic [\#336](https://github.com/auth0/auth0-spa-js/pull/336) ([stevehobbsdev](https://github.com/stevehobbsdev))
+
+## [v1.7.0-beta.2](https://github.com/auth0/auth0-spa-js/tree/v1.7.0-beta.2) (2020-01-16)
+
+[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v1.7.0-beta.1...v1.7.0-beta.2)
+
+**Changed**
+
+- Fixed issue with cache not retaining refresh token [\#333](https://github.com/auth0/auth0-spa-js/pull/333) ([stevehobbsdev](https://github.com/stevehobbsdev))
+
+## [v1.7.0-beta.1](https://github.com/auth0/auth0-spa-js/tree/v1.7.0-beta.1) (2020-01-08)
+
+**Added**
+
+- Ability to use either an in-memory cache (the default) or localstorage to store tokens - [stevehobbsdev](https://github.com/stevehobbsdev) - https://github.com/auth0/auth0-spa-js/pull/303
+- Added support for rotating refresh tokens - [stevehobbsdev](https://github.com/stevehobbsdev) - https://github.com/auth0/auth0-spa-js/pull/315
+
 ## [v1.6.5](https://github.com/auth0/auth0-spa-js/tree/v1.6.5) (2020-03-19)
 
 [Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v1.6.4...v1.6.5)

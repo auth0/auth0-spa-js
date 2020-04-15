@@ -5,32 +5,36 @@ import 'core-js/es/array/includes';
 import 'core-js/es/string/includes';
 import 'promise-polyfill/src/polyfill';
 import 'fast-text-encoding';
+import 'abortcontroller-polyfill/dist/abortcontroller-polyfill-only';
 
 import Auth0Client from './Auth0Client';
 import * as ClientStorage from './storage';
+import { Auth0ClientOptions } from './global';
+import { CACHE_LOCATION_MEMORY } from './constants';
 
-//this is necessary to export the type definitions used in this file
 import './global';
-import { validateCrypto } from './utils';
+
+export * from './global';
 
 export default async function createAuth0Client(options: Auth0ClientOptions) {
-  validateCrypto();
-
   const auth0 = new Auth0Client(options);
 
-  if (!ClientStorage.get('auth0.is.authenticated')) {
+  if (
+    auth0.cacheLocation === CACHE_LOCATION_MEMORY &&
+    !ClientStorage.get('auth0.is.authenticated')
+  ) {
     return auth0;
   }
+
   try {
-    await auth0.getTokenSilently({
-      audience: options.audience,
-      scope: options.scope,
-      ignoreCache: true
-    });
+    await auth0.getTokenSilently();
   } catch (error) {
     if (error.error !== 'login_required') {
       throw error;
     }
   }
+
   return auth0;
 }
+
+export { Auth0Client };

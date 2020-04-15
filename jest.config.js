@@ -8,5 +8,6 @@ module.exports = {
     './jest.config.js'
   ],
   coverageReporters: ['lcov', 'text', 'text-summary'],
-  preset: 'ts-jest'
+  preset: 'ts-jest',
+  setupFiles: ['jest-localstorage-mock']
 };
