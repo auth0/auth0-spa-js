@@ -42,7 +42,8 @@ export const runIframe = (
   timeoutInSeconds: number = DEFAULT_AUTHORIZE_TIMEOUT_IN_SECONDS
 ) => {
   return new Promise<AuthenticationResult>((res, rej) => {
-    const iframe = window.document.createElement('iframe');
+    let iframe = window.document.createElement('iframe');
+
     iframe.setAttribute('width', '0');
     iframe.setAttribute('height', '0');
     iframe.style.display = 'none';
@@ -53,23 +54,31 @@ export const runIframe = (
       }
     };
 
+    let iframeEventHandler;
+
     const timeoutSetTimeoutId = setTimeout(() => {
       rej(new TimeoutError());
       removeIframe();
+      window.removeEventListener('message', iframeEventHandler, false);
     }, timeoutInSeconds * 1000);
 
-    const iframeEventHandler = function (e: MessageEvent) {
+    iframeEventHandler = function (e: MessageEvent) {
       if (e.origin != eventOrigin) return;
       if (!e.data || e.data.type !== 'authorization_response') return;
+
       const eventSource = e.source;
+
       if (eventSource) {
         (eventSource as any).close();
       }
+
       e.data.response.error
         ? rej(GenericError.fromPayload(e.data.response))
         : res(e.data.response);
+
       clearTimeout(timeoutSetTimeoutId);
       window.removeEventListener('message', iframeEventHandler, false);
+
       // Delay the removal of the iframe to prevent hanging loading status
       // in Chrome: https://github.com/auth0/auth0-spa-js/issues/240
       setTimeout(removeIframe, CLEANUP_IFRAME_TIMEOUT_IN_SECONDS * 1000);
@@ -107,20 +116,30 @@ export const runPopup = (authorizeUrl: string, config: PopupConfigOptions) => {
   }
 
   return new Promise<AuthenticationResult>((resolve, reject) => {
+    let popupEventListener;
+
     const timeoutId = setTimeout(() => {
       reject(new PopupTimeoutError(popup));
+      window.removeEventListener('message', popupEventListener, false);
     }, (config.timeoutInSeconds || DEFAULT_AUTHORIZE_TIMEOUT_IN_SECONDS) * 1000);
-    window.addEventListener('message', e => {
+
+    popupEventListener = function (e: MessageEvent) {
       if (!e.data || e.data.type !== 'authorization_response') {
         return;
       }
+
       clearTimeout(timeoutId);
+      window.removeEventListener('message', popupEventListener, false);
       popup.close();
+
       if (e.data.response.error) {
         return reject(GenericError.fromPayload(e.data.response));
       }
+
       resolve(e.data.response);
-    });
+    };
+
+    window.addEventListener('message', e => popupEventListener);
   });
 };
 
@@ -368,7 +387,7 @@ export const validateCrypto = () => {
   if (typeof getCryptoSubtle() === 'undefined') {
     throw new Error(`
       auth0-spa-js must run on a secure origin.
-      See https://github.com/auth0/auth0-spa-js/blob/master/FAQ.md#why-do-i-get-auth0-spa-js-must-run-on-a-secure-origin 
+      See https://github.com/auth0/auth0-spa-js/blob/master/FAQ.md#why-do-i-get-auth0-spa-js-must-run-on-a-secure-origin
       for more information.
     `);
   }
