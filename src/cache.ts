@@ -1,6 +1,9 @@
+import { IdToken } from './global';
+
 interface CacheKeyData {
   audience: string;
   scope: string;
+  client_id: string;
 }
 
 interface DecodedToken {
@@ -8,39 +11,178 @@ interface DecodedToken {
   user: any;
 }
 
-interface CacheEntry extends CacheKeyData {
+interface CacheEntry {
   id_token: string;
   access_token: string;
   expires_in: number;
   decodedToken: DecodedToken;
+  audience: string;
+  scope: string;
+  client_id: string;
+  refresh_token?: string;
 }
 
-interface CachedTokens {
-  [key: string]: CacheEntry;
+export interface ICache {
+  save(entry: CacheEntry): void;
+  get(key: CacheKeyData): Partial<CacheEntry>;
+  clear(): void;
 }
 
-const createKey = (e: CacheKeyData) => `${e.audience}::${e.scope}`;
+const keyPrefix = '@@auth0spajs@@';
+const createKey = (e: CacheKeyData) =>
+  `${keyPrefix}::${e.client_id}::${e.audience}::${e.scope}`;
 
-const getExpirationTimeoutInMilliseconds = (expiresIn: number, exp: number) => {
-  const expTime =
-    (new Date(exp * 1000).getTime() - new Date().getTime()) / 1000;
-  return Math.min(expiresIn, expTime) * 1000 * 0.8;
+type CachePayload = {
+  body: Partial<CacheEntry>;
+  expiresAt: number;
 };
 
-export default class Cache {
-  cache: CachedTokens = {};
-  public save(entry: CacheEntry) {
-    const key = createKey(entry);
-    this.cache[key] = entry;
-    const timeout = getExpirationTimeoutInMilliseconds(
-      entry.expires_in,
-      entry.decodedToken.claims.exp
-    );
-    setTimeout(() => {
-      delete this.cache[key];
-    }, timeout);
+/**
+ * Wraps the specified cache entry and returns the payload
+ * @param entry The cache entry to wrap
+ */
+const wrapCacheEntry = (entry: CacheEntry): CachePayload => {
+  const expiresInTime = Math.floor(Date.now() / 1000) + entry.expires_in;
+  const expirySeconds =
+    Math.min(expiresInTime, entry.decodedToken.claims.exp) - 60; // take off a small leeway
+
+  return {
+    body: entry,
+    expiresAt: expirySeconds
+  };
+};
+
+export class LocalStorageCache implements ICache {
+  public save(entry: CacheEntry): void {
+    const cacheKey = createKey(entry);
+    const payload = wrapCacheEntry(entry);
+
+    window.localStorage.setItem(cacheKey, JSON.stringify(payload));
   }
-  public get(key: CacheKeyData) {
-    return this.cache[createKey(key)];
+
+  public get(key: CacheKeyData): Partial<CacheEntry> {
+    const cacheKey = createKey(key);
+    const payload = this.readJson(cacheKey);
+    const nowSeconds = Math.floor(Date.now() / 1000);
+
+    if (!payload) return;
+
+    if (payload.expiresAt < nowSeconds) {
+      if (payload.body.refresh_token) {
+        const newPayload = this.stripData(payload);
+        this.writeJson(cacheKey, newPayload);
+
+        return newPayload.body;
+      }
+
+      localStorage.removeItem(cacheKey);
+      return;
+    }
+
+    return payload.body;
   }
+
+  public clear() {
+    for (var i = localStorage.length - 1; i >= 0; i--) {
+      if (localStorage.key(i).startsWith(keyPrefix)) {
+        localStorage.removeItem(localStorage.key(i));
+      }
+    }
+  }
+
+  /**
+   * Retrieves data from local storage and parses it into the correct format
+   * @param cacheKey The cache key
+   */
+  private readJson(cacheKey: string): CachePayload {
+    const json = window.localStorage.getItem(cacheKey);
+    let payload;
+
+    if (!json) {
+      return;
+    }
+
+    payload = JSON.parse(json);
+
+    if (!payload) {
+      return;
+    }
+
+    return payload;
+  }
+
+  /**
+   * Writes the payload as JSON to localstorage
+   * @param cacheKey The cache key
+   * @param payload The payload to write as JSON
+   */
+  private writeJson(cacheKey: string, payload: CachePayload) {
+    localStorage.setItem(cacheKey, JSON.stringify(payload));
+  }
+
+  /**
+   * Produce a copy of the payload with everything removed except the refresh token
+   * @param payload The payload
+   */
+  private stripData(payload: CachePayload): CachePayload {
+    const { refresh_token } = payload.body;
+
+    const strippedPayload: CachePayload = {
+      body: { refresh_token: refresh_token },
+      expiresAt: payload.expiresAt
+    };
+
+    return strippedPayload;
+  }
+}
+
+export class InMemoryCache {
+  public enclosedCache: ICache = (function() {
+    let cache: CachePayload = {
+      body: {},
+      expiresAt: 0
+    };
+
+    return {
+      save(entry: CacheEntry) {
+        const key = createKey(entry);
+        const payload = wrapCacheEntry(entry);
+
+        cache[key] = payload;
+      },
+
+      get(key: CacheKeyData) {
+        const cacheKey = createKey(key);
+        const wrappedEntry: CachePayload = cache[cacheKey];
+        const nowSeconds = Math.floor(Date.now() / 1000);
+
+        if (!wrappedEntry) {
+          return;
+        }
+
+        if (wrappedEntry.expiresAt < nowSeconds) {
+          if (wrappedEntry.body.refresh_token) {
+            wrappedEntry.body = {
+              refresh_token: wrappedEntry.body.refresh_token
+            };
+
+            return wrappedEntry.body;
+          }
+
+          delete cache[cacheKey];
+
+          return;
+        }
+
+        return wrappedEntry.body;
+      },
+
+      clear() {
+        cache = {
+          body: {},
+          expiresAt: 0
+        };
+      }
+    };
+  })();
 }

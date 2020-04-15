@@ -1,16 +1,10 @@
-import { decode } from 'qss';
-import {
-  shouldBe,
-  shouldNotBe,
-  shouldBeUndefined,
-  shouldNotBeUndefined,
-  whenReady
-} from '../support/utils';
+import { shouldBe, whenReady } from '../support/utils';
 
 describe('getTokenSilently', function() {
   beforeEach(cy.resetTests);
+  afterEach(cy.logout);
 
-  it('return error when not logged in', function(done) {
+  it('returns an error when not logged in', function(done) {
     whenReady().then(win =>
       win.auth0.getTokenSilently().catch(error => {
         shouldBe('login_required', error.error);
@@ -19,73 +13,86 @@ describe('getTokenSilently', function() {
     );
   });
 
-  it.skip('Builds URL correctly', function(done) {
-    cy.login().then(() => {
-      whenReady().then(win => {
-        var iframe = win.document.createElement('iframe');
-        cy.stub(win.document, 'createElement', type =>
-          type === 'iframe' ? iframe : window.document.createElement
-        );
-        return win.auth0.getTokenSilently().then(() => {
-          const parsedUrl = new URL(iframe.src);
-          shouldBe(parsedUrl.host, 'brucke.auth0.com');
-          const pageParams = decode(parsedUrl.search.substr(1));
-          shouldBeUndefined(pageParams.code_verifier);
-          shouldNotBeUndefined(pageParams.code_challenge);
-          shouldNotBeUndefined(pageParams.code_challenge_method);
-          shouldNotBeUndefined(pageParams.state);
-          shouldNotBeUndefined(pageParams.nonce);
-          shouldBe(pageParams.redirect_uri, win.location.origin);
-          shouldBe(pageParams.response_mode, 'web_message');
-          shouldBe(pageParams.response_type, 'code');
-          shouldBe(pageParams.scope, 'openid profile email');
-          shouldBe(pageParams.client_id, 'wLSIP47wM39wKdDmOj6Zb5eSEw3JVhVp');
-          done();
+  describe('when using an iframe', () => {
+    describe('using an in-memory store', () => {
+      it('gets a new access token', () => {
+        return whenReady().then(win => {
+          cy.login().then(() => {
+            cy.get('[data-cy=get-token]').click();
+            cy.get('[data-cy=access-token]').should('have.length', 2); // 1 from handleRedirectCallback, 1 from clicking "Get access token"
+            cy.get('[data-cy=error]').should('not.exist');
+          });
+        });
+      });
+
+      it('can get the access token after refreshing the page', () => {
+        return whenReady().then(win => {
+          cy.login().then(() => {
+            cy.reload();
+
+            cy.get('[data-cy=get-token]')
+              .click()
+              .wait(500)
+              .get('[data-cy=access-token]')
+              .should('have.length', 1);
+
+            cy.get('[data-cy=error]').should('not.exist');
+          });
         });
       });
     });
-  });
 
-  it('return cached token after login', function(done) {
-    cy.login().then(() => {
-      whenReady().then(win =>
-        win.auth0.getTokenSilently().then(token => {
-          shouldNotBeUndefined(token);
-          win.auth0.getTokenSilently().then(token2 => {
-            shouldNotBeUndefined(token2);
-            shouldBe(token, token2);
-            done();
+    describe('using local storage', () => {
+      it('can get the access token after refreshing the page', () => {
+        return whenReady().then(win => {
+          cy.toggleSwitch('local-storage');
+
+          cy.login().then(() => {
+            cy.reload().wait(5000);
+
+            cy.get('[data-cy=get-token]')
+              .click()
+              .wait(500)
+              .get('[data-cy=access-token]')
+              .should('have.length', 1)
+              .then(() => {
+                expect(
+                  win.localStorage.getItem(
+                    '@@auth0spajs@@::wLSIP47wM39wKdDmOj6Zb5eSEw3JVhVp::default::openid profile email'
+                  )
+                ).to.not.be.null;
+              });
+
+            cy.get('[data-cy=error]').should('not.exist');
           });
-        })
-      );
-    });
-  });
+        });
+      });
 
-  it('ignores cache if `ignoreCache:true`', function(done) {
-    cy.login().then(() => {
-      whenReady().then(win =>
-        win.auth0.getTokenSilently().then(token => {
-          shouldNotBeUndefined(token);
-          win.auth0.getTokenSilently({ ignoreCache: true }).then(token2 => {
-            shouldNotBeUndefined(token2);
-            shouldNotBe(token, token2);
-            done();
+      describe('when using refresh tokens', () => {
+        /**
+         * This test will fail with a 'consent_required' error when running on localhost, but the fact that it does
+         * proves that the iframe method was attempted even though we're supposed to be using refresh tokens.
+         */
+        it.skip('attempts to retrieve an access token by falling back to the iframe method', () => {
+          return whenReady().then(win => {
+            cy.toggleSwitch('local-storage');
+            cy.toggleSwitch('use-cache');
+
+            cy.login().then(() => {
+              cy.toggleSwitch('refresh-tokens').wait(1000);
+              win.localStorage.clear();
+
+              cy.get('[data-cy=get-token]')
+                .click()
+                .wait(500)
+                .get('[data-cy=access-token]')
+                .should('have.length', 1);
+
+              cy.get('[data-cy=error]').should('contain', 'consent_required');
+            });
           });
-        })
-      );
-    });
-  });
-
-  it('returns consent_required when using an audience without consent', function(done) {
-    cy.login().then(() => {
-      whenReady().then(win =>
-        win.auth0
-          .getTokenSilently({ audience: 'https://brucke.auth0.com/api/v2/' })
-          .catch(error => {
-            shouldBe('consent_required', error.error);
-            done();
-          })
-      );
+        });
+      });
     });
   });
 });
