@@ -621,6 +621,7 @@ describe('utils', () => {
         expect(type).toBe('iframe');
         return iframe;
       });
+      window.document.body.contains = () => true;
       window.document.body.appendChild = jest.fn();
       window.document.body.removeChild = jest.fn();
       return { iframe, url, origin };
