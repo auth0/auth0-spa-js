@@ -1,5 +1,36 @@
 # Change Log
 
+## [v1.7.0](https://github.com/auth0/auth0-spa-js/tree/v1.7.0) (2020-04-15)
+
+[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v1.7.0-beta.5...v1.7.0)
+
+**Added**
+
+- Support for rotating refresh tokens [\#315](https://github.com/auth0/auth0-spa-js/pull/315) ([stevehobbsdev](https://github.com/stevehobbsdev))
+- Export types from global TypeScript file. [\#310](https://github.com/auth0/auth0-spa-js/pull/310) ([maxswa](https://github.com/maxswa))
+- Local Storage caching mechanism [\#303](https://github.com/auth0/auth0-spa-js/pull/303) ([stevehobbsdev](https://github.com/stevehobbsdev))
+
+**Changed**
+
+- Use Web Workers for token endpoint call for in-memory storage [\#409](https://github.com/auth0/auth0-spa-js/pull/409) ([adamjmcgrath](https://github.com/adamjmcgrath))
+- Export constructor [\#385](https://github.com/auth0/auth0-spa-js/pull/385) ([adamjmcgrath](https://github.com/adamjmcgrath))
+- Fall back to iframe method if no refresh token is available [\#364](https://github.com/auth0/auth0-spa-js/pull/364) ([stevehobbsdev](https://github.com/stevehobbsdev))
+- Removed setTimeout cache removal in favour of removal-on-read [\#354](https://github.com/auth0/auth0-spa-js/pull/354) ([stevehobbsdev](https://github.com/stevehobbsdev))
+- Stop checking `isAuthenticated` cookie on initialization when using local storage [\#352](https://github.com/auth0/auth0-spa-js/pull/352) ([stevehobbsdev](https://github.com/stevehobbsdev))
+- getTokenSilently retry logic [\#336](https://github.com/auth0/auth0-spa-js/pull/336) ([stevehobbsdev](https://github.com/stevehobbsdev))
+- Fixed issue with cache not retaining refresh token [\#333](https://github.com/auth0/auth0-spa-js/pull/333) ([stevehobbsdev](https://github.com/stevehobbsdev))
+
+**Fixed**
+
+- Check if source of event exists before closing it [\#410](https://github.com/auth0/auth0-spa-js/pull/410) ([gerritdeperrit](https://github.com/gerritdeperrit))
+- Check if iframe is still in body before removing [\#399](https://github.com/auth0/auth0-spa-js/pull/399) ([paulfalgout](https://github.com/paulfalgout))
+- Fix typings to allow custom claims in ID token [\#386](https://github.com/auth0/auth0-spa-js/pull/386) ([picosam](https://github.com/picosam))
+- Fix error in library type definitions [\#367](https://github.com/auth0/auth0-spa-js/pull/367) ([devoto13](https://github.com/devoto13))
+
+**Security**
+
+- Dependency upgrade [\#405](https://github.com/auth0/auth0-spa-js/pull/405) ([stevehobbsdev](https://github.com/stevehobbsdev))
+
 ## [v1.7.0-beta.5](https://github.com/auth0/auth0-spa-js/tree/v1.7.0-beta.5) (2020-03-26)
 
 [Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v1.7.0-beta.4...v1.7.0-beta.5)

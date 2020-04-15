@@ -72,6 +72,9 @@ const cacheFactory = (location: string) => {
   return cacheLocationBuilders[location];
 };
 
+/**
+ * @ignore
+ */
 const isIE11 = () => /Trident.*rv:11\.0/.test(navigator.userAgent);
 
 /**
@@ -467,6 +470,19 @@ export default class Auth0Client {
    * as arguments. Random and secure `state` and `nonce` parameters
    * will be auto-generated. If the response is successful, results
    * will be valid according to their expiration times.
+   *
+   * If refresh tokens are used, the token endpoint is called directly with the
+   * 'refresh_token' grant. If no refresh token is available to make this call,
+   * the SDK falls back to using an iframe to the '/authorize' URL.
+   *
+   * This method may use a web worker to perform the token call if the in-memory
+   * cache is used.
+   *
+   * If an `audience` value is given to this function, the SDK always falls
+   * back to using an iframe to make the token exchange.
+   *
+   * Note that in all cases, falling back to an iframe requires access to
+   * the `auth0` cookie.
    *
    * @param options
    */
