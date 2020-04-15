@@ -110,6 +110,12 @@ export interface Auth0ClientOptions extends BaseLoginOptions {
    * Defaults to 60s.
    */
   authorizeTimeoutInSeconds?: number;
+
+  /**
+   * A maximum number of seconds to wait before declaring background calls to /logout as failed for timeout
+   * Defaults to 60s.
+   */
+  logoutTimeoutInSeconds?: number;
 }
 
 /**
@@ -241,24 +247,7 @@ export interface GetTokenSilentlyOptions {
 
 export interface GetTokenWithPopupOptions extends PopupLoginOptions {}
 
-export interface LogoutOptions {
-  /**
-   * The URL where Auth0 will redirect your browser to after the logout.
-   *
-   * > Note that if the `client_id` parameter is included, the
-   * `returnTo` URL that is provided must be listed in the
-   * Application's "Allowed Logout URLs" in the Auth0 dashboard.
-   * However, if the `client_id` parameter is not included, the
-   * `returnTo` URL must be listed in the "Allowed Logout URLs" at
-   * the account level in the Auth0 dashboard.
-   */
-  returnTo?: string;
-
-  /**
-   * The `client_id` of your application.
-   */
-  client_id?: string;
-
+export interface CommonLogoutOptions {
   /**
    * When supported by the upstream identity provider,
    * forces the user to logout of their identity provider
@@ -276,7 +265,39 @@ export interface LogoutOptions {
    */
   localOnly?: boolean;
 }
+export interface LogoutOptions extends CommonLogoutOptions {
+  /**
+   * The URL where Auth0 will redirect your browser to after the logout.
+   *
+   * > Note that if the `client_id` parameter is included, the
+   * `returnTo` URL that is provided must be listed in the
+   * Application's "Allowed Logout URLs" in the Auth0 dashboard.
+   * However, if the `client_id` parameter is not included, the
+   * `returnTo` URL must be listed in the "Allowed Logout URLs" at
+   * the account level in the Auth0 dashboard.
+   */
+  returnTo?: string;
 
+  /**
+   * The `client_id` of your application.
+   */
+  client_id?: string;
+}
+export interface LogoutSilentlyOptions extends CommonLogoutOptions {
+  /**
+   * A maximum number of seconds to wait before declaring the background /authorize call as failed for timeout
+   * Defaults to 60s.
+   */
+  timeoutInSeconds?: number;
+  /**
+   * The scope to clear from the local cache
+   */
+  scope?: string;
+  /**
+   * The audience to clear from the local cache
+   */
+  audience?: string;
+}
 /**
  * @ignore
  */

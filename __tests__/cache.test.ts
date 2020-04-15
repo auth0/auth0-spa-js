@@ -409,4 +409,27 @@ describe('LocalStorageCache', () => {
       '@@auth0spajs@@::key-2'
     );
   });
+  it('deletes key correctly', () => {
+    cache.save({
+      audience: 'the_audiene',
+      scope: 'the_scope',
+      id_token: 'idtoken',
+      access_token: 'accesstoken',
+      expires_in: 2,
+      decodedToken: {
+        claims: {
+          __raw: 'idtoken',
+          name: 'Test',
+          exp: new Date().getTime() / 1000 + 1
+        },
+        user: { name: 'Test' }
+      }
+    });
+    expect(Object.keys(cache.cache).length).toBe(1);
+    cache.delete({
+      audience: 'the_audiene',
+      scope: 'the_scope'
+    });
+    expect(Object.keys(cache.cache).length).toBe(0);
+  });
 });

@@ -2049,7 +2049,97 @@ describe('Auth0', () => {
     });
   });
 });
-
+describe('logoutSilently()', () => {
+  const defaultOptions: GetTokenSilentlyOptions = {
+    audience: 'test:audience',
+    scope: 'test:scope'
+  };
+  it('removes `auth0.is.authenticated` key from storage', async () => {
+    const { auth0, storage } = await setup();
+    await auth0.logoutSilently(defaultOptions);
+    expect(storage.remove).toHaveBeenCalledWith('auth0.is.authenticated');
+  });
+  it('opens iframe with the correct url', async () => {
+    const { auth0, utils } = await setup();
+    await auth0.logoutSilently(defaultOptions);
+    expect(utils.runIframe).toHaveBeenCalledWith(
+      `https://test.auth0.com/v2/logout?query=params${TEST_TELEMETRY_QUERY_STRING}`,
+      'https://test.auth0.com',
+      defaultOptions.timeoutInSeconds
+    );
+  });
+  it('opens iframe with correct urls', async () => {
+    const { auth0, utils } = await setup();
+    await auth0.logoutSilently(defaultOptions);
+    expect(utils.runIframe).toHaveBeenCalledWith(
+      `https://test.auth0.com/v2/logout?${TEST_QUERY_PARAMS}${TEST_TELEMETRY_QUERY_STRING}`,
+      'https://test.auth0.com',
+      defaultOptions.timeoutInSeconds
+    );
+  });
+  it('opens iframe with correct urls and timeout from client options', async () => {
+    const { auth0, utils } = await setup({ logoutTimeoutInSeconds: 1 });
+    await auth0.logoutSilently(defaultOptions);
+    expect(utils.runIframe).toHaveBeenCalledWith(
+      `https://test.auth0.com/v2/logout?${TEST_QUERY_PARAMS}${TEST_TELEMETRY_QUERY_STRING}`,
+      'https://test.auth0.com',
+      1
+    );
+  });
+  it('opens iframe with correct urls and custom timeout', async () => {
+    const { auth0, utils } = await setup();
+    await auth0.logoutSilently({
+      ...defaultOptions,
+      timeoutInSeconds: 1
+    });
+    expect(utils.runIframe).toHaveBeenCalledWith(
+      `https://test.auth0.com/v2/logout?${TEST_QUERY_PARAMS}${TEST_TELEMETRY_QUERY_STRING}`,
+      'https://test.auth0.com',
+      1
+    );
+  });
+  it('opens iframe with the correct url when `options.federated` is true', async () => {
+    const { auth0, utils } = await setup();
+    await auth0.logoutSilently({
+      ...defaultOptions,
+      federated: true
+    });
+    expect(utils.runIframe).toHaveBeenCalledWith(
+      `https://test.auth0.com/v2/logout?${TEST_QUERY_PARAMS}${TEST_TELEMETRY_QUERY_STRING}&federated`,
+      'https://test.auth0.com',
+      defaultOptions.timeoutInSeconds
+    );
+  });
+  it('removes `auth0.is.authenticated` key from storage when `options.localOnly` is true', async () => {
+    const { auth0, storage } = await setup();
+    await auth0.logoutSilently({
+      ...defaultOptions,
+      localOnly: true
+    });
+    expect(storage.remove).toHaveBeenCalledWith('auth0.is.authenticated');
+  });
+  it('does not open iframe when `options.localOnly` is true', async () => {
+    const { auth0, utils } = await setup();
+    await auth0.logoutSilently({
+      ...defaultOptions,
+      localOnly: true
+    });
+    expect(utils.runIframe).not.toHaveBeenCalledWith();
+  });
+  it('opens iframe when `options.localOnly` is false', async () => {
+    const { auth0, utils } = await setup();
+    await auth0.logoutSilently(defaultOptions);
+    expect(utils.runIframe).toHaveBeenCalled();
+  });
+  it('throws when both `options.localOnly` and `options.federated` are true', async () => {
+    const { auth0 } = await setup();
+    await expect(
+      auth0.logoutSilently({ localOnly: true, federated: true })
+    ).rejects.toThrowError(
+      'It is invalid to set both the `federated` and `localOnly` options to `true`'
+    );
+  });
+});
 describe('default creation function', () => {
   it('does nothing if there is nothing storage', async () => {
     Auth0Client.prototype.getTokenSilently = jest.fn();
