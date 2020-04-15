@@ -17,7 +17,7 @@ import {
 import { InMemoryCache, ICache, LocalStorageCache } from './cache';
 import TransactionManager from './transaction-manager';
 import { verify as verifyIdToken } from './jwt';
-import { AuthenticationError, GenericError } from './errors';
+import { AuthenticationError } from './errors';
 import * as ClientStorage from './storage';
 import {
   CACHE_LOCATION_MEMORY,
