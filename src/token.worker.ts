@@ -1,9 +1,18 @@
 import { MISSING_REFRESH_TOKEN_ERROR_MESSAGE } from './constants';
 
+/**
+ * @ignore
+ */
 let refreshToken;
 
+/**
+ * @ignore
+ */
 const wait: any = (time) => new Promise((resolve) => setTimeout(resolve, time));
 
+/**
+ * @ignore
+ */
 const messageHandler = async ({
   data: { url, timeout, ...opts },
   ports: [port],

@@ -2809,6 +2809,9 @@ img {
 		<li class=" tsd-kind-variable">
 			<a href="../globals.html#cache_location_memory" class="tsd-kind-icon">CACHE_<wbr>LOCATION_<wbr>MEMORY</a>
 		</li>
+		<li class=" tsd-kind-variable">
+			<a href="../globals.html#missing_refresh_token_error_message" class="tsd-kind-icon">MISSING_<wbr>REFRESH_<wbr>TOKEN_<wbr>ERROR_<wbr>MESSAGE</a>
+		</li>
 		<li class=" tsd-kind-function">
 			<a href="../globals.html#createauth0client" class="tsd-kind-icon">create<wbr>Auth0<wbr>Client</a>
 		</li>
@@ -2877,7 +2880,7 @@ img {
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/dd0ed8a/src/Auth0Client.ts#L80">src/Auth0Client.ts:80</a></li>
+								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/476caea/src/Auth0Client.ts#L91">src/Auth0Client.ts:91</a></li>
 							</ul>
 						</aside>
 						<h4 class="tsd-parameters-title">Parameters</h4>
@@ -2899,7 +2902,7 @@ img {
 				<div class="tsd-signature tsd-kind-icon">cache<wbr>Location<span class="tsd-signature-symbol">:</span> <a href="../globals.html#cachelocation" class="tsd-signature-type">CacheLocation</a></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/dd0ed8a/src/Auth0Client.ts#L80">src/Auth0Client.ts:80</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/476caea/src/Auth0Client.ts#L90">src/Auth0Client.ts:90</a></li>
 					</ul>
 				</aside>
 			</section>
@@ -2916,7 +2919,7 @@ img {
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/dd0ed8a/src/Auth0Client.ts#L176">src/Auth0Client.ts:176</a></li>
+								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/476caea/src/Auth0Client.ts#L205">src/Auth0Client.ts:205</a></li>
 							</ul>
 						</aside>
 						<div class="tsd-comment tsd-typography">
@@ -2949,7 +2952,7 @@ img {
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/dd0ed8a/src/Auth0Client.ts#L321">src/Auth0Client.ts:321</a></li>
+								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/476caea/src/Auth0Client.ts#L353">src/Auth0Client.ts:353</a></li>
 							</ul>
 						</aside>
 						<div class="tsd-comment tsd-typography">
@@ -2961,7 +2964,7 @@ img {
 						<h4 class="tsd-parameters-title">Parameters</h4>
 						<ul class="tsd-parameters">
 							<li>
-								<h5><span class="tsd-flag ts-flagDefault value">Default value</span> options: <a href="../interfaces/getidtokenclaimsoptions.html" class="tsd-signature-type">GetIdTokenClaimsOptions</a><span class="tsd-signature-symbol"> = {audience: this.options.audience || &#x27;default&#x27;,scope: this.options.scope || this.DEFAULT_SCOPE}</span></h5>
+								<h5><span class="tsd-flag ts-flagDefault value">Default value</span> options: <a href="../interfaces/getidtokenclaimsoptions.html" class="tsd-signature-type">GetIdTokenClaimsOptions</a><span class="tsd-signature-symbol"> = {audience: this.options.audience || &#x27;default&#x27;,scope: this.options.scope || this.DEFAULT_SCOPE,}</span></h5>
 								<div class="tsd-comment tsd-typography">
 								</div>
 							</li>
@@ -2980,7 +2983,7 @@ img {
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/dd0ed8a/src/Auth0Client.ts#L444">src/Auth0Client.ts:444</a></li>
+								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/476caea/src/Auth0Client.ts#L489">src/Auth0Client.ts:489</a></li>
 							</ul>
 						</aside>
 						<div class="tsd-comment tsd-typography">
@@ -2992,6 +2995,15 @@ img {
 								as arguments. Random and secure <code>state</code> and <code>nonce</code> parameters
 								will be auto-generated. If the response is successful, results
 							will be valid according to their expiration times.</p>
+							<p>If refresh tokens are used, the token endpoint is called directly with the
+								&#39;refresh_token&#39; grant. If no refresh token is available to make this call,
+							the SDK falls back to using an iframe to the &#39;/authorize&#39; URL.</p>
+							<p>This method may use a web worker to perform the token call if the in-memory
+							cache is used.</p>
+							<p>If an <code>audience</code> value is given to this function, the SDK always falls
+							back to using an iframe to make the token exchange.</p>
+							<p>Note that in all cases, falling back to an iframe requires access to
+							the <code>auth0</code> cookie.</p>
 						</div>
 						<h4 class="tsd-parameters-title">Parameters</h4>
 						<ul class="tsd-parameters">
@@ -3015,7 +3027,7 @@ img {
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/dd0ed8a/src/Auth0Client.ts#L500">src/Auth0Client.ts:500</a></li>
+								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/476caea/src/Auth0Client.ts#L549">src/Auth0Client.ts:549</a></li>
 							</ul>
 						</aside>
 						<div class="tsd-comment tsd-typography">
@@ -3030,7 +3042,7 @@ img {
 						<h4 class="tsd-parameters-title">Parameters</h4>
 						<ul class="tsd-parameters">
 							<li>
-								<h5><span class="tsd-flag ts-flagDefault value">Default value</span> options: <a href="../interfaces/gettokenwithpopupoptions.html" class="tsd-signature-type">GetTokenWithPopupOptions</a><span class="tsd-signature-symbol"> = {audience: this.options.audience,scope: this.options.scope || this.DEFAULT_SCOPE}</span></h5>
+								<h5><span class="tsd-flag ts-flagDefault value">Default value</span> options: <a href="../interfaces/gettokenwithpopupoptions.html" class="tsd-signature-type">GetTokenWithPopupOptions</a><span class="tsd-signature-symbol"> = {audience: this.options.audience,scope: this.options.scope || this.DEFAULT_SCOPE,}</span></h5>
 								<div class="tsd-comment tsd-typography">
 								</div>
 							</li>
@@ -3052,7 +3064,7 @@ img {
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/dd0ed8a/src/Auth0Client.ts#L296">src/Auth0Client.ts:296</a></li>
+								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/476caea/src/Auth0Client.ts#L328">src/Auth0Client.ts:328</a></li>
 							</ul>
 						</aside>
 						<div class="tsd-comment tsd-typography">
@@ -3065,7 +3077,7 @@ img {
 						<h4 class="tsd-parameters-title">Parameters</h4>
 						<ul class="tsd-parameters">
 							<li>
-								<h5><span class="tsd-flag ts-flagDefault value">Default value</span> options: <a href="../interfaces/getuseroptions.html" class="tsd-signature-type">GetUserOptions</a><span class="tsd-signature-symbol"> = {audience: this.options.audience || &#x27;default&#x27;,scope: this.options.scope || this.DEFAULT_SCOPE}</span></h5>
+								<h5><span class="tsd-flag ts-flagDefault value">Default value</span> options: <a href="../interfaces/getuseroptions.html" class="tsd-signature-type">GetUserOptions</a><span class="tsd-signature-symbol"> = {audience: this.options.audience || &#x27;default&#x27;,scope: this.options.scope || this.DEFAULT_SCOPE,}</span></h5>
 								<div class="tsd-comment tsd-typography">
 								</div>
 							</li>
@@ -3084,7 +3096,7 @@ img {
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/dd0ed8a/src/Auth0Client.ts#L363">src/Auth0Client.ts:363</a></li>
+								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/476caea/src/Auth0Client.ts#L395">src/Auth0Client.ts:395</a></li>
 							</ul>
 						</aside>
 						<div class="tsd-comment tsd-typography">
@@ -3115,7 +3127,7 @@ img {
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/dd0ed8a/src/Auth0Client.ts#L533">src/Auth0Client.ts:533</a></li>
+								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/476caea/src/Auth0Client.ts#L582">src/Auth0Client.ts:582</a></li>
 							</ul>
 						</aside>
 						<div class="tsd-comment tsd-typography">
@@ -3139,7 +3151,7 @@ img {
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/dd0ed8a/src/Auth0Client.ts#L226">src/Auth0Client.ts:226</a></li>
+								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/476caea/src/Auth0Client.ts#L255">src/Auth0Client.ts:255</a></li>
 							</ul>
 						</aside>
 						<div class="tsd-comment tsd-typography">
@@ -3179,7 +3191,7 @@ img {
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/dd0ed8a/src/Auth0Client.ts#L352">src/Auth0Client.ts:352</a></li>
+								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/476caea/src/Auth0Client.ts#L384">src/Auth0Client.ts:384</a></li>
 							</ul>
 						</aside>
 						<div class="tsd-comment tsd-typography">
@@ -3212,7 +3224,7 @@ img {
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/dd0ed8a/src/Auth0Client.ts#L553">src/Auth0Client.ts:553</a></li>
+								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/476caea/src/Auth0Client.ts#L602">src/Auth0Client.ts:602</a></li>
 							</ul>
 						</aside>
 						<div class="tsd-comment tsd-typography">
