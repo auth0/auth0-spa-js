@@ -13,6 +13,9 @@ import * as ClientStorage from './storage';
 import './global';
 import { validateCrypto } from './utils';
 
+// export the return type of the createAuth0Client factory
+export { Auth0Client };
+
 export default async function createAuth0Client(options: Auth0ClientOptions) {
   validateCrypto();
 
