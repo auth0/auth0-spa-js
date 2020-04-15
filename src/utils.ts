@@ -70,7 +70,10 @@ export const runIframe = (
     const iframeEventHandler = function(e: MessageEvent) {
       if (e.origin != eventOrigin) return;
       if (!e.data || e.data.type !== 'authorization_response') return;
-      (<any>e.source).close();
+      const eventSource = e.source;
+      if (eventSource) {
+          (<any>eventSource).close();
+      }
       e.data.response.error ? rej(e.data.response) : res(e.data.response);
       clearTimeout(timeoutSetTimeoutId);
       window.removeEventListener('message', iframeEventHandler, false);
