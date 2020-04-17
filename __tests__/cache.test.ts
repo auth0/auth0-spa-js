@@ -41,7 +41,7 @@ describe('InMemoryCache', () => {
       cache.get({
         client_id: 'test-client',
         audience: 'a',
-        scope: 's'
+        scope: 's',
       })
     ).toBeUndefined();
   });
@@ -58,10 +58,10 @@ describe('InMemoryCache', () => {
         claims: {
           __raw: 'idtoken',
           exp: nowSeconds() + dayInSeconds,
-          name: 'Test'
+          name: 'Test',
         },
-        user: { name: 'Test' }
-      }
+        user: { name: 'Test' },
+      },
     };
 
     cache.save(data);
@@ -70,7 +70,7 @@ describe('InMemoryCache', () => {
       cache.get({
         client_id: 'test-client',
         audience: 'the_audience',
-        scope: 'the_scope'
+        scope: 'the_scope',
       })
     ).toStrictEqual(data);
   });
@@ -92,10 +92,10 @@ describe('InMemoryCache', () => {
           claims: {
             __raw: 'idtoken',
             name: 'Test',
-            exp: nowSeconds() + dayInSeconds * 2
+            exp: nowSeconds() + dayInSeconds * 2,
           },
-          user: { name: 'Test' }
-        }
+          user: { name: 'Test' },
+        },
       };
 
       cache.save(data);
@@ -103,7 +103,7 @@ describe('InMemoryCache', () => {
       const cacheEntry = {
         client_id: 'test-client',
         audience: 'the_audience',
-        scope: 'the_scope'
+        scope: 'the_scope',
       };
 
       // Test that the cache state is normal up until just before the expiry time..
@@ -114,7 +114,7 @@ describe('InMemoryCache', () => {
       global.Date.now = dateNowStub;
 
       expect(cache.get(cacheEntry)).toStrictEqual({
-        refresh_token: 'refreshtoken'
+        refresh_token: 'refreshtoken',
       });
 
       global.Date.now = realDateNow;
@@ -136,10 +136,10 @@ describe('InMemoryCache', () => {
         claims: {
           __raw: 'idtoken',
           name: 'Test',
-          exp: nowSeconds() + dayInSeconds * 2
+          exp: nowSeconds() + dayInSeconds * 2,
         },
-        user: { name: 'Test' }
-      }
+        user: { name: 'Test' },
+      },
     };
 
     cache.save(data);
@@ -147,7 +147,7 @@ describe('InMemoryCache', () => {
     const cacheEntry = {
       client_id: 'test-client',
       audience: 'the_audience',
-      scope: 'the_scope'
+      scope: 'the_scope',
     };
 
     // Test that the cache state is normal before we expire the data
@@ -178,10 +178,10 @@ describe('InMemoryCache', () => {
         claims: {
           __raw: 'idtoken',
           name: 'Test',
-          exp: nowSeconds() + dayInSeconds
+          exp: nowSeconds() + dayInSeconds,
         },
-        user: { name: 'Test' }
-      }
+        user: { name: 'Test' },
+      },
     };
 
     cache.save(data);
@@ -189,7 +189,7 @@ describe('InMemoryCache', () => {
     const cacheEntry = {
       client_id: 'test-client',
       audience: 'the_audience',
-      scope: 'the_scope'
+      scope: 'the_scope',
     };
 
     // Test that the cache state is normal before we expire the data
@@ -236,10 +236,10 @@ describe('LocalStorageCache', () => {
         claims: {
           __raw: 'idtoken',
           exp: nowSeconds() + dayInSeconds + 100,
-          name: 'Test'
+          name: 'Test',
         },
-        user: { name: 'Test' }
-      }
+        user: { name: 'Test' },
+      },
     };
   });
 
@@ -255,7 +255,7 @@ describe('LocalStorageCache', () => {
         '@@auth0spajs@@::__TEST_CLIENT_ID__::__TEST_AUDIENCE__::__TEST_SCOPE__',
         JSON.stringify({
           body: defaultEntry,
-          expiresAt: nowSeconds() + dayInSeconds
+          expiresAt: nowSeconds() + dayInSeconds,
         })
       );
 
@@ -263,7 +263,7 @@ describe('LocalStorageCache', () => {
         cache.get({
           client_id: '__TEST_CLIENT_ID__',
           audience: '__TEST_AUDIENCE__',
-          scope: '__TEST_SCOPE__'
+          scope: '__TEST_SCOPE__',
         })
       ).toStrictEqual(defaultEntry);
     });
@@ -288,12 +288,12 @@ describe('LocalStorageCache', () => {
               claims: {
                 __raw: 'idtoken',
                 exp: nowSeconds() + 15,
-                name: 'Test'
+                name: 'Test',
               },
-              user: { name: 'Test' }
-            }
+              user: { name: 'Test' },
+            },
           },
-          expiresAt: nowSeconds() + 10
+          expiresAt: nowSeconds() + 10,
         })
       );
 
@@ -304,10 +304,10 @@ describe('LocalStorageCache', () => {
         cache.get({
           client_id: '__TEST_CLIENT_ID__',
           audience: '__TEST_AUDIENCE__',
-          scope: '__TEST_SCOPE__'
+          scope: '__TEST_SCOPE__',
         })
       ).toStrictEqual({
-        refresh_token: '__REFRESH_TOKEN__'
+        refresh_token: '__REFRESH_TOKEN__',
       });
     });
   });
@@ -327,12 +327,12 @@ describe('LocalStorageCache', () => {
             claims: {
               __raw: 'idtoken',
               exp: nowSeconds() + 15,
-              name: 'Test'
+              name: 'Test',
             },
-            user: { name: 'Test' }
-          }
+            user: { name: 'Test' },
+          },
         },
-        expiresAt: nowSeconds() + 10
+        expiresAt: nowSeconds() + 10,
       })
     );
 
@@ -343,7 +343,7 @@ describe('LocalStorageCache', () => {
       cache.get({
         client_id: '__TEST_CLIENT_ID__',
         audience: '__TEST_AUDIENCE__',
-        scope: '__TEST_SCOPE__'
+        scope: '__TEST_SCOPE__',
       })
     ).toBeUndefined();
 
@@ -360,7 +360,7 @@ describe('LocalStorageCache', () => {
         '@@auth0spajs@@::__TEST_CLIENT_ID__::__TEST_AUDIENCE__::__TEST_SCOPE__',
         JSON.stringify({
           body: defaultEntry,
-          expiresAt: nowSeconds() + dayInSeconds - 60
+          expiresAt: nowSeconds() + dayInSeconds - 60,
         })
       );
     });
@@ -370,9 +370,9 @@ describe('LocalStorageCache', () => {
         expires_in: dayInSeconds + 100,
         decodedToken: {
           claims: {
-            exp: nowSeconds() + 100
-          }
-        }
+            exp: nowSeconds() + 100,
+          },
+        },
       });
 
       cache.save(entry);
@@ -381,7 +381,7 @@ describe('LocalStorageCache', () => {
         '@@auth0spajs@@::__TEST_CLIENT_ID__::__TEST_AUDIENCE__::__TEST_SCOPE__',
         JSON.stringify({
           body: entry,
-          expiresAt: nowSeconds() + 40
+          expiresAt: nowSeconds() + 40,
         })
       );
     });
@@ -392,7 +392,7 @@ describe('LocalStorageCache', () => {
       'some-key',
       '@@auth0spajs@@::key-1',
       'some-key-2',
-      '@@auth0spajs@@::key-2'
+      '@@auth0spajs@@::key-2',
     ];
 
     for (const key of keys) {
@@ -408,28 +408,5 @@ describe('LocalStorageCache', () => {
     expect(localStorage.removeItem).toHaveBeenCalledWith(
       '@@auth0spajs@@::key-2'
     );
-  });
-  it('deletes key correctly', () => {
-    cache.save({
-      audience: 'the_audiene',
-      scope: 'the_scope',
-      id_token: 'idtoken',
-      access_token: 'accesstoken',
-      expires_in: 2,
-      decodedToken: {
-        claims: {
-          __raw: 'idtoken',
-          name: 'Test',
-          exp: new Date().getTime() / 1000 + 1
-        },
-        user: { name: 'Test' }
-      }
-    });
-    expect(Object.keys(cache.cache).length).toBe(1);
-    cache.delete({
-      audience: 'the_audiene',
-      scope: 'the_scope'
-    });
-    expect(Object.keys(cache.cache).length).toBe(0);
   });
 });
