@@ -13,12 +13,12 @@ import {
   urlDecodeB64,
   getCrypto,
   getCryptoSubtle,
-  validateCrypto
+  validateCrypto,
 } from '../src/utils';
 
 import {
   DEFAULT_AUTHORIZE_TIMEOUT_IN_SECONDS,
-  DEFAULT_SILENT_TOKEN_RETRY_COUNT
+  DEFAULT_SILENT_TOKEN_RETRY_COUNT,
 } from '../src/constants';
 
 (<any>global).TextEncoder = TextEncoder;
@@ -45,7 +45,7 @@ describe('utils', () => {
         parseQueryResult('value=test&otherValue=another-test')
       ).toMatchObject({
         value: 'test',
-        otherValue: 'another-test'
+        otherValue: 'another-test',
       });
     });
     it('strips off hash values', () => {
@@ -53,13 +53,13 @@ describe('utils', () => {
         parseQueryResult('code=some-code&state=some-state#__')
       ).toMatchObject({
         code: 'some-code',
-        state: 'some-state'
+        state: 'some-state',
       });
     });
     it('converts `expires_in` to int', () => {
       expect(parseQueryResult('value=test&expires_in=10')).toMatchObject({
         value: 'test',
-        expires_in: 10
+        expires_in: 10,
       });
     });
   });
@@ -70,7 +70,7 @@ describe('utils', () => {
           id: 1,
           value: 'test',
           url: 'http://example.com',
-          nope: undefined
+          nope: undefined,
         })
       ).toBe('id=1&value=test&url=http%3A%2F%2Fexample.com');
     });
@@ -79,7 +79,7 @@ describe('utils', () => {
     let oldATOB;
     beforeEach(() => {
       oldATOB = (<any>global).atob;
-      (<any>global).atob = jest.fn(s => s);
+      (<any>global).atob = jest.fn((s) => s);
     });
     afterEach(() => {
       (<any>global).atob = oldATOB;
@@ -96,7 +96,7 @@ describe('utils', () => {
       // then we convert the percent encodings into raw bytes which
       // can be fed into btoa.
       // https://stackoverflow.com/questions/30106476/
-      const b64EncodeUnicode = str =>
+      const b64EncodeUnicode = (str) =>
         btoa(
           encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, (_, p1) =>
             String.fromCharCode(<any>('0x' + p1))
@@ -112,7 +112,7 @@ describe('utils', () => {
     let oldBTOA;
     beforeEach(() => {
       oldBTOA = (<any>global).btoa;
-      (<any>global).btoa = jest.fn(s => s);
+      (<any>global).btoa = jest.fn((s) => s);
     });
     afterEach(() => {
       (<any>global).btoa = oldBTOA;
@@ -128,13 +128,13 @@ describe('utils', () => {
   describe('createRandomString', () => {
     it('creates random string based on crypto.getRandomValues', () => {
       (<any>global).crypto = {
-        getRandomValues: () => [1, 5, 10, 15, 100]
+        getRandomValues: () => [1, 5, 10, 15, 100],
       };
       expect(createRandomString()).toBe('15AFY');
     });
     it('creates random string with a length between 43 and 128', () => {
       (<any>global).crypto = {
-        getRandomValues: (a: Uint8Array) => Array(a.length).fill(0)
+        getRandomValues: (a: Uint8Array) => Array(a.length).fill(0),
       };
       const result = createRandomString();
       expect(result.length).toBeGreaterThanOrEqual(43);
@@ -158,9 +158,9 @@ describe('utils', () => {
           digest: jest.fn((alg, encoded) => {
             expect(alg).toMatchObject({ name: 'SHA-256' });
             expect(Array.from(encoded)).toMatchObject([116, 101, 115, 116]);
-            return new Promise(res => res(true));
-          })
-        }
+            return new Promise((res) => res(true));
+          }),
+        },
       };
       const result = await sha256('test');
       expect(result).toBe(true);
@@ -169,18 +169,18 @@ describe('utils', () => {
       (<any>global).msCrypto = {};
 
       const digestResult = {
-        oncomplete: null
+        oncomplete: null,
       };
 
       (<any>global).crypto = {
         subtle: {
           digest: jest.fn(() => {
             return digestResult;
-          })
-        }
+          }),
+        },
       };
 
-      const sha = sha256('test').then(r => {
+      const sha = sha256('test').then((r) => {
         expect(r).toBe(true);
       });
 
@@ -192,18 +192,18 @@ describe('utils', () => {
       (<any>global).msCrypto = {};
 
       const digestResult = {
-        onerror: null
+        onerror: null,
       };
 
       (<any>global).crypto = {
         subtle: {
           digest: jest.fn(() => {
             return digestResult;
-          })
-        }
+          }),
+        },
       };
 
-      const sha = sha256('test').catch(e => {
+      const sha = sha256('test').catch((e) => {
         expect(e).toBe('An error occurred');
       });
 
@@ -216,18 +216,18 @@ describe('utils', () => {
       (<any>global).msCrypto = {};
 
       const digestResult = {
-        onabort: null
+        onabort: null,
       };
 
       (<any>global).crypto = {
         subtle: {
           digest: jest.fn(() => {
             return digestResult;
-          })
-        }
+          }),
+        },
       };
 
-      const sha = sha256('test').catch(e => {
+      const sha = sha256('test').catch((e) => {
         expect(e).toBe('The digest operation was aborted');
       });
 
@@ -264,8 +264,8 @@ describe('utils', () => {
 
     it('calls oauth/token with the correct url', async () => {
       mockUnfetch.mockReturnValue(
-        new Promise(res =>
-          res({ ok: true, json: () => new Promise(ress => ress(true)) })
+        new Promise((res) =>
+          res({ ok: true, json: () => new Promise((ress) => ress(true)) })
         )
       );
 
@@ -274,7 +274,7 @@ describe('utils', () => {
         baseUrl: 'https://test.com',
         client_id: 'client_idIn',
         code: 'codeIn',
-        code_verifier: 'code_verifierIn'
+        code_verifier: 'code_verifierIn',
       });
 
       expect(mockUnfetch).toBeCalledWith('https://test.com/oauth/token', {
@@ -282,7 +282,7 @@ describe('utils', () => {
           '{"redirect_uri":"http://localhost","grant_type":"authorization_code","client_id":"client_idIn","code":"codeIn","code_verifier":"code_verifierIn"}',
         headers: { 'Content-type': 'application/json' },
         method: 'POST',
-        signal: abortController.signal
+        signal: abortController.signal,
       });
 
       expect(mockUnfetch.mock.calls[0][1].signal).not.toBeUndefined();
@@ -291,14 +291,14 @@ describe('utils', () => {
     it('handles error with error response', async () => {
       const theError = {
         error: 'the-error',
-        error_description: 'the-error-description'
+        error_description: 'the-error-description',
       };
 
       mockUnfetch.mockReturnValue(
-        new Promise(res =>
+        new Promise((res) =>
           res({
             ok: false,
-            json: () => new Promise(ress => ress(theError))
+            json: () => new Promise((ress) => ress(theError)),
           })
         )
       );
@@ -308,7 +308,7 @@ describe('utils', () => {
           baseUrl: 'https://test.com',
           client_id: 'client_idIn',
           code: 'codeIn',
-          code_verifier: 'code_verifierIn'
+          code_verifier: 'code_verifierIn',
         });
       } catch (error) {
         expect(error.message).toBe(theError.error_description);
@@ -319,10 +319,10 @@ describe('utils', () => {
 
     it('handles error without error response', async () => {
       mockUnfetch.mockReturnValue(
-        new Promise(res =>
+        new Promise((res) =>
           res({
             ok: false,
-            json: () => new Promise(ress => ress(false))
+            json: () => new Promise((ress) => ress(false)),
           })
         )
       );
@@ -332,7 +332,7 @@ describe('utils', () => {
           baseUrl: 'https://test.com',
           client_id: 'client_idIn',
           code: 'codeIn',
-          code_verifier: 'code_verifierIn'
+          code_verifier: 'code_verifierIn',
         });
       } catch (error) {
         expect(error.message).toBe(
@@ -357,7 +357,7 @@ describe('utils', () => {
           baseUrl: 'https://test.com',
           client_id: 'client_idIn',
           code: 'codeIn',
-          code_verifier: 'code_verifierIn'
+          code_verifier: 'code_verifierIn',
         });
       } catch (error) {
         expect(error.message).toBe('Network failure');
@@ -379,7 +379,7 @@ describe('utils', () => {
         .mockReturnValue(
           Promise.resolve({
             ok: true,
-            json: () => Promise.resolve({ access_token: 'access-token' })
+            json: () => Promise.resolve({ access_token: 'access-token' }),
           })
         );
 
@@ -387,7 +387,7 @@ describe('utils', () => {
         baseUrl: 'https://test.com',
         client_id: 'client_idIn',
         code: 'codeIn',
-        code_verifier: 'code_verifierIn'
+        code_verifier: 'code_verifierIn',
       });
 
       expect(result.access_token).toBe('access-token');
@@ -402,7 +402,7 @@ describe('utils', () => {
             () =>
               resolve({
                 ok: true,
-                json: () => Promise.resolve({ access_token: 'access-token' })
+                json: () => Promise.resolve({ access_token: 'access-token' }),
               }),
             500
           );
@@ -416,7 +416,7 @@ describe('utils', () => {
           client_id: 'client_idIn',
           code: 'codeIn',
           code_verifier: 'code_verifierIn',
-          timeout: 100
+          timeout: 100,
         });
       } catch (e) {
         expect(e.message).toBe("Timeout when executing 'fetch'");
@@ -428,7 +428,7 @@ describe('utils', () => {
     it('retries the request in the event of a timeout', async () => {
       const fetchResult = {
         ok: true,
-        json: () => Promise.resolve({ access_token: 'access-token' })
+        json: () => Promise.resolve({ access_token: 'access-token' }),
       };
 
       mockUnfetch.mockReturnValueOnce(
@@ -444,7 +444,7 @@ describe('utils', () => {
         client_id: 'client_idIn',
         code: 'codeIn',
         code_verifier: 'code_verifierIn',
-        timeout: 500
+        timeout: 500,
       });
 
       expect(result.access_token).toBe('access-token');
@@ -458,10 +458,10 @@ describe('utils', () => {
 
     const url = 'https://authorize.com';
 
-    const setup = customMessage => {
+    const setup = (customMessage) => {
       const popup = {
         location: { href: url },
-        close: jest.fn()
+        close: jest.fn(),
       };
 
       window.addEventListener = <any>jest.fn((message, callback) => {
@@ -474,7 +474,7 @@ describe('utils', () => {
 
     describe('with invalid messages', () => {
       ['', {}, { data: 'test' }, { data: { type: 'other-type' } }].forEach(
-        m => {
+        (m) => {
           it(`ignores invalid messages: ${JSON.stringify(m)}`, async () => {
             const { popup, url } = setup(m);
             /**
@@ -500,8 +500,8 @@ describe('utils', () => {
       const message = {
         data: {
           type: 'authorization_response',
-          response: { id_token: 'id_token' }
-        }
+          response: { id_token: 'id_token' },
+        },
       };
 
       const { popup, url } = setup(message);
@@ -518,8 +518,8 @@ describe('utils', () => {
       const message = {
         data: {
           type: 'authorization_response',
-          response: { error: 'error' }
-        }
+          response: { error: 'error' },
+        },
       };
 
       const { popup, url } = setup(message);
@@ -551,7 +551,7 @@ describe('utils', () => {
       await expect(
         runPopup(url, {
           timeoutInSeconds: seconds,
-          popup
+          popup,
         })
       ).rejects.toMatchObject({ ...TIMEOUT_ERROR, popup });
 
@@ -583,8 +583,8 @@ describe('utils', () => {
       const message = {
         data: {
           type: 'authorization_response',
-          response: { id_token: 'id_token' }
-        }
+          response: { id_token: 'id_token' },
+        },
       };
 
       const { popup, url } = setup(message);
@@ -604,10 +604,10 @@ describe('utils', () => {
   });
   describe('runIframe', () => {
     const TIMEOUT_ERROR = { error: 'timeout', error_description: 'Timeout' };
-    const setup = customMessage => {
+    const setup = (customMessage) => {
       const iframe = {
         setAttribute: jest.fn(),
-        style: { display: '' }
+        style: { display: '' },
       };
       const url = 'https://authorize.com';
       const origin =
@@ -617,7 +617,7 @@ describe('utils', () => {
         callback(customMessage);
       });
       window.removeEventListener = jest.fn();
-      window.document.createElement = <any>jest.fn(type => {
+      window.document.createElement = <any>jest.fn((type) => {
         expect(type).toBe('iframe');
         return iframe;
       });
@@ -633,8 +633,8 @@ describe('utils', () => {
         source: { close: jest.fn() },
         data: {
           type: 'authorization_response',
-          response: { id_token: 'id_token' }
-        }
+          response: { id_token: 'id_token' },
+        },
       };
       const { iframe, url } = setup(message);
       jest.useFakeTimers();
@@ -646,7 +646,7 @@ describe('utils', () => {
       expect(iframe.setAttribute.mock.calls).toMatchObject([
         ['width', '0'],
         ['height', '0'],
-        ['src', url]
+        ['src', url],
       ]);
       expect(iframe.style.display).toBe('none');
     });
@@ -656,8 +656,8 @@ describe('utils', () => {
         {},
         { origin: 'other-origin' },
         { data: 'test' },
-        { data: { type: 'other-type' } }
-      ].forEach(m => {
+        { data: { type: 'other-type' } },
+      ].forEach((m) => {
         it(`ignores invalid messages: ${JSON.stringify(m)}`, async () => {
           const { iframe, url, origin } = setup(m);
           jest.useFakeTimers();
@@ -675,8 +675,8 @@ describe('utils', () => {
         source: { close: jest.fn() },
         data: {
           type: 'authorization_response',
-          response: { id_token: 'id_token' }
-        }
+          response: { id_token: 'id_token' },
+        },
       };
       const { iframe, url } = setup(message);
       jest.useFakeTimers();
@@ -694,8 +694,8 @@ describe('utils', () => {
         source: { close: jest.fn() },
         data: {
           type: 'authorization_response',
-          response: { error: 'error' }
-        }
+          response: { error: 'error' },
+        },
       };
       const { iframe, url } = setup(message);
       jest.useFakeTimers();
@@ -767,8 +767,7 @@ describe('utils', () => {
 
       expect(validateCrypto).toThrowError(`
       auth0-spa-js must run on a secure origin.
-      See https://github.com/auth0/auth0-spa-js/blob/master/FAQ.md#why-do-i-get-auth0-spa-js-must-run-on-a-secure-origin 
-      for more information.
+      See https://github.com/auth0/auth0-spa-js/blob/master/FAQ.md#why-do-i-get-auth0-spa-js-must-run-on-a-secure-origin for more information.
     `);
     });
   });

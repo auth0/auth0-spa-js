@@ -256,7 +256,9 @@ export interface CommonLogoutOptions {
    * [Read more about how federated logout works at Auth0](https://auth0.com/docs/logout/guides/logout-idps)
    */
   federated?: boolean;
+}
 
+export interface LogoutOptions extends CommonLogoutOptions {
   /**
    * When `true`, this skips the request to the logout endpoint on the authorization server,
    * effectively performing a "local" logout of the application. No redirect should take place,
@@ -264,8 +266,7 @@ export interface CommonLogoutOptions {
    * This option cannot be specified along with the `federated` option.
    */
   localOnly?: boolean;
-}
-export interface LogoutOptions extends CommonLogoutOptions {
+
   /**
    * The URL where Auth0 will redirect your browser to after the logout.
    *
@@ -283,21 +284,15 @@ export interface LogoutOptions extends CommonLogoutOptions {
    */
   client_id?: string;
 }
+
 export interface LogoutSilentlyOptions extends CommonLogoutOptions {
   /**
    * A maximum number of seconds to wait before declaring the background /authorize call as failed for timeout
    * Defaults to 60s.
    */
   timeoutInSeconds?: number;
-  /**
-   * The scope to clear from the local cache
-   */
-  scope?: string;
-  /**
-   * The audience to clear from the local cache
-   */
-  audience?: string;
 }
+
 /**
  * @ignore
  */

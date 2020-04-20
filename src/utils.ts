@@ -3,17 +3,17 @@ import fetch from 'unfetch';
 import {
   AuthenticationResult,
   PopupConfigOptions,
-  TokenEndpointOptions
+  TokenEndpointOptions,
 } from './global';
 
 import {
   DEFAULT_AUTHORIZE_TIMEOUT_IN_SECONDS,
   DEFAULT_SILENT_TOKEN_RETRY_COUNT,
   DEFAULT_FETCH_TIMEOUT_MS,
-  CLEANUP_IFRAME_TIMEOUT_IN_SECONDS
+  CLEANUP_IFRAME_TIMEOUT_IN_SECONDS,
 } from './constants';
 
-const dedupe = arr => arr.filter((x, i) => arr.indexOf(x) === i);
+const dedupe = (arr) => arr.filter((x, i) => arr.indexOf(x) === i);
 
 const TIMEOUT_ERROR = { error: 'timeout', error_description: 'Timeout' };
 
@@ -21,9 +21,7 @@ export const createAbortController = () => new AbortController();
 
 export const getUniqueScopes = (...scopes: string[]) => {
   const scopeString = scopes.filter(Boolean).join();
-  return dedupe(scopeString.replace(/\s/g, ',').split(','))
-    .join(' ')
-    .trim();
+  return dedupe(scopeString.replace(/\s/g, ',').split(',')).join(' ').trim();
 };
 
 export const parseQueryResult = (queryString: string) => {
@@ -34,14 +32,14 @@ export const parseQueryResult = (queryString: string) => {
   let queryParams = queryString.split('&');
 
   let parsedQuery: any = {};
-  queryParams.forEach(qp => {
+  queryParams.forEach((qp) => {
     let [key, val] = qp.split('=');
     parsedQuery[key] = decodeURIComponent(val);
   });
 
   return <AuthenticationResult>{
     ...parsedQuery,
-    expires_in: parseInt(parsedQuery.expires_in)
+    expires_in: parseInt(parsedQuery.expires_in),
   };
 };
 
@@ -55,7 +53,7 @@ export const runIframe = (
     iframe.setAttribute('width', '0');
     iframe.setAttribute('height', '0');
     iframe.style.display = 'none';
-    
+
     const removeIframe = () => {
       if (window.document.body.contains(iframe)) {
         window.document.body.removeChild(iframe);
@@ -67,22 +65,19 @@ export const runIframe = (
       removeIframe();
     }, timeoutInSeconds * 1000);
 
-    const iframeEventHandler = function(e: MessageEvent) {
+    const iframeEventHandler = function (e: MessageEvent) {
       if (e.origin != eventOrigin) return;
       if (!e.data || e.data.type !== 'authorization_response') return;
       const eventSource = e.source;
       if (eventSource) {
-          (<any>eventSource).close();
+        (<any>eventSource).close();
       }
       e.data.response.error ? rej(e.data.response) : res(e.data.response);
       clearTimeout(timeoutSetTimeoutId);
       window.removeEventListener('message', iframeEventHandler, false);
       // Delay the removal of the iframe to prevent hanging loading status
       // in Chrome: https://github.com/auth0/auth0-spa-js/issues/240
-      setTimeout(
-        removeIframe,
-        CLEANUP_IFRAME_TIMEOUT_IN_SECONDS * 1000
-      );
+      setTimeout(removeIframe, CLEANUP_IFRAME_TIMEOUT_IN_SECONDS * 1000);
     };
     window.addEventListener('message', iframeEventHandler, false);
     window.document.body.appendChild(iframe);
@@ -90,7 +85,7 @@ export const runIframe = (
   });
 };
 
-const openPopup = url => {
+const openPopup = (url) => {
   const width = 400;
   const height = 600;
   const left = window.screenX + (window.innerWidth - width) / 2;
@@ -120,7 +115,7 @@ export const runPopup = (authorizeUrl: string, config: PopupConfigOptions) => {
     const timeoutId = setTimeout(() => {
       reject({ ...TIMEOUT_ERROR, popup });
     }, (config.timeoutInSeconds || DEFAULT_AUTHORIZE_TIMEOUT_IN_SECONDS) * 1000);
-    window.addEventListener('message', e => {
+    window.addEventListener('message', (e) => {
       if (!e.data || e.data.type !== 'authorization_response') {
         return;
       }
@@ -141,7 +136,7 @@ export const createRandomString = () => {
   const randomValues = Array.from(
     getCrypto().getRandomValues(new Uint8Array(43))
   );
-  randomValues.forEach(v => (random += charset[v % charset.length]));
+  randomValues.forEach((v) => (random += charset[v % charset.length]));
   return random;
 };
 
@@ -150,8 +145,8 @@ export const decode = (value: string) => atob(value);
 
 export const createQueryParams = (params: any) => {
   return Object.keys(params)
-    .filter(k => typeof params[k] !== 'undefined')
-    .map(k => encodeURIComponent(k) + '=' + encodeURIComponent(params[k]))
+    .filter((k) => typeof params[k] !== 'undefined')
+    .map((k) => encodeURIComponent(k) + '=' + encodeURIComponent(params[k]))
     .join('&');
 };
 
@@ -170,7 +165,7 @@ export const sha256 = async (s: string) => {
   // or reject depending on their intention.
   if ((<any>window).msCrypto) {
     return new Promise((res, rej) => {
-      digestOp.oncomplete = e => {
+      digestOp.oncomplete = (e) => {
         res(e.target.result);
       };
 
@@ -193,11 +188,11 @@ const urlEncodeB64 = (input: string) => {
 };
 
 // https://stackoverflow.com/questions/30106476/
-const decodeB64 = input =>
+const decodeB64 = (input) =>
   decodeURIComponent(
     atob(input)
       .split('')
-      .map(c => {
+      .map((c) => {
         return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
       })
       .join('')
@@ -206,7 +201,7 @@ const decodeB64 = input =>
 export const urlDecodeB64 = (input: string) =>
   decodeB64(input.replace(/_/g, '/').replace(/-/g, '+'));
 
-export const bufferToBase64UrlEncoded = input => {
+export const bufferToBase64UrlEncoded = (input) => {
   const ie11SafeInput = new Uint8Array(input);
   return urlEncodeB64(
     window.btoa(String.fromCharCode(...Array.from(ie11SafeInput)))
@@ -214,9 +209,9 @@ export const bufferToBase64UrlEncoded = input => {
 };
 
 const sendMessage = (message, to) =>
-  new Promise(function(resolve, reject) {
+  new Promise(function (resolve, reject) {
     const messageChannel = new MessageChannel();
-    messageChannel.port1.onmessage = function(event) {
+    messageChannel.port1.onmessage = function (event) {
       // Only for fetch errors, as these get retried
       if (event.data.error) {
         reject(new Error(event.data.error));
@@ -236,7 +231,7 @@ const switchFetch = async (url, opts, timeout, worker) => {
     const response = await fetch(url, opts);
     return {
       ok: response.ok,
-      json: await response.json()
+      json: await response.json(),
     };
   }
 };
@@ -252,7 +247,7 @@ const fetchWithTimeout = (
 
   const fetchOptions = {
     ...options,
-    signal
+    signal,
   };
 
   // The promise will resolve with one of these two promises (the fetch or the timeout), whichever completes first.
@@ -263,7 +258,7 @@ const fetchWithTimeout = (
         controller.abort();
         reject(new Error("Timeout when executing 'fetch'"));
       }, timeout);
-    })
+    }),
   ]);
 };
 
@@ -290,7 +285,7 @@ const getJSON = async (url, timeout, options, worker) => {
 
   const {
     json: { error, error_description, ...success },
-    ok
+    ok,
   } = response;
 
   if (!ok) {
@@ -318,11 +313,11 @@ export const oauthToken = async (
       method: 'POST',
       body: JSON.stringify({
         redirect_uri: window.location.origin,
-        ...options
+        ...options,
       }),
       headers: {
-        'Content-type': 'application/json'
-      }
+        'Content-type': 'application/json',
+      },
     },
     worker
   );
@@ -347,8 +342,7 @@ export const validateCrypto = () => {
   if (typeof getCryptoSubtle() === 'undefined') {
     throw new Error(`
       auth0-spa-js must run on a secure origin.
-      See https://github.com/auth0/auth0-spa-js/blob/master/FAQ.md#why-do-i-get-auth0-spa-js-must-run-on-a-secure-origin
-      for more information.
+      See https://github.com/auth0/auth0-spa-js/blob/master/FAQ.md#why-do-i-get-auth0-spa-js-must-run-on-a-secure-origin for more information.
     `);
   }
 };

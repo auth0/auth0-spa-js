@@ -4,7 +4,7 @@ jest.mock('../src/storage');
 jest.mock('../src/transaction-manager');
 jest.mock('../src/utils');
 
-import { CacheLocation } from '../src/global';
+import { CacheLocation, LogoutSilentlyOptions } from '../src/global';
 
 import createAuth0Client, {
   Auth0Client,
@@ -2050,10 +2050,7 @@ describe('Auth0', () => {
   });
 });
 describe('logoutSilently()', () => {
-  const defaultOptions: GetTokenSilentlyOptions = {
-    audience: 'test:audience',
-    scope: 'test:scope'
-  };
+  const defaultOptions: LogoutSilentlyOptions = {};
   it('removes `auth0.is.authenticated` key from storage', async () => {
     const { auth0, storage } = await setup();
     await auth0.logoutSilently(defaultOptions);
@@ -2086,11 +2083,20 @@ describe('logoutSilently()', () => {
       1
     );
   });
+  it('opens iframe with correct urls with no client options', async () => {
+    const { auth0, utils } = await setup();
+    await auth0.logoutSilently();
+    expect(utils.runIframe).toHaveBeenCalledWith(
+      `https://test.auth0.com/v2/logout?${TEST_QUERY_PARAMS}${TEST_TELEMETRY_QUERY_STRING}`,
+      'https://test.auth0.com',
+      undefined
+    );
+  });
   it('opens iframe with correct urls and custom timeout', async () => {
     const { auth0, utils } = await setup();
     await auth0.logoutSilently({
       ...defaultOptions,
-      timeoutInSeconds: 1
+      timeoutInSeconds: 1,
     });
     expect(utils.runIframe).toHaveBeenCalledWith(
       `https://test.auth0.com/v2/logout?${TEST_QUERY_PARAMS}${TEST_TELEMETRY_QUERY_STRING}`,
@@ -2102,41 +2108,12 @@ describe('logoutSilently()', () => {
     const { auth0, utils } = await setup();
     await auth0.logoutSilently({
       ...defaultOptions,
-      federated: true
+      federated: true,
     });
     expect(utils.runIframe).toHaveBeenCalledWith(
       `https://test.auth0.com/v2/logout?${TEST_QUERY_PARAMS}${TEST_TELEMETRY_QUERY_STRING}&federated`,
       'https://test.auth0.com',
       defaultOptions.timeoutInSeconds
-    );
-  });
-  it('removes `auth0.is.authenticated` key from storage when `options.localOnly` is true', async () => {
-    const { auth0, storage } = await setup();
-    await auth0.logoutSilently({
-      ...defaultOptions,
-      localOnly: true
-    });
-    expect(storage.remove).toHaveBeenCalledWith('auth0.is.authenticated');
-  });
-  it('does not open iframe when `options.localOnly` is true', async () => {
-    const { auth0, utils } = await setup();
-    await auth0.logoutSilently({
-      ...defaultOptions,
-      localOnly: true
-    });
-    expect(utils.runIframe).not.toHaveBeenCalledWith();
-  });
-  it('opens iframe when `options.localOnly` is false', async () => {
-    const { auth0, utils } = await setup();
-    await auth0.logoutSilently(defaultOptions);
-    expect(utils.runIframe).toHaveBeenCalled();
-  });
-  it('throws when both `options.localOnly` and `options.federated` are true', async () => {
-    const { auth0 } = await setup();
-    await expect(
-      auth0.logoutSilently({ localOnly: true, federated: true })
-    ).rejects.toThrowError(
-      'It is invalid to set both the `federated` and `localOnly` options to `true`'
     );
   });
 });
