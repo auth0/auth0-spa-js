@@ -117,6 +117,7 @@ export default class Auth0Client {
 
     // Don't use web workers unless using refresh tokens in memory and not IE11
     if (
+      window.navigator &&
       window.Worker &&
       this.options.useRefreshTokens &&
       this.cacheLocation === CACHE_LOCATION_MEMORY &&
