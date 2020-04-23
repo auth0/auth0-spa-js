@@ -17,11 +17,11 @@ const verifyOptions = {
 
 const createCertificate = (): Promise<Certificate> =>
   new Promise((res, rej) => {
-    pem.createCertificate({ days: 1, selfSigned: true }, function(err, keys) {
+    pem.createCertificate({ days: 1, selfSigned: true }, function (err, keys) {
       if (err) {
         return rej(err);
       }
-      pem.getPublicKey(keys.certificate, function(e, p) {
+      pem.getPublicKey(keys.certificate, function (e, p) {
         if (e) {
           return rej(e);
         }

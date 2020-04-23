@@ -31,7 +31,7 @@ const assertPost = (url, body, callNum = 0) => {
 const fetchResponse = (ok, json) =>
   Promise.resolve({
     ok,
-    json: () => Promise.resolve(json),
+    json: () => Promise.resolve(json)
   });
 
 const setup: any = (config?, claims?) => {
@@ -40,7 +40,7 @@ const setup: any = (config?, claims?) => {
       {
         domain: 'auth0_domain',
         client_id: 'auth0_client_id',
-        redirect_uri: 'my_callback_url',
+        redirect_uri: 'my_callback_url'
       },
       config
     )
@@ -48,10 +48,10 @@ const setup: any = (config?, claims?) => {
   mockVerify.mockReturnValue({
     claims: Object.assign(
       {
-        exp: Date.now() / 1000 + 86400,
+        exp: Date.now() / 1000 + 86400
       },
       claims
-    ),
+    )
   });
   return auth0;
 };
@@ -74,7 +74,7 @@ const login: any = async (
           id_token: 'my_id_token',
           refresh_token: 'my_refresh_token',
           access_token: 'my_access_token',
-          expires_in: 86400,
+          expires_in: 86400
         },
         tokenResponse
       )
@@ -88,11 +88,11 @@ describe('Auth0Client', () => {
     mockWindow.location.assign = jest.fn();
     mockWindow.crypto = {
       subtle: {
-        digest: () => 'foo',
+        digest: () => 'foo'
       },
       getRandomValues() {
         return '123';
-      },
+      }
     };
     mockWindow.MessageChannel = MessageChannel;
     mockWindow.Worker = {};
@@ -106,7 +106,7 @@ describe('Auth0Client', () => {
   it('automatically adds the offline_access scope during construction', async () => {
     setup({
       useRefreshTokens: true,
-      scope: 'test-scope',
+      scope: 'test-scope'
     });
 
     expect(utils.getUniqueScopes).toHaveBeenCalledWith(
@@ -128,20 +128,20 @@ describe('Auth0Client', () => {
       state: 'MTIz',
       nonce: 'MTIz',
       code_challenge: '',
-      code_challenge_method: 'S256',
+      code_challenge_method: 'S256'
     });
     assertPost('https://auth0_domain/oauth/token', {
       redirect_uri: 'my_callback_url',
       client_id: 'auth0_client_id',
       code_verifier: '123',
       grant_type: 'authorization_code',
-      code: 'my_code',
+      code: 'my_code'
     });
   });
 
   it('refreshes the token from a web worker', async () => {
     const auth0 = setup({
-      useRefreshTokens: true,
+      useRefreshTokens: true
     });
     expect(auth0.worker).toBeDefined();
     await login(auth0);
@@ -150,7 +150,7 @@ describe('Auth0Client', () => {
         id_token: 'my_id_token',
         refresh_token: 'my_refresh_token',
         access_token: 'my_access_token',
-        expires_in: 86400,
+        expires_in: 86400
       })
     );
     const access_token = await auth0.getTokenSilently({ ignoreCache: true });
@@ -160,7 +160,7 @@ describe('Auth0Client', () => {
         client_id: 'auth0_client_id',
         grant_type: 'refresh_token',
         redirect_uri: 'my_callback_url',
-        refresh_token: 'my_refresh_token',
+        refresh_token: 'my_refresh_token'
       },
       1
     );
@@ -170,7 +170,7 @@ describe('Auth0Client', () => {
   it('refreshes the token without the worker', async () => {
     const auth0 = setup({
       useRefreshTokens: true,
-      cacheLocation: 'localstorage',
+      cacheLocation: 'localstorage'
     });
     expect(auth0.worker).toBeUndefined();
     await login(auth0);
@@ -179,14 +179,14 @@ describe('Auth0Client', () => {
       client_id: 'auth0_client_id',
       code_verifier: '123',
       grant_type: 'authorization_code',
-      code: 'my_code',
+      code: 'my_code'
     });
     mockFetch.mockResolvedValueOnce(
       fetchResponse(true, {
         id_token: 'my_id_token',
         refresh_token: 'my_refresh_token',
         access_token: 'my_access_token',
-        expires_in: 86400,
+        expires_in: 86400
       })
     );
     const access_token = await auth0.getTokenSilently({ ignoreCache: true });
@@ -196,7 +196,7 @@ describe('Auth0Client', () => {
         client_id: 'auth0_client_id',
         grant_type: 'refresh_token',
         redirect_uri: 'my_callback_url',
-        refresh_token: 'my_refresh_token',
+        refresh_token: 'my_refresh_token'
       },
       1
     );
@@ -208,7 +208,7 @@ describe('Auth0Client', () => {
 
     const auth0 = setup({
       useRefreshTokens: true,
-      cacheLocation: 'memory',
+      cacheLocation: 'memory'
     });
 
     expect(auth0.worker).toBeUndefined();
@@ -220,7 +220,7 @@ describe('Auth0Client', () => {
       client_id: 'auth0_client_id',
       code_verifier: '123',
       grant_type: 'authorization_code',
-      code: 'my_code',
+      code: 'my_code'
     });
 
     mockFetch.mockResolvedValueOnce(
@@ -228,7 +228,7 @@ describe('Auth0Client', () => {
         id_token: 'my_id_token',
         refresh_token: 'my_refresh_token',
         access_token: 'my_access_token',
-        expires_in: 86400,
+        expires_in: 86400
       })
     );
 
@@ -240,7 +240,7 @@ describe('Auth0Client', () => {
         client_id: 'auth0_client_id',
         grant_type: 'refresh_token',
         redirect_uri: 'my_callback_url',
-        refresh_token: 'my_refresh_token',
+        refresh_token: 'my_refresh_token'
       },
       1
     );
@@ -250,7 +250,7 @@ describe('Auth0Client', () => {
 
   it('handles fetch errors from the worker', async () => {
     const auth0 = setup({
-      useRefreshTokens: true,
+      useRefreshTokens: true
     });
     expect(auth0.worker).toBeDefined();
     await login(auth0);
@@ -264,7 +264,7 @@ describe('Auth0Client', () => {
 
   it('handles api errors from the worker', async () => {
     const auth0 = setup({
-      useRefreshTokens: true,
+      useRefreshTokens: true
     });
     expect(auth0.worker).toBeDefined();
     await login(auth0);
@@ -272,7 +272,7 @@ describe('Auth0Client', () => {
     mockFetch.mockResolvedValue(
       fetchResponse(false, {
         error: 'my_api_error',
-        error_description: 'my_error_description',
+        error_description: 'my_error_description'
       })
     );
     await expect(auth0.getTokenSilently({ ignoreCache: true })).rejects.toThrow(
@@ -285,22 +285,22 @@ describe('Auth0Client', () => {
     const constants = require('../src/constants');
     const originalDefaultFetchTimeoutMs = constants.DEFAULT_FETCH_TIMEOUT_MS;
     Object.defineProperty(constants, 'DEFAULT_FETCH_TIMEOUT_MS', {
-      get: () => 100,
+      get: () => 100
     });
     const auth0 = setup({
-      useRefreshTokens: true,
+      useRefreshTokens: true
     });
     expect(auth0.worker).toBeDefined();
     await login(auth0);
     mockFetch.mockReset();
     mockFetch.mockImplementation(
       () =>
-        new Promise((resolve) =>
+        new Promise(resolve =>
           setTimeout(
             () =>
               resolve({
                 ok: true,
-                json: () => Promise.resolve({ access_token: 'access-token' }),
+                json: () => Promise.resolve({ access_token: 'access-token' })
               }),
             500
           )
@@ -316,26 +316,26 @@ describe('Auth0Client', () => {
     expect(AbortController.prototype.abort).toBeCalledTimes(7);
     expect(mockFetch).toBeCalledTimes(3);
     Object.defineProperty(constants, 'DEFAULT_FETCH_TIMEOUT_MS', {
-      get: () => originalDefaultFetchTimeoutMs,
+      get: () => originalDefaultFetchTimeoutMs
     });
   });
 
   it('falls back to iframe when missing refresh token errors from the worker', async () => {
     const auth0 = setup({
-      useRefreshTokens: true,
+      useRefreshTokens: true
     });
     expect(auth0.worker).toBeDefined();
     await login(auth0, true, { refresh_token: '' });
     jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
       access_token: 'my_access_token',
-      state: 'MTIz',
+      state: 'MTIz'
     });
     mockFetch.mockResolvedValueOnce(
       fetchResponse(true, {
         id_token: 'my_id_token',
         refresh_token: 'my_refresh_token',
         access_token: 'my_access_token',
-        expires_in: 86400,
+        expires_in: 86400
       })
     );
     const access_token = await auth0.getTokenSilently({ ignoreCache: true });
@@ -346,7 +346,7 @@ describe('Auth0Client', () => {
   it('handles fetch errors without the worker', async () => {
     const auth0 = setup({
       useRefreshTokens: true,
-      cacheLocation: 'localstorage',
+      cacheLocation: 'localstorage'
     });
     expect(auth0.worker).toBeUndefined();
     await login(auth0);
@@ -361,7 +361,7 @@ describe('Auth0Client', () => {
   it('handles api errors without the worker', async () => {
     const auth0 = setup({
       useRefreshTokens: true,
-      cacheLocation: 'localstorage',
+      cacheLocation: 'localstorage'
     });
     expect(auth0.worker).toBeUndefined();
     await login(auth0);
@@ -369,7 +369,7 @@ describe('Auth0Client', () => {
     mockFetch.mockResolvedValue(
       fetchResponse(false, {
         error: 'my_api_error',
-        error_description: 'my_error_description',
+        error_description: 'my_error_description'
       })
     );
     await expect(auth0.getTokenSilently({ ignoreCache: true })).rejects.toThrow(
@@ -382,23 +382,23 @@ describe('Auth0Client', () => {
     const constants = require('../src/constants');
     const originalDefaultFetchTimeoutMs = constants.DEFAULT_FETCH_TIMEOUT_MS;
     Object.defineProperty(constants, 'DEFAULT_FETCH_TIMEOUT_MS', {
-      get: () => 100,
+      get: () => 100
     });
     const auth0 = setup({
       useRefreshTokens: true,
-      cacheLocation: 'localstorage',
+      cacheLocation: 'localstorage'
     });
     expect(auth0.worker).toBeUndefined();
     await login(auth0);
     mockFetch.mockReset();
     mockFetch.mockImplementation(
       () =>
-        new Promise((resolve) =>
+        new Promise(resolve =>
           setTimeout(
             () =>
               resolve({
                 ok: true,
-                json: () => Promise.resolve({ access_token: 'access-token' }),
+                json: () => Promise.resolve({ access_token: 'access-token' })
               }),
             500
           )
@@ -413,27 +413,27 @@ describe('Auth0Client', () => {
     expect(AbortController.prototype.abort).toBeCalledTimes(4);
     expect(mockFetch).toBeCalledTimes(3);
     Object.defineProperty(constants, 'DEFAULT_FETCH_TIMEOUT_MS', {
-      get: () => originalDefaultFetchTimeoutMs,
+      get: () => originalDefaultFetchTimeoutMs
     });
   });
 
   it('falls back to iframe when missing refresh token without the worker', async () => {
     const auth0 = setup({
       useRefreshTokens: true,
-      cacheLocation: 'localstorage',
+      cacheLocation: 'localstorage'
     });
     expect(auth0.worker).toBeUndefined();
     await login(auth0, true, { refresh_token: '' });
     jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
       access_token: 'my_access_token',
-      state: 'MTIz',
+      state: 'MTIz'
     });
     mockFetch.mockResolvedValueOnce(
       fetchResponse(true, {
         id_token: 'my_id_token',
         refresh_token: 'my_refresh_token',
         access_token: 'my_access_token',
-        expires_in: 86400,
+        expires_in: 86400
       })
     );
     const access_token = await auth0.getTokenSilently({ ignoreCache: true });
@@ -446,30 +446,30 @@ describe('Auth0Client', () => {
     Object.defineProperty(window.navigator, 'userAgent', {
       value:
         'Mozilla/5.0 (Windows NT 6.1; WOW64; Trident/7.0; AS; rv:11.0) like Gecko',
-      configurable: true,
+      configurable: true
     });
     const auth0 = setup({
-      useRefreshTokens: true,
+      useRefreshTokens: true
     });
     expect(auth0.worker).toBeUndefined();
     await login(auth0, true, { refresh_token: '' });
     jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
       access_token: 'my_access_token',
-      state: 'MTIz',
+      state: 'MTIz'
     });
     mockFetch.mockResolvedValueOnce(
       fetchResponse(true, {
         id_token: 'my_id_token',
         refresh_token: 'my_refresh_token',
         access_token: 'my_access_token',
-        expires_in: 86400,
+        expires_in: 86400
       })
     );
     const access_token = await auth0.getTokenSilently({ ignoreCache: true });
     expect(access_token).toEqual('my_access_token');
     expect(utils.runIframe).toHaveBeenCalled();
     Object.defineProperty(window.navigator, 'userAgent', {
-      value: originalUserAgent,
+      value: originalUserAgent
     });
   });
 });
