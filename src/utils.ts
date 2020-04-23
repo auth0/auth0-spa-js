@@ -21,9 +21,7 @@ export const createAbortController = () => new AbortController();
 
 export const getUniqueScopes = (...scopes: string[]) => {
   const scopeString = scopes.filter(Boolean).join();
-  return dedupe(scopeString.replace(/\s/g, ',').split(','))
-    .join(' ')
-    .trim();
+  return dedupe(scopeString.replace(/\s/g, ',').split(',')).join(' ').trim();
 };
 
 export const parseQueryResult = (queryString: string) => {
@@ -55,7 +53,7 @@ export const runIframe = (
     iframe.setAttribute('width', '0');
     iframe.setAttribute('height', '0');
     iframe.style.display = 'none';
-    
+
     const removeIframe = () => {
       if (window.document.body.contains(iframe)) {
         window.document.body.removeChild(iframe);
@@ -67,22 +65,19 @@ export const runIframe = (
       removeIframe();
     }, timeoutInSeconds * 1000);
 
-    const iframeEventHandler = function(e: MessageEvent) {
+    const iframeEventHandler = function (e: MessageEvent) {
       if (e.origin != eventOrigin) return;
       if (!e.data || e.data.type !== 'authorization_response') return;
       const eventSource = e.source;
       if (eventSource) {
-          (<any>eventSource).close();
+        (<any>eventSource).close();
       }
       e.data.response.error ? rej(e.data.response) : res(e.data.response);
       clearTimeout(timeoutSetTimeoutId);
       window.removeEventListener('message', iframeEventHandler, false);
       // Delay the removal of the iframe to prevent hanging loading status
       // in Chrome: https://github.com/auth0/auth0-spa-js/issues/240
-      setTimeout(
-        removeIframe,
-        CLEANUP_IFRAME_TIMEOUT_IN_SECONDS * 1000
-      );
+      setTimeout(removeIframe, CLEANUP_IFRAME_TIMEOUT_IN_SECONDS * 1000);
     };
     window.addEventListener('message', iframeEventHandler, false);
     window.document.body.appendChild(iframe);
@@ -214,9 +209,9 @@ export const bufferToBase64UrlEncoded = input => {
 };
 
 const sendMessage = (message, to) =>
-  new Promise(function(resolve, reject) {
+  new Promise(function (resolve, reject) {
     const messageChannel = new MessageChannel();
-    messageChannel.port1.onmessage = function(event) {
+    messageChannel.port1.onmessage = function (event) {
       // Only for fetch errors, as these get retried
       if (event.data.error) {
         reject(new Error(event.data.error));
