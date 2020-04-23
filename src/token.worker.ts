@@ -8,14 +8,14 @@ let refreshToken;
 /**
  * @ignore
  */
-const wait: any = (time) => new Promise((resolve) => setTimeout(resolve, time));
+const wait: any = time => new Promise(resolve => setTimeout(resolve, time));
 
 /**
  * @ignore
  */
 const messageHandler = async ({
   data: { url, timeout, ...opts },
-  ports: [port],
+  ports: [port]
 }) => {
   let json;
   try {
@@ -34,12 +34,12 @@ const messageHandler = async ({
     try {
       response = await Promise.race([
         wait(timeout),
-        fetch(url, { ...opts, signal }),
+        fetch(url, { ...opts, signal })
       ]);
     } catch (error) {
       // fetch error, reject `sendMessage` using `error` key so that we retry.
       port.postMessage({
-        error: error.message,
+        error: error.message
       });
       return;
     }
@@ -61,14 +61,14 @@ const messageHandler = async ({
 
     port.postMessage({
       ok: response.ok,
-      json,
+      json
     });
   } catch (error) {
     port.postMessage({
       ok: false,
       json: {
-        error_description: error.message,
-      },
+        error_description: error.message
+      }
     });
   }
 };

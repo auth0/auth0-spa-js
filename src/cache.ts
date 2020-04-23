@@ -137,7 +137,7 @@ export class LocalStorageCache implements ICache {
 }
 
 export class InMemoryCache {
-  public enclosedCache: ICache = (function() {
+  public enclosedCache: ICache = (function () {
     let cache: CachePayload = {
       body: {},
       expiresAt: 0
