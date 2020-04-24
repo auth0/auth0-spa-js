@@ -220,6 +220,21 @@
           >
         </div>
 
+        <div class="custom-control custom-switch mb-5">
+          <input
+            type="checkbox"
+            class="custom-control-input"
+            id="transaction-switch"
+            v-model="clearTransactionCookies"
+          />
+          <label
+            for="transaction-switch"
+            class="custom-control-label"
+            data-cy="switch-clear-transaction"
+            >Clear transaction cookies</label
+          >
+        </div>
+
         <button @click="saveForm" class="btn btn-primary">
           Save
         </button>
@@ -255,6 +270,7 @@
             useRefreshTokens: data.useRefreshTokens || false,
             useCache: data.useCache === false ? false : true,
             useConstructor: data.useConstructor === false ? false : true,
+            clearTransactionCookies: data.clearTransactionCookies || false,
             profile: null,
             access_tokens: [],
             id_token: '',
@@ -262,7 +278,7 @@
             domain: data.domain || defaultDomain,
             clientId: data.clientId || defaultClientId,
             audience: data.audience || defaultAudience,
-            error: null,
+            error: null
           };
         },
         created: function () {
@@ -284,6 +300,10 @@
             this.initializeClient();
             this.saveForm();
           },
+          clearTransactionCookies: function () {
+            this.initializeClient();
+            this.saveForm();
+          }
         },
         methods: {
           initializeClient: function () {
@@ -299,32 +319,23 @@
               });
             };
 
+            const settings = {
+              domain: _self.domain,
+              client_id: _self.clientId,
+              cacheLocation: _self.useLocalStorage ? 'localstorage' : 'memory',
+              useRefreshTokens: _self.useRefreshTokens,
+              audience: _self.audience,
+              advancedOptions: {
+                clearTransactionCookies: _self.clearTransactionCookies
+              }
+            };
+
             if (_self.useConstructor) {
               console.log('Initializing using the constructor');
-
-              _init(
-                new Auth0Client({
-                  domain: _self.domain,
-                  client_id: _self.clientId,
-                  cacheLocation: _self.useLocalStorage
-                    ? 'localstorage'
-                    : 'memory',
-                  useRefreshTokens: _self.useRefreshTokens,
-                  audience: _self.audience,
-                })
-              );
+              _init(new Auth0Client(settings));
             } else {
               console.log('Initializing using the factory function');
-
-              createAuth0Client({
-                domain: _self.domain,
-                client_id: _self.clientId,
-                cacheLocation: _self.useLocalStorage
-                  ? 'localstorage'
-                  : 'memory',
-                useRefreshTokens: _self.useRefreshTokens,
-                audience: _self.audience,
-              }).then(_init);
+              createAuth0Client(settings).then(_init);
             }
           },
           saveForm: function () {
@@ -336,8 +347,9 @@
                 useLocalStorage: this.useLocalStorage,
                 useRefreshTokens: this.useRefreshTokens,
                 useConstructor: this.useConstructor,
+                clearTransactionCookies: this.clearTransactionCookies,
                 useCache: this.useCache,
-                audience: this.audience,
+                audience: this.audience
               })
             );
           },
@@ -346,6 +358,7 @@
             this.clientId = defaultClientId;
             this.useLocalStorage = false;
             this.useRefreshTokens = false;
+            this.clearTransactionCookies = false;
             this.useCache = true;
             this.audience = defaultAudience;
             this.useConstructor = false;
@@ -372,7 +385,7 @@
 
             _self.auth0
               .loginWithPopup({
-                redirect_uri: 'http://localhost:3000/callback.html',
+                redirect_uri: 'http://localhost:3000/callback.html'
               })
               .then(function () {
                 auth0.isAuthenticated().then(function (isAuthenticated) {
@@ -383,7 +396,7 @@
           },
           loginRedirect: function () {
             this.auth0.loginWithRedirect({
-              redirect_uri: 'http://localhost:3000/',
+              redirect_uri: 'http://localhost:3000/'
             });
           },
           loginHandleRedirectCallback: function () {
@@ -430,7 +443,7 @@
 
             Promise.all([
               _self.auth0.getTokenSilently({ ignoreCache: true }),
-              _self.auth0.getTokenSilently({ ignoreCache: true }),
+              _self.auth0.getTokenSilently({ ignoreCache: true })
             ]).then(function (tokens) {
               _self.access_tokens = [tokens[0], tokens[1]];
             });
@@ -441,7 +454,7 @@
             _self.auth0
               .getTokenWithPopup({
                 audience: 'https://brucke.auth0.com/api/v2/',
-                scope: 'read:rules',
+                scope: 'read:rules'
               })
               .then(function (token) {
                 _self.access_tokens = [token];
@@ -454,7 +467,7 @@
               audience: 'https://brucke.auth0.com/api/v2/',
               scope: 'read:rules',
               redirect_uri: 'http://localhost:3000/callback.html',
-              ignoreCache: !_self.useCache,
+              ignoreCache: !_self.useCache
             };
 
             _self.auth0
@@ -465,16 +478,16 @@
           },
           logout: function () {
             this.auth0.logout({
-              returnTo: 'http://localhost:3000/',
+              returnTo: 'http://localhost:3000/'
             });
           },
           logoutNoClient: function () {
             this.auth0.logout({
               client_id: null,
-              returnTo: 'http://localhost:3000/',
+              returnTo: 'http://localhost:3000/'
             });
-          },
-        },
+          }
+        }
       });
     </script>
   </body>

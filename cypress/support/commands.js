@@ -13,20 +13,33 @@ import { whenReady } from './utils';
 //
 // -- This is a parent command --
 
-Cypress.Commands.add('login', () => {
+Cypress.Commands.add('login', (opts = {}) => {
   cy.get('#login_redirect').click();
 
   cy.get('.auth0-lock-input-username .auth0-lock-input')
     .clear()
     .type('johnfoo+integration@gmail.com');
 
-  cy.get('.auth0-lock-input-password .auth0-lock-input')
-    .clear()
-    .type('1234');
+  cy.get('.auth0-lock-input-password .auth0-lock-input').clear().type('1234');
   cy.get('.auth0-lock-submit').click();
 
   return whenReady().then(() => {
-    cy.get('#handle_redirect_callback').click();
+    if (!opts.skipCallback) {
+      cy.get('#handle_redirect_callback').click();
+    }
+    return cy.wait(250);
+  });
+});
+
+Cypress.Commands.add('loginAuthenticated', opts => {
+  cy.get('#login_redirect').click();
+
+  cy.get('.auth0-lock-social-button').click();
+
+  return whenReady().then(() => {
+    if (!opts.skipCallback) {
+      cy.get('#handle_redirect_callback').click();
+    }
     return cy.wait(250);
   });
 });
@@ -48,9 +61,7 @@ Cypress.Commands.add('loginNoCallback', () => {
   cy.get('.auth0-lock-input-username .auth0-lock-input')
     .clear()
     .type('johnfoo+integration@gmail.com');
-  cy.get('.auth0-lock-input-password .auth0-lock-input')
-    .clear()
-    .type('1234');
+  cy.get('.auth0-lock-input-password .auth0-lock-input').clear().type('1234');
   cy.get('.auth0-lock-submit').click();
 });
 

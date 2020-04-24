@@ -70,6 +70,13 @@ interface AdvancedOptions {
    * Note: The `openid` scope is **always applied** regardless of this setting.
    */
   defaultScope?: string;
+
+  /**
+   * If set to `true`, any transaction cookies will be cleared before redirecting to the `/authorize` endpoint.
+   *
+   * The default is `false`
+   */
+  clearTransactionCookies?: boolean;
 }
 
 export interface Auth0ClientOptions extends BaseLoginOptions {

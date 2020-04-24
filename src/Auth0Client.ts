@@ -395,6 +395,10 @@ export default class Auth0Client {
    * @param options
    */
   public async loginWithRedirect(options: RedirectLoginOptions = {}) {
+    if (this.options?.advancedOptions?.clearTransactionCookies) {
+      this.transactionManager.clear();
+    }
+
     const url = await this.buildAuthorizeUrl(options);
     window.location.assign(url);
   }
