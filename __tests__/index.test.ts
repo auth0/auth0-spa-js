@@ -223,24 +223,6 @@ describe('Auth0', () => {
         expect(e.error).toEqual('some_other_error');
       }
     });
-
-    it('should respect advanced defaultScope option when provided', async () => {
-      const { auth0, utils, cache } = await setup({
-        advancedOptions: { defaultScope: 'openid jaffa' }
-      });
-      await auth0.getIdTokenClaims({
-        audience: 'the-audience',
-        scope: 'the-scope'
-      });
-      expect(cache.get).toHaveBeenCalledWith({
-        audience: 'the-audience',
-        scope: TEST_SCOPES
-      });
-      expect(utils.getUniqueScopes).toHaveBeenCalledWith(
-        'openid jaffa',
-        'the-scope'
-      );
-    });
   });
 
   describe('loginWithPopup()', () => {
@@ -1344,6 +1326,29 @@ describe('Auth0', () => {
       cache.get.mockReturnValue(userIn);
       const userOut = await auth0.getIdTokenClaims();
       expect(userOut).toEqual(userIn.decodedToken.claims);
+    });
+
+    it('should respect advanced defaultScope option when provided', async () => {
+      const { auth0, utils, cache } = await setup({
+        advancedOptions: { defaultScope: 'openid jaffa' }
+      });
+
+      await auth0.getIdTokenClaims({
+        audience: 'the-audience',
+        scope: 'the-scope'
+      });
+
+      expect(cache.get).toHaveBeenCalledWith({
+        audience: 'the-audience',
+        client_id: TEST_CLIENT_ID,
+        scope: TEST_SCOPES
+      });
+
+      expect(utils.getUniqueScopes).toHaveBeenCalledWith(
+        'openid jaffa',
+        undefined,
+        'the-scope'
+      );
     });
 
     describe('when using refresh tokens', () => {
