@@ -65,7 +65,9 @@ export interface BaseLoginOptions {
 interface AdvancedOptions {
   /**
    * The default scope to be included with all request.
-   * If not provided, 'openid profile email' is used.
+   * If not provided, 'openid profile email' is used. This can be set to `null` in order to effectively remove the default scopes.
+   *
+   * Note: The `openid` scope is **always applied** regardless of this setting.
    */
   defaultScope?: string;
 }
@@ -110,7 +112,7 @@ export interface Auth0ClientOptions extends BaseLoginOptions {
    * If true, refresh tokens are used to fetch new access tokens from the Auth0 server. If false, the legacy technique of using a hidden iframe and the `authorization_code` grant with `prompt=none` is used.
    * The default setting is `false`.
    *
-   * *Note*: Use of refresh tokens must be enabled by an administrator on your Auth0 client application.
+   * **Note**: Use of refresh tokens must be enabled by an administrator on your Auth0 client application.
    */
   useRefreshTokens?: boolean;
 
