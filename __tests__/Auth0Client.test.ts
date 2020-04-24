@@ -4,6 +4,8 @@ import unfetch from 'unfetch';
 import { verify } from '../src/jwt';
 import { MessageChannel } from 'worker_threads';
 import * as utils from '../src/utils';
+import { Auth0ClientOptions, IdToken } from '../src';
+import * as scope from '../src/scope';
 
 jest.mock('unfetch');
 jest.mock('../src/jwt');
@@ -34,7 +36,10 @@ const fetchResponse = (ok, json) =>
     json: () => Promise.resolve(json)
   });
 
-const setup: any = (config?, claims?) => {
+const setup = (
+  config?: Partial<Auth0ClientOptions>,
+  claims?: Partial<IdToken>
+) => {
   const auth0 = new Auth0Client(
     Object.assign(
       {
@@ -45,6 +50,7 @@ const setup: any = (config?, claims?) => {
       config
     )
   );
+
   mockVerify.mockReturnValue({
     claims: Object.assign(
       {
@@ -53,6 +59,7 @@ const setup: any = (config?, claims?) => {
       claims
     )
   });
+
   return auth0;
 };
 
@@ -96,23 +103,33 @@ describe('Auth0Client', () => {
     };
     mockWindow.MessageChannel = MessageChannel;
     mockWindow.Worker = {};
-    jest.spyOn(utils, 'getUniqueScopes');
+    jest.spyOn(scope, 'getUniqueScopes');
   });
 
   afterEach(() => {
     jest.clearAllMocks();
   });
 
-  it('automatically adds the offline_access scope during construction', async () => {
+  it('automatically adds the offline_access scope during construction', () => {
     setup({
       useRefreshTokens: true,
       scope: 'test-scope'
     });
 
-    expect(utils.getUniqueScopes).toHaveBeenCalledWith(
+    expect(scope.getUniqueScopes).toHaveBeenCalledWith(
       'test-scope',
       'offline_access'
     );
+  });
+
+  it('ensures the openid scope is defined when customizing default scopes', () => {
+    setup({
+      advancedOptions: {
+        defaultScope: 'test-scope'
+      }
+    });
+
+    expect(scope.getUniqueScopes).toHaveBeenCalledWith('openid', 'test-scope');
   });
 
   it('should log the user in and get the token', async () => {
@@ -143,8 +160,11 @@ describe('Auth0Client', () => {
     const auth0 = setup({
       useRefreshTokens: true
     });
-    expect(auth0.worker).toBeDefined();
+
+    expect((<any>auth0).worker).toBeDefined();
+
     await login(auth0);
+
     mockFetch.mockResolvedValueOnce(
       fetchResponse(true, {
         id_token: 'my_id_token',
@@ -153,7 +173,9 @@ describe('Auth0Client', () => {
         expires_in: 86400
       })
     );
+
     const access_token = await auth0.getTokenSilently({ ignoreCache: true });
+
     assertPost(
       'https://auth0_domain/oauth/token',
       {
@@ -164,6 +186,7 @@ describe('Auth0Client', () => {
       },
       1
     );
+
     expect(access_token).toEqual('my_access_token');
   });
 
@@ -172,8 +195,11 @@ describe('Auth0Client', () => {
       useRefreshTokens: true,
       cacheLocation: 'localstorage'
     });
-    expect(auth0.worker).toBeUndefined();
+
+    expect((<any>auth0).worker).toBeUndefined();
+
     await login(auth0);
+
     assertPost('https://auth0_domain/oauth/token', {
       redirect_uri: 'my_callback_url',
       client_id: 'auth0_client_id',
@@ -181,6 +207,7 @@ describe('Auth0Client', () => {
       grant_type: 'authorization_code',
       code: 'my_code'
     });
+
     mockFetch.mockResolvedValueOnce(
       fetchResponse(true, {
         id_token: 'my_id_token',
@@ -189,7 +216,9 @@ describe('Auth0Client', () => {
         expires_in: 86400
       })
     );
+
     const access_token = await auth0.getTokenSilently({ ignoreCache: true });
+
     assertPost(
       'https://auth0_domain/oauth/token',
       {
@@ -200,6 +229,7 @@ describe('Auth0Client', () => {
       },
       1
     );
+
     expect(access_token).toEqual('my_access_token');
   });
 
@@ -211,7 +241,7 @@ describe('Auth0Client', () => {
       cacheLocation: 'memory'
     });
 
-    expect(auth0.worker).toBeUndefined();
+    expect((<any>auth0).worker).toBeUndefined();
 
     await login(auth0);
 
@@ -252,7 +282,8 @@ describe('Auth0Client', () => {
     const auth0 = setup({
       useRefreshTokens: true
     });
-    expect(auth0.worker).toBeDefined();
+
+    expect((<any>auth0).worker).toBeDefined();
     await login(auth0);
     mockFetch.mockReset();
     mockFetch.mockImplementation(() => Promise.reject(new Error('my_error')));
@@ -266,7 +297,7 @@ describe('Auth0Client', () => {
     const auth0 = setup({
       useRefreshTokens: true
     });
-    expect(auth0.worker).toBeDefined();
+    expect((<any>auth0).worker).toBeDefined();
     await login(auth0);
     mockFetch.mockReset();
     mockFetch.mockResolvedValue(
@@ -290,7 +321,9 @@ describe('Auth0Client', () => {
     const auth0 = setup({
       useRefreshTokens: true
     });
-    expect(auth0.worker).toBeDefined();
+
+    expect((<any>auth0).worker).toBeDefined();
+
     await login(auth0);
     mockFetch.mockReset();
     mockFetch.mockImplementation(
@@ -324,7 +357,7 @@ describe('Auth0Client', () => {
     const auth0 = setup({
       useRefreshTokens: true
     });
-    expect(auth0.worker).toBeDefined();
+    expect((<any>auth0).worker).toBeDefined();
     await login(auth0, true, { refresh_token: '' });
     jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
       access_token: 'my_access_token',
@@ -348,7 +381,7 @@ describe('Auth0Client', () => {
       useRefreshTokens: true,
       cacheLocation: 'localstorage'
     });
-    expect(auth0.worker).toBeUndefined();
+    expect((<any>auth0).worker).toBeUndefined();
     await login(auth0);
     mockFetch.mockReset();
     mockFetch.mockImplementation(() => Promise.reject(new Error('my_error')));
@@ -363,7 +396,7 @@ describe('Auth0Client', () => {
       useRefreshTokens: true,
       cacheLocation: 'localstorage'
     });
-    expect(auth0.worker).toBeUndefined();
+    expect((<any>auth0).worker).toBeUndefined();
     await login(auth0);
     mockFetch.mockReset();
     mockFetch.mockResolvedValue(
@@ -388,7 +421,7 @@ describe('Auth0Client', () => {
       useRefreshTokens: true,
       cacheLocation: 'localstorage'
     });
-    expect(auth0.worker).toBeUndefined();
+    expect((<any>auth0).worker).toBeUndefined();
     await login(auth0);
     mockFetch.mockReset();
     mockFetch.mockImplementation(
@@ -422,7 +455,7 @@ describe('Auth0Client', () => {
       useRefreshTokens: true,
       cacheLocation: 'localstorage'
     });
-    expect(auth0.worker).toBeUndefined();
+    expect((<any>auth0).worker).toBeUndefined();
     await login(auth0, true, { refresh_token: '' });
     jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
       access_token: 'my_access_token',
@@ -451,7 +484,7 @@ describe('Auth0Client', () => {
     const auth0 = setup({
       useRefreshTokens: true
     });
-    expect(auth0.worker).toBeUndefined();
+    expect((<any>auth0).worker).toBeUndefined();
     await login(auth0, true, { refresh_token: '' });
     jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
       access_token: 'my_access_token',

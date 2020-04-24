@@ -1,7 +1,6 @@
 import Lock from 'browser-tabs-lock';
 
 import {
-  getUniqueScopes,
   createQueryParams,
   runPopup,
   parseQueryResult,
@@ -14,6 +13,7 @@ import {
   validateCrypto
 } from './utils';
 
+import { getUniqueScopes } from './scope';
 import { InMemoryCache, ICache, LocalStorageCache } from './cache';
 import TransactionManager from './transaction-manager';
 import { verify as verifyIdToken } from './jwt';
@@ -110,6 +110,13 @@ export default class Auth0Client {
     this.tokenIssuer = this.options.issuer
       ? `https://${this.options.issuer}/`
       : `${this.domainUrl}/`;
+
+    this.defaultScope = getUniqueScopes(
+      'openid',
+      this.options.advancedOptions && this.options.advancedOptions.defaultScope
+        ? this.options.advancedOptions.defaultScope
+        : DEFAULT_SCOPE
+    );
 
     // If using refresh tokens, automatically specify the `offline_access` scope
     if (this.options.useRefreshTokens) {
