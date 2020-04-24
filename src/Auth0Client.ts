@@ -135,10 +135,6 @@ export default class Auth0Client {
     ) {
       this.worker = new TokenWorker();
     }
-    this.defaultScope =
-      this.options.advancedOptions && this.options.advancedOptions.defaultScope
-        ? this.options.advancedOptions.defaultScope
-        : DEFAULT_SCOPE;
   }
 
   private _url(path) {
