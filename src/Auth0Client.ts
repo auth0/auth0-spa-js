@@ -114,7 +114,8 @@ export default class Auth0Client {
 
     this.defaultScope = getUniqueScopes(
       'openid',
-      this.options.advancedOptions && this.options.advancedOptions.defaultScope
+      this.options.advancedOptions &&
+        this.options.advancedOptions.defaultScope !== undefined
         ? this.options.advancedOptions.defaultScope
         : DEFAULT_SCOPE
     );

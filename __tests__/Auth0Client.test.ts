@@ -111,25 +111,32 @@ describe('Auth0Client', () => {
   });
 
   it('automatically adds the offline_access scope during construction', () => {
-    setup({
+    const auth0 = setup({
       useRefreshTokens: true,
       scope: 'test-scope'
     });
 
-    expect(scope.getUniqueScopes).toHaveBeenCalledWith(
-      'test-scope',
-      'offline_access'
-    );
+    expect((<any>auth0).scope).toBe('test-scope offline_access');
   });
 
   it('ensures the openid scope is defined when customizing default scopes', () => {
-    setup({
+    const auth0 = setup({
       advancedOptions: {
         defaultScope: 'test-scope'
       }
     });
 
-    expect(scope.getUniqueScopes).toHaveBeenCalledWith('openid', 'test-scope');
+    expect((<any>auth0).defaultScope).toBe('openid test-scope');
+  });
+
+  it('allows an empty custom default scope', () => {
+    const auth0 = setup({
+      advancedOptions: {
+        defaultScope: null
+      }
+    });
+
+    expect((<any>auth0).defaultScope).toBe('openid');
   });
 
   it('should log the user in and get the token', async () => {
