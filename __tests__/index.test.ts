@@ -622,6 +622,29 @@ describe('Auth0', () => {
       });
     });
 
+    it('creates correct query params with different default scopes', async () => {
+      const { auth0, utils } = await setup({
+        advancedOptions: {
+          defaultScope: 'email'
+        }
+      });
+
+      await auth0.buildAuthorizeUrl(REDIRECT_OPTIONS);
+
+      expect(utils.createQueryParams).toHaveBeenCalledWith({
+        client_id: TEST_CLIENT_ID,
+        scope: 'openid email',
+        response_type: TEST_CODE,
+        response_mode: 'query',
+        state: TEST_ENCODED_STATE,
+        nonce: TEST_ENCODED_STATE,
+        redirect_uri: REDIRECT_OPTIONS.redirect_uri,
+        code_challenge: TEST_BASE64_ENCODED_STRING,
+        code_challenge_method: 'S256',
+        connection: 'test-connection'
+      });
+    });
+
     it('creates correct query params when using refresh tokens', async () => {
       const { auth0, utils } = await setup({
         useRefreshTokens: true
@@ -1256,7 +1279,7 @@ describe('Auth0', () => {
       expect(userOut).toEqual({ sub: TEST_USER_ID, email: TEST_USER_EMAIL });
     });
     it('uses default options', async () => {
-      const { auth0, utils, cache } = await setup();
+      const { auth0, cache } = await setup();
 
       await auth0.getUser();
 
@@ -1274,6 +1297,22 @@ describe('Auth0', () => {
       expect(cache.get).toHaveBeenCalledWith({
         audience: 'the-audience',
         scope: `${TEST_SCOPES} the-scope`,
+        client_id: TEST_CLIENT_ID
+      });
+    });
+
+    it('uses a custom default scope', async () => {
+      const { auth0, cache } = await setup({
+        advancedOptions: {
+          defaultScope: 'email'
+        }
+      });
+
+      await auth0.getUser({ audience: 'the-audience', scope: 'the-scope' });
+
+      expect(cache.get).toHaveBeenCalledWith({
+        audience: 'the-audience',
+        scope: `openid email the-scope`,
         client_id: TEST_CLIENT_ID
       });
     });
@@ -1448,6 +1487,24 @@ describe('Auth0', () => {
           // an access token
           expect(utils.encode).toHaveBeenCalledWith(TEST_RANDOM_STRING);
         });
+
+        it('respects the global default scopes', async () => {
+          const { auth0, cache } = await setup({
+            advancedOptions: {
+              defaultScope: 'email'
+            }
+          });
+
+          cache.get.mockReturnValue({ access_token: TEST_ACCESS_TOKEN });
+
+          await auth0.getTokenSilently();
+
+          expect(cache.get).toHaveBeenCalledWith({
+            audience: 'default',
+            scope: 'openid email',
+            client_id: TEST_CLIENT_ID
+          });
+        });
       });
 
       describe('when refresh tokens are used', () => {
@@ -1507,6 +1564,57 @@ describe('Auth0', () => {
             access_token: TEST_ACCESS_TOKEN,
             id_token: TEST_ID_TOKEN,
             scope: `${TEST_SCOPES} offline_access`,
+            audience: 'default',
+            decodedToken: {
+              claims: { sub: TEST_USER_ID, aud: TEST_CLIENT_ID },
+              user: { sub: TEST_USER_ID }
+            }
+          });
+        });
+
+        it('calls the token endpoint with the correct params with different default scopes', async () => {
+          const { auth0, cache, utils } = await setup({
+            useRefreshTokens: true,
+            advancedOptions: {
+              defaultScope: 'email'
+            }
+          });
+
+          utils.oauthToken.mockReturnValue(
+            Promise.resolve({
+              id_token: TEST_ID_TOKEN,
+              access_token: TEST_ACCESS_TOKEN,
+              refresh_token: TEST_REFRESH_TOKEN
+            })
+          );
+
+          cache.get.mockReturnValue({ refresh_token: TEST_REFRESH_TOKEN });
+
+          await auth0.getTokenSilently({ ignoreCache: true });
+
+          expect(cache.get).toHaveBeenCalledWith({
+            audience: 'default',
+            scope: `openid email offline_access`,
+            client_id: TEST_CLIENT_ID
+          });
+
+          expect(utils.oauthToken).toHaveBeenCalledWith(
+            {
+              baseUrl: 'https://test.auth0.com',
+              refresh_token: TEST_REFRESH_TOKEN,
+              client_id: TEST_CLIENT_ID,
+              grant_type: 'refresh_token',
+              redirect_uri: 'http://localhost'
+            },
+            webWorkerMatcher
+          );
+
+          expect(cache.save).toHaveBeenCalledWith({
+            client_id: TEST_CLIENT_ID,
+            refresh_token: TEST_REFRESH_TOKEN,
+            access_token: TEST_ACCESS_TOKEN,
+            id_token: TEST_ID_TOKEN,
+            scope: `openid email offline_access`,
             audience: 'default',
             decodedToken: {
               claims: { sub: TEST_USER_ID, aud: TEST_CLIENT_ID },
@@ -1810,15 +1918,15 @@ describe('Auth0', () => {
   });
 
   describe('getTokenWithPopup()', () => {
-    const localSetup = async () => {
-      const result = await setup();
+    const localSetup = async (options: Partial<Auth0ClientOptions> = {}) => {
+      const result = await setup(options);
       result.auth0.loginWithPopup = jest.fn();
       result.cache.get.mockReturnValue({ access_token: TEST_ACCESS_TOKEN });
       return result;
     };
 
     it('calls `loginWithPopup` with the correct default options', async () => {
-      const { auth0, utils } = await localSetup();
+      const { auth0 } = await localSetup();
 
       await auth0.getTokenWithPopup();
 
@@ -1826,6 +1934,24 @@ describe('Auth0', () => {
         {
           audience: undefined,
           scope: TEST_SCOPES
+        },
+        DEFAULT_POPUP_CONFIG_OPTIONS
+      );
+    });
+
+    it('respects customized default scopes', async () => {
+      const { auth0 } = await localSetup({
+        advancedOptions: {
+          defaultScope: 'email'
+        }
+      });
+
+      await auth0.getTokenWithPopup();
+
+      expect(auth0.loginWithPopup).toHaveBeenCalledWith(
+        {
+          audience: undefined,
+          scope: 'openid email'
         },
         DEFAULT_POPUP_CONFIG_OPTIONS
       );

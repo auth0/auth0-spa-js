@@ -165,6 +165,7 @@ export default class Auth0Client {
       leeway,
       useRefreshTokens,
       cacheLocation,
+      advancedOptions,
       ...withoutDomain
     } = this.options;
 
