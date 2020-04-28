@@ -35,6 +35,8 @@ export interface BaseLoginOptions {
    * The user's email address or other identifier. When your app knows
    * which user is trying to authenticate, you can provide this parameter
    * to pre-fill the email box or select the right session for sign-in.
+   *
+   * This currently only affects the classic Lock experience.
    */
   login_hint?: string;
   acr_values?: string;
