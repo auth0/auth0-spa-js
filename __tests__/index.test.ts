@@ -1629,9 +1629,6 @@ describe('Auth0', () => {
         });
 
         it('falls back to the iframe method when an audience is specified', async () => {
-          // const utils = require('../src/utils');
-          // scope.getUniqueScopes.mockReturnValue('offline_access');
-
           const { auth0, utils } = await setup({
             useRefreshTokens: true
           });
@@ -2147,7 +2144,6 @@ describe('default creation function', () => {
       Auth0Client.prototype.getTokenSilently = jest.fn();
 
       require('../src/storage').get = () => true;
-      // scope.getUniqueScopes = jest.fn(() => options.scope);
 
       const auth0 = await createAuth0Client({
         domain: TEST_DOMAIN,
