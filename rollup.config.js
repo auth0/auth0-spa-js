@@ -27,14 +27,8 @@ const getPlugins = (shouldMinify) => {
     }),
     commonjs(),
     typescript({
-      check: false,
       clean: true,
       useTsconfigDeclarationDir: true,
-      include: [
-        'src/**/*.ts',
-        'src/**/*.js',
-        'node_modules/rollup-plugin-web-worker-loader/**/*',
-      ],
       tsconfigOverride: {
         noEmit: false,
         sourceMap: true,
