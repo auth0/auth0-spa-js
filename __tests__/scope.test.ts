@@ -4,12 +4,14 @@ describe('getUniqueScopes', () => {
   it('removes duplicates', () => {
     expect(getUniqueScopes('openid openid', 'email')).toBe('openid email');
   });
+
   it('handles whitespace', () => {
     expect(getUniqueScopes(' openid    profile  ', ' ')).toBe('openid profile');
   });
-  it('handles undefined/empty/null', () => {
+
+  it('handles undefined/empty/null/whitespace', () => {
     expect(
-      getUniqueScopes('openid profile', 'email', undefined, '', null)
+      getUniqueScopes('openid profile', ' ', undefined, 'email', '', null)
     ).toBe('openid profile email');
   });
 });
