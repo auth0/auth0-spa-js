@@ -85,7 +85,7 @@ export default class Auth0Client {
   private transactionManager: TransactionManager;
   private domainUrl: string;
   private tokenIssuer: string;
-  private readonly DEFAULT_SCOPE = 'openid profile email';
+  private readonly DEFAULT_SCOPE = 'openid';
 
   cacheLocation: CacheLocation;
   private worker: Worker;
