@@ -66,7 +66,7 @@ export interface BaseLoginOptions {
 
 interface AdvancedOptions {
   /**
-   * The default scope to be included with all request.
+   * The default scope to be included with all requests.
    * If not provided, 'openid profile email' is used. This can be set to `null` in order to effectively remove the default scopes.
    *
    * Note: The `openid` scope is **always applied** regardless of this setting.
@@ -125,7 +125,7 @@ export interface Auth0ClientOptions extends BaseLoginOptions {
   authorizeTimeoutInSeconds?: number;
 
   /**
-   * Changes to recommeded defaults, like defaultScope
+   * Changes to recommended defaults, like defaultScope
    */
   advancedOptions?: AdvancedOptions;
 }
