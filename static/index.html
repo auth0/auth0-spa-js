@@ -106,7 +106,7 @@
             <ul v-for="token in access_tokens">
               <li data-cy="access-token">
                 {{token}} (<a
-                  :href="`https://jwt.io?token=${token}`"
+                  :href="'https://jwt.io?token=' + token"
                   target="_blank"
                   >view</a
                 >)
@@ -121,7 +121,7 @@
           </div>
           <div class="card-body">
             {{ id_token }} (<a
-              :href="`https://jwt.io?token=${id_token}`"
+              :href="'https://jwt.io?token=' + id_token"
               target="_blank"
               >view</a
             >)
@@ -262,7 +262,7 @@
             domain: data.domain || defaultDomain,
             clientId: data.clientId || defaultClientId,
             audience: data.audience || defaultAudience,
-            error: null,
+            error: null
           };
         },
         created: function () {
@@ -283,7 +283,7 @@
           useConstructor: function () {
             this.initializeClient();
             this.saveForm();
-          },
+          }
         },
         methods: {
           initializeClient: function () {
@@ -310,7 +310,7 @@
                     ? 'localstorage'
                     : 'memory',
                   useRefreshTokens: _self.useRefreshTokens,
-                  audience: _self.audience,
+                  audience: _self.audience
                 })
               );
             } else {
@@ -323,7 +323,7 @@
                   ? 'localstorage'
                   : 'memory',
                 useRefreshTokens: _self.useRefreshTokens,
-                audience: _self.audience,
+                audience: _self.audience
               }).then(_init);
             }
           },
@@ -337,7 +337,7 @@
                 useRefreshTokens: this.useRefreshTokens,
                 useConstructor: this.useConstructor,
                 useCache: this.useCache,
-                audience: this.audience,
+                audience: this.audience
               })
             );
           },
@@ -372,7 +372,7 @@
 
             _self.auth0
               .loginWithPopup({
-                redirect_uri: 'http://localhost:3000/callback.html',
+                redirect_uri: 'http://localhost:3000/callback.html'
               })
               .then(function () {
                 auth0.isAuthenticated().then(function (isAuthenticated) {
@@ -383,7 +383,7 @@
           },
           loginRedirect: function () {
             this.auth0.loginWithRedirect({
-              redirect_uri: 'http://localhost:3000/',
+              redirect_uri: 'http://localhost:3000/'
             });
           },
           loginHandleRedirectCallback: function () {
@@ -430,7 +430,7 @@
 
             Promise.all([
               _self.auth0.getTokenSilently({ ignoreCache: true }),
-              _self.auth0.getTokenSilently({ ignoreCache: true }),
+              _self.auth0.getTokenSilently({ ignoreCache: true })
             ]).then(function (tokens) {
               _self.access_tokens = [tokens[0], tokens[1]];
             });
@@ -441,7 +441,7 @@
             _self.auth0
               .getTokenWithPopup({
                 audience: 'https://brucke.auth0.com/api/v2/',
-                scope: 'read:rules',
+                scope: 'read:rules'
               })
               .then(function (token) {
                 _self.access_tokens = [token];
@@ -454,7 +454,7 @@
               audience: 'https://brucke.auth0.com/api/v2/',
               scope: 'read:rules',
               redirect_uri: 'http://localhost:3000/callback.html',
-              ignoreCache: !_self.useCache,
+              ignoreCache: !_self.useCache
             };
 
             _self.auth0
@@ -465,16 +465,16 @@
           },
           logout: function () {
             this.auth0.logout({
-              returnTo: 'http://localhost:3000/',
+              returnTo: 'http://localhost:3000/'
             });
           },
           logoutNoClient: function () {
             this.auth0.logout({
               client_id: null,
-              returnTo: 'http://localhost:3000/',
+              returnTo: 'http://localhost:3000/'
             });
-          },
-        },
+          }
+        }
       });
     </script>
   </body>
