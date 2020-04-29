@@ -5,7 +5,7 @@ jest.mock('../src/transaction-manager');
 jest.mock('../src/utils');
 
 import { CacheLocation, Auth0ClientOptions } from '../src/global';
-const scope = require('../src/scope');
+import * as scope from '../src/scope';
 
 import createAuth0Client, {
   Auth0Client,
@@ -138,6 +138,8 @@ const setup = async (clientOptions: Partial<Auth0ClientOptions> = {}) => {
 };
 
 describe('Auth0', () => {
+  let getUniqueScopesSpy;
+
   beforeEach(() => {
     window.location.assign = jest.fn();
     window.Worker = jest.fn();
@@ -147,10 +149,13 @@ describe('Auth0', () => {
         digest: () => ''
       }
     };
+
+    getUniqueScopesSpy = jest.spyOn(scope, 'getUniqueScopes');
   });
 
   afterEach(() => {
     jest.resetAllMocks();
+    getUniqueScopesSpy.mockRestore();
   });
 
   describe('createAuth0Client()', () => {
