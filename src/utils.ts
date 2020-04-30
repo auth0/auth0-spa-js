@@ -13,16 +13,9 @@ import {
   CLEANUP_IFRAME_TIMEOUT_IN_SECONDS
 } from './constants';
 
-const dedupe = arr => arr.filter((x, i) => arr.indexOf(x) === i);
-
 const TIMEOUT_ERROR = { error: 'timeout', error_description: 'Timeout' };
 
 export const createAbortController = () => new AbortController();
-
-export const getUniqueScopes = (...scopes: string[]) => {
-  const scopeString = scopes.filter(Boolean).join();
-  return dedupe(scopeString.replace(/\s/g, ',').split(',')).join(' ').trim();
-};
 
 export const parseQueryResult = (queryString: string) => {
   if (queryString.indexOf('#') > -1) {

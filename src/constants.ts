@@ -31,3 +31,8 @@ export const CACHE_LOCATION_MEMORY = 'memory';
 export const CACHE_LOCATION_LOCAL_STORAGE = 'localstorage';
 export const MISSING_REFRESH_TOKEN_ERROR_MESSAGE =
   'The web worker is missing the refresh token';
+
+/**
+ * @ignore
+ */
+export const DEFAULT_SCOPE = 'openid profile email';
