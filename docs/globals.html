@@ -2730,6 +2730,9 @@ img {
 			<a href="classes/genericerror.html" class="tsd-kind-icon">Generic<wbr>Error</a>
 		</li>
 		<li class=" tsd-kind-interface">
+			<a href="interfaces/advancedoptions.html" class="tsd-kind-icon">Advanced<wbr>Options</a>
+		</li>
+		<li class=" tsd-kind-interface">
 			<a href="interfaces/auth0clientoptions.html" class="tsd-kind-icon">Auth0<wbr>Client<wbr>Options</a>
 		</li>
 		<li class=" tsd-kind-interface">
@@ -2832,15 +2835,15 @@ img {
 <span class="hljs-keyword">const</span> auth0 = <span class="hljs-keyword">await</span> createAuth0Client({
   <span class="hljs-attr">domain</span>: <span class="hljs-string">'&lt;AUTH0_DOMAIN&gt;'</span>,
   <span class="hljs-attr">client_id</span>: <span class="hljs-string">'&lt;AUTH0_CLIENT_ID&gt;'</span>,
-  <span class="hljs-attr">redirect_uri</span>: <span class="hljs-string">'&lt;MY_CALLBACK_URL&gt;'</span>,
+  <span class="hljs-attr">redirect_uri</span>: <span class="hljs-string">'&lt;MY_CALLBACK_URL&gt;'</span>
 });
 
 <span class="hljs-comment">//with promises</span>
 createAuth0Client({
   <span class="hljs-attr">domain</span>: <span class="hljs-string">'&lt;AUTH0_DOMAIN&gt;'</span>,
   <span class="hljs-attr">client_id</span>: <span class="hljs-string">'&lt;AUTH0_CLIENT_ID&gt;'</span>,
-  <span class="hljs-attr">redirect_uri</span>: <span class="hljs-string">'&lt;MY_CALLBACK_URL&gt;'</span>,
-}).then(<span class="hljs-function">(<span class="hljs-params">auth0</span>) =&gt;</span> {
+  <span class="hljs-attr">redirect_uri</span>: <span class="hljs-string">'&lt;MY_CALLBACK_URL&gt;'</span>
+}).then(<span class="hljs-function"><span class="hljs-params">auth0</span> =&gt;</span> {
   <span class="hljs-comment">//...</span>
 });
 
@@ -2850,7 +2853,7 @@ createAuth0Client({
 <span class="hljs-keyword">const</span> auth0 = <span class="hljs-keyword">new</span> Auth0Client({
   <span class="hljs-attr">domain</span>: <span class="hljs-string">'&lt;AUTH0_DOMAIN&gt;'</span>,
   <span class="hljs-attr">client_id</span>: <span class="hljs-string">'&lt;AUTH0_CLIENT_ID&gt;'</span>,
-  <span class="hljs-attr">redirect_uri</span>: <span class="hljs-string">'&lt;MY_CALLBACK_URL&gt;'</span>,
+  <span class="hljs-attr">redirect_uri</span>: <span class="hljs-string">'&lt;MY_CALLBACK_URL&gt;'</span>
 });
 
 <span class="hljs-comment">//if you do this, you'll need to check the session yourself</span>
@@ -2891,9 +2894,9 @@ createAuth0Client({
 
 <span class="hljs-comment">//in your callback route (&lt;MY_CALLBACK_URL&gt;)</span>
 <span class="hljs-built_in">window</span>.addEventListener(<span class="hljs-string">'load'</span>, () =&gt; {
-  auth0.handleRedirectCallback().then(<span class="hljs-function">(<span class="hljs-params">redirectResult</span>) =&gt;</span> {
+  auth0.handleRedirectCallback().then(<span class="hljs-function"><span class="hljs-params">redirectResult</span> =&gt;</span> {
     <span class="hljs-comment">//logged in. you can get the user profile like this:</span>
-    auth0.getUser().then(<span class="hljs-function">(<span class="hljs-params">user</span>) =&gt;</span> {
+    auth0.getUser().then(<span class="hljs-function"><span class="hljs-params">user</span> =&gt;</span> {
       <span class="hljs-built_in">console</span>.log(user);
     });
   });
@@ -2908,8 +2911,8 @@ createAuth0Client({
   <span class="hljs-keyword">const</span> result = <span class="hljs-keyword">await</span> fetch(<span class="hljs-string">'https://myapi.com'</span>, {
     <span class="hljs-attr">method</span>: <span class="hljs-string">'GET'</span>,
     <span class="hljs-attr">headers</span>: {
-      <span class="hljs-attr">Authorization</span>: <span class="hljs-string">`Bearer <span class="hljs-subst">${accessToken}</span>`</span>,
-    },
+      <span class="hljs-attr">Authorization</span>: <span class="hljs-string">`Bearer <span class="hljs-subst">${accessToken}</span>`</span>
+    }
   });
   <span class="hljs-keyword">const</span> data = <span class="hljs-keyword">await</span> result.json();
   <span class="hljs-built_in">console</span>.log(data);
@@ -2919,16 +2922,16 @@ createAuth0Client({
 <span class="hljs-built_in">document</span>.getElementById(<span class="hljs-string">'call-api'</span>).addEventListener(<span class="hljs-string">'click'</span>, () =&gt; {
   auth0
     .getTokenSilently()
-    .then(<span class="hljs-function">(<span class="hljs-params">accessToken</span>) =&gt;</span>
+    .then(<span class="hljs-function"><span class="hljs-params">accessToken</span> =&gt;</span>
       fetch(<span class="hljs-string">'https://myapi.com'</span>, {
         <span class="hljs-attr">method</span>: <span class="hljs-string">'GET'</span>,
         <span class="hljs-attr">headers</span>: {
-          <span class="hljs-attr">Authorization</span>: <span class="hljs-string">`Bearer <span class="hljs-subst">${accessToken}</span>`</span>,
-        },
+          <span class="hljs-attr">Authorization</span>: <span class="hljs-string">`Bearer <span class="hljs-subst">${accessToken}</span>`</span>
+        }
       })
     )
-    .then(<span class="hljs-function">(<span class="hljs-params">result</span>) =&gt;</span> result.json())
-    .then(<span class="hljs-function">(<span class="hljs-params">data</span>) =&gt;</span> {
+    .then(<span class="hljs-function"><span class="hljs-params">result</span> =&gt;</span> result.json())
+    .then(<span class="hljs-function"><span class="hljs-params">data</span> =&gt;</span> {
       <span class="hljs-built_in">console</span>.log(data);
     });
 });</code></pre>
@@ -2950,7 +2953,7 @@ createAuth0Client({
   <span class="hljs-attr">domain</span>: <span class="hljs-string">'&lt;AUTH0_DOMAIN&gt;'</span>,
   <span class="hljs-attr">client_id</span>: <span class="hljs-string">'&lt;AUTH0_CLIENT_ID&gt;'</span>,
   <span class="hljs-attr">redirect_uri</span>: <span class="hljs-string">'&lt;MY_CALLBACK_URL&gt;'</span>,
-  <span class="hljs-attr">cacheLocation</span>: <span class="hljs-string">'localstorage'</span>, <span class="hljs-comment">// valid values are: 'memory' or 'localstorage'</span>
+  <span class="hljs-attr">cacheLocation</span>: <span class="hljs-string">'localstorage'</span> <span class="hljs-comment">// valid values are: 'memory' or 'localstorage'</span>
 });</code></pre>
 			<p><strong>Important:</strong> This feature will allow the caching of data <strong>such as ID and access tokens</strong> to be stored in local storage. Exercising this option changes the security characteristics of your application and <strong>should not be used lightly</strong>. Extra care should be taken to mitigate against XSS attacks and minimize the risk of tokens being stolen from local storage.</p>
 			<a href="#refresh-tokens" id="refresh-tokens" style="color: inherit; text-decoration: none;">
@@ -2962,10 +2965,27 @@ createAuth0Client({
   <span class="hljs-attr">domain</span>: <span class="hljs-string">'&lt;AUTH0_DOMAIN&gt;'</span>,
   <span class="hljs-attr">client_id</span>: <span class="hljs-string">'&lt;AUTH0_CLIENT_ID&gt;'</span>,
   <span class="hljs-attr">redirect_uri</span>: <span class="hljs-string">'&lt;MY_CALLBACK_URL&gt;'</span>,
-  <span class="hljs-attr">useRefreshTokens</span>: <span class="hljs-literal">true</span>,
+  <span class="hljs-attr">useRefreshTokens</span>: <span class="hljs-literal">true</span>
 });</code></pre>
-			<p>Using this setting will cause the SDK to automatically send the <code>offline_access</code> scope to the authorization server. Refresh tokens will then be used to exchange for new access tokens instead of using a hidden iframe, and calls the <code>/oauth/token</code> endpoint directly. This means that the SDK does not rely on third-party cookies when using refresh tokens.</p>
+			<p>Using this setting will cause the SDK to automatically send the <code>offline_access</code> scope to the authorization server. Refresh tokens will then be used to exchange for new access tokens instead of using a hidden iframe, and calls the <code>/oauth/token</code> endpoint directly. This means that in most cases the SDK does not rely on third-party cookies when using refresh tokens.</p>
 			<p><strong>Note</strong> This configuration option requires Rotating Refresh Tokens to be <a href="https://auth0.com/docs/tokens/guides/configure-refresh-token-rotation">enabled for your Auth0 Tenant</a>.</p>
+			<a href="#refresh-token-fallback" id="refresh-token-fallback" style="color: inherit; text-decoration: none;">
+				<h4>Refresh Token fallback</h4>
+			</a>
+			<p>In all cases where a refresh token is not available, the SDK falls back to the legacy technique of using a hidden iframe with <code>prompt=none</code> to try and get a new access token and refresh token. This scenario would occur for example if you are using the in-memory cache and you have refreshed the page. In this case, any refresh token that was stored previously would be lost.</p>
+			<p>If the fallback mechanism fails, a <code>login_required</code> error will be thrown and could be handled in order to put the user back through the authentication process.</p>
+			<p><strong>Note</strong>: This fallback mechanism does still require access to the Auth0 session cookie, so if third-party cookies are being blocked then this fallback will not work and the user must re-authenticate in order to get a new refresh token.</p>
+			<a href="#advanced-options" id="advanced-options" style="color: inherit; text-decoration: none;">
+				<h3>Advanced options</h3>
+			</a>
+			<p>Advanced options can be set by specifying the <code>advancedOptions</code> property when configuring <code>Auth0Client</code>. Learn about the complete set of advanced options in the <a href="https://auth0.github.io/auth0-spa-js/interfaces/advancedoptions.html">API documentation</a></p>
+			<pre><code class="language-js">createAuth0Client({
+  <span class="hljs-attr">domain</span>: <span class="hljs-string">'&lt;AUTH0_DOMAIN&gt;'</span>,
+  <span class="hljs-attr">client_id</span>: <span class="hljs-string">'&lt;AUTH0_CLIENT_ID&gt;'</span>,
+  <span class="hljs-attr">advancedOptions</span>: {
+    <span class="hljs-attr">defaultScope</span>: <span class="hljs-string">'email'</span> <span class="hljs-comment">// change the scopes that are applied to every authz request. **Note**: `openid` is always specified regardless of this setting</span>
+  }
+});</code></pre>
 			<a href="#contributing" id="contributing" style="color: inherit; text-decoration: none;">
 				<h2>Contributing</h2>
 			</a>
@@ -3020,6 +3040,7 @@ createAuth0Client({
 					<section class="tsd-index-section ">
 						<h3>Interfaces</h3>
 						<ul class="tsd-index-list">
+							<li class="tsd-kind-interface"><a href="interfaces/advancedoptions.html" class="tsd-kind-icon">Advanced<wbr>Options</a></li>
 							<li class="tsd-kind-interface"><a href="interfaces/auth0clientoptions.html" class="tsd-kind-icon">Auth0<wbr>Client<wbr>Options</a></li>
 							<li class="tsd-kind-interface"><a href="interfaces/getidtokenclaimsoptions.html" class="tsd-kind-icon">Get<wbr>IdToken<wbr>Claims<wbr>Options</a></li>
 							<li class="tsd-kind-interface"><a href="interfaces/gettokensilentlyoptions.html" class="tsd-kind-icon">Get<wbr>Token<wbr>Silently<wbr>Options</a></li>
@@ -3064,7 +3085,7 @@ createAuth0Client({
 				<div class="tsd-signature tsd-kind-icon">Cache<wbr>Location<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">"memory"</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">"localstorage"</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/476caea/src/global.ts#L118">src/global.ts:118</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/0af848a/src/global.ts#L136">src/global.ts:136</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-comment tsd-typography">
@@ -3079,7 +3100,7 @@ createAuth0Client({
 				<div class="tsd-signature tsd-kind-icon">get<wbr>IdToken<wbr>Claims<wbr>Options<span class="tsd-signature-symbol">:</span> <a href="interfaces/getidtokenclaimsoptions.html" class="tsd-signature-type">GetIdTokenClaimsOptions</a></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/476caea/src/global.ts#L201">src/global.ts:201</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/0af848a/src/global.ts#L219">src/global.ts:219</a></li>
 					</ul>
 				</aside>
 			</section>
@@ -3092,7 +3113,7 @@ createAuth0Client({
 				<div class="tsd-signature tsd-kind-icon">CACHE_<wbr>LOCATION_<wbr>LOCAL_<wbr>STORAGE<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">"localstorage"</span><span class="tsd-signature-symbol"> = &quot;localstorage&quot;</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/476caea/src/constants.ts#L31">src/constants.ts:31</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/0af848a/src/constants.ts#L31">src/constants.ts:31</a></li>
 					</ul>
 				</aside>
 			</section>
@@ -3102,7 +3123,7 @@ createAuth0Client({
 				<div class="tsd-signature tsd-kind-icon">CACHE_<wbr>LOCATION_<wbr>MEMORY<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">"memory"</span><span class="tsd-signature-symbol"> = &quot;memory&quot;</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/476caea/src/constants.ts#L30">src/constants.ts:30</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/0af848a/src/constants.ts#L30">src/constants.ts:30</a></li>
 					</ul>
 				</aside>
 			</section>
@@ -3112,7 +3133,7 @@ createAuth0Client({
 				<div class="tsd-signature tsd-kind-icon">MISSING_<wbr>REFRESH_<wbr>TOKEN_<wbr>ERROR_<wbr>MESSAGE<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">"The web worker is missing the refresh token"</span><span class="tsd-signature-symbol"> = &quot;The web worker is missing the refresh token&quot;</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/476caea/src/constants.ts#L32">src/constants.ts:32</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/0af848a/src/constants.ts#L32">src/constants.ts:32</a></li>
 					</ul>
 				</aside>
 			</section>
@@ -3129,7 +3150,7 @@ createAuth0Client({
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/476caea/src/index.ts#L19">src/index.ts:19</a></li>
+								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/0af848a/src/index.ts#L20">src/index.ts:20</a></li>
 							</ul>
 						</aside>
 						<h4 class="tsd-parameters-title">Parameters</h4>
