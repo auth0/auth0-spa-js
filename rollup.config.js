@@ -18,6 +18,7 @@ const shouldGenerateStats = process.env.WITH_STATS === 'true';
 const getPlugins = shouldMinify => {
   return [
     webWorkerLoader({
+      targetPlatform: 'browser',
       sourceMap: !isProduction,
       preserveSource: !isProduction,
       pattern: /^[^\/].+\.worker\.ts$/
