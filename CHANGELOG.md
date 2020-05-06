@@ -1,5 +1,13 @@
 # Change Log
 
+## [v1.8.1](https://github.com/auth0/auth0-spa-js/tree/v1.8.1) (2020-05-06)
+
+[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v1.8.0...v1.8.1)
+
+**Fixed**
+
+- Fix issue with create-react-app webpack build [\#451](https://github.com/auth0/auth0-spa-js/pull/451) ([adamjmcgrath](https://github.com/adamjmcgrath))
+
 ## [v1.8.0](https://github.com/auth0/auth0-spa-js/tree/v1.8.0) (2020-04-30)
 
 [Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v1.7.0...v1.8.0)
