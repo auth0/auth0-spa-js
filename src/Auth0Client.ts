@@ -220,7 +220,7 @@ export default class Auth0Client {
     const { redirect_uri, appState, ...authorizeOptions } = options;
 
     const stateIn = encode(createRandomString());
-    const nonceIn = encode(createRandomString());
+    const nonceIn = options.nonce || encode(createRandomString());
     const code_verifier = createRandomString();
     const code_challengeBuffer = await sha256(code_verifier);
     const code_challenge = bufferToBase64UrlEncoded(code_challengeBuffer);

@@ -627,6 +627,30 @@ describe('Auth0', () => {
       });
     });
 
+    it('passes through the `nonce` if provided', async () => {
+      const { auth0, utils } = await setup();
+
+      const NONCE = 'abcd';
+
+      await auth0.buildAuthorizeUrl({
+        ...REDIRECT_OPTIONS,
+        nonce: NONCE
+      });
+
+      expect(utils.createQueryParams).toHaveBeenCalledWith({
+        client_id: TEST_CLIENT_ID,
+        scope: TEST_SCOPES,
+        response_type: TEST_CODE,
+        response_mode: 'query',
+        state: TEST_ENCODED_STATE,
+        nonce: NONCE,
+        redirect_uri: REDIRECT_OPTIONS.redirect_uri,
+        code_challenge: TEST_BASE64_ENCODED_STRING,
+        code_challenge_method: 'S256',
+        connection: 'test-connection'
+      });
+    });
+
     it('creates correct query params with different default scopes', async () => {
       const { auth0, utils } = await setup({
         advancedOptions: {

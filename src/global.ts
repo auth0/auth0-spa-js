@@ -165,6 +165,10 @@ export interface RedirectLoginOptions extends BaseLoginOptions {
    * Used to add to the URL fragment before redirecting
    */
   fragment?: string;
+  /**
+   * Used to override the nonce
+   */
+  nonce?: string;
 }
 
 export interface RedirectLoginResult {
