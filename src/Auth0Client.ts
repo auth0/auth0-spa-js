@@ -693,14 +693,8 @@ export default class Auth0Client {
   private async _getTokenUsingRefreshToken(
     options: GetTokenSilentlyOptions
   ): Promise<any> {
-    options.scope = getUniqueScopes(
-      this.defaultScope,
-      this.scope,
-      options.scope
-    );
-
     const cache = this.cache.get({
-      scope: options.scope,
+      scope: getUniqueScopes(this.defaultScope, this.scope, options.scope),
       audience: options.audience || 'default',
       client_id: this.options.client_id
     });
@@ -718,9 +712,12 @@ export default class Auth0Client {
       window.location.origin;
 
     let tokenResult;
+    const { scope, audience, ignoreCache, ...customOptions } = options;
+
     try {
       tokenResult = await oauthToken(
         {
+          ...customOptions,
           baseUrl: this.domainUrl,
           client_id: this.options.client_id,
           grant_type: 'refresh_token',
