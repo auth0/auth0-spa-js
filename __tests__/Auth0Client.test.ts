@@ -534,11 +534,12 @@ describe('Auth0Client', () => {
     });
     expect(access_token).toEqual('my_access_token');
     expect(utils.runIframe).toHaveBeenCalledTimes(1);
+    (<jest.Mock>utils.runIframe).mockClear();
     access_token = await auth0.getTokenSilently({
       audience: 'foo',
       scope: 'bar'
     });
     expect(access_token).toEqual('my_access_token');
-    expect(utils.runIframe).toHaveBeenCalledTimes(1);
+    expect(utils.runIframe).not.toHaveBeenCalled();
   });
 });
