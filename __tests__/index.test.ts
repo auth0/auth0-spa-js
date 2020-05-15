@@ -1558,7 +1558,8 @@ describe('Auth0', () => {
               refresh_token: TEST_REFRESH_TOKEN,
               client_id: TEST_CLIENT_ID,
               grant_type: 'refresh_token',
-              redirect_uri: 'http://localhost'
+              redirect_uri: 'http://localhost',
+              scope: `${TEST_SCOPES} offline_access`
             },
             webWorkerMatcher
           );
@@ -1609,7 +1610,8 @@ describe('Auth0', () => {
               refresh_token: TEST_REFRESH_TOKEN,
               client_id: TEST_CLIENT_ID,
               grant_type: 'refresh_token',
-              redirect_uri: 'http://localhost'
+              redirect_uri: 'http://localhost',
+              scope: `openid email offline_access`
             },
             webWorkerMatcher
           );
