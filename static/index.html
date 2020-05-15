@@ -94,7 +94,7 @@
           <div class="card-body">
             <pre>
               <code>
-                {{ JSON.stringify(profile, null, 2).trim() }}
+                {{ profile | json }}
               </code>
             </pre>
           </div>
@@ -105,7 +105,7 @@
           <div class="card-body">
             <ul v-for="token in access_tokens">
               <li data-cy="access-token">
-                {{token}} (<a
+                {{token | concat}} (<a
                   :href="'https://jwt.io?token=' + token"
                   target="_blank"
                   >view</a
@@ -120,7 +120,7 @@
             ID Token
           </div>
           <div class="card-body">
-            {{ id_token }} (<a
+            {{ id_token | concat }} (<a
               :href="'https://jwt.io?token=' + id_token"
               target="_blank"
               >view</a
@@ -240,6 +240,14 @@
       var defaultDomain = 'brucke.auth0.com';
       var defaultClientId = 'wLSIP47wM39wKdDmOj6Zb5eSEw3JVhVp';
       var defaultAudience = '';
+
+      Vue.filter('concat', function (value) {
+        if (value && value.length > 35) {
+          return value.substr(0, 32) + '...';
+        }
+
+        return value;
+      });
 
       var app = new Vue({
         el: '#app',
