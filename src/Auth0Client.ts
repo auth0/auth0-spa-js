@@ -668,8 +668,17 @@ export default class Auth0Client {
       throw new Error('Invalid state');
     }
 
+    const {
+      scope,
+      audience,
+      redirect_uri,
+      ignoreCache,
+      ...customOptions
+    } = options;
+
     const tokenResult = await oauthToken(
       {
+        ...customOptions,
         baseUrl: this.domainUrl,
         client_id: this.options.client_id,
         code_verifier,
