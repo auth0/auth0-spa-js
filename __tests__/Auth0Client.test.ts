@@ -512,4 +512,34 @@ describe('Auth0Client', () => {
       value: originalUserAgent
     });
   });
+
+  it('uses the cache for multiple token requests with audience and scope', async () => {
+    const auth0 = setup();
+    await login(auth0);
+    jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
+      access_token: 'my_access_token',
+      state: 'MTIz'
+    });
+    mockFetch.mockResolvedValue(
+      fetchResponse(true, {
+        id_token: 'my_id_token',
+        refresh_token: 'my_refresh_token',
+        access_token: 'my_access_token',
+        expires_in: 86400
+      })
+    );
+    let access_token = await auth0.getTokenSilently({
+      audience: 'foo',
+      scope: 'bar'
+    });
+    expect(access_token).toEqual('my_access_token');
+    expect(utils.runIframe).toHaveBeenCalledTimes(1);
+    (<jest.Mock>utils.runIframe).mockClear();
+    access_token = await auth0.getTokenSilently({
+      audience: 'foo',
+      scope: 'bar'
+    });
+    expect(access_token).toEqual('my_access_token');
+    expect(utils.runIframe).not.toHaveBeenCalled();
+  });
 });

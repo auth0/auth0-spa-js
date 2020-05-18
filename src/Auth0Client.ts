@@ -501,9 +501,9 @@ export default class Auth0Client {
   public async getTokenSilently(options: GetTokenSilentlyOptions = {}) {
     const { ignoreCache, ...getTokenOptions } = {
       audience: this.options.audience,
-      scope: getUniqueScopes(this.defaultScope, this.scope, options.scope),
       ignoreCache: false,
-      ...options
+      ...options,
+      scope: getUniqueScopes(this.defaultScope, this.scope, options.scope)
     };
 
     try {
