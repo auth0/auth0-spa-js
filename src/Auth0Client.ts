@@ -728,7 +728,14 @@ export default class Auth0Client {
       window.location.origin;
 
     let tokenResult;
-    const { scope, audience, ignoreCache, ...customOptions } = options;
+
+    const {
+      scope,
+      audience,
+      ignoreCache,
+      timeoutInSeconds,
+      ...customOptions
+    } = options;
 
     try {
       tokenResult = await oauthToken(
@@ -750,6 +757,7 @@ export default class Auth0Client {
       }
       throw e;
     }
+
     const decodedToken = this._verifyIdToken(tokenResult.id_token);
 
     return {
