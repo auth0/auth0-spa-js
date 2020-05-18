@@ -673,6 +673,7 @@ export default class Auth0Client {
       audience,
       redirect_uri,
       ignoreCache,
+      timeoutInSeconds,
       ...customOptions
     } = options;
 
