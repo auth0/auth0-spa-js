@@ -703,8 +703,14 @@ export default class Auth0Client {
   private async _getTokenUsingRefreshToken(
     options: GetTokenSilentlyOptions
   ): Promise<any> {
+    options.scope = getUniqueScopes(
+      this.defaultScope,
+      this.options.scope,
+      options.scope
+    );
+
     const cache = this.cache.get({
-      scope: getUniqueScopes(this.defaultScope, this.scope, options.scope),
+      scope: options.scope,
       audience: options.audience || 'default',
       client_id: this.options.client_id
     });
