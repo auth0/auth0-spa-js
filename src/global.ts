@@ -313,6 +313,7 @@ export interface TokenEndpointOptions {
   client_id: string;
   grant_type: string;
   timeout?: number;
+  [key: string]: any;
 }
 
 /**
