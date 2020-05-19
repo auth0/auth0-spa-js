@@ -18,12 +18,13 @@ export default class TransactionManager {
   private transactions: Transactions;
   constructor() {
     this.transactions = {};
-    ClientStorage.getAllKeys()
-      .filter(k => k.startsWith(COOKIE_KEY))
-      .forEach(k => {
-        const state = k.replace(COOKIE_KEY, '');
-        this.transactions[state] = ClientStorage.get<Transaction>(k);
-      });
+    typeof window !== 'undefined' &&
+      ClientStorage.getAllKeys()
+        .filter(k => k.startsWith(COOKIE_KEY))
+        .forEach(k => {
+          const state = k.replace(COOKIE_KEY, '');
+          this.transactions[state] = ClientStorage.get<Transaction>(k);
+        });
   }
   public create(state: string, transaction: Transaction) {
     this.transactions[state] = transaction;
