@@ -414,7 +414,10 @@
             var _self = this;
 
             _self.auth0
-              .getTokenSilently({ ignoreCache: !_self.useCache })
+              .getTokenSilently({
+                ignoreCache: !_self.useCache,
+                aCustomOption: 'hello world'
+              })
               .then(function (token) {
                 _self.access_tokens.push(token);
                 _self.error = null;
