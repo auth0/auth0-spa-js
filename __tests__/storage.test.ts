@@ -14,7 +14,8 @@ describe('storage', () => {
       key,
       JSON.stringify(value),
       {
-        expires: options.daysUntilExpire
+        expires: options.daysUntilExpire,
+        sameSite: 'strict'
       }
     );
   });

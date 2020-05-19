@@ -19,7 +19,8 @@ export const save = (
   options: ClientStorageOptions
 ) => {
   Cookies.set(key, JSON.stringify(value), {
-    expires: options.daysUntilExpire
+    expires: options.daysUntilExpire,
+    sameSite: 'strict'
   });
 };
 export const remove = (key: string) => {
