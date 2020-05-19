@@ -96,7 +96,7 @@ export default class Auth0Client {
   private worker: Worker;
 
   constructor(private options: Auth0ClientOptions) {
-    validateCrypto();
+    typeof window !== 'undefined' && validateCrypto();
     this.cacheLocation = options.cacheLocation || CACHE_LOCATION_MEMORY;
 
     if (!cacheFactory(this.cacheLocation)) {
@@ -128,6 +128,7 @@ export default class Auth0Client {
 
     // Don't use web workers unless using refresh tokens in memory and not IE11
     if (
+      typeof window !== 'undefined' &&
       window.Worker &&
       this.options.useRefreshTokens &&
       this.cacheLocation === CACHE_LOCATION_MEMORY &&
