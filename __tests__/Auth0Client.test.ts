@@ -542,4 +542,68 @@ describe('Auth0Client', () => {
     expect(access_token).toEqual('my_access_token');
     expect(utils.runIframe).not.toHaveBeenCalled();
   });
+
+  it('sends custom options through to the token endpoint when using an iframe', async () => {
+    const auth0 = setup();
+
+    await login(auth0, true);
+
+    jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
+      access_token: 'my_access_token',
+      state: 'MTIz'
+    });
+
+    await auth0.getTokenSilently({
+      ignoreCache: true,
+      customParam: 'hello world'
+    });
+
+    expect(
+      (<any>utils.runIframe).mock.calls[0][0].includes(
+        'customParam=hello%20world'
+      )
+    ).toBe(true);
+
+    expect(JSON.parse(mockFetch.mock.calls[1][1].body)).toEqual({
+      redirect_uri: 'my_callback_url',
+      client_id: 'auth0_client_id',
+      grant_type: 'authorization_code',
+      customParam: 'hello world',
+      code_verifier: '123'
+    });
+  });
+
+  it('sends custom options through to the token endpoint when using refresh tokens', async () => {
+    const auth0 = setup({
+      useRefreshTokens: true
+    });
+
+    await login(auth0, true, { refresh_token: 'a_refresh_token' });
+
+    mockFetch.mockResolvedValueOnce(
+      fetchResponse(true, {
+        id_token: 'my_id_token',
+        refresh_token: 'my_refresh_token',
+        access_token: 'my_access_token',
+        expires_in: 86400
+      })
+    );
+
+    expect(utils.runIframe).not.toHaveBeenCalled();
+
+    const access_token = await auth0.getTokenSilently({
+      ignoreCache: true,
+      customParam: 'hello world'
+    });
+
+    expect(JSON.parse(mockFetch.mock.calls[1][1].body)).toEqual({
+      redirect_uri: 'my_callback_url',
+      client_id: 'auth0_client_id',
+      grant_type: 'refresh_token',
+      refresh_token: 'a_refresh_token',
+      customParam: 'hello world'
+    });
+
+    expect(access_token).toEqual('my_access_token');
+  });
 });
