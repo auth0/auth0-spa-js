@@ -1,3 +1,7 @@
+## Environment
+
+- Node >= 10.x
+
 ## Building
 
 The SDK uses [Rollup](https://rollupjs.org/guide/en/) to compile all JavaScript assets into a set of output modules to be consumed by other module builders such as [Webpack](https://webpack.js.org/) and Rollup, or directly into and HTML file via the CDN.
