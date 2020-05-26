@@ -2149,7 +2149,7 @@ describe('default creation function', () => {
       client_id: TEST_CLIENT_ID
     });
 
-    expect(auth0.getTokenSilently).toHaveBeenCalledWith();
+    expect(auth0.getTokenSilently).toHaveBeenCalledWith(undefined);
   });
 
   describe('when refresh tokens are not used', () => {
@@ -2171,7 +2171,7 @@ describe('default creation function', () => {
         ...options
       });
 
-      expect(auth0.getTokenSilently).toHaveBeenCalledWith();
+      expect(auth0.getTokenSilently).toHaveBeenCalledWith(undefined);
     });
   });
 
@@ -2195,7 +2195,7 @@ describe('default creation function', () => {
 
       expect((<any>auth0).scope).toBe('the-scope offline_access');
 
-      expect(auth0.getTokenSilently).toHaveBeenCalledWith();
+      expect(auth0.getTokenSilently).toHaveBeenCalledWith(undefined);
     });
   });
 
@@ -2219,7 +2219,7 @@ describe('default creation function', () => {
         ...options
       });
 
-      expect(auth0.getTokenSilently).toHaveBeenCalledWith();
+      expect(auth0.getTokenSilently).toHaveBeenCalledWith(undefined);
     });
   });
 });
