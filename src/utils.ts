@@ -224,7 +224,8 @@ const switchFetch = async (url, opts, timeout, worker) => {
     const response = await fetch(url, opts);
     return {
       ok: response.ok,
-      json: await response.json()
+      json: await response.json(),
+      status: response.status
     };
   }
 };
@@ -280,8 +281,9 @@ const getJSON = async (url, timeout, options, worker) => {
   }
 
   const {
-    json: { error, error_description, status, ...success },
-    ok
+    json: { error, error_description, ...success },
+    ok,
+    status
   } = response;
 
   if (!ok) {
