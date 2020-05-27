@@ -14,10 +14,27 @@ describe('storage', () => {
       key,
       JSON.stringify(value),
       {
-        expires: options.daysUntilExpire,
-        sameSite: 'strict'
+        expires: options.daysUntilExpire
       }
     );
+  });
+  it('saves object with secure flag when on https', () => {
+    const key = 'key';
+    const value = { some: 'value' };
+    const options = { daysUntilExpire: 1 };
+    const originalLocation = window.location;
+    delete window.location;
+    window.location = { ...originalLocation, protocol: 'https:' };
+    storage.save(key, value, options);
+    expect(require('es-cookie').set).toHaveBeenCalledWith(
+      key,
+      JSON.stringify(value),
+      {
+        expires: options.daysUntilExpire,
+        secure: true
+      }
+    );
+    window.location = originalLocation;
   });
   it('returns undefined when there is no object', () => {
     const Cookie = require('es-cookie');
