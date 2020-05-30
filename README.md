@@ -28,7 +28,7 @@ Auth0 SDK for Single Page Applications using [Authorization Code Grant Flow with
 From the CDN:
 
 ```html
-<script src="https://cdn.auth0.com/js/auth0-spa-js/1.7/auth0-spa-js.production.js"></script>
+<script src="https://cdn.auth0.com/js/auth0-spa-js/1.8/auth0-spa-js.production.js"></script>
 ```
 
 Using [npm](https://npmjs.org):
@@ -56,15 +56,15 @@ import createAuth0Client from '@auth0/auth0-spa-js';
 const auth0 = await createAuth0Client({
   domain: '<AUTH0_DOMAIN>',
   client_id: '<AUTH0_CLIENT_ID>',
-  redirect_uri: '<MY_CALLBACK_URL>',
+  redirect_uri: '<MY_CALLBACK_URL>'
 });
 
 //with promises
 createAuth0Client({
   domain: '<AUTH0_DOMAIN>',
   client_id: '<AUTH0_CLIENT_ID>',
-  redirect_uri: '<MY_CALLBACK_URL>',
-}).then((auth0) => {
+  redirect_uri: '<MY_CALLBACK_URL>'
+}).then(auth0 => {
   //...
 });
 
@@ -74,7 +74,7 @@ import { Auth0Client } from '@auth0/auth0-spa-js';
 const auth0 = new Auth0Client({
   domain: '<AUTH0_DOMAIN>',
   client_id: '<AUTH0_CLIENT_ID>',
-  redirect_uri: '<MY_CALLBACK_URL>',
+  redirect_uri: '<MY_CALLBACK_URL>'
 });
 
 //if you do this, you'll need to check the session yourself
@@ -120,9 +120,9 @@ document.getElementById('login').addEventListener('click', () => {
 
 //in your callback route (<MY_CALLBACK_URL>)
 window.addEventListener('load', () => {
-  auth0.handleRedirectCallback().then((redirectResult) => {
+  auth0.handleRedirectCallback().then(redirectResult => {
     //logged in. you can get the user profile like this:
-    auth0.getUser().then((user) => {
+    auth0.getUser().then(user => {
       console.log(user);
     });
   });
@@ -142,8 +142,8 @@ document.getElementById('call-api').addEventListener('click', async () => {
   const result = await fetch('https://myapi.com', {
     method: 'GET',
     headers: {
-      Authorization: `Bearer ${accessToken}`,
-    },
+      Authorization: `Bearer ${accessToken}`
+    }
   });
   const data = await result.json();
   console.log(data);
@@ -153,16 +153,16 @@ document.getElementById('call-api').addEventListener('click', async () => {
 document.getElementById('call-api').addEventListener('click', () => {
   auth0
     .getTokenSilently()
-    .then((accessToken) =>
+    .then(accessToken =>
       fetch('https://myapi.com', {
         method: 'GET',
         headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
+          Authorization: `Bearer ${accessToken}`
+        }
       })
     )
-    .then((result) => result.json())
-    .then((data) => {
+    .then(result => result.json())
+    .then(data => {
       console.log(data);
     });
 });
@@ -193,7 +193,7 @@ await createAuth0Client({
   domain: '<AUTH0_DOMAIN>',
   client_id: '<AUTH0_CLIENT_ID>',
   redirect_uri: '<MY_CALLBACK_URL>',
-  cacheLocation: 'localstorage', // valid values are: 'memory' or 'localstorage'
+  cacheLocation: 'localstorage' // valid values are: 'memory' or 'localstorage'
 });
 ```
 
@@ -210,7 +210,7 @@ await createAuth0Client({
   domain: '<AUTH0_DOMAIN>',
   client_id: '<AUTH0_CLIENT_ID>',
   redirect_uri: '<MY_CALLBACK_URL>',
-  useRefreshTokens: true,
+  useRefreshTokens: true
 });
 ```
 
@@ -225,6 +225,20 @@ In all cases where a refresh token is not available, the SDK falls back to the l
 If the fallback mechanism fails, a `login_required` error will be thrown and could be handled in order to put the user back through the authentication process.
 
 **Note**: This fallback mechanism does still require access to the Auth0 session cookie, so if third-party cookies are being blocked then this fallback will not work and the user must re-authenticate in order to get a new refresh token.
+
+### Advanced options
+
+Advanced options can be set by specifying the `advancedOptions` property when configuring `Auth0Client`. Learn about the complete set of advanced options in the [API documentation](https://auth0.github.io/auth0-spa-js/interfaces/advancedoptions.html)
+
+```js
+createAuth0Client({
+  domain: '<AUTH0_DOMAIN>',
+  client_id: '<AUTH0_CLIENT_ID>',
+  advancedOptions: {
+    defaultScope: 'email' // change the scopes that are applied to every authz request. **Note**: `openid` is always specified regardless of this setting
+  }
+});
+```
 
 ## Contributing
 

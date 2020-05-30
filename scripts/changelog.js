@@ -9,7 +9,7 @@ const path = require('path');
 const execSync = require('child_process').execSync;
 const moment = require('moment');
 
-module.exports = function(newVersion) {
+module.exports = function (newVersion) {
   return new Promise((resolve, reject) => {
     const tmp = fs.readFileSync('.release', 'utf-8');
 
@@ -28,7 +28,7 @@ module.exports = function(newVersion) {
       'sed "s/# Change Log//" CHANGELOG.md | sed \'1,2d\''
     );
 
-    stream.once('open', function(fd) {
+    stream.once('open', function (fd) {
       stream.write('# Change Log');
       stream.write('\n');
       stream.write('\n');
@@ -52,7 +52,7 @@ module.exports = function(newVersion) {
       stream.end();
     });
 
-    stream.once('close', function(fd) {
+    stream.once('close', function (fd) {
       execSync(`mv ${changelogPath} CHANGELOG.md`, { stdio: 'inherit' });
       execSync('git add CHANGELOG.md', { stdio: 'inherit' });
       resolve();

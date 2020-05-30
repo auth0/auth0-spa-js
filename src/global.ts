@@ -35,12 +35,15 @@ export interface BaseLoginOptions {
    * The user's email address or other identifier. When your app knows
    * which user is trying to authenticate, you can provide this parameter
    * to pre-fill the email box or select the right session for sign-in.
+   *
+   * This currently only affects the classic Lock experience.
    */
   login_hint?: string;
   acr_values?: string;
   /**
    * The default scope to be used on authentication requests.
-   * `openid profile email` is always added to all requests.
+   * The defaultScope defined in the Auth0Client is included
+   * along with this scope
    */
   scope?: string;
   /**
@@ -59,6 +62,16 @@ export interface BaseLoginOptions {
    * make sure to use the original parameter name.
    */
   [key: string]: any;
+}
+
+interface AdvancedOptions {
+  /**
+   * The default scope to be included with all requests.
+   * If not provided, 'openid profile email' is used. This can be set to `null` in order to effectively remove the default scopes.
+   *
+   * Note: The `openid` scope is **always applied** regardless of this setting.
+   */
+  defaultScope?: string;
 }
 
 export interface Auth0ClientOptions extends BaseLoginOptions {
@@ -101,7 +114,7 @@ export interface Auth0ClientOptions extends BaseLoginOptions {
    * If true, refresh tokens are used to fetch new access tokens from the Auth0 server. If false, the legacy technique of using a hidden iframe and the `authorization_code` grant with `prompt=none` is used.
    * The default setting is `false`.
    *
-   * *Note*: Use of refresh tokens must be enabled by an administrator on your Auth0 client application.
+   * **Note**: Use of refresh tokens must be enabled by an administrator on your Auth0 client application.
    */
   useRefreshTokens?: boolean;
 
@@ -110,6 +123,11 @@ export interface Auth0ClientOptions extends BaseLoginOptions {
    * Defaults to 60s.
    */
   authorizeTimeoutInSeconds?: number;
+
+  /**
+   * Changes to recommended defaults, like defaultScope
+   */
+  advancedOptions?: AdvancedOptions;
 }
 
 /**
@@ -295,6 +313,7 @@ export interface TokenEndpointOptions {
   client_id: string;
   grant_type: string;
   timeout?: number;
+  [key: string]: any;
 }
 
 /**

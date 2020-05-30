@@ -4,22 +4,25 @@ jest.mock('../src/storage');
 jest.mock('../src/transaction-manager');
 jest.mock('../src/utils');
 
-import { CacheLocation } from '../src/global';
+import { CacheLocation, Auth0ClientOptions } from '../src/global';
+import * as scope from '../src/scope';
 
 import createAuth0Client, {
   Auth0Client,
-  GetTokenSilentlyOptions,
+  GetTokenSilentlyOptions
 } from '../src/index';
 
 import { AuthenticationError } from '../src/errors';
 import version from '../src/version';
+
+import { DEFAULT_POPUP_CONFIG_OPTIONS, DEFAULT_SCOPE } from '../src/constants';
 
 const GET_TOKEN_SILENTLY_LOCK_KEY = 'auth0.lock.getTokenSilently';
 
 const TEST_DOMAIN = 'test.auth0.com';
 const TEST_CLIENT_ID = 'test-client-id';
 const TEST_QUERY_PARAMS = 'query=params';
-const TEST_SCOPES = 'unique:scopes';
+const TEST_SCOPES = DEFAULT_SCOPE;
 const TEST_ENCODED_STATE = 'encoded-state';
 const TEST_RANDOM_STRING = 'random-string';
 const TEST_ARRAY_BUFFER = 'this-is-an-array-buffer';
@@ -35,45 +38,43 @@ const TEST_TELEMETRY_QUERY_STRING = `&auth0Client=${encodeURIComponent(
   btoa(
     JSON.stringify({
       name: 'auth0-spa-js',
-      version: version,
+      version: version
     })
   )
 )}`;
 
-import { DEFAULT_POPUP_CONFIG_OPTIONS } from '../src/constants';
-
 const mockEnclosedCache = {
   get: jest.fn(),
   save: jest.fn(),
-  clear: jest.fn(),
+  clear: jest.fn()
 };
 
 jest.mock('../src/cache', () => ({
   InMemoryCache: () => ({
-    enclosedCache: mockEnclosedCache,
+    enclosedCache: mockEnclosedCache
   }),
-  LocalStorageCache: () => mockEnclosedCache,
+  LocalStorageCache: () => mockEnclosedCache
 }));
 
 jest.mock('../src/token.worker');
 
 const webWorkerMatcher = expect.objectContaining({
-  postMessage: expect.any(Function),
+  postMessage: expect.any(Function)
 });
 
-const setup = async (options = {}) => {
+const setup = async (clientOptions: Partial<Auth0ClientOptions> = {}) => {
   const auth0 = await createAuth0Client({
     domain: TEST_DOMAIN,
     client_id: TEST_CLIENT_ID,
-    ...options,
+    ...clientOptions
   });
 
-  const getDefaultInstance = (m) => require(m).default.mock.instances[0];
+  const getDefaultInstance = m => require(m).default.mock.instances[0];
 
   const storage = {
     get: require('../src/storage').get,
     save: require('../src/storage').save,
-    remove: require('../src/storage').remove,
+    remove: require('../src/storage').remove
   };
 
   const lock = require('browser-tabs-lock');
@@ -84,7 +85,6 @@ const setup = async (options = {}) => {
   const utils = require('../src/utils');
 
   utils.createQueryParams.mockReturnValue(TEST_QUERY_PARAMS);
-  utils.getUniqueScopes.mockReturnValue(TEST_SCOPES);
   utils.encode.mockReturnValue(TEST_ENCODED_STATE);
   utils.createRandomString.mockReturnValue(TEST_RANDOM_STRING);
   utils.sha256.mockReturnValue(Promise.resolve(TEST_ARRAY_BUFFER));
@@ -92,7 +92,7 @@ const setup = async (options = {}) => {
 
   utils.parseQueryResult.mockReturnValue({
     state: TEST_ENCODED_STATE,
-    code: TEST_CODE,
+    code: TEST_CODE
   });
 
   utils.runPopup.mockReturnValue(
@@ -106,23 +106,23 @@ const setup = async (options = {}) => {
   utils.oauthToken.mockReturnValue(
     Promise.resolve({
       id_token: TEST_ID_TOKEN,
-      access_token: TEST_ACCESS_TOKEN,
+      access_token: TEST_ACCESS_TOKEN
     })
   );
 
   tokenVerifier.mockReturnValue({
     user: {
-      sub: TEST_USER_ID,
+      sub: TEST_USER_ID
     },
     claims: {
       sub: TEST_USER_ID,
-      aud: TEST_CLIENT_ID,
-    },
+      aud: TEST_CLIENT_ID
+    }
   });
 
   const popup = {
     location: { href: '' },
-    close: jest.fn(),
+    close: jest.fn()
   };
 
   return {
@@ -133,29 +133,36 @@ const setup = async (options = {}) => {
     transactionManager,
     utils,
     lock,
-    popup,
+    popup
   };
 };
 
 describe('Auth0', () => {
-  beforeEach(() => {
-    jest.resetAllMocks();
+  let getUniqueScopesSpy;
 
+  beforeEach(() => {
     window.location.assign = jest.fn();
     window.Worker = jest.fn();
 
     (<any>global).crypto = {
       subtle: {
-        digest: () => '',
-      },
+        digest: () => ''
+      }
     };
+
+    getUniqueScopesSpy = jest.spyOn(scope, 'getUniqueScopes');
+  });
+
+  afterEach(() => {
+    jest.resetAllMocks();
+    getUniqueScopesSpy.mockRestore();
   });
 
   describe('createAuth0Client()', () => {
     it('should create an Auth0 client', async () => {
       const auth0 = await createAuth0Client({
         domain: TEST_DOMAIN,
-        client_id: TEST_CLIENT_ID,
+        client_id: TEST_CLIENT_ID
       });
 
       expect(auth0).toBeInstanceOf(Auth0Client);
@@ -172,7 +179,7 @@ describe('Auth0', () => {
         createAuth0Client({
           domain: TEST_DOMAIN,
           client_id: TEST_CLIENT_ID,
-          cacheLocation: 'dummy',
+          cacheLocation: 'dummy'
         } as any)
       ).rejects.toThrow(new Error('Invalid cache location "dummy"'));
     });
@@ -183,7 +190,7 @@ describe('Auth0', () => {
       utils.runIframe.mockImplementation(() => {
         throw {
           error: 'login_required',
-          error_message: 'Login required',
+          error_message: 'Login required'
         };
       });
 
@@ -191,7 +198,7 @@ describe('Auth0', () => {
 
       const auth0 = await createAuth0Client({
         domain: TEST_DOMAIN,
-        client_id: TEST_CLIENT_ID,
+        client_id: TEST_CLIENT_ID
       });
 
       expect(auth0).toBeInstanceOf(Auth0Client);
@@ -204,7 +211,7 @@ describe('Auth0', () => {
       utils.runIframe.mockImplementation(() => {
         throw {
           error: 'some_other_error',
-          error_message: 'This is a different error to login_required',
+          error_message: 'This is a different error to login_required'
         };
       });
 
@@ -217,7 +224,7 @@ describe('Auth0', () => {
       try {
         await createAuth0Client({
           domain: TEST_DOMAIN,
-          client_id: TEST_CLIENT_ID,
+          client_id: TEST_CLIENT_ID
         });
       } catch (e) {
         expect(e.error).toEqual('some_other_error');
@@ -241,7 +248,7 @@ describe('Auth0', () => {
         `https://test.auth0.com/authorize?${TEST_QUERY_PARAMS}${TEST_TELEMETRY_QUERY_STRING}`,
         {
           popup,
-          timeoutInSeconds: 60,
+          timeoutInSeconds: 60
         }
       );
     });
@@ -267,8 +274,9 @@ describe('Auth0', () => {
       const { auth0, utils } = await setup();
 
       await auth0.loginWithPopup({
-        connection: 'test-connection',
+        connection: 'test-connection'
       });
+
       expect(utils.createQueryParams).toHaveBeenCalledWith({
         client_id: TEST_CLIENT_ID,
         scope: TEST_SCOPES,
@@ -279,7 +287,7 @@ describe('Auth0', () => {
         redirect_uri: 'http://localhost',
         code_challenge: TEST_BASE64_ENCODED_STRING,
         code_challenge_method: 'S256',
-        connection: 'test-connection',
+        connection: 'test-connection'
       });
     });
 
@@ -287,7 +295,7 @@ describe('Auth0', () => {
       const { auth0, utils } = await setup({ leeway: 10 });
 
       await auth0.loginWithPopup({
-        connection: 'test-connection',
+        connection: 'test-connection'
       });
 
       expect(utils.createQueryParams).toHaveBeenCalledWith({
@@ -300,14 +308,14 @@ describe('Auth0', () => {
         redirect_uri: 'http://localhost',
         code_challenge: TEST_BASE64_ENCODED_STRING,
         code_challenge_method: 'S256',
-        connection: 'test-connection',
+        connection: 'test-connection'
       });
     });
 
     it('creates correct query params when providing a default redirect_uri', async () => {
       const redirect_uri = 'https://custom-redirect-uri/callback';
       const { auth0, utils } = await setup({
-        redirect_uri,
+        redirect_uri
       });
 
       await auth0.loginWithPopup({});
@@ -321,7 +329,7 @@ describe('Auth0', () => {
         nonce: TEST_ENCODED_STATE,
         redirect_uri,
         code_challenge: TEST_BASE64_ENCODED_STRING,
-        code_challenge_method: 'S256',
+        code_challenge_method: 'S256'
       });
     });
 
@@ -340,7 +348,7 @@ describe('Auth0', () => {
         nonce: TEST_ENCODED_STATE,
         redirect_uri: 'http://localhost',
         code_challenge: TEST_BASE64_ENCODED_STRING,
-        code_challenge_method: 'S256',
+        code_challenge_method: 'S256'
       });
     });
 
@@ -370,7 +378,7 @@ describe('Auth0', () => {
       await auth0.loginWithPopup(
         {},
         {
-          timeoutInSeconds: 25,
+          timeoutInSeconds: 25
         }
       );
 
@@ -387,7 +395,7 @@ describe('Auth0', () => {
 
       utils.runPopup.mockReturnValue(
         Promise.resolve({
-          state: 'other-state',
+          state: 'other-state'
         })
       );
       await expect(auth0.loginWithPopup({})).rejects.toThrowError(
@@ -406,7 +414,7 @@ describe('Auth0', () => {
           code: TEST_CODE,
           code_verifier: TEST_RANDOM_STRING,
           grant_type: 'authorization_code',
-          redirect_uri: 'http://localhost',
+          redirect_uri: 'http://localhost'
         },
         undefined
       );
@@ -416,7 +424,7 @@ describe('Auth0', () => {
       const redirect_uri = 'http://another.uri';
 
       const { auth0, utils } = await setup({
-        redirect_uri,
+        redirect_uri
       });
 
       await auth0.loginWithPopup();
@@ -430,7 +438,7 @@ describe('Auth0', () => {
         nonce: TEST_ENCODED_STATE,
         redirect_uri,
         code_challenge: TEST_BASE64_ENCODED_STRING,
-        code_challenge_method: 'S256',
+        code_challenge_method: 'S256'
       });
 
       expect(utils.oauthToken).toHaveBeenCalledWith(
@@ -441,7 +449,7 @@ describe('Auth0', () => {
           code: TEST_CODE,
           code_verifier: TEST_RANDOM_STRING,
           grant_type: 'authorization_code',
-          redirect_uri,
+          redirect_uri
         },
         undefined
       );
@@ -458,7 +466,7 @@ describe('Auth0', () => {
           code: TEST_CODE,
           code_verifier: TEST_RANDOM_STRING,
           grant_type: 'authorization_code',
-          redirect_uri: 'http://localhost',
+          redirect_uri: 'http://localhost'
         },
         undefined
       );
@@ -473,12 +481,12 @@ describe('Auth0', () => {
         aud: 'test-client-id',
         iss: 'https://test.auth0.com/',
         leeway: undefined,
-        max_age: undefined,
+        max_age: undefined
       });
     });
     it('calls `tokenVerifier.verify` with the `issuer` from in the oauth/token response', async () => {
       const { auth0, tokenVerifier } = await setup({
-        issuer: 'test-123.auth0.com',
+        issuer: 'test-123.auth0.com'
       });
 
       await auth0.loginWithPopup({});
@@ -488,7 +496,7 @@ describe('Auth0', () => {
         nonce: TEST_ENCODED_STATE,
         iss: 'https://test-123.auth0.com/',
         leeway: undefined,
-        max_age: undefined,
+        max_age: undefined
       });
     });
     it('calls `tokenVerifier.verify` with the `leeway` from constructor', async () => {
@@ -501,7 +509,7 @@ describe('Auth0', () => {
         aud: 'test-client-id',
         iss: 'https://test.auth0.com/',
         leeway: 10,
-        max_age: undefined,
+        max_age: undefined
       });
     });
     it('calls `tokenVerifier.verify` with undefined `max_age` when value set in constructor is an empty string', async () => {
@@ -514,7 +522,7 @@ describe('Auth0', () => {
         aud: 'test-client-id',
         iss: 'https://test.auth0.com/',
         leeway: undefined,
-        max_age: undefined,
+        max_age: undefined
       });
     });
     it('calls `tokenVerifier.verify` with the parsed `max_age` string from constructor', async () => {
@@ -527,7 +535,7 @@ describe('Auth0', () => {
         aud: 'test-client-id',
         iss: 'https://test.auth0.com/',
         leeway: undefined,
-        max_age: 10,
+        max_age: 10
       });
     });
     it('calls `tokenVerifier.verify` with the parsed `max_age` number from constructor', async () => {
@@ -540,7 +548,7 @@ describe('Auth0', () => {
         aud: 'test-client-id',
         iss: 'https://test.auth0.com/',
         leeway: undefined,
-        max_age: 10,
+        max_age: 10
       });
     });
     it('saves cache', async () => {
@@ -555,8 +563,8 @@ describe('Auth0', () => {
         scope: TEST_SCOPES,
         decodedToken: {
           claims: { sub: TEST_USER_ID, aud: TEST_CLIENT_ID },
-          user: { sub: TEST_USER_ID },
-        },
+          user: { sub: TEST_USER_ID }
+        }
       });
     });
     it('saves `auth0.is.authenticated` key in storage', async () => {
@@ -580,7 +588,7 @@ describe('Auth0', () => {
     const REDIRECT_OPTIONS = {
       redirect_uri: 'https://redirect.uri',
       appState: TEST_APP_STATE,
-      connection: 'test-connection',
+      connection: 'test-connection'
     };
 
     it('encodes state with random string', async () => {
@@ -605,12 +613,6 @@ describe('Auth0', () => {
 
       await auth0.buildAuthorizeUrl(REDIRECT_OPTIONS);
 
-      expect(utils.getUniqueScopes).toHaveBeenCalledWith(
-        'openid profile email',
-        undefined,
-        undefined
-      );
-
       expect(utils.createQueryParams).toHaveBeenCalledWith({
         client_id: TEST_CLIENT_ID,
         scope: TEST_SCOPES,
@@ -621,31 +623,43 @@ describe('Auth0', () => {
         redirect_uri: REDIRECT_OPTIONS.redirect_uri,
         code_challenge: TEST_BASE64_ENCODED_STRING,
         code_challenge_method: 'S256',
-        connection: 'test-connection',
+        connection: 'test-connection'
+      });
+    });
+
+    it('creates correct query params with different default scopes', async () => {
+      const { auth0, utils } = await setup({
+        advancedOptions: {
+          defaultScope: 'email'
+        }
+      });
+
+      await auth0.buildAuthorizeUrl(REDIRECT_OPTIONS);
+
+      expect(utils.createQueryParams).toHaveBeenCalledWith({
+        client_id: TEST_CLIENT_ID,
+        scope: 'openid email',
+        response_type: TEST_CODE,
+        response_mode: 'query',
+        state: TEST_ENCODED_STATE,
+        nonce: TEST_ENCODED_STATE,
+        redirect_uri: REDIRECT_OPTIONS.redirect_uri,
+        code_challenge: TEST_BASE64_ENCODED_STRING,
+        code_challenge_method: 'S256',
+        connection: 'test-connection'
       });
     });
 
     it('creates correct query params when using refresh tokens', async () => {
-      const utils = require('../src/utils');
-      utils.getUniqueScopes.mockReturnValue('offline_access');
-
-      const { auth0 } = await setup({
-        useRefreshTokens: true,
+      const { auth0, utils } = await setup({
+        useRefreshTokens: true
       });
-
-      // utils.getUniqueScopes.mockReturnValue(`${TEST_SCOPES} offline_access`);
 
       await auth0.buildAuthorizeUrl(REDIRECT_OPTIONS);
 
-      expect(utils.getUniqueScopes).toHaveBeenCalledWith(
-        'openid profile email',
-        'offline_access',
-        undefined
-      );
-
       expect(utils.createQueryParams).toHaveBeenCalledWith({
         client_id: TEST_CLIENT_ID,
-        scope: TEST_SCOPES,
+        scope: `${TEST_SCOPES} offline_access`,
         response_type: TEST_CODE,
         response_mode: 'query',
         state: TEST_ENCODED_STATE,
@@ -653,7 +667,7 @@ describe('Auth0', () => {
         redirect_uri: REDIRECT_OPTIONS.redirect_uri,
         code_challenge: TEST_BASE64_ENCODED_STRING,
         code_challenge_method: 'S256',
-        connection: 'test-connection',
+        connection: 'test-connection'
       });
     });
 
@@ -671,7 +685,7 @@ describe('Auth0', () => {
         redirect_uri: REDIRECT_OPTIONS.redirect_uri,
         code_challenge: TEST_BASE64_ENCODED_STRING,
         code_challenge_method: 'S256',
-        connection: 'test-connection',
+        connection: 'test-connection'
       });
     });
 
@@ -679,7 +693,7 @@ describe('Auth0', () => {
       const redirect_uri = 'https://custom-redirect-uri/callback';
       const { redirect_uri: _ignore, ...options } = REDIRECT_OPTIONS;
       const { auth0, utils } = await setup({
-        redirect_uri,
+        redirect_uri
       });
 
       await auth0.buildAuthorizeUrl(options);
@@ -694,14 +708,14 @@ describe('Auth0', () => {
         redirect_uri,
         code_challenge: TEST_BASE64_ENCODED_STRING,
         code_challenge_method: 'S256',
-        connection: 'test-connection',
+        connection: 'test-connection'
       });
     });
 
     it('creates correct query params when overriding redirect_uri', async () => {
       const redirect_uri = 'https://custom-redirect-uri/callback';
       const { auth0, utils } = await setup({
-        redirect_uri,
+        redirect_uri
       });
 
       await auth0.buildAuthorizeUrl(REDIRECT_OPTIONS);
@@ -716,7 +730,7 @@ describe('Auth0', () => {
         redirect_uri: REDIRECT_OPTIONS.redirect_uri,
         code_challenge: TEST_BASE64_ENCODED_STRING,
         code_challenge_method: 'S256',
-        connection: 'test-connection',
+        connection: 'test-connection'
       });
     });
 
@@ -736,7 +750,7 @@ describe('Auth0', () => {
         redirect_uri: REDIRECT_OPTIONS.redirect_uri,
         code_challenge: TEST_BASE64_ENCODED_STRING,
         code_challenge_method: 'S256',
-        connection: 'test-connection',
+        connection: 'test-connection'
       });
     });
 
@@ -752,7 +766,7 @@ describe('Auth0', () => {
           code_verifier: TEST_RANDOM_STRING,
           nonce: TEST_ENCODED_STATE,
           scope: TEST_SCOPES,
-          redirect_uri: 'https://redirect.uri',
+          redirect_uri: 'https://redirect.uri'
         }
       );
     });
@@ -761,7 +775,7 @@ describe('Auth0', () => {
       const { auth0 } = await setup();
 
       const url = await auth0.buildAuthorizeUrl({
-        ...REDIRECT_OPTIONS,
+        ...REDIRECT_OPTIONS
       });
 
       expect(url).toBe(
@@ -784,7 +798,7 @@ describe('Auth0', () => {
     const REDIRECT_OPTIONS = {
       redirect_uri: 'https://redirect.uri',
       appState: TEST_APP_STATE,
-      connection: 'test-connection',
+      connection: 'test-connection'
     };
 
     it('calls `window.location.assign` with the correct url', async () => {
@@ -801,7 +815,7 @@ describe('Auth0', () => {
 
       await auth0.loginWithRedirect({
         ...REDIRECT_OPTIONS,
-        fragment: '/reset',
+        fragment: '/reset'
       });
       expect(window.location.assign).toHaveBeenCalledWith(
         `https://test.auth0.com/authorize?query=params${TEST_TELEMETRY_QUERY_STRING}#/reset`
@@ -840,7 +854,7 @@ describe('Auth0', () => {
           nonce: TEST_ENCODED_STATE,
           audience: 'default',
           scope: TEST_SCOPES,
-          appState: TEST_APP_STATE,
+          appState: TEST_APP_STATE
         });
         result.cache.get.mockReturnValue({ access_token: TEST_ACCESS_TOKEN });
         return result;
@@ -874,7 +888,7 @@ describe('Auth0', () => {
         const { auth0, utils } = await localSetup();
         const queryResult = {
           error: 'unauthorized',
-          error_description: 'Unauthorized user',
+          error_description: 'Unauthorized user'
         };
         utils.parseQueryResult.mockReturnValue(queryResult);
 
@@ -888,7 +902,7 @@ describe('Auth0', () => {
         const queryResult = {
           error: 'unauthorized',
           error_description: 'Unauthorized user',
-          state: 'abcxyz',
+          state: 'abcxyz'
         };
         utils.parseQueryResult.mockReturnValue(queryResult);
 
@@ -910,7 +924,7 @@ describe('Auth0', () => {
         const { auth0, utils, transactionManager } = await localSetup();
 
         const appState = {
-          key: 'property',
+          key: 'property'
         };
 
         transactionManager.get.mockReturnValue({ appState });
@@ -918,7 +932,7 @@ describe('Auth0', () => {
         const queryResult = {
           error: 'unauthorized',
           error_description: 'Unauthorized user',
-          state: 'abcxyz',
+          state: 'abcxyz'
         };
 
         utils.parseQueryResult.mockReturnValue(queryResult);
@@ -975,7 +989,7 @@ describe('Auth0', () => {
             client_id: TEST_CLIENT_ID,
             code: TEST_CODE,
             code_verifier: TEST_RANDOM_STRING,
-            grant_type: 'authorization_code',
+            grant_type: 'authorization_code'
           },
           undefined
         );
@@ -988,7 +1002,7 @@ describe('Auth0', () => {
           audience: 'default',
           scope: TEST_SCOPES,
           appState: TEST_APP_STATE,
-          redirect_uri: 'http://localhost',
+          redirect_uri: 'http://localhost'
         });
         await auth0.handleRedirectCallback();
         const arg = utils.oauthToken.mock.calls[0][0];
@@ -1002,7 +1016,7 @@ describe('Auth0', () => {
           nonce: TEST_RANDOM_STRING,
           audience: 'default',
           scope: TEST_SCOPES,
-          appState: TEST_APP_STATE,
+          appState: TEST_APP_STATE
         });
         await auth0.handleRedirectCallback();
         const arg = utils.oauthToken.mock.calls[0][0];
@@ -1019,7 +1033,7 @@ describe('Auth0', () => {
           aud: 'test-client-id',
           iss: 'https://test.auth0.com/',
           leeway: undefined,
-          max_age: undefined,
+          max_age: undefined
         });
       });
       it('saves cache', async () => {
@@ -1035,8 +1049,8 @@ describe('Auth0', () => {
           scope: TEST_SCOPES,
           decodedToken: {
             claims: { sub: TEST_USER_ID, aud: TEST_CLIENT_ID },
-            user: { sub: TEST_USER_ID },
-          },
+            user: { sub: TEST_USER_ID }
+          }
         });
       });
       it('saves `auth0.is.authenticated` key in storage', async () => {
@@ -1056,7 +1070,7 @@ describe('Auth0', () => {
         const response = await auth0.handleRedirectCallback();
 
         expect(response).toEqual({
-          appState: TEST_APP_STATE,
+          appState: TEST_APP_STATE
         });
       });
     });
@@ -1074,7 +1088,7 @@ describe('Auth0', () => {
           nonce: TEST_ENCODED_STATE,
           audience: 'default',
           scope: TEST_SCOPES,
-          appState: TEST_APP_STATE,
+          appState: TEST_APP_STATE
         });
         result.cache.get.mockReturnValue({ access_token: TEST_ACCESS_TOKEN });
         return result;
@@ -1116,7 +1130,7 @@ describe('Auth0', () => {
         const { auth0, utils } = await localSetup();
         const queryResult = {
           error: 'unauthorized',
-          error_description: 'Unauthorized user',
+          error_description: 'Unauthorized user'
         };
         utils.parseQueryResult.mockReturnValue(queryResult);
 
@@ -1129,7 +1143,7 @@ describe('Auth0', () => {
         const queryResult = {
           error: 'unauthorized',
           error_description: 'Unauthorized user',
-          state: 'abcxyz',
+          state: 'abcxyz'
         };
         utils.parseQueryResult.mockReturnValue(queryResult);
 
@@ -1187,7 +1201,7 @@ describe('Auth0', () => {
             client_id: TEST_CLIENT_ID,
             code: TEST_CODE,
             code_verifier: TEST_RANDOM_STRING,
-            grant_type: 'authorization_code',
+            grant_type: 'authorization_code'
           },
           undefined
         );
@@ -1203,7 +1217,7 @@ describe('Auth0', () => {
           aud: 'test-client-id',
           iss: 'https://test.auth0.com/',
           leeway: undefined,
-          max_age: undefined,
+          max_age: undefined
         });
       });
       it('saves cache', async () => {
@@ -1219,8 +1233,8 @@ describe('Auth0', () => {
           scope: TEST_SCOPES,
           decodedToken: {
             claims: { sub: TEST_USER_ID, aud: TEST_CLIENT_ID },
-            user: { sub: TEST_USER_ID },
-          },
+            user: { sub: TEST_USER_ID }
+          }
         });
       });
       it('saves `auth0.is.authenticated` key in storage', async () => {
@@ -1240,7 +1254,7 @@ describe('Auth0', () => {
         const response = await auth0.handleRedirectCallback();
 
         expect(response).toEqual({
-          appState: TEST_APP_STATE,
+          appState: TEST_APP_STATE
         });
       });
     });
@@ -1260,46 +1274,52 @@ describe('Auth0', () => {
           claims: {
             sub: TEST_USER_ID,
             email: TEST_USER_EMAIL,
-            aud: TEST_CLIENT_ID,
+            aud: TEST_CLIENT_ID
           },
-          user: { sub: TEST_USER_ID, email: TEST_USER_EMAIL },
-        },
+          user: { sub: TEST_USER_ID, email: TEST_USER_EMAIL }
+        }
       };
       cache.get.mockReturnValue(userIn);
       const userOut = await auth0.getUser();
       expect(userOut).toEqual({ sub: TEST_USER_ID, email: TEST_USER_EMAIL });
     });
     it('uses default options', async () => {
-      const { auth0, utils, cache } = await setup();
+      const { auth0, cache } = await setup();
 
       await auth0.getUser();
 
       expect(cache.get).toHaveBeenCalledWith({
         audience: 'default',
         scope: TEST_SCOPES,
-        client_id: TEST_CLIENT_ID,
+        client_id: TEST_CLIENT_ID
       });
-
-      expect(utils.getUniqueScopes).toHaveBeenCalledWith(
-        'openid profile email',
-        'openid profile email'
-      );
     });
 
     it('uses custom options when provided', async () => {
-      const { auth0, utils, cache } = await setup();
+      const { auth0, cache } = await setup();
       await auth0.getUser({ audience: 'the-audience', scope: 'the-scope' });
 
       expect(cache.get).toHaveBeenCalledWith({
         audience: 'the-audience',
-        scope: TEST_SCOPES,
-        client_id: TEST_CLIENT_ID,
+        scope: `${TEST_SCOPES} the-scope`,
+        client_id: TEST_CLIENT_ID
+      });
+    });
+
+    it('uses a custom default scope', async () => {
+      const { auth0, cache } = await setup({
+        advancedOptions: {
+          defaultScope: 'email'
+        }
       });
 
-      expect(utils.getUniqueScopes).toHaveBeenCalledWith(
-        'openid profile email',
-        'the-scope'
-      );
+      await auth0.getUser({ audience: 'the-audience', scope: 'the-scope' });
+
+      expect(cache.get).toHaveBeenCalledWith({
+        audience: 'the-audience',
+        scope: `openid email the-scope`,
+        client_id: TEST_CLIENT_ID
+      });
     });
   });
 
@@ -1318,105 +1338,92 @@ describe('Auth0', () => {
           claims: {
             aud: TEST_CLIENT_ID,
             sub: TEST_USER_ID,
-            email: TEST_USER_EMAIL,
+            email: TEST_USER_EMAIL
           },
-          user: { sub: TEST_USER_ID, email: TEST_USER_EMAIL },
-        },
+          user: { sub: TEST_USER_ID, email: TEST_USER_EMAIL }
+        }
       };
       cache.get.mockReturnValue(userIn);
       const userOut = await auth0.getIdTokenClaims();
       expect(userOut).toEqual(userIn.decodedToken.claims);
     });
 
+    it('should respect advanced defaultScope option when provided', async () => {
+      const { auth0, cache } = await setup({
+        advancedOptions: { defaultScope: 'openid custom-scope' }
+      });
+
+      await auth0.getIdTokenClaims({
+        audience: 'the-audience',
+        scope: 'openid custom-scope'
+      });
+
+      expect(cache.get).toHaveBeenCalledWith({
+        audience: 'the-audience',
+        client_id: TEST_CLIENT_ID,
+        scope: 'openid custom-scope'
+      });
+    });
+
     describe('when using refresh tokens', () => {
       it('uses default options with offine_access', async () => {
-        const utils = require('../src/utils');
-        utils.getUniqueScopes.mockReturnValue('offline_access');
-
         const { auth0, cache } = await setup({
-          useRefreshTokens: true,
+          useRefreshTokens: true
         });
 
         await auth0.getIdTokenClaims();
 
         expect(cache.get).toHaveBeenCalledWith({
           audience: 'default',
-          scope: TEST_SCOPES,
-          client_id: TEST_CLIENT_ID,
+          scope: `${TEST_SCOPES} offline_access`,
+          client_id: TEST_CLIENT_ID
         });
-
-        expect(utils.getUniqueScopes).toHaveBeenCalledWith(
-          'openid profile email',
-          'offline_access',
-          'offline_access'
-        );
       });
 
       it('uses custom options when provided with offline_access', async () => {
-        const utils = require('../src/utils');
-        utils.getUniqueScopes.mockReturnValue('offline_access');
-
-        const { auth0, cache } = await setup({
-          useRefreshTokens: true,
+        const { auth0, cache, utils } = await setup({
+          useRefreshTokens: true
         });
 
         await auth0.getIdTokenClaims({
           audience: 'the-audience',
-          scope: 'the-scope',
+          scope: 'the-scope'
         });
 
         expect(cache.get).toHaveBeenCalledWith({
           audience: 'the-audience',
-          scope: TEST_SCOPES,
-          client_id: TEST_CLIENT_ID,
+          scope: `${TEST_SCOPES} offline_access the-scope`,
+          client_id: TEST_CLIENT_ID
         });
-
-        expect(utils.getUniqueScopes).toHaveBeenCalledWith(
-          'openid profile email',
-          'offline_access',
-          'the-scope'
-        );
       });
     });
 
     describe('when not using refresh tokens', () => {
       it('uses default options', async () => {
-        const { auth0, utils, cache } = await setup();
+        const { auth0, cache } = await setup();
 
         await auth0.getIdTokenClaims();
 
         expect(cache.get).toHaveBeenCalledWith({
           audience: 'default',
           scope: TEST_SCOPES,
-          client_id: TEST_CLIENT_ID,
+          client_id: TEST_CLIENT_ID
         });
-
-        expect(utils.getUniqueScopes).toHaveBeenCalledWith(
-          'openid profile email',
-          undefined,
-          'openid profile email'
-        );
       });
 
       it('uses custom options when provided', async () => {
-        const { auth0, utils, cache } = await setup();
+        const { auth0, cache } = await setup();
 
         await auth0.getIdTokenClaims({
           audience: 'the-audience',
-          scope: 'the-scope',
+          scope: 'the-scope'
         });
 
         expect(cache.get).toHaveBeenCalledWith({
           audience: 'the-audience',
-          scope: TEST_SCOPES,
-          client_id: TEST_CLIENT_ID,
+          scope: `${TEST_SCOPES} the-scope`,
+          client_id: TEST_CLIENT_ID
         });
-
-        expect(utils.getUniqueScopes).toHaveBeenCalledWith(
-          'openid profile email',
-          undefined,
-          'the-scope'
-        );
       });
     });
   });
@@ -1426,7 +1433,7 @@ describe('Auth0', () => {
       const { auth0 } = await setup();
       auth0.getUser = jest.fn(() =>
         Promise.resolve({
-          id: TEST_USER_ID,
+          id: TEST_USER_ID
         })
       );
       const result = await auth0.isAuthenticated();
@@ -1444,7 +1451,7 @@ describe('Auth0', () => {
     describe('when `options.ignoreCache` is false', () => {
       describe('when refresh tokens are not used', () => {
         it('calls `cache.get` with the correct options', async () => {
-          const { auth0, cache, utils } = await setup();
+          const { auth0, cache } = await setup();
           cache.get.mockReturnValue({ access_token: TEST_ACCESS_TOKEN });
 
           await auth0.getTokenSilently();
@@ -1452,14 +1459,8 @@ describe('Auth0', () => {
           expect(cache.get).toHaveBeenCalledWith({
             audience: 'default',
             scope: TEST_SCOPES,
-            client_id: TEST_CLIENT_ID,
+            client_id: TEST_CLIENT_ID
           });
-
-          expect(utils.getUniqueScopes).toHaveBeenCalledWith(
-            'openid profile email',
-            undefined,
-            undefined
-          );
         });
 
         it('returns cached access_token when there is a cache', async () => {
@@ -1491,20 +1492,31 @@ describe('Auth0', () => {
           // an access token
           expect(utils.encode).toHaveBeenCalledWith(TEST_RANDOM_STRING);
         });
+
+        it('respects the global default scopes', async () => {
+          const { auth0, cache } = await setup({
+            advancedOptions: {
+              defaultScope: 'email'
+            }
+          });
+
+          cache.get.mockReturnValue({ access_token: TEST_ACCESS_TOKEN });
+
+          await auth0.getTokenSilently();
+
+          expect(cache.get).toHaveBeenCalledWith({
+            audience: 'default',
+            scope: 'openid email',
+            client_id: TEST_CLIENT_ID
+          });
+        });
       });
 
       describe('when refresh tokens are used', () => {
         it('calls `cache.get` with the correct options', async () => {
-          const utils = require('../src/utils');
-          utils.getUniqueScopes.mockReturnValue('offline_access');
-
           const { auth0, cache } = await setup({
-            useRefreshTokens: true,
+            useRefreshTokens: true
           });
-
-          utils.getUniqueScopes.mockReturnValue(
-            `${TEST_SCOPES} offline_access`
-          );
 
           cache.get.mockReturnValue({ access_token: TEST_ACCESS_TOKEN });
 
@@ -1513,30 +1525,20 @@ describe('Auth0', () => {
           expect(cache.get).toHaveBeenCalledWith({
             audience: 'default',
             scope: `${TEST_SCOPES} offline_access`,
-            client_id: TEST_CLIENT_ID,
+            client_id: TEST_CLIENT_ID
           });
-
-          expect(utils.getUniqueScopes).toHaveBeenCalledWith(
-            'openid profile email',
-            'offline_access',
-            undefined
-          );
         });
 
         it('calls the token endpoint with the correct params', async () => {
           const { auth0, cache, utils } = await setup({
-            useRefreshTokens: true,
+            useRefreshTokens: true
           });
-
-          utils.getUniqueScopes.mockReturnValue(
-            `${TEST_SCOPES} offline_access`
-          );
 
           utils.oauthToken.mockReturnValue(
             Promise.resolve({
               id_token: TEST_ID_TOKEN,
               access_token: TEST_ACCESS_TOKEN,
-              refresh_token: TEST_REFRESH_TOKEN,
+              refresh_token: TEST_REFRESH_TOKEN
             })
           );
 
@@ -1547,7 +1549,7 @@ describe('Auth0', () => {
           expect(cache.get).toHaveBeenCalledWith({
             audience: 'default',
             scope: `${TEST_SCOPES} offline_access`,
-            client_id: TEST_CLIENT_ID,
+            client_id: TEST_CLIENT_ID
           });
 
           expect(utils.oauthToken).toHaveBeenCalledWith(
@@ -1556,7 +1558,7 @@ describe('Auth0', () => {
               refresh_token: TEST_REFRESH_TOKEN,
               client_id: TEST_CLIENT_ID,
               grant_type: 'refresh_token',
-              redirect_uri: 'http://localhost',
+              redirect_uri: 'http://localhost'
             },
             webWorkerMatcher
           );
@@ -1570,22 +1572,70 @@ describe('Auth0', () => {
             audience: 'default',
             decodedToken: {
               claims: { sub: TEST_USER_ID, aud: TEST_CLIENT_ID },
-              user: { sub: TEST_USER_ID },
+              user: { sub: TEST_USER_ID }
+            }
+          });
+        });
+
+        it('calls the token endpoint with the correct params with different default scopes', async () => {
+          const { auth0, cache, utils } = await setup({
+            useRefreshTokens: true,
+            advancedOptions: {
+              defaultScope: 'email'
+            }
+          });
+
+          utils.oauthToken.mockReturnValue(
+            Promise.resolve({
+              id_token: TEST_ID_TOKEN,
+              access_token: TEST_ACCESS_TOKEN,
+              refresh_token: TEST_REFRESH_TOKEN
+            })
+          );
+
+          cache.get.mockReturnValue({ refresh_token: TEST_REFRESH_TOKEN });
+
+          await auth0.getTokenSilently({ ignoreCache: true });
+
+          expect(cache.get).toHaveBeenCalledWith({
+            audience: 'default',
+            scope: `openid email offline_access`,
+            client_id: TEST_CLIENT_ID
+          });
+
+          expect(utils.oauthToken).toHaveBeenCalledWith(
+            {
+              baseUrl: 'https://test.auth0.com',
+              refresh_token: TEST_REFRESH_TOKEN,
+              client_id: TEST_CLIENT_ID,
+              grant_type: 'refresh_token',
+              redirect_uri: 'http://localhost'
             },
+            webWorkerMatcher
+          );
+
+          expect(cache.save).toHaveBeenCalledWith({
+            client_id: TEST_CLIENT_ID,
+            refresh_token: TEST_REFRESH_TOKEN,
+            access_token: TEST_ACCESS_TOKEN,
+            id_token: TEST_ID_TOKEN,
+            scope: `openid email offline_access`,
+            audience: 'default',
+            decodedToken: {
+              claims: { sub: TEST_USER_ID, aud: TEST_CLIENT_ID },
+              user: { sub: TEST_USER_ID }
+            }
           });
         });
 
         it('falls back to the iframe method when an audience is specified', async () => {
-          const utils = require('../src/utils');
-          utils.getUniqueScopes.mockReturnValue('offline_access');
-
-          const { auth0 } = await setup({
-            useRefreshTokens: true,
+          const { auth0, utils } = await setup({
+            useRefreshTokens: true
           });
 
           await auth0.getTokenSilently({
             audience: 'other-audience',
-            ignoreCache: true,
+            ignoreCache: true
           });
 
           expect(utils.runIframe).toHaveBeenCalledWith(
@@ -1601,7 +1651,7 @@ describe('Auth0', () => {
       const defaultOptionsIgnoreCacheTrue: GetTokenSilentlyOptions = {
         audience: 'test:audience',
         scope: 'test:scope',
-        ignoreCache: true,
+        ignoreCache: true
       };
 
       it('releases the lock when there is an error', async () => {
@@ -1646,7 +1696,7 @@ describe('Auth0', () => {
         expect(utils.createQueryParams).toHaveBeenCalledWith({
           audience: defaultOptionsIgnoreCacheTrue.audience,
           client_id: TEST_CLIENT_ID,
-          scope: TEST_SCOPES,
+          scope: `${TEST_SCOPES} test:scope`,
           response_type: TEST_CODE,
           response_mode: 'web_message',
           prompt: 'none',
@@ -1654,7 +1704,7 @@ describe('Auth0', () => {
           nonce: TEST_ENCODED_STATE,
           redirect_uri: 'http://localhost',
           code_challenge: TEST_BASE64_ENCODED_STRING,
-          code_challenge_method: 'S256',
+          code_challenge_method: 'S256'
         });
       });
 
@@ -1665,7 +1715,7 @@ describe('Auth0', () => {
         expect(utils.createQueryParams).toHaveBeenCalledWith({
           audience: defaultOptionsIgnoreCacheTrue.audience,
           client_id: TEST_CLIENT_ID,
-          scope: TEST_SCOPES,
+          scope: `${TEST_SCOPES} test:scope`,
           response_type: TEST_CODE,
           response_mode: 'web_message',
           prompt: 'none',
@@ -1673,21 +1723,21 @@ describe('Auth0', () => {
           nonce: TEST_ENCODED_STATE,
           redirect_uri: 'http://localhost',
           code_challenge: TEST_BASE64_ENCODED_STRING,
-          code_challenge_method: 'S256',
+          code_challenge_method: 'S256'
         });
       });
 
       it('creates correct query params when providing a default redirect_uri', async () => {
         const redirect_uri = 'https://custom-redirect-uri/callback';
         const { auth0, utils } = await setup({
-          redirect_uri,
+          redirect_uri
         });
 
         await auth0.getTokenSilently(defaultOptionsIgnoreCacheTrue);
         expect(utils.createQueryParams).toHaveBeenCalledWith({
           audience: defaultOptionsIgnoreCacheTrue.audience,
           client_id: TEST_CLIENT_ID,
-          scope: TEST_SCOPES,
+          scope: `${TEST_SCOPES} test:scope`,
           response_type: TEST_CODE,
           response_mode: 'web_message',
           prompt: 'none',
@@ -1695,7 +1745,7 @@ describe('Auth0', () => {
           nonce: TEST_ENCODED_STATE,
           redirect_uri,
           code_challenge: TEST_BASE64_ENCODED_STRING,
-          code_challenge_method: 'S256',
+          code_challenge_method: 'S256'
         });
       });
 
@@ -1707,7 +1757,7 @@ describe('Auth0', () => {
         expect(utils.createQueryParams).toHaveBeenCalledWith({
           audience: defaultOptionsIgnoreCacheTrue.audience,
           client_id: TEST_CLIENT_ID,
-          scope: TEST_SCOPES,
+          scope: `${TEST_SCOPES} test:scope`,
           response_type: TEST_CODE,
           response_mode: 'web_message',
           prompt: 'none',
@@ -1715,14 +1765,8 @@ describe('Auth0', () => {
           nonce: TEST_ENCODED_STATE,
           redirect_uri: 'http://localhost',
           code_challenge: TEST_BASE64_ENCODED_STRING,
-          code_challenge_method: 'S256',
+          code_challenge_method: 'S256'
         });
-
-        expect(utils.getUniqueScopes).toHaveBeenCalledWith(
-          'openid profile email',
-          undefined,
-          defaultOptionsIgnoreCacheTrue.scope
-        );
       });
 
       it('creates correct query params when providing user specified custom query params', async () => {
@@ -1730,13 +1774,15 @@ describe('Auth0', () => {
 
         const customQueryParameterOptions = {
           ...defaultOptionsIgnoreCacheTrue,
-          foo: 'bar',
+          foo: 'bar'
         };
+
         await auth0.getTokenSilently(customQueryParameterOptions);
+
         expect(utils.createQueryParams).toHaveBeenCalledWith({
           audience: defaultOptionsIgnoreCacheTrue.audience,
           client_id: TEST_CLIENT_ID,
-          scope: TEST_SCOPES,
+          scope: `${TEST_SCOPES} test:scope`,
           response_type: TEST_CODE,
           response_mode: 'web_message',
           prompt: 'none',
@@ -1745,7 +1791,7 @@ describe('Auth0', () => {
           redirect_uri: 'http://localhost',
           code_challenge: TEST_BASE64_ENCODED_STRING,
           code_challenge_method: 'S256',
-          foo: 'bar',
+          foo: 'bar'
         });
       });
 
@@ -1773,7 +1819,7 @@ describe('Auth0', () => {
         const { auth0, utils } = await setup();
         await auth0.getTokenSilently({
           ...defaultOptionsIgnoreCacheTrue,
-          timeoutInSeconds: 1,
+          timeoutInSeconds: 1
         });
         expect(utils.runIframe).toHaveBeenCalledWith(
           `https://test.auth0.com/authorize?${TEST_QUERY_PARAMS}${TEST_TELEMETRY_QUERY_STRING}`,
@@ -1787,7 +1833,7 @@ describe('Auth0', () => {
 
         utils.runIframe.mockReturnValue(
           Promise.resolve({
-            state: 'other-state',
+            state: 'other-state'
           })
         );
 
@@ -1812,7 +1858,7 @@ describe('Auth0', () => {
             code: TEST_CODE,
             code_verifier: TEST_RANDOM_STRING,
             grant_type: 'authorization_code',
-            redirect_uri: 'http://localhost',
+            redirect_uri: 'http://localhost'
           },
           undefined
         );
@@ -1828,7 +1874,7 @@ describe('Auth0', () => {
           aud: 'test-client-id',
           iss: 'https://test.auth0.com/',
           leeway: undefined,
-          max_age: undefined,
+          max_age: undefined
         });
       });
       it('saves cache', async () => {
@@ -1840,11 +1886,11 @@ describe('Auth0', () => {
           access_token: TEST_ACCESS_TOKEN,
           audience: defaultOptionsIgnoreCacheTrue.audience,
           id_token: TEST_ID_TOKEN,
-          scope: TEST_SCOPES,
+          scope: `${TEST_SCOPES} test:scope`,
           decodedToken: {
             claims: { sub: TEST_USER_ID, aud: TEST_CLIENT_ID },
-            user: { sub: TEST_USER_ID },
-          },
+            user: { sub: TEST_USER_ID }
+          }
         });
       });
       it('saves `auth0.is.authenticated` key in storage', async () => {
@@ -1874,68 +1920,75 @@ describe('Auth0', () => {
   });
 
   describe('getTokenWithPopup()', () => {
-    const localSetup = async () => {
-      const result = await setup();
+    const localSetup = async (options: Partial<Auth0ClientOptions> = {}) => {
+      const result = await setup(options);
       result.auth0.loginWithPopup = jest.fn();
       result.cache.get.mockReturnValue({ access_token: TEST_ACCESS_TOKEN });
       return result;
     };
 
     it('calls `loginWithPopup` with the correct default options', async () => {
-      const { auth0, utils } = await localSetup();
+      const { auth0 } = await localSetup();
 
       await auth0.getTokenWithPopup();
+
       expect(auth0.loginWithPopup).toHaveBeenCalledWith(
         {
           audience: undefined,
-          scope: TEST_SCOPES,
+          scope: TEST_SCOPES
         },
         DEFAULT_POPUP_CONFIG_OPTIONS
       );
+    });
 
-      expect(utils.getUniqueScopes).toHaveBeenCalledWith(
-        'openid profile email',
-        undefined,
-        'openid profile email'
+    it('respects customized default scopes', async () => {
+      const { auth0 } = await localSetup({
+        advancedOptions: {
+          defaultScope: 'email'
+        }
+      });
+
+      await auth0.getTokenWithPopup();
+
+      expect(auth0.loginWithPopup).toHaveBeenCalledWith(
+        {
+          audience: undefined,
+          scope: 'openid email'
+        },
+        DEFAULT_POPUP_CONFIG_OPTIONS
       );
     });
 
     it('calls `loginWithPopup` with the correct custom options', async () => {
-      const { auth0, utils } = await localSetup();
+      const { auth0 } = await localSetup();
       const loginOptions = {
         audience: 'other-audience',
-        scope: 'other-scope',
+        scope: 'other-scope'
       };
+
       const configOptions = { timeoutInSeconds: 1 };
 
       await auth0.getTokenWithPopup(loginOptions, configOptions);
+
       expect(auth0.loginWithPopup).toHaveBeenCalledWith(
-        loginOptions,
+        {
+          audience: 'other-audience',
+          scope: `${TEST_SCOPES} other-scope`
+        },
         configOptions
-      );
-      expect(utils.getUniqueScopes).toHaveBeenCalledWith(
-        'openid profile email',
-        undefined,
-        'other-scope'
       );
     });
 
     it('calls `cache.get` with the correct options', async () => {
-      const { auth0, cache, utils } = await localSetup();
+      const { auth0, cache } = await localSetup();
 
       await auth0.getTokenWithPopup();
 
       expect(cache.get).toHaveBeenCalledWith({
         audience: 'default',
         scope: TEST_SCOPES,
-        client_id: TEST_CLIENT_ID,
+        client_id: TEST_CLIENT_ID
       });
-
-      expect(utils.getUniqueScopes).toHaveBeenCalledWith(
-        'openid profile email',
-        undefined,
-        'openid profile email'
-      );
     });
 
     it('returns cached access_token', async () => {
@@ -1958,7 +2011,7 @@ describe('Auth0', () => {
 
       auth0.logout();
       expect(utils.createQueryParams).toHaveBeenCalledWith({
-        client_id: TEST_CLIENT_ID,
+        client_id: TEST_CLIENT_ID
       });
     });
 
@@ -1974,7 +2027,7 @@ describe('Auth0', () => {
 
       auth0.logout({ client_id: 'another-client-id' });
       expect(utils.createQueryParams).toHaveBeenCalledWith({
-        client_id: 'another-client-id',
+        client_id: 'another-client-id'
       });
     });
 
@@ -1983,7 +2036,7 @@ describe('Auth0', () => {
 
       auth0.logout({ returnTo: 'https://return.to', client_id: null });
       expect(utils.createQueryParams).toHaveBeenCalledWith({
-        returnTo: 'https://return.to',
+        returnTo: 'https://return.to'
       });
     });
 
@@ -2056,7 +2109,7 @@ describe('default creation function', () => {
 
     const auth0 = await createAuth0Client({
       domain: TEST_DOMAIN,
-      client_id: TEST_CLIENT_ID,
+      client_id: TEST_CLIENT_ID
     });
 
     expect(require('../src/storage').get).toHaveBeenCalledWith(
@@ -2073,7 +2126,7 @@ describe('default creation function', () => {
 
     const auth0 = await createAuth0Client({
       domain: TEST_DOMAIN,
-      client_id: TEST_CLIENT_ID,
+      client_id: TEST_CLIENT_ID
     });
 
     expect(auth0.getTokenSilently).toHaveBeenCalledWith();
@@ -2085,18 +2138,17 @@ describe('default creation function', () => {
 
       const options = {
         audience: 'the-audience',
-        scope: 'the-scope',
+        scope: 'the-scope'
       };
 
       Auth0Client.prototype.getTokenSilently = jest.fn();
 
       require('../src/storage').get = () => true;
-      utils.getUniqueScopes = jest.fn(() => options.scope);
 
       const auth0 = await createAuth0Client({
         domain: TEST_DOMAIN,
         client_id: TEST_CLIENT_ID,
-        ...options,
+        ...options
       });
 
       expect(auth0.getTokenSilently).toHaveBeenCalledWith();
@@ -2105,29 +2157,23 @@ describe('default creation function', () => {
 
   describe('when refresh tokens are used', () => {
     it('creates the client with the correct scopes', async () => {
-      const utils = require('../src/utils');
-
       const options = {
         audience: 'the-audience',
         scope: 'the-scope',
-        useRefreshTokens: true,
+        useRefreshTokens: true
       };
 
       Auth0Client.prototype.getTokenSilently = jest.fn();
 
       require('../src/storage').get = () => true;
-      utils.getUniqueScopes = jest.fn(() => `${options.scope} offline_access`);
 
       const auth0 = await createAuth0Client({
         domain: TEST_DOMAIN,
         client_id: TEST_CLIENT_ID,
-        ...options,
+        ...options
       });
 
-      expect(utils.getUniqueScopes).toHaveBeenCalledWith(
-        'the-scope',
-        'offline_access'
-      );
+      expect((<any>auth0).scope).toBe('the-scope offline_access');
 
       expect(auth0.getTokenSilently).toHaveBeenCalledWith();
     });
@@ -2140,7 +2186,7 @@ describe('default creation function', () => {
       const options = {
         audience: 'the-audience',
         scope: 'the-scope',
-        cacheLocation,
+        cacheLocation
       };
 
       Auth0Client.prototype.getTokenSilently = jest.fn();
@@ -2150,7 +2196,7 @@ describe('default creation function', () => {
       const auth0 = await createAuth0Client({
         domain: TEST_DOMAIN,
         client_id: TEST_CLIENT_ID,
-        ...options,
+        ...options
       });
 
       expect(auth0.getTokenSilently).toHaveBeenCalledWith();

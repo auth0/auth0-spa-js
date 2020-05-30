@@ -1,5 +1,37 @@
 # Change Log
 
+## [v1.8.2](https://github.com/auth0/auth0-spa-js/tree/v1.8.2) (2020-05-26)
+
+[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v1.8.1...v1.8.2)
+
+**Fixed**
+
+- [SDK-1640] Allow the client to be constructed in a Node SSR environment [\#471](https://github.com/auth0/auth0-spa-js/pull/471) ([adamjmcgrath](https://github.com/adamjmcgrath))
+- [SDK-1634] Pass custom options to the token endpoint [\#465](https://github.com/auth0/auth0-spa-js/pull/465) ([stevehobbsdev](https://github.com/stevehobbsdev))
+- [SDK-1649] Fix issue where cache was missed when scope parameter was provided [\#461](https://github.com/auth0/auth0-spa-js/pull/461) ([adamjmcgrath](https://github.com/adamjmcgrath))
+
+## [v1.8.1](https://github.com/auth0/auth0-spa-js/tree/v1.8.1) (2020-05-06)
+
+[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v1.8.0...v1.8.1)
+
+**Fixed**
+
+- Fix issue with create-react-app webpack build [\#451](https://github.com/auth0/auth0-spa-js/pull/451) ([adamjmcgrath](https://github.com/adamjmcgrath))
+
+## [v1.8.0](https://github.com/auth0/auth0-spa-js/tree/v1.8.0) (2020-04-30)
+
+[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v1.7.0...v1.8.0)
+
+**Added**
+
+- [SDK-1417] Customizable default scopes [\#435](https://github.com/auth0/auth0-spa-js/pull/435) ([stevehobbsdev](https://github.com/stevehobbsdev))
+- include polyfill for Set [\#426](https://github.com/auth0/auth0-spa-js/pull/426) ([tony-aq](https://github.com/tony-aq))
+
+**Fixed**
+
+- Update rollup-plugin-web-worker-loader to 1.1.1 [\#443](https://github.com/auth0/auth0-spa-js/pull/443) ([stevehobbsdev](https://github.com/stevehobbsdev))
+- Updated `login_hint` js docs to clarify usage with Lock [\#441](https://github.com/auth0/auth0-spa-js/pull/441) ([stevehobbsdev](https://github.com/stevehobbsdev))
+
 ## [v1.7.0](https://github.com/auth0/auth0-spa-js/tree/v1.7.0) (2020-04-15)
 
 [Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v1.7.0-beta.5...v1.7.0)
