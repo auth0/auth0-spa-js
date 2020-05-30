@@ -124,6 +124,8 @@ export default class Auth0Client {
       = this.options.isAuthenticatedStorageKey || 'auth0.is.authenticated';
 
     // If using refresh tokens, automatically specify the `offline_access` scope
+    // Note we cannot add this to 'defaultScope' above as the scopes are used in the
+    // cache keys - changing the order could invalidate the keys
     if (this.options.useRefreshTokens) {
       this.scope = getUniqueScopes(this.scope, 'offline_access');
     }

@@ -180,7 +180,7 @@ export interface RedirectLoginResult {
   appState?: any;
 }
 
-export interface PopupLoginOptions extends BaseLoginOptions { }
+export interface PopupLoginOptions extends BaseLoginOptions {}
 
 export interface PopupConfigOptions {
   /**
@@ -263,7 +263,7 @@ export interface GetTokenSilentlyOptions {
   [key: string]: any;
 }
 
-export interface GetTokenWithPopupOptions extends PopupLoginOptions { }
+export interface GetTokenWithPopupOptions extends PopupLoginOptions {}
 
 export interface LogoutOptions {
   /**
