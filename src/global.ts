@@ -125,6 +125,12 @@ export interface Auth0ClientOptions extends BaseLoginOptions {
   authorizeTimeoutInSeconds?: number;
 
   /**
+   * The key used by the library to store authentication status ("is authenticated") locally.
+   * Defaults to `auth0.is.authenticated` but may be configured to suit specific client needs.
+   */
+  isAuthenticatedStorageKey?: string;
+
+  /**
    * Changes to recommended defaults, like defaultScope
    */
   advancedOptions?: AdvancedOptions;
@@ -174,7 +180,7 @@ export interface RedirectLoginResult {
   appState?: any;
 }
 
-export interface PopupLoginOptions extends BaseLoginOptions {}
+export interface PopupLoginOptions extends BaseLoginOptions { }
 
 export interface PopupConfigOptions {
   /**
@@ -257,7 +263,7 @@ export interface GetTokenSilentlyOptions {
   [key: string]: any;
 }
 
-export interface GetTokenWithPopupOptions extends PopupLoginOptions {}
+export interface GetTokenWithPopupOptions extends PopupLoginOptions { }
 
 export interface LogoutOptions {
   /**

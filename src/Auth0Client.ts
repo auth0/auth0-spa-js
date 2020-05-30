@@ -91,6 +91,7 @@ export default class Auth0Client {
   private tokenIssuer: string;
   private defaultScope: string;
   private scope: string;
+  readonly isAuthenticatedStorageKey: string;
 
   cacheLocation: CacheLocation;
   private worker: Worker;
@@ -119,9 +120,10 @@ export default class Auth0Client {
         : DEFAULT_SCOPE
     );
 
-    // If using refresh tokens, automatically specify the `offline_access` scope.
-    // Note we cannot add this to 'defaultScope' above as the scopes are used in the
-    // cache keys - changing the order could invalidate the keys
+    this.isAuthenticatedStorageKey
+      = this.options.isAuthenticatedStorageKey || 'auth0.is.authenticated';
+
+    // If using refresh tokens, automatically specify the `offline_access` scope
     if (this.options.useRefreshTokens) {
       this.scope = getUniqueScopes(this.scope, 'offline_access');
     }
@@ -325,7 +327,7 @@ export default class Auth0Client {
 
     this.cache.save(cacheEntry);
 
-    ClientStorage.save('auth0.is.authenticated', true, { daysUntilExpire: 1 });
+    ClientStorage.save(this.isAuthenticatedStorageKey, true, { daysUntilExpire: 1 });
   }
 
   /**
@@ -466,7 +468,7 @@ export default class Auth0Client {
 
     this.cache.save(cacheEntry);
 
-    ClientStorage.save('auth0.is.authenticated', true, { daysUntilExpire: 1 });
+    ClientStorage.save(this.isAuthenticatedStorageKey, true, { daysUntilExpire: 1 });
 
     return {
       appState: transaction.appState
@@ -532,7 +534,7 @@ export default class Auth0Client {
 
       this.cache.save({ client_id: this.options.client_id, ...authResult });
 
-      ClientStorage.save('auth0.is.authenticated', true, {
+      ClientStorage.save(this.isAuthenticatedStorageKey, true, {
         daysUntilExpire: 1
       });
 
@@ -624,7 +626,7 @@ export default class Auth0Client {
     }
 
     this.cache.clear();
-    ClientStorage.remove('auth0.is.authenticated');
+    ClientStorage.remove(this.isAuthenticatedStorageKey);
 
     if (localOnly) {
       return;
@@ -651,8 +653,8 @@ export default class Auth0Client {
       nonceIn,
       code_challenge,
       options.redirect_uri ||
-        this.options.redirect_uri ||
-        window.location.origin
+      this.options.redirect_uri ||
+      window.location.origin
     );
 
     const url = this._authorizeUrl({

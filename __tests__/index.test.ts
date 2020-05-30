@@ -572,7 +572,20 @@ describe('Auth0', () => {
 
       await auth0.loginWithPopup({});
       expect(storage.save).toHaveBeenCalledWith(
-        'auth0.is.authenticated',
+        auth0.isAuthenticatedStorageKey,
+        true,
+        { daysUntilExpire: 1 }
+      );
+    });
+    it('saves `auth0.is.authenticated` key in storage using custom cookie name', async () => {
+      const keyName = 'test_name_for_isAuthenticatedStorageKey_1';
+      const { auth0, storage } = await setup({
+        isAuthenticatedStorageKey: keyName,
+      });
+
+      await auth0.loginWithPopup({});
+      expect(storage.save).toHaveBeenCalledWith(
+        keyName,  
         true,
         { daysUntilExpire: 1 }
       );
@@ -842,13 +855,13 @@ describe('Auth0', () => {
     });
 
     describe('when there is a valid query string in the url', () => {
-      const localSetup = async () => {
+      const localSetup = async (options = {}) => {
         window.history.pushState(
           {},
           'Test',
           `?code=${TEST_CODE}&state=${TEST_ENCODED_STATE}`
         );
-        const result = await setup();
+        const result = await setup(options);
         result.transactionManager.get.mockReturnValue({
           code_verifier: TEST_RANDOM_STRING,
           nonce: TEST_ENCODED_STATE,
@@ -1059,7 +1072,21 @@ describe('Auth0', () => {
         await auth0.handleRedirectCallback();
 
         expect(storage.save).toHaveBeenCalledWith(
-          'auth0.is.authenticated',
+          auth0.isAuthenticatedStorageKey,
+          true,
+          { daysUntilExpire: 1 }
+        );
+      });
+      it('saves `auth0.is.authenticated` key in storage using custom cookie name', async () => {
+        const keyName = 'test_name_for_isAuthenticatedStorageKey_2';
+        const { auth0, storage } = await localSetup({
+          isAuthenticatedStorageKey: keyName,
+        });
+
+        await auth0.handleRedirectCallback();
+
+        expect(storage.save).toHaveBeenCalledWith(
+          keyName,
           true,
           { daysUntilExpire: 1 }
         );
@@ -1075,14 +1102,14 @@ describe('Auth0', () => {
       });
     });
     describe('when there is a valid query string in a hash', () => {
-      const localSetup = async () => {
+      const localSetup = async (options = {}) => {
         window.history.pushState({}, 'Test', `/`);
         window.history.pushState(
           {},
           'Test',
           `#/callback/?code=${TEST_CODE}&state=${TEST_ENCODED_STATE}`
         );
-        const result = await setup();
+        const result = await setup(options);
         result.transactionManager.get.mockReturnValue({
           code_verifier: TEST_RANDOM_STRING,
           nonce: TEST_ENCODED_STATE,
@@ -1243,7 +1270,21 @@ describe('Auth0', () => {
         await auth0.handleRedirectCallback();
 
         expect(storage.save).toHaveBeenCalledWith(
-          'auth0.is.authenticated',
+          auth0.isAuthenticatedStorageKey,
+          true,
+          { daysUntilExpire: 1 }
+        );
+      });
+      it('saves `auth0.is.authenticated` key in storage using custom cookie name', async () => {
+        const keyName = 'test_name_for_isAuthenticatedStorageKey_3';
+        const { auth0, storage } = await localSetup({
+          isAuthenticatedStorageKey: keyName,
+        });
+
+        await auth0.handleRedirectCallback();
+
+        expect(storage.save).toHaveBeenCalledWith(
+          keyName,
           true,
           { daysUntilExpire: 1 }
         );
@@ -1898,7 +1939,20 @@ describe('Auth0', () => {
 
         await auth0.getTokenSilently(defaultOptionsIgnoreCacheTrue);
         expect(storage.save).toHaveBeenCalledWith(
-          'auth0.is.authenticated',
+          auth0.isAuthenticatedStorageKey,
+          true,
+          { daysUntilExpire: 1 }
+        );
+      });
+      it('saves `auth0.is.authenticated` key in storage using custom cookie name', async () => {
+        const keyName = 'test_name_for_isAuthenticatedStorageKey_4';
+        const { auth0, storage } = await setup({
+          isAuthenticatedStorageKey: keyName,
+        });
+
+        await auth0.getTokenSilently(defaultOptionsIgnoreCacheTrue);
+        expect(storage.save).toHaveBeenCalledWith(
+          keyName,
           true,
           { daysUntilExpire: 1 }
         );
@@ -2003,7 +2057,16 @@ describe('Auth0', () => {
     it('removes `auth0.is.authenticated` key from storage', async () => {
       const { auth0, storage } = await setup();
       auth0.logout();
-      expect(storage.remove).toHaveBeenCalledWith('auth0.is.authenticated');
+      expect(storage.remove).toHaveBeenCalledWith(auth0.isAuthenticatedStorageKey);
+    });
+
+    it('removes `auth0.is.authenticated` key from storage using custom cookie name', async () => {
+      const keyName = 'test_name_for_isAuthenticatedStorageKey_5';
+      const { auth0, storage } = await setup({
+        isAuthenticatedStorageKey: keyName,
+      });
+      auth0.logout();
+      expect(storage.remove).toHaveBeenCalledWith(keyName);
     });
 
     it('creates correct query params with empty options', async () => {
@@ -2077,7 +2140,17 @@ describe('Auth0', () => {
       const { auth0, storage } = await setup();
 
       auth0.logout({ localOnly: true });
-      expect(storage.remove).toHaveBeenCalledWith('auth0.is.authenticated');
+      expect(storage.remove).toHaveBeenCalledWith(auth0.isAuthenticatedStorageKey);
+    });
+
+    it('removes `auth0.is.authenticated` key from storage when `options.localOnly` is true and using custom cookie name', async () => {
+      const keyName = 'test_name_for_isAuthenticatedStorageKey_6';
+      const { auth0, storage } = await setup({
+        isAuthenticatedStorageKey: keyName,
+      });
+
+      auth0.logout({ localOnly: true });
+      expect(storage.remove).toHaveBeenCalledWith(keyName);
     });
 
     it('skips `window.location.assign` when `options.localOnly` is true', async () => {
@@ -2113,7 +2186,24 @@ describe('default creation function', () => {
     });
 
     expect(require('../src/storage').get).toHaveBeenCalledWith(
-      'auth0.is.authenticated'
+      auth0.isAuthenticatedStorageKey
+    );
+
+    expect(auth0.getTokenSilently).not.toHaveBeenCalled();
+  });
+
+  it('does nothing if there is nothing storage using custom cookie name', async () => {
+    Auth0Client.prototype.getTokenSilently = jest.fn();
+
+    const keyName = 'test_name_for_isAuthenticatedStorageKey_6';
+    const auth0 = await createAuth0Client({
+      domain: TEST_DOMAIN,
+      client_id: TEST_CLIENT_ID,
+      isAuthenticatedStorageKey: keyName,
+    });
+
+    expect(require('../src/storage').get).toHaveBeenCalledWith(
+      keyName
     );
 
     expect(auth0.getTokenSilently).not.toHaveBeenCalled();
@@ -2127,6 +2217,21 @@ describe('default creation function', () => {
     const auth0 = await createAuth0Client({
       domain: TEST_DOMAIN,
       client_id: TEST_CLIENT_ID
+    });
+
+    expect(auth0.getTokenSilently).toHaveBeenCalledWith();
+  });
+
+  it('calls getTokenSilently if there is a storage item with key `auth0.is.authenticated` using custom cookie name', async () => {
+    Auth0Client.prototype.getTokenSilently = jest.fn();
+
+    require('../src/storage').get = () => true;
+
+    const keyName = 'test_name_for_isAuthenticatedStorageKey_7';
+    const auth0 = await createAuth0Client({
+      domain: TEST_DOMAIN,
+      client_id: TEST_CLIENT_ID,
+      isAuthenticatedStorageKey: keyName,
     });
 
     expect(auth0.getTokenSilently).toHaveBeenCalledWith();

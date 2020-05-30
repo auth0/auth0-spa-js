@@ -22,7 +22,7 @@ export default async function createAuth0Client(options: Auth0ClientOptions) {
 
   if (
     auth0.cacheLocation === CACHE_LOCATION_MEMORY &&
-    !ClientStorage.get('auth0.is.authenticated')
+    !ClientStorage.get(auth0.isAuthenticatedStorageKey)
   ) {
     return auth0;
   }
