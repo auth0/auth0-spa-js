@@ -220,6 +220,19 @@
           >
         </div>
 
+        <div class="form-group">
+          <label
+            for="isAuthenticatedStorageKey"
+            >"Is Authenticated" Storage Key (defaults to <code>auth0.is.authenticated</code>)</label
+          >
+          <input
+            type="text"
+            class="form-control"
+            id="isAuthenticatedStorageKey"
+            v-model="isAuthenticatedStorageKey"
+          />
+        </div>
+
         <button @click="saveForm" class="btn btn-primary">
           Save
         </button>
@@ -240,6 +253,7 @@
       var defaultDomain = 'brucke.auth0.com';
       var defaultClientId = 'wLSIP47wM39wKdDmOj6Zb5eSEw3JVhVp';
       var defaultAudience = '';
+      var defaultIsAuthenticatedStorageKey = '';
 
       Vue.filter('concat', function (value) {
         if (value && value.length > 35) {
@@ -270,6 +284,7 @@
             domain: data.domain || defaultDomain,
             clientId: data.clientId || defaultClientId,
             audience: data.audience || defaultAudience,
+            isAuthenticatedStorageKey: data.isAuthenticatedStorageKey || defaultIsAuthenticatedStorageKey,
             error: null
           };
         },
@@ -318,7 +333,8 @@
                     ? 'localstorage'
                     : 'memory',
                   useRefreshTokens: _self.useRefreshTokens,
-                  audience: _self.audience
+                  audience: _self.audience,
+                  isAuthenticatedStorageKey: _self.isAuthenticatedStorageKey
                 })
               );
             } else {
@@ -331,7 +347,8 @@
                   ? 'localstorage'
                   : 'memory',
                 useRefreshTokens: _self.useRefreshTokens,
-                audience: _self.audience
+                audience: _self.audience,
+                isAuthenticatedStorageKey: _self.isAuthenticatedStorageKey
               }).then(_init);
             }
           },
@@ -345,7 +362,8 @@
                 useRefreshTokens: this.useRefreshTokens,
                 useConstructor: this.useConstructor,
                 useCache: this.useCache,
-                audience: this.audience
+                audience: this.audience,
+                isAuthenticatedStorageKey: this.isAuthenticatedStorageKey
               })
             );
           },
@@ -356,6 +374,7 @@
             this.useRefreshTokens = false;
             this.useCache = true;
             this.audience = defaultAudience;
+            this.isAuthenticatedStorageKey = defaultIsAuthenticatedStorageKey;
             this.useConstructor = false;
             this.saveForm();
           },
