@@ -512,13 +512,16 @@ export default class Auth0Client {
 
     try {
       if (!ignoreCache) {
-        const cache = this.cache.get({
-          scope: getTokenOptions.scope,
-          audience: getTokenOptions.audience || 'default',
-          client_id: this.options.client_id
-        });
+        const cache = this.cache.get(
+          {
+            scope: getTokenOptions.scope,
+            audience: getTokenOptions.audience || 'default',
+            client_id: this.options.client_id
+          },
+          60 // get a new token if within 60 seconds of expiring
+        );
 
-        if (cache && cache.access_token) {
+        if (cache && !cache.expiresSoon && cache.access_token) {
           return cache.access_token;
         }
       }

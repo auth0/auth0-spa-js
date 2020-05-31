@@ -415,8 +415,7 @@
 
             _self.auth0
               .getTokenSilently({
-                ignoreCache: !_self.useCache,
-                aCustomOption: 'hello world'
+                ignoreCache: !_self.useCache
               })
               .then(function (token) {
                 _self.access_tokens.push(token);

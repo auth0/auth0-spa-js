@@ -67,7 +67,7 @@ const setup = (
 const login: any = async (
   auth0,
   tokenSuccess = true,
-  tokenResponse?,
+  tokenResponse = {},
   code = 'my_code',
   state = 'MTIz'
 ) => {
@@ -172,6 +172,86 @@ describe('Auth0Client', () => {
       mockWindow.location.assign,
       auth0Client
     );
+  });
+
+  it('uses the cache when expires_in > constant leeway', async () => {
+    const auth0 = setup();
+    await login(auth0, true, { expires_in: 70 });
+
+    jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
+      access_token: 'my_access_token',
+      state: 'MTIz'
+    });
+
+    mockFetch.mockReset();
+
+    await auth0.getTokenSilently();
+    expect(mockFetch).not.toHaveBeenCalled();
+  });
+
+  it('refreshes the token when expires_in < constant leeway', async () => {
+    const auth0 = setup();
+    await login(auth0, true, { expires_in: 50 });
+
+    jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
+      access_token: 'my_access_token',
+      state: 'MTIz'
+    });
+
+    mockFetch.mockReset();
+    mockFetch.mockResolvedValue(
+      fetchResponse(true, {
+        id_token: 'my_id_token',
+        refresh_token: 'my_refresh_token',
+        access_token: 'my_access_token',
+        expires_in: 86400
+      })
+    );
+
+    await auth0.getTokenSilently();
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+  });
+
+  it('uses the cache when expires_in > constant leeway & refresh tokens are used', async () => {
+    const auth0 = setup({
+      useRefreshTokens: true
+    });
+
+    await login(auth0, true, { expires_in: 70 });
+
+    mockFetch.mockReset();
+    mockFetch.mockResolvedValue(
+      fetchResponse(true, {
+        id_token: 'my_id_token',
+        refresh_token: 'my_refresh_token',
+        access_token: 'my_access_token',
+        expires_in: 86400
+      })
+    );
+
+    await auth0.getTokenSilently();
+    expect(mockFetch).not.toHaveBeenCalled();
+  });
+
+  it('refreshes the token when expires_in < constant leeway & refresh tokens are used', async () => {
+    const auth0 = setup({
+      useRefreshTokens: true
+    });
+
+    await login(auth0, true, { expires_in: 50 });
+
+    mockFetch.mockReset();
+    mockFetch.mockResolvedValue(
+      fetchResponse(true, {
+        id_token: 'my_id_token',
+        refresh_token: 'my_refresh_token',
+        access_token: 'my_access_token',
+        expires_in: 86400
+      })
+    );
+
+    await auth0.getTokenSilently();
+    expect(mockFetch).toHaveBeenCalledTimes(1);
   });
 
   it('refreshes the token from a web worker', async () => {
