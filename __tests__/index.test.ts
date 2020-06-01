@@ -205,25 +205,25 @@ describe('Auth0', () => {
       expect(utils.runIframe).toHaveBeenCalled();
     });
 
-    it('should absorb "consent_required" errors', async () => {
+    it('should absorb other recoverable errors', async () => {
       const { utils, storage } = await setup();
-
-      utils.runIframe.mockImplementation(() => {
-        throw {
-          error: 'consent_required',
-          error_message: 'Consent required'
-        };
-      });
-
       storage.get.mockReturnValue(true);
-
-      const auth0 = await createAuth0Client({
-        domain: TEST_DOMAIN,
-        client_id: TEST_CLIENT_ID
-      });
-
-      expect(auth0).toBeInstanceOf(Auth0Client);
-      expect(utils.runIframe).toHaveBeenCalled();
+      const recoverableErrors = [
+        'consent_required',
+        'interaction_required',
+        'account_selection_required',
+        'access_denied'
+      ];
+      for (let error of recoverableErrors) {
+        utils.runIframe.mockRejectedValue({ error });
+        const auth0 = await createAuth0Client({
+          domain: TEST_DOMAIN,
+          client_id: TEST_CLIENT_ID
+        });
+        expect(auth0).toBeInstanceOf(Auth0Client);
+        expect(utils.runIframe).toHaveBeenCalledTimes(1);
+        utils.runIframe.mockClear();
+      }
     });
 
     it('should throw for other errors that are not recoverable', async () => {
