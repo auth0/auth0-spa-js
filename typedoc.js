@@ -21,6 +21,7 @@ module.exports = {
   excludeExternals: true,
   excludePrivate: true,
   includeDeclarations: true,
+  stripInternal: true,
   hideGenerator: true,
   theme: 'minimal'
 };
