@@ -222,10 +222,21 @@ const switchFetch = async (url, opts, timeout, worker) => {
     return sendMessage({ url, timeout, ...opts }, worker);
   } else {
     const response = await fetch(url, opts);
+
+    if (response.status == 429) {
+      return {
+        ok: false,
+        status: response.status,
+        json: {
+          error: 'too_many_requests',
+          error_description: 'Global rate limit exceeded'
+        }
+      };
+    }
+
     return {
       ok: response.ok,
-      json: await response.json(),
-      status: response.status
+      json: await response.json()
     };
   }
 };
@@ -282,17 +293,10 @@ const getJSON = async (url, timeout, options, worker) => {
 
   const {
     json: { error, error_description, ...success },
-    ok,
-    status
+    ok
   } = response;
 
   if (!ok) {
-    if (status === 429) {
-      const e = <any>new Error('too_many_requests');
-      e.error_description = 'Too Many Requests';
-      throw e;
-    }
-
     const errorMessage =
       error_description || `HTTP error. Unable to fetch ${url}`;
     const e = <any>new Error(errorMessage);
