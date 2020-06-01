@@ -6,6 +6,7 @@ import { MessageChannel } from 'worker_threads';
 import * as utils from '../src/utils';
 import { Auth0ClientOptions, IdToken } from '../src';
 import * as scope from '../src/scope';
+import { expectToHaveBeenCalledWithAuth0ClientParam } from './helpers';
 
 jest.mock('unfetch');
 jest.mock('../src/jwt');
@@ -161,6 +162,16 @@ describe('Auth0Client', () => {
       grant_type: 'authorization_code',
       code: 'my_code'
     });
+  });
+
+  it('should log the user in with custom auth0Client', async () => {
+    const auth0Client = { name: '__test_client__', version: '0.0.0' };
+    const auth0 = setup({ auth0Client });
+    await login(auth0);
+    expectToHaveBeenCalledWithAuth0ClientParam(
+      mockWindow.location.assign,
+      auth0Client
+    );
   });
 
   it('refreshes the token from a web worker', async () => {

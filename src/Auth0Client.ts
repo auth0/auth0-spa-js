@@ -163,6 +163,7 @@ export default class Auth0Client {
       domain,
       leeway,
       useRefreshTokens,
+      auth0Client,
       cacheLocation,
       advancedOptions,
       ...withoutDomain

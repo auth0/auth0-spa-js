@@ -4,6 +4,7 @@ jest.mock('../src/storage');
 jest.mock('../src/transaction-manager');
 jest.mock('../src/utils');
 
+import { expectToHaveBeenCalledWithAuth0ClientParam } from './helpers';
 import { CacheLocation, Auth0ClientOptions } from '../src/global';
 import * as scope from '../src/scope';
 
@@ -61,14 +62,6 @@ jest.mock('../src/token.worker');
 const webWorkerMatcher = expect.objectContaining({
   postMessage: expect.any(Function)
 });
-
-const expectToHaveBeenCalledWithAuth0ClientParam = (mock, expected) => {
-  const [[url]] = (<jest.Mock>mock).mock.calls;
-  const param = new URL(url).searchParams.get('auth0Client');
-  const decodedParam = decodeURIComponent(atob(param));
-  const actual = JSON.parse(decodedParam);
-  expect(actual).toStrictEqual(expected);
-};
 
 const setup = async (clientOptions: Partial<Auth0ClientOptions> = {}) => {
   const auth0 = await createAuth0Client({
@@ -1612,7 +1605,7 @@ describe('Auth0', () => {
             version: '9.9.9'
           };
 
-          const { auth0, utils, cache } = await setup({ auth0Client });
+          const { auth0, utils } = await setup({ auth0Client });
 
           await auth0.getTokenSilently();
 
