@@ -62,12 +62,12 @@ const webWorkerMatcher = expect.objectContaining({
   postMessage: expect.any(Function)
 });
 
-const expectToHaveBeenCalledWithAuth0ClientParam = (mock, actual) => {
+const expectToHaveBeenCalledWithAuth0ClientParam = (mock, expected) => {
   const [[url]] = (<jest.Mock>mock).mock.calls;
   const param = new URL(url).searchParams.get('auth0Client');
   const decodedParam = decodeURIComponent(atob(param));
-  const expected = JSON.parse(decodedParam);
-  expect(expected).toStrictEqual(actual);
+  const actual = JSON.parse(decodedParam);
+  expect(actual).toStrictEqual(expected);
 };
 
 const setup = async (clientOptions: Partial<Auth0ClientOptions> = {}) => {
