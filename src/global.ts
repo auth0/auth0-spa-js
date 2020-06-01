@@ -125,6 +125,12 @@ export interface Auth0ClientOptions extends BaseLoginOptions {
   authorizeTimeoutInSeconds?: number;
 
   /**
+   * Internal property to send information about the client to the authorization server.
+   * @internal
+   */
+  auth0Client?: { name: string; version: string };
+
+  /**
    * Changes to recommended defaults, like defaultScope
    */
   advancedOptions?: AdvancedOptions;
