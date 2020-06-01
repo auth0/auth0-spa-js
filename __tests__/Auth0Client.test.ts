@@ -7,6 +7,7 @@ import { MessageChannel } from 'worker_threads';
 import * as utils from '../src/utils';
 import { Auth0ClientOptions, IdToken } from '../src';
 import * as scope from '../src/scope';
+import { expectToHaveBeenCalledWithAuth0ClientParam } from './helpers';
 
 jest.mock('unfetch');
 jest.mock('es-cookie');
@@ -163,6 +164,16 @@ describe('Auth0Client', () => {
       grant_type: 'authorization_code',
       code: 'my_code'
     });
+  });
+
+  it('should log the user in with custom auth0Client', async () => {
+    const auth0Client = { name: '__test_client__', version: '0.0.0' };
+    const auth0 = setup({ auth0Client });
+    await login(auth0);
+    expectToHaveBeenCalledWithAuth0ClientParam(
+      mockWindow.location.assign,
+      auth0Client
+    );
   });
 
   it('refreshes the token from a web worker', async () => {
@@ -352,10 +363,9 @@ describe('Auth0Client', () => {
     await expect(auth0.getTokenSilently({ ignoreCache: true })).rejects.toThrow(
       `Timeout when executing 'fetch'`
     );
-    // Called once for the authorization grant (noop)
     // Called thrice for the refresh token grant in utils (noop)
     // Called thrice for the refresh token grant in token worker
-    expect(AbortController.prototype.abort).toBeCalledTimes(7);
+    expect(AbortController.prototype.abort).toBeCalledTimes(6);
     expect(mockFetch).toBeCalledTimes(3);
     Object.defineProperty(constants, 'DEFAULT_FETCH_TIMEOUT_MS', {
       get: () => originalDefaultFetchTimeoutMs
@@ -450,9 +460,8 @@ describe('Auth0Client', () => {
     await expect(auth0.getTokenSilently({ ignoreCache: true })).rejects.toThrow(
       `Timeout when executing 'fetch'`
     );
-    // Called once for the authorization grant (noop)
     // Called thrice for the refresh token grant in utils
-    expect(AbortController.prototype.abort).toBeCalledTimes(4);
+    expect(AbortController.prototype.abort).toBeCalledTimes(3);
     expect(mockFetch).toBeCalledTimes(3);
     Object.defineProperty(constants, 'DEFAULT_FETCH_TIMEOUT_MS', {
       get: () => originalDefaultFetchTimeoutMs

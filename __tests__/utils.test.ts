@@ -6,6 +6,7 @@ import {
   createRandomString,
   encode,
   decode,
+  fetchWithTimeout,
   sha256,
   runPopup,
   runIframe,
@@ -19,8 +20,15 @@ import {
   DEFAULT_AUTHORIZE_TIMEOUT_IN_SECONDS,
   DEFAULT_SILENT_TOKEN_RETRY_COUNT
 } from '../src/constants';
+import unfetch from 'unfetch';
 
+jest.mock('unfetch');
+const mockUnfetch = <jest.Mock>unfetch;
 (<any>global).TextEncoder = TextEncoder;
+
+afterEach(() => {
+  jest.resetAllMocks();
+});
 
 describe('utils', () => {
   describe('parseQueryResult', () => {
@@ -135,6 +143,19 @@ describe('utils', () => {
       expect(decode('dGVzdA==')).toBe('test');
     });
   });
+  describe('fetchWithTimeout', () => {
+    it('clears timeout when successful', async () => {
+      mockUnfetch.mockImplementation(() =>
+        Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve()
+        })
+      );
+      jest.spyOn(window, 'clearTimeout');
+      await fetchWithTimeout('https://test.com/', {}, undefined);
+      expect(clearTimeout).toBeCalledTimes(1);
+    });
+  });
   describe('sha256', () => {
     it('generates a digest of the given data', async () => {
       (<any>global).crypto = {
@@ -229,14 +250,9 @@ describe('utils', () => {
 
   describe('oauthToken', () => {
     let oauthToken;
-    let mockUnfetch;
     let abortController;
 
     beforeEach(() => {
-      jest.resetModules();
-      jest.mock('unfetch');
-      mockUnfetch = require('unfetch');
-
       const utils = require('../src/utils');
       oauthToken = utils.oauthToken;
 
