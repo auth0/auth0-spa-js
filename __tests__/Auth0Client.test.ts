@@ -1,4 +1,5 @@
 import 'fast-text-encoding';
+import * as esCookie from 'es-cookie';
 import Auth0Client from '../src/Auth0Client';
 import unfetch from 'unfetch';
 import { verify } from '../src/jwt';
@@ -9,6 +10,7 @@ import * as scope from '../src/scope';
 import { expectToHaveBeenCalledWithAuth0ClientParam } from './helpers';
 
 jest.mock('unfetch');
+jest.mock('es-cookie');
 jest.mock('../src/jwt');
 jest.mock('../src/token.worker');
 
@@ -614,5 +616,36 @@ describe('Auth0Client', () => {
     });
 
     expect(access_token).toEqual('my_access_token');
+  });
+
+  it("skips checking the auth0 session when there's no auth cookie", async () => {
+    const auth0 = setup();
+
+    jest.spyOn(<any>utils, 'runIframe');
+
+    await auth0.checkSession();
+
+    expect(utils.runIframe).not.toHaveBeenCalled();
+  });
+
+  it('checks the auth0 session when there is an auth cookie', async () => {
+    const auth0 = setup();
+
+    jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
+      access_token: 'my_access_token',
+      state: 'MTIz'
+    });
+    (<jest.Mock>esCookie.get).mockReturnValue(true);
+    mockFetch.mockResolvedValueOnce(
+      fetchResponse(true, {
+        id_token: 'my_id_token',
+        refresh_token: 'my_refresh_token',
+        access_token: 'my_access_token',
+        expires_in: 86400
+      })
+    );
+    await auth0.checkSession();
+
+    expect(utils.runIframe).toHaveBeenCalled();
   });
 });
