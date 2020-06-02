@@ -20,7 +20,6 @@ interface CacheEntry {
   scope: string;
   client_id: string;
   refresh_token?: string;
-  expiresSoon?: boolean;
 }
 
 export interface ICache {

@@ -521,7 +521,7 @@ export default class Auth0Client {
           60 // get a new token if within 60 seconds of expiring
         );
 
-        if (cache && !cache.expiresSoon && cache.access_token) {
+        if (cache && cache.access_token) {
           return cache.access_token;
         }
       }
