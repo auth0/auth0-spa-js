@@ -18,7 +18,7 @@ describe('storage', () => {
       }
     );
   });
-  it('saves object with secure flag when on https', () => {
+  it('saves object with secure flag and samesite=none when on https', () => {
     const key = 'key';
     const value = { some: 'value' };
     const options = { daysUntilExpire: 1 };
@@ -31,7 +31,8 @@ describe('storage', () => {
       JSON.stringify(value),
       {
         expires: options.daysUntilExpire,
-        secure: true
+        secure: true,
+        sameSite: 'none'
       }
     );
     window.location = originalLocation;
