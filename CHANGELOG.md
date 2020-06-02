@@ -1,5 +1,18 @@
 # Change Log
 
+## [v1.9.0](https://github.com/auth0/auth0-spa-js/tree/v1.9.0) (2020-06-02)
+
+[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v1.8.2...v1.9.0)
+
+**Added**
+
+- [SDK-1695] Add `auth0Client` option so wrapper libraries can send their own client info [\#490](https://github.com/auth0/auth0-spa-js/pull/490) ([adamjmcgrath](https://github.com/adamjmcgrath))
+- Add `checkSession` and ignore recoverable errors [\#482](https://github.com/auth0/auth0-spa-js/pull/482) ([adamjmcgrath](https://github.com/adamjmcgrath))
+
+**Fixed**
+
+- Update docs for returnTo and client_id params on logout [\#484](https://github.com/auth0/auth0-spa-js/pull/484) ([stevehobbsdev](https://github.com/stevehobbsdev))
+
 ## [v1.8.2](https://github.com/auth0/auth0-spa-js/tree/v1.8.2) (2020-05-26)
 
 [Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v1.8.1...v1.8.2)
