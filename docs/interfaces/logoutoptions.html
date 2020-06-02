@@ -2830,13 +2830,16 @@ img {
 				<div class="tsd-signature tsd-kind-icon">client_<wbr>id<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/91b7683/src/global.ts#L278">src/global.ts:278</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/0602674/src/global.ts#L292">src/global.ts:292</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-comment tsd-typography">
 					<div class="lead">
 						<p>The <code>client_id</code> of your application.</p>
 					</div>
+					<p>If this property is not set, then the <code>client_id</code> that was used during initialization of the SDK is sent to the logout endpoint.</p>
+					<p>If this property is set to <code>null</code>, then no client ID value is sent to the logout endpoint.</p>
+					<p><a href="https://auth0.com/docs/logout/guides/redirect-users-after-logout">Read more about how redirecting after logout works</a></p>
 				</div>
 			</section>
 			<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
@@ -2845,7 +2848,7 @@ img {
 				<div class="tsd-signature tsd-kind-icon">federated<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">boolean</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/91b7683/src/global.ts#L287">src/global.ts:287</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/0602674/src/global.ts#L301">src/global.ts:301</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-comment tsd-typography">
@@ -2864,7 +2867,7 @@ img {
 				<div class="tsd-signature tsd-kind-icon">local<wbr>Only<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">boolean</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/91b7683/src/global.ts#L295">src/global.ts:295</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/0602674/src/global.ts#L309">src/global.ts:309</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-comment tsd-typography">
@@ -2882,21 +2885,20 @@ img {
 				<div class="tsd-signature tsd-kind-icon">return<wbr>To<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/91b7683/src/global.ts#L273">src/global.ts:273</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/0602674/src/global.ts#L281">src/global.ts:281</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-comment tsd-typography">
 					<div class="lead">
 						<p>The URL where Auth0 will redirect your browser to after the logout.</p>
 					</div>
-					<blockquote>
-						<p>Note that if the <code>client_id</code> parameter is included, the
-							<code>returnTo</code> URL that is provided must be listed in the
-							Application&#39;s &quot;Allowed Logout URLs&quot; in the Auth0 dashboard.
-							However, if the <code>client_id</code> parameter is not included, the
-							<code>returnTo</code> URL must be listed in the &quot;Allowed Logout URLs&quot; at
-						the account level in the Auth0 dashboard.</p>
-					</blockquote>
+					<p><strong>Note</strong>: If the <code>client_id</code> parameter is included, the
+						<code>returnTo</code> URL that is provided must be listed in the
+						Application&#39;s &quot;Allowed Logout URLs&quot; in the Auth0 dashboard.
+						However, if the <code>client_id</code> parameter is not included, the
+						<code>returnTo</code> URL must be listed in the &quot;Allowed Logout URLs&quot; at
+					the account level in the Auth0 dashboard.</p>
+					<p><a href="https://auth0.com/docs/logout/guides/redirect-users-after-logout">Read more about how redirecting after logout works</a></p>
 				</div>
 			</section>
 		</section>
