@@ -59,6 +59,21 @@ const verifier = new IDTokenVerifier({
 verifier.getRsaVerifier = (_, __, cb) => cb(null, { verify: () => true });
 
 describe('jwt', () => {
+  const IDTOKEN_ERROR_MESSAGE = 'ID token could not be decoded';
+  let now: number;
+  let realDateNowFn: () => number;
+
+  beforeEach(() => {
+    // Mock the date, but pin it to the current time so that everything gets the same time
+    realDateNowFn = Date.now;
+    now = realDateNowFn();
+    global.Date.now = jest.fn(() => now);
+  });
+
+  afterEach(() => {
+    global.Date.now = realDateNowFn;
+  });
+
   it('decodes correctly', () => {
     const id_token =
       'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJwYXlsb2FkIjp0cnVlLCJpYXQiOjE1NTEzNjIzOTAsImV4cCI6MTU1MTM2NTk5MCwiYXVkIjoiazV1M28yZmlBQThYd2VYRUVYNjA0S0N3Q2p6anRNVTYiLCJpc3MiOiJodHRwczovL2JydWNrZS5hdXRoMC5jb20vIn0.MeU2xC4qwr6JvYeDjCRbzT78mvugpVcSlkoGqRsA-ig-JUHuKMsBO1mNgsilRaxulf_zEl-XktKpq9IisamKSRe1UeboESXsZ02nbZqP5i0X4pdYnTI9Z51Iuet2GAJqPDTMpyj-BA0yiROd1X3Ot91_Fh1ZU7EyZmYdoyJrx_Cue1ituMMIWBk1JOs6rMKy1xVCFoDk20upQzf5Xuy2oGtaRhrQzz5sdRR9Y5yxEN5kzcHrGVaZ_fLMYkUDF_aKv4PTFU-I-0HpP_-4PtcjTUJpeXDK_7BzpA6fAdnqaRTl6iYgNKl7R19_8QfQpoTkeJBmZ7HxW_13s03G5jNLSg';
@@ -89,21 +104,6 @@ describe('jwt', () => {
     });
   });
   describe('validates id_token', () => {
-    const IDTOKEN_ERROR_MESSAGE = 'ID token could not be decoded';
-    let now: number;
-    let realDateNowFn: () => number;
-
-    beforeEach(() => {
-      // Mock the date, but pin it to the current time so that everything gets the same time
-      realDateNowFn = Date.now;
-      now = realDateNowFn();
-      global.Date.now = jest.fn(() => now);
-    });
-
-    afterEach(() => {
-      global.Date.now = realDateNowFn;
-    });
-
     it('throws when there is less than 3 parts', () => {
       expect(() => decode('test')).toThrow(IDTOKEN_ERROR_MESSAGE);
       expect(() => decode('test.')).toThrow(IDTOKEN_ERROR_MESSAGE);
@@ -122,6 +122,7 @@ describe('jwt', () => {
       expect(() => decode('test.test.')).toThrow(IDTOKEN_ERROR_MESSAGE);
     });
   });
+
   it('verifies correctly', async done => {
     const id_token = await createJWT();
     const { encoded, header, claims } = verify({
