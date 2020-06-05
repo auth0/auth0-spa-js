@@ -90,6 +90,20 @@ describe('jwt', () => {
   });
   describe('validates id_token', () => {
     const IDTOKEN_ERROR_MESSAGE = 'ID token could not be decoded';
+    let now: number;
+    let realDateNowFn: () => number;
+
+    beforeEach(() => {
+      // Mock the date, but pin it to the current time so that everything gets the same time
+      realDateNowFn = Date.now;
+      now = realDateNowFn();
+      global.Date.now = jest.fn(() => now);
+    });
+
+    afterEach(() => {
+      global.Date.now = realDateNowFn;
+    });
+
     it('throws when there is less than 3 parts', () => {
       expect(() => decode('test')).toThrow(IDTOKEN_ERROR_MESSAGE);
       expect(() => decode('test.')).toThrow(IDTOKEN_ERROR_MESSAGE);
@@ -274,19 +288,32 @@ describe('jwt', () => {
   });
   it('validate auth_time is present when max_age is provided', async () => {
     const id_token = await createJWT({ ...DEFAULT_PAYLOAD });
+
     expect(() => verify({ ...verifyOptions, id_token, max_age: 123 })).toThrow(
       'Authentication Time (auth_time) claim must be a number present in the ID token when Max Age (max_age) is specified'
     );
   });
+
   it('validate auth_time + max_age is in the future', async () => {
-    const yesterday = new Date();
+    const yesterday = new Date(now);
     yesterday.setDate(yesterday.getDate() - 1);
+
+    const maxAge = 1;
+    const leeway = 60;
+    const authTime = Math.floor(yesterday.getTime() / 1000);
+    const authTimeDateCorrected = new Date((authTime + maxAge + leeway) * 1000);
+
     const id_token = await createJWT({
       ...DEFAULT_PAYLOAD,
-      auth_time: yesterday.getTime()
+      auth_time: authTime
     });
-    expect(() => verify({ ...verifyOptions, id_token, max_age: 1 })).toThrow(
-      'Authentication Time (auth_time) claim in the ID token indicates that too much time has passed since the last end-user authentication.'
+
+    expect(() =>
+      verify({ ...verifyOptions, id_token, max_age: maxAge, leeway })
+    ).toThrow(
+      `Authentication Time (auth_time) claim in the ID token indicates that too much time has passed since the last end-user authentication. Currrent time (${new Date(
+        now
+      )}) is after last auth at ${authTimeDateCorrected}`
     );
   });
 });
