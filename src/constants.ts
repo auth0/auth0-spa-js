@@ -36,3 +36,20 @@ export const MISSING_REFRESH_TOKEN_ERROR_MESSAGE =
  * @ignore
  */
 export const DEFAULT_SCOPE = 'openid profile email';
+
+/**
+ * A list of errors that can be issued by the authorization server which the
+ * user can recover from by signing in interactively.
+ * https://openid.net/specs/openid-connect-core-1_0.html#AuthError
+ * @ignore
+ */
+export const RECOVERABLE_ERRORS = [
+  'login_required',
+  'consent_required',
+  'interaction_required',
+  'account_selection_required',
+  // Strictly speaking the user can't recover from `access_denied` - but they
+  // can get more information about their access being denied by logging in
+  // interactively.
+  'access_denied'
+];

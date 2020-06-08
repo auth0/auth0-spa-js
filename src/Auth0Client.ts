@@ -25,7 +25,8 @@ import {
   DEFAULT_POPUP_CONFIG_OPTIONS,
   DEFAULT_AUTHORIZE_TIMEOUT_IN_SECONDS,
   MISSING_REFRESH_TOKEN_ERROR_MESSAGE,
-  DEFAULT_SCOPE
+  DEFAULT_SCOPE,
+  RECOVERABLE_ERRORS
 } from './constants';
 
 import version from './version';
@@ -474,6 +475,38 @@ export default class Auth0Client {
     return {
       appState: transaction.appState
     };
+  }
+
+  /**
+   * ```js
+   * await auth0.checkSession();
+   * ```
+   *
+   * Check if the user is logged in using `getTokenSilently`. The difference
+   * with `getTokenSilently` is that this doesn't return a token, but it will
+   * pre-fill the token cache.
+   *
+   * It should be used for silently logging in the user when you instantiate the
+   * `Auth0Client` constructor. You should not need this if you are using the
+   * `createAuth0Client` factory.
+   *
+   * @param options
+   */
+  public async checkSession(options?: GetTokenSilentlyOptions) {
+    if (
+      this.cacheLocation === CACHE_LOCATION_MEMORY &&
+      !ClientStorage.get('auth0.is.authenticated')
+    ) {
+      return;
+    }
+
+    try {
+      await this.getTokenSilently(options);
+    } catch (error) {
+      if (!RECOVERABLE_ERRORS.includes(error.error)) {
+        throw error;
+      }
+    }
   }
 
   /**
