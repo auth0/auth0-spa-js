@@ -206,7 +206,28 @@ describe('Auth0', () => {
       expect(utils.runIframe).toHaveBeenCalled();
     });
 
-    it('should throw other errors that are not "login_required"', async () => {
+    it('should absorb other recoverable errors', async () => {
+      const { utils, storage } = await setup();
+      storage.get.mockReturnValue(true);
+      const recoverableErrors = [
+        'consent_required',
+        'interaction_required',
+        'account_selection_required',
+        'access_denied'
+      ];
+      for (let error of recoverableErrors) {
+        utils.runIframe.mockRejectedValue({ error });
+        const auth0 = await createAuth0Client({
+          domain: TEST_DOMAIN,
+          client_id: TEST_CLIENT_ID
+        });
+        expect(auth0).toBeInstanceOf(Auth0Client);
+        expect(utils.runIframe).toHaveBeenCalledTimes(1);
+        utils.runIframe.mockClear();
+      }
+    });
+
+    it('should throw for other errors that are not recoverable', async () => {
       const { utils, storage } = await setup();
 
       utils.runIframe.mockImplementation(() => {
@@ -218,18 +239,17 @@ describe('Auth0', () => {
 
       storage.get.mockReturnValue(true);
 
-      // We expect one assertion, meaning that if the function under test
-      // does not throw, it will still fail the test.
-      expect.assertions(1);
+      await expect(Promise.reject(new Error('foo'))).rejects.toThrow(Error);
 
-      try {
-        await createAuth0Client({
+      await expect(
+        createAuth0Client({
           domain: TEST_DOMAIN,
           client_id: TEST_CLIENT_ID
-        });
-      } catch (e) {
-        expect(e.error).toEqual('some_other_error');
-      }
+        })
+      ).rejects.toStrictEqual({
+        error: 'some_other_error',
+        error_message: 'This is a different error to login_required'
+      });
     });
   });
 
@@ -2177,7 +2197,7 @@ describe('default creation function', () => {
       client_id: TEST_CLIENT_ID
     });
 
-    expect(auth0.getTokenSilently).toHaveBeenCalledWith();
+    expect(auth0.getTokenSilently).toHaveBeenCalledWith(undefined);
   });
 
   describe('when refresh tokens are not used', () => {
@@ -2199,7 +2219,7 @@ describe('default creation function', () => {
         ...options
       });
 
-      expect(auth0.getTokenSilently).toHaveBeenCalledWith();
+      expect(auth0.getTokenSilently).toHaveBeenCalledWith(undefined);
     });
   });
 
@@ -2223,7 +2243,7 @@ describe('default creation function', () => {
 
       expect((<any>auth0).scope).toBe('the-scope offline_access');
 
-      expect(auth0.getTokenSilently).toHaveBeenCalledWith();
+      expect(auth0.getTokenSilently).toHaveBeenCalledWith(undefined);
     });
   });
 
@@ -2247,7 +2267,7 @@ describe('default creation function', () => {
         ...options
       });
 
-      expect(auth0.getTokenSilently).toHaveBeenCalledWith();
+      expect(auth0.getTokenSilently).toHaveBeenCalledWith(undefined);
     });
   });
 });
