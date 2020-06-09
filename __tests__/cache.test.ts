@@ -75,6 +75,38 @@ describe('InMemoryCache', () => {
     ).toStrictEqual(data);
   });
 
+  it('returns undefined from the cache when expires_in < expiryAdjustmentSeconds', () => {
+    const data = {
+      client_id: 'test-client',
+      audience: 'the_audience',
+      scope: 'the_scope',
+      id_token: 'idtoken',
+      access_token: 'accesstoken',
+      expires_in: 40,
+      decodedToken: {
+        claims: {
+          __raw: 'idtoken',
+          exp: nowSeconds() + dayInSeconds,
+          name: 'Test'
+        },
+        user: { name: 'Test' }
+      }
+    };
+
+    cache.save(data);
+
+    expect(
+      cache.get(
+        {
+          client_id: 'test-client',
+          audience: 'the_audience',
+          scope: 'the_scope'
+        },
+        60
+      )
+    ).toBeUndefined();
+  });
+
   describe('when refresh tokens are used', () => {
     it('strips everything except the refresh token when expiry has been reached', () => {
       const now = Date.now();
@@ -268,6 +300,53 @@ describe('LocalStorageCache', () => {
       ).toStrictEqual(defaultEntry);
     });
 
+    it('returns undefined when expires_in < expiryAdjustmentSeconds', () => {
+      localStorage.setItem(
+        '@@auth0spajs@@::__TEST_CLIENT_ID__::__TEST_AUDIENCE__::__TEST_SCOPE__',
+        JSON.stringify({
+          body: defaultEntry,
+          expiresAt: nowSeconds() + 40
+        })
+      );
+
+      expect(
+        cache.get(
+          {
+            client_id: '__TEST_CLIENT_ID__',
+            audience: '__TEST_AUDIENCE__',
+            scope: '__TEST_SCOPE__'
+          },
+          60
+        )
+      ).toBeUndefined();
+    });
+
+    it('strips the cache data when expires_in < expiryAdjustmentSeconds and refresh tokens are being used', () => {
+      localStorage.setItem(
+        '@@auth0spajs@@::__TEST_CLIENT_ID__::__TEST_AUDIENCE__::__TEST_SCOPE__',
+        JSON.stringify({
+          body: {
+            ...defaultEntry,
+            refresh_token: '__REFRESH_TOKEN__'
+          },
+          expiresAt: nowSeconds() + 40
+        })
+      );
+
+      expect(
+        cache.get(
+          {
+            client_id: '__TEST_CLIENT_ID__',
+            audience: '__TEST_AUDIENCE__',
+            scope: '__TEST_SCOPE__'
+          },
+          60
+        )
+      ).toStrictEqual({
+        refresh_token: '__REFRESH_TOKEN__'
+      });
+    });
+
     it('returns undefined when there is no data', () => {
       expect(cache.get({ scope: '', audience: '' })).toBeUndefined();
     });
@@ -360,7 +439,7 @@ describe('LocalStorageCache', () => {
         '@@auth0spajs@@::__TEST_CLIENT_ID__::__TEST_AUDIENCE__::__TEST_SCOPE__',
         JSON.stringify({
           body: defaultEntry,
-          expiresAt: nowSeconds() + dayInSeconds - 60
+          expiresAt: nowSeconds() + dayInSeconds
         })
       );
     });
@@ -381,7 +460,7 @@ describe('LocalStorageCache', () => {
         '@@auth0spajs@@::__TEST_CLIENT_ID__::__TEST_AUDIENCE__::__TEST_SCOPE__',
         JSON.stringify({
           body: entry,
-          expiresAt: nowSeconds() + 40
+          expiresAt: nowSeconds() + 100
         })
       );
     });

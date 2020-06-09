@@ -1498,11 +1498,14 @@ describe('Auth0', () => {
 
           await auth0.getTokenSilently();
 
-          expect(cache.get).toHaveBeenCalledWith({
-            audience: 'default',
-            scope: TEST_SCOPES,
-            client_id: TEST_CLIENT_ID
-          });
+          expect(cache.get).toHaveBeenCalledWith(
+            {
+              audience: 'default',
+              scope: TEST_SCOPES,
+              client_id: TEST_CLIENT_ID
+            },
+            60
+          );
         });
 
         it('returns cached access_token when there is a cache', async () => {
@@ -1546,11 +1549,14 @@ describe('Auth0', () => {
 
           await auth0.getTokenSilently();
 
-          expect(cache.get).toHaveBeenCalledWith({
-            audience: 'default',
-            scope: 'openid email',
-            client_id: TEST_CLIENT_ID
-          });
+          expect(cache.get).toHaveBeenCalledWith(
+            {
+              audience: 'default',
+              scope: 'openid email',
+              client_id: TEST_CLIENT_ID
+            },
+            60
+          );
         });
       });
 
@@ -1564,11 +1570,14 @@ describe('Auth0', () => {
 
           await auth0.getTokenSilently();
 
-          expect(cache.get).toHaveBeenCalledWith({
-            audience: 'default',
-            scope: `${TEST_SCOPES} offline_access`,
-            client_id: TEST_CLIENT_ID
-          });
+          expect(cache.get).toHaveBeenCalledWith(
+            {
+              audience: 'default',
+              scope: `${TEST_SCOPES} offline_access`,
+              client_id: TEST_CLIENT_ID
+            },
+            60
+          );
         });
 
         it('calls the token endpoint with the correct params', async () => {

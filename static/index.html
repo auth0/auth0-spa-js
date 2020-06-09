@@ -84,7 +84,10 @@
         <template v-if="error">
           <hr />
           <h3>Last error</h3>
-          <pre><code data-cy="error">{{JSON.stringify(error, null, 2)}}</code></pre>
+          <pre><code data-cy="error">
+{{JSON.stringify(error, null, 2)}}
+              </code>
+          </pre>
         </template>
 
         <hr />
@@ -94,7 +97,7 @@
           <div class="card-body">
             <pre>
               <code>
-                {{ profile | json }}
+{{ JSON.stringify(profile, null, 2) }}
               </code>
             </pre>
           </div>
@@ -365,14 +368,14 @@
 
             _self.auth0.getTokenSilently().then(function (token) {
               _self.access_tokens.push(token);
-            });
 
-            _self.auth0.getUser().then(function (user) {
-              _self.profile = user;
-            });
+              _self.auth0.getUser().then(function (user) {
+                _self.profile = user;
+              });
 
-            _self.auth0.getIdTokenClaims().then(function (claims) {
-              _self.id_token = claims.__raw;
+              _self.auth0.getIdTokenClaims().then(function (claims) {
+                _self.id_token = claims.__raw;
+              });
             });
           },
           loginPopup: function () {
@@ -415,8 +418,7 @@
 
             _self.auth0
               .getTokenSilently({
-                ignoreCache: !_self.useCache,
-                aCustomOption: 'hello world'
+                ignoreCache: !_self.useCache
               })
               .then(function (token) {
                 _self.access_tokens.push(token);
