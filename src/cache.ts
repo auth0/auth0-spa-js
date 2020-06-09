@@ -24,11 +24,13 @@ interface CacheEntry {
 
 export interface ICache {
   save(entry: CacheEntry): void;
-  get(key: CacheKeyData): Partial<CacheEntry>;
+  get(key: CacheKeyData, expiryAdjustmentSeconds?: number): Partial<CacheEntry>;
   clear(): void;
 }
 
 const keyPrefix = '@@auth0spajs@@';
+const DEFAULT_EXPIRY_ADJUSTMENT_SECONDS = 0;
+
 const createKey = (e: CacheKeyData) =>
   `${keyPrefix}::${e.client_id}::${e.audience}::${e.scope}`;
 
@@ -43,8 +45,7 @@ type CachePayload = {
  */
 const wrapCacheEntry = (entry: CacheEntry): CachePayload => {
   const expiresInTime = Math.floor(Date.now() / 1000) + entry.expires_in;
-  const expirySeconds =
-    Math.min(expiresInTime, entry.decodedToken.claims.exp) - 60; // take off a small leeway
+  const expirySeconds = Math.min(expiresInTime, entry.decodedToken.claims.exp);
 
   return {
     body: entry,
@@ -60,14 +61,17 @@ export class LocalStorageCache implements ICache {
     window.localStorage.setItem(cacheKey, JSON.stringify(payload));
   }
 
-  public get(key: CacheKeyData): Partial<CacheEntry> {
+  public get(
+    key: CacheKeyData,
+    expiryAdjustmentSeconds = DEFAULT_EXPIRY_ADJUSTMENT_SECONDS
+  ): Partial<CacheEntry> {
     const cacheKey = createKey(key);
     const payload = this.readJson(cacheKey);
     const nowSeconds = Math.floor(Date.now() / 1000);
 
     if (!payload) return;
 
-    if (payload.expiresAt < nowSeconds) {
+    if (payload.expiresAt - expiryAdjustmentSeconds < nowSeconds) {
       if (payload.body.refresh_token) {
         const newPayload = this.stripData(payload);
         this.writeJson(cacheKey, newPayload);
@@ -151,7 +155,10 @@ export class InMemoryCache {
         cache[key] = payload;
       },
 
-      get(key: CacheKeyData) {
+      get(
+        key: CacheKeyData,
+        expiryAdjustmentSeconds = DEFAULT_EXPIRY_ADJUSTMENT_SECONDS
+      ) {
         const cacheKey = createKey(key);
         const wrappedEntry: CachePayload = cache[cacheKey];
         const nowSeconds = Math.floor(Date.now() / 1000);
@@ -160,7 +167,7 @@ export class InMemoryCache {
           return;
         }
 
-        if (wrappedEntry.expiresAt < nowSeconds) {
+        if (wrappedEntry.expiresAt - expiryAdjustmentSeconds < nowSeconds) {
           if (wrappedEntry.body.refresh_token) {
             wrappedEntry.body = {
               refresh_token: wrappedEntry.body.refresh_token
