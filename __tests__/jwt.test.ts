@@ -296,7 +296,7 @@ describe('jwt', () => {
   });
 
   it('validate auth_time + max_age is in the future', async () => {
-    const yesterday = new Date(now);
+    const yesterday = new Date();
     yesterday.setDate(yesterday.getDate() - 1);
 
     const maxAge = 1;
