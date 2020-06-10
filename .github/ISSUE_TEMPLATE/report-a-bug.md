@@ -12,17 +12,29 @@ assignees: ''
 
 By submitting an Issue to this repository, you agree to the terms within the [Auth0 Code of Conduct](https://github.com/auth0/open-source-template/blob/master/CODE-OF-CONDUCT.md).
 
-### Description
+### Describe the problem
 
-> Provide a clear and concise description of the issue, including what you expected to happen.
+> Provide a clear and concise description of the issue
+
+### What was the expected behavior?
+
+> Tell us about the behavior you expected to see
 
 ### Reproduction
 
-> Detail the steps taken to reproduce this error, what was expected, and whether this issue can be reproduced consistently or if it is intermittent.
->
+> Detail the steps taken to reproduce this error, and whether this issue can be reproduced consistently or if it is intermittent.
+
+- Step 1..
+- Step 2..
+- ...
+
+**Can the behavior be reproduced using the [SPA SDK Playground](https://github.com/auth0/auth0-spa-js/blob/master/DEVELOPMENT.md#the-sdk-playground)?**
+
+If so, provide steps:
+
 > Where applicable, please include:
 >
-> - Code sample to reproduce the issue
+> - The smallest possible sample app that reproduces the undesirable behavior
 > - Log files (redact/remove sensitive information)
 > - Application settings (redact/remove sensitive information)
 > - Screenshots
@@ -31,7 +43,7 @@ By submitting an Issue to this repository, you agree to the terms within the [Au
 
 > Please provide the following:
 
-- **Version of this library used:**
-- **Version of the platform or framework used, if applicable:**
-- **Other relevant versions (language, server software, OS, browser):**
+- **Version of `auth0-spa-js` used:**
+- **Which browsers have you tested in?**
+- **Which framework are you using, if applicable (Angular, React, etc):**
 - **Other modules/plugins/libraries that might be involved:**
