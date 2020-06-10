@@ -6,6 +6,9 @@ contact_links:
   - name: FAQ
     url: https://github.com/auth0/auth0-spa-js/blob/master/FAQ.md
     about: Read the FAQ to get answers to common issues
+  - name: SDK API Documentation
+    url: https://auth0.github.io/auth0-spa-js/
+    about: Read the API documentation for this SDK
   - name: Library Documentation
     url: https://auth0.com/docs/libraries/auth0-spa-js
     about: Read the library docs on Auth0.com
