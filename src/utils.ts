@@ -226,7 +226,6 @@ const switchFetch = async (url, opts, timeout, worker) => {
     if (response.status == 429) {
       return {
         ok: false,
-        status: response.status,
         json: {
           error: 'too_many_requests',
           error_description: 'Global rate limit exceeded'
