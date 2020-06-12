@@ -159,13 +159,15 @@ export const verify = (options: JWTVerifyOptions) => {
   }
 
   const leeway = options.leeway || 60;
-  const now = new Date();
+  const now = new Date(Date.now());
   const expDate = new Date(0);
   const nbfDate = new Date(0);
   const authTimeDate = new Date(0);
+
   authTimeDate.setUTCSeconds(
-    (parseInt(decoded.claims.auth_time) + options.max_age) / 1000 + leeway
+    parseInt(decoded.claims.auth_time) + options.max_age + leeway
   );
+
   expDate.setUTCSeconds(decoded.claims.exp + leeway);
   nbfDate.setUTCSeconds(decoded.claims.nbf - leeway);
 
