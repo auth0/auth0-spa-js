@@ -8,5 +8,5 @@
     "declarationDir": "./dist/typings",
     "moduleResolution": "node"
   },
-  "exclude": ["./__tests__", "./dist/typings"]
+  "exclude": ["./__tests__", "./dist/typings", "**/__mocks__/**"]
 }
