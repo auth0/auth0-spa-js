@@ -30,7 +30,8 @@ const assertUrlEquals = (actualUrl, host, path, queryParams) => {
 const assertPost = (url, body, callNum = 0) => {
   const [actualUrl, opts] = mockFetch.mock.calls[callNum];
   expect(url).toEqual(actualUrl);
-  expect(body).toEqual(JSON.parse(opts.body));
+  const parsedBody = utils.parseQueryResult(opts.body);
+  expect(body).toEqual(parsedBody);
 };
 
 const fetchResponse = (ok, json) =>
@@ -655,7 +656,7 @@ describe('Auth0Client', () => {
       )
     ).toBe(true);
 
-    expect(JSON.parse(mockFetch.mock.calls[1][1].body)).toEqual({
+    expect(utils.parseQueryResult(mockFetch.mock.calls[1][1].body)).toEqual({
       redirect_uri: 'my_callback_url',
       client_id: 'auth0_client_id',
       grant_type: 'authorization_code',
@@ -687,7 +688,7 @@ describe('Auth0Client', () => {
       customParam: 'hello world'
     });
 
-    expect(JSON.parse(mockFetch.mock.calls[1][1].body)).toEqual({
+    expect(utils.parseQueryResult(mockFetch.mock.calls[1][1].body)).toEqual({
       redirect_uri: 'my_callback_url',
       client_id: 'auth0_client_id',
       grant_type: 'refresh_token',

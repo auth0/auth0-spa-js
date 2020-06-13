@@ -30,10 +30,10 @@ export const parseQueryResult = (queryString: string) => {
     parsedQuery[key] = decodeURIComponent(val);
   });
 
-  return <AuthenticationResult>{
-    ...parsedQuery,
-    expires_in: parseInt(parsedQuery.expires_in)
-  };
+  if (parsedQuery.expires_in) {
+    parsedQuery.expires_in = parseInt(parsedQuery.expires_in);
+  }
+  return <any>parsedQuery;
 };
 
 export const runIframe = (
@@ -307,12 +307,12 @@ export const oauthToken = async (
     timeout,
     {
       method: 'POST',
-      body: JSON.stringify({
+      body: createQueryParams({
         redirect_uri: window.location.origin,
         ...options
       }),
       headers: {
-        'Content-type': 'application/json'
+        'Content-type': 'application/x-www-form-urlencoded'
       }
     },
     worker

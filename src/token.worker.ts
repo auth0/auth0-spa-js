@@ -1,4 +1,5 @@
 import { MISSING_REFRESH_TOKEN_ERROR_MESSAGE } from './constants';
+import { parseQueryResult, createQueryParams } from './utils';
 
 /**
  * @ignore
@@ -19,12 +20,12 @@ const messageHandler = async ({
 }) => {
   let json;
   try {
-    const body = JSON.parse(opts.body);
+    const body = parseQueryResult(opts.body);
     if (!body.refresh_token && body.grant_type === 'refresh_token') {
       if (!refreshToken) {
         throw new Error(MISSING_REFRESH_TOKEN_ERROR_MESSAGE);
       }
-      opts.body = JSON.stringify({ ...body, refresh_token: refreshToken });
+      opts.body = createQueryParams({ ...body, refresh_token: refreshToken });
     }
 
     const abortController = new AbortController();

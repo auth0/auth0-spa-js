@@ -279,8 +279,8 @@ describe('utils', () => {
 
       expect(mockUnfetch).toBeCalledWith('https://test.com/oauth/token', {
         body:
-          '{"redirect_uri":"http://localhost","grant_type":"authorization_code","client_id":"client_idIn","code":"codeIn","code_verifier":"code_verifierIn"}',
-        headers: { 'Content-type': 'application/json' },
+          'redirect_uri=http%3A%2F%2Flocalhost&grant_type=authorization_code&client_id=client_idIn&code=codeIn&code_verifier=code_verifierIn',
+        headers: { 'Content-type': 'application/x-www-form-urlencoded' },
         method: 'POST',
         signal: abortController.signal
       });
