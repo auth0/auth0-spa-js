@@ -1,5 +1,19 @@
 # Change Log
 
+## [v1.10.0](https://github.com/auth0/auth0-spa-js/tree/v1.10.0) (2020-06-17)
+
+[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v1.9.0...v1.10.0)
+
+**Changed**
+
+- [SDK-1696] Allow caller of cache.get to specify an expiry time adjustment [\#491](https://github.com/auth0/auth0-spa-js/pull/491) ([stevehobbsdev](https://github.com/stevehobbsdev))
+
+**Fixed**
+
+- Don't include mocks in build [\#503](https://github.com/auth0/auth0-spa-js/pull/503) ([adamjmcgrath](https://github.com/adamjmcgrath))
+- [SDK-1699] Fix ID token validation for auth_time [\#497](https://github.com/auth0/auth0-spa-js/pull/497) ([stevehobbsdev](https://github.com/stevehobbsdev))
+- Add secure attribute to cookies if served over HTTPS [\#472](https://github.com/auth0/auth0-spa-js/pull/472) ([ties-v](https://github.com/ties-v))
+
 ## [v1.9.0](https://github.com/auth0/auth0-spa-js/tree/v1.9.0) (2020-06-02)
 
 [Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v1.8.2...v1.9.0)
