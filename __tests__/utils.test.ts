@@ -454,6 +454,19 @@ describe('utils', () => {
       expect(abortController.abort).not.toHaveBeenCalled();
     });
 
+    it('throws a fetch error when the network is down', async () => {
+      mockUnfetch.mockReturnValue(Promise.reject(new ProgressEvent('error')));
+
+      await expect(
+        oauthToken({
+          baseUrl: 'https://test.com',
+          client_id: 'client_idIn',
+          code: 'codeIn',
+          code_verifier: 'code_verifierIn'
+        })
+      ).rejects.toMatchObject({ message: 'Failed to fetch' });
+    });
+
     it('surfaces a timeout error when the fetch continuously times out', async () => {
       const createPromise = () =>
         new Promise((resolve, _) => {
@@ -513,7 +526,11 @@ describe('utils', () => {
   });
 
   describe('runPopup', () => {
-    const TIMEOUT_ERROR = { error: 'timeout', error_description: 'Timeout' };
+    const TIMEOUT_ERROR = {
+      error: 'timeout',
+      error_description: 'Timeout',
+      message: 'Timeout'
+    };
 
     const url = 'https://authorize.com';
 
@@ -577,15 +594,19 @@ describe('utils', () => {
       const message = {
         data: {
           type: 'authorization_response',
-          response: { error: 'error' }
+          response: {
+            error: 'error',
+            error_description: 'error_description'
+          }
         }
       };
 
       const { popup, url } = setup(message);
 
-      await expect(runPopup(url, { popup })).rejects.toMatchObject(
-        message.data.response
-      );
+      await expect(runPopup(url, { popup })).rejects.toMatchObject({
+        ...message.data.response,
+        message: 'error_description'
+      });
 
       expect(popup.location.href).toBe(url);
       expect(popup.close).toHaveBeenCalled();
@@ -662,7 +683,11 @@ describe('utils', () => {
     });
   });
   describe('runIframe', () => {
-    const TIMEOUT_ERROR = { error: 'timeout', error_description: 'Timeout' };
+    const TIMEOUT_ERROR = {
+      error: 'timeout',
+      error_description: 'Timeout',
+      message: 'Timeout'
+    };
     const setup = customMessage => {
       const iframe = {
         setAttribute: jest.fn(),
@@ -753,14 +778,18 @@ describe('utils', () => {
         source: { close: jest.fn() },
         data: {
           type: 'authorization_response',
-          response: { error: 'error' }
+          response: {
+            error: 'error',
+            error_description: 'error_description'
+          }
         }
       };
       const { iframe, url } = setup(message);
       jest.useFakeTimers();
-      await expect(runIframe(url, origin)).rejects.toMatchObject(
-        message.data.response
-      );
+      await expect(runIframe(url, origin)).rejects.toMatchObject({
+        ...message.data.response,
+        message: 'error_description'
+      });
       jest.runAllTimers();
       expect(message.source.close).toHaveBeenCalled();
       expect(window.document.body.removeChild).toHaveBeenCalledWith(iframe);

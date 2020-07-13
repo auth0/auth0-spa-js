@@ -13,7 +13,7 @@ import {
   CLEANUP_IFRAME_TIMEOUT_IN_SECONDS
 } from './constants';
 
-const TIMEOUT_ERROR = { error: 'timeout', error_description: 'Timeout' };
+import { PopupTimeoutError, TimeoutError, GenericError } from './errors';
 
 export const createAbortController = () => new AbortController();
 
@@ -54,7 +54,7 @@ export const runIframe = (
     };
 
     const timeoutSetTimeoutId = setTimeout(() => {
-      rej(TIMEOUT_ERROR);
+      rej(new TimeoutError());
       removeIframe();
     }, timeoutInSeconds * 1000);
 
@@ -65,7 +65,9 @@ export const runIframe = (
       if (eventSource) {
         (<any>eventSource).close();
       }
-      e.data.response.error ? rej(e.data.response) : res(e.data.response);
+      e.data.response.error
+        ? rej(GenericError.fromPayload(e.data.response))
+        : res(e.data.response);
       clearTimeout(timeoutSetTimeoutId);
       window.removeEventListener('message', iframeEventHandler, false);
       // Delay the removal of the iframe to prevent hanging loading status
@@ -106,7 +108,7 @@ export const runPopup = (authorizeUrl: string, config: PopupConfigOptions) => {
 
   return new Promise<AuthenticationResult>((resolve, reject) => {
     const timeoutId = setTimeout(() => {
-      reject({ ...TIMEOUT_ERROR, popup });
+      reject(new PopupTimeoutError(popup));
     }, (config.timeoutInSeconds || DEFAULT_AUTHORIZE_TIMEOUT_IN_SECONDS) * 1000);
     window.addEventListener('message', e => {
       if (!e.data || e.data.type !== 'authorization_response') {
@@ -115,7 +117,7 @@ export const runPopup = (authorizeUrl: string, config: PopupConfigOptions) => {
       clearTimeout(timeoutId);
       popup.close();
       if (e.data.response.error) {
-        return reject(e.data.response);
+        return reject(GenericError.fromPayload(e.data.response));
       }
       resolve(e.data.response);
     });
@@ -285,6 +287,9 @@ const getJSON = async (url, timeout, audience, scope, options, worker) => {
   }
 
   if (fetchError) {
+    // unfetch uses XMLHttpRequest under the hood which throws
+    // ProgressEvents on error, which don't have message properties
+    fetchError.message = fetchError.message || 'Failed to fetch';
     throw fetchError;
   }
 
