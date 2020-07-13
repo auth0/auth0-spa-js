@@ -83,6 +83,16 @@ const cacheFactory = (location: string) => {
 const isIE11 = () => /Trident.*rv:11\.0/.test(navigator.userAgent);
 
 /**
+ * @ignore
+ */
+const getTokenIssuer = (issuer, domainUrl) => {
+  if (issuer) {
+    return issuer.startsWith('https://') ? issuer : `https://${issuer}/`;
+  }
+  return `${domainUrl}/`;
+};
+
+/**
  * Auth0 SDK for Single Page Applications using [Authorization Code Grant Flow with PKCE](https://auth0.com/docs/api-auth/tutorials/authorization-code-grant-pkce).
  */
 export default class Auth0Client {
@@ -108,10 +118,7 @@ export default class Auth0Client {
     this.scope = this.options.scope;
     this.transactionManager = new TransactionManager();
     this.domainUrl = `https://${this.options.domain}`;
-
-    this.tokenIssuer = this.options.issuer
-      ? `https://${this.options.issuer}/`
-      : `${this.domainUrl}/`;
+    this.tokenIssuer = getTokenIssuer(this.options.issuer, this.domainUrl);
 
     this.defaultScope = getUniqueScopes(
       'openid',
