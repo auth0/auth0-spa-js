@@ -544,6 +544,8 @@ export default class Auth0Client {
     };
 
     try {
+      await lock.acquireLock(GET_TOKEN_SILENTLY_LOCK_KEY, 5000);
+
       if (!ignoreCache) {
         const cache = this.cache.get(
           {
@@ -555,11 +557,10 @@ export default class Auth0Client {
         );
 
         if (cache && cache.access_token) {
+          await lock.releaseLock(GET_TOKEN_SILENTLY_LOCK_KEY);
           return cache.access_token;
         }
       }
-
-      await lock.acquireLock(GET_TOKEN_SILENTLY_LOCK_KEY, 5000);
 
       // Only get an access token using a refresh token if:
       // * refresh tokens are enabled
