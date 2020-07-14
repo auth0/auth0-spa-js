@@ -307,6 +307,8 @@ export default class Auth0Client {
 
     const authResult = await oauthToken(
       {
+        audience: params.audience,
+        scope: params.scope,
         baseUrl: this.domainUrl,
         client_id: this.options.client_id,
         code_verifier,
@@ -440,6 +442,8 @@ export default class Auth0Client {
     this.transactionManager.remove(state);
 
     const tokenOptions = {
+      audience: transaction.audience,
+      scope: transaction.scope,
       baseUrl: this.domainUrl,
       client_id: this.options.client_id,
       code_verifier: transaction.code_verifier,
@@ -562,13 +566,9 @@ export default class Auth0Client {
         }
       }
 
-      // Only get an access token using a refresh token if:
-      // * refresh tokens are enabled
-      // * no audience has been specified to getTokenSilently (we can only get a token for a new audience when using an iframe)
-      const authResult =
-        this.options.useRefreshTokens && !options.audience
-          ? await this._getTokenUsingRefreshToken(getTokenOptions)
-          : await this._getTokenFromIFrame(getTokenOptions);
+      const authResult = this.options.useRefreshTokens
+        ? await this._getTokenUsingRefreshToken(getTokenOptions)
+        : await this._getTokenFromIFrame(getTokenOptions);
 
       this.cache.save({ client_id: this.options.client_id, ...authResult });
 
@@ -721,6 +721,8 @@ export default class Auth0Client {
     const tokenResult = await oauthToken(
       {
         ...customOptions,
+        scope,
+        audience,
         baseUrl: this.domainUrl,
         client_id: this.options.client_id,
         code_verifier,
@@ -782,6 +784,8 @@ export default class Auth0Client {
       tokenResult = await oauthToken(
         {
           ...customOptions,
+          audience,
+          scope,
           baseUrl: this.domainUrl,
           client_id: this.options.client_id,
           grant_type: 'refresh_token',

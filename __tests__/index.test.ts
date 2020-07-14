@@ -439,6 +439,8 @@ describe('Auth0', () => {
 
       expect(utils.oauthToken).toHaveBeenCalledWith(
         {
+          audience: undefined,
+          scope: 'openid profile email',
           baseUrl: 'https://test.auth0.com',
           client_id: TEST_CLIENT_ID,
           code: TEST_CODE,
@@ -474,6 +476,7 @@ describe('Auth0', () => {
       expect(utils.oauthToken).toHaveBeenCalledWith(
         {
           audience: undefined,
+          scope: 'openid profile email',
           baseUrl: 'https://test.auth0.com',
           client_id: TEST_CLIENT_ID,
           code: TEST_CODE,
@@ -491,6 +494,8 @@ describe('Auth0', () => {
       await auth0.loginWithPopup({ audience: 'test-audience' });
       expect(utils.oauthToken).toHaveBeenCalledWith(
         {
+          audience: 'test-audience',
+          scope: 'openid profile email',
           baseUrl: 'https://test.auth0.com',
           client_id: TEST_CLIENT_ID,
           code: TEST_CODE,
@@ -1027,6 +1032,8 @@ describe('Auth0', () => {
 
         expect(utils.oauthToken).toHaveBeenCalledWith(
           {
+            audience: 'default',
+            scope: 'openid profile email',
             baseUrl: 'https://test.auth0.com',
             client_id: TEST_CLIENT_ID,
             code: TEST_CODE,
@@ -1239,6 +1246,8 @@ describe('Auth0', () => {
 
         expect(utils.oauthToken).toHaveBeenCalledWith(
           {
+            audience: 'default',
+            scope: 'openid profile email',
             baseUrl: 'https://test.auth0.com',
             client_id: TEST_CLIENT_ID,
             code: TEST_CODE,
@@ -1605,6 +1614,8 @@ describe('Auth0', () => {
 
           expect(utils.oauthToken).toHaveBeenCalledWith(
             {
+              audience: undefined,
+              scope: 'openid profile email offline_access',
               baseUrl: 'https://test.auth0.com',
               refresh_token: TEST_REFRESH_TOKEN,
               client_id: TEST_CLIENT_ID,
@@ -1672,6 +1683,8 @@ describe('Auth0', () => {
 
           expect(utils.oauthToken).toHaveBeenCalledWith(
             {
+              audience: undefined,
+              scope: 'openid email offline_access',
               baseUrl: 'https://test.auth0.com',
               refresh_token: TEST_REFRESH_TOKEN,
               client_id: TEST_CLIENT_ID,
@@ -1693,23 +1706,6 @@ describe('Auth0', () => {
               user: { sub: TEST_USER_ID }
             }
           });
-        });
-
-        it('falls back to the iframe method when an audience is specified', async () => {
-          const { auth0, utils } = await setup({
-            useRefreshTokens: true
-          });
-
-          await auth0.getTokenSilently({
-            audience: 'other-audience',
-            ignoreCache: true
-          });
-
-          expect(utils.runIframe).toHaveBeenCalledWith(
-            `https://test.auth0.com/authorize?${TEST_QUERY_PARAMS}${TEST_AUTH0_CLIENT_QUERY_STRING}`,
-            'https://test.auth0.com',
-            undefined
-          );
         });
       });
     });
@@ -1920,6 +1916,8 @@ describe('Auth0', () => {
 
         expect(utils.oauthToken).toHaveBeenCalledWith(
           {
+            audience: 'test:audience',
+            scope: 'openid profile email test:scope',
             baseUrl: 'https://test.auth0.com',
             client_id: TEST_CLIENT_ID,
             code: TEST_CODE,
