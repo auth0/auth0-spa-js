@@ -93,11 +93,37 @@ const getTokenIssuer = (issuer, domainUrl) => {
 };
 
 /**
+ * @ignore
+ */
+const getCustomInitialOptions = (
+  options: Auth0ClientOptions
+): BaseLoginOptions => {
+  const {
+    advancedOptions,
+    audience,
+    auth0Client,
+    authorizeTimeoutInSeconds,
+    cacheLocation,
+    client_id,
+    domain,
+    issuer,
+    leeway,
+    max_age,
+    redirect_uri,
+    scope,
+    useRefreshTokens,
+    ...customParams
+  } = options;
+  return customParams;
+};
+
+/**
  * Auth0 SDK for Single Page Applications using [Authorization Code Grant Flow with PKCE](https://auth0.com/docs/api-auth/tutorials/authorization-code-grant-pkce).
  */
 export default class Auth0Client {
   private cache: ICache;
   private transactionManager: TransactionManager;
+  private customOptions: BaseLoginOptions;
   private domainUrl: string;
   private tokenIssuer: string;
   private defaultScope: string;
@@ -144,6 +170,8 @@ export default class Auth0Client {
     ) {
       this.worker = new TokenWorker();
     }
+
+    this.customOptions = getCustomInitialOptions(options);
   }
 
   private _url(path) {
@@ -314,6 +342,8 @@ export default class Auth0Client {
 
     const authResult = await oauthToken(
       {
+        audience: params.audience,
+        scope: params.scope,
         baseUrl: this.domainUrl,
         client_id: this.options.client_id,
         code_verifier,
@@ -447,6 +477,8 @@ export default class Auth0Client {
     this.transactionManager.remove(state);
 
     const tokenOptions = {
+      audience: transaction.audience,
+      scope: transaction.scope,
       baseUrl: this.domainUrl,
       client_id: this.options.client_id,
       code_verifier: transaction.code_verifier,
@@ -551,6 +583,8 @@ export default class Auth0Client {
     };
 
     try {
+      await lock.acquireLock(GET_TOKEN_SILENTLY_LOCK_KEY, 5000);
+
       if (!ignoreCache) {
         const cache = this.cache.get(
           {
@@ -562,19 +596,14 @@ export default class Auth0Client {
         );
 
         if (cache && cache.access_token) {
+          await lock.releaseLock(GET_TOKEN_SILENTLY_LOCK_KEY);
           return cache.access_token;
         }
       }
 
-      await lock.acquireLock(GET_TOKEN_SILENTLY_LOCK_KEY, 5000);
-
-      // Only get an access token using a refresh token if:
-      // * refresh tokens are enabled
-      // * no audience has been specified to getTokenSilently (we can only get a token for a new audience when using an iframe)
-      const authResult =
-        this.options.useRefreshTokens && !options.audience
-          ? await this._getTokenUsingRefreshToken(getTokenOptions)
-          : await this._getTokenFromIFrame(getTokenOptions);
+      const authResult = this.options.useRefreshTokens
+        ? await this._getTokenUsingRefreshToken(getTokenOptions)
+        : await this._getTokenFromIFrame(getTokenOptions);
 
       this.cache.save({ client_id: this.options.client_id, ...authResult });
 
@@ -726,7 +755,10 @@ export default class Auth0Client {
 
     const tokenResult = await oauthToken(
       {
+        ...this.customOptions,
         ...customOptions,
+        scope,
+        audience,
         baseUrl: this.domainUrl,
         client_id: this.options.client_id,
         code_verifier,
@@ -787,7 +819,10 @@ export default class Auth0Client {
     try {
       tokenResult = await oauthToken(
         {
+          ...this.customOptions,
           ...customOptions,
+          audience,
+          scope,
           baseUrl: this.domainUrl,
           client_id: this.options.client_id,
           grant_type: 'refresh_token',

@@ -3,7 +3,5 @@ module.exports.shouldNotBeUndefined = e => expect(e).to.not.be.undefined;
 module.exports.shouldBe = (expected, actual) => expect(actual).to.eq(expected);
 module.exports.shouldNotBe = (expected, actual) =>
   expect(actual).to.not.eq(expected);
-module.exports.whenReady = () => {
-  cy.wait(5000);
-  return cy.get('#loaded').then(() => cy.window());
-};
+module.exports.whenReady = () =>
+  cy.get('#loaded', { timeout: 5000 }).then(() => cy.window());

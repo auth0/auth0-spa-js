@@ -14,6 +14,8 @@ jest.mock('es-cookie');
 jest.mock('../src/jwt');
 jest.mock('../src/token.worker');
 
+jest.unmock('browser-tabs-lock');
+
 const mockWindow = <any>global;
 const mockFetch = (mockWindow.fetch = <jest.Mock>unfetch);
 const mockVerify = <jest.Mock>verify;
@@ -628,6 +630,30 @@ describe('Auth0Client', () => {
     });
   });
 
+  it('uses the cache for subsequent requests that occur before the response', async () => {
+    const auth0 = setup();
+    await login(auth0);
+    (auth0 as any).cache.clear();
+    jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
+      access_token: 'my_access_token',
+      state: 'MTIz'
+    });
+    mockFetch.mockResolvedValue(
+      fetchResponse(true, {
+        id_token: 'my_id_token',
+        access_token: 'my_access_token',
+        expires_in: 86400
+      })
+    );
+    let [access_token] = await Promise.all([
+      auth0.getTokenSilently(),
+      auth0.getTokenSilently(),
+      auth0.getTokenSilently()
+    ]);
+    expect(access_token).toEqual('my_access_token');
+    expect(utils.runIframe).toHaveBeenCalledTimes(1);
+  });
+
   it('uses the cache for multiple token requests with audience and scope', async () => {
     const auth0 = setup();
     await login(auth0);
@@ -659,7 +685,10 @@ describe('Auth0Client', () => {
   });
 
   it('sends custom options through to the token endpoint when using an iframe', async () => {
-    const auth0 = setup();
+    const auth0 = setup({
+      custom_param: 'foo',
+      another_custom_param: 'bar'
+    });
 
     await login(auth0, true);
 
@@ -668,14 +697,23 @@ describe('Auth0Client', () => {
       state: 'MTIz'
     });
 
+    mockFetch.mockResolvedValue(
+      fetchResponse(true, {
+        id_token: 'my_id_token',
+        refresh_token: 'my_refresh_token',
+        access_token: 'my_access_token',
+        expires_in: 86400
+      })
+    );
+
     await auth0.getTokenSilently({
       ignoreCache: true,
-      customParam: 'hello world'
+      custom_param: 'hello world'
     });
 
     expect(
       (<any>utils.runIframe).mock.calls[0][0].includes(
-        'customParam=hello%20world'
+        'custom_param=hello%20world&another_custom_param=bar'
       )
     ).toBe(true);
 
@@ -683,19 +721,27 @@ describe('Auth0Client', () => {
       redirect_uri: 'my_callback_url',
       client_id: 'auth0_client_id',
       grant_type: 'authorization_code',
-      customParam: 'hello world',
+      custom_param: 'hello world',
+      another_custom_param: 'bar',
       code_verifier: '123'
     });
   });
 
   it('sends custom options through to the token endpoint when using refresh tokens', async () => {
     const auth0 = setup({
-      useRefreshTokens: true
+      useRefreshTokens: true,
+      custom_param: 'foo',
+      another_custom_param: 'bar'
     });
 
     await login(auth0, true, { refresh_token: 'a_refresh_token' });
 
-    mockFetch.mockResolvedValueOnce(
+    jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
+      access_token: 'my_access_token',
+      state: 'MTIz'
+    });
+
+    mockFetch.mockResolvedValue(
       fetchResponse(true, {
         id_token: 'my_id_token',
         refresh_token: 'my_refresh_token',
@@ -708,7 +754,7 @@ describe('Auth0Client', () => {
 
     const access_token = await auth0.getTokenSilently({
       ignoreCache: true,
-      customParam: 'hello world'
+      custom_param: 'hello world'
     });
 
     expect(JSON.parse(mockFetch.mock.calls[1][1].body)).toEqual({
@@ -716,7 +762,8 @@ describe('Auth0Client', () => {
       client_id: 'auth0_client_id',
       grant_type: 'refresh_token',
       refresh_token: 'a_refresh_token',
-      customParam: 'hello world'
+      custom_param: 'hello world',
+      another_custom_param: 'bar'
     });
 
     expect(access_token).toEqual('my_access_token');
