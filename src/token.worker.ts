@@ -1,26 +1,29 @@
 import { MISSING_REFRESH_TOKEN_ERROR_MESSAGE } from './constants';
 
-/**
- * @ignore
- */
-let refreshToken;
+let refreshTokens = {};
 
-/**
- * @ignore
- */
+const cacheKey = (audience, scope) => `${audience}|${scope}`;
+
+const getRefreshToken = (audience, scope) =>
+  refreshTokens[cacheKey(audience, scope)];
+
+const setRefreshToken = (refreshToken, audience, scope) =>
+  (refreshTokens[cacheKey(audience, scope)] = refreshToken);
+
+const deleteRefreshToken = (audience, scope) =>
+  delete refreshTokens[cacheKey(audience, scope)];
+
 const wait: any = time => new Promise(resolve => setTimeout(resolve, time));
 
-/**
- * @ignore
- */
 const messageHandler = async ({
-  data: { url, timeout, ...opts },
+  data: { url, timeout, audience, scope, ...opts },
   ports: [port]
 }) => {
   let json;
   try {
     const body = JSON.parse(opts.body);
     if (!body.refresh_token && body.grant_type === 'refresh_token') {
+      const refreshToken = getRefreshToken(audience, scope);
       if (!refreshToken) {
         throw new Error(MISSING_REFRESH_TOKEN_ERROR_MESSAGE);
       }
@@ -53,10 +56,10 @@ const messageHandler = async ({
     json = await response.json();
 
     if (json.refresh_token) {
-      refreshToken = json.refresh_token;
+      setRefreshToken(json.refresh_token, audience, scope);
       delete json.refresh_token;
     } else {
-      refreshToken = null;
+      deleteRefreshToken(audience, scope);
     }
 
     port.postMessage({
