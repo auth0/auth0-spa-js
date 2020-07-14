@@ -83,11 +83,37 @@ const cacheFactory = (location: string) => {
 const isIE11 = () => /Trident.*rv:11\.0/.test(navigator.userAgent);
 
 /**
+ * @ignore
+ */
+const getCustomInitialOptions = (
+  options: Auth0ClientOptions
+): BaseLoginOptions => {
+  const {
+    advancedOptions,
+    audience,
+    auth0Client,
+    authorizeTimeoutInSeconds,
+    cacheLocation,
+    client_id,
+    domain,
+    issuer,
+    leeway,
+    max_age,
+    redirect_uri,
+    scope,
+    useRefreshTokens,
+    ...customParams
+  } = options;
+  return customParams;
+};
+
+/**
  * Auth0 SDK for Single Page Applications using [Authorization Code Grant Flow with PKCE](https://auth0.com/docs/api-auth/tutorials/authorization-code-grant-pkce).
  */
 export default class Auth0Client {
   private cache: ICache;
   private transactionManager: TransactionManager;
+  private customOptions: BaseLoginOptions;
   private domainUrl: string;
   private tokenIssuer: string;
   private defaultScope: string;
@@ -137,6 +163,8 @@ export default class Auth0Client {
     ) {
       this.worker = new TokenWorker();
     }
+
+    this.customOptions = getCustomInitialOptions(options);
   }
 
   private _url(path) {
@@ -720,6 +748,7 @@ export default class Auth0Client {
 
     const tokenResult = await oauthToken(
       {
+        ...this.customOptions,
         ...customOptions,
         scope,
         audience,
@@ -783,6 +812,7 @@ export default class Auth0Client {
     try {
       tokenResult = await oauthToken(
         {
+          ...this.customOptions,
           ...customOptions,
           audience,
           scope,
