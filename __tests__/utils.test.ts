@@ -20,11 +20,17 @@ import {
   DEFAULT_AUTHORIZE_TIMEOUT_IN_SECONDS,
   DEFAULT_SILENT_TOKEN_RETRY_COUNT
 } from '../src/constants';
+import { MessageChannel } from 'worker_threads';
 import unfetch from 'unfetch';
+// @ts-ignore
+import Worker from '../src/token.worker';
 
+jest.mock('../src/token.worker');
 jest.mock('unfetch');
 const mockUnfetch = <jest.Mock>unfetch;
 (<any>global).TextEncoder = TextEncoder;
+(<any>global).MessageChannel = MessageChannel;
+(<any>global).fetch = mockUnfetch;
 
 afterEach(() => {
   jest.resetAllMocks();
@@ -152,7 +158,7 @@ describe('utils', () => {
         })
       );
       jest.spyOn(window, 'clearTimeout');
-      await fetchWithTimeout('https://test.com/', {}, undefined);
+      await fetchWithTimeout('https://test.com/', null, null, {}, undefined);
       expect(clearTimeout).toBeCalledTimes(1);
     });
   });
@@ -286,6 +292,59 @@ describe('utils', () => {
       });
 
       expect(mockUnfetch.mock.calls[0][1].signal).not.toBeUndefined();
+    });
+
+    it('calls oauth/token with a worker with the correct url', async () => {
+      mockUnfetch.mockReturnValue(
+        new Promise(res =>
+          res({ ok: true, json: () => new Promise(ress => ress(true)) })
+        )
+      );
+      const worker = new Worker();
+      const spy = jest.spyOn(worker, 'postMessage');
+      const body = {
+        redirect_uri: 'http://localhost',
+        grant_type: 'authorization_code',
+        client_id: 'client_idIn',
+        code: 'codeIn',
+        code_verifier: 'code_verifierIn'
+      };
+
+      await oauthToken(
+        {
+          grant_type: 'authorization_code',
+          baseUrl: 'https://test.com',
+          client_id: 'client_idIn',
+          code: 'codeIn',
+          code_verifier: 'code_verifierIn',
+          audience: '__test_audience__',
+          scope: '__test_scope__'
+        },
+        worker
+      );
+
+      expect(mockUnfetch).toBeCalledWith('https://test.com/oauth/token', {
+        body: JSON.stringify(body),
+        headers: { 'Content-type': 'application/json' },
+        method: 'POST',
+        signal: abortController.signal
+      });
+
+      expect(mockUnfetch.mock.calls[0][1].signal).not.toBeUndefined();
+      expect(spy).toHaveBeenCalledWith(
+        {
+          body: JSON.stringify(body),
+          audience: '__test_audience__',
+          scope: '__test_scope__',
+          headers: {
+            'Content-type': 'application/json'
+          },
+          method: 'POST',
+          timeout: 10000,
+          url: 'https://test.com/oauth/token'
+        },
+        expect.arrayContaining([expect.anything()])
+      );
     });
 
     it('handles error with error response', async () => {

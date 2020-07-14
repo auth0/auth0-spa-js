@@ -14,6 +14,8 @@ jest.mock('es-cookie');
 jest.mock('../src/jwt');
 jest.mock('../src/token.worker');
 
+jest.unmock('browser-tabs-lock');
+
 const mockWindow = <any>global;
 const mockFetch = (mockWindow.fetch = <jest.Mock>unfetch);
 const mockVerify = <jest.Mock>verify;
@@ -626,6 +628,30 @@ describe('Auth0Client', () => {
     Object.defineProperty(window.navigator, 'userAgent', {
       value: originalUserAgent
     });
+  });
+
+  it('uses the cache for subsequent requests that occur before the response', async () => {
+    const auth0 = setup();
+    await login(auth0);
+    (auth0 as any).cache.clear();
+    jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
+      access_token: 'my_access_token',
+      state: 'MTIz'
+    });
+    mockFetch.mockResolvedValue(
+      fetchResponse(true, {
+        id_token: 'my_id_token',
+        access_token: 'my_access_token',
+        expires_in: 86400
+      })
+    );
+    let [access_token] = await Promise.all([
+      auth0.getTokenSilently(),
+      auth0.getTokenSilently(),
+      auth0.getTokenSilently()
+    ]);
+    expect(access_token).toEqual('my_access_token');
+    expect(utils.runIframe).toHaveBeenCalledTimes(1);
   });
 
   it('uses the cache for multiple token requests with audience and scope', async () => {

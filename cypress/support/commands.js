@@ -20,9 +20,7 @@ Cypress.Commands.add('login', () => {
     .clear()
     .type('johnfoo+integration@gmail.com');
 
-  cy.get('.auth0-lock-input-password .auth0-lock-input')
-    .clear()
-    .type('1234');
+  cy.get('.auth0-lock-input-password .auth0-lock-input').clear().type('1234');
   cy.get('.auth0-lock-submit').click();
 
   return whenReady().then(() => {
@@ -48,9 +46,7 @@ Cypress.Commands.add('loginNoCallback', () => {
   cy.get('.auth0-lock-input-username .auth0-lock-input')
     .clear()
     .type('johnfoo+integration@gmail.com');
-  cy.get('.auth0-lock-input-password .auth0-lock-input')
-    .clear()
-    .type('1234');
+  cy.get('.auth0-lock-input-password .auth0-lock-input').clear().type('1234');
   cy.get('.auth0-lock-submit').click();
 });
 
@@ -58,4 +54,5 @@ Cypress.Commands.add('resetTests', () => {
   cy.visit('http://localhost:3000');
   cy.get('#reset-config').click();
   cy.get('#logout').click();
+  cy.window().then(win => win.localStorage.clear());
 });

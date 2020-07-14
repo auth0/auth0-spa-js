@@ -337,6 +337,8 @@ export interface OAuthTokenOptions extends TokenEndpointOptions {
   code_verifier: string;
   code: string;
   redirect_uri: string;
+  audience: string;
+  scope: string;
 }
 
 /**

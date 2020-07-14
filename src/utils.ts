@@ -217,11 +217,11 @@ const sendMessage = (message, to) =>
     to.postMessage(message, [messageChannel.port2]);
   });
 
-const switchFetch = async (url, opts, timeout, worker) => {
+const switchFetch = async (url, audience, scope, opts, timeout, worker) => {
   if (worker) {
     // AbortSignal is not serializable, need to implement in the Web Worker
     delete opts.signal;
-    return sendMessage({ url, timeout, ...opts }, worker);
+    return sendMessage({ url, audience, scope, timeout, ...opts }, worker);
   } else {
     const response = await fetch(url, opts);
     return {
@@ -233,6 +233,8 @@ const switchFetch = async (url, opts, timeout, worker) => {
 
 export const fetchWithTimeout = (
   url,
+  audience,
+  scope,
   options,
   worker,
   timeout = DEFAULT_FETCH_TIMEOUT_MS
@@ -248,7 +250,7 @@ export const fetchWithTimeout = (
   let timeoutId;
   // The promise will resolve with one of these two promises (the fetch or the timeout), whichever completes first.
   return Promise.race([
-    switchFetch(url, fetchOptions, timeout, worker),
+    switchFetch(url, audience, scope, fetchOptions, timeout, worker),
     new Promise((_, reject) => {
       timeoutId = setTimeout(() => {
         controller.abort();
@@ -260,12 +262,19 @@ export const fetchWithTimeout = (
   });
 };
 
-const getJSON = async (url, timeout, options, worker) => {
+const getJSON = async (url, timeout, audience, scope, options, worker) => {
   let fetchError, response;
 
   for (let i = 0; i < DEFAULT_SILENT_TOKEN_RETRY_COUNT; i++) {
     try {
-      response = await fetchWithTimeout(url, options, worker, timeout);
+      response = await fetchWithTimeout(
+        url,
+        audience,
+        scope,
+        options,
+        worker,
+        timeout
+      );
       fetchError = null;
       break;
     } catch (e) {
@@ -304,12 +313,14 @@ const getJSON = async (url, timeout, options, worker) => {
 };
 
 export const oauthToken = async (
-  { baseUrl, timeout, ...options }: TokenEndpointOptions,
+  { baseUrl, timeout, audience, scope, ...options }: TokenEndpointOptions,
   worker
 ) =>
   await getJSON(
     `${baseUrl}/oauth/token`,
     timeout,
+    audience || 'default',
+    scope,
     {
       method: 'POST',
       body: JSON.stringify({
