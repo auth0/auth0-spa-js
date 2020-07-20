@@ -144,6 +144,30 @@ describe('Auth0Client', () => {
     expect((<any>auth0).defaultScope).toBe('openid');
   });
 
+  it('should create issuer from domain', () => {
+    const auth0 = setup({
+      domain: 'test.dev'
+    });
+
+    expect((<any>auth0).tokenIssuer).toEqual('https://test.dev/');
+  });
+
+  it('should allow issuer as a domain', () => {
+    const auth0 = setup({
+      issuer: 'foo.bar.com'
+    });
+
+    expect((<any>auth0).tokenIssuer).toEqual('https://foo.bar.com/');
+  });
+
+  it('should allow issuer as a fully qualified url', () => {
+    const auth0 = setup({
+      issuer: 'https://some.issuer.com/'
+    });
+
+    expect((<any>auth0).tokenIssuer).toEqual('https://some.issuer.com/');
+  });
+
   it('should log the user in and get the token', async () => {
     const auth0 = setup();
     await login(auth0);
