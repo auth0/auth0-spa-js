@@ -2729,6 +2729,12 @@ img {
 		<li class=" tsd-kind-class">
 			<a href="classes/genericerror.html" class="tsd-kind-icon">Generic<wbr>Error</a>
 		</li>
+		<li class=" tsd-kind-class">
+			<a href="classes/popuptimeouterror.html" class="tsd-kind-icon">Popup<wbr>Timeout<wbr>Error</a>
+		</li>
+		<li class=" tsd-kind-class">
+			<a href="classes/timeouterror.html" class="tsd-kind-icon">Timeout<wbr>Error</a>
+		</li>
 		<li class=" tsd-kind-interface">
 			<a href="interfaces/advancedoptions.html" class="tsd-kind-icon">Advanced<wbr>Options</a>
 		</li>
@@ -2777,8 +2783,29 @@ img {
 		<li class=" tsd-kind-variable">
 			<a href="globals.html#missing_refresh_token_error_message" class="tsd-kind-icon">MISSING_<wbr>REFRESH_<wbr>TOKEN_<wbr>ERROR_<wbr>MESSAGE</a>
 		</li>
+		<li class=" tsd-kind-variable">
+			<a href="globals.html#refreshtokens" class="tsd-kind-icon">refresh<wbr>Tokens</a>
+		</li>
+		<li class=" tsd-kind-function">
+			<a href="globals.html#cachekey" class="tsd-kind-icon">cache<wbr>Key</a>
+		</li>
 		<li class=" tsd-kind-function">
 			<a href="globals.html#createauth0client" class="tsd-kind-icon">create<wbr>Auth0<wbr>Client</a>
+		</li>
+		<li class=" tsd-kind-function">
+			<a href="globals.html#deleterefreshtoken" class="tsd-kind-icon">delete<wbr>Refresh<wbr>Token</a>
+		</li>
+		<li class=" tsd-kind-function">
+			<a href="globals.html#getrefreshtoken" class="tsd-kind-icon">get<wbr>Refresh<wbr>Token</a>
+		</li>
+		<li class=" tsd-kind-function">
+			<a href="globals.html#messagehandler" class="tsd-kind-icon">message<wbr>Handler</a>
+		</li>
+		<li class=" tsd-kind-function">
+			<a href="globals.html#setrefreshtoken" class="tsd-kind-icon">set<wbr>Refresh<wbr>Token</a>
+		</li>
+		<li class=" tsd-kind-function">
+			<a href="globals.html#wait" class="tsd-kind-icon">wait</a>
 		</li>
 	</ul>
 </nav>
@@ -3035,6 +3062,8 @@ createAuth0Client({
 							<li class="tsd-kind-class"><a href="classes/auth0client.html" class="tsd-kind-icon">Auth0<wbr>Client</a></li>
 							<li class="tsd-kind-class"><a href="classes/authenticationerror.html" class="tsd-kind-icon">Authentication<wbr>Error</a></li>
 							<li class="tsd-kind-class"><a href="classes/genericerror.html" class="tsd-kind-icon">Generic<wbr>Error</a></li>
+							<li class="tsd-kind-class"><a href="classes/popuptimeouterror.html" class="tsd-kind-icon">Popup<wbr>Timeout<wbr>Error</a></li>
+							<li class="tsd-kind-class"><a href="classes/timeouterror.html" class="tsd-kind-icon">Timeout<wbr>Error</a></li>
 						</ul>
 					</section>
 					<section class="tsd-index-section ">
@@ -3066,12 +3095,19 @@ createAuth0Client({
 							<li class="tsd-kind-variable"><a href="globals.html#cache_location_local_storage" class="tsd-kind-icon">CACHE_<wbr>LOCATION_<wbr>LOCAL_<wbr>STORAGE</a></li>
 							<li class="tsd-kind-variable"><a href="globals.html#cache_location_memory" class="tsd-kind-icon">CACHE_<wbr>LOCATION_<wbr>MEMORY</a></li>
 							<li class="tsd-kind-variable"><a href="globals.html#missing_refresh_token_error_message" class="tsd-kind-icon">MISSING_<wbr>REFRESH_<wbr>TOKEN_<wbr>ERROR_<wbr>MESSAGE</a></li>
+							<li class="tsd-kind-variable"><a href="globals.html#refreshtokens" class="tsd-kind-icon">refresh<wbr>Tokens</a></li>
 						</ul>
 					</section>
 					<section class="tsd-index-section ">
 						<h3>Functions</h3>
 						<ul class="tsd-index-list">
+							<li class="tsd-kind-function"><a href="globals.html#cachekey" class="tsd-kind-icon">cache<wbr>Key</a></li>
 							<li class="tsd-kind-function"><a href="globals.html#createauth0client" class="tsd-kind-icon">create<wbr>Auth0<wbr>Client</a></li>
+							<li class="tsd-kind-function"><a href="globals.html#deleterefreshtoken" class="tsd-kind-icon">delete<wbr>Refresh<wbr>Token</a></li>
+							<li class="tsd-kind-function"><a href="globals.html#getrefreshtoken" class="tsd-kind-icon">get<wbr>Refresh<wbr>Token</a></li>
+							<li class="tsd-kind-function"><a href="globals.html#messagehandler" class="tsd-kind-icon">message<wbr>Handler</a></li>
+							<li class="tsd-kind-function"><a href="globals.html#setrefreshtoken" class="tsd-kind-icon">set<wbr>Refresh<wbr>Token</a></li>
+							<li class="tsd-kind-function"><a href="globals.html#wait" class="tsd-kind-icon">wait</a></li>
 						</ul>
 					</section>
 				</div>
@@ -3085,7 +3121,7 @@ createAuth0Client({
 				<div class="tsd-signature tsd-kind-icon">Cache<wbr>Location<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">"memory"</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">"localstorage"</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/e229241/src/global.ts#L142">src/global.ts:142</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/3a92890/src/global.ts#L142">src/global.ts:142</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-comment tsd-typography">
@@ -3100,7 +3136,7 @@ createAuth0Client({
 				<div class="tsd-signature tsd-kind-icon">get<wbr>IdToken<wbr>Claims<wbr>Options<span class="tsd-signature-symbol">:</span> <a href="interfaces/getidtokenclaimsoptions.html" class="tsd-signature-type">GetIdTokenClaimsOptions</a></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/e229241/src/global.ts#L225">src/global.ts:225</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/3a92890/src/global.ts#L225">src/global.ts:225</a></li>
 					</ul>
 				</aside>
 			</section>
@@ -3113,7 +3149,7 @@ createAuth0Client({
 				<div class="tsd-signature tsd-kind-icon">CACHE_<wbr>LOCATION_<wbr>LOCAL_<wbr>STORAGE<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">"localstorage"</span><span class="tsd-signature-symbol"> = &quot;localstorage&quot;</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/e229241/src/constants.ts#L31">src/constants.ts:31</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/3a92890/src/constants.ts#L31">src/constants.ts:31</a></li>
 					</ul>
 				</aside>
 			</section>
@@ -3123,7 +3159,7 @@ createAuth0Client({
 				<div class="tsd-signature tsd-kind-icon">CACHE_<wbr>LOCATION_<wbr>MEMORY<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">"memory"</span><span class="tsd-signature-symbol"> = &quot;memory&quot;</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/e229241/src/constants.ts#L30">src/constants.ts:30</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/3a92890/src/constants.ts#L30">src/constants.ts:30</a></li>
 					</ul>
 				</aside>
 			</section>
@@ -3133,13 +3169,54 @@ createAuth0Client({
 				<div class="tsd-signature tsd-kind-icon">MISSING_<wbr>REFRESH_<wbr>TOKEN_<wbr>ERROR_<wbr>MESSAGE<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">"The web worker is missing the refresh token"</span><span class="tsd-signature-symbol"> = &quot;The web worker is missing the refresh token&quot;</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/e229241/src/constants.ts#L32">src/constants.ts:32</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/3a92890/src/constants.ts#L32">src/constants.ts:32</a></li>
 					</ul>
 				</aside>
+			</section>
+			<section class="tsd-panel tsd-member tsd-kind-variable">
+				<a name="refreshtokens" class="tsd-anchor"></a>
+				<h3><span class="tsd-flag ts-flagLet">Let</span> refresh<wbr>Tokens</h3>
+				<div class="tsd-signature tsd-kind-icon">refresh<wbr>Tokens<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">{}</span></div>
+				<aside class="tsd-sources">
+					<ul>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/3a92890/src/token.worker.ts#L3">src/token.worker.ts:3</a></li>
+					</ul>
+				</aside>
+				<div class="tsd-type-declaration">
+					<h4>Type declaration</h4>
+					<ul class="tsd-parameters">
+					</ul>
+				</div>
 			</section>
 		</section>
 		<section class="tsd-panel-group tsd-member-group ">
 			<h2>Functions</h2>
+			<section class="tsd-panel tsd-member tsd-kind-function">
+				<a name="cachekey" class="tsd-anchor"></a>
+				<h3><span class="tsd-flag ts-flagConst">Const</span> cache<wbr>Key</h3>
+				<ul class="tsd-signatures tsd-kind-function">
+					<li class="tsd-signature tsd-kind-icon">cache<wbr>Key<span class="tsd-signature-symbol">(</span>audience<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">any</span>, scope<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span></li>
+				</ul>
+				<ul class="tsd-descriptions">
+					<li class="tsd-description">
+						<aside class="tsd-sources">
+							<ul>
+								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/3a92890/src/token.worker.ts#L5">src/token.worker.ts:5</a></li>
+							</ul>
+						</aside>
+						<h4 class="tsd-parameters-title">Parameters</h4>
+						<ul class="tsd-parameters">
+							<li>
+								<h5>audience: <span class="tsd-signature-type">any</span></h5>
+							</li>
+							<li>
+								<h5>scope: <span class="tsd-signature-type">any</span></h5>
+							</li>
+						</ul>
+						<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">string</span></h4>
+					</li>
+				</ul>
+			</section>
 			<section class="tsd-panel tsd-member tsd-kind-function">
 				<a name="createauth0client" class="tsd-anchor"></a>
 				<h3>create<wbr>Auth0<wbr>Client</h3>
@@ -3150,7 +3227,7 @@ createAuth0Client({
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/e229241/src/index.ts#L18">src/index.ts:18</a></li>
+								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/3a92890/src/index.ts#L18">src/index.ts:18</a></li>
 							</ul>
 						</aside>
 						<h4 class="tsd-parameters-title">Parameters</h4>
@@ -3160,6 +3237,158 @@ createAuth0Client({
 							</li>
 						</ul>
 						<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><a href="classes/auth0client.html" class="tsd-signature-type">Auth0Client</a><span class="tsd-signature-symbol">&gt;</span></h4>
+					</li>
+				</ul>
+			</section>
+			<section class="tsd-panel tsd-member tsd-kind-function">
+				<a name="deleterefreshtoken" class="tsd-anchor"></a>
+				<h3><span class="tsd-flag ts-flagConst">Const</span> delete<wbr>Refresh<wbr>Token</h3>
+				<ul class="tsd-signatures tsd-kind-function">
+					<li class="tsd-signature tsd-kind-icon">delete<wbr>Refresh<wbr>Token<span class="tsd-signature-symbol">(</span>audience<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">any</span>, scope<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">boolean</span></li>
+				</ul>
+				<ul class="tsd-descriptions">
+					<li class="tsd-description">
+						<aside class="tsd-sources">
+							<ul>
+								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/3a92890/src/token.worker.ts#L13">src/token.worker.ts:13</a></li>
+							</ul>
+						</aside>
+						<h4 class="tsd-parameters-title">Parameters</h4>
+						<ul class="tsd-parameters">
+							<li>
+								<h5>audience: <span class="tsd-signature-type">any</span></h5>
+							</li>
+							<li>
+								<h5>scope: <span class="tsd-signature-type">any</span></h5>
+							</li>
+						</ul>
+						<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">boolean</span></h4>
+					</li>
+				</ul>
+			</section>
+			<section class="tsd-panel tsd-member tsd-kind-function">
+				<a name="getrefreshtoken" class="tsd-anchor"></a>
+				<h3><span class="tsd-flag ts-flagConst">Const</span> get<wbr>Refresh<wbr>Token</h3>
+				<ul class="tsd-signatures tsd-kind-function">
+					<li class="tsd-signature tsd-kind-icon">get<wbr>Refresh<wbr>Token<span class="tsd-signature-symbol">(</span>audience<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">any</span>, scope<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">any</span></li>
+				</ul>
+				<ul class="tsd-descriptions">
+					<li class="tsd-description">
+						<aside class="tsd-sources">
+							<ul>
+								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/3a92890/src/token.worker.ts#L7">src/token.worker.ts:7</a></li>
+							</ul>
+						</aside>
+						<h4 class="tsd-parameters-title">Parameters</h4>
+						<ul class="tsd-parameters">
+							<li>
+								<h5>audience: <span class="tsd-signature-type">any</span></h5>
+							</li>
+							<li>
+								<h5>scope: <span class="tsd-signature-type">any</span></h5>
+							</li>
+						</ul>
+						<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">any</span></h4>
+					</li>
+				</ul>
+			</section>
+			<section class="tsd-panel tsd-member tsd-kind-function">
+				<a name="messagehandler" class="tsd-anchor"></a>
+				<h3><span class="tsd-flag ts-flagConst">Const</span> message<wbr>Handler</h3>
+				<ul class="tsd-signatures tsd-kind-function">
+					<li class="tsd-signature tsd-kind-icon">message<wbr>Handler<span class="tsd-signature-symbol">(</span>__namedParameters<span class="tsd-signature-symbol">: </span><span class="tsd-signature-symbol">{ </span>data<span class="tsd-signature-symbol">: </span><span class="tsd-signature-symbol">{ </span>audience<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">; </span>opts<span class="tsd-signature-symbol">: </span><a href="" class="tsd-signature-type">opts</a><span class="tsd-signature-symbol">; </span>scope<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">; </span>timeout<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">; </span>url<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">any</span><span class="tsd-signature-symbol"> }</span><span class="tsd-signature-symbol">; </span>ports<span class="tsd-signature-symbol">: </span><span class="tsd-signature-symbol">[</span><span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">]</span><span class="tsd-signature-symbol"> }</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">&gt;</span></li>
+				</ul>
+				<ul class="tsd-descriptions">
+					<li class="tsd-description">
+						<aside class="tsd-sources">
+							<ul>
+								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/3a92890/src/token.worker.ts#L18">src/token.worker.ts:18</a></li>
+							</ul>
+						</aside>
+						<h4 class="tsd-parameters-title">Parameters</h4>
+						<ul class="tsd-parameters">
+							<li>
+								<h5>__namedParameters: <span class="tsd-signature-symbol">{ </span>data<span class="tsd-signature-symbol">: </span><span class="tsd-signature-symbol">{ </span>audience<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">; </span>opts<span class="tsd-signature-symbol">: </span><a href="" class="tsd-signature-type">opts</a><span class="tsd-signature-symbol">; </span>scope<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">; </span>timeout<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">; </span>url<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">any</span><span class="tsd-signature-symbol"> }</span><span class="tsd-signature-symbol">; </span>ports<span class="tsd-signature-symbol">: </span><span class="tsd-signature-symbol">[</span><span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">]</span><span class="tsd-signature-symbol"> }</span></h5>
+								<ul class="tsd-parameters">
+									<li class="tsd-parameter">
+										<h5>data<span class="tsd-signature-symbol">: </span><span class="tsd-signature-symbol">{ </span>audience<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">; </span>opts<span class="tsd-signature-symbol">: </span><a href="" class="tsd-signature-type">opts</a><span class="tsd-signature-symbol">; </span>scope<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">; </span>timeout<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">; </span>url<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">any</span><span class="tsd-signature-symbol"> }</span></h5>
+										<ul class="tsd-parameters">
+											<li class="tsd-parameter">
+												<h5>audience<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">any</span></h5>
+											</li>
+											<li class="tsd-parameter">
+												<h5>opts<span class="tsd-signature-symbol">: </span><a href="" class="tsd-signature-type">opts</a></h5>
+											</li>
+											<li class="tsd-parameter">
+												<h5>scope<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">any</span></h5>
+											</li>
+											<li class="tsd-parameter">
+												<h5>timeout<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">any</span></h5>
+											</li>
+											<li class="tsd-parameter">
+												<h5>url<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">any</span></h5>
+											</li>
+										</ul>
+									</li>
+									<li class="tsd-parameter">
+										<h5>ports<span class="tsd-signature-symbol">: </span><span class="tsd-signature-symbol">[</span><span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">]</span></h5>
+									</li>
+								</ul>
+							</li>
+						</ul>
+						<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">&gt;</span></h4>
+					</li>
+				</ul>
+			</section>
+			<section class="tsd-panel tsd-member tsd-kind-function">
+				<a name="setrefreshtoken" class="tsd-anchor"></a>
+				<h3><span class="tsd-flag ts-flagConst">Const</span> set<wbr>Refresh<wbr>Token</h3>
+				<ul class="tsd-signatures tsd-kind-function">
+					<li class="tsd-signature tsd-kind-icon">set<wbr>Refresh<wbr>Token<span class="tsd-signature-symbol">(</span>refreshToken<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">any</span>, audience<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">any</span>, scope<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">any</span></li>
+				</ul>
+				<ul class="tsd-descriptions">
+					<li class="tsd-description">
+						<aside class="tsd-sources">
+							<ul>
+								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/3a92890/src/token.worker.ts#L10">src/token.worker.ts:10</a></li>
+							</ul>
+						</aside>
+						<h4 class="tsd-parameters-title">Parameters</h4>
+						<ul class="tsd-parameters">
+							<li>
+								<h5>refreshToken: <span class="tsd-signature-type">any</span></h5>
+							</li>
+							<li>
+								<h5>audience: <span class="tsd-signature-type">any</span></h5>
+							</li>
+							<li>
+								<h5>scope: <span class="tsd-signature-type">any</span></h5>
+							</li>
+						</ul>
+						<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">any</span></h4>
+					</li>
+				</ul>
+			</section>
+			<section class="tsd-panel tsd-member tsd-kind-function">
+				<a name="wait" class="tsd-anchor"></a>
+				<h3><span class="tsd-flag ts-flagConst">Const</span> wait</h3>
+				<ul class="tsd-signatures tsd-kind-function">
+					<li class="tsd-signature tsd-kind-icon">wait<span class="tsd-signature-symbol">(</span>time<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">unknown</span><span class="tsd-signature-symbol">&gt;</span></li>
+				</ul>
+				<ul class="tsd-descriptions">
+					<li class="tsd-description">
+						<aside class="tsd-sources">
+							<ul>
+								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/3a92890/src/token.worker.ts#L16">src/token.worker.ts:16</a></li>
+							</ul>
+						</aside>
+						<h4 class="tsd-parameters-title">Parameters</h4>
+						<ul class="tsd-parameters">
+							<li>
+								<h5>time: <span class="tsd-signature-type">any</span></h5>
+							</li>
+						</ul>
+						<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">unknown</span><span class="tsd-signature-symbol">&gt;</span></h4>
 					</li>
 				</ul>
 			</section>
@@ -3174,13 +3403,14 @@ createAuth0Client({
 						<li class="tsd-kind-method tsd-parent-kind-class"><span class="tsd-kind-icon">Method</span></li>
 					</ul>
 					<ul class="tsd-legend">
+						<li class="tsd-kind-property tsd-parent-kind-class tsd-is-static"><span class="tsd-kind-icon">Static property</span></li>
+						<li class="tsd-kind-method tsd-parent-kind-class tsd-is-static"><span class="tsd-kind-icon">Static method</span></li>
+					</ul>
+					<ul class="tsd-legend">
 						<li class="tsd-kind-property tsd-parent-kind-interface"><span class="tsd-kind-icon">Property</span></li>
 					</ul>
 					<ul class="tsd-legend">
 						<li class="tsd-kind-property tsd-parent-kind-class tsd-is-inherited"><span class="tsd-kind-icon">Inherited property</span></li>
-					</ul>
-					<ul class="tsd-legend">
-						<li class="tsd-kind-property tsd-parent-kind-class tsd-is-static"><span class="tsd-kind-icon">Static property</span></li>
 					</ul>
 				</div>
 			</div>
