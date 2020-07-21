@@ -188,7 +188,8 @@ describe('Auth0Client', () => {
       client_id: 'auth0_client_id',
       code_verifier: '123',
       grant_type: 'authorization_code',
-      code: 'my_code'
+      code: 'my_code',
+      scope: 'openid profile email'
     });
   });
 
@@ -308,7 +309,8 @@ describe('Auth0Client', () => {
         client_id: 'auth0_client_id',
         grant_type: 'refresh_token',
         redirect_uri: 'my_callback_url',
-        refresh_token: 'my_refresh_token'
+        refresh_token: 'my_refresh_token',
+        scope: 'openid profile email offline_access'
       },
       1
     );
@@ -331,7 +333,8 @@ describe('Auth0Client', () => {
       client_id: 'auth0_client_id',
       code_verifier: '123',
       grant_type: 'authorization_code',
-      code: 'my_code'
+      code: 'my_code',
+      scope: 'openid profile email offline_access'
     });
 
     mockFetch.mockResolvedValueOnce(
@@ -351,7 +354,8 @@ describe('Auth0Client', () => {
         client_id: 'auth0_client_id',
         grant_type: 'refresh_token',
         redirect_uri: 'my_callback_url',
-        refresh_token: 'my_refresh_token'
+        refresh_token: 'my_refresh_token',
+        scope: 'openid profile email offline_access'
       },
       1
     );
@@ -376,7 +380,8 @@ describe('Auth0Client', () => {
       client_id: 'auth0_client_id',
       code_verifier: '123',
       grant_type: 'authorization_code',
-      code: 'my_code'
+      code: 'my_code',
+      scope: 'openid profile email offline_access'
     });
 
     mockFetch.mockResolvedValueOnce(
@@ -396,7 +401,8 @@ describe('Auth0Client', () => {
         client_id: 'auth0_client_id',
         grant_type: 'refresh_token',
         redirect_uri: 'my_callback_url',
-        refresh_token: 'my_refresh_token'
+        refresh_token: 'my_refresh_token',
+        scope: 'openid profile email offline_access'
       },
       1
     );
@@ -723,7 +729,8 @@ describe('Auth0Client', () => {
       grant_type: 'authorization_code',
       custom_param: 'hello world',
       another_custom_param: 'bar',
-      code_verifier: '123'
+      code_verifier: '123',
+      scope: 'openid profile email'
     });
   });
 
@@ -763,7 +770,8 @@ describe('Auth0Client', () => {
       grant_type: 'refresh_token',
       refresh_token: 'a_refresh_token',
       custom_param: 'hello world',
-      another_custom_param: 'bar'
+      another_custom_param: 'bar',
+      scope: 'openid profile email offline_access'
     });
 
     expect(access_token).toEqual('my_access_token');

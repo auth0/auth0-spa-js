@@ -304,6 +304,7 @@ describe('utils', () => {
       const spy = jest.spyOn(worker, 'postMessage');
       const body = {
         redirect_uri: 'http://localhost',
+        scope: '__test_scope__',
         grant_type: 'authorization_code',
         client_id: 'client_idIn',
         code: 'codeIn',
