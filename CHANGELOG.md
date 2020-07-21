@@ -1,5 +1,20 @@
 # Change Log
 
+## [v1.11.0](https://github.com/auth0/auth0-spa-js/tree/v1.11.0) (2020-07-21)
+
+[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v1.10.0...v1.11.0)
+
+**Added**
+
+- [SDK-1560] Allow issuer as url [\#523](https://github.com/auth0/auth0-spa-js/pull/523) ([adamjmcgrath](https://github.com/adamjmcgrath))
+- [SDK-1790] use refresh_tokens with multiple audiences [\#521](https://github.com/auth0/auth0-spa-js/pull/521) ([adamjmcgrath](https://github.com/adamjmcgrath))
+- [SDK-1650] Add `message` to errors that don't have one [\#520](https://github.com/auth0/auth0-spa-js/pull/520) ([adamjmcgrath](https://github.com/adamjmcgrath))
+
+**Fixed**
+
+- [SDK-1798] prevent unnecessary token requests [\#525](https://github.com/auth0/auth0-spa-js/pull/525) ([adamjmcgrath](https://github.com/adamjmcgrath))
+- [SDK-1789] Add custom initial options to the 2 getToken methods [\#524](https://github.com/auth0/auth0-spa-js/pull/524) ([adamjmcgrath](https://github.com/adamjmcgrath))
+
 ## [v1.10.0](https://github.com/auth0/auth0-spa-js/tree/v1.10.0) (2020-06-17)
 
 [Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v1.9.0...v1.10.0)
