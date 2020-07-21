@@ -21,7 +21,7 @@ const getPlugins = shouldMinify => {
       targetPlatform: 'browser',
       sourceMap: !isProduction,
       preserveSource: !isProduction,
-      pattern: /^[^\/].+\.worker\.ts$/
+      pattern: /^(?!(?:[a-zA-Z]:)|\/).+\.worker\.ts$/
     }),
     resolve({
       browser: true
