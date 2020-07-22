@@ -2750,10 +2750,19 @@ img {
 				<li class=" tsd-kind-property tsd-parent-kind-class">
 					<a href="authenticationerror.html#state" class="tsd-kind-icon">state</a>
 				</li>
+				<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-static">
+					<a href="authenticationerror.html#frompayload" class="tsd-kind-icon">from<wbr>Payload</a>
+				</li>
 			</ul>
 		</li>
 		<li class=" tsd-kind-class">
 			<a href="genericerror.html" class="tsd-kind-icon">Generic<wbr>Error</a>
+		</li>
+		<li class=" tsd-kind-class">
+			<a href="popuptimeouterror.html" class="tsd-kind-icon">Popup<wbr>Timeout<wbr>Error</a>
+		</li>
+		<li class=" tsd-kind-class">
+			<a href="timeouterror.html" class="tsd-kind-icon">Timeout<wbr>Error</a>
 		</li>
 		<li class=" tsd-kind-interface">
 			<a href="../interfaces/advancedoptions.html" class="tsd-kind-icon">Advanced<wbr>Options</a>
@@ -2803,8 +2812,29 @@ img {
 		<li class=" tsd-kind-variable">
 			<a href="../globals.html#missing_refresh_token_error_message" class="tsd-kind-icon">MISSING_<wbr>REFRESH_<wbr>TOKEN_<wbr>ERROR_<wbr>MESSAGE</a>
 		</li>
+		<li class=" tsd-kind-variable">
+			<a href="../globals.html#refreshtokens" class="tsd-kind-icon">refresh<wbr>Tokens</a>
+		</li>
+		<li class=" tsd-kind-function">
+			<a href="../globals.html#cachekey" class="tsd-kind-icon">cache<wbr>Key</a>
+		</li>
 		<li class=" tsd-kind-function">
 			<a href="../globals.html#createauth0client" class="tsd-kind-icon">create<wbr>Auth0<wbr>Client</a>
+		</li>
+		<li class=" tsd-kind-function">
+			<a href="../globals.html#deleterefreshtoken" class="tsd-kind-icon">delete<wbr>Refresh<wbr>Token</a>
+		</li>
+		<li class=" tsd-kind-function">
+			<a href="../globals.html#getrefreshtoken" class="tsd-kind-icon">get<wbr>Refresh<wbr>Token</a>
+		</li>
+		<li class=" tsd-kind-function">
+			<a href="../globals.html#messagehandler" class="tsd-kind-icon">message<wbr>Handler</a>
+		</li>
+		<li class=" tsd-kind-function">
+			<a href="../globals.html#setrefreshtoken" class="tsd-kind-icon">set<wbr>Refresh<wbr>Token</a>
+		</li>
+		<li class=" tsd-kind-function">
+			<a href="../globals.html#wait" class="tsd-kind-icon">wait</a>
 		</li>
 	</ul>
 </nav>
@@ -2845,6 +2875,12 @@ img {
 							<li class="tsd-kind-property tsd-parent-kind-class"><a href="authenticationerror.html#state" class="tsd-kind-icon">state</a></li>
 						</ul>
 					</section>
+					<section class="tsd-index-section tsd-is-inherited">
+						<h3>Methods</h3>
+						<ul class="tsd-index-list">
+							<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-static"><a href="authenticationerror.html#frompayload" class="tsd-kind-icon">from<wbr>Payload</a></li>
+						</ul>
+					</section>
 				</div>
 			</section>
 		</section>
@@ -2861,7 +2897,7 @@ img {
 						<aside class="tsd-sources">
 							<p>Overrides <a href="genericerror.html">GenericError</a>.<a href="genericerror.html#constructor">constructor</a></p>
 							<ul>
-								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/e229241/src/errors.ts#L8">src/errors.ts:8</a></li>
+								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/3a92890/src/errors.ts#L13">src/errors.ts:13</a></li>
 							</ul>
 						</aside>
 						<h4 class="tsd-parameters-title">Parameters</h4>
@@ -2892,7 +2928,7 @@ img {
 				<div class="tsd-signature tsd-kind-icon">app<wbr>State<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">any</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/e229241/src/errors.ts#L13">src/errors.ts:13</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/3a92890/src/errors.ts#L18">src/errors.ts:18</a></li>
 					</ul>
 				</aside>
 			</section>
@@ -2903,7 +2939,7 @@ img {
 				<aside class="tsd-sources">
 					<p>Inherited from <a href="genericerror.html">GenericError</a>.<a href="genericerror.html#error">error</a></p>
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/e229241/src/errors.ts#L2">src/errors.ts:2</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/3a92890/src/errors.ts#L2">src/errors.ts:2</a></li>
 					</ul>
 				</aside>
 			</section>
@@ -2914,7 +2950,7 @@ img {
 				<aside class="tsd-sources">
 					<p>Inherited from <a href="genericerror.html">GenericError</a>.<a href="genericerror.html#error_description">error_description</a></p>
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/e229241/src/errors.ts#L2">src/errors.ts:2</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/3a92890/src/errors.ts#L2">src/errors.ts:2</a></li>
 					</ul>
 				</aside>
 			</section>
@@ -2957,9 +2993,44 @@ img {
 				<div class="tsd-signature tsd-kind-icon">state<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/e229241/src/errors.ts#L12">src/errors.ts:12</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/3a92890/src/errors.ts#L17">src/errors.ts:17</a></li>
 					</ul>
 				</aside>
+			</section>
+		</section>
+		<section class="tsd-panel-group tsd-member-group tsd-is-inherited">
+			<h2>Methods</h2>
+			<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-static">
+				<a name="frompayload" class="tsd-anchor"></a>
+				<h3><span class="tsd-flag ts-flagStatic">Static</span> from<wbr>Payload</h3>
+				<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-static">
+					<li class="tsd-signature tsd-kind-icon">from<wbr>Payload<span class="tsd-signature-symbol">(</span>__namedParameters<span class="tsd-signature-symbol">: </span><span class="tsd-signature-symbol">{ </span>error<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">; </span>error_description<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">any</span><span class="tsd-signature-symbol"> }</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="genericerror.html" class="tsd-signature-type">GenericError</a></li>
+				</ul>
+				<ul class="tsd-descriptions">
+					<li class="tsd-description">
+						<aside class="tsd-sources">
+							<p>Inherited from <a href="genericerror.html">GenericError</a>.<a href="genericerror.html#frompayload">fromPayload</a></p>
+							<ul>
+								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/3a92890/src/errors.ts#L8">src/errors.ts:8</a></li>
+							</ul>
+						</aside>
+						<h4 class="tsd-parameters-title">Parameters</h4>
+						<ul class="tsd-parameters">
+							<li>
+								<h5>__namedParameters: <span class="tsd-signature-symbol">{ </span>error<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">; </span>error_description<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">any</span><span class="tsd-signature-symbol"> }</span></h5>
+								<ul class="tsd-parameters">
+									<li class="tsd-parameter">
+										<h5>error<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">any</span></h5>
+									</li>
+									<li class="tsd-parameter">
+										<h5>error_<wbr>description<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">any</span></h5>
+									</li>
+								</ul>
+							</li>
+						</ul>
+						<h4 class="tsd-returns-title">Returns <a href="genericerror.html" class="tsd-signature-type">GenericError</a></h4>
+					</li>
+				</ul>
 			</section>
 		</section>
 		<footer>
@@ -2972,13 +3043,14 @@ img {
 						<li class="tsd-kind-method tsd-parent-kind-class"><span class="tsd-kind-icon">Method</span></li>
 					</ul>
 					<ul class="tsd-legend">
+						<li class="tsd-kind-property tsd-parent-kind-class tsd-is-static"><span class="tsd-kind-icon">Static property</span></li>
+						<li class="tsd-kind-method tsd-parent-kind-class tsd-is-static"><span class="tsd-kind-icon">Static method</span></li>
+					</ul>
+					<ul class="tsd-legend">
 						<li class="tsd-kind-property tsd-parent-kind-interface"><span class="tsd-kind-icon">Property</span></li>
 					</ul>
 					<ul class="tsd-legend">
 						<li class="tsd-kind-property tsd-parent-kind-class tsd-is-inherited"><span class="tsd-kind-icon">Inherited property</span></li>
-					</ul>
-					<ul class="tsd-legend">
-						<li class="tsd-kind-property tsd-parent-kind-class tsd-is-static"><span class="tsd-kind-icon">Static property</span></li>
 					</ul>
 				</div>
 			</div>
