@@ -2064,17 +2064,17 @@ describe('Auth0', () => {
     });
   });
 
-  describe('logout()', () => {
+  describe('buildLogoutUrl()', () => {
     it('removes `auth0.is.authenticated` key from storage', async () => {
       const { auth0, storage } = await setup();
-      auth0.logout();
+      auth0.buildLogoutUrl();
       expect(storage.remove).toHaveBeenCalledWith('auth0.is.authenticated');
     });
 
     it('creates correct query params with empty options', async () => {
       const { auth0, utils } = await setup();
 
-      auth0.logout();
+      auth0.buildLogoutUrl();
       expect(utils.createQueryParams).toHaveBeenCalledWith({
         client_id: TEST_CLIENT_ID
       });
@@ -2083,14 +2083,14 @@ describe('Auth0', () => {
     it('creates correct query params with `options.client_id` is null', async () => {
       const { auth0, utils } = await setup();
 
-      auth0.logout({ client_id: null });
+      auth0.buildLogoutUrl({ client_id: null });
       expect(utils.createQueryParams).toHaveBeenCalledWith({});
     });
 
     it('creates correct query params with `options.client_id` defined', async () => {
       const { auth0, utils } = await setup();
 
-      auth0.logout({ client_id: 'another-client-id' });
+      auth0.buildLogoutUrl({ client_id: 'another-client-id' });
       expect(utils.createQueryParams).toHaveBeenCalledWith({
         client_id: 'another-client-id'
       });
@@ -2099,7 +2099,7 @@ describe('Auth0', () => {
     it('creates correct query params with `options.returnTo` defined', async () => {
       const { auth0, utils } = await setup();
 
-      auth0.logout({ returnTo: 'https://return.to', client_id: null });
+      auth0.buildLogoutUrl({ returnTo: 'https://return.to', client_id: null });
       expect(utils.createQueryParams).toHaveBeenCalledWith({
         returnTo: 'https://return.to'
       });
@@ -2108,42 +2108,14 @@ describe('Auth0', () => {
     it('creates correct query params when `options.federated` is true', async () => {
       const { auth0, utils } = await setup();
 
-      auth0.logout({ federated: true, client_id: null });
+      auth0.buildLogoutUrl({ federated: true, client_id: null });
       expect(utils.createQueryParams).toHaveBeenCalledWith({});
-    });
-
-    it('calls `window.location.assign` with the correct url', async () => {
-      const { auth0 } = await setup();
-
-      auth0.logout();
-      expect(window.location.assign).toHaveBeenCalledWith(
-        `https://test.auth0.com/v2/logout?query=params${TEST_AUTH0_CLIENT_QUERY_STRING}`
-      );
-    });
-
-    it('calls `window.location.assign` with the correct url when `options.federated` is true', async () => {
-      const { auth0 } = await setup();
-
-      auth0.logout({ federated: true });
-      expect(window.location.assign).toHaveBeenCalledWith(
-        `https://test.auth0.com/v2/logout?query=params${TEST_AUTH0_CLIENT_QUERY_STRING}&federated`
-      );
-    });
-
-    it('calls `window.location.assign` with the correct url with custom `options.auth0Client`', async () => {
-      const auth0Client = { name: '__test_client_name__', version: '9.9.9' };
-      const { auth0 } = await setup({ auth0Client });
-      auth0.logout();
-      expectToHaveBeenCalledWithAuth0ClientParam(
-        window.location.assign,
-        auth0Client
-      );
     });
 
     it('clears the cache', async () => {
       const { auth0, cache } = await setup();
 
-      auth0.logout();
+      auth0.buildLogoutUrl();
 
       expect(cache.clear).toHaveBeenCalled();
     });
@@ -2151,30 +2123,61 @@ describe('Auth0', () => {
     it('removes `auth0.is.authenticated` key from storage when `options.localOnly` is true', async () => {
       const { auth0, storage } = await setup();
 
-      auth0.logout({ localOnly: true });
+      auth0.buildLogoutUrl({ localOnly: true });
       expect(storage.remove).toHaveBeenCalledWith('auth0.is.authenticated');
-    });
-
-    it('skips `window.location.assign` when `options.localOnly` is true', async () => {
-      const { auth0 } = await setup();
-
-      auth0.logout({ localOnly: true });
-      expect(window.location.assign).not.toHaveBeenCalledWith();
-    });
-
-    it('calls `window.location.assign` when `options.localOnly` is false', async () => {
-      const { auth0 } = await setup();
-
-      auth0.logout({ localOnly: false });
-      expect(window.location.assign).toHaveBeenCalled();
     });
 
     it('throws when both `options.localOnly` and `options.federated` are true', async () => {
       const { auth0 } = await setup();
 
-      const fn = () => auth0.logout({ localOnly: true, federated: true });
+      const fn = () =>
+        auth0.buildLogoutUrl({ localOnly: true, federated: true });
       expect(fn).toThrow();
     });
+  });
+});
+
+describe('logout()', () => {
+  it('calls `window.location.assign` with the correct url with custom `options.auth0Client`', async () => {
+    const auth0Client = { name: '__test_client_name__', version: '9.9.9' };
+    const { auth0 } = await setup({ auth0Client });
+    auth0.logout();
+    expectToHaveBeenCalledWithAuth0ClientParam(
+      window.location.assign,
+      auth0Client
+    );
+  });
+
+  it('calls `window.location.assign` with the correct url', async () => {
+    const { auth0 } = await setup();
+
+    auth0.logout();
+    expect(window.location.assign).toHaveBeenCalledWith(
+      `https://test.auth0.com/v2/logout?query=params${TEST_AUTH0_CLIENT_QUERY_STRING}`
+    );
+  });
+
+  it('calls `window.location.assign` with the correct url when `options.federated` is true', async () => {
+    const { auth0 } = await setup();
+
+    auth0.logout({ federated: true });
+    expect(window.location.assign).toHaveBeenCalledWith(
+      `https://test.auth0.com/v2/logout?query=params${TEST_AUTH0_CLIENT_QUERY_STRING}&federated`
+    );
+  });
+
+  it('skips `window.location.assign` when `options.localOnly` is true', async () => {
+    const { auth0 } = await setup();
+
+    auth0.logout({ localOnly: true });
+    expect(window.location.assign).not.toHaveBeenCalledWith();
+  });
+
+  it('calls `window.location.assign` when `options.localOnly` is false', async () => {
+    const { auth0 } = await setup();
+
+    auth0.logout({ localOnly: false });
+    expect(window.location.assign).toHaveBeenCalled();
   });
 });
 
