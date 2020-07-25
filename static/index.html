@@ -329,10 +329,7 @@
               _self.auth0 = auth0;
               window.auth0 = auth0; // Cypress integration tests support
               _self.loading = false;
-
-              auth0.isAuthenticated().then(function (isAuthenticated) {
-                _self.isAuthenticated = isAuthenticated;
-              });
+              _self.isAuthenticated = auth0.isAuthenticated();
             };
 
             if (_self.useConstructor) {
@@ -393,14 +390,8 @@
 
             _self.auth0.getTokenSilently().then(function (token) {
               _self.audienceScopes[0].access_tokens.push(token);
-
-              _self.auth0.getUser().then(function (user) {
-                _self.profile = user;
-              });
-
-              _self.auth0.getIdTokenClaims().then(function (claims) {
-                _self.id_token = claims.__raw;
-              });
+              _self.profile = _self.auth0.getUser();
+              _self.id_token = _self.auth0.getIdTokenClaims().__raw;
             });
           },
           loginPopup: function () {
@@ -411,10 +402,8 @@
                 redirect_uri: 'http://localhost:3000/callback.html'
               })
               .then(function () {
-                auth0.isAuthenticated().then(function (isAuthenticated) {
-                  _self.isAuthenticated = isAuthenticated;
-                  _self.showAuth0Info();
-                });
+                _self.isAuthenticated = auth0.isAuthenticated();
+                _self.showAuth0Info();
               });
           },
           loginRedirect: function () {
@@ -432,10 +421,8 @@
                 window.location.origin + '/'
               );
 
-              auth0.isAuthenticated().then(function (isAuthenticated) {
-                _self.isAuthenticated = isAuthenticated;
-                _self.showAuth0Info();
-              });
+              _self.isAuthenticated = auth0.isAuthenticated();
+              _self.showAuth0Info();
             });
           },
           getToken: function (audience, scope, access_tokens) {
@@ -450,10 +437,7 @@
               .then(function (token) {
                 access_tokens.push(token);
                 _self.error = null;
-
-                auth0.isAuthenticated().then(function (isAuthenticated) {
-                  _self.isAuthenticated = isAuthenticated;
-                });
+                _self.isAuthenticated = auth0.isAuthenticated();
               })
               .catch(function (e) {
                 console.error(e);

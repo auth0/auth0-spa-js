@@ -105,7 +105,7 @@ document.getElementById('login').addEventListener('click', async () => {
 window.addEventListener('load', async () => {
   const redirectResult = await auth0.handleRedirectCallback();
   //logged in. you can get the user profile like this:
-  const user = await auth0.getUser();
+  const user = auth0.getUser();
   console.log(user);
 });
 
@@ -122,9 +122,8 @@ document.getElementById('login').addEventListener('click', () => {
 window.addEventListener('load', () => {
   auth0.handleRedirectCallback().then(redirectResult => {
     //logged in. you can get the user profile like this:
-    auth0.getUser().then(user => {
-      console.log(user);
-    });
+    const user = auth0.getUser();
+    console.log(user);
   });
 });
 ```

@@ -371,7 +371,7 @@ export default class Auth0Client {
 
   /**
    * ```js
-   * const user = await auth0.getUser();
+   * const user = auth0.getUser();
    * ```
    *
    * Returns the user information if available (decoded
@@ -379,7 +379,7 @@ export default class Auth0Client {
    *
    * @param options
    */
-  public async getUser(
+  public getUser(
     options: GetUserOptions = {
       audience: this.options.audience || 'default',
       scope: this.scope || this.defaultScope
@@ -397,14 +397,14 @@ export default class Auth0Client {
 
   /**
    * ```js
-   * const claims = await auth0.getIdTokenClaims();
+   * const claims = auth0.getIdTokenClaims();
    * ```
    *
    * Returns all claims from the id_token if available.
    *
    * @param options
    */
-  public async getIdTokenClaims(
+  public getIdTokenClaims(
     options: GetIdTokenClaimsOptions = {
       audience: this.options.audience || 'default',
       scope: this.scope || this.defaultScope
@@ -656,15 +656,15 @@ export default class Auth0Client {
 
   /**
    * ```js
-   * const isAuthenticated = await auth0.isAuthenticated();
+   * const isAuthenticated = auth0.isAuthenticated();
    * ```
    *
    * Returns `true` if there's valid information stored,
    * otherwise returns `false`.
    *
    */
-  public async isAuthenticated() {
-    const user = await this.getUser();
+  public isAuthenticated() {
+    const user = this.getUser();
     return !!user;
   }
 

@@ -1315,7 +1315,7 @@ describe('Auth0', () => {
     it('returns undefined if there is no cache', async () => {
       const { auth0, cache } = await setup();
       cache.get.mockReturnValue(undefined);
-      const decodedToken = await auth0.getUser();
+      const decodedToken = auth0.getUser();
       expect(decodedToken).toBeUndefined();
     });
     it('returns only user information if there is a cache entry', async () => {
@@ -1331,13 +1331,13 @@ describe('Auth0', () => {
         }
       };
       cache.get.mockReturnValue(userIn);
-      const userOut = await auth0.getUser();
+      const userOut = auth0.getUser();
       expect(userOut).toEqual({ sub: TEST_USER_ID, email: TEST_USER_EMAIL });
     });
     it('uses default options', async () => {
       const { auth0, cache } = await setup();
 
-      await auth0.getUser();
+      auth0.getUser();
 
       expect(cache.get).toHaveBeenCalledWith({
         audience: 'default',
@@ -1378,7 +1378,7 @@ describe('Auth0', () => {
     it('returns undefined if there is no cache', async () => {
       const { auth0, cache } = await setup();
       cache.get.mockReturnValue(undefined);
-      const decodedToken = await auth0.getIdTokenClaims();
+      const decodedToken = auth0.getIdTokenClaims();
       expect(decodedToken).toBeUndefined();
     });
 
@@ -1395,7 +1395,7 @@ describe('Auth0', () => {
         }
       };
       cache.get.mockReturnValue(userIn);
-      const userOut = await auth0.getIdTokenClaims();
+      const userOut = auth0.getIdTokenClaims();
       expect(userOut).toEqual(userIn.decodedToken.claims);
     });
 
@@ -1404,7 +1404,7 @@ describe('Auth0', () => {
         advancedOptions: { defaultScope: 'openid custom-scope' }
       });
 
-      await auth0.getIdTokenClaims({
+      auth0.getIdTokenClaims({
         audience: 'the-audience',
         scope: 'openid custom-scope'
       });
@@ -1422,7 +1422,7 @@ describe('Auth0', () => {
           useRefreshTokens: true
         });
 
-        await auth0.getIdTokenClaims();
+        auth0.getIdTokenClaims();
 
         expect(cache.get).toHaveBeenCalledWith({
           audience: 'default',
@@ -1436,7 +1436,7 @@ describe('Auth0', () => {
           useRefreshTokens: true
         });
 
-        await auth0.getIdTokenClaims({
+        auth0.getIdTokenClaims({
           audience: 'the-audience',
           scope: 'the-scope'
         });
@@ -1453,7 +1453,7 @@ describe('Auth0', () => {
       it('uses default options', async () => {
         const { auth0, cache } = await setup();
 
-        await auth0.getIdTokenClaims();
+        auth0.getIdTokenClaims();
 
         expect(cache.get).toHaveBeenCalledWith({
           audience: 'default',
@@ -1465,7 +1465,7 @@ describe('Auth0', () => {
       it('uses custom options when provided', async () => {
         const { auth0, cache } = await setup();
 
-        await auth0.getIdTokenClaims({
+        auth0.getIdTokenClaims({
           audience: 'the-audience',
           scope: 'the-scope'
         });
@@ -1487,13 +1487,13 @@ describe('Auth0', () => {
           id: TEST_USER_ID
         })
       );
-      const result = await auth0.isAuthenticated();
+      const result = auth0.isAuthenticated();
       expect(result).toBe(true);
     });
     it('returns false if there is not an user', async () => {
       const { auth0 } = await setup();
       auth0.getUser = jest.fn(() => undefined);
-      const result = await auth0.isAuthenticated();
+      const result = auth0.isAuthenticated();
       expect(result).toBe(false);
     });
   });

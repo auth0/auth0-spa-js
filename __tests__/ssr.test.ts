@@ -10,9 +10,9 @@ describe('In a Node SSR environment', () => {
     ).not.toThrow();
   });
 
-  it('can check authenticated state', async () => {
+  it('can check authenticated state', () => {
     const client = new Auth0Client({ client_id: 'foo', domain: 'bar' });
-    expect(await client.isAuthenticated()).toBeFalsy();
-    expect(await client.getUser()).toBeUndefined();
+    expect(client.isAuthenticated()).toBeFalsy();
+    expect(client.getUser()).toBeUndefined();
   });
 });
