@@ -80,7 +80,7 @@ export const runIframe = (
   });
 };
 
-const openPopup = url => {
+const openPopup = (url: string) => {
   const width = 400;
   const height = 600;
   const left = window.screenX + (window.innerWidth - width) / 2;
@@ -146,7 +146,7 @@ export const createQueryParams = (params: any) => {
 };
 
 export const sha256 = async (s: string) => {
-  const digestOp = getCryptoSubtle().digest(
+  const digestOp: any = getCryptoSubtle().digest(
     { name: 'SHA-256' },
     new TextEncoder().encode(s)
   );
@@ -160,7 +160,7 @@ export const sha256 = async (s: string) => {
   // or reject depending on their intention.
   if ((<any>window).msCrypto) {
     return new Promise((res, rej) => {
-      digestOp.oncomplete = e => {
+      digestOp.oncomplete = (e: any) => {
         res(e.target.result);
       };
 
@@ -178,12 +178,12 @@ export const sha256 = async (s: string) => {
 };
 
 const urlEncodeB64 = (input: string) => {
-  const b64Chars = { '+': '-', '/': '_', '=': '' };
+  const b64Chars: { [index: string]: string } = { '+': '-', '/': '_', '=': '' };
   return input.replace(/[\+\/=]/g, (m: string) => b64Chars[m]);
 };
 
 // https://stackoverflow.com/questions/30106476/
-const decodeB64 = input =>
+const decodeB64 = (input: string) =>
   decodeURIComponent(
     atob(input)
       .split('')
@@ -196,14 +196,14 @@ const decodeB64 = input =>
 export const urlDecodeB64 = (input: string) =>
   decodeB64(input.replace(/_/g, '/').replace(/-/g, '+'));
 
-export const bufferToBase64UrlEncoded = input => {
+export const bufferToBase64UrlEncoded = (input: Buffer) => {
   const ie11SafeInput = new Uint8Array(input);
   return urlEncodeB64(
     window.btoa(String.fromCharCode(...Array.from(ie11SafeInput)))
   );
 };
 
-const sendMessage = (message, to) =>
+const sendMessage = (message: any, to: MessagePort) =>
   new Promise(function (resolve, reject) {
     const messageChannel = new MessageChannel();
     messageChannel.port1.onmessage = function (event) {
@@ -217,7 +217,14 @@ const sendMessage = (message, to) =>
     to.postMessage(message, [messageChannel.port2]);
   });
 
-const switchFetch = async (url, audience, scope, opts, timeout, worker) => {
+const switchFetch = async (
+  url: string,
+  audience: string,
+  scope: string,
+  opts: { [index: string]: any },
+  timeout: number,
+  worker: MessagePort
+) => {
   if (worker) {
     // AbortSignal is not serializable, need to implement in the Web Worker
     delete opts.signal;
@@ -232,11 +239,11 @@ const switchFetch = async (url, audience, scope, opts, timeout, worker) => {
 };
 
 export const fetchWithTimeout = (
-  url,
-  audience,
-  scope,
-  options,
-  worker,
+  url: string,
+  audience: string,
+  scope: string,
+  options: { [index: string]: any },
+  worker: MessagePort,
   timeout = DEFAULT_FETCH_TIMEOUT_MS
 ) => {
   const controller = createAbortController();
@@ -247,7 +254,7 @@ export const fetchWithTimeout = (
     signal
   };
 
-  let timeoutId;
+  let timeoutId: ReturnType<typeof setTimeout>;
   // The promise will resolve with one of these two promises (the fetch or the timeout), whichever completes first.
   return Promise.race([
     switchFetch(url, audience, scope, fetchOptions, timeout, worker),
@@ -262,8 +269,16 @@ export const fetchWithTimeout = (
   });
 };
 
-const getJSON = async (url, timeout, audience, scope, options, worker) => {
-  let fetchError, response;
+const getJSON = async (
+  url: string,
+  timeout: number,
+  audience: string,
+  scope: string,
+  options: { [index: string]: any },
+  worker: MessagePort
+) => {
+  let fetchError: null | Error = null;
+  let response: any;
 
   for (let i = 0; i < DEFAULT_SILENT_TOKEN_RETRY_COUNT; i++) {
     try {
@@ -314,11 +329,11 @@ const getJSON = async (url, timeout, audience, scope, options, worker) => {
 
 export const oauthToken = async (
   { baseUrl, timeout, audience, scope, ...options }: TokenEndpointOptions,
-  worker
+  worker: MessagePort
 ) =>
   await getJSON(
     `${baseUrl}/oauth/token`,
-    timeout,
+    timeout as number,
     audience || 'default',
     scope,
     {
