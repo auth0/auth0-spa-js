@@ -22,18 +22,18 @@ export const parseQueryResult = (queryString: string) => {
     queryString = queryString.substr(0, queryString.indexOf('#'));
   }
 
-  let queryParams = queryString.split('&');
+  const queryParams = queryString.split('&');
 
-  let parsedQuery: any = {};
+  const parsedQuery: any = {};
   queryParams.forEach(qp => {
-    let [key, val] = qp.split('=');
+    const [key, val] = qp.split('=');
     parsedQuery[key] = decodeURIComponent(val);
   });
 
-  return <AuthenticationResult>{
+  return {
     ...parsedQuery,
     expires_in: parseInt(parsedQuery.expires_in)
-  };
+  } as AuthenticationResult;
 };
 
 export const runIframe = (
@@ -42,7 +42,7 @@ export const runIframe = (
   timeoutInSeconds: number = DEFAULT_AUTHORIZE_TIMEOUT_IN_SECONDS
 ) => {
   return new Promise<AuthenticationResult>((res, rej) => {
-    var iframe = window.document.createElement('iframe');
+    const iframe = window.document.createElement('iframe');
     iframe.setAttribute('width', '0');
     iframe.setAttribute('height', '0');
     iframe.style.display = 'none';
@@ -63,7 +63,7 @@ export const runIframe = (
       if (!e.data || e.data.type !== 'authorization_response') return;
       const eventSource = e.source;
       if (eventSource) {
-        (<any>eventSource).close();
+        (eventSource as any).close();
       }
       e.data.response.error
         ? rej(GenericError.fromPayload(e.data.response))
@@ -124,6 +124,16 @@ export const runPopup = (authorizeUrl: string, config: PopupConfigOptions) => {
   });
 };
 
+export const getCrypto = () => {
+  //ie 11.x uses msCrypto
+  return (window.crypto || (window as any).msCrypto) as Crypto;
+};
+
+export const getCryptoSubtle = () => {
+  const crypto = getCrypto();
+  //safari 10.x uses webkitSubtle
+  return crypto.subtle || (crypto as any).webkitSubtle;
+};
 export const createRandomString = () => {
   const charset =
     '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-_~.';
@@ -158,7 +168,7 @@ export const sha256 = async (s: string) => {
   // As a result, the various events need to be handled in the event that we're
   // working in IE11 (hence the msCrypto check). These events just call resolve
   // or reject depending on their intention.
-  if ((<any>window).msCrypto) {
+  if ((window as any).msCrypto) {
     return new Promise((res, rej) => {
       digestOp.oncomplete = (e: any) => {
         res(e.target.result);
@@ -179,7 +189,7 @@ export const sha256 = async (s: string) => {
 
 const urlEncodeB64 = (input: string) => {
   const b64Chars: { [index: string]: string } = { '+': '-', '/': '_', '=': '' };
-  return input.replace(/[\+\/=]/g, (m: string) => b64Chars[m]);
+  return input.replace(/[+/=]/g, (m: string) => b64Chars[m]);
 };
 
 // https://stackoverflow.com/questions/30106476/
@@ -316,7 +326,7 @@ const getJSON = async (
   if (!ok) {
     const errorMessage =
       error_description || `HTTP error. Unable to fetch ${url}`;
-    const e = <any>new Error(errorMessage);
+    const e: any = new Error(errorMessage);
 
     e.error = error || 'request_error';
     e.error_description = errorMessage;
@@ -348,17 +358,6 @@ export const oauthToken = async (
     },
     worker
   );
-
-export const getCrypto = () => {
-  //ie 11.x uses msCrypto
-  return <Crypto>(window.crypto || (<any>window).msCrypto);
-};
-
-export const getCryptoSubtle = () => {
-  const crypto = getCrypto();
-  //safari 10.x uses webkitSubtle
-  return crypto.subtle || (<any>crypto).webkitSubtle;
-};
 
 export const validateCrypto = () => {
   if (!getCrypto()) {
