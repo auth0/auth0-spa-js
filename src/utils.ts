@@ -213,7 +213,7 @@ export const bufferToBase64UrlEncoded = (input: Buffer) => {
   );
 };
 
-const sendMessage = (message: any, to: MessagePort) =>
+const sendMessage = (message: any, to: Worker) =>
   new Promise(function (resolve, reject) {
     const messageChannel = new MessageChannel();
     messageChannel.port1.onmessage = function (event) {
@@ -233,7 +233,7 @@ const switchFetch = async (
   scope: string,
   opts: { [index: string]: any },
   timeout: number,
-  worker: MessagePort
+  worker: Worker
 ) => {
   if (worker) {
     // AbortSignal is not serializable, need to implement in the Web Worker
@@ -253,7 +253,7 @@ export const fetchWithTimeout = (
   audience: string,
   scope: string,
   options: { [index: string]: any },
-  worker: MessagePort,
+  worker: Worker,
   timeout = DEFAULT_FETCH_TIMEOUT_MS
 ) => {
   const controller = createAbortController();
@@ -285,7 +285,7 @@ const getJSON = async (
   audience: string,
   scope: string,
   options: { [index: string]: any },
-  worker: MessagePort
+  worker: Worker
 ) => {
   let fetchError: null | Error = null;
   let response: any;
@@ -339,7 +339,7 @@ const getJSON = async (
 
 export const oauthToken = async (
   { baseUrl, timeout, audience, scope, ...options }: TokenEndpointOptions,
-  worker: MessagePort
+  worker: Worker
 ) =>
   await getJSON(
     `${baseUrl}/oauth/token`,
