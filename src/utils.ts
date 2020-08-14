@@ -206,7 +206,7 @@ const decodeB64 = (input: string) =>
 export const urlDecodeB64 = (input: string) =>
   decodeB64(input.replace(/_/g, '/').replace(/-/g, '+'));
 
-export const bufferToBase64UrlEncoded = (input: Buffer) => {
+export const bufferToBase64UrlEncoded = (input: number[]) => {
   const ie11SafeInput = new Uint8Array(input);
   return urlEncodeB64(
     window.btoa(String.fromCharCode(...Array.from(ie11SafeInput)))
