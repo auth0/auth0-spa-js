@@ -2,6 +2,21 @@
 
 Below are a number of questions or issues that have arisen from using the SDK.
 
+## Why is the user logged out when they refresh the page in their SPA?
+
+After logging in, if the page is refreshed and the user appears logged out, it usually means that the silent authentication step has failed to work.
+
+This could be affected by a couple of things:
+
+- When not using refresh tokens, the SDK relies on third-party cookie support to log in silently. If you're not using refresh tokens, you could be using a browser that blocks third-party cookies by default (Safari, Brave, etc)
+- You're using the [classic login experience](https://auth0.com/docs/universal-login/classic-experience), and trying to log in using a social provider that uses Auth0's developer keys (see [Limitations of Developer Keys when using Classic Universal Login](https://auth0.com/docs/connections/social/devkeys#limitations-of-developer-keys-when-using-classic-universal-login))
+
+Please try these to see if you can get unblocked:
+
+- Try it in a browser like Chrome which does not block third-party cookies by default (yet)
+- Use the New Login Experience, if possible
+- Supply the social connection with your own client ID and secret in the Auth0 dashboard
+
 ## Why does the `Auth0Client` object take a long time to initialize?
 
 Sometimes the `createAuth0Client` asynchronous method can take over 30 seconds to complete. `createAuth0Client` may also return `undefined` and produce an error when you try to access it.
