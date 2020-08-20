@@ -1,4 +1,4 @@
-import { CookieStorage } from './storage';
+import { SessionStorage } from './storage';
 
 const TRANSACTION_STORAGE_KEY = 'a0.spajs.txs.';
 const getTransactionKey = (state: string) =>
@@ -17,7 +17,7 @@ interface Transactions {
 }
 export default class TransactionManager {
   private transactions: Transactions;
-  private storage = CookieStorage;
+  private storage = SessionStorage;
 
   constructor() {
     this.transactions = {};
