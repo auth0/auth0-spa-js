@@ -18,7 +18,7 @@ import { InMemoryCache, ICache, LocalStorageCache } from './cache';
 import TransactionManager from './transaction-manager';
 import { verify as verifyIdToken } from './jwt';
 import { AuthenticationError } from './errors';
-import * as ClientStorage from './storage';
+import { CookieStorage } from './storage';
 
 import {
   CACHE_LOCATION_MEMORY,
@@ -367,7 +367,7 @@ export default class Auth0Client {
 
     this.cache.save(cacheEntry);
 
-    ClientStorage.save('auth0.is.authenticated', true, { daysUntilExpire: 1 });
+    CookieStorage.save('auth0.is.authenticated', true, { daysUntilExpire: 1 });
   }
 
   /**
@@ -500,7 +500,7 @@ export default class Auth0Client {
 
     this.cache.save(cacheEntry);
 
-    ClientStorage.save('auth0.is.authenticated', true, { daysUntilExpire: 1 });
+    CookieStorage.save('auth0.is.authenticated', true, { daysUntilExpire: 1 });
 
     return {
       appState: transaction.appState
@@ -525,7 +525,7 @@ export default class Auth0Client {
   public async checkSession(options?: GetTokenSilentlyOptions) {
     if (
       this.cacheLocation === CACHE_LOCATION_MEMORY &&
-      !ClientStorage.get('auth0.is.authenticated')
+      !CookieStorage.get('auth0.is.authenticated')
     ) {
       return;
     }
@@ -612,7 +612,7 @@ export default class Auth0Client {
 
       this.cache.save({ client_id: this.options.client_id, ...authResult });
 
-      ClientStorage.save('auth0.is.authenticated', true, {
+      CookieStorage.save('auth0.is.authenticated', true, {
         daysUntilExpire: 1
       });
 
@@ -707,7 +707,7 @@ export default class Auth0Client {
     }
 
     this.cache.clear();
-    ClientStorage.remove('auth0.is.authenticated');
+    CookieStorage.remove('auth0.is.authenticated');
 
     if (localOnly) {
       return;
