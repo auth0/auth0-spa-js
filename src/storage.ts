@@ -4,6 +4,9 @@ interface ClientStorageOptions {
   daysUntilExpire: number;
 }
 
+/**
+ * Defines a type that handles storage to/from a storage location
+ */
 export type ClientStorage = {
   get<T extends Object>(key: string): T;
   save(key: string, value: any, options?: ClientStorageOptions): void;
@@ -11,6 +14,9 @@ export type ClientStorage = {
   getAllKeys(): string[];
 };
 
+/**
+ * A storage protocol for marshalling data to/from cookies
+ */
 export const CookieStorage = {
   get<T extends Object>(key: string) {
     const value = Cookies.get(key);
@@ -41,6 +47,9 @@ export const CookieStorage = {
   }
 } as ClientStorage;
 
+/**
+ * A storage protocol for marshalling data to/from session storage
+ */
 export const SessionStorage = {
   get<T extends Object>(key: string) {
     const value = sessionStorage.getItem(key);
