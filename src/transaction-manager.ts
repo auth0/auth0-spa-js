@@ -1,7 +1,8 @@
-import * as ClientStorage from './storage';
+import { CookieStorage } from './storage';
 
-const COOKIE_KEY = 'a0.spajs.txs.';
-const getTransactionKey = (state: string) => `${COOKIE_KEY}${state}`;
+const TRANSACTION_STORAGE_KEY = 'a0.spajs.txs.';
+const getTransactionKey = (state: string) =>
+  `${TRANSACTION_STORAGE_KEY}${state}`;
 
 interface Transaction {
   nonce: string;
@@ -16,19 +17,22 @@ interface Transactions {
 }
 export default class TransactionManager {
   private transactions: Transactions;
+  private storage = CookieStorage;
+
   constructor() {
     this.transactions = {};
     typeof window !== 'undefined' &&
-      ClientStorage.getAllKeys()
-        .filter(k => k.startsWith(COOKIE_KEY))
+      this.storage
+        .getAllKeys()
+        .filter(k => k.startsWith(TRANSACTION_STORAGE_KEY))
         .forEach(k => {
-          const state = k.replace(COOKIE_KEY, '');
-          this.transactions[state] = ClientStorage.get<Transaction>(k);
+          const state = k.replace(TRANSACTION_STORAGE_KEY, '');
+          this.transactions[state] = this.storage.get<Transaction>(k);
         });
   }
   public create(state: string, transaction: Transaction) {
     this.transactions[state] = transaction;
-    ClientStorage.save(getTransactionKey(state), transaction, {
+    this.storage.save(getTransactionKey(state), transaction, {
       daysUntilExpire: 1
     });
   }
@@ -37,6 +41,6 @@ export default class TransactionManager {
   }
   public remove(state: string) {
     delete this.transactions[state];
-    ClientStorage.remove(getTransactionKey(state));
+    this.storage.remove(getTransactionKey(state));
   }
 }
