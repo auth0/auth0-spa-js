@@ -18,7 +18,12 @@ import { InMemoryCache, ICache, LocalStorageCache } from './cache';
 import TransactionManager from './transaction-manager';
 import { verify as verifyIdToken } from './jwt';
 import { AuthenticationError } from './errors';
-import { CookieStorage, SessionStorage } from './storage';
+import {
+  ClientStorage,
+  CookieStorage,
+  CookieStorageWithLegacySameSite,
+  SessionStorage
+} from './storage';
 
 import {
   CACHE_LOCATION_MEMORY,
@@ -128,6 +133,7 @@ export default class Auth0Client {
   private tokenIssuer: string;
   private defaultScope: string;
   private scope: string;
+  private CookieStorage: ClientStorage;
 
   cacheLocation: CacheLocation;
   private worker: Worker;
@@ -135,6 +141,10 @@ export default class Auth0Client {
   constructor(private options: Auth0ClientOptions) {
     typeof window !== 'undefined' && validateCrypto();
     this.cacheLocation = options.cacheLocation || CACHE_LOCATION_MEMORY;
+    this.CookieStorage =
+      options.legacySameSiteCookie === false
+        ? CookieStorage
+        : CookieStorageWithLegacySameSite;
 
     if (!cacheFactory(this.cacheLocation)) {
       throw new Error(`Invalid cache location "${this.cacheLocation}"`);
@@ -367,7 +377,9 @@ export default class Auth0Client {
 
     this.cache.save(cacheEntry);
 
-    CookieStorage.save('auth0.is.authenticated', true, { daysUntilExpire: 1 });
+    this.CookieStorage.save('auth0.is.authenticated', true, {
+      daysUntilExpire: 1
+    });
   }
 
   /**
@@ -501,7 +513,9 @@ export default class Auth0Client {
 
     this.cache.save(cacheEntry);
 
-    CookieStorage.save('auth0.is.authenticated', true, { daysUntilExpire: 1 });
+    this.CookieStorage.save('auth0.is.authenticated', true, {
+      daysUntilExpire: 1
+    });
 
     return {
       appState: transaction.appState
@@ -526,7 +540,7 @@ export default class Auth0Client {
   public async checkSession(options?: GetTokenSilentlyOptions) {
     if (
       this.cacheLocation === CACHE_LOCATION_MEMORY &&
-      !CookieStorage.get('auth0.is.authenticated')
+      !this.CookieStorage.get('auth0.is.authenticated')
     ) {
       return;
     }
@@ -613,7 +627,7 @@ export default class Auth0Client {
 
       this.cache.save({ client_id: this.options.client_id, ...authResult });
 
-      CookieStorage.save('auth0.is.authenticated', true, {
+      this.CookieStorage.save('auth0.is.authenticated', true, {
         daysUntilExpire: 1
       });
 
@@ -708,7 +722,7 @@ export default class Auth0Client {
     }
 
     this.cache.clear();
-    CookieStorage.remove('auth0.is.authenticated');
+    this.CookieStorage.remove('auth0.is.authenticated');
 
     if (localOnly) {
       return;

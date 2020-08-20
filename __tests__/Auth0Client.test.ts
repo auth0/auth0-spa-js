@@ -860,4 +860,29 @@ describe('Auth0Client', () => {
 
     expect(utils.runIframe).toHaveBeenCalled();
   });
+
+  it('checks the legacy samesite cookie', async () => {
+    const auth0 = setup();
+    (<jest.Mock>esCookie.get).mockReturnValueOnce(undefined);
+    await auth0.checkSession();
+    expect(<jest.Mock>esCookie.get).toHaveBeenCalledWith(
+      'auth0.is.authenticated'
+    );
+    expect(<jest.Mock>esCookie.get).toHaveBeenCalledWith(
+      '_legacy_auth0.is.authenticated'
+    );
+  });
+
+  it('skips checking the legacy samesite cookie when configured', async () => {
+    const auth0 = setup({
+      legacySameSiteCookie: false
+    });
+    await auth0.checkSession();
+    expect(<jest.Mock>esCookie.get).toHaveBeenCalledWith(
+      'auth0.is.authenticated'
+    );
+    expect(<jest.Mock>esCookie.get).not.toHaveBeenCalledWith(
+      '_legacy_auth0.is.authenticated'
+    );
+  });
 });
