@@ -142,7 +142,7 @@ export default class Auth0Client {
 
     this.cache = cacheFactory(this.cacheLocation)();
     this.scope = this.options.scope;
-    this.transactionManager = new TransactionManager();
+    this.transactionManager = new TransactionManager(this.options.client_id);
     this.domainUrl = `https://${this.options.domain}`;
     this.tokenIssuer = getTokenIssuer(this.options.issuer, this.domainUrl);
 
@@ -276,7 +276,7 @@ export default class Auth0Client {
 
     const url = this._authorizeUrl(params);
 
-    this.transactionManager.create(stateIn, {
+    this.transactionManager.create({
       nonce: nonceIn,
       code_verifier,
       appState,
@@ -448,14 +448,14 @@ export default class Auth0Client {
       queryStringFragments.join('')
     );
 
-    const transaction = this.transactionManager.get(state);
+    const transaction = this.transactionManager.get();
 
     if (!transaction) {
       throw new Error('Invalid state');
     }
 
     if (error) {
-      this.transactionManager.remove(state);
+      this.transactionManager.remove();
 
       throw new AuthenticationError(
         error,
@@ -465,7 +465,7 @@ export default class Auth0Client {
       );
     }
 
-    this.transactionManager.remove(state);
+    this.transactionManager.remove();
 
     const tokenOptions = {
       audience: transaction.audience,
