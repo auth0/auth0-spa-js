@@ -18,7 +18,7 @@ import { InMemoryCache, ICache, LocalStorageCache } from './cache';
 import TransactionManager from './transaction-manager';
 import { verify as verifyIdToken } from './jwt';
 import { AuthenticationError } from './errors';
-import { CookieStorage } from './storage';
+import { CookieStorage, SessionStorage } from './storage';
 
 import {
   CACHE_LOCATION_MEMORY,
@@ -142,7 +142,7 @@ export default class Auth0Client {
 
     this.cache = cacheFactory(this.cacheLocation)();
     this.scope = this.options.scope;
-    this.transactionManager = new TransactionManager(this.options.client_id);
+    this.transactionManager = new TransactionManager(SessionStorage);
     this.domainUrl = `https://${this.options.domain}`;
     this.tokenIssuer = getTokenIssuer(this.options.issuer, this.domainUrl);
 
@@ -336,10 +336,6 @@ export default class Auth0Client {
         this.options.authorizeTimeoutInSeconds ||
         DEFAULT_AUTHORIZE_TIMEOUT_IN_SECONDS
     });
-
-    if (stateIn !== codeResult.state) {
-      throw new Error('Invalid state');
-    }
 
     const authResult = await oauthToken(
       {
@@ -748,9 +744,10 @@ export default class Auth0Client {
       options.timeoutInSeconds || this.options.authorizeTimeoutInSeconds;
     const codeResult = await runIframe(url, this.domainUrl, timeout);
 
-    if (stateIn !== codeResult.state) {
-      throw new Error('Invalid state');
-    }
+    // if (stateIn !== codeResult.state) {
+    //   throw new Error('Invalid state');
+    // }
+    if (!codeResult) throw 'Error';
 
     const {
       scope,
