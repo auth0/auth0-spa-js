@@ -583,22 +583,36 @@ export default class Auth0Client {
       scope: getUniqueScopes(this.defaultScope, this.scope, options.scope)
     };
 
+    const getAccessTokenFromCache = () => {
+      const cache = this.cache.get(
+        {
+          scope: getTokenOptions.scope,
+          audience: getTokenOptions.audience || 'default',
+          client_id: this.options.client_id
+        },
+        60 // get a new token if within 60 seconds of expiring
+      );
+
+      return cache && cache.access_token;
+    };
+
+    // Check the cache before acquiring the lock to avoid the latency of
+    // `lock.acquireLock` when the cache is populated.
+    if (!ignoreCache) {
+      let accessToken = getAccessTokenFromCache();
+      if (accessToken) {
+        return accessToken;
+      }
+    }
+
     try {
       await lock.acquireLock(GET_TOKEN_SILENTLY_LOCK_KEY, 5000);
-
+      // Check the cache a second time, because it may have been populated
+      // by a previous call while this call was waiting to acquire the lock.
       if (!ignoreCache) {
-        const cache = this.cache.get(
-          {
-            scope: getTokenOptions.scope,
-            audience: getTokenOptions.audience || 'default',
-            client_id: this.options.client_id
-          },
-          60 // get a new token if within 60 seconds of expiring
-        );
-
-        if (cache && cache.access_token) {
-          await lock.releaseLock(GET_TOKEN_SILENTLY_LOCK_KEY);
-          return cache.access_token;
+        let accessToken = getAccessTokenFromCache();
+        if (accessToken) {
+          return accessToken;
         }
       }
 
