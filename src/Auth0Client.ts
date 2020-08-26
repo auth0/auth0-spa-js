@@ -382,7 +382,7 @@ export default class Auth0Client {
    */
   public async getUser(options: GetUserOptions = {}) {
     const audience = options.audience || this.options.audience || 'default';
-    const scope = getUniqueScopes(this.defaultScope, options.scope);
+    const scope = getUniqueScopes(this.defaultScope, this.scope, options.scope);
 
     const cache = this.cache.get({
       client_id: this.options.client_id,

@@ -196,17 +196,17 @@ describe('Auth0Client', () => {
   });
 
   it('should log the user in and get the user', async () => {
-    const auth0 = setup();
+    const auth0 = setup({ scope: 'foo' });
     await login(auth0);
     expect(await auth0.getUser()).toBeTruthy();
     expect(await auth0.getUser({})).toBeTruthy();
     expect(await auth0.getUser({ audience: 'default' })).toBeTruthy();
-    expect(await auth0.getUser({ scope: 'openid' })).toBeTruthy();
+    expect(await auth0.getUser({ scope: 'foo' })).toBeTruthy();
     expect(await auth0.getUser({ audience: 'invalid' })).toBeUndefined();
     expect(await auth0.getIdTokenClaims()).toBeTruthy();
     expect(await auth0.getIdTokenClaims({})).toBeTruthy();
     expect(await auth0.getIdTokenClaims({ audience: 'default' })).toBeTruthy();
-    expect(await auth0.getIdTokenClaims({ scope: 'openid' })).toBeTruthy();
+    expect(await auth0.getIdTokenClaims({ scope: 'foo' })).toBeTruthy();
     expect(
       await auth0.getIdTokenClaims({ audience: 'invalid' })
     ).toBeUndefined();
