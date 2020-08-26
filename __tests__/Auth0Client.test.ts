@@ -8,13 +8,13 @@ import * as utils from '../src/utils';
 import { Auth0ClientOptions, IdToken } from '../src';
 import * as scope from '../src/scope';
 import { expectToHaveBeenCalledWithAuth0ClientParam } from './helpers';
+// @ts-ignore
+import { acquireLockSpy } from 'browser-tabs-lock';
 
 jest.mock('unfetch');
 jest.mock('es-cookie');
 jest.mock('../src/jwt');
 jest.mock('../src/token.worker');
-
-jest.unmock('browser-tabs-lock');
 
 const mockWindow = <any>global;
 const mockFetch = (mockWindow.fetch = <jest.Mock>unfetch);
@@ -682,6 +682,31 @@ describe('Auth0Client', () => {
     });
     expect(access_token).toEqual('my_access_token');
     expect(utils.runIframe).not.toHaveBeenCalled();
+  });
+
+  it('should not acquire a browser lock when cache is populated', async () => {
+    const auth0 = setup();
+    await login(auth0);
+    jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
+      access_token: 'my_access_token',
+      state: 'MTIz'
+    });
+    mockFetch.mockResolvedValue(
+      fetchResponse(true, {
+        id_token: 'my_id_token',
+        refresh_token: 'my_refresh_token',
+        access_token: 'my_access_token',
+        expires_in: 86400
+      })
+    );
+    let access_token = await auth0.getTokenSilently({ audience: 'foo' });
+    expect(access_token).toEqual('my_access_token');
+    expect(acquireLockSpy).toHaveBeenCalled();
+    acquireLockSpy.mockClear();
+    // This request will hit the cache, so should not acquire the lock
+    access_token = await auth0.getTokenSilently({ audience: 'foo' });
+    expect(access_token).toEqual('my_access_token');
+    expect(acquireLockSpy).not.toHaveBeenCalled();
   });
 
   it('sends custom options through to the token endpoint when using an iframe', async () => {

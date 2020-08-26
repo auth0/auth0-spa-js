@@ -1,12 +1,13 @@
-jest.mock('browser-tabs-lock');
+import { expectToHaveBeenCalledWithAuth0ClientParam } from './helpers';
+import { CacheLocation, Auth0ClientOptions } from '../src/global';
+import * as scope from '../src/scope';
+// @ts-ignore
+import { acquireLockSpy, releaseLockSpy } from 'browser-tabs-lock';
+
 jest.mock('../src/jwt');
 jest.mock('../src/storage');
 jest.mock('../src/transaction-manager');
 jest.mock('../src/utils');
-
-import { expectToHaveBeenCalledWithAuth0ClientParam } from './helpers';
-import { CacheLocation, Auth0ClientOptions } from '../src/global';
-import * as scope from '../src/scope';
 
 import createAuth0Client, {
   Auth0Client,
@@ -64,12 +65,6 @@ const webWorkerMatcher = expect.objectContaining({
 });
 
 const setup = async (clientOptions: Partial<Auth0ClientOptions> = {}) => {
-  const auth0 = await createAuth0Client({
-    domain: TEST_DOMAIN,
-    client_id: TEST_CLIENT_ID,
-    ...clientOptions
-  });
-
   const getDefaultInstance = m => require(m).default.mock.instances[0];
 
   const storage = {
@@ -78,11 +73,9 @@ const setup = async (clientOptions: Partial<Auth0ClientOptions> = {}) => {
     remove: require('../src/storage').remove
   };
 
-  const lock = require('browser-tabs-lock');
   const cache = mockEnclosedCache;
 
   const tokenVerifier = require('../src/jwt').verify;
-  const transactionManager = getDefaultInstance('../src/transaction-manager');
   const utils = require('../src/utils');
 
   utils.createQueryParams.mockReturnValue(TEST_QUERY_PARAMS);
@@ -126,6 +119,13 @@ const setup = async (clientOptions: Partial<Auth0ClientOptions> = {}) => {
     close: jest.fn()
   };
 
+  const auth0 = await createAuth0Client({
+    domain: TEST_DOMAIN,
+    client_id: TEST_CLIENT_ID,
+    ...clientOptions
+  });
+  const transactionManager = getDefaultInstance('../src/transaction-manager');
+
   return {
     auth0,
     storage,
@@ -133,7 +133,6 @@ const setup = async (clientOptions: Partial<Auth0ClientOptions> = {}) => {
     tokenVerifier,
     transactionManager,
     utils,
-    lock,
     popup
   };
 };
@@ -155,7 +154,7 @@ describe('Auth0', () => {
   });
 
   afterEach(() => {
-    jest.resetAllMocks();
+    jest.clearAllMocks();
     getUniqueScopesSpy.mockRestore();
   });
 
@@ -216,6 +215,7 @@ describe('Auth0', () => {
         'access_denied'
       ];
       for (let error of recoverableErrors) {
+        utils.runIframe.mockClear();
         utils.runIframe.mockRejectedValue({ error });
         const auth0 = await createAuth0Client({
           domain: TEST_DOMAIN,
@@ -223,7 +223,6 @@ describe('Auth0', () => {
         });
         expect(auth0).toBeInstanceOf(Auth0Client);
         expect(utils.runIframe).toHaveBeenCalledTimes(1);
-        utils.runIframe.mockClear();
       }
     });
 
@@ -1527,7 +1526,8 @@ describe('Auth0', () => {
         });
 
         it('continues method execution when there is no cache available', async () => {
-          const { auth0, utils } = await setup();
+          const { auth0, utils, cache } = await setup();
+          cache.get.mockReturnValue(undefined);
 
           await auth0.getTokenSilently();
 
@@ -1718,18 +1718,20 @@ describe('Auth0', () => {
       };
 
       it('releases the lock when there is an error', async () => {
-        const { auth0, lock, utils } = await setup();
+        const { auth0, utils } = await setup();
 
-        utils.runIframe.mockReturnValue(Promise.reject(new Error('Failed')));
+        utils.runIframe.mockImplementation(() =>
+          Promise.reject(new Error('Failed'))
+        );
 
         await expect(auth0.getTokenSilently()).rejects.toThrowError('Failed');
 
-        expect(lock.acquireLockMock).toHaveBeenCalledWith(
+        expect(acquireLockSpy).toHaveBeenCalledWith(
           GET_TOKEN_SILENTLY_LOCK_KEY,
           5000
         );
 
-        expect(lock.releaseLockMock).toHaveBeenCalledWith(
+        expect(releaseLockSpy).toHaveBeenCalledWith(
           GET_TOKEN_SILENTLY_LOCK_KEY
         );
       });
@@ -1892,7 +1894,7 @@ describe('Auth0', () => {
       });
 
       it('throws error if state from popup response is different from the provided state', async () => {
-        const { auth0, utils, lock } = await setup();
+        const { auth0, utils } = await setup();
 
         utils.runIframe.mockReturnValue(
           Promise.resolve({
@@ -1904,7 +1906,7 @@ describe('Auth0', () => {
           auth0.getTokenSilently(defaultOptionsIgnoreCacheTrue)
         ).rejects.toThrowError('Invalid state');
 
-        expect(lock.releaseLockMock).toHaveBeenCalledWith(
+        expect(releaseLockSpy).toHaveBeenCalledWith(
           GET_TOKEN_SILENTLY_LOCK_KEY
         );
       });
@@ -1969,15 +1971,15 @@ describe('Auth0', () => {
         );
       });
       it('acquires and releases lock', async () => {
-        const { auth0, lock } = await setup();
+        const { auth0 } = await setup();
 
         await auth0.getTokenSilently(defaultOptionsIgnoreCacheTrue);
 
-        expect(lock.acquireLockMock).toHaveBeenCalledWith(
+        expect(acquireLockSpy).toHaveBeenCalledWith(
           GET_TOKEN_SILENTLY_LOCK_KEY,
           5000
         );
-        expect(lock.releaseLockMock).toHaveBeenCalledWith(
+        expect(releaseLockSpy).toHaveBeenCalledWith(
           GET_TOKEN_SILENTLY_LOCK_KEY
         );
       });
@@ -2179,17 +2181,18 @@ describe('Auth0', () => {
 });
 
 describe('default creation function', () => {
-  it('does nothing if there is nothing storage', async () => {
-    Auth0Client.prototype.getTokenSilently = jest.fn();
+  it('does nothing if there is nothing in storage', async () => {
+    jest.spyOn(Auth0Client.prototype, 'getTokenSilently');
+    const getSpy = jest
+      .spyOn(require('../src/storage'), 'get')
+      .mockReturnValueOnce(false);
 
     const auth0 = await createAuth0Client({
       domain: TEST_DOMAIN,
       client_id: TEST_CLIENT_ID
     });
 
-    expect(require('../src/storage').get).toHaveBeenCalledWith(
-      'auth0.is.authenticated'
-    );
+    expect(getSpy).toHaveBeenCalledWith('auth0.is.authenticated');
 
     expect(auth0.getTokenSilently).not.toHaveBeenCalled();
   });
