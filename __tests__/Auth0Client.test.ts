@@ -202,6 +202,22 @@ describe('Auth0Client', () => {
     );
   });
 
+  it('should not attempt to log the user in with Object prototype properties as state', async () => {
+    window.history.pushState({}, '', `/?code=foo&state=constructor`);
+    const auth0 = await setup();
+    mockFetch.mockResolvedValueOnce(
+      fetchResponse(true, {
+        id_token: 'my_id_token',
+        refresh_token: 'my_refresh_token',
+        access_token: 'my_access_token',
+        expires_in: 86400
+      })
+    );
+    await expect(auth0.handleRedirectCallback()).rejects.toThrow(
+      'Invalid state'
+    );
+  });
+
   it('uses the cache when expires_in > constant leeway', async () => {
     const auth0 = setup();
     await login(auth0, true, { expires_in: 70 });
