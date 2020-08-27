@@ -62,7 +62,10 @@ const setup = (
         exp: Date.now() / 1000 + 86400
       },
       claims
-    )
+    ),
+    user: {
+      sub: 'me'
+    }
   });
 
   return auth0;
@@ -190,6 +193,23 @@ describe('Auth0Client', () => {
       grant_type: 'authorization_code',
       code: 'my_code'
     });
+  });
+
+  it('should log the user in and get the user', async () => {
+    const auth0 = setup({ scope: 'foo' });
+    await login(auth0);
+    expect(await auth0.getUser()).toBeTruthy();
+    expect(await auth0.getUser({})).toBeTruthy();
+    expect(await auth0.getUser({ audience: 'default' })).toBeTruthy();
+    expect(await auth0.getUser({ scope: 'foo' })).toBeTruthy();
+    expect(await auth0.getUser({ audience: 'invalid' })).toBeUndefined();
+    expect(await auth0.getIdTokenClaims()).toBeTruthy();
+    expect(await auth0.getIdTokenClaims({})).toBeTruthy();
+    expect(await auth0.getIdTokenClaims({ audience: 'default' })).toBeTruthy();
+    expect(await auth0.getIdTokenClaims({ scope: 'foo' })).toBeTruthy();
+    expect(
+      await auth0.getIdTokenClaims({ audience: 'invalid' })
+    ).toBeUndefined();
   });
 
   it('should log the user in with custom auth0Client', async () => {

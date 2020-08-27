@@ -201,22 +201,22 @@ export interface GetUserOptions {
   /**
    * The scope that was used in the authentication request
    */
-  scope: string;
+  scope?: string;
   /**
    * The audience that was used in the authentication request
    */
-  audience: string;
+  audience?: string;
 }
 
 export interface GetIdTokenClaimsOptions {
   /**
    * The scope that was used in the authentication request
    */
-  scope: string;
+  scope?: string;
   /**
    * The audience that was used in the authentication request
    */
-  audience: string;
+  audience?: string;
 }
 
 /*
