@@ -745,9 +745,10 @@ export default class Auth0Client {
       options.timeoutInSeconds || this.options.authorizeTimeoutInSeconds;
     const codeResult = await runIframe(url, this.domainUrl, timeout);
 
-    // if (stateIn !== codeResult.state) {
-    //   throw new Error('Invalid state');
-    // }
+    if (stateIn !== codeResult.state) {
+      throw new Error('Invalid state');
+    }
+
     if (!codeResult) throw 'Error';
 
     const {

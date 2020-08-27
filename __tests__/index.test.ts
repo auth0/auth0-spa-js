@@ -64,13 +64,6 @@ const mockEnclosedCache = {
   clear: jest.fn()
 };
 
-const mockStorage = {
-  get: jest.fn(),
-  save: jest.fn(),
-  clear: jest.fn(),
-  remove: jest.fn()
-};
-
 jest.mock('../src/cache', () => ({
   InMemoryCache: () => ({
     enclosedCache: mockEnclosedCache
@@ -84,27 +77,9 @@ const webWorkerMatcher = expect.objectContaining({
   postMessage: expect.any(Function)
 });
 
-const transaction = {
-  nonce: 'nonceIn',
-  code_verifier: 'code_verifierIn',
-  appState: 'appStateIn',
-  scope: 'scopeIn',
-  audience: ' audienceIn',
-  redirect_uri: 'http://localhost'
-};
-
 const setup = async (clientOptions: Partial<Auth0ClientOptions> = {}) => {
   const getDefaultInstance = m => require(m).default.mock.instances[0];
-
-  const storage = {
-    get: require('../src/storage').get,
-    save: require('../src/storage').save,
-    remove: require('../src/storage').remove
-  };
-
-  const lock = require('browser-tabs-lock');
   const cache = mockEnclosedCache;
-
   const tokenVerifier = require('../src/jwt').verify;
   const utils = require('../src/utils');
 
