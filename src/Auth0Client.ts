@@ -446,7 +446,8 @@ export default class Auth0Client {
 
     const transaction = this.transactionManager.get();
 
-    if (!transaction) {
+    // Transaction should have a `code_verifier` to do PKCE and a `nonce` for CSRF protection
+    if (!transaction || !transaction.code_verifier || !transaction.nonce) {
       throw new Error('Invalid state');
     }
 
