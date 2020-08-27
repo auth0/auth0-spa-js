@@ -973,7 +973,11 @@ describe('Auth0', () => {
           key: 'property'
         };
 
-        transactionManager.get.mockReturnValue({ appState });
+        transactionManager.get.mockReturnValue({
+          appState,
+          nonce: 'foo',
+          code_verifier: 'bar'
+        });
 
         const queryResult = {
           error: 'unauthorized',
