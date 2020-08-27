@@ -11,7 +11,6 @@ export type ClientStorage = {
   get<T extends Object>(key: string): T;
   save(key: string, value: any, options?: ClientStorageOptions): void;
   remove(key: string): void;
-  getAllKeys(): string[];
 };
 
 /**
@@ -40,10 +39,6 @@ export const CookieStorage = {
 
   remove(key: string) {
     Cookies.remove(key);
-  },
-
-  getAllKeys() {
-    return Object.keys(Cookies.getAll() || {});
   }
 } as ClientStorage;
 
@@ -65,9 +60,5 @@ export const SessionStorage = {
 
   remove(key: string) {
     sessionStorage.removeItem(key);
-  },
-
-  getAllKeys() {
-    return Object.keys(sessionStorage);
   }
 } as ClientStorage;
