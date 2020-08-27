@@ -2064,6 +2064,32 @@ describe('Auth0', () => {
       const token = await auth0.getTokenWithPopup();
       expect(token).toBe(TEST_ACCESS_TOKEN);
     });
+
+    it('accepts empty options and config', async () => {
+      const { auth0 } = await localSetup({ audience: 'foo' });
+
+      await auth0.getTokenWithPopup();
+      expect(auth0.loginWithPopup).toHaveBeenCalledWith(
+        {
+          audience: 'foo',
+          scope: 'openid profile email'
+        },
+        { timeoutInSeconds: 60 }
+      );
+    });
+
+    it('accepts partial options and config', async () => {
+      const { auth0 } = await localSetup({ audience: 'foo' });
+
+      await auth0.getTokenWithPopup({ scope: 'bar' }, { popup: 'baz' });
+      expect(auth0.loginWithPopup).toHaveBeenCalledWith(
+        {
+          audience: 'foo',
+          scope: 'openid profile email bar'
+        },
+        { timeoutInSeconds: 60, popup: 'baz' }
+      );
+    });
   });
 
   describe('logout()', () => {

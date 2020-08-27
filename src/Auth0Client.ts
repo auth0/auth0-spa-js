@@ -303,6 +303,7 @@ export default class Auth0Client {
    * otherwise the popup will be blocked in most browsers.
    *
    * @param options
+   * @param config
    */
   public async loginWithPopup(
     options: PopupLoginOptions = {},
@@ -379,17 +380,14 @@ export default class Auth0Client {
    *
    * @param options
    */
-  public async getUser(
-    options: GetUserOptions = {
-      audience: this.options.audience || 'default',
-      scope: this.scope || this.defaultScope
-    }
-  ) {
-    options.scope = getUniqueScopes(this.defaultScope, options.scope);
+  public async getUser(options: GetUserOptions = {}) {
+    const audience = options.audience || this.options.audience || 'default';
+    const scope = getUniqueScopes(this.defaultScope, this.scope, options.scope);
 
     const cache = this.cache.get({
       client_id: this.options.client_id,
-      ...options
+      audience,
+      scope
     });
 
     return cache && cache.decodedToken && cache.decodedToken.user;
@@ -404,21 +402,14 @@ export default class Auth0Client {
    *
    * @param options
    */
-  public async getIdTokenClaims(
-    options: GetIdTokenClaimsOptions = {
-      audience: this.options.audience || 'default',
-      scope: this.scope || this.defaultScope
-    }
-  ) {
-    options.scope = getUniqueScopes(
-      this.defaultScope,
-      this.scope,
-      options.scope
-    );
+  public async getIdTokenClaims(options: GetIdTokenClaimsOptions = {}) {
+    const audience = options.audience || this.options.audience || 'default';
+    const scope = getUniqueScopes(this.defaultScope, this.scope, options.scope);
 
     const cache = this.cache.get({
       client_id: this.options.client_id,
-      ...options
+      audience,
+      scope
     });
 
     return cache && cache.decodedToken && cache.decodedToken.claims;
@@ -643,19 +634,22 @@ export default class Auth0Client {
    * results will be valid according to their expiration times.
    *
    * @param options
+   * @param config
    */
   public async getTokenWithPopup(
-    options: GetTokenWithPopupOptions = {
-      audience: this.options.audience,
-      scope: this.scope || this.defaultScope
-    },
-    config: PopupConfigOptions = DEFAULT_POPUP_CONFIG_OPTIONS
+    options: GetTokenWithPopupOptions = {},
+    config: PopupConfigOptions = {}
   ) {
+    options.audience = options.audience || this.options.audience;
     options.scope = getUniqueScopes(
       this.defaultScope,
       this.scope,
       options.scope
     );
+    config = {
+      ...DEFAULT_POPUP_CONFIG_OPTIONS,
+      ...config
+    };
 
     await this.loginWithPopup(options, config);
 
