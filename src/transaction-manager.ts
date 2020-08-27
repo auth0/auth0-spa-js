@@ -1,4 +1,4 @@
-import { SessionStorage, ClientStorage } from './storage';
+import { ClientStorage } from './storage';
 
 const TRANSACTION_STORAGE_KEY = 'a0.spajs.txs';
 
