@@ -4,4 +4,4 @@ module.exports.shouldBe = (expected, actual) => expect(actual).to.eq(expected);
 module.exports.shouldNotBe = (expected, actual) =>
   expect(actual).to.not.eq(expected);
 module.exports.whenReady = () =>
-  cy.get('#loaded', { timeout: 5000 }).then(() => cy.window());
+  cy.get('#loaded', { timeout: 10000 }).then(() => cy.window());

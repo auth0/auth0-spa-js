@@ -73,8 +73,6 @@ describe('getTokenSilently', function () {
 
   describe('when using refresh tokens', () => {
     it('retrieves an access token using a refresh token', () => {
-      cy.server();
-
       return whenReady().then(win => {
         cy.toggleSwitch('local-storage');
         cy.toggleSwitch('use-cache');
@@ -94,7 +92,6 @@ describe('getTokenSilently', function () {
             .should('have.length', 2);
 
           cy.wait('@tokenApiCheck').then(xhr => {
-            console.log(xhr);
             assert.equal(
               xhr.request.body.grant_type,
               'refresh_token',
@@ -106,8 +103,6 @@ describe('getTokenSilently', function () {
     });
 
     it('retrieves an access token for another audience using a refresh token', () => {
-      cy.server();
-
       return whenReady().then(win => {
         cy.toggleSwitch('local-storage');
         cy.toggleSwitch('use-cache');
