@@ -337,6 +337,10 @@ export default class Auth0Client {
         DEFAULT_AUTHORIZE_TIMEOUT_IN_SECONDS
     });
 
+    if (stateIn !== codeResult.state) {
+      throw new Error('Invalid state');
+    }
+
     const authResult = await oauthToken(
       {
         audience: params.audience,
