@@ -4,7 +4,6 @@ import * as scope from '../src/scope';
 // @ts-ignore
 import { acquireLockSpy, releaseLockSpy } from 'browser-tabs-lock';
 
-jest.mock('browser-tabs-lock');
 jest.mock('../src/jwt');
 jest.mock('../src/storage', () => ({
   SessionStorage: {
