@@ -51,6 +51,7 @@ Cypress.Commands.add('loginNoCallback', () => {
 });
 
 Cypress.Commands.add('resetTests', () => {
+  cy.server();
   cy.visit('http://localhost:3000');
   cy.get('#reset-config').click();
   cy.get('#logout').click();

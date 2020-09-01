@@ -61,15 +61,12 @@
           </div>
         </div>
 
-        <div
-          v-for="({ audience, scope, access_tokens }, i) in audienceScopes"
-          :set="sfx = i && `-${i}` || ''"
-        >
+        <div v-for="current in scopesWithSuffix">
           <div class="card mb-3 bg-light">
             <div class="card-header">
-              <strong>{{audience || 'default'}}</strong>
+              <strong>{{current.audience || 'default'}}</strong>
               <span
-                v-for="s of scope.split(' ')"
+                v-for="s of current.scope.split(' ')"
                 class="badge badge-success ml-1"
                 >{{s}}</span
               >
@@ -78,25 +75,28 @@
               <div class="btn-group mb-0">
                 <button
                   class="btn btn-outline-info"
-                  @click="() => getToken(audience, scope, access_tokens)"
-                  :data-cy="`get-token${sfx}`"
+                  @click="getToken(current.audience, current.scope, current.access_tokens)"
+                  :data-cy="'get-token' + current.suffix"
                 >
                   Get access token
                 </button>
 
                 <button
                   class="btn btn-outline-info"
-                  @click="() => getTokenPopup(audience, scope, access_tokens)"
+                  @click="getTokenPopup(current.audience, current.scope, current.access_tokens)"
                 >
                   Get access token with a popup
                 </button>
               </div>
 
-              <div class="card mb-0 mt-3" v-if="access_tokens.length > 0">
+              <div
+                class="card mb-0 mt-3"
+                v-if="current.access_tokens.length > 0"
+              >
                 <div class="card-header">Access Tokens</div>
                 <div class="card-body">
-                  <ul v-for="token in access_tokens">
-                    <li :data-cy="`access-token${sfx}`">
+                  <ul v-for="token in current.access_tokens">
+                    <li :data-cy="'access-token' + current.suffix">
                       {{token | concat}} (<a
                         :href="'https://jwt.io?token=' + token"
                         target="_blank"
@@ -293,7 +293,7 @@
                 access_tokens: []
               },
               {
-                audience: `https://${data.domain || defaultDomain}/api/v2/`,
+                audience: 'https://' + data.domain + '/api/v2/',
                 scope: 'read:rules',
                 access_tokens: []
               }
@@ -319,6 +319,14 @@
           useConstructor: function () {
             this.initializeClient();
             this.saveForm();
+          }
+        },
+        computed: {
+          scopesWithSuffix: function () {
+            return this.audienceScopes.map(function (scope, index) {
+              scope.suffix = index > 0 ? '-' + index : '';
+              return scope;
+            });
           }
         },
         methods: {
@@ -443,8 +451,8 @@
 
             _self.auth0
               .getTokenSilently({
-                audience,
-                scope,
+                audience: audience,
+                scope: scope,
                 ignoreCache: !_self.useCache
               })
               .then(function (token) {
@@ -469,7 +477,7 @@
             var _self = this;
 
             _self.auth0
-              .getTokenWithPopup({ audience, scope })
+              .getTokenWithPopup({ audience: audience, scope: scope })
               .then(function (token) {
                 access_tokens.push(token);
               });
