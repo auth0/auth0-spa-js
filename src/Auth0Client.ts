@@ -18,7 +18,7 @@ import { InMemoryCache, ICache, LocalStorageCache } from './cache';
 import TransactionManager from './transaction-manager';
 import { verify as verifyIdToken } from './jwt';
 import { AuthenticationError } from './errors';
-import * as ClientStorage from './storage';
+import { CookieStorage, SessionStorage } from './storage';
 
 import {
   CACHE_LOCATION_MEMORY,
@@ -142,7 +142,7 @@ export default class Auth0Client {
 
     this.cache = cacheFactory(this.cacheLocation)();
     this.scope = this.options.scope;
-    this.transactionManager = new TransactionManager();
+    this.transactionManager = new TransactionManager(SessionStorage);
     this.domainUrl = `https://${this.options.domain}`;
     this.tokenIssuer = getTokenIssuer(this.options.issuer, this.domainUrl);
 
@@ -276,7 +276,7 @@ export default class Auth0Client {
 
     const url = this._authorizeUrl(params);
 
-    this.transactionManager.create(stateIn, {
+    this.transactionManager.create({
       nonce: nonceIn,
       code_verifier,
       appState,
@@ -303,6 +303,7 @@ export default class Auth0Client {
    * otherwise the popup will be blocked in most browsers.
    *
    * @param options
+   * @param config
    */
   public async loginWithPopup(
     options: PopupLoginOptions = {},
@@ -366,7 +367,7 @@ export default class Auth0Client {
 
     this.cache.save(cacheEntry);
 
-    ClientStorage.save('auth0.is.authenticated', true, { daysUntilExpire: 1 });
+    CookieStorage.save('auth0.is.authenticated', true, { daysUntilExpire: 1 });
   }
 
   /**
@@ -379,17 +380,14 @@ export default class Auth0Client {
    *
    * @param options
    */
-  public async getUser(
-    options: GetUserOptions = {
-      audience: this.options.audience || 'default',
-      scope: this.scope || this.defaultScope
-    }
-  ) {
-    options.scope = getUniqueScopes(this.defaultScope, options.scope);
+  public async getUser(options: GetUserOptions = {}) {
+    const audience = options.audience || this.options.audience || 'default';
+    const scope = getUniqueScopes(this.defaultScope, this.scope, options.scope);
 
     const cache = this.cache.get({
       client_id: this.options.client_id,
-      ...options
+      audience,
+      scope
     });
 
     return cache && cache.decodedToken && cache.decodedToken.user;
@@ -404,21 +402,14 @@ export default class Auth0Client {
    *
    * @param options
    */
-  public async getIdTokenClaims(
-    options: GetIdTokenClaimsOptions = {
-      audience: this.options.audience || 'default',
-      scope: this.scope || this.defaultScope
-    }
-  ) {
-    options.scope = getUniqueScopes(
-      this.defaultScope,
-      this.scope,
-      options.scope
-    );
+  public async getIdTokenClaims(options: GetIdTokenClaimsOptions = {}) {
+    const audience = options.audience || this.options.audience || 'default';
+    const scope = getUniqueScopes(this.defaultScope, this.scope, options.scope);
 
     const cache = this.cache.get({
       client_id: this.options.client_id,
-      ...options
+      audience,
+      scope
     });
 
     return cache && cache.decodedToken && cache.decodedToken.claims;
@@ -457,14 +448,15 @@ export default class Auth0Client {
       queryStringFragments.join('')
     );
 
-    const transaction = this.transactionManager.get(state);
+    const transaction = this.transactionManager.get();
 
-    if (!transaction) {
+    // Transaction should have a `code_verifier` to do PKCE and a `nonce` for CSRF protection
+    if (!transaction || !transaction.code_verifier || !transaction.nonce) {
       throw new Error('Invalid state');
     }
 
     if (error) {
-      this.transactionManager.remove(state);
+      this.transactionManager.remove();
 
       throw new AuthenticationError(
         error,
@@ -474,7 +466,7 @@ export default class Auth0Client {
       );
     }
 
-    this.transactionManager.remove(state);
+    this.transactionManager.remove();
 
     const tokenOptions = {
       audience: transaction.audience,
@@ -509,7 +501,7 @@ export default class Auth0Client {
 
     this.cache.save(cacheEntry);
 
-    ClientStorage.save('auth0.is.authenticated', true, { daysUntilExpire: 1 });
+    CookieStorage.save('auth0.is.authenticated', true, { daysUntilExpire: 1 });
 
     return {
       appState: transaction.appState
@@ -534,7 +526,7 @@ export default class Auth0Client {
   public async checkSession(options?: GetTokenSilentlyOptions) {
     if (
       this.cacheLocation === CACHE_LOCATION_MEMORY &&
-      !ClientStorage.get('auth0.is.authenticated')
+      !CookieStorage.get('auth0.is.authenticated')
     ) {
       return;
     }
@@ -582,22 +574,36 @@ export default class Auth0Client {
       scope: getUniqueScopes(this.defaultScope, this.scope, options.scope)
     };
 
+    const getAccessTokenFromCache = () => {
+      const cache = this.cache.get(
+        {
+          scope: getTokenOptions.scope,
+          audience: getTokenOptions.audience || 'default',
+          client_id: this.options.client_id
+        },
+        60 // get a new token if within 60 seconds of expiring
+      );
+
+      return cache && cache.access_token;
+    };
+
+    // Check the cache before acquiring the lock to avoid the latency of
+    // `lock.acquireLock` when the cache is populated.
+    if (!ignoreCache) {
+      let accessToken = getAccessTokenFromCache();
+      if (accessToken) {
+        return accessToken;
+      }
+    }
+
     try {
       await lock.acquireLock(GET_TOKEN_SILENTLY_LOCK_KEY, 5000);
-
+      // Check the cache a second time, because it may have been populated
+      // by a previous call while this call was waiting to acquire the lock.
       if (!ignoreCache) {
-        const cache = this.cache.get(
-          {
-            scope: getTokenOptions.scope,
-            audience: getTokenOptions.audience || 'default',
-            client_id: this.options.client_id
-          },
-          60 // get a new token if within 60 seconds of expiring
-        );
-
-        if (cache && cache.access_token) {
-          await lock.releaseLock(GET_TOKEN_SILENTLY_LOCK_KEY);
-          return cache.access_token;
+        let accessToken = getAccessTokenFromCache();
+        if (accessToken) {
+          return accessToken;
         }
       }
 
@@ -607,7 +613,7 @@ export default class Auth0Client {
 
       this.cache.save({ client_id: this.options.client_id, ...authResult });
 
-      ClientStorage.save('auth0.is.authenticated', true, {
+      CookieStorage.save('auth0.is.authenticated', true, {
         daysUntilExpire: 1
       });
 
@@ -629,19 +635,22 @@ export default class Auth0Client {
    * results will be valid according to their expiration times.
    *
    * @param options
+   * @param config
    */
   public async getTokenWithPopup(
-    options: GetTokenWithPopupOptions = {
-      audience: this.options.audience,
-      scope: this.scope || this.defaultScope
-    },
-    config: PopupConfigOptions = DEFAULT_POPUP_CONFIG_OPTIONS
+    options: GetTokenWithPopupOptions = {},
+    config: PopupConfigOptions = {}
   ) {
+    options.audience = options.audience || this.options.audience;
     options.scope = getUniqueScopes(
       this.defaultScope,
       this.scope,
       options.scope
     );
+    config = {
+      ...DEFAULT_POPUP_CONFIG_OPTIONS,
+      ...config
+    };
 
     await this.loginWithPopup(options, config);
 
@@ -699,7 +708,7 @@ export default class Auth0Client {
     }
 
     this.cache.clear();
-    ClientStorage.remove('auth0.is.authenticated');
+    CookieStorage.remove('auth0.is.authenticated');
 
     if (localOnly) {
       return;

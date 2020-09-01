@@ -1,12 +1,25 @@
-jest.mock('browser-tabs-lock');
-jest.mock('../src/jwt');
-jest.mock('../src/storage');
-jest.mock('../src/transaction-manager');
-jest.mock('../src/utils');
-
 import { expectToHaveBeenCalledWithAuth0ClientParam } from './helpers';
 import { CacheLocation, Auth0ClientOptions } from '../src/global';
 import * as scope from '../src/scope';
+// @ts-ignore
+import { acquireLockSpy, releaseLockSpy } from 'browser-tabs-lock';
+
+jest.mock('../src/jwt');
+jest.mock('../src/storage', () => ({
+  SessionStorage: {
+    get: jest.fn(),
+    save: jest.fn(),
+    remove: jest.fn()
+  },
+  CookieStorage: {
+    get: jest.fn(),
+    save: jest.fn(),
+    remove: jest.fn()
+  }
+}));
+
+jest.mock('../src/transaction-manager');
+jest.mock('../src/utils');
 
 import createAuth0Client, {
   Auth0Client,
@@ -64,25 +77,9 @@ const webWorkerMatcher = expect.objectContaining({
 });
 
 const setup = async (clientOptions: Partial<Auth0ClientOptions> = {}) => {
-  const auth0 = await createAuth0Client({
-    domain: TEST_DOMAIN,
-    client_id: TEST_CLIENT_ID,
-    ...clientOptions
-  });
-
   const getDefaultInstance = m => require(m).default.mock.instances[0];
-
-  const storage = {
-    get: require('../src/storage').get,
-    save: require('../src/storage').save,
-    remove: require('../src/storage').remove
-  };
-
-  const lock = require('browser-tabs-lock');
   const cache = mockEnclosedCache;
-
   const tokenVerifier = require('../src/jwt').verify;
-  const transactionManager = getDefaultInstance('../src/transaction-manager');
   const utils = require('../src/utils');
 
   utils.createQueryParams.mockReturnValue(TEST_QUERY_PARAMS);
@@ -126,14 +123,20 @@ const setup = async (clientOptions: Partial<Auth0ClientOptions> = {}) => {
     close: jest.fn()
   };
 
+  const auth0 = await createAuth0Client({
+    domain: TEST_DOMAIN,
+    client_id: TEST_CLIENT_ID,
+    ...clientOptions
+  });
+  const transactionManager = getDefaultInstance('../src/transaction-manager');
+
   return {
     auth0,
-    storage,
+    cookieStorage: require('../src/storage').CookieStorage,
     cache,
     tokenVerifier,
     transactionManager,
     utils,
-    lock,
     popup
   };
 };
@@ -155,7 +158,7 @@ describe('Auth0', () => {
   });
 
   afterEach(() => {
-    jest.resetAllMocks();
+    jest.clearAllMocks();
     getUniqueScopesSpy.mockRestore();
   });
 
@@ -186,7 +189,7 @@ describe('Auth0', () => {
     });
 
     it('should absorb "login_required" errors', async () => {
-      const { utils, storage } = await setup();
+      const { utils, cookieStorage } = await setup();
 
       utils.runIframe.mockImplementation(() => {
         throw {
@@ -195,7 +198,7 @@ describe('Auth0', () => {
         };
       });
 
-      storage.get.mockReturnValue(true);
+      cookieStorage.get.mockReturnValue(true);
 
       const auth0 = await createAuth0Client({
         domain: TEST_DOMAIN,
@@ -207,8 +210,8 @@ describe('Auth0', () => {
     });
 
     it('should absorb other recoverable errors', async () => {
-      const { utils, storage } = await setup();
-      storage.get.mockReturnValue(true);
+      const { utils, cookieStorage } = await setup();
+      cookieStorage.get.mockReturnValue(true);
       const recoverableErrors = [
         'consent_required',
         'interaction_required',
@@ -216,6 +219,7 @@ describe('Auth0', () => {
         'access_denied'
       ];
       for (let error of recoverableErrors) {
+        utils.runIframe.mockClear();
         utils.runIframe.mockRejectedValue({ error });
         const auth0 = await createAuth0Client({
           domain: TEST_DOMAIN,
@@ -223,12 +227,11 @@ describe('Auth0', () => {
         });
         expect(auth0).toBeInstanceOf(Auth0Client);
         expect(utils.runIframe).toHaveBeenCalledTimes(1);
-        utils.runIframe.mockClear();
       }
     });
 
     it('should throw for other errors that are not recoverable', async () => {
-      const { utils, storage } = await setup();
+      const { utils, cookieStorage } = await setup();
 
       utils.runIframe.mockImplementation(() => {
         throw {
@@ -237,7 +240,7 @@ describe('Auth0', () => {
         };
       });
 
-      storage.get.mockReturnValue(true);
+      cookieStorage.get.mockReturnValue(true);
 
       await expect(Promise.reject(new Error('foo'))).rejects.toThrow(Error);
 
@@ -432,6 +435,7 @@ describe('Auth0', () => {
         'Invalid state'
       );
     });
+
     it('calls oauth/token with correct params', async () => {
       const { auth0, utils } = await setup();
 
@@ -603,10 +607,10 @@ describe('Auth0', () => {
       });
     });
     it('saves `auth0.is.authenticated` key in storage', async () => {
-      const { auth0, storage } = await setup();
+      const { auth0, cookieStorage } = await setup();
 
       await auth0.loginWithPopup({});
-      expect(storage.save).toHaveBeenCalledWith(
+      expect(cookieStorage.save).toHaveBeenCalledWith(
         'auth0.is.authenticated',
         true,
         { daysUntilExpire: 1 }
@@ -793,17 +797,15 @@ describe('Auth0', () => {
       const { auth0, transactionManager } = await setup();
 
       await auth0.buildAuthorizeUrl(REDIRECT_OPTIONS);
-      expect(transactionManager.create).toHaveBeenCalledWith(
-        TEST_ENCODED_STATE,
-        {
-          appState: TEST_APP_STATE,
-          audience: 'default',
-          code_verifier: TEST_RANDOM_STRING,
-          nonce: TEST_ENCODED_STATE,
-          scope: TEST_SCOPES,
-          redirect_uri: 'https://redirect.uri'
-        }
-      );
+
+      expect(transactionManager.create).toHaveBeenCalledWith({
+        appState: TEST_APP_STATE,
+        audience: 'default',
+        code_verifier: TEST_RANDOM_STRING,
+        nonce: TEST_ENCODED_STATE,
+        scope: TEST_SCOPES,
+        redirect_uri: 'https://redirect.uri'
+      });
     });
 
     it('returns the url', async () => {
@@ -920,7 +922,7 @@ describe('Auth0', () => {
 
         await auth0.handleRedirectCallback();
 
-        expect(transactionManager.get).toHaveBeenCalledWith(queryState);
+        expect(transactionManager.get).toHaveBeenCalled();
       });
       it('throws error with AuthenticationError', async () => {
         const { auth0, utils } = await localSetup();
@@ -974,7 +976,11 @@ describe('Auth0', () => {
           key: 'property'
         };
 
-        transactionManager.get.mockReturnValue({ appState });
+        transactionManager.get.mockReturnValue({
+          appState,
+          nonce: 'foo',
+          code_verifier: 'bar'
+        });
 
         const queryResult = {
           error: 'unauthorized',
@@ -1011,9 +1017,7 @@ describe('Auth0', () => {
         try {
           await auth0.handleRedirectCallback();
         } catch (e) {
-          expect(transactionManager.remove).toHaveBeenCalledWith(
-            queryResult.state
-          );
+          expect(transactionManager.remove).toHaveBeenCalledWith();
         }
       });
       it('uses `state` from parsed query to remove the transaction', async () => {
@@ -1023,7 +1027,7 @@ describe('Auth0', () => {
 
         await auth0.handleRedirectCallback();
 
-        expect(transactionManager.remove).toHaveBeenCalledWith(queryState);
+        expect(transactionManager.remove).toHaveBeenCalled();
       });
       it('calls oauth/token with correct params', async () => {
         const { auth0, utils } = await localSetup();
@@ -1103,19 +1107,20 @@ describe('Auth0', () => {
         });
       });
       it('saves `auth0.is.authenticated` key in storage', async () => {
-        const { auth0, storage } = await localSetup();
+        const { auth0, cookieStorage } = await localSetup();
 
         await auth0.handleRedirectCallback();
 
-        expect(storage.save).toHaveBeenCalledWith(
+        expect(cookieStorage.save).toHaveBeenCalledWith(
           'auth0.is.authenticated',
           true,
-          { daysUntilExpire: 1 }
+          {
+            daysUntilExpire: 1
+          }
         );
       });
       it('returns the transactions appState', async () => {
         const { auth0 } = await localSetup();
-
         const response = await auth0.handleRedirectCallback();
 
         expect(response).toEqual({
@@ -1164,7 +1169,7 @@ describe('Auth0', () => {
 
         await auth0.handleRedirectCallback();
 
-        expect(transactionManager.get).toHaveBeenCalledWith(queryState);
+        expect(transactionManager.get).toHaveBeenCalled();
       });
       it('throws error with AuthenticationError', async () => {
         const { auth0, utils } = await localSetup();
@@ -1217,9 +1222,7 @@ describe('Auth0', () => {
         try {
           await auth0.handleRedirectCallback();
         } catch (e) {
-          expect(transactionManager.remove).toHaveBeenCalledWith(
-            queryResult.state
-          );
+          expect(transactionManager.remove).toHaveBeenCalledWith();
         }
       });
       it('throws error when there is no transaction', async () => {
@@ -1237,7 +1240,7 @@ describe('Auth0', () => {
 
         await auth0.handleRedirectCallback();
 
-        expect(transactionManager.remove).toHaveBeenCalledWith(queryState);
+        expect(transactionManager.remove).toHaveBeenCalled();
       });
       it('calls oauth/token with correct params', async () => {
         const { auth0, utils } = await localSetup();
@@ -1289,14 +1292,16 @@ describe('Auth0', () => {
         });
       });
       it('saves `auth0.is.authenticated` key in storage', async () => {
-        const { auth0, storage } = await localSetup();
+        const { auth0, cookieStorage } = await localSetup();
 
         await auth0.handleRedirectCallback();
 
-        expect(storage.save).toHaveBeenCalledWith(
+        expect(cookieStorage.save).toHaveBeenCalledWith(
           'auth0.is.authenticated',
           true,
-          { daysUntilExpire: 1 }
+          {
+            daysUntilExpire: 1
+          }
         );
       });
       it('returns the transactions appState', async () => {
@@ -1527,7 +1532,8 @@ describe('Auth0', () => {
         });
 
         it('continues method execution when there is no cache available', async () => {
-          const { auth0, utils } = await setup();
+          const { auth0, utils, cache } = await setup();
+          cache.get.mockReturnValue(undefined);
 
           await auth0.getTokenSilently();
 
@@ -1718,18 +1724,20 @@ describe('Auth0', () => {
       };
 
       it('releases the lock when there is an error', async () => {
-        const { auth0, lock, utils } = await setup();
+        const { auth0, utils } = await setup();
 
-        utils.runIframe.mockReturnValue(Promise.reject(new Error('Failed')));
+        utils.runIframe.mockImplementation(() =>
+          Promise.reject(new Error('Failed'))
+        );
 
         await expect(auth0.getTokenSilently()).rejects.toThrowError('Failed');
 
-        expect(lock.acquireLockMock).toHaveBeenCalledWith(
+        expect(acquireLockSpy).toHaveBeenCalledWith(
           GET_TOKEN_SILENTLY_LOCK_KEY,
           5000
         );
 
-        expect(lock.releaseLockMock).toHaveBeenCalledWith(
+        expect(releaseLockSpy).toHaveBeenCalledWith(
           GET_TOKEN_SILENTLY_LOCK_KEY
         );
       });
@@ -1892,7 +1900,7 @@ describe('Auth0', () => {
       });
 
       it('throws error if state from popup response is different from the provided state', async () => {
-        const { auth0, utils, lock } = await setup();
+        const { auth0, utils } = await setup();
 
         utils.runIframe.mockReturnValue(
           Promise.resolve({
@@ -1904,7 +1912,7 @@ describe('Auth0', () => {
           auth0.getTokenSilently(defaultOptionsIgnoreCacheTrue)
         ).rejects.toThrowError('Invalid state');
 
-        expect(lock.releaseLockMock).toHaveBeenCalledWith(
+        expect(releaseLockSpy).toHaveBeenCalledWith(
           GET_TOKEN_SILENTLY_LOCK_KEY
         );
       });
@@ -1959,25 +1967,27 @@ describe('Auth0', () => {
         });
       });
       it('saves `auth0.is.authenticated` key in storage', async () => {
-        const { auth0, storage } = await setup();
+        const { auth0, cookieStorage } = await setup();
 
         await auth0.getTokenSilently(defaultOptionsIgnoreCacheTrue);
-        expect(storage.save).toHaveBeenCalledWith(
+        expect(cookieStorage.save).toHaveBeenCalledWith(
           'auth0.is.authenticated',
           true,
-          { daysUntilExpire: 1 }
+          {
+            daysUntilExpire: 1
+          }
         );
       });
       it('acquires and releases lock', async () => {
-        const { auth0, lock } = await setup();
+        const { auth0 } = await setup();
 
         await auth0.getTokenSilently(defaultOptionsIgnoreCacheTrue);
 
-        expect(lock.acquireLockMock).toHaveBeenCalledWith(
+        expect(acquireLockSpy).toHaveBeenCalledWith(
           GET_TOKEN_SILENTLY_LOCK_KEY,
           5000
         );
-        expect(lock.releaseLockMock).toHaveBeenCalledWith(
+        expect(releaseLockSpy).toHaveBeenCalledWith(
           GET_TOKEN_SILENTLY_LOCK_KEY
         );
       });
@@ -2062,13 +2072,41 @@ describe('Auth0', () => {
       const token = await auth0.getTokenWithPopup();
       expect(token).toBe(TEST_ACCESS_TOKEN);
     });
+
+    it('accepts empty options and config', async () => {
+      const { auth0 } = await localSetup({ audience: 'foo' });
+
+      await auth0.getTokenWithPopup();
+      expect(auth0.loginWithPopup).toHaveBeenCalledWith(
+        {
+          audience: 'foo',
+          scope: 'openid profile email'
+        },
+        { timeoutInSeconds: 60 }
+      );
+    });
+
+    it('accepts partial options and config', async () => {
+      const { auth0 } = await localSetup({ audience: 'foo' });
+
+      await auth0.getTokenWithPopup({ scope: 'bar' }, { popup: 'baz' });
+      expect(auth0.loginWithPopup).toHaveBeenCalledWith(
+        {
+          audience: 'foo',
+          scope: 'openid profile email bar'
+        },
+        { timeoutInSeconds: 60, popup: 'baz' }
+      );
+    });
   });
 
   describe('logout()', () => {
     it('removes `auth0.is.authenticated` key from storage', async () => {
-      const { auth0, storage } = await setup();
+      const { auth0, cookieStorage } = await setup();
       auth0.logout();
-      expect(storage.remove).toHaveBeenCalledWith('auth0.is.authenticated');
+      expect(cookieStorage.remove).toHaveBeenCalledWith(
+        'auth0.is.authenticated'
+      );
     });
 
     it('creates correct query params with empty options', async () => {
@@ -2149,10 +2187,12 @@ describe('Auth0', () => {
     });
 
     it('removes `auth0.is.authenticated` key from storage when `options.localOnly` is true', async () => {
-      const { auth0, storage } = await setup();
+      const { auth0, cookieStorage } = await setup();
 
       auth0.logout({ localOnly: true });
-      expect(storage.remove).toHaveBeenCalledWith('auth0.is.authenticated');
+      expect(cookieStorage.remove).toHaveBeenCalledWith(
+        'auth0.is.authenticated'
+      );
     });
 
     it('skips `window.location.assign` when `options.localOnly` is true', async () => {
@@ -2179,17 +2219,18 @@ describe('Auth0', () => {
 });
 
 describe('default creation function', () => {
-  it('does nothing if there is nothing storage', async () => {
-    Auth0Client.prototype.getTokenSilently = jest.fn();
+  it('does nothing if there is nothing in storage', async () => {
+    jest.spyOn(Auth0Client.prototype, 'getTokenSilently');
+    const getSpy = jest
+      .spyOn(require('../src/storage').CookieStorage, 'get')
+      .mockReturnValueOnce(false);
 
     const auth0 = await createAuth0Client({
       domain: TEST_DOMAIN,
       client_id: TEST_CLIENT_ID
     });
 
-    expect(require('../src/storage').get).toHaveBeenCalledWith(
-      'auth0.is.authenticated'
-    );
+    expect(getSpy).toHaveBeenCalledWith('auth0.is.authenticated');
 
     expect(auth0.getTokenSilently).not.toHaveBeenCalled();
   });
@@ -2197,7 +2238,7 @@ describe('default creation function', () => {
   it('calls getTokenSilently if there is a storage item with key `auth0.is.authenticated`', async () => {
     Auth0Client.prototype.getTokenSilently = jest.fn();
 
-    require('../src/storage').get = () => true;
+    require('../src/storage').CookieStorage.get.mockReturnValue(true);
 
     const auth0 = await createAuth0Client({
       domain: TEST_DOMAIN,
