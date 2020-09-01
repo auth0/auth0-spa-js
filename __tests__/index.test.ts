@@ -423,6 +423,19 @@ describe('Auth0', () => {
       expectToHaveBeenCalledWithAuth0ClientParam(utils.runPopup, auth0Client);
     });
 
+    it('throws error if state from popup response is different from the provided state', async () => {
+      const { auth0, utils } = await setup();
+
+      utils.runPopup.mockReturnValue(
+        Promise.resolve({
+          state: 'other-state'
+        })
+      );
+      await expect(auth0.loginWithPopup({})).rejects.toThrowError(
+        'Invalid state'
+      );
+    });
+
     it('calls oauth/token with correct params', async () => {
       const { auth0, utils } = await setup();
 
@@ -1883,6 +1896,24 @@ describe('Auth0', () => {
           `https://test.auth0.com/authorize?${TEST_QUERY_PARAMS}${TEST_AUTH0_CLIENT_QUERY_STRING}`,
           'https://test.auth0.com',
           1
+        );
+      });
+
+      it('throws error if state from popup response is different from the provided state', async () => {
+        const { auth0, utils } = await setup();
+
+        utils.runIframe.mockReturnValue(
+          Promise.resolve({
+            state: 'other-state'
+          })
+        );
+
+        await expect(
+          auth0.getTokenSilently(defaultOptionsIgnoreCacheTrue)
+        ).rejects.toThrowError('Invalid state');
+
+        expect(releaseLockSpy).toHaveBeenCalledWith(
+          GET_TOKEN_SILENTLY_LOCK_KEY
         );
       });
 
