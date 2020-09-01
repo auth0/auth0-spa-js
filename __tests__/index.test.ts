@@ -1899,6 +1899,24 @@ describe('Auth0', () => {
         );
       });
 
+      it('throws error if state from popup response is different from the provided state', async () => {
+        const { auth0, utils } = await setup();
+
+        utils.runIframe.mockReturnValue(
+          Promise.resolve({
+            state: 'other-state'
+          })
+        );
+
+        await expect(
+          auth0.getTokenSilently(defaultOptionsIgnoreCacheTrue)
+        ).rejects.toThrowError('Invalid state');
+
+        expect(releaseLockSpy).toHaveBeenCalledWith(
+          GET_TOKEN_SILENTLY_LOCK_KEY
+        );
+      });
+
       it('calls oauth/token with correct params', async () => {
         const { auth0, utils } = await setup();
 
