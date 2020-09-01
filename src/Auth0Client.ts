@@ -753,8 +753,6 @@ export default class Auth0Client {
       throw new Error('Invalid state');
     }
 
-    if (!codeResult) throw 'Error';
-
     const {
       scope,
       audience,
