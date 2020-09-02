@@ -70,7 +70,7 @@
     "tslint-config-security": "^1.16.0",
     "typedoc": "^0.17.8",
     "typescript": "^3.9.7",
-    "wait-on": "^4.0.2"
+    "wait-on": "^5.2.0"
   },
   "dependencies": {
     "abortcontroller-polyfill": "^1.5.0",
