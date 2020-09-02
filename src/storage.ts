@@ -43,6 +43,44 @@ export const CookieStorage = {
 } as ClientStorage;
 
 /**
+ * @ignore
+ */
+const LEGACY_PREFIX = '_legacy_';
+
+/**
+ * Cookie storage that creates a cookie for modern and legacy browsers.
+ * See: https://web.dev/samesite-cookie-recipes/#handling-incompatible-clients
+ */
+export const CookieStorageWithLegacySameSite = {
+  get<T extends Object>(key: string) {
+    const value = CookieStorage.get(key);
+    if (value) {
+      return value;
+    }
+    return CookieStorage.get(`${LEGACY_PREFIX}${key}`);
+  },
+
+  save(key: string, value: any, options?: ClientStorageOptions): void {
+    let cookieAttributes: Cookies.CookieAttributes = {};
+    if ('https:' === window.location.protocol) {
+      cookieAttributes = { secure: true };
+    }
+    cookieAttributes.expires = options.daysUntilExpire;
+    Cookies.set(
+      `${LEGACY_PREFIX}${key}`,
+      JSON.stringify(value),
+      cookieAttributes
+    );
+    CookieStorage.save(key, value, options);
+  },
+
+  remove(key: string) {
+    CookieStorage.remove(key);
+    CookieStorage.remove(`${LEGACY_PREFIX}${key}`);
+  }
+} as ClientStorage;
+
+/**
  * A storage protocol for marshalling data to/from session storage
  */
 export const SessionStorage = {

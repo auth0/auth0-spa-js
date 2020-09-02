@@ -131,6 +131,16 @@ export interface Auth0ClientOptions extends BaseLoginOptions {
   auth0Client?: { name: string; version: string };
 
   /**
+   * Sets an additional cookie with no SameSite attribute to support legacy browsers
+   * that are not compatible with the latest SameSite changes.
+   * This will log a warning on modern browsers, you can disable the warning by setting
+   * this to false but be aware that some older useragents will not work,
+   * See https://www.chromium.org/updates/same-site/incompatible-clients
+   * Defaults to true
+   */
+  legacySameSiteCookie?: boolean;
+
+  /**
    * Changes to recommended defaults, like defaultScope
    */
   advancedOptions?: AdvancedOptions;

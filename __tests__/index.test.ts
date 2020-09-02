@@ -15,6 +15,11 @@ jest.mock('../src/storage', () => ({
     get: jest.fn(),
     save: jest.fn(),
     remove: jest.fn()
+  },
+  CookieStorageWithLegacySameSite: {
+    get: jest.fn(),
+    save: jest.fn(),
+    remove: jest.fn()
   }
 }));
 
@@ -132,7 +137,7 @@ const setup = async (clientOptions: Partial<Auth0ClientOptions> = {}) => {
 
   return {
     auth0,
-    cookieStorage: require('../src/storage').CookieStorage,
+    cookieStorage: require('../src/storage').CookieStorageWithLegacySameSite,
     cache,
     tokenVerifier,
     transactionManager,
@@ -2222,7 +2227,7 @@ describe('default creation function', () => {
   it('does nothing if there is nothing in storage', async () => {
     jest.spyOn(Auth0Client.prototype, 'getTokenSilently');
     const getSpy = jest
-      .spyOn(require('../src/storage').CookieStorage, 'get')
+      .spyOn(require('../src/storage').CookieStorageWithLegacySameSite, 'get')
       .mockReturnValueOnce(false);
 
     const auth0 = await createAuth0Client({
