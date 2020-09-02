@@ -5,7 +5,13 @@ export class GenericError extends Error {
     Object.setPrototypeOf(this, GenericError.prototype);
   }
 
-  static fromPayload({ error, error_description }) {
+  static fromPayload({
+    error,
+    error_description
+  }: {
+    error: string;
+    error_description: string;
+  }) {
     return new GenericError(error, error_description);
   }
 }
