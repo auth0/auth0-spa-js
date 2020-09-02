@@ -133,7 +133,7 @@ export default class Auth0Client {
   private tokenIssuer: string;
   private defaultScope: string;
   private scope: string;
-  private CookieStorage: ClientStorage;
+  private cookieStorage: ClientStorage;
 
   cacheLocation: CacheLocation;
   private worker: Worker;
@@ -141,7 +141,7 @@ export default class Auth0Client {
   constructor(private options: Auth0ClientOptions) {
     typeof window !== 'undefined' && validateCrypto();
     this.cacheLocation = options.cacheLocation || CACHE_LOCATION_MEMORY;
-    this.CookieStorage =
+    this.cookieStorage =
       options.legacySameSiteCookie === false
         ? CookieStorage
         : CookieStorageWithLegacySameSite;
@@ -377,7 +377,7 @@ export default class Auth0Client {
 
     this.cache.save(cacheEntry);
 
-    this.CookieStorage.save('auth0.is.authenticated', true, {
+    this.cookieStorage.save('auth0.is.authenticated', true, {
       daysUntilExpire: 1
     });
   }
@@ -513,7 +513,7 @@ export default class Auth0Client {
 
     this.cache.save(cacheEntry);
 
-    this.CookieStorage.save('auth0.is.authenticated', true, {
+    this.cookieStorage.save('auth0.is.authenticated', true, {
       daysUntilExpire: 1
     });
 
@@ -540,7 +540,7 @@ export default class Auth0Client {
   public async checkSession(options?: GetTokenSilentlyOptions) {
     if (
       this.cacheLocation === CACHE_LOCATION_MEMORY &&
-      !this.CookieStorage.get('auth0.is.authenticated')
+      !this.cookieStorage.get('auth0.is.authenticated')
     ) {
       return;
     }
@@ -627,7 +627,7 @@ export default class Auth0Client {
 
       this.cache.save({ client_id: this.options.client_id, ...authResult });
 
-      this.CookieStorage.save('auth0.is.authenticated', true, {
+      this.cookieStorage.save('auth0.is.authenticated', true, {
         daysUntilExpire: 1
       });
 
@@ -722,7 +722,7 @@ export default class Auth0Client {
     }
 
     this.cache.clear();
-    this.CookieStorage.remove('auth0.is.authenticated');
+    this.cookieStorage.remove('auth0.is.authenticated');
 
     if (localOnly) {
       return;
