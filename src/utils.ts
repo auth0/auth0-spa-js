@@ -22,18 +22,18 @@ export const parseQueryResult = (queryString: string) => {
     queryString = queryString.substr(0, queryString.indexOf('#'));
   }
 
-  let queryParams = queryString.split('&');
+  const queryParams = queryString.split('&');
 
-  let parsedQuery: any = {};
+  const parsedQuery: any = {};
   queryParams.forEach(qp => {
-    let [key, val] = qp.split('=');
+    const [key, val] = qp.split('=');
     parsedQuery[key] = decodeURIComponent(val);
   });
 
-  return <AuthenticationResult>{
+  return {
     ...parsedQuery,
     expires_in: parseInt(parsedQuery.expires_in)
-  };
+  } as AuthenticationResult;
 };
 
 export const runIframe = (
@@ -42,7 +42,7 @@ export const runIframe = (
   timeoutInSeconds: number = DEFAULT_AUTHORIZE_TIMEOUT_IN_SECONDS
 ) => {
   return new Promise<AuthenticationResult>((res, rej) => {
-    var iframe = window.document.createElement('iframe');
+    const iframe = window.document.createElement('iframe');
     iframe.setAttribute('width', '0');
     iframe.setAttribute('height', '0');
     iframe.style.display = 'none';
@@ -63,7 +63,7 @@ export const runIframe = (
       if (!e.data || e.data.type !== 'authorization_response') return;
       const eventSource = e.source;
       if (eventSource) {
-        (<any>eventSource).close();
+        (eventSource as any).close();
       }
       e.data.response.error
         ? rej(GenericError.fromPayload(e.data.response))
@@ -80,7 +80,7 @@ export const runIframe = (
   });
 };
 
-const openPopup = url => {
+const openPopup = (url: string) => {
   const width = 400;
   const height = 600;
   const left = window.screenX + (window.innerWidth - width) / 2;
@@ -124,6 +124,16 @@ export const runPopup = (authorizeUrl: string, config: PopupConfigOptions) => {
   });
 };
 
+export const getCrypto = () => {
+  //ie 11.x uses msCrypto
+  return (window.crypto || (window as any).msCrypto) as Crypto;
+};
+
+export const getCryptoSubtle = () => {
+  const crypto = getCrypto();
+  //safari 10.x uses webkitSubtle
+  return crypto.subtle || (crypto as any).webkitSubtle;
+};
 export const createRandomString = () => {
   const charset =
     '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-_~.';
@@ -146,7 +156,7 @@ export const createQueryParams = (params: any) => {
 };
 
 export const sha256 = async (s: string) => {
-  const digestOp = getCryptoSubtle().digest(
+  const digestOp: any = getCryptoSubtle().digest(
     { name: 'SHA-256' },
     new TextEncoder().encode(s)
   );
@@ -158,9 +168,9 @@ export const sha256 = async (s: string) => {
   // As a result, the various events need to be handled in the event that we're
   // working in IE11 (hence the msCrypto check). These events just call resolve
   // or reject depending on their intention.
-  if ((<any>window).msCrypto) {
+  if ((window as any).msCrypto) {
     return new Promise((res, rej) => {
-      digestOp.oncomplete = e => {
+      digestOp.oncomplete = (e: any) => {
         res(e.target.result);
       };
 
@@ -178,12 +188,12 @@ export const sha256 = async (s: string) => {
 };
 
 const urlEncodeB64 = (input: string) => {
-  const b64Chars = { '+': '-', '/': '_', '=': '' };
-  return input.replace(/[\+\/=]/g, (m: string) => b64Chars[m]);
+  const b64Chars: { [index: string]: string } = { '+': '-', '/': '_', '=': '' };
+  return input.replace(/[+/=]/g, (m: string) => b64Chars[m]);
 };
 
 // https://stackoverflow.com/questions/30106476/
-const decodeB64 = input =>
+const decodeB64 = (input: string) =>
   decodeURIComponent(
     atob(input)
       .split('')
@@ -196,14 +206,14 @@ const decodeB64 = input =>
 export const urlDecodeB64 = (input: string) =>
   decodeB64(input.replace(/_/g, '/').replace(/-/g, '+'));
 
-export const bufferToBase64UrlEncoded = input => {
+export const bufferToBase64UrlEncoded = (input: number[] | Uint8Array) => {
   const ie11SafeInput = new Uint8Array(input);
   return urlEncodeB64(
     window.btoa(String.fromCharCode(...Array.from(ie11SafeInput)))
   );
 };
 
-const sendMessage = (message, to) =>
+const sendMessage = (message: any, to: Worker) =>
   new Promise(function (resolve, reject) {
     const messageChannel = new MessageChannel();
     messageChannel.port1.onmessage = function (event) {
@@ -217,7 +227,14 @@ const sendMessage = (message, to) =>
     to.postMessage(message, [messageChannel.port2]);
   });
 
-const switchFetch = async (url, audience, scope, opts, timeout, worker) => {
+const switchFetch = async (
+  url: string,
+  audience: string,
+  scope: string,
+  opts: { [index: string]: any },
+  timeout: number,
+  worker: Worker
+) => {
   if (worker) {
     // AbortSignal is not serializable, need to implement in the Web Worker
     delete opts.signal;
@@ -232,11 +249,11 @@ const switchFetch = async (url, audience, scope, opts, timeout, worker) => {
 };
 
 export const fetchWithTimeout = (
-  url,
-  audience,
-  scope,
-  options,
-  worker,
+  url: string,
+  audience: string,
+  scope: string,
+  options: { [index: string]: any },
+  worker: Worker,
   timeout = DEFAULT_FETCH_TIMEOUT_MS
 ) => {
   const controller = createAbortController();
@@ -247,7 +264,7 @@ export const fetchWithTimeout = (
     signal
   };
 
-  let timeoutId;
+  let timeoutId: ReturnType<typeof setTimeout>;
   // The promise will resolve with one of these two promises (the fetch or the timeout), whichever completes first.
   return Promise.race([
     switchFetch(url, audience, scope, fetchOptions, timeout, worker),
@@ -262,8 +279,16 @@ export const fetchWithTimeout = (
   });
 };
 
-const getJSON = async (url, timeout, audience, scope, options, worker) => {
-  let fetchError, response;
+const getJSON = async (
+  url: string,
+  timeout: number,
+  audience: string,
+  scope: string,
+  options: { [index: string]: any },
+  worker: Worker
+) => {
+  let fetchError: null | Error = null;
+  let response: any;
 
   for (let i = 0; i < DEFAULT_SILENT_TOKEN_RETRY_COUNT; i++) {
     try {
@@ -301,7 +326,7 @@ const getJSON = async (url, timeout, audience, scope, options, worker) => {
   if (!ok) {
     const errorMessage =
       error_description || `HTTP error. Unable to fetch ${url}`;
-    const e = <any>new Error(errorMessage);
+    const e: any = new Error(errorMessage);
 
     e.error = error || 'request_error';
     e.error_description = errorMessage;
@@ -314,7 +339,7 @@ const getJSON = async (url, timeout, audience, scope, options, worker) => {
 
 export const oauthToken = async (
   { baseUrl, timeout, audience, scope, ...options }: TokenEndpointOptions,
-  worker
+  worker: Worker
 ) =>
   await getJSON(
     `${baseUrl}/oauth/token`,
@@ -333,17 +358,6 @@ export const oauthToken = async (
     },
     worker
   );
-
-export const getCrypto = () => {
-  //ie 11.x uses msCrypto
-  return <Crypto>(window.crypto || (<any>window).msCrypto);
-};
-
-export const getCryptoSubtle = () => {
-  const crypto = getCrypto();
-  //safari 10.x uses webkitSubtle
-  return crypto.subtle || (<any>crypto).webkitSubtle;
-};
 
 export const validateCrypto = () => {
   if (!getCrypto()) {
