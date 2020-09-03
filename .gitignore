@@ -8,3 +8,5 @@ cypress/videos
 .release
 .idea
 test-results
+yarn.lock
+
