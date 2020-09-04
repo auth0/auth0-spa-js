@@ -1,5 +1,27 @@
 # Change Log
 
+## [v1.12.0](https://github.com/auth0/auth0-spa-js/tree/v1.12.0) (2020-09-04)
+
+[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v1.11.0...v1.12.0)
+
+**Added**
+
+- [SDK-1858] Create legacy samsite cookie by default [\#568](https://github.com/auth0/auth0-spa-js/pull/568) ([adamjmcgrath](https://github.com/adamjmcgrath))
+
+**Changed**
+
+- Dependency updates [\#569](https://github.com/auth0/auth0-spa-js/pull/569) ([stevehobbsdev](https://github.com/stevehobbsdev))
+- Update FAQ.md with information on silent authentication problems [\#550](https://github.com/auth0/auth0-spa-js/pull/550) ([stevehobbsdev](https://github.com/stevehobbsdev))
+
+**Fixed**
+
+- [SDK-1837] Session storage support for transactions [\#564](https://github.com/auth0/auth0-spa-js/pull/564) ([stevehobbsdev](https://github.com/stevehobbsdev))
+- [SDK-1924] client methods should handle partially filled arguments [\#561](https://github.com/auth0/auth0-spa-js/pull/561) ([adamjmcgrath](https://github.com/adamjmcgrath))
+- [SDK-1885] Add some additional state validation [\#560](https://github.com/auth0/auth0-spa-js/pull/560) ([adamjmcgrath](https://github.com/adamjmcgrath))
+- [SDK-1912] Unnecessary latency in `getTokenSilently` with primed cache [\#558](https://github.com/auth0/auth0-spa-js/pull/558) ([adamjmcgrath](https://github.com/adamjmcgrath))
+- fix: add missing types to utils.ts and errors.ts [\#547](https://github.com/auth0/auth0-spa-js/pull/547) ([SeyyedKhandon](https://github.com/SeyyedKhandon))
+- Exclude windows absolute paths as well as posix [\#534](https://github.com/auth0/auth0-spa-js/pull/534) ([adamjmcgrath](https://github.com/adamjmcgrath))
+
 ## [v1.11.0](https://github.com/auth0/auth0-spa-js/tree/v1.11.0) (2020-07-21)
 
 [Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v1.10.0...v1.11.0)
