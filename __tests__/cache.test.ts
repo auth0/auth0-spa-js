@@ -1,3 +1,4 @@
+import 'jest-localstorage-mock';
 import { InMemoryCache, LocalStorageCache, ICache } from '../src/cache';
 
 const nowSeconds = () => Math.floor(Date.now() / 1000);
