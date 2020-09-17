@@ -1,3 +1,4 @@
+import 'jest-localstorage-mock';
 import TransactionManager from '../src/transaction-manager';
 import { SessionStorage } from '../src/storage';
 import { mocked } from 'ts-jest/utils';

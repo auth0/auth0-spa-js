@@ -85,6 +85,9 @@ export const CookieStorageWithLegacySameSite = {
  */
 export const SessionStorage = {
   get<T extends Object>(key: string) {
+    if (typeof sessionStorage === 'undefined') {
+      return;
+    }
     const value = sessionStorage.getItem(key);
     if (typeof value === 'undefined') {
       return;

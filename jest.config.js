@@ -12,6 +12,5 @@ module.exports = {
     ['jest-junit', { outputDirectory: 'test-results/jest' }]
   ],
   coverageReporters: ['lcov', 'text', 'text-summary'],
-  preset: 'ts-jest',
-  setupFiles: ['jest-localstorage-mock']
+  preset: 'ts-jest'
 };
