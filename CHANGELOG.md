@@ -6,7 +6,7 @@
 
 **Fixed**
 
-- Fix SSR [\#578](https://github.com/auth0/auth0-spa-js/pull/578) ([adamjmcgrath](https://github.com/adamjmcgrath))
+- Remove `sessionStorage` requirement from instantiation to fix SSR environments [\#578](https://github.com/auth0/auth0-spa-js/pull/578) ([adamjmcgrath](https://github.com/adamjmcgrath))
 
 ## [v1.12.0](https://github.com/auth0/auth0-spa-js/tree/v1.12.0) (2020-09-04)
 
