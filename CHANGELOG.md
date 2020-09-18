@@ -1,5 +1,13 @@
 # Change Log
 
+## [v1.12.1](https://github.com/auth0/auth0-spa-js/tree/v1.12.1) (2020-09-17)
+
+[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v1.12.0...v1.12.1)
+
+**Fixed**
+
+- Remove `sessionStorage` requirement from instantiation to fix SSR environments [\#578](https://github.com/auth0/auth0-spa-js/pull/578) ([adamjmcgrath](https://github.com/adamjmcgrath))
+
 ## [v1.12.0](https://github.com/auth0/auth0-spa-js/tree/v1.12.0) (2020-09-04)
 
 [Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v1.11.0...v1.12.0)
