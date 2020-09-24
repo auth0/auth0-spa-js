@@ -621,6 +621,18 @@ describe('Auth0', () => {
         { daysUntilExpire: 1 }
       );
     });
+    it('saves `auth0.is.authenticated` key in storage for an extended period', async () => {
+      const { auth0, cookieStorage } = await setup({
+        daysUntilAuthenticateCookieExpire: 2
+      });
+
+      await auth0.loginWithPopup({});
+      expect(cookieStorage.save).toHaveBeenCalledWith(
+        'auth0.is.authenticated',
+        true,
+        { daysUntilExpire: 2 }
+      );
+    });
     it('can be called with no arguments', async () => {
       const { auth0, utils } = await setup();
 
@@ -896,13 +908,15 @@ describe('Auth0', () => {
     });
 
     describe('when there is a valid query string in the url', () => {
-      const localSetup = async () => {
+      const localSetup = async (
+        clientOptions: Partial<Auth0ClientOptions> = {}
+      ) => {
         window.history.pushState(
           {},
           'Test',
           `?code=${TEST_CODE}&state=${TEST_ENCODED_STATE}`
         );
-        const result = await setup();
+        const result = await setup(clientOptions);
         result.transactionManager.get.mockReturnValue({
           code_verifier: TEST_RANDOM_STRING,
           nonce: TEST_ENCODED_STATE,
@@ -1124,6 +1138,19 @@ describe('Auth0', () => {
           }
         );
       });
+      it('saves `auth0.is.authenticated` key in storage for an extended period', async () => {
+        const { auth0, cookieStorage } = await localSetup({
+          daysUntilAuthenticateCookieExpire: 2
+        });
+
+        await auth0.handleRedirectCallback();
+
+        expect(
+          cookieStorage.save
+        ).toHaveBeenCalledWith('auth0.is.authenticated', true, {
+          daysUntilExpire: 2
+        });
+      });
       it('returns the transactions appState', async () => {
         const { auth0 } = await localSetup();
         const response = await auth0.handleRedirectCallback();
@@ -1134,14 +1161,16 @@ describe('Auth0', () => {
       });
     });
     describe('when there is a valid query string in a hash', () => {
-      const localSetup = async () => {
+      const localSetup = async (
+        clientOptions: Partial<Auth0ClientOptions> = {}
+      ) => {
         window.history.pushState({}, 'Test', `/`);
         window.history.pushState(
           {},
           'Test',
           `#/callback/?code=${TEST_CODE}&state=${TEST_ENCODED_STATE}`
         );
-        const result = await setup();
+        const result = await setup(clientOptions);
         result.transactionManager.get.mockReturnValue({
           code_verifier: TEST_RANDOM_STRING,
           nonce: TEST_ENCODED_STATE,
@@ -1308,6 +1337,19 @@ describe('Auth0', () => {
             daysUntilExpire: 1
           }
         );
+      });
+      it('saves `auth0.is.authenticated` key in storage for an extended period', async () => {
+        const { auth0, cookieStorage } = await localSetup({
+          daysUntilAuthenticateCookieExpire: 2
+        });
+
+        await auth0.handleRedirectCallback();
+
+        expect(
+          cookieStorage.save
+        ).toHaveBeenCalledWith('auth0.is.authenticated', true, {
+          daysUntilExpire: 2
+        });
       });
       it('returns the transactions appState', async () => {
         const { auth0 } = await localSetup();
@@ -1980,6 +2022,20 @@ describe('Auth0', () => {
           true,
           {
             daysUntilExpire: 1
+          }
+        );
+      });
+      it('saves `auth0.is.authenticated` key in storage for an extended period', async () => {
+        const { auth0, cookieStorage } = await setup({
+          daysUntilAuthenticateCookieExpire: 2
+        });
+
+        await auth0.getTokenSilently(defaultOptionsIgnoreCacheTrue);
+        expect(cookieStorage.save).toHaveBeenCalledWith(
+          'auth0.is.authenticated',
+          true,
+          {
+            daysUntilExpire: 2
           }
         );
       });

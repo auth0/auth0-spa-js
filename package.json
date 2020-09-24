@@ -25,7 +25,7 @@
     "test:integration:tests": "wait-on http://localhost:3000/ && cypress run",
     "test:integration": "concurrently --raw --kill-others --success first npm:test:integration:server npm:test:integration:tests",
     "print-bundle-size": "node ./scripts/print-bundle-size",
-    "prepack": "npm run build && npm run test && node ./scripts/prepack",
+    "prepack": "npm run build && node ./scripts/prepack",
     "release": "node ./scripts/release",
     "release:clean": "node ./scripts/cleanup",
     "publish:cdn": "ccu --trace"

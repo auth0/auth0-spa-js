@@ -53,3 +53,8 @@ export const RECOVERABLE_ERRORS = [
   // interactively.
   'access_denied'
 ];
+
+/**
+ * @ignore
+ */
+export const DEFAULT_DAYS_UNTIL_EXPIRE = 1;

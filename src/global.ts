@@ -144,6 +144,11 @@ export interface Auth0ClientOptions extends BaseLoginOptions {
    * Changes to recommended defaults, like defaultScope
    */
   advancedOptions?: AdvancedOptions;
+
+  /**
+   * Number of days until the cookie `auth0.is.authenticated` will expire
+   */
+  daysUntilAuthenticateCookieExpire?: number;
 }
 
 /**
