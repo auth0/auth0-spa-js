@@ -1,6 +1,6 @@
 ## Environment
 
-- Node >= 10.x
+- Node >= 12.x
 
 ## Building
 
