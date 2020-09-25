@@ -623,7 +623,7 @@ describe('Auth0', () => {
     });
     it('saves `auth0.is.authenticated` key in storage for an extended period', async () => {
       const { auth0, cookieStorage } = await setup({
-        daysUntilAuthenticateCookieExpire: 2
+        sessionCheckExpiryDays: 2
       });
 
       await auth0.loginWithPopup({});
@@ -909,7 +909,7 @@ describe('Auth0', () => {
 
     describe('when there is a valid query string in the url', () => {
       const localSetup = async (
-        clientOptions: Partial<Auth0ClientOptions> = {}
+        clientOptions?: Partial<Auth0ClientOptions>
       ) => {
         window.history.pushState(
           {},
@@ -1140,16 +1140,18 @@ describe('Auth0', () => {
       });
       it('saves `auth0.is.authenticated` key in storage for an extended period', async () => {
         const { auth0, cookieStorage } = await localSetup({
-          daysUntilAuthenticateCookieExpire: 2
+          sessionCheckExpiryDays: 2
         });
 
         await auth0.handleRedirectCallback();
 
-        expect(
-          cookieStorage.save
-        ).toHaveBeenCalledWith('auth0.is.authenticated', true, {
-          daysUntilExpire: 2
-        });
+        expect(cookieStorage.save).toHaveBeenCalledWith(
+          'auth0.is.authenticated',
+          true,
+          {
+            daysUntilExpire: 2
+          }
+        );
       });
       it('returns the transactions appState', async () => {
         const { auth0 } = await localSetup();
@@ -1162,7 +1164,7 @@ describe('Auth0', () => {
     });
     describe('when there is a valid query string in a hash', () => {
       const localSetup = async (
-        clientOptions: Partial<Auth0ClientOptions> = {}
+        clientOptions?: Partial<Auth0ClientOptions>
       ) => {
         window.history.pushState({}, 'Test', `/`);
         window.history.pushState(
@@ -1340,16 +1342,18 @@ describe('Auth0', () => {
       });
       it('saves `auth0.is.authenticated` key in storage for an extended period', async () => {
         const { auth0, cookieStorage } = await localSetup({
-          daysUntilAuthenticateCookieExpire: 2
+          sessionCheckExpiryDays: 2
         });
 
         await auth0.handleRedirectCallback();
 
-        expect(
-          cookieStorage.save
-        ).toHaveBeenCalledWith('auth0.is.authenticated', true, {
-          daysUntilExpire: 2
-        });
+        expect(cookieStorage.save).toHaveBeenCalledWith(
+          'auth0.is.authenticated',
+          true,
+          {
+            daysUntilExpire: 2
+          }
+        );
       });
       it('returns the transactions appState', async () => {
         const { auth0 } = await localSetup();
@@ -2027,7 +2031,7 @@ describe('Auth0', () => {
       });
       it('saves `auth0.is.authenticated` key in storage for an extended period', async () => {
         const { auth0, cookieStorage } = await setup({
-          daysUntilAuthenticateCookieExpire: 2
+          sessionCheckExpiryDays: 2
         });
 
         await auth0.getTokenSilently(defaultOptionsIgnoreCacheTrue);
@@ -2056,8 +2060,8 @@ describe('Auth0', () => {
   });
 
   describe('getTokenWithPopup()', () => {
-    const localSetup = async (options: Partial<Auth0ClientOptions> = {}) => {
-      const result = await setup(options);
+    const localSetup = async (clientOptions?: Partial<Auth0ClientOptions>) => {
+      const result = await setup(clientOptions);
       result.auth0.loginWithPopup = jest.fn();
       result.cache.get.mockReturnValue({ access_token: TEST_ACCESS_TOKEN });
       return result;

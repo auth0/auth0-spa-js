@@ -57,4 +57,4 @@ export const RECOVERABLE_ERRORS = [
 /**
  * @ignore
  */
-export const DEFAULT_DAYS_UNTIL_EXPIRE = 1;
+export const DEFAULT_SESSION_CHECK_EXPIRY_DAYS = 1;

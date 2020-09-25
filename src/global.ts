@@ -147,8 +147,9 @@ export interface Auth0ClientOptions extends BaseLoginOptions {
 
   /**
    * Number of days until the cookie `auth0.is.authenticated` will expire
+   * Defaults to 1.
    */
-  daysUntilAuthenticateCookieExpire?: number;
+  sessionCheckExpiryDays?: number;
 }
 
 /**
