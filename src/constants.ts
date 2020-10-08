@@ -53,3 +53,8 @@ export const RECOVERABLE_ERRORS = [
   // interactively.
   'access_denied'
 ];
+
+/**
+ * @ignore
+ */
+export const DEFAULT_SESSION_CHECK_EXPIRY_DAYS = 1;

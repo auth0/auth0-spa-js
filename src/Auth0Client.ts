@@ -31,7 +31,8 @@ import {
   DEFAULT_AUTHORIZE_TIMEOUT_IN_SECONDS,
   MISSING_REFRESH_TOKEN_ERROR_MESSAGE,
   DEFAULT_SCOPE,
-  RECOVERABLE_ERRORS
+  RECOVERABLE_ERRORS,
+  DEFAULT_SESSION_CHECK_EXPIRY_DAYS
 } from './constants';
 
 import version from './version';
@@ -134,6 +135,7 @@ export default class Auth0Client {
   private defaultScope: string;
   private scope: string;
   private cookieStorage: ClientStorage;
+  private sessionCheckExpiryDays: number;
 
   cacheLocation: CacheLocation;
   private worker: Worker;
@@ -145,6 +147,8 @@ export default class Auth0Client {
       options.legacySameSiteCookie === false
         ? CookieStorage
         : CookieStorageWithLegacySameSite;
+    this.sessionCheckExpiryDays =
+      options.sessionCheckExpiryDays || DEFAULT_SESSION_CHECK_EXPIRY_DAYS;
 
     if (!cacheFactory(this.cacheLocation)) {
       throw new Error(`Invalid cache location "${this.cacheLocation}"`);
@@ -378,7 +382,7 @@ export default class Auth0Client {
     this.cache.save(cacheEntry);
 
     this.cookieStorage.save('auth0.is.authenticated', true, {
-      daysUntilExpire: 1
+      daysUntilExpire: this.sessionCheckExpiryDays
     });
   }
 
@@ -514,7 +518,7 @@ export default class Auth0Client {
     this.cache.save(cacheEntry);
 
     this.cookieStorage.save('auth0.is.authenticated', true, {
-      daysUntilExpire: 1
+      daysUntilExpire: this.sessionCheckExpiryDays
     });
 
     return {
@@ -628,7 +632,7 @@ export default class Auth0Client {
       this.cache.save({ client_id: this.options.client_id, ...authResult });
 
       this.cookieStorage.save('auth0.is.authenticated', true, {
-        daysUntilExpire: 1
+        daysUntilExpire: this.sessionCheckExpiryDays
       });
 
       return authResult.access_token;
