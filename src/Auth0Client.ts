@@ -52,7 +52,8 @@ import {
   LogoutOptions,
   RefreshTokenOptions,
   OAuthTokenOptions,
-  CacheLocation
+  CacheLocation,
+  LogoutUrlOptions
 } from './global';
 
 // @ts-ignore
@@ -697,6 +698,31 @@ export default class Auth0Client {
 
   /**
    * ```js
+   * await auth0.buildLogoutUrl(options);
+   * ```
+   *
+   * Clears the application session and builds an `/v2/logout` URL for logout using
+   * the parameters provided as arguments.
+   * @param options
+   */
+  public buildLogoutUrl(options: LogoutUrlOptions = {}): string {
+    if (options.client_id !== null) {
+      options.client_id = options.client_id || this.options.client_id;
+    } else {
+      delete options.client_id;
+    }
+
+    const { federated, ...logoutOptions } = options;
+    this.cache.clear();
+    this.cookieStorage.remove('auth0.is.authenticated');
+    const federatedQuery = federated ? `&federated` : '';
+    const url = this._url(`/v2/logout?${createQueryParams(logoutOptions)}`);
+
+    return url + federatedQuery;
+  }
+
+  /**
+   * ```js
    * auth0.logout();
    * ```
    *
@@ -713,11 +739,9 @@ export default class Auth0Client {
   public logout(options: LogoutOptions = {}) {
     if (options.client_id !== null) {
       options.client_id = options.client_id || this.options.client_id;
-    } else {
-      delete options.client_id;
     }
 
-    const { federated, localOnly, ...logoutOptions } = options;
+    const { federated, localOnly } = options;
 
     if (localOnly && federated) {
       throw new Error(
@@ -725,17 +749,12 @@ export default class Auth0Client {
       );
     }
 
-    this.cache.clear();
-    this.cookieStorage.remove('auth0.is.authenticated');
-
     if (localOnly) {
       return;
     }
 
-    const federatedQuery = federated ? `&federated` : '';
-    const url = this._url(`/v2/logout?${createQueryParams(logoutOptions)}`);
-
-    window.location.assign(`${url}${federatedQuery}`);
+    const url = this.buildLogoutUrl(options);
+    window.location.assign(url);
   }
 
   private async _getTokenFromIFrame(

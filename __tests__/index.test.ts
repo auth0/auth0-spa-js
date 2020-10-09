@@ -2165,10 +2165,218 @@ describe('Auth0', () => {
     });
   });
 
-  describe('logout()', () => {
+  describe('buildAuthorizeUrl', () => {
+    const REDIRECT_OPTIONS = {
+      redirect_uri: 'https://redirect.uri',
+      appState: TEST_APP_STATE,
+      connection: 'test-connection'
+    };
+
+    it('encodes state with random string', async () => {
+      const { auth0, utils } = await setup();
+
+      await auth0.buildAuthorizeUrl(REDIRECT_OPTIONS);
+      expect(utils.encode).toHaveBeenCalledWith(TEST_RANDOM_STRING);
+    });
+
+    it('creates `code_challenge` by using `utils.sha256` with the result of `utils.createRandomString`', async () => {
+      const { auth0, utils } = await setup();
+
+      await auth0.buildAuthorizeUrl(REDIRECT_OPTIONS);
+      expect(utils.sha256).toHaveBeenCalledWith(TEST_RANDOM_STRING);
+      expect(utils.bufferToBase64UrlEncoded).toHaveBeenCalledWith(
+        TEST_ARRAY_BUFFER
+      );
+    });
+
+    it('creates correct query params', async () => {
+      const { auth0, utils } = await setup();
+
+      await auth0.buildAuthorizeUrl(REDIRECT_OPTIONS);
+
+      expect(utils.createQueryParams).toHaveBeenCalledWith({
+        client_id: TEST_CLIENT_ID,
+        scope: TEST_SCOPES,
+        response_type: TEST_CODE,
+        response_mode: 'query',
+        state: TEST_ENCODED_STATE,
+        nonce: TEST_ENCODED_STATE,
+        redirect_uri: REDIRECT_OPTIONS.redirect_uri,
+        code_challenge: TEST_BASE64_ENCODED_STRING,
+        code_challenge_method: 'S256',
+        connection: 'test-connection'
+      });
+    });
+
+    it('creates correct query params with different default scopes', async () => {
+      const { auth0, utils } = await setup({
+        advancedOptions: {
+          defaultScope: 'email'
+        }
+      });
+
+      await auth0.buildAuthorizeUrl(REDIRECT_OPTIONS);
+
+      expect(utils.createQueryParams).toHaveBeenCalledWith({
+        client_id: TEST_CLIENT_ID,
+        scope: 'openid email',
+        response_type: TEST_CODE,
+        response_mode: 'query',
+        state: TEST_ENCODED_STATE,
+        nonce: TEST_ENCODED_STATE,
+        redirect_uri: REDIRECT_OPTIONS.redirect_uri,
+        code_challenge: TEST_BASE64_ENCODED_STRING,
+        code_challenge_method: 'S256',
+        connection: 'test-connection'
+      });
+    });
+
+    it('creates correct query params when using refresh tokens', async () => {
+      const { auth0, utils } = await setup({
+        useRefreshTokens: true
+      });
+
+      await auth0.buildAuthorizeUrl(REDIRECT_OPTIONS);
+
+      expect(utils.createQueryParams).toHaveBeenCalledWith({
+        client_id: TEST_CLIENT_ID,
+        scope: `${TEST_SCOPES} offline_access`,
+        response_type: TEST_CODE,
+        response_mode: 'query',
+        state: TEST_ENCODED_STATE,
+        nonce: TEST_ENCODED_STATE,
+        redirect_uri: REDIRECT_OPTIONS.redirect_uri,
+        code_challenge: TEST_BASE64_ENCODED_STRING,
+        code_challenge_method: 'S256',
+        connection: 'test-connection'
+      });
+    });
+
+    it('creates correct query params without leeway', async () => {
+      const { auth0, utils } = await setup({ leeway: 10 });
+
+      await auth0.buildAuthorizeUrl(REDIRECT_OPTIONS);
+      expect(utils.createQueryParams).toHaveBeenCalledWith({
+        client_id: TEST_CLIENT_ID,
+        scope: TEST_SCOPES,
+        response_type: TEST_CODE,
+        response_mode: 'query',
+        state: TEST_ENCODED_STATE,
+        nonce: TEST_ENCODED_STATE,
+        redirect_uri: REDIRECT_OPTIONS.redirect_uri,
+        code_challenge: TEST_BASE64_ENCODED_STRING,
+        code_challenge_method: 'S256',
+        connection: 'test-connection'
+      });
+    });
+
+    it('creates correct query params when providing a default redirect_uri', async () => {
+      const redirect_uri = 'https://custom-redirect-uri/callback';
+      const { redirect_uri: _ignore, ...options } = REDIRECT_OPTIONS;
+      const { auth0, utils } = await setup({
+        redirect_uri
+      });
+
+      await auth0.buildAuthorizeUrl(options);
+
+      expect(utils.createQueryParams).toHaveBeenCalledWith({
+        client_id: TEST_CLIENT_ID,
+        scope: TEST_SCOPES,
+        response_type: TEST_CODE,
+        response_mode: 'query',
+        state: TEST_ENCODED_STATE,
+        nonce: TEST_ENCODED_STATE,
+        redirect_uri,
+        code_challenge: TEST_BASE64_ENCODED_STRING,
+        code_challenge_method: 'S256',
+        connection: 'test-connection'
+      });
+    });
+
+    it('creates correct query params when overriding redirect_uri', async () => {
+      const redirect_uri = 'https://custom-redirect-uri/callback';
+      const { auth0, utils } = await setup({
+        redirect_uri
+      });
+
+      await auth0.buildAuthorizeUrl(REDIRECT_OPTIONS);
+
+      expect(utils.createQueryParams).toHaveBeenCalledWith({
+        client_id: TEST_CLIENT_ID,
+        scope: TEST_SCOPES,
+        response_type: TEST_CODE,
+        response_mode: 'query',
+        state: TEST_ENCODED_STATE,
+        nonce: TEST_ENCODED_STATE,
+        redirect_uri: REDIRECT_OPTIONS.redirect_uri,
+        code_challenge: TEST_BASE64_ENCODED_STRING,
+        code_challenge_method: 'S256',
+        connection: 'test-connection'
+      });
+    });
+
+    it('creates correct query params with custom params', async () => {
+      const { auth0, utils } = await setup();
+
+      await auth0.buildAuthorizeUrl({ ...REDIRECT_OPTIONS, audience: 'test' });
+
+      expect(utils.createQueryParams).toHaveBeenCalledWith({
+        audience: 'test',
+        client_id: TEST_CLIENT_ID,
+        scope: TEST_SCOPES,
+        response_type: TEST_CODE,
+        response_mode: 'query',
+        state: TEST_ENCODED_STATE,
+        nonce: TEST_ENCODED_STATE,
+        redirect_uri: REDIRECT_OPTIONS.redirect_uri,
+        code_challenge: TEST_BASE64_ENCODED_STRING,
+        code_challenge_method: 'S256',
+        connection: 'test-connection'
+      });
+    });
+
+    it('calls `transactionManager.create` with new transaction', async () => {
+      const { auth0, transactionManager } = await setup();
+
+      await auth0.buildAuthorizeUrl(REDIRECT_OPTIONS);
+
+      expect(transactionManager.create).toHaveBeenCalledWith({
+        appState: TEST_APP_STATE,
+        audience: 'default',
+        code_verifier: TEST_RANDOM_STRING,
+        nonce: TEST_ENCODED_STATE,
+        scope: TEST_SCOPES,
+        redirect_uri: 'https://redirect.uri'
+      });
+    });
+
+    it('returns the url', async () => {
+      const { auth0 } = await setup();
+
+      const url = await auth0.buildAuthorizeUrl({
+        ...REDIRECT_OPTIONS
+      });
+
+      expect(url).toBe(
+        `https://test.auth0.com/authorize?query=params${TEST_AUTH0_CLIENT_QUERY_STRING}`
+      );
+    });
+
+    it('returns the url when no arguments are passed', async () => {
+      const { auth0 } = await setup();
+
+      const url = await auth0.buildAuthorizeUrl();
+
+      expect(url).toBe(
+        `https://test.auth0.com/authorize?query=params${TEST_AUTH0_CLIENT_QUERY_STRING}`
+      );
+    });
+  });
+
+  describe('buildLogoutUrl()', () => {
     it('removes `auth0.is.authenticated` key from storage', async () => {
       const { auth0, cookieStorage } = await setup();
-      auth0.logout();
+      auth0.buildLogoutUrl();
       expect(cookieStorage.remove).toHaveBeenCalledWith(
         'auth0.is.authenticated'
       );
@@ -2177,7 +2385,7 @@ describe('Auth0', () => {
     it('creates correct query params with empty options', async () => {
       const { auth0, utils } = await setup();
 
-      auth0.logout();
+      auth0.buildLogoutUrl();
       expect(utils.createQueryParams).toHaveBeenCalledWith({
         client_id: TEST_CLIENT_ID
       });
@@ -2186,14 +2394,14 @@ describe('Auth0', () => {
     it('creates correct query params with `options.client_id` is null', async () => {
       const { auth0, utils } = await setup();
 
-      auth0.logout({ client_id: null });
+      auth0.buildLogoutUrl({ client_id: null });
       expect(utils.createQueryParams).toHaveBeenCalledWith({});
     });
 
     it('creates correct query params with `options.client_id` defined', async () => {
       const { auth0, utils } = await setup();
 
-      auth0.logout({ client_id: 'another-client-id' });
+      auth0.buildLogoutUrl({ client_id: 'another-client-id' });
       expect(utils.createQueryParams).toHaveBeenCalledWith({
         client_id: 'another-client-id'
       });
@@ -2202,7 +2410,7 @@ describe('Auth0', () => {
     it('creates correct query params with `options.returnTo` defined', async () => {
       const { auth0, utils } = await setup();
 
-      auth0.logout({ returnTo: 'https://return.to', client_id: null });
+      auth0.buildLogoutUrl({ returnTo: 'https://return.to', client_id: null });
       expect(utils.createQueryParams).toHaveBeenCalledWith({
         returnTo: 'https://return.to'
       });
@@ -2211,75 +2419,130 @@ describe('Auth0', () => {
     it('creates correct query params when `options.federated` is true', async () => {
       const { auth0, utils } = await setup();
 
-      auth0.logout({ federated: true, client_id: null });
+      auth0.buildLogoutUrl({ federated: true, client_id: null });
       expect(utils.createQueryParams).toHaveBeenCalledWith({});
-    });
-
-    it('calls `window.location.assign` with the correct url', async () => {
-      const { auth0 } = await setup();
-
-      auth0.logout();
-      expect(window.location.assign).toHaveBeenCalledWith(
-        `https://test.auth0.com/v2/logout?query=params${TEST_AUTH0_CLIENT_QUERY_STRING}`
-      );
-    });
-
-    it('calls `window.location.assign` with the correct url when `options.federated` is true', async () => {
-      const { auth0 } = await setup();
-
-      auth0.logout({ federated: true });
-      expect(window.location.assign).toHaveBeenCalledWith(
-        `https://test.auth0.com/v2/logout?query=params${TEST_AUTH0_CLIENT_QUERY_STRING}&federated`
-      );
-    });
-
-    it('calls `window.location.assign` with the correct url with custom `options.auth0Client`', async () => {
-      const auth0Client = { name: '__test_client_name__', version: '9.9.9' };
-      const { auth0 } = await setup({ auth0Client });
-      auth0.logout();
-      expectToHaveBeenCalledWithAuth0ClientParam(
-        window.location.assign,
-        auth0Client
-      );
     });
 
     it('clears the cache', async () => {
       const { auth0, cache } = await setup();
 
-      auth0.logout();
+      auth0.buildLogoutUrl();
 
       expect(cache.clear).toHaveBeenCalled();
     });
+  });
+});
 
-    it('removes `auth0.is.authenticated` key from storage when `options.localOnly` is true', async () => {
-      const { auth0, cookieStorage } = await setup();
+describe('logout()', () => {
+  it('removes `auth0.is.authenticated` key from storage', async () => {
+    const { auth0, cookieStorage } = await setup();
+    auth0.logout();
+    expect(cookieStorage.remove).toHaveBeenCalledWith('auth0.is.authenticated');
+  });
 
-      auth0.logout({ localOnly: true });
-      expect(cookieStorage.remove).toHaveBeenCalledWith(
-        'auth0.is.authenticated'
-      );
+  it('creates correct query params with empty options', async () => {
+    const { auth0, utils } = await setup();
+
+    auth0.logout();
+    expect(utils.createQueryParams).toHaveBeenCalledWith({
+      client_id: TEST_CLIENT_ID
     });
+  });
 
-    it('skips `window.location.assign` when `options.localOnly` is true', async () => {
-      const { auth0 } = await setup();
+  it('creates correct query params with `options.client_id` is null', async () => {
+    const { auth0, utils } = await setup();
 
-      auth0.logout({ localOnly: true });
-      expect(window.location.assign).not.toHaveBeenCalledWith();
+    auth0.logout({ client_id: null });
+    expect(utils.createQueryParams).toHaveBeenCalledWith({});
+  });
+
+  it('creates correct query params with `options.client_id` defined', async () => {
+    const { auth0, utils } = await setup();
+
+    auth0.logout({ client_id: 'another-client-id' });
+    expect(utils.createQueryParams).toHaveBeenCalledWith({
+      client_id: 'another-client-id'
     });
+  });
 
-    it('calls `window.location.assign` when `options.localOnly` is false', async () => {
-      const { auth0 } = await setup();
+  it('creates correct query params with `options.returnTo` defined', async () => {
+    const { auth0, utils } = await setup();
 
-      auth0.logout({ localOnly: false });
-      expect(window.location.assign).toHaveBeenCalled();
+    auth0.logout({ returnTo: 'https://return.to', client_id: null });
+    expect(utils.createQueryParams).toHaveBeenCalledWith({
+      returnTo: 'https://return.to'
     });
+  });
 
-    it('throws when both `options.localOnly` and `options.federated` are true', async () => {
-      const { auth0 } = await setup();
+  it('creates correct query params when `options.federated` is true', async () => {
+    const { auth0, utils } = await setup();
 
-      const fn = () => auth0.logout({ localOnly: true, federated: true });
-      expect(fn).toThrow();
-    });
+    auth0.logout({ federated: true, client_id: null });
+    expect(utils.createQueryParams).toHaveBeenCalledWith({});
+  });
+
+  it('calls `window.location.assign` with the correct url', async () => {
+    const { auth0 } = await setup();
+
+    auth0.logout();
+    expect(window.location.assign).toHaveBeenCalledWith(
+      `https://test.auth0.com/v2/logout?query=params${TEST_AUTH0_CLIENT_QUERY_STRING}`
+    );
+  });
+
+  it('calls `window.location.assign` with the correct url when `options.federated` is true', async () => {
+    const { auth0 } = await setup();
+
+    auth0.logout({ federated: true });
+    expect(window.location.assign).toHaveBeenCalledWith(
+      `https://test.auth0.com/v2/logout?query=params${TEST_AUTH0_CLIENT_QUERY_STRING}&federated`
+    );
+  });
+
+  it('calls `window.location.assign` with the correct url with custom `options.auth0Client`', async () => {
+    const auth0Client = { name: '__test_client_name__', version: '9.9.9' };
+    const { auth0 } = await setup({ auth0Client });
+    auth0.logout();
+    expectToHaveBeenCalledWithAuth0ClientParam(
+      window.location.assign,
+      auth0Client
+    );
+  });
+
+  it('clears the cache', async () => {
+    const { auth0, cache } = await setup();
+
+    auth0.logout();
+
+    expect(cache.clear).toHaveBeenCalled();
+  });
+
+  it('removes `auth0.is.authenticated` key from storage when `options.localOnly` is true', async () => {
+    const { auth0, cookieStorage } = await setup();
+
+    auth0.logout({ localOnly: true });
+    expect(cookieStorage.remove).toHaveBeenCalledWith('auth0.is.authenticated');
+  });
+
+  it('skips `window.location.assign` when `options.localOnly` is true', async () => {
+    const { auth0 } = await setup();
+
+    auth0.logout({ localOnly: true });
+    expect(window.location.assign).not.toHaveBeenCalledWith();
+  });
+
+  it('calls `window.location.assign` when `options.localOnly` is false', async () => {
+    const { auth0 } = await setup();
+
+    auth0.logout({ localOnly: false });
+    expect(window.location.assign).toHaveBeenCalled();
+  });
+
+  it('throws when both `options.localOnly` and `options.federated` are true', async () => {
+    const { auth0 } = await setup();
+
+    const fn = () => auth0.logout({ localOnly: true, federated: true });
+    expect(fn).toThrow();
   });
 });
 
