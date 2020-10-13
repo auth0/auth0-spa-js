@@ -735,10 +735,6 @@ export default class Auth0Client {
    * @param options
    */
   public logout(options: LogoutOptions = {}) {
-    if (options.client_id !== null) {
-      options.client_id = options.client_id || this.options.client_id;
-    }
-
     const { federated, localOnly } = options;
 
     if (localOnly && federated) {
