@@ -311,7 +311,6 @@ export interface LogoutUrlOptions {
    * When supported by the upstream identity provider,
    * forces the user to logout of their identity provider
    * and from Auth0.
-   * This option cannot be specified along with the `localOnly` option.
    * [Read more about how federated logout works at Auth0](https://auth0.com/docs/logout/guides/logout-idps)
    */
   federated?: boolean;
