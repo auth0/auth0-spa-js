@@ -701,8 +701,8 @@ export default class Auth0Client {
    * await auth0.buildLogoutUrl(options);
    * ```
    *
-   * Clears the application session and builds an `/v2/logout` URL for logout using
-   * the parameters provided as arguments.
+   * Builds a `/v2/logout` URL for logout using the parameters provided as arguments.
+   * No session data is removed.
    * @param options
    */
   public buildLogoutUrl(options: LogoutUrlOptions = {}): string {
@@ -753,7 +753,7 @@ export default class Auth0Client {
     if (localOnly) {
       return;
     }
-
+    delete options.localOnly;
     const url = this.buildLogoutUrl(options);
     window.location.assign(url);
   }
