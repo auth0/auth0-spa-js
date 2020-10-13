@@ -702,7 +702,6 @@ export default class Auth0Client {
    * ```
    *
    * Builds a `/v2/logout` URL for logout using the parameters provided as arguments.
-   * No session data is removed.
    * @param options
    */
   public buildLogoutUrl(options: LogoutUrlOptions = {}): string {
