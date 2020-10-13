@@ -2290,6 +2290,7 @@ describe('Auth0', () => {
       const { auth0, cache } = await setup();
 
       auth0.logout();
+
       expect(cache.clear).toHaveBeenCalled();
     });
 
@@ -2323,106 +2324,106 @@ describe('Auth0', () => {
       expect(fn).toThrow();
     });
   });
+});
 
-  describe('default creation function', () => {
-    it('does nothing if there is nothing in storage', async () => {
-      jest.spyOn(Auth0Client.prototype, 'getTokenSilently');
-      const getSpy = jest
-        .spyOn(require('../src/storage').CookieStorageWithLegacySameSite, 'get')
-        .mockReturnValueOnce(false);
+describe('default creation function', () => {
+  it('does nothing if there is nothing in storage', async () => {
+    jest.spyOn(Auth0Client.prototype, 'getTokenSilently');
+    const getSpy = jest
+      .spyOn(require('../src/storage').CookieStorageWithLegacySameSite, 'get')
+      .mockReturnValueOnce(false);
 
-      const auth0 = await createAuth0Client({
-        domain: TEST_DOMAIN,
-        client_id: TEST_CLIENT_ID
-      });
-
-      expect(getSpy).toHaveBeenCalledWith('auth0.is.authenticated');
-
-      expect(auth0.getTokenSilently).not.toHaveBeenCalled();
+    const auth0 = await createAuth0Client({
+      domain: TEST_DOMAIN,
+      client_id: TEST_CLIENT_ID
     });
 
-    it('calls getTokenSilently if there is a storage item with key `auth0.is.authenticated`', async () => {
+    expect(getSpy).toHaveBeenCalledWith('auth0.is.authenticated');
+
+    expect(auth0.getTokenSilently).not.toHaveBeenCalled();
+  });
+
+  it('calls getTokenSilently if there is a storage item with key `auth0.is.authenticated`', async () => {
+    Auth0Client.prototype.getTokenSilently = jest.fn();
+
+    require('../src/storage').CookieStorage.get.mockReturnValue(true);
+
+    const auth0 = await createAuth0Client({
+      domain: TEST_DOMAIN,
+      client_id: TEST_CLIENT_ID
+    });
+
+    expect(auth0.getTokenSilently).toHaveBeenCalledWith(undefined);
+  });
+
+  describe('when refresh tokens are not used', () => {
+    it('calls getTokenSilently', async () => {
+      const utils = require('../src/utils');
+
+      const options = {
+        audience: 'the-audience',
+        scope: 'the-scope'
+      };
+
       Auth0Client.prototype.getTokenSilently = jest.fn();
 
-      require('../src/storage').CookieStorage.get.mockReturnValue(true);
+      require('../src/storage').get = () => true;
 
       const auth0 = await createAuth0Client({
         domain: TEST_DOMAIN,
-        client_id: TEST_CLIENT_ID
+        client_id: TEST_CLIENT_ID,
+        ...options
       });
 
       expect(auth0.getTokenSilently).toHaveBeenCalledWith(undefined);
     });
+  });
 
-    describe('when refresh tokens are not used', () => {
-      it('calls getTokenSilently', async () => {
-        const utils = require('../src/utils');
+  describe('when refresh tokens are used', () => {
+    it('creates the client with the correct scopes', async () => {
+      const options = {
+        audience: 'the-audience',
+        scope: 'the-scope',
+        useRefreshTokens: true
+      };
 
-        const options = {
-          audience: 'the-audience',
-          scope: 'the-scope'
-        };
+      Auth0Client.prototype.getTokenSilently = jest.fn();
 
-        Auth0Client.prototype.getTokenSilently = jest.fn();
+      require('../src/storage').get = () => true;
 
-        require('../src/storage').get = () => true;
-
-        const auth0 = await createAuth0Client({
-          domain: TEST_DOMAIN,
-          client_id: TEST_CLIENT_ID,
-          ...options
-        });
-
-        expect(auth0.getTokenSilently).toHaveBeenCalledWith(undefined);
+      const auth0 = await createAuth0Client({
+        domain: TEST_DOMAIN,
+        client_id: TEST_CLIENT_ID,
+        ...options
       });
+
+      expect((<any>auth0).scope).toBe('the-scope offline_access');
+
+      expect(auth0.getTokenSilently).toHaveBeenCalledWith(undefined);
     });
+  });
 
-    describe('when refresh tokens are used', () => {
-      it('creates the client with the correct scopes', async () => {
-        const options = {
-          audience: 'the-audience',
-          scope: 'the-scope',
-          useRefreshTokens: true
-        };
+  describe('when localstorage is used', () => {
+    it('refreshes token state regardless of isauthenticated cookie', async () => {
+      const cacheLocation: CacheLocation = 'localstorage';
 
-        Auth0Client.prototype.getTokenSilently = jest.fn();
+      const options = {
+        audience: 'the-audience',
+        scope: 'the-scope',
+        cacheLocation
+      };
 
-        require('../src/storage').get = () => true;
+      Auth0Client.prototype.getTokenSilently = jest.fn();
 
-        const auth0 = await createAuth0Client({
-          domain: TEST_DOMAIN,
-          client_id: TEST_CLIENT_ID,
-          ...options
-        });
+      require('../src/storage').get = () => false;
 
-        expect((<any>auth0).scope).toBe('the-scope offline_access');
-
-        expect(auth0.getTokenSilently).toHaveBeenCalledWith(undefined);
+      const auth0 = await createAuth0Client({
+        domain: TEST_DOMAIN,
+        client_id: TEST_CLIENT_ID,
+        ...options
       });
-    });
 
-    describe('when localstorage is used', () => {
-      it('refreshes token state regardless of isauthenticated cookie', async () => {
-        const cacheLocation: CacheLocation = 'localstorage';
-
-        const options = {
-          audience: 'the-audience',
-          scope: 'the-scope',
-          cacheLocation
-        };
-
-        Auth0Client.prototype.getTokenSilently = jest.fn();
-
-        require('../src/storage').get = () => false;
-
-        const auth0 = await createAuth0Client({
-          domain: TEST_DOMAIN,
-          client_id: TEST_CLIENT_ID,
-          ...options
-        });
-
-        expect(auth0.getTokenSilently).toHaveBeenCalledWith(undefined);
-      });
+      expect(auth0.getTokenSilently).toHaveBeenCalledWith(undefined);
     });
   });
 });
