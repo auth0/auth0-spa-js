@@ -713,8 +713,6 @@ export default class Auth0Client {
     }
 
     const { federated, ...logoutOptions } = options;
-    this.cache.clear();
-    this.cookieStorage.remove('auth0.is.authenticated');
     const federatedQuery = federated ? `&federated` : '';
     const url = this._url(`/v2/logout?${createQueryParams(logoutOptions)}`);
 
@@ -748,6 +746,9 @@ export default class Auth0Client {
         'It is invalid to set both the `federated` and `localOnly` options to `true`'
       );
     }
+
+    this.cache.clear();
+    this.cookieStorage.remove('auth0.is.authenticated');
 
     if (localOnly) {
       return;
