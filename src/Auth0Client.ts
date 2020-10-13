@@ -735,9 +735,9 @@ export default class Auth0Client {
    * @param options
    */
   public logout(options: LogoutOptions = {}) {
-    const { federated, localOnly } = options;
+    const { localOnly, ...logoutOptions } = options;
 
-    if (localOnly && federated) {
+    if (localOnly && logoutOptions.federated) {
       throw new Error(
         'It is invalid to set both the `federated` and `localOnly` options to `true`'
       );
@@ -749,8 +749,7 @@ export default class Auth0Client {
     if (localOnly) {
       return;
     }
-    delete options.localOnly;
-    const url = this.buildLogoutUrl(options);
+    const url = this.buildLogoutUrl(logoutOptions);
     window.location.assign(url);
   }
 
