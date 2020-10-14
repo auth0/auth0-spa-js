@@ -701,7 +701,7 @@ export default class Auth0Client {
    * await auth0.buildLogoutUrl(options);
    * ```
    *
-   * Builds a `/v2/logout` URL for logout using the parameters provided as arguments.
+   * Builds a URL to the logout endpoint using the parameters provided as arguments.
    * @param options
    */
   public buildLogoutUrl(options: LogoutUrlOptions = {}): string {
