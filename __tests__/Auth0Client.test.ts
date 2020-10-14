@@ -71,7 +71,7 @@ const setup = (
   return auth0;
 };
 
-const login: any = async (
+const loginWithRedirect: any = async (
   auth0,
   tokenSuccess = true,
   tokenResponse = {},
@@ -173,10 +173,10 @@ describe('Auth0Client', () => {
     });
   });
 
-  describe('login', () => {
+  describe('loginWithRedirect', () => {
     it('should log the user in and get the token', async () => {
       const auth0 = setup();
-      await login(auth0);
+      await loginWithRedirect(auth0);
       const url = new URL(mockWindow.location.assign.mock.calls[0][0]);
       assertUrlEquals(url, 'auth0_domain', '/authorize', {
         client_id: 'auth0_client_id',
@@ -200,7 +200,7 @@ describe('Auth0Client', () => {
 
     it('should log the user in and get the user', async () => {
       const auth0 = setup({ scope: 'foo' });
-      await login(auth0);
+      await loginWithRedirect(auth0);
       expect(await auth0.getUser()).toBeTruthy();
       expect(await auth0.getUser({})).toBeTruthy();
       expect(await auth0.getUser({ audience: 'default' })).toBeTruthy();
@@ -220,7 +220,7 @@ describe('Auth0Client', () => {
     it('should log the user in with custom auth0Client', async () => {
       const auth0Client = { name: '__test_client__', version: '0.0.0' };
       const auth0 = setup({ auth0Client });
-      await login(auth0);
+      await loginWithRedirect(auth0);
       expectToHaveBeenCalledWithAuth0ClientParam(
         mockWindow.location.assign,
         auth0Client
@@ -249,7 +249,7 @@ describe('Auth0Client', () => {
   describe('getTokenSilently', () => {
     it('uses the cache when expires_in > constant leeway', async () => {
       const auth0 = setup();
-      await login(auth0, true, { expires_in: 70 });
+      await loginWithRedirect(auth0, true, { expires_in: 70 });
 
       jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
         access_token: 'my_access_token',
@@ -264,7 +264,7 @@ describe('Auth0Client', () => {
 
     it('refreshes the token when expires_in < constant leeway', async () => {
       const auth0 = setup();
-      await login(auth0, true, { expires_in: 50 });
+      await loginWithRedirect(auth0, true, { expires_in: 50 });
 
       jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
         access_token: 'my_access_token',
@@ -290,7 +290,7 @@ describe('Auth0Client', () => {
         useRefreshTokens: true
       });
 
-      await login(auth0, true, { expires_in: 70 });
+      await loginWithRedirect(auth0, true, { expires_in: 70 });
 
       mockFetch.mockReset();
       mockFetch.mockResolvedValue(
@@ -311,7 +311,7 @@ describe('Auth0Client', () => {
         useRefreshTokens: true
       });
 
-      await login(auth0, true, { expires_in: 50 });
+      await loginWithRedirect(auth0, true, { expires_in: 50 });
 
       mockFetch.mockReset();
       mockFetch.mockResolvedValue(
@@ -334,7 +334,7 @@ describe('Auth0Client', () => {
 
       expect((<any>auth0).worker).toBeDefined();
 
-      await login(auth0);
+      await loginWithRedirect(auth0);
 
       mockFetch.mockResolvedValueOnce(
         fetchResponse(true, {
@@ -369,7 +369,7 @@ describe('Auth0Client', () => {
 
       expect((<any>auth0).worker).toBeUndefined();
 
-      await login(auth0);
+      await loginWithRedirect(auth0);
 
       assertPost('https://auth0_domain/oauth/token', {
         redirect_uri: 'my_callback_url',
@@ -414,7 +414,7 @@ describe('Auth0Client', () => {
 
       expect((<any>auth0).worker).toBeUndefined();
 
-      await login(auth0);
+      await loginWithRedirect(auth0);
 
       assertPost('https://auth0_domain/oauth/token', {
         redirect_uri: 'my_callback_url',
@@ -455,7 +455,7 @@ describe('Auth0Client', () => {
       });
 
       expect((<any>auth0).worker).toBeDefined();
-      await login(auth0);
+      await loginWithRedirect(auth0);
       mockFetch.mockReset();
       mockFetch.mockImplementation(() => Promise.reject(new Error('my_error')));
       await expect(
@@ -469,7 +469,7 @@ describe('Auth0Client', () => {
         useRefreshTokens: true
       });
       expect((<any>auth0).worker).toBeDefined();
-      await login(auth0);
+      await loginWithRedirect(auth0);
       mockFetch.mockReset();
       mockFetch.mockResolvedValue(
         fetchResponse(false, {
@@ -495,7 +495,7 @@ describe('Auth0Client', () => {
 
       expect((<any>auth0).worker).toBeDefined();
 
-      await login(auth0);
+      await loginWithRedirect(auth0);
       mockFetch.mockReset();
       mockFetch.mockImplementation(
         () =>
@@ -528,7 +528,7 @@ describe('Auth0Client', () => {
         useRefreshTokens: true
       });
       expect((<any>auth0).worker).toBeDefined();
-      await login(auth0, true, { refresh_token: '' });
+      await loginWithRedirect(auth0, true, { refresh_token: '' });
       jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
         access_token: 'my_access_token',
         state: 'MTIz'
@@ -552,7 +552,7 @@ describe('Auth0Client', () => {
         cacheLocation: 'localstorage'
       });
       expect((<any>auth0).worker).toBeUndefined();
-      await login(auth0);
+      await loginWithRedirect(auth0);
       mockFetch.mockReset();
       mockFetch.mockImplementation(() => Promise.reject(new Error('my_error')));
       await expect(
@@ -567,7 +567,7 @@ describe('Auth0Client', () => {
         cacheLocation: 'localstorage'
       });
       expect((<any>auth0).worker).toBeUndefined();
-      await login(auth0);
+      await loginWithRedirect(auth0);
       mockFetch.mockReset();
       mockFetch.mockResolvedValue(
         fetchResponse(false, {
@@ -592,7 +592,7 @@ describe('Auth0Client', () => {
         cacheLocation: 'localstorage'
       });
       expect((<any>auth0).worker).toBeUndefined();
-      await login(auth0);
+      await loginWithRedirect(auth0);
       mockFetch.mockReset();
       mockFetch.mockImplementation(
         () =>
@@ -625,7 +625,7 @@ describe('Auth0Client', () => {
         cacheLocation: 'localstorage'
       });
       expect((<any>auth0).worker).toBeUndefined();
-      await login(auth0, true, { refresh_token: '' });
+      await loginWithRedirect(auth0, true, { refresh_token: '' });
       jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
         access_token: 'my_access_token',
         state: 'MTIz'
@@ -654,7 +654,7 @@ describe('Auth0Client', () => {
         useRefreshTokens: true
       });
       expect((<any>auth0).worker).toBeUndefined();
-      await login(auth0, true, { refresh_token: '' });
+      await loginWithRedirect(auth0, true, { refresh_token: '' });
       jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
         access_token: 'my_access_token',
         state: 'MTIz'
@@ -677,7 +677,7 @@ describe('Auth0Client', () => {
 
     it('uses the cache for subsequent requests that occur before the response', async () => {
       const auth0 = setup();
-      await login(auth0);
+      await loginWithRedirect(auth0);
       (auth0 as any).cache.clear();
       jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
         access_token: 'my_access_token',
@@ -701,7 +701,7 @@ describe('Auth0Client', () => {
 
     it('uses the cache for multiple token requests with audience and scope', async () => {
       const auth0 = setup();
-      await login(auth0);
+      await loginWithRedirect(auth0);
       jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
         access_token: 'my_access_token',
         state: 'MTIz'
@@ -731,7 +731,7 @@ describe('Auth0Client', () => {
 
     it('should not acquire a browser lock when cache is populated', async () => {
       const auth0 = setup();
-      await login(auth0);
+      await loginWithRedirect(auth0);
       jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
         access_token: 'my_access_token',
         state: 'MTIz'
@@ -760,7 +760,7 @@ describe('Auth0Client', () => {
         another_custom_param: 'bar'
       });
 
-      await login(auth0, true);
+      await loginWithRedirect(auth0, true);
 
       jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
         access_token: 'my_access_token',
@@ -804,7 +804,9 @@ describe('Auth0Client', () => {
         another_custom_param: 'bar'
       });
 
-      await login(auth0, true, { refresh_token: 'a_refresh_token' });
+      await loginWithRedirect(auth0, true, {
+        refresh_token: 'a_refresh_token'
+      });
 
       jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
         access_token: 'my_access_token',
