@@ -2217,47 +2217,6 @@ describe('Auth0', () => {
       );
     });
 
-    it('creates correct query params with empty options', async () => {
-      const { auth0, utils } = await setup();
-
-      auth0.logout();
-      expect(utils.createQueryParams).toHaveBeenCalledWith({
-        client_id: TEST_CLIENT_ID
-      });
-    });
-
-    it('creates correct query params with `options.client_id` is null', async () => {
-      const { auth0, utils } = await setup();
-
-      auth0.logout({ client_id: null });
-      expect(utils.createQueryParams).toHaveBeenCalledWith({});
-    });
-
-    it('creates correct query params with `options.client_id` defined', async () => {
-      const { auth0, utils } = await setup();
-
-      auth0.logout({ client_id: 'another-client-id' });
-      expect(utils.createQueryParams).toHaveBeenCalledWith({
-        client_id: 'another-client-id'
-      });
-    });
-
-    it('creates correct query params with `options.returnTo` defined', async () => {
-      const { auth0, utils } = await setup();
-
-      auth0.logout({ returnTo: 'https://return.to', client_id: null });
-      expect(utils.createQueryParams).toHaveBeenCalledWith({
-        returnTo: 'https://return.to'
-      });
-    });
-
-    it('creates correct query params when `options.federated` is true', async () => {
-      const { auth0, utils } = await setup();
-
-      auth0.logout({ federated: true, client_id: null });
-      expect(utils.createQueryParams).toHaveBeenCalledWith({});
-    });
-
     it('calls `window.location.assign` with the correct url', async () => {
       const { auth0 } = await setup();
 
