@@ -2165,19 +2165,11 @@ describe('Auth0', () => {
     });
   });
 
-  describe('logout()', () => {
-    it('removes `auth0.is.authenticated` key from storage', async () => {
-      const { auth0, cookieStorage } = await setup();
-      auth0.logout();
-      expect(cookieStorage.remove).toHaveBeenCalledWith(
-        'auth0.is.authenticated'
-      );
-    });
-
+  describe('buildLogoutUrl()', () => {
     it('creates correct query params with empty options', async () => {
       const { auth0, utils } = await setup();
 
-      auth0.logout();
+      auth0.buildLogoutUrl();
       expect(utils.createQueryParams).toHaveBeenCalledWith({
         client_id: TEST_CLIENT_ID
       });
@@ -2186,14 +2178,14 @@ describe('Auth0', () => {
     it('creates correct query params with `options.client_id` is null', async () => {
       const { auth0, utils } = await setup();
 
-      auth0.logout({ client_id: null });
+      auth0.buildLogoutUrl({ client_id: null });
       expect(utils.createQueryParams).toHaveBeenCalledWith({});
     });
 
     it('creates correct query params with `options.client_id` defined', async () => {
       const { auth0, utils } = await setup();
 
-      auth0.logout({ client_id: 'another-client-id' });
+      auth0.buildLogoutUrl({ client_id: 'another-client-id' });
       expect(utils.createQueryParams).toHaveBeenCalledWith({
         client_id: 'another-client-id'
       });
@@ -2202,7 +2194,7 @@ describe('Auth0', () => {
     it('creates correct query params with `options.returnTo` defined', async () => {
       const { auth0, utils } = await setup();
 
-      auth0.logout({ returnTo: 'https://return.to', client_id: null });
+      auth0.buildLogoutUrl({ returnTo: 'https://return.to', client_id: null });
       expect(utils.createQueryParams).toHaveBeenCalledWith({
         returnTo: 'https://return.to'
       });
@@ -2211,8 +2203,18 @@ describe('Auth0', () => {
     it('creates correct query params when `options.federated` is true', async () => {
       const { auth0, utils } = await setup();
 
-      auth0.logout({ federated: true, client_id: null });
+      auth0.buildLogoutUrl({ federated: true, client_id: null });
       expect(utils.createQueryParams).toHaveBeenCalledWith({});
+    });
+  });
+
+  describe('logout()', () => {
+    it('removes `auth0.is.authenticated` key from storage', async () => {
+      const { auth0, cookieStorage } = await setup();
+      auth0.logout();
+      expect(cookieStorage.remove).toHaveBeenCalledWith(
+        'auth0.is.authenticated'
+      );
     });
 
     it('calls `window.location.assign` with the correct url', async () => {
