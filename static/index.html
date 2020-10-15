@@ -13,7 +13,7 @@
 
   <body>
     <div id="app" class="container">
-      <div v-if="!loading" style="visibility: hidden;">
+      <div v-if="!loading" style="visibility: hidden">
         <span id="loaded">loaded</span>
       </div>
 
@@ -133,9 +133,7 @@
         </div>
 
         <div class="card mb-3" v-if="id_token">
-          <div class="card-header">
-            ID Token
-          </div>
+          <div class="card-header">ID Token</div>
           <div class="card-body">
             {{ id_token | concat }} (<a
               :href="'https://jwt.io?token=' + id_token"
@@ -237,9 +235,7 @@
           >
         </div>
 
-        <button @click="saveForm" class="btn btn-primary">
-          Save
-        </button>
+        <button @click="saveForm" class="btn btn-primary">Save</button>
 
         <button
           @click="resetForm"
@@ -280,6 +276,7 @@
             useRefreshTokens: data.useRefreshTokens || false,
             useCache: data.useCache === false ? false : true,
             useConstructor: data.useConstructor === false ? false : true,
+            useCookiesForTransactions: true,
             profile: null,
             id_token: '',
             isAuthenticated: false,
