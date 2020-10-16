@@ -464,9 +464,11 @@ export default class Auth0Client {
     url: string = window.location.href
   ): Promise<RedirectLoginResult> {
     const queryStringFragments = url.split('?').slice(1);
+
     if (queryStringFragments.length === 0) {
       throw new Error('There are no query params available for parsing.');
     }
+
     const { state, code, error, error_description } = parseQueryResult(
       queryStringFragments.join('')
     );
