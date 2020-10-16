@@ -330,7 +330,16 @@
           initializeClient: function () {
             var _self = this;
 
-            const _init = function (auth0) {
+            var clientOptions = {
+              domain: _self.domain,
+              client_id: _self.clientId,
+              cacheLocation: _self.useLocalStorage ? 'localstorage' : 'memory',
+              useRefreshTokens: _self.useRefreshTokens,
+              audience: _self.audience,
+              useCookiesForTransactions: _self.useCookiesForTransactions
+            };
+
+            var _init = function (auth0) {
               _self.auth0 = auth0;
               window.auth0 = auth0; // Cypress integration tests support
               _self.loading = false;
@@ -343,29 +352,11 @@
             if (_self.useConstructor) {
               console.log('Initializing using the constructor');
 
-              _init(
-                new Auth0Client({
-                  domain: _self.domain,
-                  client_id: _self.clientId,
-                  cacheLocation: _self.useLocalStorage
-                    ? 'localstorage'
-                    : 'memory',
-                  useRefreshTokens: _self.useRefreshTokens,
-                  audience: _self.audience
-                })
-              );
+              _init(new Auth0Client(clientOptions));
             } else {
               console.log('Initializing using the factory function');
 
-              createAuth0Client({
-                domain: _self.domain,
-                client_id: _self.clientId,
-                cacheLocation: _self.useLocalStorage
-                  ? 'localstorage'
-                  : 'memory',
-                useRefreshTokens: _self.useRefreshTokens,
-                audience: _self.audience
-              }).then(_init);
+              createAuth0Client(clientOptions).then(_init);
             }
           },
           saveForm: function () {
