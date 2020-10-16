@@ -226,6 +226,19 @@ describe('Auth0Client', () => {
         auth0Client
       );
     });
+
+    it('uses cookie storage for transactions', async () => {
+      const auth0 = setup({ useCookiesForTransactions: true });
+      const cookies = require('es-cookie');
+
+      await loginWithRedirect(auth0);
+
+      // Don't necessarily need to check the contents of the cookie (the storage tests are doing that),
+      // just that cookies were used when I set the correct option.
+      expect((cookies.set as jest.Mock).mock.calls[1][0]).toEqual(
+        'a0.spajs.txs'
+      );
+    });
   });
 
   describe('handleRedirectCallback', () => {
