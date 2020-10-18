@@ -493,15 +493,21 @@ describe('Auth0Client', () => {
     it('saves `auth0.is.authenticated` key in storage', async () => {
       const auth0 = setup();
 
-      jest.spyOn(auth0['cookieStorage'], 'save');
-
       await loginWithPopup(auth0);
 
-      expect(auth0['cookieStorage']['save']).toHaveBeenCalledWith(
-        'auth0.is.authenticated',
-        true,
+      expect(<jest.Mock>esCookie.set).toHaveBeenCalledWith(
+        '_legacy_auth0.is.authenticated',
+        'true',
         {
-          daysUntilExpire: 1
+          expires: 1
+        }
+      );
+
+      expect(<jest.Mock>esCookie.set).toHaveBeenCalledWith(
+        'auth0.is.authenticated',
+        'true',
+        {
+          expires: 1
         }
       );
     });
@@ -510,15 +516,20 @@ describe('Auth0Client', () => {
         sessionCheckExpiryDays: 2
       });
 
-      jest.spyOn(auth0['cookieStorage'], 'save');
-
       await loginWithPopup(auth0);
 
-      expect(auth0['cookieStorage']['save']).toHaveBeenCalledWith(
-        'auth0.is.authenticated',
-        true,
+      expect(<jest.Mock>esCookie.set).toHaveBeenCalledWith(
+        '_legacy_auth0.is.authenticated',
+        'true',
         {
-          daysUntilExpire: 2
+          expires: 2
+        }
+      );
+      expect(<jest.Mock>esCookie.set).toHaveBeenCalledWith(
+        'auth0.is.authenticated',
+        'true',
+        {
+          expires: 2
         }
       );
     });
