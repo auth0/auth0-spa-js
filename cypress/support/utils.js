@@ -10,3 +10,15 @@ module.exports.shouldNotBe = (expected, actual) =>
 
 module.exports.whenReady = () =>
   cy.get('#loaded', { timeout: 10000 }).then(() => cy.window());
+
+/**
+ * Returns true if a is within b +- tolerance
+ * @param {*} a The value to check
+ * @param {*} b The value to compare against
+ * @param {*} tolerance The tolerance value
+ */
+module.exports.tolerance = (a, b, tolerance) => {
+  if (a > b - tolerance && a < b + tolerance) {
+    return true;
+  }
+};

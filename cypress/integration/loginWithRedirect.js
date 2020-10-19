@@ -4,7 +4,8 @@ import {
   shouldBeUndefined,
   shouldNotBeUndefined,
   whenReady,
-  shouldInclude
+  shouldInclude,
+  tolerance
 } from '../support/utils';
 
 describe('loginWithRedirect', function () {
@@ -65,15 +66,24 @@ describe('loginWithRedirect', function () {
     });
   });
 
-  it('can perform the login flow with cookie transactions', () => {
+  it.only('can perform the login flow with cookie transactions', () => {
     whenReady().then(win => {
       cy.toggleSwitch('cookie-txns');
+
+      const tomorrowInSeconds = Math.floor(Date.now() / 1000) + 86400;
+
       cy.loginNoCallback();
 
       cy.url().then(url => shouldInclude(url, 'https://brucke.auth0.com'));
 
       cy.get('#loaded').then(() => {
-        cy.getCookie('a0.spajs.txs').should('exist');
+        cy.getCookie('a0.spajs.txs')
+          .should('exist')
+          .then(cookie => {
+            // Check that the cookie value is at least within a second of what we expect, to make
+            // the test a little less brittle.
+            expect(tolerance(cookie.expiry, tomorrowInSeconds, 1)).to.be.true;
+          });
 
         cy.handleRedirectCallback().then(() => {
           cy.getCookie('a0.spajs.txs').should('not.exist');
