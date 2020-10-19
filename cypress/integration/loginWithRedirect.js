@@ -49,7 +49,7 @@ describe('loginWithRedirect', function () {
     });
   });
 
-  it('can peform the login flow', () => {
+  it('can perform the login flow', () => {
     whenReady().then(win => {
       cy.loginNoCallback();
 
