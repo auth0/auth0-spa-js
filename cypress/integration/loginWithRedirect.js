@@ -66,7 +66,7 @@ describe('loginWithRedirect', function () {
     });
   });
 
-  it.only('can perform the login flow with cookie transactions', () => {
+  it('can perform the login flow with cookie transactions', () => {
     whenReady().then(win => {
       cy.toggleSwitch('cookie-txns');
 
