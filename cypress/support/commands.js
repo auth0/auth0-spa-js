@@ -13,7 +13,7 @@ import { whenReady } from './utils';
 //
 // -- This is a parent command --
 
-Cypress.Commands.add('login', () => {
+const login = () => {
   cy.get('#login_redirect').click();
 
   cy.get('.auth0-lock-input-username .auth0-lock-input')
@@ -22,17 +22,20 @@ Cypress.Commands.add('login', () => {
 
   cy.get('.auth0-lock-input-password .auth0-lock-input').clear().type('1234');
   cy.get('.auth0-lock-submit').click();
+};
 
-  return whenReady().then(() => {
-    cy.get('#handle_redirect_callback').click();
-    return cy.wait(250);
-  });
-});
-
-Cypress.Commands.add('handleRedirectCallback', () => {
+const handleCallback = () => {
   cy.get('#handle_redirect_callback').click();
-  return cy.wait(250);
+  return cy.get('[data-cy=profile]');
+};
+
+Cypress.Commands.add('login', () => {
+  login();
+
+  return whenReady().then(() => handleCallback());
 });
+
+Cypress.Commands.add('handleRedirectCallback', () => handleCallback());
 
 Cypress.Commands.add('logout', () => cy.get('[data-cy=logout]').click());
 
@@ -40,15 +43,7 @@ Cypress.Commands.add('toggleSwitch', name =>
   cy.get(`[data-cy=switch-${name}]`).click()
 );
 
-Cypress.Commands.add('loginNoCallback', () => {
-  cy.get('#login_redirect').click();
-
-  cy.get('.auth0-lock-input-username .auth0-lock-input')
-    .clear()
-    .type('johnfoo+integration@gmail.com');
-  cy.get('.auth0-lock-input-password .auth0-lock-input').clear().type('1234');
-  cy.get('.auth0-lock-submit').click();
-});
+Cypress.Commands.add('loginNoCallback', () => login());
 
 Cypress.Commands.add('resetTests', () => {
   cy.server();

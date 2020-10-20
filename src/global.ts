@@ -141,6 +141,19 @@ export interface Auth0ClientOptions extends BaseLoginOptions {
   legacySameSiteCookie?: boolean;
 
   /**
+   * If `true`, the SDK will use a cookie when storing information about the auth transaction while
+   * the user is going through the authentication flow on the authorization server.
+   *
+   * The default is `false`, in which case the SDK will use session storage.
+   *
+   * @notes
+   *
+   * You might want to enable this if you rely on your users being able to authenticate using flows that
+   * may end up spanning across multiple tabs (e.g. magic links) or you cannot otherwise rely on session storage being available.
+   */
+  useCookiesForTransactions?: boolean;
+
+  /**
    * Changes to recommended defaults, like defaultScope
    */
   advancedOptions?: AdvancedOptions;

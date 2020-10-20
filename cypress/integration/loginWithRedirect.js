@@ -3,13 +3,15 @@ import {
   shouldBe,
   shouldBeUndefined,
   shouldNotBeUndefined,
-  whenReady
+  whenReady,
+  shouldInclude,
+  tolerance
 } from '../support/utils';
 
-describe('loginWithRedirect', function() {
+describe('loginWithRedirect', function () {
   beforeEach(cy.resetTests);
 
-  it('Builds URL correctly', function() {
+  it('Builds URL correctly', function () {
     whenReady().then(win => {
       return win.auth0.loginWithRedirect({
         redirect_uri: 'http://localhost:3000/'
@@ -34,7 +36,7 @@ describe('loginWithRedirect', function() {
     });
   });
 
-  it('Appends unique scopes to the default scopes', function() {
+  it('Appends unique scopes to the default scopes', function () {
     whenReady().then(win => {
       return win.auth0.loginWithRedirect({
         redirect_uri: 'http://localhost:3000/',
@@ -45,6 +47,48 @@ describe('loginWithRedirect', function() {
     cy.url().then(url => {
       const pageParams = decode(new URL(url).search.substr(1));
       shouldBe(pageParams.scope, 'openid profile email test test2');
+    });
+  });
+
+  it('can perform the login flow', () => {
+    whenReady().then(win => {
+      cy.loginNoCallback();
+
+      cy.url().then(url => shouldInclude(url, 'https://brucke.auth0.com'));
+
+      cy.get('#loaded').then(() => {
+        expect(win.sessionStorage.getItem('a0.spajs.txs')).to.exist;
+
+        cy.handleRedirectCallback().then(() => {
+          expect(win.sessionStorage.getItem('a0.spajs.txs')).to.not.exist;
+        });
+      });
+    });
+  });
+
+  it('can perform the login flow with cookie transactions', () => {
+    whenReady().then(win => {
+      cy.toggleSwitch('cookie-txns');
+
+      const tomorrowInSeconds = Math.floor(Date.now() / 1000) + 86400;
+
+      cy.loginNoCallback();
+
+      cy.url().then(url => shouldInclude(url, 'https://brucke.auth0.com'));
+
+      cy.get('#loaded').then(() => {
+        cy.getCookie('a0.spajs.txs')
+          .should('exist')
+          .then(cookie => {
+            // Check that the cookie value is at least within a second of what we expect, to make
+            // the test a little less brittle.
+            expect(tolerance(cookie.expiry, tomorrowInSeconds, 1)).to.be.true;
+          });
+
+        cy.handleRedirectCallback().then(() => {
+          cy.getCookie('a0.spajs.txs').should('not.exist');
+        });
+      });
     });
   });
 });
