@@ -1,15 +1,33 @@
 import 'fast-text-encoding';
 import * as esCookie from 'es-cookie';
-import Auth0Client from '../src/Auth0Client';
 import unfetch from 'unfetch';
 import { verify } from '../src/jwt';
 import { MessageChannel } from 'worker_threads';
 import * as utils from '../src/utils';
-import { Auth0ClientOptions, IdToken } from '../src';
+import { PopupConfigOptions } from '../src';
 import * as scope from '../src/scope';
 import { expectToHaveBeenCalledWithAuth0ClientParam } from './helpers';
 // @ts-ignore
 import { acquireLockSpy } from 'browser-tabs-lock';
+import {
+  checkSessionFn,
+  loginWithPopupFn,
+  loginWithRedirectFn,
+  setupFn,
+  TEST_ACCESS_TOKEN,
+  TEST_CLIENT_ID,
+  TEST_CODE,
+  TEST_CODE_CHALLENGE,
+  TEST_CODE_VERIFIER,
+  TEST_DOMAIN,
+  TEST_ID_TOKEN,
+  TEST_NONCE,
+  TEST_REDIRECT_URI,
+  TEST_REFRESH_TOKEN,
+  TEST_SCOPES,
+  TEST_STATE
+} from './Auth0Client.helpers';
+import { DEFAULT_POPUP_CONFIG_OPTIONS } from '../src/constants';
 
 jest.mock('unfetch');
 jest.mock('es-cookie');
@@ -20,6 +38,33 @@ const mockWindow = <any>global;
 const mockFetch = (mockWindow.fetch = <jest.Mock>unfetch);
 const mockVerify = <jest.Mock>verify;
 const mockCookies = require('es-cookie');
+const originalRunPopup = utils.runPopup;
+const tokenVerifier = require('../src/jwt').verify;
+
+const authorizationResponse = {
+  code: 'my_code',
+  state: TEST_STATE
+};
+
+jest
+  .spyOn(utils, 'bufferToBase64UrlEncoded')
+  .mockReturnValue(TEST_CODE_CHALLENGE);
+jest
+  .spyOn(utils, 'runPopup')
+  .mockImplementation((authorizeUrl: string, config: PopupConfigOptions) => {
+    setTimeout(() => {
+      window.dispatchEvent(
+        new MessageEvent('message', {
+          data: {
+            type: 'authorization_response',
+            response: authorizationResponse
+          }
+        })
+      );
+    }, 10);
+
+    return originalRunPopup(authorizeUrl, config);
+  });
 
 const assertUrlEquals = (actualUrl, host, path, queryParams) => {
   const url = new URL(actualUrl);
@@ -42,66 +87,19 @@ const fetchResponse = (ok, json) =>
     json: () => Promise.resolve(json)
   });
 
-const setup = (
-  config?: Partial<Auth0ClientOptions>,
-  claims?: Partial<IdToken>
-) => {
-  const auth0 = new Auth0Client(
-    Object.assign(
-      {
-        domain: 'auth0_domain',
-        client_id: 'auth0_client_id',
-        redirect_uri: 'my_callback_url'
-      },
-      config
-    )
-  );
-
-  mockVerify.mockReturnValue({
-    claims: Object.assign(
-      {
-        exp: Date.now() / 1000 + 86400
-      },
-      claims
-    ),
-    user: {
-      sub: 'me'
-    }
-  });
-
-  return auth0;
-};
-
-const loginWithRedirect: any = async (
-  auth0,
-  tokenSuccess = true,
-  tokenResponse = {},
-  code = 'my_code',
-  state = 'MTIz'
-) => {
-  await auth0.loginWithRedirect();
-  expect(mockWindow.location.assign).toHaveBeenCalled();
-  window.history.pushState({}, '', `/?code=${code}&state=${state}`);
-  mockFetch.mockResolvedValueOnce(
-    fetchResponse(
-      tokenSuccess,
-      Object.assign(
-        {
-          id_token: 'my_id_token',
-          refresh_token: 'my_refresh_token',
-          access_token: 'my_access_token',
-          expires_in: 86400
-        },
-        tokenResponse
-      )
-    )
-  );
-  await auth0.handleRedirectCallback();
-};
+const setup = setupFn(mockVerify);
+const loginWithRedirect = loginWithRedirectFn(
+  mockWindow,
+  mockFetch,
+  fetchResponse
+);
+const loginWithPopup = loginWithPopupFn(mockWindow, mockFetch, fetchResponse);
+const checkSession = checkSessionFn(mockFetch, fetchResponse);
 
 describe('Auth0Client', () => {
   beforeEach(() => {
     mockWindow.location.assign = jest.fn();
+    mockWindow.open = jest.fn();
     mockWindow.crypto = {
       subtle: {
         digest: () => 'foo'
@@ -114,9 +112,11 @@ describe('Auth0Client', () => {
     mockWindow.Worker = {};
     jest.spyOn(scope, 'getUniqueScopes');
     sessionStorage.clear();
+    authorizationResponse.state = TEST_STATE;
   });
 
   afterEach(() => {
+    mockFetch.mockReset();
     jest.clearAllMocks();
   });
 
@@ -175,28 +175,400 @@ describe('Auth0Client', () => {
     });
   });
 
+  describe('loginWithPopup', () => {
+    it('encodes state with random string', async () => {
+      const auth0 = setup();
+
+      await loginWithPopup(auth0);
+
+      const [[url]] = (<jest.Mock>mockWindow.open).mock.calls;
+      assertUrlEquals(url, 'auth0_domain', '/authorize', {
+        state: TEST_STATE,
+        nonce: TEST_NONCE
+      });
+    });
+
+    it('creates `code_challenge` by using `utils.sha256` with the result of `utils.createRandomString`', async () => {
+      const auth0 = setup();
+
+      await loginWithPopup(auth0);
+
+      const [[url]] = (<jest.Mock>mockWindow.open).mock.calls;
+      assertUrlEquals(url, 'auth0_domain', '/authorize', {
+        code_challenge: TEST_CODE_CHALLENGE,
+        code_challenge_method: 'S256'
+      });
+    });
+
+    it('should log the user in with a popup and redirect using a default redirect URI', async () => {
+      const auth0 = setup({ leeway: 10, redirect_uri: null });
+
+      await loginWithPopup(auth0, {
+        connection: 'test-connection',
+        audience: 'test'
+      });
+
+      expect(mockWindow.open).toHaveBeenCalled();
+      const [[url]] = (<jest.Mock>mockWindow.open).mock.calls;
+      assertUrlEquals(url, 'auth0_domain', '/authorize', {
+        redirect_uri: 'http://localhost',
+        client_id: TEST_CLIENT_ID,
+        scope: TEST_SCOPES,
+        response_type: 'code',
+        response_mode: 'web_message',
+        state: TEST_STATE,
+        nonce: TEST_NONCE,
+        code_challenge: TEST_CODE_CHALLENGE,
+        code_challenge_method: 'S256',
+        connection: 'test-connection',
+        audience: 'test'
+      });
+    });
+
+    it('should log the user in with a popup and redirect', async () => {
+      const auth0 = setup({ leeway: 10 });
+
+      await loginWithPopup(auth0, {
+        connection: 'test-connection',
+        audience: 'test'
+      });
+
+      expect(mockWindow.open).toHaveBeenCalled();
+      const [[url]] = (<jest.Mock>mockWindow.open).mock.calls;
+      assertUrlEquals(url, TEST_DOMAIN, '/authorize', {
+        redirect_uri: TEST_REDIRECT_URI,
+        client_id: TEST_CLIENT_ID,
+        scope: TEST_SCOPES,
+        response_type: 'code',
+        response_mode: 'web_message',
+        state: TEST_STATE,
+        nonce: TEST_NONCE,
+        code_challenge: TEST_CODE_CHALLENGE,
+        code_challenge_method: 'S256',
+        connection: 'test-connection',
+        audience: 'test'
+      });
+    });
+
+    it('should log the user in with a popup and get the token', async () => {
+      const auth0 = setup();
+
+      await loginWithPopup(auth0);
+
+      expect(mockWindow.open).toHaveBeenCalled();
+      assertPost('https://auth0_domain/oauth/token', {
+        redirect_uri: TEST_REDIRECT_URI,
+        client_id: TEST_CLIENT_ID,
+        code_verifier: TEST_CODE_VERIFIER,
+        grant_type: 'authorization_code',
+        code: 'my_code'
+      });
+    });
+
+    it('uses default config', async () => {
+      const auth0 = setup({ leeway: 10 });
+
+      await loginWithPopup(auth0);
+
+      expect(utils.runPopup).toHaveBeenCalledWith(
+        expect.any(String),
+        DEFAULT_POPUP_CONFIG_OPTIONS
+      );
+    });
+
+    it('should be able to provide custom config', async () => {
+      const auth0 = setup({ leeway: 10 });
+
+      await loginWithPopup(auth0, {}, { timeoutInSeconds: 3 });
+
+      expect(utils.runPopup).toHaveBeenCalledWith(expect.any(String), {
+        timeoutInSeconds: 3
+      });
+    });
+
+    it('throws an error if not resolved before timeout', async () => {
+      const auth0 = setup({ leeway: 10 });
+
+      await expect(
+        loginWithPopup(auth0, {}, { timeoutInSeconds: 0.005 })
+      ).rejects.toThrowError('Timeout');
+    });
+
+    it('uses a custom popup specified in the configuration and redirect', async () => {
+      const auth0 = setup();
+      const popup = {
+        location: { href: '' },
+        close: jest.fn()
+      };
+
+      await loginWithPopup(
+        auth0,
+        { connection: 'test-connection', audience: 'test' },
+        { popup }
+      );
+
+      expect(mockWindow.open).not.toHaveBeenCalled();
+      assertUrlEquals(popup.location.href, TEST_DOMAIN, '/authorize', {
+        redirect_uri: TEST_REDIRECT_URI,
+        client_id: TEST_CLIENT_ID,
+        scope: TEST_SCOPES,
+        response_type: 'code',
+        response_mode: 'web_message',
+        state: TEST_STATE,
+        nonce: TEST_NONCE,
+        code_challenge: TEST_CODE_CHALLENGE,
+        code_challenge_method: 'S256',
+        connection: 'test-connection',
+        audience: 'test'
+      });
+    });
+
+    it('uses a custom popup specified in the configuration and get a token', async () => {
+      const auth0 = setup();
+      const popup = {
+        location: { href: '' },
+        close: jest.fn()
+      };
+
+      await loginWithPopup(auth0, {}, { popup });
+
+      expect(mockWindow.open).not.toHaveBeenCalled();
+      assertPost('https://auth0_domain/oauth/token', {
+        redirect_uri: TEST_REDIRECT_URI,
+        client_id: TEST_CLIENT_ID,
+        code_verifier: TEST_CODE_VERIFIER,
+        grant_type: 'authorization_code',
+        code: 'my_code'
+      });
+    });
+
+    it('opens popup with custom auth0Client', async () => {
+      const auth0Client = { name: '__test_client_name__', version: '9.9.9' };
+      const auth0 = await setup({ auth0Client });
+
+      await loginWithPopup(auth0);
+
+      expect(mockWindow.open).toHaveBeenCalled();
+      const [[url]] = (<jest.Mock>mockWindow.open).mock.calls;
+      assertUrlEquals(url, TEST_DOMAIN, '/authorize', {
+        auth0Client: btoa(JSON.stringify(auth0Client))
+      });
+    });
+
+    it('throws error if state from popup response is different from the provided state', async () => {
+      authorizationResponse.state = 'other-state';
+
+      const auth0 = setup();
+
+      await expect(loginWithPopup(auth0)).rejects.toThrowError('Invalid state');
+    });
+
+    it('calls `tokenVerifier.verify` with the `issuer` from in the oauth/token response', async () => {
+      const auth0 = setup({
+        issuer: 'test-123.auth0.com'
+      });
+
+      await loginWithPopup(auth0);
+      expect(tokenVerifier).toHaveBeenCalledWith(
+        expect.objectContaining({
+          iss: 'https://test-123.auth0.com/'
+        })
+      );
+    });
+    it('calls `tokenVerifier.verify` with the `leeway` from constructor', async () => {
+      const auth0 = setup({ leeway: 10 });
+
+      await loginWithPopup(auth0);
+
+      expect(tokenVerifier).toHaveBeenCalledWith(
+        expect.objectContaining({
+          leeway: 10
+        })
+      );
+    });
+    it('calls `tokenVerifier.verify` with undefined `max_age` when value set in constructor is an empty string', async () => {
+      const auth0 = setup({ max_age: '' });
+
+      await loginWithPopup(auth0);
+
+      expect(tokenVerifier).toHaveBeenCalledWith(
+        expect.objectContaining({
+          max_age: undefined
+        })
+      );
+    });
+    it('calls `tokenVerifier.verify` with the parsed `max_age` string from constructor', async () => {
+      const auth0 = setup({ max_age: '10' });
+
+      await loginWithPopup(auth0);
+
+      expect(tokenVerifier).toHaveBeenCalledWith(
+        expect.objectContaining({
+          max_age: 10
+        })
+      );
+    });
+    it('calls `tokenVerifier.verify` with the parsed `max_age` number from constructor', async () => {
+      const auth0 = setup({ max_age: 10 });
+
+      await loginWithPopup(auth0);
+
+      expect(tokenVerifier).toHaveBeenCalledWith(
+        expect.objectContaining({
+          max_age: 10
+        })
+      );
+    });
+
+    it('saves into cache', async () => {
+      const auth0 = setup();
+
+      jest.spyOn(auth0['cache'], 'save');
+
+      await loginWithPopup(auth0);
+
+      expect(auth0['cache']['save']).toHaveBeenCalledWith(
+        expect.objectContaining({
+          client_id: TEST_CLIENT_ID,
+          access_token: TEST_ACCESS_TOKEN,
+          expires_in: 86400,
+          audience: 'default',
+          id_token: TEST_ID_TOKEN,
+          scope: TEST_SCOPES
+        })
+      );
+    });
+
+    it('saves decoded token into cache', async () => {
+      const auth0 = setup();
+
+      const mockDecodedToken = {
+        claims: { sub: 'sub', aud: 'aus' },
+        user: { sub: 'sub' }
+      };
+      tokenVerifier.mockReturnValue(mockDecodedToken);
+
+      jest.spyOn(auth0['cache'], 'save');
+
+      await loginWithPopup(auth0);
+
+      expect(auth0['cache']['save']).toHaveBeenCalledWith(
+        expect.objectContaining({
+          decodedToken: mockDecodedToken
+        })
+      );
+    });
+
+    it('should not save refresh_token in memory cache', async () => {
+      const auth0 = setup({
+        useRefreshTokens: true
+      });
+
+      jest.spyOn(auth0['cache'], 'save');
+
+      await loginWithPopup(auth0);
+
+      expect(auth0['cache']['save']).toHaveBeenCalled();
+      expect(auth0['cache']['save']).not.toHaveBeenCalledWith(
+        expect.objectContaining({
+          refresh_token: TEST_REFRESH_TOKEN
+        })
+      );
+    });
+    it('should save refresh_token in local storage cache', async () => {
+      const auth0 = setup({
+        useRefreshTokens: true,
+        cacheLocation: 'localstorage'
+      });
+
+      jest.spyOn(auth0['cache'], 'save');
+
+      await loginWithPopup(auth0);
+
+      expect(auth0['cache']['save']).toHaveBeenCalledWith(
+        expect.objectContaining({
+          refresh_token: TEST_REFRESH_TOKEN
+        })
+      );
+    });
+
+    it('saves `auth0.is.authenticated` key in storage', async () => {
+      const auth0 = setup();
+
+      await loginWithPopup(auth0);
+
+      expect(<jest.Mock>esCookie.set).toHaveBeenCalledWith(
+        '_legacy_auth0.is.authenticated',
+        'true',
+        {
+          expires: 1
+        }
+      );
+
+      expect(<jest.Mock>esCookie.set).toHaveBeenCalledWith(
+        'auth0.is.authenticated',
+        'true',
+        {
+          expires: 1
+        }
+      );
+    });
+    it('saves `auth0.is.authenticated` key in storage for an extended period', async () => {
+      const auth0 = setup({
+        sessionCheckExpiryDays: 2
+      });
+
+      await loginWithPopup(auth0);
+
+      expect(<jest.Mock>esCookie.set).toHaveBeenCalledWith(
+        '_legacy_auth0.is.authenticated',
+        'true',
+        {
+          expires: 2
+        }
+      );
+      expect(<jest.Mock>esCookie.set).toHaveBeenCalledWith(
+        'auth0.is.authenticated',
+        'true',
+        {
+          expires: 2
+        }
+      );
+    });
+
+    it('should throw an error on token failure', async () => {
+      const auth0 = setup();
+
+      await expect(
+        loginWithPopup(auth0, {}, {}, false, {})
+      ).rejects.toThrowError(
+        'HTTP error. Unable to fetch https://auth0_domain/oauth/token'
+      );
+    });
+  });
+
   describe('loginWithRedirect', () => {
     it('should log the user in and get the token', async () => {
       const auth0 = setup();
       await loginWithRedirect(auth0);
       const url = new URL(mockWindow.location.assign.mock.calls[0][0]);
-      assertUrlEquals(url, 'auth0_domain', '/authorize', {
-        client_id: 'auth0_client_id',
-        redirect_uri: 'my_callback_url',
-        scope: 'openid profile email',
+      assertUrlEquals(url, TEST_DOMAIN, '/authorize', {
+        client_id: TEST_CLIENT_ID,
+        redirect_uri: TEST_REDIRECT_URI,
+        scope: TEST_SCOPES,
         response_type: 'code',
         response_mode: 'query',
-        state: 'MTIz',
-        nonce: 'MTIz',
-        code_challenge: '',
+        state: TEST_STATE,
+        nonce: TEST_NONCE,
+        code_challenge: TEST_CODE_CHALLENGE,
         code_challenge_method: 'S256'
       });
       assertPost('https://auth0_domain/oauth/token', {
-        redirect_uri: 'my_callback_url',
-        client_id: 'auth0_client_id',
-        code_verifier: '123',
+        redirect_uri: TEST_REDIRECT_URI,
+        client_id: TEST_CLIENT_ID,
+        code_verifier: TEST_CODE_VERIFIER,
         grant_type: 'authorization_code',
-        code: 'my_code'
+        code: TEST_CODE
       });
     });
 
@@ -249,6 +621,16 @@ describe('Auth0Client', () => {
         'a0.spajs.txs'
       );
     });
+
+    it('should throw an error on token failure', async () => {
+      const auth0 = setup();
+
+      await expect(
+        loginWithRedirect(auth0, false, {}, TEST_CODE, 'MTIz')
+      ).rejects.toThrowError(
+        'HTTP error. Unable to fetch https://auth0_domain/oauth/token'
+      );
+    });
   });
 
   describe('handleRedirectCallback', () => {
@@ -259,9 +641,9 @@ describe('Auth0Client', () => {
 
       mockFetch.mockResolvedValueOnce(
         fetchResponse(true, {
-          id_token: 'my_id_token',
-          refresh_token: 'my_refresh_token',
-          access_token: 'my_access_token',
+          id_token: TEST_ID_TOKEN,
+          refresh_token: TEST_REFRESH_TOKEN,
+          access_token: TEST_ACCESS_TOKEN,
           expires_in: 86400
         })
       );
@@ -278,8 +660,8 @@ describe('Auth0Client', () => {
       await loginWithRedirect(auth0, true, { expires_in: 70 });
 
       jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
-        access_token: 'my_access_token',
-        state: 'MTIz'
+        access_token: TEST_ACCESS_TOKEN,
+        state: TEST_STATE
       });
 
       mockFetch.mockReset();
@@ -293,16 +675,16 @@ describe('Auth0Client', () => {
       await loginWithRedirect(auth0, true, { expires_in: 50 });
 
       jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
-        access_token: 'my_access_token',
-        state: 'MTIz'
+        access_token: TEST_ACCESS_TOKEN,
+        state: TEST_STATE
       });
 
       mockFetch.mockReset();
       mockFetch.mockResolvedValue(
         fetchResponse(true, {
-          id_token: 'my_id_token',
-          refresh_token: 'my_refresh_token',
-          access_token: 'my_access_token',
+          id_token: TEST_ID_TOKEN,
+          refresh_token: TEST_REFRESH_TOKEN,
+          access_token: TEST_ACCESS_TOKEN,
           expires_in: 86400
         })
       );
@@ -321,9 +703,9 @@ describe('Auth0Client', () => {
       mockFetch.mockReset();
       mockFetch.mockResolvedValue(
         fetchResponse(true, {
-          id_token: 'my_id_token',
-          refresh_token: 'my_refresh_token',
-          access_token: 'my_access_token',
+          id_token: TEST_ID_TOKEN,
+          refresh_token: TEST_REFRESH_TOKEN,
+          access_token: TEST_ACCESS_TOKEN,
           expires_in: 86400
         })
       );
@@ -342,9 +724,9 @@ describe('Auth0Client', () => {
       mockFetch.mockReset();
       mockFetch.mockResolvedValue(
         fetchResponse(true, {
-          id_token: 'my_id_token',
-          refresh_token: 'my_refresh_token',
-          access_token: 'my_access_token',
+          id_token: TEST_ID_TOKEN,
+          refresh_token: TEST_REFRESH_TOKEN,
+          access_token: TEST_ACCESS_TOKEN,
           expires_in: 86400
         })
       );
@@ -364,9 +746,9 @@ describe('Auth0Client', () => {
 
       mockFetch.mockResolvedValueOnce(
         fetchResponse(true, {
-          id_token: 'my_id_token',
-          refresh_token: 'my_refresh_token',
-          access_token: 'my_access_token',
+          id_token: TEST_ID_TOKEN,
+          refresh_token: TEST_REFRESH_TOKEN,
+          access_token: TEST_ACCESS_TOKEN,
           expires_in: 86400
         })
       );
@@ -376,15 +758,15 @@ describe('Auth0Client', () => {
       assertPost(
         'https://auth0_domain/oauth/token',
         {
-          client_id: 'auth0_client_id',
+          client_id: TEST_CLIENT_ID,
           grant_type: 'refresh_token',
-          redirect_uri: 'my_callback_url',
-          refresh_token: 'my_refresh_token'
+          redirect_uri: TEST_REDIRECT_URI,
+          refresh_token: TEST_REFRESH_TOKEN
         },
         1
       );
 
-      expect(access_token).toEqual('my_access_token');
+      expect(access_token).toEqual(TEST_ACCESS_TOKEN);
     });
 
     it('refreshes the token without the worker', async () => {
@@ -398,18 +780,18 @@ describe('Auth0Client', () => {
       await loginWithRedirect(auth0);
 
       assertPost('https://auth0_domain/oauth/token', {
-        redirect_uri: 'my_callback_url',
-        client_id: 'auth0_client_id',
-        code_verifier: '123',
+        redirect_uri: TEST_REDIRECT_URI,
+        client_id: TEST_CLIENT_ID,
+        code_verifier: TEST_CODE_VERIFIER,
         grant_type: 'authorization_code',
-        code: 'my_code'
+        code: TEST_CODE
       });
 
       mockFetch.mockResolvedValueOnce(
         fetchResponse(true, {
-          id_token: 'my_id_token',
-          refresh_token: 'my_refresh_token',
-          access_token: 'my_access_token',
+          id_token: TEST_ID_TOKEN,
+          refresh_token: TEST_REFRESH_TOKEN,
+          access_token: TEST_ACCESS_TOKEN,
           expires_in: 86400
         })
       );
@@ -419,15 +801,15 @@ describe('Auth0Client', () => {
       assertPost(
         'https://auth0_domain/oauth/token',
         {
-          client_id: 'auth0_client_id',
+          client_id: TEST_CLIENT_ID,
           grant_type: 'refresh_token',
-          redirect_uri: 'my_callback_url',
-          refresh_token: 'my_refresh_token'
+          redirect_uri: TEST_REDIRECT_URI,
+          refresh_token: TEST_REFRESH_TOKEN
         },
         1
       );
 
-      expect(access_token).toEqual('my_access_token');
+      expect(access_token).toEqual(TEST_ACCESS_TOKEN);
     });
 
     it('refreshes the token without the worker, when window.Worker is undefined', async () => {
@@ -443,18 +825,18 @@ describe('Auth0Client', () => {
       await loginWithRedirect(auth0);
 
       assertPost('https://auth0_domain/oauth/token', {
-        redirect_uri: 'my_callback_url',
-        client_id: 'auth0_client_id',
-        code_verifier: '123',
+        redirect_uri: TEST_REDIRECT_URI,
+        client_id: TEST_CLIENT_ID,
+        code_verifier: TEST_CODE_VERIFIER,
         grant_type: 'authorization_code',
-        code: 'my_code'
+        code: TEST_CODE
       });
 
       mockFetch.mockResolvedValueOnce(
         fetchResponse(true, {
-          id_token: 'my_id_token',
-          refresh_token: 'my_refresh_token',
-          access_token: 'my_access_token',
+          id_token: TEST_ID_TOKEN,
+          refresh_token: TEST_REFRESH_TOKEN,
+          access_token: TEST_ACCESS_TOKEN,
           expires_in: 86400
         })
       );
@@ -464,15 +846,15 @@ describe('Auth0Client', () => {
       assertPost(
         'https://auth0_domain/oauth/token',
         {
-          client_id: 'auth0_client_id',
+          client_id: TEST_CLIENT_ID,
           grant_type: 'refresh_token',
-          redirect_uri: 'my_callback_url',
-          refresh_token: 'my_refresh_token'
+          redirect_uri: TEST_REDIRECT_URI,
+          refresh_token: TEST_REFRESH_TOKEN
         },
         1
       );
 
-      expect(access_token).toEqual('my_access_token');
+      expect(access_token).toEqual(TEST_ACCESS_TOKEN);
     });
 
     it('handles fetch errors from the worker', async () => {
@@ -556,19 +938,19 @@ describe('Auth0Client', () => {
       expect((<any>auth0).worker).toBeDefined();
       await loginWithRedirect(auth0, true, { refresh_token: '' });
       jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
-        access_token: 'my_access_token',
-        state: 'MTIz'
+        access_token: TEST_ACCESS_TOKEN,
+        state: TEST_STATE
       });
       mockFetch.mockResolvedValueOnce(
         fetchResponse(true, {
-          id_token: 'my_id_token',
-          refresh_token: 'my_refresh_token',
-          access_token: 'my_access_token',
+          id_token: TEST_ID_TOKEN,
+          refresh_token: TEST_REFRESH_TOKEN,
+          access_token: TEST_ACCESS_TOKEN,
           expires_in: 86400
         })
       );
       const access_token = await auth0.getTokenSilently({ ignoreCache: true });
-      expect(access_token).toEqual('my_access_token');
+      expect(access_token).toEqual(TEST_ACCESS_TOKEN);
       expect(utils.runIframe).toHaveBeenCalled();
     });
 
@@ -653,19 +1035,19 @@ describe('Auth0Client', () => {
       expect((<any>auth0).worker).toBeUndefined();
       await loginWithRedirect(auth0, true, { refresh_token: '' });
       jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
-        access_token: 'my_access_token',
-        state: 'MTIz'
+        access_token: TEST_ACCESS_TOKEN,
+        state: TEST_STATE
       });
       mockFetch.mockResolvedValueOnce(
         fetchResponse(true, {
-          id_token: 'my_id_token',
-          refresh_token: 'my_refresh_token',
-          access_token: 'my_access_token',
+          id_token: TEST_ID_TOKEN,
+          refresh_token: TEST_REFRESH_TOKEN,
+          access_token: TEST_ACCESS_TOKEN,
           expires_in: 86400
         })
       );
       const access_token = await auth0.getTokenSilently({ ignoreCache: true });
-      expect(access_token).toEqual('my_access_token');
+      expect(access_token).toEqual(TEST_ACCESS_TOKEN);
       expect(utils.runIframe).toHaveBeenCalled();
     });
 
@@ -682,19 +1064,19 @@ describe('Auth0Client', () => {
       expect((<any>auth0).worker).toBeUndefined();
       await loginWithRedirect(auth0, true, { refresh_token: '' });
       jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
-        access_token: 'my_access_token',
-        state: 'MTIz'
+        access_token: TEST_ACCESS_TOKEN,
+        state: TEST_STATE
       });
       mockFetch.mockResolvedValueOnce(
         fetchResponse(true, {
-          id_token: 'my_id_token',
-          refresh_token: 'my_refresh_token',
-          access_token: 'my_access_token',
+          id_token: TEST_ID_TOKEN,
+          refresh_token: TEST_REFRESH_TOKEN,
+          access_token: TEST_ACCESS_TOKEN,
           expires_in: 86400
         })
       );
       const access_token = await auth0.getTokenSilently({ ignoreCache: true });
-      expect(access_token).toEqual('my_access_token');
+      expect(access_token).toEqual(TEST_ACCESS_TOKEN);
       expect(utils.runIframe).toHaveBeenCalled();
       Object.defineProperty(window.navigator, 'userAgent', {
         value: originalUserAgent
@@ -706,13 +1088,13 @@ describe('Auth0Client', () => {
       await loginWithRedirect(auth0);
       (auth0 as any).cache.clear();
       jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
-        access_token: 'my_access_token',
-        state: 'MTIz'
+        access_token: TEST_ACCESS_TOKEN,
+        state: TEST_STATE
       });
       mockFetch.mockResolvedValue(
         fetchResponse(true, {
-          id_token: 'my_id_token',
-          access_token: 'my_access_token',
+          id_token: TEST_ID_TOKEN,
+          access_token: TEST_ACCESS_TOKEN,
           expires_in: 86400
         })
       );
@@ -721,7 +1103,7 @@ describe('Auth0Client', () => {
         auth0.getTokenSilently(),
         auth0.getTokenSilently()
       ]);
-      expect(access_token).toEqual('my_access_token');
+      expect(access_token).toEqual(TEST_ACCESS_TOKEN);
       expect(utils.runIframe).toHaveBeenCalledTimes(1);
     });
 
@@ -729,14 +1111,14 @@ describe('Auth0Client', () => {
       const auth0 = setup();
       await loginWithRedirect(auth0);
       jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
-        access_token: 'my_access_token',
-        state: 'MTIz'
+        access_token: TEST_ACCESS_TOKEN,
+        state: TEST_STATE
       });
       mockFetch.mockResolvedValue(
         fetchResponse(true, {
-          id_token: 'my_id_token',
-          refresh_token: 'my_refresh_token',
-          access_token: 'my_access_token',
+          id_token: TEST_ID_TOKEN,
+          refresh_token: TEST_REFRESH_TOKEN,
+          access_token: TEST_ACCESS_TOKEN,
           expires_in: 86400
         })
       );
@@ -744,14 +1126,14 @@ describe('Auth0Client', () => {
         audience: 'foo',
         scope: 'bar'
       });
-      expect(access_token).toEqual('my_access_token');
+      expect(access_token).toEqual(TEST_ACCESS_TOKEN);
       expect(utils.runIframe).toHaveBeenCalledTimes(1);
       (<jest.Mock>utils.runIframe).mockClear();
       access_token = await auth0.getTokenSilently({
         audience: 'foo',
         scope: 'bar'
       });
-      expect(access_token).toEqual('my_access_token');
+      expect(access_token).toEqual(TEST_ACCESS_TOKEN);
       expect(utils.runIframe).not.toHaveBeenCalled();
     });
 
@@ -759,24 +1141,24 @@ describe('Auth0Client', () => {
       const auth0 = setup();
       await loginWithRedirect(auth0);
       jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
-        access_token: 'my_access_token',
-        state: 'MTIz'
+        access_token: TEST_ACCESS_TOKEN,
+        state: TEST_STATE
       });
       mockFetch.mockResolvedValue(
         fetchResponse(true, {
-          id_token: 'my_id_token',
-          refresh_token: 'my_refresh_token',
-          access_token: 'my_access_token',
+          id_token: TEST_ID_TOKEN,
+          refresh_token: TEST_REFRESH_TOKEN,
+          access_token: TEST_ACCESS_TOKEN,
           expires_in: 86400
         })
       );
       let access_token = await auth0.getTokenSilently({ audience: 'foo' });
-      expect(access_token).toEqual('my_access_token');
+      expect(access_token).toEqual(TEST_ACCESS_TOKEN);
       expect(acquireLockSpy).toHaveBeenCalled();
       acquireLockSpy.mockClear();
       // This request will hit the cache, so should not acquire the lock
       access_token = await auth0.getTokenSilently({ audience: 'foo' });
-      expect(access_token).toEqual('my_access_token');
+      expect(access_token).toEqual(TEST_ACCESS_TOKEN);
       expect(acquireLockSpy).not.toHaveBeenCalled();
     });
 
@@ -789,15 +1171,15 @@ describe('Auth0Client', () => {
       await loginWithRedirect(auth0, true);
 
       jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
-        access_token: 'my_access_token',
-        state: 'MTIz'
+        access_token: TEST_ACCESS_TOKEN,
+        state: TEST_STATE
       });
 
       mockFetch.mockResolvedValue(
         fetchResponse(true, {
-          id_token: 'my_id_token',
-          refresh_token: 'my_refresh_token',
-          access_token: 'my_access_token',
+          id_token: TEST_ID_TOKEN,
+          refresh_token: TEST_REFRESH_TOKEN,
+          access_token: TEST_ACCESS_TOKEN,
           expires_in: 86400
         })
       );
@@ -814,12 +1196,12 @@ describe('Auth0Client', () => {
       ).toBe(true);
 
       expect(JSON.parse(mockFetch.mock.calls[1][1].body)).toEqual({
-        redirect_uri: 'my_callback_url',
-        client_id: 'auth0_client_id',
+        redirect_uri: TEST_REDIRECT_URI,
+        client_id: TEST_CLIENT_ID,
         grant_type: 'authorization_code',
         custom_param: 'hello world',
         another_custom_param: 'bar',
-        code_verifier: '123'
+        code_verifier: TEST_CODE_VERIFIER
       });
     });
 
@@ -835,15 +1217,15 @@ describe('Auth0Client', () => {
       });
 
       jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
-        access_token: 'my_access_token',
-        state: 'MTIz'
+        access_token: TEST_ACCESS_TOKEN,
+        state: TEST_STATE
       });
 
       mockFetch.mockResolvedValue(
         fetchResponse(true, {
-          id_token: 'my_id_token',
-          refresh_token: 'my_refresh_token',
-          access_token: 'my_access_token',
+          id_token: TEST_ID_TOKEN,
+          refresh_token: TEST_REFRESH_TOKEN,
+          access_token: TEST_ACCESS_TOKEN,
           expires_in: 86400
         })
       );
@@ -856,15 +1238,15 @@ describe('Auth0Client', () => {
       });
 
       expect(JSON.parse(mockFetch.mock.calls[1][1].body)).toEqual({
-        redirect_uri: 'my_callback_url',
-        client_id: 'auth0_client_id',
+        redirect_uri: TEST_REDIRECT_URI,
+        client_id: TEST_CLIENT_ID,
         grant_type: 'refresh_token',
         refresh_token: 'a_refresh_token',
         custom_param: 'hello world',
         another_custom_param: 'bar'
       });
 
-      expect(access_token).toEqual('my_access_token');
+      expect(access_token).toEqual(TEST_ACCESS_TOKEN);
     });
   });
 
@@ -883,15 +1265,15 @@ describe('Auth0Client', () => {
       const auth0 = setup();
 
       jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
-        access_token: 'my_access_token',
-        state: 'MTIz'
+        access_token: TEST_ACCESS_TOKEN,
+        state: TEST_STATE
       });
       (<jest.Mock>esCookie.get).mockReturnValue(true);
       mockFetch.mockResolvedValueOnce(
         fetchResponse(true, {
-          id_token: 'my_id_token',
-          refresh_token: 'my_refresh_token',
-          access_token: 'my_access_token',
+          id_token: TEST_ID_TOKEN,
+          refresh_token: TEST_REFRESH_TOKEN,
+          access_token: TEST_ACCESS_TOKEN,
           expires_in: 86400
         })
       );
@@ -903,7 +1285,7 @@ describe('Auth0Client', () => {
     it('checks the legacy samesite cookie', async () => {
       const auth0 = setup();
       (<jest.Mock>esCookie.get).mockReturnValueOnce(undefined);
-      await auth0.checkSession();
+      await checkSession(auth0);
       expect(<jest.Mock>esCookie.get).toHaveBeenCalledWith(
         'auth0.is.authenticated'
       );
@@ -916,7 +1298,7 @@ describe('Auth0Client', () => {
       const auth0 = setup({
         legacySameSiteCookie: false
       });
-      await auth0.checkSession();
+      await checkSession(auth0);
       expect(<jest.Mock>esCookie.get).toHaveBeenCalledWith(
         'auth0.is.authenticated'
       );
