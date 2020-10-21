@@ -1,5 +1,20 @@
 # Change Log
 
+## [v1.13.0](https://github.com/auth0/auth0-spa-js/tree/v1.13.0) (2020-10-21)
+
+[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v1.12.1...v1.13.0)
+
+**Added**
+
+- [SDK-2042] Fallback option for transactions using cookies [\#603](https://github.com/auth0/auth0-spa-js/pull/603) ([stevehobbsdev](https://github.com/stevehobbsdev))
+- Refactor logout to use buildLogoutUrl [\#595](https://github.com/auth0/auth0-spa-js/pull/595) ([rnwolfe](https://github.com/rnwolfe))
+- Add an option to extend cookie expire day [\#586](https://github.com/auth0/auth0-spa-js/pull/586) ([luisfmsouza](https://github.com/luisfmsouza))
+
+**Fixed**
+
+- Use AbortController polyfill in Web Worker [\#598](https://github.com/auth0/auth0-spa-js/pull/598) ([frederikprijck](https://github.com/frederikprijck))
+- [SDK-1994] GMaps breaks SPA JS on IE11 [\#592](https://github.com/auth0/auth0-spa-js/pull/592) ([adamjmcgrath](https://github.com/adamjmcgrath))
+
 ## [v1.12.1](https://github.com/auth0/auth0-spa-js/tree/v1.12.1) (2020-09-17)
 
 [Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v1.12.0...v1.12.1)
