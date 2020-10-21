@@ -37,6 +37,7 @@ jest.mock('../src/token.worker');
 const mockWindow = <any>global;
 const mockFetch = (mockWindow.fetch = <jest.Mock>unfetch);
 const mockVerify = <jest.Mock>verify;
+const mockCookies = require('es-cookie');
 const originalRunPopup = utils.runPopup;
 const tokenVerifier = require('../src/jwt').verify;
 
@@ -110,6 +111,7 @@ describe('Auth0Client', () => {
     mockWindow.MessageChannel = MessageChannel;
     mockWindow.Worker = {};
     jest.spyOn(scope, 'getUniqueScopes');
+    sessionStorage.clear();
     authorizationResponse.state = TEST_STATE;
   });
 
@@ -599,6 +601,27 @@ describe('Auth0Client', () => {
       );
     });
 
+    it('uses session storage for transactions by default', async () => {
+      const auth0 = setup();
+      await auth0.loginWithRedirect();
+
+      expect((sessionStorage.setItem as jest.Mock).mock.calls[0][0]).toBe(
+        'a0.spajs.txs'
+      );
+    });
+
+    it('uses cookie storage for transactions', async () => {
+      const auth0 = setup({ useCookiesForTransactions: true });
+
+      await loginWithRedirect(auth0);
+
+      // Don't necessarily need to check the contents of the cookie (the storage tests are doing that),
+      // just that cookies were used when I set the correct option.
+      expect((mockCookies.set as jest.Mock).mock.calls[1][0]).toEqual(
+        'a0.spajs.txs'
+      );
+    });
+
     it('should throw an error on token failure', async () => {
       const auth0 = setup();
 
@@ -613,7 +636,9 @@ describe('Auth0Client', () => {
   describe('handleRedirectCallback', () => {
     it('should not attempt to log the user in with Object prototype properties as state', async () => {
       window.history.pushState({}, '', `/?code=foo&state=constructor`);
+
       const auth0 = await setup();
+
       mockFetch.mockResolvedValueOnce(
         fetchResponse(true, {
           id_token: TEST_ID_TOKEN,
@@ -622,6 +647,7 @@ describe('Auth0Client', () => {
           expires_in: 86400
         })
       );
+
       await expect(auth0.handleRedirectCallback()).rejects.toThrow(
         'Invalid state'
       );

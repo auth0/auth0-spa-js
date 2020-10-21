@@ -144,10 +144,12 @@ export default class Auth0Client {
   constructor(private options: Auth0ClientOptions) {
     typeof window !== 'undefined' && validateCrypto();
     this.cacheLocation = options.cacheLocation || CACHE_LOCATION_MEMORY;
+
     this.cookieStorage =
       options.legacySameSiteCookie === false
         ? CookieStorage
         : CookieStorageWithLegacySameSite;
+
     this.sessionCheckExpiryDays =
       options.sessionCheckExpiryDays || DEFAULT_SESSION_CHECK_EXPIRY_DAYS;
 
@@ -155,9 +157,13 @@ export default class Auth0Client {
       throw new Error(`Invalid cache location "${this.cacheLocation}"`);
     }
 
+    const transactionStorage = options.useCookiesForTransactions
+      ? this.cookieStorage
+      : SessionStorage;
+
     this.cache = cacheFactory(this.cacheLocation)();
     this.scope = this.options.scope;
-    this.transactionManager = new TransactionManager(SessionStorage);
+    this.transactionManager = new TransactionManager(transactionStorage);
     this.domainUrl = `https://${this.options.domain}`;
     this.tokenIssuer = getTokenIssuer(this.options.issuer, this.domainUrl);
 
@@ -458,9 +464,11 @@ export default class Auth0Client {
     url: string = window.location.href
   ): Promise<RedirectLoginResult> {
     const queryStringFragments = url.split('?').slice(1);
+
     if (queryStringFragments.length === 0) {
       throw new Error('There are no query params available for parsing.');
     }
+
     const { state, code, error, error_description } = parseQueryResult(
       queryStringFragments.join('')
     );

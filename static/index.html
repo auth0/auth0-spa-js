@@ -13,7 +13,7 @@
 
   <body>
     <div id="app" class="container">
-      <div v-if="!loading" style="visibility: hidden;">
+      <div v-if="!loading" style="visibility: hidden">
         <span id="loaded">loaded</span>
       </div>
 
@@ -125,7 +125,7 @@
           <div class="card-header">Profile</div>
           <div class="card-body">
             <pre>
-              <code>
+              <code data-cy="profile">
 {{ JSON.stringify(profile, null, 2) }}
               </code>
             </pre>
@@ -133,9 +133,7 @@
         </div>
 
         <div class="card mb-3" v-if="id_token">
-          <div class="card-header">
-            ID Token
-          </div>
+          <div class="card-header">ID Token</div>
           <div class="card-body">
             {{ id_token | concat }} (<a
               :href="'https://jwt.io?token=' + id_token"
@@ -176,6 +174,20 @@
             v-model="audience"
           />
         </div>
+
+        <div class="btn-group mb-5">
+          <button @click="saveForm" class="btn btn-primary">Save</button>
+
+          <button
+            @click="resetForm"
+            class="btn btn-outline-primary"
+            id="reset-config"
+          >
+            Reset
+          </button>
+        </div>
+
+        <h3 class="mb-5">Other switches</h3>
 
         <div class="custom-control custom-switch mb-5">
           <input
@@ -237,17 +249,20 @@
           >
         </div>
 
-        <button @click="saveForm" class="btn btn-primary">
-          Save
-        </button>
-
-        <button
-          @click="resetForm"
-          class="btn btn-outline-primary"
-          id="reset-config"
-        >
-          Reset
-        </button>
+        <div class="custom-control custom-switch mb-5">
+          <input
+            type="checkbox"
+            class="custom-control-input"
+            id="cookie-txn-switch"
+            v-model="useCookiesForTransactions"
+          />
+          <label
+            for="cookie-txn-switch"
+            class="custom-control-label"
+            data-cy="switch-cookie-txns"
+            >Use cookies for transactions</label
+          >
+        </div>
       </form>
     </div>
 
@@ -280,6 +295,7 @@
             useRefreshTokens: data.useRefreshTokens || false,
             useCache: data.useCache === false ? false : true,
             useConstructor: data.useConstructor === false ? false : true,
+            useCookiesForTransactions: data.useCookiesForTransactions || false,
             profile: null,
             id_token: '',
             isAuthenticated: false,
@@ -319,6 +335,10 @@
           useConstructor: function () {
             this.initializeClient();
             this.saveForm();
+          },
+          useCookiesForTransactions: function () {
+            this.initializeClient();
+            this.saveForm();
           }
         },
         computed: {
@@ -333,7 +353,16 @@
           initializeClient: function () {
             var _self = this;
 
-            const _init = function (auth0) {
+            var clientOptions = {
+              domain: _self.domain,
+              client_id: _self.clientId,
+              cacheLocation: _self.useLocalStorage ? 'localstorage' : 'memory',
+              useRefreshTokens: _self.useRefreshTokens,
+              audience: _self.audience,
+              useCookiesForTransactions: _self.useCookiesForTransactions
+            };
+
+            var _init = function (auth0) {
               _self.auth0 = auth0;
               window.auth0 = auth0; // Cypress integration tests support
               _self.loading = false;
@@ -346,29 +375,11 @@
             if (_self.useConstructor) {
               console.log('Initializing using the constructor');
 
-              _init(
-                new Auth0Client({
-                  domain: _self.domain,
-                  client_id: _self.clientId,
-                  cacheLocation: _self.useLocalStorage
-                    ? 'localstorage'
-                    : 'memory',
-                  useRefreshTokens: _self.useRefreshTokens,
-                  audience: _self.audience
-                })
-              );
+              _init(new Auth0Client(clientOptions));
             } else {
               console.log('Initializing using the factory function');
 
-              createAuth0Client({
-                domain: _self.domain,
-                client_id: _self.clientId,
-                cacheLocation: _self.useLocalStorage
-                  ? 'localstorage'
-                  : 'memory',
-                useRefreshTokens: _self.useRefreshTokens,
-                audience: _self.audience
-              }).then(_init);
+              createAuth0Client(clientOptions).then(_init);
             }
           },
           saveForm: function () {
@@ -380,6 +391,7 @@
                 useLocalStorage: this.useLocalStorage,
                 useRefreshTokens: this.useRefreshTokens,
                 useConstructor: this.useConstructor,
+                useCookiesForTransactions: this.useCookiesForTransactions,
                 useCache: this.useCache,
                 audience: this.audience
               })
@@ -393,6 +405,7 @@
             this.useCache = true;
             this.audience = defaultAudience;
             this.useConstructor = false;
+            this.useCookiesForTransactions = false;
             this.saveForm();
           },
           showAuth0Info: function () {
