@@ -2757,6 +2757,9 @@ img {
 			<a href="interfaces/logoutoptions.html" class="tsd-kind-icon">Logout<wbr>Options</a>
 		</li>
 		<li class=" tsd-kind-interface">
+			<a href="interfaces/logouturloptions.html" class="tsd-kind-icon">Logout<wbr>Url<wbr>Options</a>
+		</li>
+		<li class=" tsd-kind-interface">
 			<a href="interfaces/popupconfigoptions.html" class="tsd-kind-icon">Popup<wbr>Config<wbr>Options</a>
 		</li>
 		<li class=" tsd-kind-interface">
@@ -2845,7 +2848,7 @@ img {
 				<h2>Installation</h2>
 			</a>
 			<p>From the CDN:</p>
-			<pre><code class="language-html"><span class="hljs-tag">&lt;<span class="hljs-name">script</span> <span class="hljs-attr">src</span>=<span class="hljs-string">&quot;https://cdn.auth0.com/js/auth0-spa-js/1.11/auth0-spa-js.production.js&quot;</span>&gt;</span><span class="hljs-tag">&lt;/<span class="hljs-name">script</span>&gt;</span></code></pre>
+			<pre><code class="language-html"><span class="hljs-tag">&lt;<span class="hljs-name">script</span> <span class="hljs-attr">src</span>=<span class="hljs-string">&quot;https://cdn.auth0.com/js/auth0-spa-js/1.12/auth0-spa-js.production.js&quot;</span>&gt;</span><span class="hljs-tag">&lt;/<span class="hljs-name">script</span>&gt;</span></code></pre>
 			<p>Using <a href="https://npmjs.org">npm</a>:</p>
 			<pre><code class="language-sh">npm install @auth0/auth0-spa-js</code></pre>
 			<p>Using <a href="https://yarnpkg.com">yarn</a>:</p>
@@ -3079,6 +3082,7 @@ createAuth0Client({
 							<li class="tsd-kind-interface"><a href="interfaces/gettokenwithpopupoptions.html" class="tsd-kind-icon">Get<wbr>Token<wbr>With<wbr>Popup<wbr>Options</a></li>
 							<li class="tsd-kind-interface"><a href="interfaces/getuseroptions.html" class="tsd-kind-icon">Get<wbr>User<wbr>Options</a></li>
 							<li class="tsd-kind-interface"><a href="interfaces/logoutoptions.html" class="tsd-kind-icon">Logout<wbr>Options</a></li>
+							<li class="tsd-kind-interface"><a href="interfaces/logouturloptions.html" class="tsd-kind-icon">Logout<wbr>Url<wbr>Options</a></li>
 							<li class="tsd-kind-interface"><a href="interfaces/popupconfigoptions.html" class="tsd-kind-icon">Popup<wbr>Config<wbr>Options</a></li>
 							<li class="tsd-kind-interface"><a href="interfaces/popuploginoptions.html" class="tsd-kind-icon">Popup<wbr>Login<wbr>Options</a></li>
 							<li class="tsd-kind-interface"><a href="interfaces/redirectloginoptions.html" class="tsd-kind-icon">Redirect<wbr>Login<wbr>Options</a></li>
@@ -3124,7 +3128,7 @@ createAuth0Client({
 				<div class="tsd-signature tsd-kind-icon">Cache<wbr>Location<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">"memory"</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">"localstorage"</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/5a4c0c8/src/global.ts#L152">src/global.ts:152</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/1a4af92/src/global.ts#L171">src/global.ts:171</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-comment tsd-typography">
@@ -3139,7 +3143,7 @@ createAuth0Client({
 				<div class="tsd-signature tsd-kind-icon">get<wbr>IdToken<wbr>Claims<wbr>Options<span class="tsd-signature-symbol">:</span> <a href="interfaces/getidtokenclaimsoptions.html" class="tsd-signature-type">GetIdTokenClaimsOptions</a></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/5a4c0c8/src/global.ts#L235">src/global.ts:235</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/1a4af92/src/global.ts#L254">src/global.ts:254</a></li>
 					</ul>
 				</aside>
 			</section>
@@ -3152,7 +3156,7 @@ createAuth0Client({
 				<div class="tsd-signature tsd-kind-icon">CACHE_<wbr>LOCATION_<wbr>LOCAL_<wbr>STORAGE<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">"localstorage"</span><span class="tsd-signature-symbol"> = &quot;localstorage&quot;</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/5a4c0c8/src/constants.ts#L31">src/constants.ts:31</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/1a4af92/src/constants.ts#L31">src/constants.ts:31</a></li>
 					</ul>
 				</aside>
 			</section>
@@ -3162,7 +3166,7 @@ createAuth0Client({
 				<div class="tsd-signature tsd-kind-icon">CACHE_<wbr>LOCATION_<wbr>MEMORY<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">"memory"</span><span class="tsd-signature-symbol"> = &quot;memory&quot;</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/5a4c0c8/src/constants.ts#L30">src/constants.ts:30</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/1a4af92/src/constants.ts#L30">src/constants.ts:30</a></li>
 					</ul>
 				</aside>
 			</section>
@@ -3172,7 +3176,7 @@ createAuth0Client({
 				<div class="tsd-signature tsd-kind-icon">MISSING_<wbr>REFRESH_<wbr>TOKEN_<wbr>ERROR_<wbr>MESSAGE<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">"The web worker is missing the refresh token"</span><span class="tsd-signature-symbol"> = &quot;The web worker is missing the refresh token&quot;</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/5a4c0c8/src/constants.ts#L32">src/constants.ts:32</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/1a4af92/src/constants.ts#L32">src/constants.ts:32</a></li>
 					</ul>
 				</aside>
 			</section>
@@ -3182,7 +3186,7 @@ createAuth0Client({
 				<div class="tsd-signature tsd-kind-icon">refresh<wbr>Tokens<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">{}</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/5a4c0c8/src/token.worker.ts#L3">src/token.worker.ts:3</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/1a4af92/src/token.worker.ts#L4">src/token.worker.ts:4</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-type-declaration">
@@ -3204,7 +3208,7 @@ createAuth0Client({
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/5a4c0c8/src/token.worker.ts#L5">src/token.worker.ts:5</a></li>
+								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/1a4af92/src/token.worker.ts#L6">src/token.worker.ts:6</a></li>
 							</ul>
 						</aside>
 						<h4 class="tsd-parameters-title">Parameters</h4>
@@ -3230,7 +3234,7 @@ createAuth0Client({
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/5a4c0c8/src/index.ts#L18">src/index.ts:18</a></li>
+								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/1a4af92/src/index.ts#L19">src/index.ts:19</a></li>
 							</ul>
 						</aside>
 						<h4 class="tsd-parameters-title">Parameters</h4>
@@ -3253,7 +3257,7 @@ createAuth0Client({
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/5a4c0c8/src/token.worker.ts#L13">src/token.worker.ts:13</a></li>
+								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/1a4af92/src/token.worker.ts#L14">src/token.worker.ts:14</a></li>
 							</ul>
 						</aside>
 						<h4 class="tsd-parameters-title">Parameters</h4>
@@ -3279,7 +3283,7 @@ createAuth0Client({
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/5a4c0c8/src/token.worker.ts#L7">src/token.worker.ts:7</a></li>
+								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/1a4af92/src/token.worker.ts#L8">src/token.worker.ts:8</a></li>
 							</ul>
 						</aside>
 						<h4 class="tsd-parameters-title">Parameters</h4>
@@ -3305,7 +3309,7 @@ createAuth0Client({
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/5a4c0c8/src/token.worker.ts#L18">src/token.worker.ts:18</a></li>
+								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/1a4af92/src/token.worker.ts#L19">src/token.worker.ts:19</a></li>
 							</ul>
 						</aside>
 						<h4 class="tsd-parameters-title">Parameters</h4>
@@ -3353,7 +3357,7 @@ createAuth0Client({
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/5a4c0c8/src/token.worker.ts#L10">src/token.worker.ts:10</a></li>
+								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/1a4af92/src/token.worker.ts#L11">src/token.worker.ts:11</a></li>
 							</ul>
 						</aside>
 						<h4 class="tsd-parameters-title">Parameters</h4>
@@ -3382,7 +3386,7 @@ createAuth0Client({
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/5a4c0c8/src/token.worker.ts#L16">src/token.worker.ts:16</a></li>
+								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/1a4af92/src/token.worker.ts#L17">src/token.worker.ts:17</a></li>
 							</ul>
 						</aside>
 						<h4 class="tsd-parameters-title">Parameters</h4>

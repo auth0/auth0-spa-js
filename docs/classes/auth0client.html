@@ -2733,6 +2733,9 @@ img {
 					<a href="auth0client.html#buildauthorizeurl" class="tsd-kind-icon">build<wbr>Authorize<wbr>Url</a>
 				</li>
 				<li class=" tsd-kind-method tsd-parent-kind-class">
+					<a href="auth0client.html#buildlogouturl" class="tsd-kind-icon">build<wbr>Logout<wbr>Url</a>
+				</li>
+				<li class=" tsd-kind-method tsd-parent-kind-class">
 					<a href="auth0client.html#checksession" class="tsd-kind-icon">check<wbr>Session</a>
 				</li>
 				<li class=" tsd-kind-method tsd-parent-kind-class">
@@ -2796,6 +2799,9 @@ img {
 		</li>
 		<li class=" tsd-kind-interface">
 			<a href="../interfaces/logoutoptions.html" class="tsd-kind-icon">Logout<wbr>Options</a>
+		</li>
+		<li class=" tsd-kind-interface">
+			<a href="../interfaces/logouturloptions.html" class="tsd-kind-icon">Logout<wbr>Url<wbr>Options</a>
 		</li>
 		<li class=" tsd-kind-interface">
 			<a href="../interfaces/popupconfigoptions.html" class="tsd-kind-icon">Popup<wbr>Config<wbr>Options</a>
@@ -2887,6 +2893,7 @@ img {
 						<h3>Methods</h3>
 						<ul class="tsd-index-list">
 							<li class="tsd-kind-method tsd-parent-kind-class"><a href="auth0client.html#buildauthorizeurl" class="tsd-kind-icon">build<wbr>Authorize<wbr>Url</a></li>
+							<li class="tsd-kind-method tsd-parent-kind-class"><a href="auth0client.html#buildlogouturl" class="tsd-kind-icon">build<wbr>Logout<wbr>Url</a></li>
 							<li class="tsd-kind-method tsd-parent-kind-class"><a href="auth0client.html#checksession" class="tsd-kind-icon">check<wbr>Session</a></li>
 							<li class="tsd-kind-method tsd-parent-kind-class"><a href="auth0client.html#getidtokenclaims" class="tsd-kind-icon">get<wbr>IdToken<wbr>Claims</a></li>
 							<li class="tsd-kind-method tsd-parent-kind-class"><a href="auth0client.html#gettokensilently" class="tsd-kind-icon">get<wbr>Token<wbr>Silently</a></li>
@@ -2914,7 +2921,7 @@ img {
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/5a4c0c8/src/Auth0Client.ts#L139">src/Auth0Client.ts:139</a></li>
+								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/1a4af92/src/Auth0Client.ts#L142">src/Auth0Client.ts:142</a></li>
 							</ul>
 						</aside>
 						<h4 class="tsd-parameters-title">Parameters</h4>
@@ -2936,7 +2943,7 @@ img {
 				<div class="tsd-signature tsd-kind-icon">cache<wbr>Location<span class="tsd-signature-symbol">:</span> <a href="../globals.html#cachelocation" class="tsd-signature-type">CacheLocation</a></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/5a4c0c8/src/Auth0Client.ts#L138">src/Auth0Client.ts:138</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/1a4af92/src/Auth0Client.ts#L141">src/Auth0Client.ts:141</a></li>
 					</ul>
 				</aside>
 			</section>
@@ -2953,7 +2960,7 @@ img {
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/5a4c0c8/src/Auth0Client.ts#L267">src/Auth0Client.ts:267</a></li>
+								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/1a4af92/src/Auth0Client.ts#L278">src/Auth0Client.ts:278</a></li>
 							</ul>
 						</aside>
 						<div class="tsd-comment tsd-typography">
@@ -2977,6 +2984,37 @@ img {
 				</ul>
 			</section>
 			<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
+				<a name="buildlogouturl" class="tsd-anchor"></a>
+				<h3>build<wbr>Logout<wbr>Url</h3>
+				<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
+					<li class="tsd-signature tsd-kind-icon">build<wbr>Logout<wbr>Url<span class="tsd-signature-symbol">(</span>options<span class="tsd-signature-symbol">?: </span><a href="../interfaces/logouturloptions.html" class="tsd-signature-type">LogoutUrlOptions</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span></li>
+				</ul>
+				<ul class="tsd-descriptions">
+					<li class="tsd-description">
+						<aside class="tsd-sources">
+							<ul>
+								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/1a4af92/src/Auth0Client.ts#L715">src/Auth0Client.ts:715</a></li>
+							</ul>
+						</aside>
+						<div class="tsd-comment tsd-typography">
+							<div class="lead">
+								<pre><code class="language-js"><span class="hljs-keyword">await</span> auth0.buildLogoutUrl(options);</code></pre>
+							</div>
+							<p>Builds a URL to the logout endpoint using the parameters provided as arguments.</p>
+						</div>
+						<h4 class="tsd-parameters-title">Parameters</h4>
+						<ul class="tsd-parameters">
+							<li>
+								<h5><span class="tsd-flag ts-flagDefault value">Default value</span> options: <a href="../interfaces/logouturloptions.html" class="tsd-signature-type">LogoutUrlOptions</a><span class="tsd-signature-symbol"> = {}</span></h5>
+								<div class="tsd-comment tsd-typography">
+								</div>
+							</li>
+						</ul>
+						<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">string</span></h4>
+					</li>
+				</ul>
+			</section>
+			<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
 				<a name="checksession" class="tsd-anchor"></a>
 				<h3>check<wbr>Session</h3>
 				<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
@@ -2986,7 +3024,7 @@ img {
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/5a4c0c8/src/Auth0Client.ts#L540">src/Auth0Client.ts:540</a></li>
+								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/1a4af92/src/Auth0Client.ts#L553">src/Auth0Client.ts:553</a></li>
 							</ul>
 						</aside>
 						<div class="tsd-comment tsd-typography">
@@ -3022,7 +3060,7 @@ img {
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/5a4c0c8/src/Auth0Client.ts#L417">src/Auth0Client.ts:417</a></li>
+								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/1a4af92/src/Auth0Client.ts#L428">src/Auth0Client.ts:428</a></li>
 							</ul>
 						</aside>
 						<div class="tsd-comment tsd-typography">
@@ -3053,7 +3091,7 @@ img {
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/5a4c0c8/src/Auth0Client.ts#L583">src/Auth0Client.ts:583</a></li>
+								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/1a4af92/src/Auth0Client.ts#L596">src/Auth0Client.ts:596</a></li>
 							</ul>
 						</aside>
 						<div class="tsd-comment tsd-typography">
@@ -3097,7 +3135,7 @@ img {
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/5a4c0c8/src/Auth0Client.ts#L654">src/Auth0Client.ts:654</a></li>
+								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/1a4af92/src/Auth0Client.ts#L667">src/Auth0Client.ts:667</a></li>
 							</ul>
 						</aside>
 						<div class="tsd-comment tsd-typography">
@@ -3134,7 +3172,7 @@ img {
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/5a4c0c8/src/Auth0Client.ts#L395">src/Auth0Client.ts:395</a></li>
+								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/1a4af92/src/Auth0Client.ts#L406">src/Auth0Client.ts:406</a></li>
 							</ul>
 						</aside>
 						<div class="tsd-comment tsd-typography">
@@ -3166,7 +3204,7 @@ img {
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/5a4c0c8/src/Auth0Client.ts#L452">src/Auth0Client.ts:452</a></li>
+								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/1a4af92/src/Auth0Client.ts#L463">src/Auth0Client.ts:463</a></li>
 							</ul>
 						</aside>
 						<div class="tsd-comment tsd-typography">
@@ -3197,7 +3235,7 @@ img {
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/5a4c0c8/src/Auth0Client.ts#L689">src/Auth0Client.ts:689</a></li>
+								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/1a4af92/src/Auth0Client.ts#L702">src/Auth0Client.ts:702</a></li>
 							</ul>
 						</aside>
 						<div class="tsd-comment tsd-typography">
@@ -3221,7 +3259,7 @@ img {
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/5a4c0c8/src/Auth0Client.ts#L318">src/Auth0Client.ts:318</a></li>
+								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/1a4af92/src/Auth0Client.ts#L329">src/Auth0Client.ts:329</a></li>
 							</ul>
 						</aside>
 						<div class="tsd-comment tsd-typography">
@@ -3261,7 +3299,7 @@ img {
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/5a4c0c8/src/Auth0Client.ts#L441">src/Auth0Client.ts:441</a></li>
+								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/1a4af92/src/Auth0Client.ts#L452">src/Auth0Client.ts:452</a></li>
 							</ul>
 						</aside>
 						<div class="tsd-comment tsd-typography">
@@ -3294,7 +3332,7 @@ img {
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/5a4c0c8/src/Auth0Client.ts#L709">src/Auth0Client.ts:709</a></li>
+								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/1a4af92/src/Auth0Client.ts#L744">src/Auth0Client.ts:744</a></li>
 							</ul>
 						</aside>
 						<div class="tsd-comment tsd-typography">
