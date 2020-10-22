@@ -8,6 +8,7 @@ import livereload from 'rollup-plugin-livereload';
 import visualizer from 'rollup-plugin-visualizer';
 import webWorkerLoader from 'rollup-plugin-web-worker-loader';
 import replace from '@rollup/plugin-replace';
+import analyze from 'rollup-plugin-analyzer';
 
 import pkg from './package.json';
 
@@ -39,6 +40,7 @@ const getPlugins = shouldMinify => {
       }
     }),
     replace({ 'process.env.NODE_ENV': `'${process.env.NODE_ENV}'` }),
+    analyze({ summaryOnly: true }),
     shouldMinify && terser(),
     sourcemaps()
   ];
