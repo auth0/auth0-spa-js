@@ -6,7 +6,7 @@ Auth0 SDK for Single Page Applications using [Authorization Code Grant Flow with
 [![License](https://img.shields.io/:license-mit-blue.svg?style=flat)](https://opensource.org/licenses/MIT)
 [![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fauth0%2Fauth0-spa-js.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Fauth0%2Fauth0-spa-js?ref=badge_shield)
 
-## Table of Contents
+## Table of Contents:
 
 - [Documentation](#documentation)
 - [Installation](#installation)
@@ -18,7 +18,7 @@ Auth0 SDK for Single Page Applications using [Authorization Code Grant Flow with
 - [What is Auth0](#what-is-auth0)
 - [License](#license)
 
-## Documentation
+## Documentation:
 
 - [Documentation](https://auth0.com/docs/libraries/auth0-spa-js)
 - [API reference](https://auth0.github.io/auth0-spa-js/)
