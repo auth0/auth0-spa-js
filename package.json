@@ -55,6 +55,7 @@
     "qss": "^2.0.3",
     "rimraf": "^3.0.2",
     "rollup": "^2.31.0",
+    "rollup-plugin-analyzer": "^3.3.0",
     "rollup-plugin-commonjs": "^10.1.0",
     "rollup-plugin-livereload": "^2.0.0",
     "rollup-plugin-node-resolve": "^5.2.0",
