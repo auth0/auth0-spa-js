@@ -1,7 +1,7 @@
 blank_issues_enabled: false
 contact_links:
   - name: Auth0 Community
-    url: https://community.auth0.com/c/sdks/auth0-spa-js/71
+    url: https://community.auth0.com/tags/c/sdks/5/auth0-spa-js
     about: Discuss this SDK in the Auth0 Community forums
   - name: FAQ
     url: https://github.com/auth0/auth0-spa-js/blob/master/FAQ.md
