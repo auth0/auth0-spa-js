@@ -42,7 +42,7 @@ export const runIframe = (
   timeoutInSeconds: number = DEFAULT_AUTHORIZE_TIMEOUT_IN_SECONDS
 ) => {
   return new Promise<AuthenticationResult>((res, rej) => {
-    let iframe = window.document.createElement('iframe');
+    const iframe = window.document.createElement('iframe');
 
     iframe.setAttribute('width', '0');
     iframe.setAttribute('height', '0');
