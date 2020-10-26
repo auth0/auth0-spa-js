@@ -139,7 +139,7 @@ export const runPopup = (authorizeUrl: string, config: PopupConfigOptions) => {
       resolve(e.data.response);
     };
 
-    window.addEventListener('message', e => popupEventListener);
+    window.addEventListener('message', e => popupEventListener(e));
   });
 };
 
@@ -386,9 +386,7 @@ export const validateCrypto = () => {
   }
   if (typeof getCryptoSubtle() === 'undefined') {
     throw new Error(`
-      auth0-spa-js must run on a secure origin.
-      See https://github.com/auth0/auth0-spa-js/blob/master/FAQ.md#why-do-i-get-auth0-spa-js-must-run-on-a-secure-origin
-      for more information.
+      auth0-spa-js must run on a secure origin. See https://github.com/auth0/auth0-spa-js/blob/master/FAQ.md#why-do-i-get-auth0-spa-js-must-run-on-a-secure-origin for more information.
     `);
   }
 };
