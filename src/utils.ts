@@ -51,15 +51,15 @@ export const runIframe = (
     const removeIframe = () => {
       if (window.document.body.contains(iframe)) {
         window.document.body.removeChild(iframe);
+        window.removeEventListener('message', iframeEventHandler, false);
       }
     };
 
-    let iframeEventHandler;
+    let iframeEventHandler: (e: MessageEvent) => void;
 
     const timeoutSetTimeoutId = setTimeout(() => {
       rej(new TimeoutError());
       removeIframe();
-      window.removeEventListener('message', iframeEventHandler, false);
     }, timeoutInSeconds * 1000);
 
     iframeEventHandler = function (e: MessageEvent) {
@@ -77,12 +77,12 @@ export const runIframe = (
         : res(e.data.response);
 
       clearTimeout(timeoutSetTimeoutId);
-      window.removeEventListener('message', iframeEventHandler, false);
 
       // Delay the removal of the iframe to prevent hanging loading status
       // in Chrome: https://github.com/auth0/auth0-spa-js/issues/240
       setTimeout(removeIframe, CLEANUP_IFRAME_TIMEOUT_IN_SECONDS * 1000);
     };
+
     window.addEventListener('message', iframeEventHandler, false);
     window.document.body.appendChild(iframe);
     iframe.setAttribute('src', authorizeUrl);

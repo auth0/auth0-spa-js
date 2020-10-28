@@ -793,6 +793,7 @@ describe('utils', () => {
       jest.runAllTimers();
       expect(message.source.close).toHaveBeenCalled();
       expect(window.document.body.removeChild).toHaveBeenCalledWith(iframe);
+      expect(window.removeEventListener).toBeCalled();
     });
     it('times out after timeoutInSeconds', async () => {
       const { iframe, url, origin } = setup('');
@@ -802,6 +803,15 @@ describe('utils', () => {
       jest.runTimersToTime(seconds * 1000);
       await expect(promise).rejects.toMatchObject(TIMEOUT_ERROR);
       expect(window.document.body.removeChild).toHaveBeenCalledWith(iframe);
+    });
+    it('removes the message event listener in the event of a timeout', async () => {
+      const { url, origin } = setup('');
+      const seconds = 10;
+      jest.useFakeTimers();
+      const promise = runIframe(url, origin, seconds);
+      jest.runTimersToTime(seconds * 1000);
+      await expect(promise).rejects.toMatchObject(TIMEOUT_ERROR);
+      expect(window.removeEventListener).toBeCalled();
     });
   });
   describe('getCrypto', () => {
