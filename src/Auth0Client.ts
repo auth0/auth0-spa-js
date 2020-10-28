@@ -551,10 +551,7 @@ export default class Auth0Client {
    * @param options
    */
   public async checkSession(options?: GetTokenSilentlyOptions) {
-    if (
-      this.cacheLocation === CACHE_LOCATION_MEMORY &&
-      !this.cookieStorage.get('auth0.is.authenticated')
-    ) {
+    if (!this.cookieStorage.get('auth0.is.authenticated')) {
       return;
     }
 
