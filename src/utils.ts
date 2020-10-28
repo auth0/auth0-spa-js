@@ -77,6 +77,7 @@ export const runIframe = (
         : res(e.data.response);
 
       clearTimeout(timeoutSetTimeoutId);
+      window.removeEventListener('message', iframeEventHandler, false);
 
       // Delay the removal of the iframe to prevent hanging loading status
       // in Chrome: https://github.com/auth0/auth0-spa-js/issues/240
