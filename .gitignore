@@ -10,3 +10,4 @@ cypress/videos
 test-results
 yarn.lock
 
+release-tmp*
