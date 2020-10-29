@@ -3,7 +3,9 @@ const excludeFiles = [
   'jwt',
   'storage',
   'transaction-manager',
-  'utils'
+  'utils',
+  'token.worker',
+  'user-agent'
 ];
 
 module.exports = {

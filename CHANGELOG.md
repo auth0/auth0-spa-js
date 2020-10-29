@@ -1,5 +1,18 @@
 # Change Log
 
+## [v1.13.1](https://github.com/auth0/auth0-spa-js/tree/v1.13.1) (2020-10-29)
+
+[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v1.13.0...v1.13.1)
+
+**Changed**
+
+- [SDK-2037] Remove cacheLocation guard from checkSession [\#613](https://github.com/auth0/auth0-spa-js/pull/613) ([frederikprijck](https://github.com/frederikprijck))
+- [SDK-2092] Do not use Web Worker for Safari < 12.1 [\#612](https://github.com/auth0/auth0-spa-js/pull/612) ([frederikprijck](https://github.com/frederikprijck))
+
+**Fixed**
+
+- Fix leaking windows message event listener [\#422](https://github.com/auth0/auth0-spa-js/pull/422) ([yinzara](https://github.com/yinzara))
+
 ## [v1.13.0](https://github.com/auth0/auth0-spa-js/tree/v1.13.0) (2020-10-21)
 
 [Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v1.12.1...v1.13.0)
