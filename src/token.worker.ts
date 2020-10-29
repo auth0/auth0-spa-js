@@ -1,4 +1,3 @@
-import 'abortcontroller-polyfill/dist/umd-polyfill';
 import { MISSING_REFRESH_TOKEN_ERROR_MESSAGE } from './constants';
 
 let refreshTokens = {};

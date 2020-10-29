@@ -58,6 +58,7 @@ import {
 
 // @ts-ignore
 import TokenWorker from './token.worker.ts';
+import { isIE11, isSafari10, isSafari11, isSafari12_0 } from './user-agent';
 
 /**
  * @ignore
@@ -87,7 +88,8 @@ const cacheFactory = (location: string) => {
 /**
  * @ignore
  */
-const isIE11 = () => /Trident.*rv:11\.0/.test(navigator.userAgent);
+const supportWebWorker = () =>
+  !isIE11() && !isSafari10() && !isSafari11() && !isSafari12_0();
 
 /**
  * @ignore
@@ -187,7 +189,7 @@ export default class Auth0Client {
       window.Worker &&
       this.options.useRefreshTokens &&
       this.cacheLocation === CACHE_LOCATION_MEMORY &&
-      !isIE11()
+      supportWebWorker()
     ) {
       this.worker = new TokenWorker();
     }
@@ -551,10 +553,7 @@ export default class Auth0Client {
    * @param options
    */
   public async checkSession(options?: GetTokenSilentlyOptions) {
-    if (
-      this.cacheLocation === CACHE_LOCATION_MEMORY &&
-      !this.cookieStorage.get('auth0.is.authenticated')
-    ) {
+    if (!this.cookieStorage.get('auth0.is.authenticated')) {
       return;
     }
 
