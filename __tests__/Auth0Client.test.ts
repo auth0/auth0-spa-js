@@ -857,6 +857,66 @@ describe('Auth0Client', () => {
       expect(access_token).toEqual(TEST_ACCESS_TOKEN);
     });
 
+    describe('Worker browser support', () => {
+      [
+        {
+          name: 'IE11',
+          userAgent:
+            'Mozilla/5.0 (Windows NT 6.1; WOW64; Trident/7.0; AS; rv:11.0) like Gecko',
+          supported: false
+        },
+        {
+          name: 'Safari 10',
+          userAgent:
+            'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_5) AppleWebKit/603.3.8 (KHTML, like Gecko) Version/10.1.2 Safari/603.3.8',
+          supported: false
+        },
+        {
+          name: 'Safari 11',
+          userAgent:
+            'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/604.1.28 (KHTML, like Gecko) Version/11.0 Safari/604.1.28',
+          supported: false
+        },
+        {
+          name: 'Safari 12',
+          userAgent:
+            'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_6) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/12.0.1 Safari/605.1.15',
+          supported: false
+        },
+        {
+          name: 'Safari 12.1',
+          userAgent:
+            'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/12.1.2 Safari/605.1.15',
+          supported: true
+        }
+      ].forEach(({ name, userAgent, supported }) =>
+        it(`refreshes the token ${
+          supported ? 'with' : 'without'
+        } the worker, when ${name}`, async () => {
+          const originalUserAgent = window.navigator.userAgent;
+          Object.defineProperty(window.navigator, 'userAgent', {
+            value: userAgent,
+            configurable: true
+          });
+
+          const auth0 = setup({
+            useRefreshTokens: true,
+            cacheLocation: 'memory'
+          });
+
+          if (supported) {
+            expect((<any>auth0).worker).toBeDefined();
+          } else {
+            expect((<any>auth0).worker).toBeUndefined();
+          }
+
+          Object.defineProperty(window.navigator, 'userAgent', {
+            value: originalUserAgent
+          });
+        })
+      );
+    });
+
     it('handles fetch errors from the worker', async () => {
       const auth0 = setup({
         useRefreshTokens: true
