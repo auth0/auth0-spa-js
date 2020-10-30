@@ -469,57 +469,6 @@ describe('Auth0', () => {
     });
   });
 
-  describe('loginWithRedirect()', () => {
-    const REDIRECT_OPTIONS = {
-      redirect_uri: 'https://redirect.uri',
-      appState: TEST_APP_STATE,
-      connection: 'test-connection'
-    };
-
-    it('calls `window.location.assign` with the correct url', async () => {
-      const { auth0 } = await setup();
-
-      await auth0.loginWithRedirect(REDIRECT_OPTIONS);
-      expect(window.location.assign).toHaveBeenCalledWith(
-        `https://test.auth0.com/authorize?query=params${TEST_AUTH0_CLIENT_QUERY_STRING}`
-      );
-    });
-
-    it('calls `window.location.assign` with the correct url and fragment if provided', async () => {
-      const { auth0 } = await setup();
-
-      await auth0.loginWithRedirect({
-        ...REDIRECT_OPTIONS,
-        fragment: '/reset'
-      });
-      expect(window.location.assign).toHaveBeenCalledWith(
-        `https://test.auth0.com/authorize?query=params${TEST_AUTH0_CLIENT_QUERY_STRING}#/reset`
-      );
-    });
-
-    it('can be called with no arguments', async () => {
-      const { auth0 } = await setup();
-
-      await auth0.loginWithRedirect();
-
-      expect(window.location.assign).toHaveBeenCalledWith(
-        `https://test.auth0.com/authorize?query=params${TEST_AUTH0_CLIENT_QUERY_STRING}`
-      );
-    });
-
-    it('redirects to authorize with custom auth0Client', async () => {
-      const auth0Client = { name: '__test_client_name__', version: '9.9.9' };
-      const { auth0, utils } = await setup({ auth0Client });
-
-      await auth0.loginWithRedirect();
-
-      expectToHaveBeenCalledWithAuth0ClientParam(
-        window.location.assign,
-        auth0Client
-      );
-    });
-  });
-
   describe('handleRedirectCallback()', () => {
     it('throws when there is no query string', async () => {
       const { auth0 } = await setup();
