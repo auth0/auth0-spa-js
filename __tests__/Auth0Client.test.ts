@@ -6,7 +6,10 @@ import { MessageChannel } from 'worker_threads';
 import * as utils from '../src/utils';
 import { PopupConfigOptions } from '../src';
 import * as scope from '../src/scope';
-import { expectToHaveBeenCalledWithAuth0ClientParam } from './helpers';
+import {
+  expectToHaveBeenCalledWithAuth0ClientParam,
+  expectToHaveBeenCalledWithHash
+} from './helpers';
 // @ts-ignore
 import { acquireLockSpy } from 'browser-tabs-lock';
 import {
@@ -660,6 +663,13 @@ describe('Auth0Client', () => {
         mockWindow.location.assign,
         auth0Client
       );
+    });
+
+    it('should log the user in with custom fragment', async () => {
+      const auth0Client = { name: '__test_client__', version: '0.0.0' };
+      const auth0 = setup({ auth0Client });
+      await loginWithRedirect(auth0, { fragment: '/reset' });
+      expectToHaveBeenCalledWithHash(mockWindow.location.assign, '#/reset');
     });
 
     it('uses session storage for transactions by default', async () => {
