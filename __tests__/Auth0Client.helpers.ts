@@ -2,7 +2,8 @@ import {
   Auth0ClientOptions,
   IdToken,
   PopupConfigOptions,
-  PopupLoginOptions
+  PopupLoginOptions,
+  RedirectLoginOptions
 } from '../src';
 import Auth0Client from '../src/Auth0Client';
 import { DEFAULT_SCOPE } from '../src/constants';
@@ -52,12 +53,13 @@ export const setupFn = mockVerify => {
 export const loginWithRedirectFn = (mockWindow, mockFetch, fetchResponse) => {
   return async (
     auth0,
+    options: RedirectLoginOptions = undefined,
     tokenSuccess = true,
     tokenResponse = {},
     code = TEST_CODE,
     state = TEST_STATE
   ) => {
-    await auth0.loginWithRedirect();
+    await auth0.loginWithRedirect(options);
     expect(mockWindow.location.assign).toHaveBeenCalled();
     window.history.pushState({}, '', `/?code=${code}&state=${state}`);
     mockFetch.mockResolvedValueOnce(
