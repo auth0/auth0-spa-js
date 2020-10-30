@@ -179,6 +179,46 @@ describe('Auth0Client', () => {
   });
 
   describe('loginWithPopup', () => {
+    it('should log the user in and get the user and claims', async () => {
+      const auth0 = setup({ scope: 'foo' });
+      await loginWithPopup(auth0);
+
+      const expectedUser = { sub: 'me' };
+
+      expect(await auth0.getUser()).toEqual(expectedUser);
+      expect(await auth0.getUser({})).toEqual(expectedUser);
+      expect(await auth0.getUser({ audience: 'default' })).toEqual(
+        expectedUser
+      );
+      expect(await auth0.getUser({ scope: 'foo' })).toEqual(expectedUser);
+      expect(await auth0.getUser({ audience: 'invalid' })).toBeUndefined();
+      expect(await auth0.getIdTokenClaims()).toBeTruthy();
+      expect(await auth0.getIdTokenClaims({})).toBeTruthy();
+      expect(
+        await auth0.getIdTokenClaims({ audience: 'default' })
+      ).toBeTruthy();
+      expect(await auth0.getIdTokenClaims({ scope: 'foo' })).toBeTruthy();
+      expect(
+        await auth0.getIdTokenClaims({ audience: 'invalid' })
+      ).toBeUndefined();
+    });
+
+    it('should log the user in with custom scope', async () => {
+      const auth0 = setup({
+        scope: 'scope1',
+        advancedOptions: {
+          defaultScope: 'scope2'
+        }
+      });
+      await loginWithPopup(auth0, { scope: 'scope3' });
+
+      const expectedUser = { sub: 'me' };
+
+      expect(await auth0.getUser({ scope: 'scope1 scope2 scope3' })).toEqual(
+        expectedUser
+      );
+    });
+
     it('encodes state with random string', async () => {
       const auth0 = setup();
 
@@ -578,10 +618,15 @@ describe('Auth0Client', () => {
     it('should log the user in and get the user', async () => {
       const auth0 = setup({ scope: 'foo' });
       await loginWithRedirect(auth0);
-      expect(await auth0.getUser()).toBeTruthy();
-      expect(await auth0.getUser({})).toBeTruthy();
-      expect(await auth0.getUser({ audience: 'default' })).toBeTruthy();
-      expect(await auth0.getUser({ scope: 'foo' })).toBeTruthy();
+
+      const expectedUser = { sub: 'me' };
+
+      expect(await auth0.getUser()).toEqual(expectedUser);
+      expect(await auth0.getUser({})).toEqual(expectedUser);
+      expect(await auth0.getUser({ audience: 'default' })).toEqual(
+        expectedUser
+      );
+      expect(await auth0.getUser({ scope: 'foo' })).toEqual(expectedUser);
       expect(await auth0.getUser({ audience: 'invalid' })).toBeUndefined();
       expect(await auth0.getIdTokenClaims()).toBeTruthy();
       expect(await auth0.getIdTokenClaims({})).toBeTruthy();
@@ -592,6 +637,22 @@ describe('Auth0Client', () => {
       expect(
         await auth0.getIdTokenClaims({ audience: 'invalid' })
       ).toBeUndefined();
+    });
+
+    it('should log the user in with custom scope', async () => {
+      const auth0 = setup({
+        scope: 'scope1',
+        advancedOptions: {
+          defaultScope: 'scope2'
+        }
+      });
+      await loginWithRedirect(auth0, { scope: 'scope3' });
+
+      const expectedUser = { sub: 'me' };
+
+      expect(await auth0.getUser({ scope: 'scope1 scope2 scope3' })).toEqual(
+        expectedUser
+      );
     });
 
     it('should log the user in with custom auth0Client', async () => {
@@ -1375,6 +1436,17 @@ describe('Auth0Client', () => {
       expect(<jest.Mock>esCookie.get).not.toHaveBeenCalledWith(
         '_legacy_auth0.is.authenticated'
       );
+    });
+  });
+
+  describe('getUser', () => {
+    it('returns undefined if there is no cache', async () => {
+      const auth0 = setup();
+
+      jest.spyOn(auth0['cache'], 'get').mockReturnValueOnce(undefined);
+
+      const decodedToken = await auth0.getUser();
+      expect(decodedToken).toBeUndefined();
     });
   });
 });

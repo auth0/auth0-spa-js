@@ -937,69 +937,6 @@ describe('Auth0', () => {
     });
   });
 
-  describe('getUser()', () => {
-    it('returns undefined if there is no cache', async () => {
-      const { auth0, cache } = await setup();
-      cache.get.mockReturnValue(undefined);
-      const decodedToken = await auth0.getUser();
-      expect(decodedToken).toBeUndefined();
-    });
-    it('returns only user information if there is a cache entry', async () => {
-      const { auth0, cache } = await setup();
-      const userIn = {
-        decodedToken: {
-          claims: {
-            sub: TEST_USER_ID,
-            email: TEST_USER_EMAIL,
-            aud: TEST_CLIENT_ID
-          },
-          user: { sub: TEST_USER_ID, email: TEST_USER_EMAIL }
-        }
-      };
-      cache.get.mockReturnValue(userIn);
-      const userOut = await auth0.getUser();
-      expect(userOut).toEqual({ sub: TEST_USER_ID, email: TEST_USER_EMAIL });
-    });
-    it('uses default options', async () => {
-      const { auth0, cache } = await setup();
-
-      await auth0.getUser();
-
-      expect(cache.get).toHaveBeenCalledWith({
-        audience: 'default',
-        scope: TEST_SCOPES,
-        client_id: TEST_CLIENT_ID
-      });
-    });
-
-    it('uses custom options when provided', async () => {
-      const { auth0, cache } = await setup();
-      await auth0.getUser({ audience: 'the-audience', scope: 'the-scope' });
-
-      expect(cache.get).toHaveBeenCalledWith({
-        audience: 'the-audience',
-        scope: `${TEST_SCOPES} the-scope`,
-        client_id: TEST_CLIENT_ID
-      });
-    });
-
-    it('uses a custom default scope', async () => {
-      const { auth0, cache } = await setup({
-        advancedOptions: {
-          defaultScope: 'email'
-        }
-      });
-
-      await auth0.getUser({ audience: 'the-audience', scope: 'the-scope' });
-
-      expect(cache.get).toHaveBeenCalledWith({
-        audience: 'the-audience',
-        scope: `openid email the-scope`,
-        client_id: TEST_CLIENT_ID
-      });
-    });
-  });
-
   describe('getIdTokenClaims()', () => {
     it('returns undefined if there is no cache', async () => {
       const { auth0, cache } = await setup();
