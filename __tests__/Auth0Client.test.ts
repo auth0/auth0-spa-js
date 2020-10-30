@@ -610,6 +610,7 @@ describe('Auth0Client', () => {
       await loginWithRedirect(auth0, { fragment: '/reset' });
       expectToHaveBeenCalledWithHash(mockWindow.location.assign, '#/reset');
     });
+
     it('uses session storage for transactions by default', async () => {
       const auth0 = setup();
       await auth0.loginWithRedirect();
