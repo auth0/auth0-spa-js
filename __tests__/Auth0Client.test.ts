@@ -41,33 +41,13 @@ const mockWindow = <any>global;
 const mockFetch = (mockWindow.fetch = <jest.Mock>unfetch);
 const mockVerify = <jest.Mock>verify;
 const mockCookies = require('es-cookie');
-const originalRunPopup = utils.runPopup;
 const tokenVerifier = require('../src/jwt').verify;
-
-const authorizationResponse = {
-  code: 'my_code',
-  state: TEST_STATE
-};
 
 jest
   .spyOn(utils, 'bufferToBase64UrlEncoded')
   .mockReturnValue(TEST_CODE_CHALLENGE);
-jest
-  .spyOn(utils, 'runPopup')
-  .mockImplementation((authorizeUrl: string, config: PopupConfigOptions) => {
-    setTimeout(() => {
-      window.dispatchEvent(
-        new MessageEvent('message', {
-          data: {
-            type: 'authorization_response',
-            response: authorizationResponse
-          }
-        })
-      );
-    }, 10);
 
-    return originalRunPopup(authorizeUrl, config);
-  });
+jest.spyOn(utils, 'runPopup');
 
 const assertUrlEquals = (actualUrl, host, path, queryParams) => {
   const url = new URL(actualUrl);
@@ -103,6 +83,7 @@ describe('Auth0Client', () => {
   beforeEach(() => {
     mockWindow.location.assign = jest.fn();
     mockWindow.open = jest.fn();
+    mockWindow.addEventListener = jest.fn();
     mockWindow.crypto = {
       subtle: {
         digest: () => 'foo'
@@ -115,7 +96,6 @@ describe('Auth0Client', () => {
     mockWindow.Worker = {};
     jest.spyOn(scope, 'getUniqueScopes');
     sessionStorage.clear();
-    authorizationResponse.state = TEST_STATE;
   });
 
   afterEach(() => {
@@ -333,7 +313,7 @@ describe('Auth0Client', () => {
       const auth0 = setup({ leeway: 10 });
 
       await expect(
-        loginWithPopup(auth0, {}, { timeoutInSeconds: 0.005 })
+        loginWithPopup(auth0, {}, { timeoutInSeconds: 0.005 }, true, {}, {}, 10)
       ).rejects.toThrowError('Timeout');
     });
 
@@ -399,11 +379,20 @@ describe('Auth0Client', () => {
     });
 
     it('throws error if state from popup response is different from the provided state', async () => {
-      authorizationResponse.state = 'other-state';
-
       const auth0 = setup();
 
-      await expect(loginWithPopup(auth0)).rejects.toThrowError('Invalid state');
+      await expect(
+        loginWithPopup(
+          auth0,
+          undefined,
+          undefined,
+          true,
+          {},
+          {
+            state: 'other-state'
+          }
+        )
+      ).rejects.toThrowError('Invalid state');
     });
 
     it('calls `tokenVerifier.verify` with the `issuer` from in the oauth/token response', async () => {
