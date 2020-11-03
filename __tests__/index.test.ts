@@ -937,25 +937,6 @@ describe('Auth0', () => {
     });
   });
 
-  describe('isAuthenticated()', () => {
-    it('returns true if there is an user', async () => {
-      const { auth0 } = await setup();
-      auth0.getUser = jest.fn(() =>
-        Promise.resolve({
-          id: TEST_USER_ID
-        })
-      );
-      const result = await auth0.isAuthenticated();
-      expect(result).toBe(true);
-    });
-    it('returns false if there is not an user', async () => {
-      const { auth0 } = await setup();
-      auth0.getUser = jest.fn(() => undefined);
-      const result = await auth0.isAuthenticated();
-      expect(result).toBe(false);
-    });
-  });
-
   describe('getTokenSilently()', () => {
     describe('when `options.ignoreCache` is false', () => {
       describe('when refresh tokens are not used', () => {

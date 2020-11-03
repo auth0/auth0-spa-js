@@ -67,7 +67,13 @@ export const loginWithRedirectFn = (mockWindow, mockFetch, fetchResponse) => {
   ) => {
     await auth0.loginWithRedirect(options);
     expect(mockWindow.location.assign).toHaveBeenCalled();
-    window.history.pushState({}, '', `/?code=${code}&state=${state}`);
+
+    if (code || state) {
+      window.history.pushState({}, '', `/?code=${code}&state=${state}`);
+    } else {
+      window.history.pushState({}, '', `/`);
+    }
+
     mockFetch.mockResolvedValueOnce(
       fetchResponse(
         tokenSuccess,
