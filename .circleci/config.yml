@@ -7,7 +7,11 @@ jobs:
     steps:
       - checkout
       - run: npm ci
-      - run: npm run build
+      - run:
+        name: build
+        command: npm run build
+        environment:
+          WITH_STATS: true
       - run: npm run test
       - run: npm run test:integration
       - run: npm run test:es-check
