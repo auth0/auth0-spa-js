@@ -16,6 +16,11 @@ const EXPORT_NAME = 'createAuth0Client';
 
 const isProduction = process.env.NODE_ENV === 'production';
 const shouldGenerateStats = process.env.WITH_STATS === 'true';
+
+const visualizerOptions = {
+  filename: 'bundle-stats/index.html'
+};
+
 const getPlugins = shouldMinify => {
   return [
     webWorkerLoader({
@@ -40,7 +45,6 @@ const getPlugins = shouldMinify => {
       }
     }),
     replace({ 'process.env.NODE_ENV': `'${process.env.NODE_ENV}'` }),
-    analyze({ summaryOnly: true }),
     shouldMinify && terser(),
     sourcemaps()
   ];
@@ -88,7 +92,10 @@ if (isProduction) {
       ],
       plugins: [
         ...getPlugins(isProduction),
-        shouldGenerateStats && visualizer()
+        ...(shouldGenerateStats && [
+          visualizer(visualizerOptions),
+          analyze({ summaryOnly: true })
+        ])
       ]
     },
     {
