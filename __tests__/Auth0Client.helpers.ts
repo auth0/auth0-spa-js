@@ -1,5 +1,6 @@
 import {
   Auth0ClientOptions,
+  AuthenticationResult,
   IdToken,
   PopupConfigOptions,
   PopupLoginOptions,
@@ -20,6 +21,11 @@ export const TEST_CODE = 'my_code';
 export const TEST_SCOPES = DEFAULT_SCOPE;
 export const TEST_CODE_CHALLENGE = 'TEST_CODE_CHALLENGE';
 export const TEST_CODE_VERIFIER = '123';
+
+const authorizationResponse: AuthenticationResult = {
+  code: 'my_code',
+  state: TEST_STATE
+};
 
 export const setupFn = mockVerify => {
   return (config?: Partial<Auth0ClientOptions>, claims?: Partial<IdToken>) => {
@@ -86,8 +92,28 @@ export const loginWithPopupFn = (mockWindow, mockFetch, fetchResponse) => {
     options: PopupLoginOptions = undefined,
     config: PopupConfigOptions = undefined,
     tokenSuccess = true,
-    tokenResponse = {}
+    tokenResponse = {},
+    authResponse: any = {},
+    delay = 0
   ) => {
+    const response = {
+      ...authorizationResponse,
+      ...authResponse
+    };
+
+    mockWindow.addEventListener.mockImplementationOnce((type, cb) => {
+      if (type === 'message') {
+        setTimeout(() => {
+          cb({
+            data: {
+              type: 'authorization_response',
+              response
+            }
+          });
+        }, delay);
+      }
+    });
+
     mockWindow.open.mockReturnValue({
       close: () => {}
     });
