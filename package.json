@@ -24,6 +24,7 @@
     "test:integration:server": "cp static/index.html dist/index.html && serve ./dist/ -p 3000 -n",
     "test:integration:tests": "wait-on http://localhost:3000/ && cypress run",
     "test:integration": "concurrently --raw --kill-others --success first npm:test:integration:server npm:test:integration:tests",
+    "coverage:show": "serve coverage/lcov-report -n",
     "print-bundle-size": "node ./scripts/print-bundle-size",
     "prepack": "npm run build && npm run test && node ./scripts/prepack",
     "release": "node ./scripts/release",
