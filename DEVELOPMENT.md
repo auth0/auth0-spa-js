@@ -12,6 +12,19 @@ To perform a build, use the `build` script:
 npm run build
 ```
 
+### Bundle stats
+
+Bundle size statistics can be generated when `WITH_STATS=true` is present in the environment. This outputs production bundle stats into the terminal when running `npm run build`, but also generates a visualization into the `bundle-stats` folder.
+
+To build with stats then view the results, do:
+
+```
+WITH_STATS=true npm run build
+npm run serve:stats
+```
+
+Then browse to http://localhost:5000 to view an HTML-based bundle size report.
+
 ## Running Tests
 
 ### Unit tests
@@ -47,7 +60,7 @@ npm run test:watch:integration
 Coverage is automatically generated just by running `npm test`. To view the coverage output, use:
 
 ```
-npm run coverage:show
+npm run serve:coverage
 ```
 
 Then, browse to http://localhost:5000 to view an HTML-based coverage report.
