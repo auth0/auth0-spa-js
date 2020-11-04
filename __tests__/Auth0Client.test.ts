@@ -1569,11 +1569,18 @@ describe('Auth0Client', () => {
     });
 
     it('returns false if code not part of URL', async () => {
-      authorizationResponse.error = 'some error';
-
       const auth0 = setup();
       try {
-        await loginWithPopup(auth0);
+        await loginWithPopup(
+          auth0,
+          undefined,
+          undefined,
+          true,
+          {},
+          {
+            error: 'some error'
+          }
+        );
       } catch {}
       const result = await auth0.isAuthenticated();
       expect(result).toBe(false);
