@@ -42,6 +42,16 @@ To perform these tests interactively and watch the output, use:
 npm run test:watch:integration
 ```
 
+### Test coverage
+
+Coverage is automatically generated just by running `npm test`. To view the coverage output, use:
+
+```
+npm run coverage:show
+```
+
+Then, browse to http://localhost:5000 to view an HTML-based coverage report.
+
 ## The SDK Playground
 
 The SDK provides a simple [Vue JS](https://vuejs.org/) app to test out and experiment with features of the SDK. This Playground is also used by the integration tests to verify behaviors. If you make changes to the Playground that are to be commited, ensure that the integration tests pass.
