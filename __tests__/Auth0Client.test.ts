@@ -703,6 +703,26 @@ describe('Auth0Client', () => {
         'Invalid state'
       );
     });
+
+    it('should throw an error if the /authorize call redirects with an error param', async () => {
+      const auth0 = setup();
+      let error;
+      try {
+        await loginWithRedirect(
+          auth0,
+          undefined,
+          true,
+          {},
+          null,
+          null,
+          'some-error'
+        );
+      } catch (e) {
+        error = e;
+      }
+      expect(error).toBeDefined();
+      expect(error.error).toBe('some-error');
+    });
   });
 
   describe('getTokenSilently', () => {
@@ -1539,10 +1559,18 @@ describe('Auth0Client', () => {
         expect(result).toBe(true);
       });
 
-      it('returns false if code not part of URL', async () => {
+      it('returns false if error was returned', async () => {
         const auth0 = setup();
         try {
-          await loginWithRedirect(auth0, undefined, true, {}, null, null);
+          await loginWithRedirect(
+            auth0,
+            undefined,
+            true,
+            {},
+            null,
+            null,
+            'some-error'
+          );
         } catch {}
         const result = await auth0.isAuthenticated();
         expect(result).toBe(false);
