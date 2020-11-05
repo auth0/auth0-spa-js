@@ -617,18 +617,9 @@ describe('Auth0Client', () => {
       );
       expect(await auth0.getUser({ scope: 'foo' })).toEqual(expectedUser);
       expect(await auth0.getUser({ audience: 'invalid' })).toBeUndefined();
-      expect(await auth0.getIdTokenClaims()).toBeTruthy();
-      expect(await auth0.getIdTokenClaims({})).toBeTruthy();
-      expect(
-        await auth0.getIdTokenClaims({ audience: 'default' })
-      ).toBeTruthy();
-      expect(await auth0.getIdTokenClaims({ scope: 'foo' })).toBeTruthy();
-      expect(
-        await auth0.getIdTokenClaims({ audience: 'invalid' })
-      ).toBeUndefined();
     });
 
-    it('should log the user in with custom scope', async () => {
+    it('should log the user in and get the user with custom scope', async () => {
       const auth0 = setup({
         scope: 'scope1',
         advancedOptions: {
@@ -1437,5 +1428,104 @@ describe('Auth0Client', () => {
       const decodedToken = await auth0.getUser();
       expect(decodedToken).toBeUndefined();
     });
+  });
+
+  describe('getIdTokenClaims', () => {
+    it('returns undefined if there is no cache', async () => {
+      const auth0 = setup();
+
+      jest.spyOn(auth0['cache'], 'get').mockReturnValueOnce(undefined);
+
+      const decodedToken = await auth0.getIdTokenClaims();
+      expect(decodedToken).toBeUndefined();
+    });
+
+    // The getIdTokenClaims is dependent on the result of a successful or failed login.
+    // As the SDK allows for a user to login using a redirect or a popup approach,
+    // functionality has to be guaranteed to be working in both situations.
+
+    // To avoid excessive test duplication, tests are being generated twice.
+    //  - once for loginWithRedirect
+    //  - once for loginWithPopup
+    [
+      {
+        name: 'loginWithRedirect',
+        login: loginWithRedirect
+      },
+      {
+        name: 'loginWithPopup',
+        login: loginWithPopup
+      }
+    ].forEach(
+      ({
+        name,
+        login
+      }: {
+        name: string;
+        login: typeof loginWithRedirect | typeof loginWithPopup;
+      }) => {
+        describe(`when ${name}`, () => {
+          it('returns the ID token claims', async () => {
+            const auth0 = setup({ scope: 'foo' });
+            await login(auth0);
+
+            expect(await auth0.getIdTokenClaims()).toHaveProperty('exp');
+            expect(await auth0.getIdTokenClaims()).not.toHaveProperty('me');
+            expect(await auth0.getIdTokenClaims({})).toHaveProperty('exp');
+            expect(
+              await auth0.getIdTokenClaims({ audience: 'default' })
+            ).toHaveProperty('exp');
+            expect(
+              await auth0.getIdTokenClaims({ scope: 'foo' })
+            ).toHaveProperty('exp');
+            expect(
+              await auth0.getIdTokenClaims({ audience: 'invalid' })
+            ).toBeUndefined();
+          });
+
+          it('returns the ID token claims with custom scope', async () => {
+            const auth0 = setup({
+              scope: 'scope1',
+              advancedOptions: {
+                defaultScope: 'scope2'
+              }
+            });
+            await login(auth0, { scope: 'scope3' });
+
+            expect(
+              await auth0.getIdTokenClaims({ scope: 'scope1 scope2 scope3' })
+            ).toHaveProperty('exp');
+          });
+
+          describe('when using refresh tokens', () => {
+            it('returns the ID token claims with offline_access', async () => {
+              const auth0 = setup({ scope: 'foo', useRefreshTokens: true });
+              await login(auth0);
+
+              expect(
+                await auth0.getIdTokenClaims({ scope: 'foo offline_access' })
+              ).toHaveProperty('exp');
+            });
+
+            it('returns the ID token claims with custom scope and offline_access', async () => {
+              const auth0 = setup({
+                scope: 'scope1',
+                advancedOptions: {
+                  defaultScope: 'scope2'
+                },
+                useRefreshTokens: true
+              });
+              await login(auth0, { scope: 'scope3' });
+
+              expect(
+                await auth0.getIdTokenClaims({
+                  scope: 'scope1 scope2 scope3 offline_access'
+                })
+              ).toHaveProperty('exp');
+            });
+          });
+        });
+      }
+    );
   });
 });
