@@ -313,7 +313,7 @@ describe('Auth0Client', () => {
       const auth0 = setup({ leeway: 10 });
 
       await expect(
-        loginWithPopup(auth0, {}, { timeoutInSeconds: 0.005 }, true, {}, {}, 10)
+        loginWithPopup(auth0, {}, { timeoutInSeconds: 0.005 }, { delay: 10 })
       ).rejects.toThrowError('Timeout');
     });
 
@@ -382,16 +382,13 @@ describe('Auth0Client', () => {
       const auth0 = setup();
 
       await expect(
-        loginWithPopup(
-          auth0,
-          undefined,
-          undefined,
-          true,
-          {},
-          {
-            state: 'other-state'
+        loginWithPopup(auth0, undefined, undefined, {
+          authorize: {
+            response: {
+              state: 'other-state'
+            }
           }
-        )
+        })
       ).rejects.toThrowError('Invalid state');
     });
 
@@ -572,7 +569,7 @@ describe('Auth0Client', () => {
       const auth0 = setup();
 
       await expect(
-        loginWithPopup(auth0, {}, {}, false, {})
+        loginWithPopup(auth0, {}, {}, { token: { success: false } })
       ).rejects.toThrowError(
         'HTTP error. Unable to fetch https://auth0_domain/oauth/token'
       );
@@ -677,7 +674,11 @@ describe('Auth0Client', () => {
       const auth0 = setup();
 
       await expect(
-        loginWithRedirect(auth0, undefined, false, {}, TEST_CODE, 'MTIz')
+        loginWithRedirect(auth0, undefined, {
+          token: {
+            success: false
+          }
+        })
       ).rejects.toThrowError(
         'HTTP error. Unable to fetch https://auth0_domain/oauth/token'
       );
@@ -708,15 +709,11 @@ describe('Auth0Client', () => {
       const auth0 = setup();
       let error;
       try {
-        await loginWithRedirect(
-          auth0,
-          undefined,
-          true,
-          {},
-          null,
-          null,
-          'some-error'
-        );
+        await loginWithRedirect(auth0, undefined, {
+          authorize: {
+            error: 'some-error'
+          }
+        });
       } catch (e) {
         error = e;
       }
@@ -728,7 +725,11 @@ describe('Auth0Client', () => {
   describe('getTokenSilently', () => {
     it('uses the cache when expires_in > constant leeway', async () => {
       const auth0 = setup();
-      await loginWithRedirect(auth0, undefined, true, { expires_in: 70 });
+      await loginWithRedirect(auth0, undefined, {
+        token: {
+          response: { expires_in: 70 }
+        }
+      });
 
       jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
         access_token: TEST_ACCESS_TOKEN,
@@ -743,7 +744,11 @@ describe('Auth0Client', () => {
 
     it('refreshes the token when expires_in < constant leeway', async () => {
       const auth0 = setup();
-      await loginWithRedirect(auth0, undefined, true, { expires_in: 50 });
+      await loginWithRedirect(auth0, undefined, {
+        token: {
+          response: { expires_in: 50 }
+        }
+      });
 
       jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
         access_token: TEST_ACCESS_TOKEN,
@@ -769,7 +774,11 @@ describe('Auth0Client', () => {
         useRefreshTokens: true
       });
 
-      await loginWithRedirect(auth0, undefined, true, { expires_in: 70 });
+      await loginWithRedirect(auth0, undefined, {
+        token: {
+          response: { expires_in: 70 }
+        }
+      });
 
       mockFetch.mockReset();
       mockFetch.mockResolvedValue(
@@ -790,7 +799,11 @@ describe('Auth0Client', () => {
         useRefreshTokens: true
       });
 
-      await loginWithRedirect(auth0, undefined, true, { expires_in: 50 });
+      await loginWithRedirect(auth0, undefined, {
+        token: {
+          response: { expires_in: 50 }
+        }
+      });
 
       mockFetch.mockReset();
       mockFetch.mockResolvedValue(
@@ -1067,7 +1080,11 @@ describe('Auth0Client', () => {
         useRefreshTokens: true
       });
       expect((<any>auth0).worker).toBeDefined();
-      await loginWithRedirect(auth0, undefined, true, { refresh_token: '' });
+      await loginWithRedirect(auth0, undefined, {
+        token: {
+          response: { refresh_token: '' }
+        }
+      });
       jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
         access_token: TEST_ACCESS_TOKEN,
         state: TEST_STATE
@@ -1164,7 +1181,11 @@ describe('Auth0Client', () => {
         cacheLocation: 'localstorage'
       });
       expect((<any>auth0).worker).toBeUndefined();
-      await loginWithRedirect(auth0, undefined, true, { refresh_token: '' });
+      await loginWithRedirect(auth0, undefined, {
+        token: {
+          response: { refresh_token: '' }
+        }
+      });
       jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
         access_token: TEST_ACCESS_TOKEN,
         state: TEST_STATE
@@ -1193,7 +1214,11 @@ describe('Auth0Client', () => {
         useRefreshTokens: true
       });
       expect((<any>auth0).worker).toBeUndefined();
-      await loginWithRedirect(auth0, undefined, true, { refresh_token: '' });
+      await loginWithRedirect(auth0, undefined, {
+        token: {
+          response: { refresh_token: '' }
+        }
+      });
       jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
         access_token: TEST_ACCESS_TOKEN,
         state: TEST_STATE
@@ -1343,8 +1368,10 @@ describe('Auth0Client', () => {
         another_custom_param: 'bar'
       });
 
-      await loginWithRedirect(auth0, undefined, true, {
-        refresh_token: 'a_refresh_token'
+      await loginWithRedirect(auth0, undefined, {
+        token: {
+          response: { refresh_token: 'a_refresh_token' }
+        }
       });
 
       jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
@@ -1562,15 +1589,11 @@ describe('Auth0Client', () => {
       it('returns false if error was returned', async () => {
         const auth0 = setup();
         try {
-          await loginWithRedirect(
-            auth0,
-            undefined,
-            true,
-            {},
-            null,
-            null,
-            'some-error'
-          );
+          await loginWithRedirect(auth0, undefined, {
+            authorize: {
+              error: 'some-error'
+            }
+          });
         } catch {}
         const result = await auth0.isAuthenticated();
         expect(result).toBe(false);
@@ -1579,7 +1602,9 @@ describe('Auth0Client', () => {
       it('returns false if token call fails', async () => {
         const auth0 = setup();
         try {
-          await loginWithRedirect(auth0, undefined, false);
+          await loginWithRedirect(auth0, undefined, {
+            token: { success: false }
+          });
         } catch {}
         const result = await auth0.isAuthenticated();
         expect(result).toBe(false);
@@ -1599,16 +1624,13 @@ describe('Auth0Client', () => {
     it('returns false if code not part of URL', async () => {
       const auth0 = setup();
       try {
-        await loginWithPopup(
-          auth0,
-          undefined,
-          undefined,
-          true,
-          {},
-          {
-            error: 'some error'
+        await loginWithPopup(auth0, undefined, undefined, {
+          authorize: {
+            response: {
+              error: 'some error'
+            }
           }
-        );
+        });
       } catch {}
       const result = await auth0.isAuthenticated();
       expect(result).toBe(false);
