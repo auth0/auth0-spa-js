@@ -193,7 +193,7 @@ export const loginWithPopupFn = (mockWindow, mockFetch, fetchResponse) => {
               response
             }
           });
-        }, delay || 0);
+        }, delay);
       }
     });
 
