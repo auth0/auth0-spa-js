@@ -484,9 +484,9 @@ export default class Auth0Client {
       throw new Error('Invalid state');
     }
 
-    if (error) {
-      this.transactionManager.remove();
+    this.transactionManager.remove();
 
+    if (error) {
       throw new AuthenticationError(
         error,
         error_description,
@@ -494,8 +494,6 @@ export default class Auth0Client {
         transaction.appState
       );
     }
-
-    this.transactionManager.remove();
 
     const tokenOptions = {
       audience: transaction.audience,
