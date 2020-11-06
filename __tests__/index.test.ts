@@ -448,12 +448,32 @@ describe('Auth0', () => {
       });
     });
 
-    it('calls `transactionManager.create` and stores the organization ID if specified', async () => {
+    it('calls `transactionManager.create` and stores the organization ID if specified in the options', async () => {
       const { auth0, transactionManager } = await setup();
 
       await auth0.buildAuthorizeUrl({
         ...REDIRECT_OPTIONS,
         organization: TEST_ORG_ID
+      });
+
+      expect(transactionManager.create).toHaveBeenCalledWith({
+        appState: TEST_APP_STATE,
+        audience: 'default',
+        code_verifier: TEST_RANDOM_STRING,
+        nonce: TEST_ENCODED_STATE,
+        scope: TEST_SCOPES,
+        redirect_uri: 'https://redirect.uri',
+        organizationId: TEST_ORG_ID
+      });
+    });
+
+    it('calls `transactionManager.create` and stores the organization ID if specified in the constructor', async () => {
+      const { auth0, transactionManager } = await setup({
+        organization: TEST_ORG_ID
+      });
+
+      await auth0.buildAuthorizeUrl({
+        ...REDIRECT_OPTIONS
       });
 
       expect(transactionManager.create).toHaveBeenCalledWith({
