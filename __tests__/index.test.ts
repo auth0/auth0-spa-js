@@ -53,6 +53,8 @@ const TEST_REFRESH_TOKEN = 'refresh-token';
 const TEST_USER_ID = 'user-id';
 const TEST_USER_EMAIL = 'user@email.com';
 const TEST_APP_STATE = { bestPet: 'dog' };
+const TEST_ORG_ID = 'org_id_123';
+
 const TEST_AUTH0_CLIENT_QUERY_STRING = `&auth0Client=${encodeURIComponent(
   btoa(
     JSON.stringify({
@@ -443,6 +445,25 @@ describe('Auth0', () => {
         nonce: TEST_ENCODED_STATE,
         scope: TEST_SCOPES,
         redirect_uri: 'https://redirect.uri'
+      });
+    });
+
+    it('calls `transactionManager.create` and stores the organization ID if specified', async () => {
+      const { auth0, transactionManager } = await setup();
+
+      await auth0.buildAuthorizeUrl({
+        ...REDIRECT_OPTIONS,
+        organization: TEST_ORG_ID
+      });
+
+      expect(transactionManager.create).toHaveBeenCalledWith({
+        appState: TEST_APP_STATE,
+        audience: 'default',
+        code_verifier: TEST_RANDOM_STRING,
+        nonce: TEST_ENCODED_STATE,
+        scope: TEST_SCOPES,
+        redirect_uri: 'https://redirect.uri',
+        organizationId: TEST_ORG_ID
       });
     });
 

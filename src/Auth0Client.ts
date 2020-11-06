@@ -298,6 +298,7 @@ export default class Auth0Client {
     );
 
     const url = this._authorizeUrl(params);
+    const organizationId = options.organization || this.options.organization;
 
     this.transactionManager.create({
       nonce: nonceIn,
@@ -305,7 +306,8 @@ export default class Auth0Client {
       appState,
       scope: params.scope,
       audience: params.audience || 'default',
-      redirect_uri: params.redirect_uri
+      redirect_uri: params.redirect_uri,
+      ...(organizationId && { organizationId })
     });
 
     return url + fragment;
