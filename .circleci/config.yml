@@ -8,10 +8,10 @@ jobs:
       - checkout
       - run: npm ci
       - run:
-        name: build
-        command: npm run build
-        environment:
-          WITH_STATS: true
+          name: build
+          command: npm run build
+          environment:
+            WITH_STATS: true
       - run: npm run test
       - run: npm run test:integration
       - run: npm run test:es-check
