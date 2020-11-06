@@ -657,6 +657,7 @@ describe('Auth0', () => {
           undefined
         );
       });
+
       it('calls oauth/token with redirect uri from transaction if set', async () => {
         const { auth0, utils, transactionManager } = await localSetup();
         const txn = transactionManager.get.mockReturnValue({
@@ -672,6 +673,7 @@ describe('Auth0', () => {
         expect(arg.hasOwnProperty('redirect_uri')).toBeTruthy();
         expect(arg.redirect_uri).toEqual('http://localhost');
       });
+
       it('calls oauth/token without redirect uri if not set in transaction', async () => {
         const { auth0, utils, transactionManager } = await localSetup();
         const txn = transactionManager.get.mockReturnValue({
@@ -685,6 +687,7 @@ describe('Auth0', () => {
         const arg = utils.oauthToken.mock.calls[0][0];
         expect(arg.hasOwnProperty('redirect_uri')).toBeFalsy();
       });
+
       it('calls `tokenVerifier.verify` with the `id_token` from in the oauth/token response', async () => {
         const { auth0, tokenVerifier } = await localSetup();
 
@@ -699,6 +702,32 @@ describe('Auth0', () => {
           max_age: undefined
         });
       });
+
+      it('calls `tokenVerifier.verify` with the organization ID from in the transaction, if set', async () => {
+        const { auth0, tokenVerifier, transactionManager } = await localSetup();
+
+        transactionManager.get.mockReturnValue({
+          code_verifier: TEST_RANDOM_STRING,
+          nonce: TEST_RANDOM_STRING,
+          audience: 'default',
+          scope: TEST_SCOPES,
+          redirect_uri: 'http://localhost',
+          organizationId: TEST_ORG_ID
+        });
+
+        await auth0.handleRedirectCallback();
+
+        expect(tokenVerifier).toHaveBeenCalledWith({
+          id_token: TEST_ID_TOKEN,
+          nonce: TEST_RANDOM_STRING,
+          aud: 'test-client-id',
+          iss: 'https://test.auth0.com/',
+          leeway: undefined,
+          max_age: undefined,
+          organizationId: TEST_ORG_ID
+        });
+      });
+
       it('saves cache', async () => {
         const { auth0, cache } = await localSetup();
 

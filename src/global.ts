@@ -422,6 +422,7 @@ export interface JWTVerifyOptions {
   nonce?: string;
   leeway?: number;
   max_age?: number;
+  organizationId?: string;
 }
 
 /**

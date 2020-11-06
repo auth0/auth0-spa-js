@@ -248,12 +248,17 @@ export default class Auth0Client {
   private _authorizeUrl(authorizeOptions: AuthorizeOptions) {
     return this._url(`/authorize?${createQueryParams(authorizeOptions)}`);
   }
-  private _verifyIdToken(id_token: string, nonce?: string) {
+  private _verifyIdToken(
+    id_token: string,
+    nonce?: string,
+    organizationId?: string
+  ) {
     return verifyIdToken({
       iss: this.tokenIssuer,
       aud: this.options.client_id,
       id_token,
       nonce,
+      organizationId,
       leeway: this.options.leeway,
       max_age: this._parseNumber(this.options.max_age)
     });
@@ -515,7 +520,8 @@ export default class Auth0Client {
 
     const decodedToken = this._verifyIdToken(
       authResult.id_token,
-      transaction.nonce
+      transaction.nonce,
+      transaction.organizationId
     );
 
     const cacheEntry = {
