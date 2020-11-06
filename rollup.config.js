@@ -49,6 +49,12 @@ const getPlugins = shouldMinify => {
     sourcemaps()
   ];
 };
+
+const getStatsPlugins = () => {
+  if (!shouldGenerateStats) return [];
+  return [visualizer(visualizerOptions), analyze({ summaryOnly: true })];
+};
+
 const footer = `('Auth0Client' in this) && this.console && this.console.warn && this.console.warn('Auth0Client already declared on the global namespace');
 this && this.${EXPORT_NAME} && (this.Auth0Client = this.Auth0Client || this.${EXPORT_NAME}.Auth0Client);`;
 
@@ -90,13 +96,7 @@ if (isProduction) {
           format: 'umd'
         }
       ],
-      plugins: [
-        ...getPlugins(isProduction),
-        ...(shouldGenerateStats && [
-          visualizer(visualizerOptions),
-          analyze({ summaryOnly: true })
-        ])
-      ]
+      plugins: [...getPlugins(isProduction), ...getStatsPlugins()]
     },
     {
       input: 'src/index.ts',
