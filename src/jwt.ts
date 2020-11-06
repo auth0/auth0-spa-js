@@ -176,15 +176,30 @@ export const verify = (options: JWTVerifyOptions) => {
       `Expiration Time (exp) claim error in the ID token; current time (${now}) is after expiration time (${expDate})`
     );
   }
+
   if (isNumber(decoded.claims.nbf) && now < nbfDate) {
     throw new Error(
       `Not Before time (nbf) claim in the ID token indicates that this token can't be used just yet. Currrent time (${now}) is before ${nbfDate}`
     );
   }
+
   if (isNumber(decoded.claims.auth_time) && now > authTimeDate) {
     throw new Error(
       `Authentication Time (auth_time) claim in the ID token indicates that too much time has passed since the last end-user authentication. Currrent time (${now}) is after last auth at ${authTimeDate}`
     );
   }
+
+  if (options.organizationId) {
+    if (!decoded.claims.org_id) {
+      throw new Error(
+        'Organization ID (org_id) claim must be a string present in the ID token'
+      );
+    } else if (options.organizationId !== decoded.claims.org_id) {
+      throw new Error(
+        `Organization ID (org_id) claim mismatch in the ID token; expected "${options.organizationId}", found "${decoded.claims.org_id}"`
+      );
+    }
+  }
+
   return decoded;
 };

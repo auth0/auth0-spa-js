@@ -465,5 +465,6 @@ export interface IdToken {
   sub_jwk?: string;
   cnf?: string;
   sid?: string;
+  org_id?: string;
   [key: string]: any;
 }
