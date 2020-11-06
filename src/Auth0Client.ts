@@ -385,7 +385,13 @@ export default class Auth0Client {
       this.worker
     );
 
-    const decodedToken = this._verifyIdToken(authResult.id_token, nonceIn);
+    const organizationId = options.organization || this.options.organization;
+
+    const decodedToken = this._verifyIdToken(
+      authResult.id_token,
+      nonceIn,
+      organizationId
+    );
 
     const cacheEntry = {
       ...authResult,
