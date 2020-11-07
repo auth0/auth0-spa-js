@@ -12,521 +12,126 @@
   </head>
 
   <body>
-    <div id="app" class="container">
-      <div v-if="!loading" style="visibility: hidden">
-        <span id="loaded">loaded</span>
-      </div>
+    <h3>User:</h3>
+    <pre id="user"></pre>
+    <h3>Token:</h3>
+    <pre id="token"></pre>
 
-      <h1 class="mb-5">Auth0 SPA JS Playground</h1>
-
-      <p>
-        <strong>Is authenticated:</strong>&nbsp;<span data-cy="authenticated"
-          >{{ isAuthenticated }}</span
-        >
-      </p>
-
-      <div v-if="!loading">
-        <div class="btn-toolbar justify-content-between">
-          <div class="btn-group mb-3">
-            <button class="btn btn-primary" @click="loginPopup">
-              Login popup
-            </button>
-
-            <button
-              class="btn btn-primary"
-              @click="loginRedirect"
-              id="login_redirect"
-            >
-              Login redirect
-            </button>
-
-            <button
-              class="btn btn-success"
-              @click="loginHandleRedirectCallback"
-              id="handle_redirect_callback"
-              data-cy="handle-redirect-callback"
-            >
-              Login redirect callback
-            </button>
-          </div>
-
-          <div class="btn-group mb-3">
-            <button
-              class="btn btn-outline-primary"
-              @click="logout"
-              id="logout"
-              data-cy="logout"
-            >
-              logout (default)
-            </button>
-
-            <button class="btn btn-outline-primary" @click="logoutNoClient">
-              logout (no client id)
-            </button>
-          </div>
-        </div>
-
-        <div v-for="current in scopesWithSuffix">
-          <div class="card mb-3 bg-light">
-            <div class="card-header">
-              <strong>{{current.audience || 'default'}}</strong>
-              <span
-                v-for="s of current.scope.split(' ')"
-                class="badge badge-success ml-1"
-                >{{s}}</span
-              >
-            </div>
-            <div class="card-body">
-              <div class="form-group">
-                <label for="scope">Scope</label>
-                <input
-                  type="text"
-                  class="form-control"
-                  id="scope"
-                  v-model="current.scope"
-                  :data-cy="'scope' + current.suffix"
-                />
-              </div>
-
-              <div class="btn-group mb-0">
-                <button
-                  class="btn btn-outline-info"
-                  @click="getToken(current.audience, current.scope, current.access_tokens)"
-                  :data-cy="'get-token' + current.suffix"
-                >
-                  Get access token
-                </button>
-
-                <button
-                  class="btn btn-outline-info"
-                  @click="getTokenPopup(current.audience, current.scope, current.access_tokens)"
-                >
-                  Get access token with a popup
-                </button>
-              </div>
-
-              <div
-                class="card mb-0 mt-3"
-                v-if="current.access_tokens.length > 0"
-              >
-                <div class="card-header">Access Tokens</div>
-                <div class="card-body">
-                  <ul v-for="token in current.access_tokens">
-                    <li :data-cy="'access-token' + current.suffix">
-                      {{token | concat}} (<a
-                        :href="'https://jwt.io?token=' + token"
-                        target="_blank"
-                        >view</a
-                      >)
-                    </li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <template v-if="error">
-          <hr />
-          <h3>Last error</h3>
-          <pre><code data-cy="error">
-{{JSON.stringify(error, null, 2)}}
-              </code>
-          </pre>
-        </template>
-
-        <hr />
-
-        <div class="card mb-3" v-if="profile">
-          <div class="card-header">Profile</div>
-          <div class="card-body">
-            <pre>
-              <code data-cy="profile">
-{{ JSON.stringify(profile, null, 2) }}
-              </code>
-            </pre>
-          </div>
-        </div>
-
-        <div class="card mb-3" v-if="id_token">
-          <div class="card-header">ID Token</div>
-          <div class="card-body">
-            {{ id_token | concat }} (<a
-              :href="'https://jwt.io?token=' + id_token"
-              target="_blank"
-              >view</a
-            >)
-          </div>
-        </div>
-      </div>
-
-      <form action="/" @submit.prevent="saveForm">
-        <div class="form-group">
-          <label for="domain">Domain</label>
-          <input
-            type="text"
-            class="form-control"
-            id="domain"
-            v-model="domain"
-          />
-        </div>
-
-        <div class="form-group">
-          <label for="client_id">Client ID</label>
-          <input
-            type="text"
-            class="form-control"
-            id="client_id"
-            v-model="clientId"
-          />
-        </div>
-
-        <div class="form-group">
-          <label for="audience">Audience</label>
-          <input
-            type="text"
-            class="form-control"
-            id="audience"
-            v-model="audience"
-          />
-        </div>
-
-        <div class="btn-group mb-5">
-          <button @click="saveForm" class="btn btn-primary">Save</button>
-
-          <button
-            @click="resetForm"
-            class="btn btn-outline-primary"
-            id="reset-config"
-          >
-            Reset
-          </button>
-        </div>
-
-        <h3 class="mb-5">Other switches</h3>
-
-        <div class="custom-control custom-switch mb-5">
-          <input
-            type="checkbox"
-            class="custom-control-input"
-            id="storage-switch"
-            v-model="useLocalStorage"
-          />
-          <label
-            for="storage-switch"
-            class="custom-control-label"
-            data-cy="switch-local-storage"
-            >Use local storage</label
-          >
-        </div>
-
-        <div class="custom-control custom-switch mb-5">
-          <input
-            type="checkbox"
-            class="custom-control-input"
-            id="refresh_token_switch"
-            v-model="useRefreshTokens"
-          />
-          <label
-            for="refresh_token_switch"
-            class="custom-control-label"
-            data-cy="switch-refresh-tokens"
-            >Use refresh tokens</label
-          >
-        </div>
-
-        <div class="custom-control custom-switch mb-5">
-          <input
-            type="checkbox"
-            class="custom-control-input"
-            id="cache-switch"
-            v-model="useCache"
-          />
-          <label
-            for="cache-switch"
-            class="custom-control-label"
-            data-cy="switch-use-cache"
-            >Use token cache when fetching new tokens</label
-          >
-        </div>
-
-        <div class="custom-control custom-switch mb-5">
-          <input
-            type="checkbox"
-            class="custom-control-input"
-            id="constructor-switch"
-            v-model="useConstructor"
-          />
-          <label
-            for="constructor-switch"
-            class="custom-control-label"
-            data-cy="switch-use-constructor"
-            >Use Auth0Client constructor</label
-          >
-        </div>
-
-        <div class="custom-control custom-switch mb-5">
-          <input
-            type="checkbox"
-            class="custom-control-input"
-            id="cookie-txn-switch"
-            v-model="useCookiesForTransactions"
-          />
-          <label
-            for="cookie-txn-switch"
-            class="custom-control-label"
-            data-cy="switch-cookie-txns"
-            >Use cookies for transactions</label
-          >
-        </div>
-      </form>
-    </div>
+    <button id="hundred">Mimic opening a new tab</button>
 
     <script src="/auth0-spa-js.development.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
     <script type="text/javascript">
       var defaultDomain = 'brucke.auth0.com';
       var defaultClientId = 'wLSIP47wM39wKdDmOj6Zb5eSEw3JVhVp';
-      var defaultAudience = '';
+      // Auth0 setup
+      const a0config = {
+        client_id: 'IJ1pIAk1G4Fd5D0elgte3EifRwfIscVx',
+        //client_id: defaultClientId,
+        //domain: defaultDomain,
+        domain: 'frdrkprck.eu.auth0.com',
+        audience: 'Test',
+        redirect_uri: 'http://localhost:3000/',
+        cacheLocation: 'localstorage',
+        useRefreshTokens: true
+      };
 
-      Vue.filter('concat', function (value) {
-        if (value && value.length > 35) {
-          return value.substr(0, 16) + '…  …' + value.substr(-16, 16);
+      const a0 = new Auth0Client(a0config);
+
+      function login() {
+        return a0.isAuthenticated().then(isAuthenticated => {
+          if (isAuthenticated) {
+            // console.warn('Already authenticated');
+            return a0.getUser();
+          } else {
+            return a0
+              .handleRedirectCallback()
+              .then(() => {
+                // console.warn('Auth callback handled.');
+                return a0.getUser();
+              })
+              .catch(() => {
+                return a0.loginWithRedirect();
+              });
+          }
+        });
+      }
+
+      function getToken() {
+        return a0.getTokenSilently();
+      }
+
+      // Demo UI
+      function displayUser(user) {
+        document.querySelector('#user').innerText = JSON.stringify(user);
+      }
+
+      function displayToken(token) {
+        document.querySelector('#token').innerText = token;
+      }
+
+      // Init logic
+      login().then(displayUser);
+
+      function expireToken() {
+        const k =
+          '@@auth0spajs@@::IJ1pIAk1G4Fd5D0elgte3EifRwfIscVx::Test::openid profile email offline_access';
+        const json = localStorage.getItem(k);
+        if (json) {
+          const tokens = JSON.parse(json);
+          tokens.expiresAt = 1;
+          localStorage.setItem(k, JSON.stringify(tokens));
+        }
+      }
+
+      function sleep(ms) {
+        return function (x) {
+          return new Promise(resolve => setTimeout(() => resolve(x), ms));
+        };
+      }
+
+      function jitter(p) {
+        // We perform real network requests, so this function is meant to mimic
+        // the random delay those might cause
+        return Promise.resolve()
+          .then(sleep(1000 * Math.random()))
+          .then(p);
+      }
+
+      let counter = 1;
+      function mimicInitializationLogic() {
+        // expire token to mimic opening a new tab after a while
+        expireToken();
+
+        // on every app init we populate our app's state with the user data, only once
+        jitter(() => a0.isAuthenticated()).then(() => {
+          // console.log('getUser');
+          a0.getUser();
+          a0.getIdTokenClaims();
+        });
+
+        // in different places throughout the app we do two things:
+        // the number "30" is not random here - that's the actual number of how many times
+        // we might call the Auth0 API functions when a user opens a new tab
+        for (let i = 0; i < 30; i++) {
+          // - we get the token and talk to our servers
+          jitter(() => {
+            // console.log('getTokenSilently');
+            a0.getTokenSilently({ ignoreCache: true });
+          });
+          // - we check if user is authenticated to make decisions in different parts of the application
+          jitter(() => {
+            // console.log('isAuthenticated');
+            a0.isAuthenticated();
+          });
         }
 
-        return value;
-      });
+        console.log('-----', counter, '-----');
+        counter++;
+      }
 
-      var app = new Vue({
-        el: '#app',
-        data: function () {
-          var savedData = localStorage.getItem('spa-playground-data');
-
-          var data = savedData ? JSON.parse(savedData) : {};
-
-          return {
-            auth0: null,
-            loading: true,
-            useLocalStorage: data.useLocalStorage || false,
-            useRefreshTokens: data.useRefreshTokens || false,
-            useCache: data.useCache === false ? false : true,
-            useConstructor: data.useConstructor === false ? false : true,
-            useCookiesForTransactions: data.useCookiesForTransactions || false,
-            profile: null,
-            id_token: '',
-            isAuthenticated: false,
-            domain: data.domain || defaultDomain,
-            clientId: data.clientId || defaultClientId,
-            audience: data.audience || defaultAudience,
-            audienceScopes: [
-              {
-                audience: data.audience || defaultAudience,
-                scope: 'openid profile email',
-                access_tokens: []
-              },
-              {
-                audience: 'https://' + data.domain + '/api/v2/',
-                scope: 'read:rules',
-                access_tokens: []
-              }
-            ],
-            error: null
-          };
-        },
-        created: function () {
-          this.initializeClient();
-        },
-        watch: {
-          useLocalStorage: function () {
-            this.initializeClient();
-            this.saveForm();
-          },
-          useRefreshTokens: function () {
-            this.initializeClient();
-            this.saveForm();
-          },
-          useCache: function () {
-            this.saveForm();
-          },
-          useConstructor: function () {
-            this.initializeClient();
-            this.saveForm();
-          },
-          useCookiesForTransactions: function () {
-            this.initializeClient();
-            this.saveForm();
-          }
-        },
-        computed: {
-          scopesWithSuffix: function () {
-            return this.audienceScopes.map(function (scope, index) {
-              scope.suffix = index > 0 ? '-' + index : '';
-              return scope;
-            });
-          }
-        },
-        methods: {
-          initializeClient: function () {
-            var _self = this;
-
-            var clientOptions = {
-              domain: _self.domain,
-              client_id: _self.clientId,
-              cacheLocation: _self.useLocalStorage ? 'localstorage' : 'memory',
-              useRefreshTokens: _self.useRefreshTokens,
-              audience: _self.audience,
-              useCookiesForTransactions: _self.useCookiesForTransactions
-            };
-
-            var _init = function (auth0) {
-              _self.auth0 = auth0;
-              window.auth0 = auth0; // Cypress integration tests support
-              _self.loading = false;
-
-              auth0.isAuthenticated().then(function (isAuthenticated) {
-                _self.isAuthenticated = isAuthenticated;
-              });
-            };
-
-            if (_self.useConstructor) {
-              console.log('Initializing using the constructor');
-
-              _init(new Auth0Client(clientOptions));
-            } else {
-              console.log('Initializing using the factory function');
-
-              createAuth0Client(clientOptions).then(_init);
-            }
-          },
-          saveForm: function () {
-            localStorage.setItem(
-              'spa-playground-data',
-              JSON.stringify({
-                domain: this.domain,
-                clientId: this.clientId,
-                useLocalStorage: this.useLocalStorage,
-                useRefreshTokens: this.useRefreshTokens,
-                useConstructor: this.useConstructor,
-                useCookiesForTransactions: this.useCookiesForTransactions,
-                useCache: this.useCache,
-                audience: this.audience
-              })
-            );
-          },
-          resetForm: function () {
-            this.domain = defaultDomain;
-            this.clientId = defaultClientId;
-            this.useLocalStorage = false;
-            this.useRefreshTokens = false;
-            this.useCache = true;
-            this.audience = defaultAudience;
-            this.useConstructor = false;
-            this.useCookiesForTransactions = false;
-            this.saveForm();
-          },
-          showAuth0Info: function () {
-            var _self = this;
-            _self.access_tokens = [];
-
-            _self.auth0.getTokenSilently().then(function (token) {
-              _self.audienceScopes[0].access_tokens.push(token);
-
-              _self.auth0.getUser().then(function (user) {
-                _self.profile = user;
-              });
-
-              _self.auth0.getIdTokenClaims().then(function (claims) {
-                _self.id_token = claims.__raw;
-              });
-            });
-          },
-          loginPopup: function () {
-            var _self = this;
-
-            _self.auth0
-              .loginWithPopup({
-                redirect_uri: 'http://localhost:3000/callback.html'
-              })
-              .then(function () {
-                auth0.isAuthenticated().then(function (isAuthenticated) {
-                  _self.isAuthenticated = isAuthenticated;
-                  _self.showAuth0Info();
-                });
-              });
-          },
-          loginRedirect: function () {
-            var _self = this;
-
-            this.auth0.loginWithRedirect({
-              redirect_uri: 'http://localhost:3000/',
-              scope: _self.audienceScopes[0].scope
-            });
-          },
-          loginHandleRedirectCallback: function () {
-            var _self = this;
-
-            _self.auth0.handleRedirectCallback().then(function () {
-              window.history.replaceState(
-                {},
-                document.title,
-                window.location.origin + '/'
-              );
-
-              auth0.isAuthenticated().then(function (isAuthenticated) {
-                _self.isAuthenticated = isAuthenticated;
-                _self.showAuth0Info();
-              });
-            });
-          },
-          getToken: function (audience, scope, access_tokens) {
-            var _self = this;
-
-            _self.auth0
-              .getTokenSilently({
-                audience: audience,
-                scope: scope,
-                ignoreCache: !_self.useCache
-              })
-              .then(function (token) {
-                access_tokens.push(token);
-                _self.error = null;
-
-                auth0.isAuthenticated().then(function (isAuthenticated) {
-                  _self.isAuthenticated = isAuthenticated;
-                });
-              })
-              .catch(function (e) {
-                console.error(e);
-
-                if (e.message) {
-                  _self.error = e.message;
-                } else {
-                  _self.error = e;
-                }
-              });
-          },
-          getTokenPopup: function (audience, scope, access_tokens) {
-            var _self = this;
-
-            _self.auth0
-              .getTokenWithPopup({ audience: audience, scope: scope })
-              .then(function (token) {
-                access_tokens.push(token);
-              });
-          },
-          logout: function () {
-            this.auth0.logout({
-              returnTo: 'http://localhost:3000/'
-            });
-          },
-          logoutNoClient: function () {
-            this.auth0.logout({
-              client_id: null,
-              returnTo: 'http://localhost:3000/'
-            });
-          }
-        }
-      });
+      document
+        .querySelector('#hundred')
+        .addEventListener('click', mimicInitializationLogic);
     </script>
   </body>
 </html>
