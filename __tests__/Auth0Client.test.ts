@@ -452,6 +452,29 @@ describe('Auth0Client', () => {
       );
     });
 
+    it('calls `tokenVerifier.verify` with the organization id', async () => {
+      const auth0 = setup({ organization: 'test_org_123' });
+
+      await loginWithPopup(auth0);
+
+      expect(tokenVerifier).toHaveBeenCalledWith(
+        expect.objectContaining({
+          organizationId: 'test_org_123'
+        })
+      );
+    });
+
+    it('calls `tokenVerifier.verify` with the organization id given in the login method', async () => {
+      const auth0 = setup();
+      await loginWithPopup(auth0, { organization: 'test_org_123' });
+
+      expect(tokenVerifier).toHaveBeenCalledWith(
+        expect.objectContaining({
+          organizationId: 'test_org_123'
+        })
+      );
+    });
+
     it('saves into cache', async () => {
       const auth0 = setup();
 
