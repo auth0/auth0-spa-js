@@ -11,3 +11,4 @@ test-results
 yarn.lock
 
 release-tmp*
+bundle-stats
