@@ -1,5 +1,13 @@
 # Change Log
 
+## [v1.13.2](https://github.com/auth0/auth0-spa-js/tree/v1.13.2) (2020-11-09)
+
+[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v1.13.1...v1.13.2)
+
+**Added**
+
+- [SDK-2121] Add support for token validation for Organizations [\#631](https://github.com/auth0/auth0-spa-js/pull/631) ([stevehobbsdev](https://github.com/stevehobbsdev))
+
 ## [v1.13.1](https://github.com/auth0/auth0-spa-js/tree/v1.13.1) (2020-10-29)
 
 [Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v1.13.0...v1.13.1)
