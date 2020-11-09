@@ -138,6 +138,7 @@ describe('jwt', () => {
       done();
     });
   });
+
   it('verifies correctly with multiple audiences and azp', async () => {
     const id_token = await createJWT(DEFAULT_PAYLOAD, {
       audience: ['item 1', verifyOptions.aud]
@@ -151,6 +152,23 @@ describe('jwt', () => {
       verifier.decode(id_token)
     );
   });
+
+  it('verifies correctly with an organization ID', async () => {
+    const org_id = 'test_org_123';
+
+    const id_token = await createJWT({ ...DEFAULT_PAYLOAD, org_id });
+
+    const { encoded, header, claims } = verify({
+      ...verifyOptions,
+      id_token,
+      organizationId: org_id
+    });
+
+    expect({ encoded, header, payload: claims }).toMatchObject(
+      verifier.decode(id_token)
+    );
+  });
+
   it('validates id_token is present', async () => {
     expect(() => verify({ ...verifyOptions, id_token: '' })).toThrow(
       'ID token is required but missing'
@@ -315,6 +333,29 @@ describe('jwt', () => {
       `Authentication Time (auth_time) claim in the ID token indicates that too much time has passed since the last end-user authentication. Currrent time (${new Date(
         now
       )}) is after last auth at ${authTimeDateCorrected}`
+    );
+  });
+
+  it('validate org_id is present when organizationId is provided', async () => {
+    const id_token = await createJWT({ ...DEFAULT_PAYLOAD });
+
+    expect(() =>
+      verify({ ...verifyOptions, id_token, organizationId: 'test_org_123' })
+    ).toThrow(
+      'Organization ID (org_id) claim must be a string present in the ID token'
+    );
+  });
+
+  it('validate org_id matches the claim when organizationId is provided', async () => {
+    const id_token = await createJWT({
+      ...DEFAULT_PAYLOAD,
+      org_id: 'test_org_456'
+    });
+
+    expect(() =>
+      verify({ ...verifyOptions, id_token, organizationId: 'test_org_123' })
+    ).toThrow(
+      'Organization ID (org_id) claim mismatch in the ID token; expected "test_org_123", found "test_org_456"'
     );
   });
 });

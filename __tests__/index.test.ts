@@ -53,6 +53,8 @@ const TEST_REFRESH_TOKEN = 'refresh-token';
 const TEST_USER_ID = 'user-id';
 const TEST_USER_EMAIL = 'user@email.com';
 const TEST_APP_STATE = { bestPet: 'dog' };
+const TEST_ORG_ID = 'org_id_123';
+
 const TEST_AUTH0_CLIENT_QUERY_STRING = `&auth0Client=${encodeURIComponent(
   btoa(
     JSON.stringify({
@@ -446,6 +448,45 @@ describe('Auth0', () => {
       });
     });
 
+    it('calls `transactionManager.create` and stores the organization ID if specified in the options', async () => {
+      const { auth0, transactionManager } = await setup();
+
+      await auth0.buildAuthorizeUrl({
+        ...REDIRECT_OPTIONS,
+        organization: TEST_ORG_ID
+      });
+
+      expect(transactionManager.create).toHaveBeenCalledWith({
+        appState: TEST_APP_STATE,
+        audience: 'default',
+        code_verifier: TEST_RANDOM_STRING,
+        nonce: TEST_ENCODED_STATE,
+        scope: TEST_SCOPES,
+        redirect_uri: 'https://redirect.uri',
+        organizationId: TEST_ORG_ID
+      });
+    });
+
+    it('calls `transactionManager.create` and stores the organization ID if specified in the constructor', async () => {
+      const { auth0, transactionManager } = await setup({
+        organization: TEST_ORG_ID
+      });
+
+      await auth0.buildAuthorizeUrl({
+        ...REDIRECT_OPTIONS
+      });
+
+      expect(transactionManager.create).toHaveBeenCalledWith({
+        appState: TEST_APP_STATE,
+        audience: 'default',
+        code_verifier: TEST_RANDOM_STRING,
+        nonce: TEST_ENCODED_STATE,
+        scope: TEST_SCOPES,
+        redirect_uri: 'https://redirect.uri',
+        organizationId: TEST_ORG_ID
+      });
+    });
+
     it('returns the url', async () => {
       const { auth0 } = await setup();
 
@@ -636,6 +677,7 @@ describe('Auth0', () => {
           undefined
         );
       });
+
       it('calls oauth/token with redirect uri from transaction if set', async () => {
         const { auth0, utils, transactionManager } = await localSetup();
         const txn = transactionManager.get.mockReturnValue({
@@ -651,6 +693,7 @@ describe('Auth0', () => {
         expect(arg.hasOwnProperty('redirect_uri')).toBeTruthy();
         expect(arg.redirect_uri).toEqual('http://localhost');
       });
+
       it('calls oauth/token without redirect uri if not set in transaction', async () => {
         const { auth0, utils, transactionManager } = await localSetup();
         const txn = transactionManager.get.mockReturnValue({
@@ -664,6 +707,7 @@ describe('Auth0', () => {
         const arg = utils.oauthToken.mock.calls[0][0];
         expect(arg.hasOwnProperty('redirect_uri')).toBeFalsy();
       });
+
       it('calls `tokenVerifier.verify` with the `id_token` from in the oauth/token response', async () => {
         const { auth0, tokenVerifier } = await localSetup();
 
@@ -678,6 +722,32 @@ describe('Auth0', () => {
           max_age: undefined
         });
       });
+
+      it('calls `tokenVerifier.verify` with the organization ID from in the transaction, if set', async () => {
+        const { auth0, tokenVerifier, transactionManager } = await localSetup();
+
+        transactionManager.get.mockReturnValue({
+          code_verifier: TEST_RANDOM_STRING,
+          nonce: TEST_RANDOM_STRING,
+          audience: 'default',
+          scope: TEST_SCOPES,
+          redirect_uri: 'http://localhost',
+          organizationId: TEST_ORG_ID
+        });
+
+        await auth0.handleRedirectCallback();
+
+        expect(tokenVerifier).toHaveBeenCalledWith({
+          id_token: TEST_ID_TOKEN,
+          nonce: TEST_RANDOM_STRING,
+          aud: 'test-client-id',
+          iss: 'https://test.auth0.com/',
+          leeway: undefined,
+          max_age: undefined,
+          organizationId: TEST_ORG_ID
+        });
+      });
+
       it('saves cache', async () => {
         const { auth0, cache } = await localSetup();
 
