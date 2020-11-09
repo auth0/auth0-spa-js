@@ -1,8 +1,12 @@
 version: 2.1
 jobs:
+  parameters:
+    docker_image:
+      type: string
+      default: cypress/browsers:node12.13.0-chrome80-ff74
   build:
     docker:
-      - image: cypress/browsers:node12.13.0-chrome80-ff74
+      - image: << parameters.docker_image >>
     working_directory: ~/repo
     steps:
       - checkout
