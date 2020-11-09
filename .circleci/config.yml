@@ -1,9 +1,9 @@
 version: 2.1
+parameters:
+  docker_image:
+    type: string
+    default: cypress/browsers:node12.13.0-chrome80-ff74
 jobs:
-  parameters:
-    docker_image:
-      type: string
-      default: cypress/browsers:node12.13.0-chrome80-ff74
   build:
     docker:
       - image: << parameters.docker_image >>
