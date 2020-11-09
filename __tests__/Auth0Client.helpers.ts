@@ -56,16 +56,53 @@ export const setupFn = mockVerify => {
   };
 };
 
+const processDefaultLoginWithRedirectOptions = config => {
+  const defaultTokenResponseOptions = {
+    success: true,
+    response: {}
+  };
+  const defaultAuthorizeResponseOptions = {
+    code: TEST_CODE,
+    state: TEST_STATE
+  };
+  const token = {
+    ...defaultTokenResponseOptions,
+    ...(config.token || {})
+  };
+  const authorize = {
+    ...defaultAuthorizeResponseOptions,
+    ...(config.authorize || {})
+  };
+
+  return {
+    token,
+    authorize
+  };
+};
+
 export const loginWithRedirectFn = (mockWindow, mockFetch, fetchResponse) => {
   return async (
     auth0,
     options: RedirectLoginOptions = undefined,
-    tokenSuccess = true,
-    tokenResponse = {},
-    code = TEST_CODE,
-    state = TEST_STATE,
-    error = null
+    testConfig: {
+      token?: {
+        success?: boolean;
+        response?: any;
+      };
+      authorize?: {
+        code?: string;
+        state?: string;
+        error?: string;
+      };
+    } = {
+      token: {},
+      authorize: {}
+    }
   ) => {
+    const {
+      token,
+      authorize: { code, state, error }
+    } = processDefaultLoginWithRedirectOptions(testConfig);
     await auth0.loginWithRedirect(options);
     expect(mockWindow.location.assign).toHaveBeenCalled();
 
@@ -77,7 +114,7 @@ export const loginWithRedirectFn = (mockWindow, mockFetch, fetchResponse) => {
 
     mockFetch.mockResolvedValueOnce(
       fetchResponse(
-        tokenSuccess,
+        token.success,
         Object.assign(
           {
             id_token: TEST_ID_TOKEN,
@@ -85,11 +122,40 @@ export const loginWithRedirectFn = (mockWindow, mockFetch, fetchResponse) => {
             access_token: TEST_ACCESS_TOKEN,
             expires_in: 86400
           },
-          tokenResponse
+          token.response
         )
       )
     );
     await auth0.handleRedirectCallback();
+  };
+};
+
+const processDefaultLoginWithPopupOptions = config => {
+  const defaultTokenResponseOptions = {
+    success: true,
+    response: {}
+  };
+
+  const defaultAuthorizeResponseOptions = {
+    response: authorizationResponse
+  };
+
+  const token = {
+    ...defaultTokenResponseOptions,
+    ...(config.token || {})
+  };
+
+  const authorize = {
+    ...defaultAuthorizeResponseOptions,
+    ...(config.authorize || {})
+  };
+
+  const delay = config.delay || 0;
+
+  return {
+    token,
+    authorize,
+    delay
   };
 };
 
@@ -98,16 +164,26 @@ export const loginWithPopupFn = (mockWindow, mockFetch, fetchResponse) => {
     auth0,
     options: PopupLoginOptions = undefined,
     config: PopupConfigOptions = undefined,
-    tokenSuccess = true,
-    tokenResponse = {},
-    authResponse: any = {},
-    delay = 0
+    testConfig: {
+      token?: {
+        success?: boolean;
+        response?: any;
+      };
+      authorize?: {
+        response?: any;
+      };
+      delay?: number;
+    } = {
+      token: {},
+      authorize: {},
+      delay: 0
+    }
   ) => {
-    const response = {
-      ...authorizationResponse,
-      ...authResponse
-    };
-
+    const {
+      token,
+      authorize: { response },
+      delay
+    } = processDefaultLoginWithPopupOptions(testConfig);
     mockWindow.addEventListener.mockImplementationOnce((type, cb) => {
       if (type === 'message') {
         setTimeout(() => {
@@ -126,7 +202,7 @@ export const loginWithPopupFn = (mockWindow, mockFetch, fetchResponse) => {
     });
     mockFetch.mockResolvedValueOnce(
       fetchResponse(
-        tokenSuccess,
+        token.success,
         Object.assign(
           {
             id_token: TEST_ID_TOKEN,
@@ -134,7 +210,7 @@ export const loginWithPopupFn = (mockWindow, mockFetch, fetchResponse) => {
             access_token: TEST_ACCESS_TOKEN,
             expires_in: 86400
           },
-          tokenResponse
+          token.response
         )
       )
     );
