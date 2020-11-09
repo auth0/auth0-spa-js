@@ -6,7 +6,7 @@ parameters:
 jobs:
   build:
     docker:
-      - image: << parameters.docker_image >>
+      - image: << pipeline.parameters.docker_image >>
     working_directory: ~/repo
     steps:
       - checkout
