@@ -422,6 +422,7 @@ export interface JWTVerifyOptions {
   nonce?: string;
   leeway?: number;
   max_age?: number;
+  organizationId?: string;
 }
 
 /**
@@ -464,5 +465,6 @@ export interface IdToken {
   sub_jwk?: string;
   cnf?: string;
   sid?: string;
+  org_id?: string;
   [key: string]: any;
 }

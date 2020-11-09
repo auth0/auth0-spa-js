@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <button onclick="memoryCacheTest()">In-memory Cache test</button>
+    <button onclick="localStorageCacheTest()">localstorage cache test</button>
+    <button onclick="iframeTest()">iframe test</button>
+    <button onclick="refreshTokenTest()">refresh token test</button>
+
+    <script src="/auth0-spa-js.development.js"></script>
+    <script>
+      const defaultSettings = {
+        domain: 'brucke.auth0.com',
+        client_id: 'wLSIP47wM39wKdDmOj6Zb5eSEw3JVhVp'
+      };
+
+      function logout() {
+        new Auth0Client(defaultSettings);
+      }
+
+      function wait(t) {
+        return new Promise((res, _) => {
+          setTimeout(() => res(), t);
+        });
+      }
+
+      async function runTokenTest(fn, name, count = 1, waitTime = 250) {
+        console.log(`Running "${name}" (${count} iteration/s)`);
+        const results = new Array(count);
+
+        for (let i = 0; i < count; i++) {
+          const start = window.performance.now();
+          await fn(i);
+          const end = window.performance.now();
+          results[i] = end - start;
+          console.log(`Iteration ${i + 1}`, results[i]);
+          await wait(waitTime);
+        }
+
+        const average = results.reduce((a, b, i) => a + b, 0) / count;
+        console.log(name, average);
+      }
+
+      async function memoryCacheTest() {
+        const client = new Auth0Client(defaultSettings);
+        await client.loginWithPopup();
+
+        await runTokenTest(
+          () => client.getTokenSilently(),
+          'getTokenSilently (memory)',
+          10
+        );
+
+        client.logout({ localOnly: true });
+      }
+
+      async function localStorageCacheTest() {
+        const client = new Auth0Client({
+          ...defaultSettings,
+          cacheLocation: 'localstorage'
+        });
+
+        await client.loginWithPopup();
+
+        await runTokenTest(
+          () => client.getTokenSilently(),
+          'getTokenSilently (local storage)',
+          10
+        );
+
+        client.logout({ localOnly: true });
+      }
+
+      async function iframeTest() {
+        const client = new Auth0Client({
+          ...defaultSettings
+        });
+
+        await client.loginWithPopup();
+
+        await runTokenTest(
+          () => client.getTokenSilently({ ignoreCache: true }),
+          'getTokenSilently (iframe)',
+          5
+        );
+
+        client.logout({ localOnly: true });
+      }
+
+      async function refreshTokenTest() {
+        const client = new Auth0Client({
+          ...defaultSettings,
+          useRefreshTokens: true
+        });
+
+        await client.loginWithPopup();
+
+        await runTokenTest(
+          () => client.getTokenSilently({ ignoreCache: true }),
+          'getTokenSilently (refresh token)',
+          5
+        );
+
+        client.logout({ localOnly: true });
+      }
+    </script>
+  </body>
+</html>
