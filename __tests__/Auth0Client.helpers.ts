@@ -73,7 +73,9 @@ const processDefaultLoginWithRedirectOptions = config => {
 
   return {
     token,
-    authorize
+    authorize,
+    useHash: config.useHash,
+    customCallbackUrl: config.customCallbackUrl
   };
 };
 
@@ -90,7 +92,10 @@ export const loginWithRedirectFn = (mockWindow, mockFetch, fetchResponse) => {
         code?: string;
         state?: string;
         error?: string;
+        errorDescription?: string;
       };
+      useHash?: boolean;
+      customCallbackUrl?: string;
     } = {
       token: {},
       authorize: {}
@@ -98,15 +103,35 @@ export const loginWithRedirectFn = (mockWindow, mockFetch, fetchResponse) => {
   ) => {
     const {
       token,
-      authorize: { code, state, error }
+      authorize: { code, state, error, errorDescription },
+      useHash,
+      customCallbackUrl
     } = processDefaultLoginWithRedirectOptions(testConfig);
     await auth0.loginWithRedirect(options);
     expect(mockWindow.location.assign).toHaveBeenCalled();
 
-    if (error) {
-      window.history.pushState({}, '', `/?error=${error}&state=${state}`);
+    if (error && errorDescription) {
+      window.history.pushState(
+        {},
+        '',
+        `/${
+          useHash ? '#' : ''
+        }?error=${error}&error_description=${errorDescription}&state=${state}`
+      );
+    } else if (error) {
+      window.history.pushState(
+        {},
+        '',
+        `/${useHash ? '#' : ''}?error=${error}&state=${state}`
+      );
+    } else if (code) {
+      window.history.pushState(
+        {},
+        '',
+        `/${useHash ? '#' : ''}?code=${code}&state=${state}`
+      );
     } else {
-      window.history.pushState({}, '', `/?code=${code}&state=${state}`);
+      window.history.pushState({}, '', `/`);
     }
 
     mockFetch.mockResolvedValueOnce(
@@ -123,7 +148,8 @@ export const loginWithRedirectFn = (mockWindow, mockFetch, fetchResponse) => {
         )
       )
     );
-    await auth0.handleRedirectCallback();
+
+    return await auth0.handleRedirectCallback(customCallbackUrl);
   };
 };
 
