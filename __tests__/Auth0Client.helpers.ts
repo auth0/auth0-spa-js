@@ -113,30 +113,28 @@ export const loginWithRedirectFn = (mockWindow, mockFetch, fetchResponse) => {
     await auth0.loginWithRedirect(options);
     expect(mockWindow.location.assign).toHaveBeenCalled();
 
-    if (!customCallbackUrl) {
-      if (error && errorDescription) {
-        window.history.pushState(
-          {},
-          '',
-          `/${
-            useHash ? '#' : ''
-          }?error=${error}&error_description=${errorDescription}&state=${state}`
-        );
-      } else if (error) {
-        window.history.pushState(
-          {},
-          '',
-          `/${useHash ? '#' : ''}?error=${error}&state=${state}`
-        );
-      } else if (code) {
-        window.history.pushState(
-          {},
-          '',
-          `/${useHash ? '#' : ''}?code=${code}&state=${state}`
-        );
-      } else {
-        window.history.pushState({}, '', `/`);
-      }
+    if (error && errorDescription) {
+      window.history.pushState(
+        {},
+        '',
+        `/${
+          useHash ? '#' : ''
+        }?error=${error}&error_description=${errorDescription}&state=${state}`
+      );
+    } else if (error) {
+      window.history.pushState(
+        {},
+        '',
+        `/${useHash ? '#' : ''}?error=${error}&state=${state}`
+      );
+    } else if (code) {
+      window.history.pushState(
+        {},
+        '',
+        `/${useHash ? '#' : ''}?code=${code}&state=${state}`
+      );
+    } else {
+      window.history.pushState({}, '', `/`);
     }
 
     mockFetch.mockResolvedValueOnce(
@@ -154,11 +152,7 @@ export const loginWithRedirectFn = (mockWindow, mockFetch, fetchResponse) => {
       )
     );
 
-    if (customCallbackUrl) {
-      return await auth0.handleRedirectCallback(customCallbackUrl);
-    } else {
-      return await auth0.handleRedirectCallback();
-    }
+    return await auth0.handleRedirectCallback(customCallbackUrl);
   };
 };
 
