@@ -624,6 +624,64 @@ describe('Auth0Client', () => {
       });
     });
 
+    it('should log the user in and get the token with a custom callback url', async () => {
+      const auth0 = setup();
+
+      await loginWithRedirect(
+        auth0,
+        {},
+        { useHash: true, customCallbackUrl: `https://test.auth0.com?code=${TEST_CODE}&state=${TEST_STATE}` }
+      );
+
+      const url = new URL(mockWindow.location.assign.mock.calls[0][0]);
+      assertUrlEquals(url, TEST_DOMAIN, '/authorize', {
+        client_id: TEST_CLIENT_ID,
+        redirect_uri: TEST_REDIRECT_URI,
+        scope: TEST_SCOPES,
+        response_type: 'code',
+        response_mode: 'query',
+        state: TEST_STATE,
+        nonce: TEST_NONCE,
+        code_challenge: TEST_CODE_CHALLENGE,
+        code_challenge_method: 'S256'
+      });
+      assertPost('https://auth0_domain/oauth/token', {
+        redirect_uri: TEST_REDIRECT_URI,
+        client_id: TEST_CLIENT_ID,
+        code_verifier: TEST_CODE_VERIFIER,
+        grant_type: 'authorization_code',
+        code: TEST_CODE
+      });
+    });
+
+    it('should log the user in and get the token when using hash', async () => {
+      const auth0 = setup();
+      await loginWithRedirect(
+        auth0,
+        {},
+        { useHash: true }
+      );
+      const url = new URL(mockWindow.location.assign.mock.calls[0][0]);
+      assertUrlEquals(url, TEST_DOMAIN, '/authorize', {
+        client_id: TEST_CLIENT_ID,
+        redirect_uri: TEST_REDIRECT_URI,
+        scope: TEST_SCOPES,
+        response_type: 'code',
+        response_mode: 'query',
+        state: TEST_STATE,
+        nonce: TEST_NONCE,
+        code_challenge: TEST_CODE_CHALLENGE,
+        code_challenge_method: 'S256'
+      });
+      assertPost('https://auth0_domain/oauth/token', {
+        redirect_uri: TEST_REDIRECT_URI,
+        client_id: TEST_CLIENT_ID,
+        code_verifier: TEST_CODE_VERIFIER,
+        grant_type: 'authorization_code',
+        code: TEST_CODE
+      });
+    });
+
     it('should log the user in and get the user', async () => {
       const auth0 = setup({ scope: 'foo' });
       await loginWithRedirect(auth0);
@@ -706,6 +764,107 @@ describe('Auth0Client', () => {
         'HTTP error. Unable to fetch https://auth0_domain/oauth/token'
       );
     });
+
+    it('calls `tokenVerifier.verify` with the `id_token` from in the oauth/token response', async () => {
+      const auth0 = setup({
+        issuer: 'test-123.auth0.com'
+      });
+
+      await loginWithRedirect(auth0);
+      expect(tokenVerifier).toHaveBeenCalledWith(
+        expect.objectContaining({
+          iss: 'https://test-123.auth0.com/',
+          id_token: TEST_ID_TOKEN
+        })
+      );
+    });
+
+    it('calls `tokenVerifier.verify` with the global organization id', async () => {
+      const auth0 = setup({ organization: 'test_org_123' });
+
+      await loginWithRedirect(auth0);
+
+      expect(tokenVerifier).toHaveBeenCalledWith(
+        expect.objectContaining({
+          organizationId: 'test_org_123'
+        })
+      );
+    });
+
+    it('calls `tokenVerifier.verify` with the specific organization id', async () => {
+      const auth0 = setup({ organization: 'test_org_123' });
+
+      await loginWithRedirect(auth0, { organization: 'test_org_456' });
+
+      expect(tokenVerifier).toHaveBeenCalledWith(
+        expect.objectContaining({
+          organizationId: 'test_org_456'
+        })
+      );
+    });
+
+    it('saves into cache', async () => {
+      const auth0 = setup();
+
+      jest.spyOn(auth0['cache'], 'save');
+
+      await loginWithRedirect(auth0);
+
+      expect(auth0['cache']['save']).toHaveBeenCalledWith(
+        expect.objectContaining({
+          client_id: TEST_CLIENT_ID,
+          access_token: TEST_ACCESS_TOKEN,
+          expires_in: 86400,
+          audience: 'default',
+          id_token: TEST_ID_TOKEN,
+          scope: TEST_SCOPES
+        })
+      );
+    });
+
+    it('saves `auth0.is.authenticated` key in storage', async () => {
+      const auth0 = setup();
+
+      await loginWithRedirect(auth0);
+
+      expect(<jest.Mock>esCookie.set).toHaveBeenCalledWith(
+        '_legacy_auth0.is.authenticated',
+        'true',
+        {
+          expires: 1
+        }
+      );
+
+      expect(<jest.Mock>esCookie.set).toHaveBeenCalledWith(
+        'auth0.is.authenticated',
+        'true',
+        {
+          expires: 1
+        }
+      );
+    });
+    it('saves `auth0.is.authenticated` key in storage for an extended period', async () => {
+      const auth0 = setup({
+        sessionCheckExpiryDays: 2
+      });
+
+      await loginWithRedirect(auth0);
+
+      expect(<jest.Mock>esCookie.set).toHaveBeenCalledWith(
+        '_legacy_auth0.is.authenticated',
+        'true',
+        {
+          expires: 2
+        }
+      );
+      expect(<jest.Mock>esCookie.set).toHaveBeenCalledWith(
+        'auth0.is.authenticated',
+        'true',
+        {
+          expires: 2
+        }
+      );
+    });
   });
 
   describe('handleRedirectCallback', () => {
@@ -731,17 +890,204 @@ describe('Auth0Client', () => {
     it('should throw an error if the /authorize call redirects with an error param', async () => {
       const auth0 = setup();
       let error;
+      const appState = {
+        key: 'property'
+      };
       try {
-        await loginWithRedirect(auth0, undefined, {
-          authorize: {
-            error: 'some-error'
+        await loginWithRedirect(
+          auth0,
+          { appState },
+          {
+            authorize: {
+              state: 'error-state',
+              error: 'some-error',
+              errorDescription: 'some-error-description'
+            }
           }
-        });
+        );
       } catch (e) {
         error = e;
       }
       expect(error).toBeDefined();
       expect(error.error).toBe('some-error');
+      expect(error.error_description).toBe('some-error-description');
+      expect(error.state).toBe('error-state');
+      expect(error.appState).toBe(appState);
+    });
+
+    it('should clear the transaction data when the /authorize call redirects with a code param', async () => {
+      const auth0 = setup();
+
+      jest.spyOn(auth0['transactionManager'], 'remove');
+
+      await loginWithRedirect(auth0);
+
+      expect(auth0['transactionManager'].remove).toHaveBeenCalledWith();
+    });
+
+    it('should clear the transaction data when the /authorize call redirects with an error param', async () => {
+      const auth0 = setup();
+      let error;
+      jest.spyOn(auth0['transactionManager'], 'remove');
+
+      try {
+        await loginWithRedirect(
+          auth0,
+          { },
+          {
+            authorize: {
+              error: 'some-error',
+            }
+          }
+        );
+      } catch (e) {
+        error = e;
+      }
+
+      expect(error).toBeDefined();
+      expect(auth0['transactionManager'].remove).toHaveBeenCalledWith();
+    });
+
+    it('should throw an error if the /authorize call redirects with no params', async () => {
+      const auth0 = setup();
+      let error;
+      try {
+        await loginWithRedirect(
+          auth0,
+          {},
+          {
+            authorize: {
+              error: null,
+              state: null,
+              code: null,
+            }
+          }
+        );
+      } catch (e) {
+        error = e;
+      }
+      expect(error).toBeDefined();
+      expect(error.message).toBe(
+        'There are no query params available for parsing.'
+      );
+    });
+
+    it('should throw an error if there is no transaction', async () => {
+      const auth0 = setup();
+      let error;
+      try {
+        await auth0.handleRedirectCallback('test?foo=bar');
+      } catch (e) {
+        error = e;
+      }
+      expect(error).toBeDefined();
+      expect(error.message).toBe('Invalid state');
+    });
+
+    describe('when there is a valid query string in a hash', () => {
+      it('should throw an error if the /authorize call redirects with an error param', async () => {
+        const auth0 = setup();
+        let error;
+        const appState = {
+          key: 'property'
+        };
+        try {
+          await loginWithRedirect(
+            auth0,
+            { appState },
+            {
+              authorize: {
+                state: 'error-state',
+                error: 'some-error',
+                errorDescription: 'some-error-description',
+              },
+              useHash: true
+            }
+          );
+        } catch (e) {
+          error = e;
+        }
+        expect(error).toBeDefined();
+        expect(error.error).toBe('some-error');
+        expect(error.error_description).toBe('some-error-description');
+        expect(error.state).toBe('error-state');
+        expect(error.appState).toBe(appState);
+      });
+
+      it('should clear the transaction data when the /authorize call redirects with a code param', async () => {
+        const auth0 = setup();
+
+        jest.spyOn(auth0['transactionManager'], 'remove');
+        await loginWithRedirect(
+          auth0,
+          { },
+          {
+            useHash: true
+          }
+        );
+
+        expect(auth0['transactionManager'].remove).toHaveBeenCalledWith();
+      });
+
+      it('should clear the transaction data when the /authorize call redirects with an error param', async () => {
+        const auth0 = setup();
+        let error;
+        jest.spyOn(auth0['transactionManager'], 'remove');
+
+        try {
+          await loginWithRedirect(
+            auth0,
+            { },
+            {
+              authorize: {
+                error: 'some-error',
+              },
+              useHash: true
+            }
+          );
+        } catch (e) {
+          error = e;
+        }
+
+        expect(error).toBeDefined();
+        expect(auth0['transactionManager'].remove).toHaveBeenCalledWith();
+      });
+
+      it('should throw an error if the /authorize call redirects with no params', async () => {
+        const auth0 = setup();
+        let error;
+        try {
+          await loginWithRedirect(
+            auth0,
+            { },
+            {
+              authorize: {
+                state: null,
+                code: null,
+              },
+              useHash: true
+            }
+          );
+        } catch (e) {
+          error = e;
+        }
+        expect(error).toBeDefined();
+        expect(error.message).toBe(
+          'There are no query params available for parsing.'
+        );
+      });
+
+      it('should throw an error if there is no transaction', async () => {
+        const auth0 = setup();
+        let error;
+        try {
+          await auth0.handleRedirectCallback('#test?foo=bar');
+        } catch (e) {
+          error = e;
+        }
+        expect(error).toBeDefined();
+        expect(error.message).toBe('Invalid state');
+      });
     });
   });
 
