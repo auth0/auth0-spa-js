@@ -630,7 +630,10 @@ describe('Auth0Client', () => {
       await loginWithRedirect(
         auth0,
         {},
-        { useHash: true, customCallbackUrl: `https://test.auth0.com?code=${TEST_CODE}&state=${TEST_STATE}` }
+        {
+          useHash: true,
+          customCallbackUrl: `https://test.auth0.com?code=${TEST_CODE}&state=${TEST_STATE}`
+        }
       );
 
       const url = new URL(mockWindow.location.assign.mock.calls[0][0]);
@@ -656,11 +659,7 @@ describe('Auth0Client', () => {
 
     it('should log the user in and get the token when using hash', async () => {
       const auth0 = setup();
-      await loginWithRedirect(
-        auth0,
-        {},
-        { useHash: true }
-      );
+      await loginWithRedirect(auth0, {}, { useHash: true });
       const url = new URL(mockWindow.location.assign.mock.calls[0][0]);
       assertUrlEquals(url, TEST_DOMAIN, '/authorize', {
         client_id: TEST_CLIENT_ID,
@@ -933,10 +932,10 @@ describe('Auth0Client', () => {
       try {
         await loginWithRedirect(
           auth0,
-          { },
+          {},
           {
             authorize: {
-              error: 'some-error',
+              error: 'some-error'
             }
           }
         );
@@ -959,7 +958,7 @@ describe('Auth0Client', () => {
             authorize: {
               error: null,
               state: null,
-              code: null,
+              code: null
             }
           }
         );
@@ -984,6 +983,16 @@ describe('Auth0Client', () => {
       expect(error.message).toBe('Invalid state');
     });
 
+    it('returns the transactions appState', async () => {
+      const auth0 = setup();
+      const appState = {
+        key: 'property'
+      };
+      const result = await loginWithRedirect(auth0, { appState });
+      expect(result).toBeDefined();
+      expect(result.appState).toBe(appState);
+    });
+
     describe('when there is a valid query string in a hash', () => {
       it('should throw an error if the /authorize call redirects with an error param', async () => {
         const auth0 = setup();
@@ -999,7 +1008,7 @@ describe('Auth0Client', () => {
               authorize: {
                 state: 'error-state',
                 error: 'some-error',
-                errorDescription: 'some-error-description',
+                errorDescription: 'some-error-description'
               },
               useHash: true
             }
@@ -1020,7 +1029,7 @@ describe('Auth0Client', () => {
         jest.spyOn(auth0['transactionManager'], 'remove');
         await loginWithRedirect(
           auth0,
-          { },
+          {},
           {
             useHash: true
           }
@@ -1037,10 +1046,10 @@ describe('Auth0Client', () => {
         try {
           await loginWithRedirect(
             auth0,
-            { },
+            {},
             {
               authorize: {
-                error: 'some-error',
+                error: 'some-error'
               },
               useHash: true
             }
@@ -1059,11 +1068,11 @@ describe('Auth0Client', () => {
         try {
           await loginWithRedirect(
             auth0,
-            { },
+            {},
             {
               authorize: {
                 state: null,
-                code: null,
+                code: null
               },
               useHash: true
             }

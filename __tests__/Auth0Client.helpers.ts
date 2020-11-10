@@ -155,9 +155,9 @@ export const loginWithRedirectFn = (mockWindow, mockFetch, fetchResponse) => {
     );
 
     if (customCallbackUrl) {
-      await auth0.handleRedirectCallback(customCallbackUrl);
+      return await auth0.handleRedirectCallback(customCallbackUrl);
     } else {
-      await auth0.handleRedirectCallback();
+      return await auth0.handleRedirectCallback();
     }
   };
 };

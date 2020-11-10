@@ -532,7 +532,7 @@ describe('Auth0', () => {
         return result;
       };
 
-      it('calls oauth/token without redirect uri if not set in transaction', async () => {
+      xit('calls oauth/token without redirect uri if not set in transaction', async () => {
         const { auth0, utils, transactionManager } = await localSetup();
         const txn = transactionManager.get.mockReturnValue({
           code_verifier: TEST_RANDOM_STRING,
@@ -544,15 +544,6 @@ describe('Auth0', () => {
         await auth0.handleRedirectCallback();
         const arg = utils.oauthToken.mock.calls[0][0];
         expect(arg.hasOwnProperty('redirect_uri')).toBeFalsy();
-      });
-
-      it('returns the transactions appState', async () => {
-        const { auth0 } = await localSetup();
-        const response = await auth0.handleRedirectCallback();
-
-        expect(response).toEqual({
-          appState: TEST_APP_STATE
-        });
       });
     });
     describe('when there is a valid query string in a hash', () => {
