@@ -1,8 +1,12 @@
-version: 2
+version: 2.1
+parameters:
+  docker_image:
+    type: string
+    default: cypress/browsers:node12.13.0-chrome80-ff74
 jobs:
   build:
     docker:
-      - image: cypress/browsers:node12.13.0-chrome80-ff74
+      - image: << pipeline.parameters.docker_image >>
     working_directory: ~/repo
     steps:
       - checkout
@@ -13,6 +17,20 @@ jobs:
           environment:
             WITH_STATS: true
       - run: npm run test
+      - run: npm run print-bundle-size
+      - save_cache:
+          key: spa-dist-{{ .Revision }}
+          paths:
+            - dist
+  integration_test:
+    docker:
+      - image: cypress/browsers:node12.13.0-chrome80-ff74
+    working_directory: ~/repo
+    steps:
+      - checkout
+      - run: npm ci
+      - restore_cache:
+          key: spa-dist-{{ .Revision }}
       - run: npm run test:integration
       - run: npm run test:es-check
       - run: npm run print-bundle-size
@@ -22,3 +40,154 @@ jobs:
           path: cypress/screenshots
       - store_artifacts:
           path: cypress/videos
+  test_gatsby:
+    docker:
+      - image: cypress/browsers:node12.13.0-chrome80-ff74
+    working_directory: ~/repo
+    steps:
+      - checkout:
+          path: spa-js
+      - restore_cache:
+          key: spa-dist-{{ .Revision }}
+      - run: mv dist spa-js
+      - run:
+          name: Create App
+          command: npx gatsby new my-app < /dev/null
+      - run:
+          name: Install SPA JS
+          command: |
+            yarn add "../spa-js"
+            echo -e "$AUTH0_CONTENT" > src/auth0.js;
+            echo -e "$IMPORT_STATEMENT"|cat - src/pages/index.js > /tmp/out && mv /tmp/out src/pages/index.js;
+          working_directory: my-app
+          environment:
+            IMPORT_STATEMENT: |
+              import './../auth0';
+            AUTH0_CONTENT: |
+              import { Auth0Client } from '@auth0/auth0-spa-js';
+              new Auth0Client({
+                domain: 'DOMAIN',
+                client_id: 'CLIENT_ID'
+              });
+      - run:
+          name: Build App
+          command: yarn build
+          working_directory: my-app
+  test_react:
+    docker:
+      - image: cypress/browsers:node12.13.0-chrome80-ff74
+    working_directory: ~/repo
+    steps:
+      - checkout:
+          path: spa-js
+      - restore_cache:
+          key: spa-dist-{{ .Revision }}
+      - run: mv dist spa-js
+      - run:
+          name: Create App
+          command: npx create-react-app my-app < /dev/null
+      - run:
+          name: Install SPA JS
+          command: |
+            yarn add "../spa-js"
+            echo -e "$AUTH0_CONTENT" > src/auth0.js;
+            echo -e "$IMPORT_STATEMENT"|cat - src/index.js > /tmp/out && mv /tmp/out src/index.js;
+          working_directory: my-app
+          environment:
+            IMPORT_STATEMENT: |
+              import './auth0';
+            AUTH0_CONTENT: |
+              import { Auth0Client } from '@auth0/auth0-spa-js';
+              new Auth0Client({
+                domain: 'DOMAIN',
+                client_id: 'CLIENT_ID'
+              });
+      - run:
+          name: Build App
+          command: yarn build
+          working_directory: my-app
+  test_vue:
+    docker:
+      - image: cypress/browsers:node12.13.0-chrome80-ff74
+    working_directory: ~/repo
+    steps:
+      - checkout:
+          path: spa-js
+      - restore_cache:
+          key: spa-dist-{{ .Revision }}
+      - run: mv dist spa-js
+      - run:
+          name: Create App
+          command: npx -p @vue/cli vue create my-app -d -m yarn < /dev/null
+      - run:
+          name: Install SPA JS
+          command: |
+            yarn add "../spa-js"
+            echo -e "$AUTH0_CONTENT" > src/auth0.js;
+            echo -e "$IMPORT_STATEMENT"|cat - src/main.js > /tmp/out && mv /tmp/out src/main.js;
+          working_directory: my-app
+          environment:
+            IMPORT_STATEMENT: |
+              import './auth0';
+            AUTH0_CONTENT: |
+              import { Auth0Client } from '@auth0/auth0-spa-js';
+              new Auth0Client({
+                domain: 'DOMAIN',
+                client_id: 'CLIENT_ID'
+              });
+      - run:
+          name: Build App
+          command: yarn build
+          working_directory: my-app
+  test_angular:
+    docker:
+      - image: cypress/browsers:node12.13.0-chrome80-ff74
+    working_directory: ~/repo
+    steps:
+      - checkout:
+          path: spa-js
+      - restore_cache:
+          key: spa-dist-{{ .Revision }}
+      - run: mv dist spa-js
+      - run:
+          name: Create App
+          command: npx -p @angular/cli ng new my-app --defaults=true --packageManager=yarn < /dev/null
+      - run:
+          name: Install SPA JS
+          command: |
+            yarn add "../spa-js"
+            echo -e "$AUTH0_CONTENT" > src/auth0.ts;
+            echo -e "$IMPORT_STATEMENT"|cat - src/main.ts > /tmp/out && mv /tmp/out src/main.ts;
+          working_directory: my-app
+          environment:
+            IMPORT_STATEMENT: |
+              import './auth0';
+            AUTH0_CONTENT: |
+              import { Auth0Client } from '@auth0/auth0-spa-js';
+              new Auth0Client({
+                domain: 'DOMAIN',
+                client_id: 'CLIENT_ID'
+              });
+      - run:
+          name: Build App
+          command: yarn build
+          working_directory: my-app
+workflows:
+  build_and_test:
+    jobs:
+      - build
+      - integration_test:
+          requires:
+            - build
+      - test_gatsby:
+          requires:
+            - build
+      - test_react:
+          requires:
+            - build
+      - test_vue:
+          requires:
+            - build
+      - test_angular:
+          requires:
+            - build
