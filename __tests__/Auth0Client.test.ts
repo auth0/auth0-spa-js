@@ -80,8 +80,23 @@ const loginWithPopup = loginWithPopupFn(mockWindow, mockFetch, fetchResponse);
 const checkSession = checkSessionFn(mockFetch, fetchResponse);
 
 describe('Auth0Client', () => {
+  const oldWindowLocation = window.location;
+
   beforeEach(() => {
-    mockWindow.location.assign = jest.fn();
+    // https://www.benmvp.com/blog/mocking-window-location-methods-jest-jsdom/
+    delete window.location;
+    window.location = Object.defineProperties(
+      {},
+      {
+        ...Object.getOwnPropertyDescriptors(oldWindowLocation),
+        assign: {
+          configurable: true,
+          value: jest.fn()
+        }
+      }
+    );
+    // --
+
     mockWindow.open = jest.fn();
     mockWindow.addEventListener = jest.fn();
     mockWindow.crypto = {
@@ -101,6 +116,7 @@ describe('Auth0Client', () => {
   afterEach(() => {
     mockFetch.mockReset();
     jest.clearAllMocks();
+    window.location = oldWindowLocation;
   });
 
   describe('constructor', () => {

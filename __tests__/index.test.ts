@@ -149,10 +149,24 @@ const setup = async (clientOptions: Partial<Auth0ClientOptions> = {}) => {
 };
 
 describe('Auth0', () => {
+  const oldWindowLocation = window.location;
   let getUniqueScopesSpy;
 
   beforeEach(() => {
-    window.location.assign = jest.fn();
+    // https://www.benmvp.com/blog/mocking-window-location-methods-jest-jsdom/
+    delete window.location;
+    window.location = Object.defineProperties(
+      {},
+      {
+        ...Object.getOwnPropertyDescriptors(oldWindowLocation),
+        assign: {
+          configurable: true,
+          value: jest.fn()
+        }
+      }
+    );
+    // --
+
     window.Worker = jest.fn();
 
     (<any>global).crypto = {
@@ -167,6 +181,7 @@ describe('Auth0', () => {
   afterEach(() => {
     jest.clearAllMocks();
     getUniqueScopesSpy.mockRestore();
+    window.location = oldWindowLocation;
   });
 
   describe('createAuth0Client()', () => {
