@@ -6,21 +6,18 @@ import {
   PopupLoginOptions,
   RedirectLoginOptions
 } from '../src';
-import Auth0Client from '../src/Auth0Client';
-import { DEFAULT_SCOPE } from '../src/constants';
 
-export const TEST_DOMAIN = 'auth0_domain';
-export const TEST_CLIENT_ID = 'auth0_client_id';
-export const TEST_REDIRECT_URI = 'my_callback_url';
-export const TEST_ID_TOKEN = 'my_id_token';
-export const TEST_ACCESS_TOKEN = 'my_access_token';
-export const TEST_REFRESH_TOKEN = 'my_refresh_token';
-export const TEST_STATE = 'MTIz';
-export const TEST_NONCE = 'MTIz';
-export const TEST_CODE = 'my_code';
-export const TEST_SCOPES = DEFAULT_SCOPE;
-export const TEST_CODE_CHALLENGE = 'TEST_CODE_CHALLENGE';
-export const TEST_CODE_VERIFIER = '123';
+import Auth0Client from '../src/Auth0Client';
+import {
+  TEST_ACCESS_TOKEN,
+  TEST_CLIENT_ID,
+  TEST_CODE,
+  TEST_DOMAIN,
+  TEST_ID_TOKEN,
+  TEST_REDIRECT_URI,
+  TEST_REFRESH_TOKEN,
+  TEST_STATE
+} from './constants';
 
 const authorizationResponse: AuthenticationResult = {
   code: 'my_code',

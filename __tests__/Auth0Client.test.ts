@@ -4,19 +4,26 @@ import unfetch from 'unfetch';
 import { verify } from '../src/jwt';
 import { MessageChannel } from 'worker_threads';
 import * as utils from '../src/utils';
-import { AuthenticationResult, PopupConfigOptions } from '../src';
 import * as scope from '../src/scope';
+
 import {
   expectToHaveBeenCalledWithAuth0ClientParam,
   expectToHaveBeenCalledWithHash
 } from './helpers';
+
+import { TEST_AUTH0_CLIENT_QUERY_STRING } from './constants';
+
 // @ts-ignore
 import { acquireLockSpy } from 'browser-tabs-lock';
+
 import {
   checkSessionFn,
   loginWithPopupFn,
   loginWithRedirectFn,
-  setupFn,
+  setupFn
+} from './Auth0Client.helpers';
+
+import {
   TEST_ACCESS_TOKEN,
   TEST_CLIENT_ID,
   TEST_CODE,
@@ -29,7 +36,8 @@ import {
   TEST_REFRESH_TOKEN,
   TEST_SCOPES,
   TEST_STATE
-} from './Auth0Client.helpers';
+} from './constants';
+
 import { DEFAULT_POPUP_CONFIG_OPTIONS } from '../src/constants';
 
 jest.mock('unfetch');
