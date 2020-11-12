@@ -297,6 +297,29 @@ describe('Auth0Client', () => {
       });
     });
 
+    it('should log the user in with a popup and redirect when using refresh tokens', async () => {
+      const auth0 = setup({
+        useRefreshTokens: true
+      });
+      await loginWithPopup(auth0);
+      const [[url]] = (<jest.Mock>mockWindow.open).mock.calls;
+      assertUrlEquals(url, TEST_DOMAIN, '/authorize', {
+        scope: `${TEST_SCOPES} offline_access`
+      });
+    });
+
+    it('should log the user and redirect when using different default redirect_uri', async () => {
+      const redirect_uri = 'https://custom-redirect-uri/callback';
+      const auth0 = setup({
+        redirect_uri
+      });
+      await loginWithPopup(auth0);
+      const [[url]] = (<jest.Mock>mockWindow.open).mock.calls;
+      assertUrlEquals(url, TEST_DOMAIN, '/authorize', {
+        redirect_uri
+      });
+    });
+
     it('should log the user in with a popup and get the token', async () => {
       const auth0 = setup();
 
@@ -645,6 +668,67 @@ describe('Auth0Client', () => {
         code_verifier: TEST_CODE_VERIFIER,
         grant_type: 'authorization_code',
         code: TEST_CODE
+      });
+    });
+
+    it('should log the user in using different default scope', async () => {
+      const auth0 = setup({
+        advancedOptions: {
+          defaultScope: 'email'
+        }
+      });
+      await loginWithRedirect(auth0);
+      const url = new URL(mockWindow.location.assign.mock.calls[0][0]);
+      assertUrlEquals(url, TEST_DOMAIN, '/authorize', {
+        scope: 'openid email'
+      });
+    });
+
+    it('should log the user in using different default redirect_uri', async () => {
+      const redirect_uri = 'https://custom-redirect-uri/callback';
+      const auth0 = setup({
+        redirect_uri
+      });
+      await loginWithRedirect(auth0);
+      const url = new URL(mockWindow.location.assign.mock.calls[0][0]);
+      assertUrlEquals(url, TEST_DOMAIN, '/authorize', {
+        redirect_uri
+      });
+    });
+
+    it('should log the user in when overriding default redirect_uri', async () => {
+      const redirect_uri = 'https://custom-redirect-uri/callback';
+      const auth0 = setup({
+        redirect_uri
+      });
+      await loginWithRedirect(auth0, {
+        redirect_uri: 'https://my-redirect-uri/callback'
+      });
+      const url = new URL(mockWindow.location.assign.mock.calls[0][0]);
+      assertUrlEquals(url, TEST_DOMAIN, '/authorize', {
+        redirect_uri: 'https://my-redirect-uri/callback'
+      });
+    });
+
+    it('should log the user in with custom params', async () => {
+      const auth0 = setup();
+      await loginWithRedirect(auth0, {
+        audience: 'test_audience'
+      });
+      const url = new URL(mockWindow.location.assign.mock.calls[0][0]);
+      assertUrlEquals(url, TEST_DOMAIN, '/authorize', {
+        audience: 'test_audience'
+      });
+    });
+
+    it('should log the user in using offline_access when using refresh tokens', async () => {
+      const auth0 = setup({
+        useRefreshTokens: true
+      });
+      await loginWithRedirect(auth0);
+      const url = new URL(mockWindow.location.assign.mock.calls[0][0]);
+      assertUrlEquals(url, TEST_DOMAIN, '/authorize', {
+        scope: `${TEST_SCOPES} offline_access`
       });
     });
 
