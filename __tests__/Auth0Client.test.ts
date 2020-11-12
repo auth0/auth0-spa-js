@@ -428,6 +428,7 @@ describe('Auth0Client', () => {
         })
       );
     });
+
     it('calls `tokenVerifier.verify` with the `leeway` from constructor', async () => {
       const auth0 = setup({ leeway: 10 });
 
@@ -439,6 +440,7 @@ describe('Auth0Client', () => {
         })
       );
     });
+
     it('calls `tokenVerifier.verify` with undefined `max_age` when value set in constructor is an empty string', async () => {
       const auth0 = setup({ max_age: '' });
 
@@ -450,6 +452,7 @@ describe('Auth0Client', () => {
         })
       );
     });
+
     it('calls `tokenVerifier.verify` with the parsed `max_age` string from constructor', async () => {
       const auth0 = setup({ max_age: '10' });
 
@@ -461,6 +464,7 @@ describe('Auth0Client', () => {
         })
       );
     });
+
     it('calls `tokenVerifier.verify` with the parsed `max_age` number from constructor', async () => {
       const auth0 = setup({ max_age: 10 });
 
@@ -551,6 +555,7 @@ describe('Auth0Client', () => {
         })
       );
     });
+
     it('should save refresh_token in local storage cache', async () => {
       const auth0 = setup({
         useRefreshTokens: true,
@@ -589,6 +594,7 @@ describe('Auth0Client', () => {
         }
       );
     });
+
     it('saves `auth0.is.authenticated` key in storage for an extended period', async () => {
       const auth0 = setup({
         sessionCheckExpiryDays: 2
@@ -866,6 +872,7 @@ describe('Auth0Client', () => {
         }
       );
     });
+
     it('saves `auth0.is.authenticated` key in storage for an extended period', async () => {
       const auth0 = setup({
         sessionCheckExpiryDays: 2
