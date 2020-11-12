@@ -876,6 +876,11 @@ export default class Auth0Client {
       ...customOptions
     } = options;
 
+    const timeout =
+      typeof options.timeoutInSeconds === 'number'
+        ? options.timeoutInSeconds * 1000
+        : null;
+
     try {
       tokenResult = await oauthToken(
         {
@@ -887,7 +892,8 @@ export default class Auth0Client {
           client_id: this.options.client_id,
           grant_type: 'refresh_token',
           refresh_token: cache && cache.refresh_token,
-          redirect_uri
+          redirect_uri,
+          ...(timeout && { timeout })
         } as RefreshTokenOptions,
         this.worker
       );
