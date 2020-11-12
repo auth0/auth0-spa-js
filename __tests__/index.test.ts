@@ -873,7 +873,10 @@ describe('Auth0', () => {
 
           cache.get.mockReturnValue({ refresh_token: TEST_REFRESH_TOKEN });
 
-          await auth0.getTokenSilently({ ignoreCache: true });
+          await auth0.getTokenSilently({
+            ignoreCache: true,
+            timeoutInSeconds: 10
+          });
 
           expect(cache.get).toHaveBeenCalledWith({
             audience: 'default',
@@ -889,7 +892,8 @@ describe('Auth0', () => {
               refresh_token: TEST_REFRESH_TOKEN,
               client_id: TEST_CLIENT_ID,
               grant_type: 'refresh_token',
-              redirect_uri: 'http://localhost'
+              redirect_uri: 'http://localhost',
+              timeout: 10000
             },
             webWorkerMatcher
           );
