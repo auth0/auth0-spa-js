@@ -1,6 +1,7 @@
 import { expectToHaveBeenCalledWithAuth0ClientParam } from './helpers';
 import { CacheLocation, Auth0ClientOptions } from '../src/global';
 import * as scope from '../src/scope';
+
 // @ts-ignore
 import { acquireLockSpy, releaseLockSpy } from 'browser-tabs-lock';
 
@@ -32,37 +33,27 @@ import createAuth0Client, {
 } from '../src/index';
 
 import { AuthenticationError } from '../src/errors';
-import version from '../src/version';
+import { DEFAULT_POPUP_CONFIG_OPTIONS } from '../src/constants';
 
-import { DEFAULT_POPUP_CONFIG_OPTIONS, DEFAULT_SCOPE } from '../src/constants';
-
-const GET_TOKEN_SILENTLY_LOCK_KEY = 'auth0.lock.getTokenSilently';
-
-const TEST_DOMAIN = 'test.auth0.com';
-const TEST_CLIENT_ID = 'test-client-id';
-const TEST_QUERY_PARAMS = 'query=params';
-const TEST_SCOPES = DEFAULT_SCOPE;
-const TEST_ENCODED_STATE = 'encoded-state';
-const TEST_RANDOM_STRING = 'random-string';
-const TEST_ARRAY_BUFFER = 'this-is-an-array-buffer';
-const TEST_BASE64_ENCODED_STRING = 'base64-url-encoded-string';
-const TEST_CODE = 'code';
-const TEST_ID_TOKEN = 'id-token';
-const TEST_ACCESS_TOKEN = 'access-token';
-const TEST_REFRESH_TOKEN = 'refresh-token';
-const TEST_USER_ID = 'user-id';
-const TEST_USER_EMAIL = 'user@email.com';
-const TEST_APP_STATE = { bestPet: 'dog' };
-const TEST_ORG_ID = 'org_id_123';
-
-const TEST_AUTH0_CLIENT_QUERY_STRING = `&auth0Client=${encodeURIComponent(
-  btoa(
-    JSON.stringify({
-      name: 'auth0-spa-js',
-      version: version
-    })
-  )
-)}`;
+import {
+  GET_TOKEN_SILENTLY_LOCK_KEY,
+  TEST_ACCESS_TOKEN,
+  TEST_APP_STATE,
+  TEST_ARRAY_BUFFER,
+  TEST_AUTH0_CLIENT_QUERY_STRING,
+  TEST_BASE64_ENCODED_STRING,
+  TEST_CLIENT_ID,
+  TEST_CODE,
+  TEST_DOMAIN,
+  TEST_ENCODED_STATE,
+  TEST_ID_TOKEN,
+  TEST_ORG_ID,
+  TEST_QUERY_PARAMS,
+  TEST_RANDOM_STRING,
+  TEST_REFRESH_TOKEN,
+  TEST_SCOPES,
+  TEST_USER_ID
+} from './constants';
 
 const mockEnclosedCache = {
   get: jest.fn(),
@@ -149,10 +140,24 @@ const setup = async (clientOptions: Partial<Auth0ClientOptions> = {}) => {
 };
 
 describe('Auth0', () => {
+  const oldWindowLocation = window.location;
   let getUniqueScopesSpy;
 
   beforeEach(() => {
-    window.location.assign = jest.fn();
+    // https://www.benmvp.com/blog/mocking-window-location-methods-jest-jsdom/
+    delete window.location;
+    window.location = Object.defineProperties(
+      {},
+      {
+        ...Object.getOwnPropertyDescriptors(oldWindowLocation),
+        assign: {
+          configurable: true,
+          value: jest.fn()
+        }
+      }
+    );
+    // --
+
     window.Worker = jest.fn();
 
     (<any>global).crypto = {
@@ -167,6 +172,7 @@ describe('Auth0', () => {
   afterEach(() => {
     jest.clearAllMocks();
     getUniqueScopesSpy.mockRestore();
+    window.location = oldWindowLocation;
   });
 
   describe('createAuth0Client()', () => {
@@ -295,7 +301,7 @@ describe('Auth0', () => {
       expect(utils.createQueryParams).toHaveBeenCalledWith({
         client_id: TEST_CLIENT_ID,
         scope: TEST_SCOPES,
-        response_type: TEST_CODE,
+        response_type: 'code',
         response_mode: 'query',
         state: TEST_ENCODED_STATE,
         nonce: TEST_ENCODED_STATE,
@@ -318,7 +324,7 @@ describe('Auth0', () => {
       expect(utils.createQueryParams).toHaveBeenCalledWith({
         client_id: TEST_CLIENT_ID,
         scope: 'openid email',
-        response_type: TEST_CODE,
+        response_type: 'code',
         response_mode: 'query',
         state: TEST_ENCODED_STATE,
         nonce: TEST_ENCODED_STATE,
@@ -339,7 +345,7 @@ describe('Auth0', () => {
       expect(utils.createQueryParams).toHaveBeenCalledWith({
         client_id: TEST_CLIENT_ID,
         scope: `${TEST_SCOPES} offline_access`,
-        response_type: TEST_CODE,
+        response_type: 'code',
         response_mode: 'query',
         state: TEST_ENCODED_STATE,
         nonce: TEST_ENCODED_STATE,
@@ -357,7 +363,7 @@ describe('Auth0', () => {
       expect(utils.createQueryParams).toHaveBeenCalledWith({
         client_id: TEST_CLIENT_ID,
         scope: TEST_SCOPES,
-        response_type: TEST_CODE,
+        response_type: 'code',
         response_mode: 'query',
         state: TEST_ENCODED_STATE,
         nonce: TEST_ENCODED_STATE,
@@ -380,7 +386,7 @@ describe('Auth0', () => {
       expect(utils.createQueryParams).toHaveBeenCalledWith({
         client_id: TEST_CLIENT_ID,
         scope: TEST_SCOPES,
-        response_type: TEST_CODE,
+        response_type: 'code',
         response_mode: 'query',
         state: TEST_ENCODED_STATE,
         nonce: TEST_ENCODED_STATE,
@@ -402,7 +408,7 @@ describe('Auth0', () => {
       expect(utils.createQueryParams).toHaveBeenCalledWith({
         client_id: TEST_CLIENT_ID,
         scope: TEST_SCOPES,
-        response_type: TEST_CODE,
+        response_type: 'code',
         response_mode: 'query',
         state: TEST_ENCODED_STATE,
         nonce: TEST_ENCODED_STATE,
@@ -422,7 +428,7 @@ describe('Auth0', () => {
         audience: 'test',
         client_id: TEST_CLIENT_ID,
         scope: TEST_SCOPES,
-        response_type: TEST_CODE,
+        response_type: 'code',
         response_mode: 'query',
         state: TEST_ENCODED_STATE,
         nonce: TEST_ENCODED_STATE,
@@ -495,7 +501,7 @@ describe('Auth0', () => {
       });
 
       expect(url).toBe(
-        `https://test.auth0.com/authorize?query=params${TEST_AUTH0_CLIENT_QUERY_STRING}`
+        `https://${TEST_DOMAIN}/authorize?query=params${TEST_AUTH0_CLIENT_QUERY_STRING}`
       );
     });
 
@@ -505,7 +511,7 @@ describe('Auth0', () => {
       const url = await auth0.buildAuthorizeUrl();
 
       expect(url).toBe(
-        `https://test.auth0.com/authorize?query=params${TEST_AUTH0_CLIENT_QUERY_STRING}`
+        `https://${TEST_DOMAIN}/authorize?query=params${TEST_AUTH0_CLIENT_QUERY_STRING}`
       );
     });
   });
@@ -576,8 +582,8 @@ describe('Auth0', () => {
         expect(tokenVerifier).toHaveBeenCalledWith({
           id_token: TEST_ID_TOKEN,
           nonce: TEST_ENCODED_STATE,
-          aud: 'test-client-id',
-          iss: 'https://test.auth0.com/',
+          aud: TEST_CLIENT_ID,
+          iss: `https://${TEST_DOMAIN}/`,
           leeway: undefined,
           max_age: undefined
         });
@@ -757,8 +763,8 @@ describe('Auth0', () => {
           expect(utils.oauthToken).toHaveBeenCalledWith(
             {
               audience: undefined,
-              scope: 'openid profile email offline_access',
-              baseUrl: 'https://test.auth0.com',
+              scope: `${TEST_SCOPES} offline_access`,
+              baseUrl: `https://${TEST_DOMAIN}`,
               refresh_token: TEST_REFRESH_TOKEN,
               client_id: TEST_CLIENT_ID,
               grant_type: 'refresh_token',
@@ -827,7 +833,7 @@ describe('Auth0', () => {
             {
               audience: undefined,
               scope: 'openid email offline_access',
-              baseUrl: 'https://test.auth0.com',
+              baseUrl: `https://${TEST_DOMAIN}`,
               refresh_token: TEST_REFRESH_TOKEN,
               client_id: TEST_CLIENT_ID,
               grant_type: 'refresh_token',
@@ -904,7 +910,7 @@ describe('Auth0', () => {
           audience: defaultOptionsIgnoreCacheTrue.audience,
           client_id: TEST_CLIENT_ID,
           scope: `${TEST_SCOPES} test:scope`,
-          response_type: TEST_CODE,
+          response_type: 'code',
           response_mode: 'web_message',
           prompt: 'none',
           state: TEST_ENCODED_STATE,
@@ -923,7 +929,7 @@ describe('Auth0', () => {
           audience: defaultOptionsIgnoreCacheTrue.audience,
           client_id: TEST_CLIENT_ID,
           scope: `${TEST_SCOPES} test:scope`,
-          response_type: TEST_CODE,
+          response_type: 'code',
           response_mode: 'web_message',
           prompt: 'none',
           state: TEST_ENCODED_STATE,
@@ -945,7 +951,7 @@ describe('Auth0', () => {
           audience: defaultOptionsIgnoreCacheTrue.audience,
           client_id: TEST_CLIENT_ID,
           scope: `${TEST_SCOPES} test:scope`,
-          response_type: TEST_CODE,
+          response_type: 'code',
           response_mode: 'web_message',
           prompt: 'none',
           state: TEST_ENCODED_STATE,
@@ -965,7 +971,7 @@ describe('Auth0', () => {
           audience: defaultOptionsIgnoreCacheTrue.audience,
           client_id: TEST_CLIENT_ID,
           scope: `${TEST_SCOPES} test:scope`,
-          response_type: TEST_CODE,
+          response_type: 'code',
           response_mode: 'web_message',
           prompt: 'none',
           state: TEST_ENCODED_STATE,
@@ -990,7 +996,7 @@ describe('Auth0', () => {
           audience: defaultOptionsIgnoreCacheTrue.audience,
           client_id: TEST_CLIENT_ID,
           scope: `${TEST_SCOPES} test:scope`,
-          response_type: TEST_CODE,
+          response_type: 'code',
           response_mode: 'web_message',
           prompt: 'none',
           state: TEST_ENCODED_STATE,
@@ -1006,8 +1012,8 @@ describe('Auth0', () => {
         const { auth0, utils } = await setup();
         await auth0.getTokenSilently(defaultOptionsIgnoreCacheTrue);
         expect(utils.runIframe).toHaveBeenCalledWith(
-          `https://test.auth0.com/authorize?${TEST_QUERY_PARAMS}${TEST_AUTH0_CLIENT_QUERY_STRING}`,
-          'https://test.auth0.com',
+          `https://${TEST_DOMAIN}/authorize?${TEST_QUERY_PARAMS}${TEST_AUTH0_CLIENT_QUERY_STRING}`,
+          `https://${TEST_DOMAIN}`,
           defaultOptionsIgnoreCacheTrue.timeoutInSeconds
         );
       });
@@ -1016,21 +1022,23 @@ describe('Auth0', () => {
         const { auth0, utils } = await setup({ authorizeTimeoutInSeconds: 1 });
         await auth0.getTokenSilently(defaultOptionsIgnoreCacheTrue);
         expect(utils.runIframe).toHaveBeenCalledWith(
-          `https://test.auth0.com/authorize?${TEST_QUERY_PARAMS}${TEST_AUTH0_CLIENT_QUERY_STRING}`,
-          'https://test.auth0.com',
+          `https://${TEST_DOMAIN}/authorize?${TEST_QUERY_PARAMS}${TEST_AUTH0_CLIENT_QUERY_STRING}`,
+          `https://${TEST_DOMAIN}`,
           1
         );
       });
 
       it('opens iframe with correct urls and custom timeout', async () => {
         const { auth0, utils } = await setup();
+
         await auth0.getTokenSilently({
           ...defaultOptionsIgnoreCacheTrue,
           timeoutInSeconds: 1
         });
+
         expect(utils.runIframe).toHaveBeenCalledWith(
-          `https://test.auth0.com/authorize?${TEST_QUERY_PARAMS}${TEST_AUTH0_CLIENT_QUERY_STRING}`,
-          'https://test.auth0.com',
+          `https://${TEST_DOMAIN}/authorize?${TEST_QUERY_PARAMS}${TEST_AUTH0_CLIENT_QUERY_STRING}`,
+          `https://${TEST_DOMAIN}`,
           1
         );
       });
@@ -1061,8 +1069,8 @@ describe('Auth0', () => {
         expect(utils.oauthToken).toHaveBeenCalledWith(
           {
             audience: 'test:audience',
-            scope: 'openid profile email test:scope',
-            baseUrl: 'https://test.auth0.com',
+            scope: `${TEST_SCOPES} test:scope`,
+            baseUrl: `https://${TEST_DOMAIN}`,
             client_id: TEST_CLIENT_ID,
             code: TEST_CODE,
             code_verifier: TEST_RANDOM_STRING,
@@ -1080,8 +1088,8 @@ describe('Auth0', () => {
         expect(tokenVerifier).toHaveBeenCalledWith({
           id_token: TEST_ID_TOKEN,
           nonce: TEST_ENCODED_STATE,
-          aud: 'test-client-id',
-          iss: 'https://test.auth0.com/',
+          aud: TEST_CLIENT_ID,
+          iss: `https://${TEST_DOMAIN}/`,
           leeway: undefined,
           max_age: undefined
         });
@@ -1290,82 +1298,6 @@ describe('Auth0', () => {
 
       auth0.buildLogoutUrl({ federated: true, client_id: null });
       expect(utils.createQueryParams).toHaveBeenCalledWith({});
-    });
-  });
-
-  describe('logout()', () => {
-    it('removes `auth0.is.authenticated` key from storage', async () => {
-      const { auth0, cookieStorage } = await setup();
-      auth0.logout();
-      expect(cookieStorage.remove).toHaveBeenCalledWith(
-        'auth0.is.authenticated'
-      );
-    });
-
-    it('calls `window.location.assign` with the correct url', async () => {
-      const { auth0 } = await setup();
-
-      auth0.logout();
-      expect(window.location.assign).toHaveBeenCalledWith(
-        `https://test.auth0.com/v2/logout?query=params${TEST_AUTH0_CLIENT_QUERY_STRING}`
-      );
-    });
-
-    it('calls `window.location.assign` with the correct url when `options.federated` is true', async () => {
-      const { auth0 } = await setup();
-
-      auth0.logout({ federated: true });
-      expect(window.location.assign).toHaveBeenCalledWith(
-        `https://test.auth0.com/v2/logout?query=params${TEST_AUTH0_CLIENT_QUERY_STRING}&federated`
-      );
-    });
-
-    it('calls `window.location.assign` with the correct url with custom `options.auth0Client`', async () => {
-      const auth0Client = { name: '__test_client_name__', version: '9.9.9' };
-      const { auth0 } = await setup({ auth0Client });
-      auth0.logout();
-      expectToHaveBeenCalledWithAuth0ClientParam(
-        window.location.assign,
-        auth0Client
-      );
-    });
-
-    it('clears the cache', async () => {
-      const { auth0, cache } = await setup();
-
-      auth0.logout();
-
-      expect(cache.clear).toHaveBeenCalled();
-    });
-
-    it('removes `auth0.is.authenticated` key from storage when `options.localOnly` is true', async () => {
-      const { auth0, cookieStorage } = await setup();
-
-      auth0.logout({ localOnly: true });
-      expect(cookieStorage.remove).toHaveBeenCalledWith(
-        'auth0.is.authenticated'
-      );
-    });
-
-    it('skips `window.location.assign` when `options.localOnly` is true', async () => {
-      const { auth0 } = await setup();
-
-      auth0.logout({ localOnly: true });
-      expect(window.location.assign).not.toHaveBeenCalledWith();
-    });
-
-    it('calls `window.location.assign` when `options.localOnly` is false', async () => {
-      const { auth0 } = await setup();
-
-      auth0.logout({ localOnly: false });
-      expect(window.location.assign).toHaveBeenCalled();
-    });
-
-    it('throws when both `options.localOnly` and `options.federated` are true', async () => {
-      const { auth0 } = await setup();
-
-      const fn = () => auth0.logout({ localOnly: true, federated: true });
-      expect(fn).toThrow();
     });
   });
 });

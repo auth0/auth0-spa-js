@@ -2,7 +2,7 @@ version: 2.1
 parameters:
   docker_image:
     type: string
-    default: cypress/browsers:node12.13.0-chrome80-ff74
+    default: cypress/browsers:node14.7.0-chrome84
 jobs:
   build:
     docker:
@@ -24,7 +24,7 @@ jobs:
             - dist
   integration_test:
     docker:
-      - image: cypress/browsers:node12.13.0-chrome80-ff74
+      - image: << pipeline.parameters.docker_image >>
     working_directory: ~/repo
     steps:
       - checkout
@@ -42,7 +42,7 @@ jobs:
           path: cypress/videos
   test_gatsby:
     docker:
-      - image: cypress/browsers:node12.13.0-chrome80-ff74
+      - image: << pipeline.parameters.docker_image >>
     working_directory: ~/repo
     steps:
       - checkout:
@@ -75,7 +75,7 @@ jobs:
           working_directory: my-app
   test_react:
     docker:
-      - image: cypress/browsers:node12.13.0-chrome80-ff74
+      - image: << pipeline.parameters.docker_image >>
     working_directory: ~/repo
     steps:
       - checkout:
@@ -108,7 +108,7 @@ jobs:
           working_directory: my-app
   test_vue:
     docker:
-      - image: cypress/browsers:node12.13.0-chrome80-ff74
+      - image: << pipeline.parameters.docker_image >>
     working_directory: ~/repo
     steps:
       - checkout:
@@ -141,7 +141,7 @@ jobs:
           working_directory: my-app
   test_angular:
     docker:
-      - image: cypress/browsers:node12.13.0-chrome80-ff74
+      - image: << pipeline.parameters.docker_image >>
     working_directory: ~/repo
     steps:
       - checkout:
