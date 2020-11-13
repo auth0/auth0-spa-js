@@ -1,6 +1,7 @@
 import {
   Auth0ClientOptions,
   AuthenticationResult,
+  GetTokenSilentlyOptions,
   IdToken,
   PopupConfigOptions,
   PopupLoginOptions,
@@ -252,5 +253,65 @@ export const checkSessionFn = (mockFetch, fetchResponse) => {
       })
     );
     await auth0.checkSession();
+  };
+};
+
+const processDefaultGetTokenSilentlyOptions = config => {
+  const defaultTokenResponseOptions = {
+    success: true,
+    response: {}
+  };
+  const defaultAuthorizeResponseOptions = {
+    code: TEST_CODE,
+    state: TEST_STATE
+  };
+  const token = {
+    ...defaultTokenResponseOptions,
+    ...(config.token || {})
+  };
+  const authorize = {
+    ...defaultAuthorizeResponseOptions,
+    ...(config.authorize || {})
+  };
+
+  return {
+    token,
+    authorize,
+    useHash: config.useHash,
+    customCallbackUrl: config.customCallbackUrl
+  };
+};
+
+export const getTokenSilentlyFn = (mockWindow, mockFetch, fetchResponse) => {
+  return async (
+    auth0,
+    options: GetTokenSilentlyOptions = undefined,
+    testConfig: {
+      token?: {
+        success?: boolean;
+        response?: any;
+      };
+    } = {
+      token: {}
+    }
+  ) => {
+    const { token } = processDefaultGetTokenSilentlyOptions(testConfig);
+
+    mockFetch.mockResolvedValueOnce(
+      fetchResponse(
+        token.success,
+        Object.assign(
+          {
+            id_token: TEST_ID_TOKEN,
+            refresh_token: TEST_REFRESH_TOKEN,
+            access_token: TEST_ACCESS_TOKEN,
+            expires_in: 86400
+          },
+          token.response
+        )
+      )
+    );
+
+    return await auth0.getTokenSilently(options);
   };
 };

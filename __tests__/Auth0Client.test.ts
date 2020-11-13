@@ -11,13 +11,21 @@ import {
   expectToHaveBeenCalledWithHash
 } from './helpers';
 
-import { TEST_AUTH0_CLIENT_QUERY_STRING } from './constants';
+import {
+  GET_TOKEN_SILENTLY_LOCK_KEY,
+  TEST_AUTH0_CLIENT_QUERY_STRING,
+  TEST_BASE64_ENCODED_STRING,
+  TEST_ENCODED_STATE,
+  TEST_QUERY_PARAMS,
+  TEST_USER_ID
+} from './constants';
 
 // @ts-ignore
 import { acquireLockSpy } from 'browser-tabs-lock';
 
 import {
   checkSessionFn,
+  getTokenSilentlyFn,
   loginWithPopupFn,
   loginWithRedirectFn,
   setupFn
@@ -39,6 +47,7 @@ import {
 } from './constants';
 
 import { DEFAULT_POPUP_CONFIG_OPTIONS } from '../src/constants';
+import { releaseLockSpy } from '../__mocks__/browser-tabs-lock';
 
 jest.mock('unfetch');
 jest.mock('es-cookie');
@@ -86,6 +95,11 @@ const loginWithRedirect = loginWithRedirectFn(
 );
 const loginWithPopup = loginWithPopupFn(mockWindow, mockFetch, fetchResponse);
 const checkSession = checkSessionFn(mockFetch, fetchResponse);
+const getTokenSilently = getTokenSilentlyFn(
+  mockWindow,
+  mockFetch,
+  fetchResponse
+);
 
 describe('Auth0Client', () => {
   const oldWindowLocation = window.location;
@@ -1140,15 +1154,288 @@ describe('Auth0Client', () => {
         }
       });
 
+      jest.spyOn(<any>utils, 'runIframe');
+
+      mockFetch.mockReset();
+
+      const token = await auth0.getTokenSilently();
+
+      expect(token).toBe(TEST_ACCESS_TOKEN);
+      expect(utils.runIframe).not.toHaveBeenCalled();
+      expect(mockFetch).not.toHaveBeenCalled();
+    });
+
+    it('calls the authorize endpoint using the correct params', async () => {
+      const auth0 = setup();
+
       jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
         access_token: TEST_ACCESS_TOKEN,
         state: TEST_STATE
       });
 
       mockFetch.mockReset();
+      mockFetch.mockResolvedValue(
+        fetchResponse(true, {
+          id_token: TEST_ID_TOKEN,
+          refresh_token: TEST_REFRESH_TOKEN,
+          access_token: TEST_ACCESS_TOKEN,
+          expires_in: 86400
+        })
+      );
+
+      await auth0.getTokenSilently({
+        foo: 'bar'
+      });
+
+      const [[url]] = (<jest.Mock>utils.runIframe).mock.calls;
+
+      assertUrlEquals(url, 'auth0_domain', '/authorize', {
+        client_id: TEST_CLIENT_ID,
+        response_type: 'code',
+        response_mode: 'web_message',
+        prompt: 'none',
+        state: TEST_STATE,
+        nonce: TEST_NONCE,
+        redirect_uri: TEST_REDIRECT_URI,
+        code_challenge: TEST_CODE_CHALLENGE,
+        code_challenge_method: 'S256',
+        foo: 'bar'
+      });
+    });
+
+    it('calls the authorize endpoint using the correct params when using a default redirect_uri', async () => {
+      const redirect_uri = 'https://custom-redirect-uri/callback';
+      const auth0 = setup({
+        redirect_uri
+      });
+
+      jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
+        access_token: TEST_ACCESS_TOKEN,
+        state: TEST_STATE
+      });
+
+      mockFetch.mockReset();
+      mockFetch.mockResolvedValue(
+        fetchResponse(true, {
+          id_token: TEST_ID_TOKEN,
+          refresh_token: TEST_REFRESH_TOKEN,
+          access_token: TEST_ACCESS_TOKEN,
+          expires_in: 86400
+        })
+      );
 
       await auth0.getTokenSilently();
-      expect(mockFetch).not.toHaveBeenCalled();
+
+      const [[url]] = (<jest.Mock>utils.runIframe).mock.calls;
+
+      assertUrlEquals(url, 'auth0_domain', '/authorize', {
+        redirect_uri
+      });
+    });
+
+    it('calls the token endpoint with the correct params', async () => {
+      const auth0 = setup();
+
+      jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
+        access_token: TEST_ACCESS_TOKEN,
+        state: TEST_STATE,
+        code: TEST_CODE
+      });
+
+      mockFetch.mockResolvedValueOnce(
+        fetchResponse(true, {
+          id_token: TEST_ID_TOKEN,
+          refresh_token: TEST_REFRESH_TOKEN,
+          access_token: TEST_ACCESS_TOKEN,
+          expires_in: 86400
+        })
+      );
+
+      await auth0.getTokenSilently();
+
+      assertPost('https://auth0_domain/oauth/token', {
+        redirect_uri: TEST_REDIRECT_URI,
+        client_id: TEST_CLIENT_ID,
+        code_verifier: TEST_CODE_VERIFIER,
+        grant_type: 'authorization_code',
+        code: TEST_CODE
+      });
+    });
+
+    it('calls the token endpoint with the correct params when using refresh tokens', async () => {
+      const auth0 = setup({
+        useRefreshTokens: true
+      });
+
+      jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
+        access_token: TEST_ACCESS_TOKEN,
+        refresh_token: TEST_REFRESH_TOKEN,
+        state: TEST_STATE,
+        code: TEST_CODE
+      });
+
+      mockFetch.mockResolvedValueOnce(
+        fetchResponse(true, {
+          id_token: TEST_ID_TOKEN,
+          refresh_token: TEST_REFRESH_TOKEN,
+          access_token: TEST_ACCESS_TOKEN,
+          expires_in: 86400
+        })
+      );
+
+      await auth0.getTokenSilently();
+
+      assertPost('https://auth0_domain/oauth/token', {
+        redirect_uri: TEST_REDIRECT_URI,
+        client_id: TEST_CLIENT_ID,
+        grant_type: 'refresh_token',
+        refresh_token: TEST_REFRESH_TOKEN
+      });
+    });
+
+    it('refreshes the token when no cache available', async () => {
+      const auth0 = setup();
+
+      jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
+        access_token: TEST_ACCESS_TOKEN,
+        state: TEST_STATE
+      });
+
+      mockFetch.mockResolvedValueOnce(
+        fetchResponse(true, {
+          id_token: TEST_ID_TOKEN,
+          refresh_token: TEST_REFRESH_TOKEN,
+          access_token: TEST_ACCESS_TOKEN,
+          expires_in: 86400
+        })
+      );
+
+      const token = await auth0.getTokenSilently();
+
+      expect(token).toBe(TEST_ACCESS_TOKEN);
+      expect(utils.runIframe).toHaveBeenCalled();
+      expect(mockFetch).toHaveBeenCalled();
+    });
+
+    it('refreshes the token using custom default scope', async () => {
+      const auth0 = setup({
+        advancedOptions: {
+          defaultScope: 'email'
+        }
+      });
+      await loginWithRedirect(auth0, undefined, {
+        token: {
+          response: { expires_in: 0 }
+        }
+      });
+
+      jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
+        access_token: TEST_ACCESS_TOKEN,
+        state: TEST_STATE
+      });
+
+      mockFetch.mockReset();
+      mockFetch.mockResolvedValue(
+        fetchResponse(true, {
+          id_token: TEST_ID_TOKEN,
+          refresh_token: TEST_REFRESH_TOKEN,
+          access_token: TEST_ACCESS_TOKEN,
+          expires_in: 86400
+        })
+      );
+
+      await auth0.getTokenSilently();
+
+      const [[url]] = (<jest.Mock>utils.runIframe).mock.calls;
+      assertUrlEquals(url, 'auth0_domain', '/authorize', {
+        scope: 'openid email'
+      });
+    });
+
+    it('refreshes the token using custom default scope when using refresh tokens', async () => {
+      const auth0 = setup({
+        useRefreshTokens: true,
+        advancedOptions: {
+          defaultScope: 'email'
+        }
+      });
+
+      await loginWithRedirect(auth0, undefined, {
+        token: {
+          response: { expires_in: 50 }
+        }
+      });
+
+      jest.spyOn(<any>utils, 'runIframe');
+
+      mockFetch.mockReset();
+      mockFetch.mockResolvedValue(
+        fetchResponse(true, {
+          id_token: TEST_ID_TOKEN,
+          refresh_token: TEST_REFRESH_TOKEN,
+          access_token: TEST_ACCESS_TOKEN,
+          expires_in: 86400
+        })
+      );
+
+      await auth0.getTokenSilently();
+
+      expect(utils.runIframe).not.toHaveBeenCalled();
+      expect(mockFetch).toHaveBeenCalledTimes(1);
+    });
+
+    it('refreshes the token using custom auth0Client', async () => {
+      const auth0Client = { name: '__test_client__', version: '0.0.0' };
+      const auth0 = setup({ auth0Client });
+
+      jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
+        access_token: TEST_ACCESS_TOKEN,
+        state: TEST_STATE
+      });
+
+      mockFetch.mockReset();
+      mockFetch.mockResolvedValue(
+        fetchResponse(true, {
+          id_token: TEST_ID_TOKEN,
+          refresh_token: TEST_REFRESH_TOKEN,
+          access_token: TEST_ACCESS_TOKEN,
+          expires_in: 86400
+        })
+      );
+
+      await auth0.getTokenSilently();
+
+      expectToHaveBeenCalledWithAuth0ClientParam(utils.runIframe, auth0Client);
+    });
+
+    it('refreshes the token when cache available without access token', async () => {
+      const auth0 = setup();
+      await loginWithRedirect(auth0, undefined, {
+        token: {
+          response: { expires_in: 70, access_token: null }
+        }
+      });
+
+      jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
+        access_token: TEST_ACCESS_TOKEN,
+        state: TEST_STATE
+      });
+
+      mockFetch.mockReset();
+      mockFetch.mockResolvedValue(
+        fetchResponse(true, {
+          id_token: TEST_ID_TOKEN,
+          refresh_token: TEST_REFRESH_TOKEN,
+          access_token: TEST_ACCESS_TOKEN,
+          expires_in: 86400
+        })
+      );
+
+      const token = await auth0.getTokenSilently();
+
+      expect(token).toBe(TEST_ACCESS_TOKEN);
+      expect(utils.runIframe).toHaveBeenCalled();
+      expect(mockFetch).toHaveBeenCalled();
     });
 
     it('refreshes the token when expires_in < constant leeway', async () => {
@@ -1727,6 +2014,53 @@ describe('Auth0Client', () => {
       expect(acquireLockSpy).not.toHaveBeenCalled();
     });
 
+    it('should acquire and release a browser lock', async () => {
+      const auth0 = setup();
+
+      jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
+        access_token: TEST_ACCESS_TOKEN,
+        state: TEST_STATE
+      });
+
+      await getTokenSilently(auth0);
+
+      expect(acquireLockSpy).toHaveBeenCalledWith(
+        GET_TOKEN_SILENTLY_LOCK_KEY,
+        5000
+      );
+      expect(releaseLockSpy).toHaveBeenCalledWith(GET_TOKEN_SILENTLY_LOCK_KEY);
+    });
+
+    it('should release a browser lock when an error occurred', async () => {
+      const auth0 = setup();
+      let error;
+
+      jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
+        access_token: TEST_ACCESS_TOKEN,
+        state: TEST_STATE
+      });
+
+      mockFetch.mockResolvedValue(
+        fetchResponse(false, {
+          id_token: TEST_ID_TOKEN,
+          refresh_token: TEST_REFRESH_TOKEN,
+          access_token: TEST_ACCESS_TOKEN,
+          expires_in: 86400
+        })
+      );
+
+      try {
+        await auth0.getTokenSilently();
+      } catch (e) {
+        error = e;
+      }
+
+      expect(error.message).toEqual(
+        'HTTP error. Unable to fetch https://auth0_domain/oauth/token'
+      );
+      expect(releaseLockSpy).toHaveBeenCalled();
+    });
+
     it('sends custom options through to the token endpoint when using an iframe', async () => {
       const auth0 = setup({
         custom_param: 'foo',
@@ -1814,6 +2148,154 @@ describe('Auth0Client', () => {
       });
 
       expect(access_token).toEqual(TEST_ACCESS_TOKEN);
+    });
+
+    it('calls `tokenVerifier.verify` with the `id_token` from in the oauth/token response', async () => {
+      const auth0 = setup({
+        issuer: 'test-123.auth0.com'
+      });
+
+      jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
+        access_token: TEST_ACCESS_TOKEN,
+        state: TEST_STATE
+      });
+
+      await getTokenSilently(auth0);
+
+      expect(tokenVerifier).toHaveBeenCalledWith(
+        expect.objectContaining({
+          iss: 'https://test-123.auth0.com/',
+          id_token: TEST_ID_TOKEN
+        })
+      );
+    });
+
+    it('throws error if state from popup response is different from the provided state', async () => {
+      const auth0 = setup();
+
+      jest.spyOn(utils, 'runIframe').mockReturnValue(
+        Promise.resolve({
+          state: 'other-state'
+        })
+      );
+
+      await expect(auth0.getTokenSilently()).rejects.toThrowError(
+        'Invalid state'
+      );
+    });
+
+    it('saves into cache', async () => {
+      const auth0 = setup();
+
+      jest.spyOn(auth0['cache'], 'save');
+      jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
+        access_token: TEST_ACCESS_TOKEN,
+        state: TEST_STATE
+      });
+
+      await getTokenSilently(auth0);
+
+      expect(auth0['cache']['save']).toHaveBeenCalledWith(
+        expect.objectContaining({
+          client_id: TEST_CLIENT_ID,
+          access_token: TEST_ACCESS_TOKEN,
+          expires_in: 86400,
+          audience: 'default',
+          id_token: TEST_ID_TOKEN,
+          scope: TEST_SCOPES
+        })
+      );
+    });
+
+    it('saves `auth0.is.authenticated` key in storage', async () => {
+      const auth0 = setup();
+
+      jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
+        access_token: TEST_ACCESS_TOKEN,
+        state: TEST_STATE
+      });
+
+      await getTokenSilently(auth0);
+
+      expect(<jest.Mock>esCookie.set).toHaveBeenCalledWith(
+        '_legacy_auth0.is.authenticated',
+        'true',
+        {
+          expires: 1
+        }
+      );
+
+      expect(<jest.Mock>esCookie.set).toHaveBeenCalledWith(
+        'auth0.is.authenticated',
+        'true',
+        {
+          expires: 1
+        }
+      );
+    });
+
+    it('saves `auth0.is.authenticated` key in storage for an extended period', async () => {
+      const auth0 = setup({
+        sessionCheckExpiryDays: 2
+      });
+
+      jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
+        access_token: TEST_ACCESS_TOKEN,
+        state: TEST_STATE
+      });
+
+      await getTokenSilently(auth0);
+
+      expect(<jest.Mock>esCookie.set).toHaveBeenCalledWith(
+        '_legacy_auth0.is.authenticated',
+        'true',
+        {
+          expires: 2
+        }
+      );
+      expect(<jest.Mock>esCookie.set).toHaveBeenCalledWith(
+        'auth0.is.authenticated',
+        'true',
+        {
+          expires: 2
+        }
+      );
+    });
+
+    it('opens iframe with correct urls and timeout from client options', async () => {
+      const auth0 = setup({ authorizeTimeoutInSeconds: 1 });
+
+      jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
+        access_token: TEST_ACCESS_TOKEN,
+        state: TEST_STATE
+      });
+
+      await getTokenSilently(auth0);
+
+      expect(utils.runIframe).toHaveBeenCalledWith(
+        expect.any(String),
+        `https://${TEST_DOMAIN}`,
+        1
+      );
+    });
+
+    it('opens iframe with correct urls and custom timeout', async () => {
+      const auth0 = setup();
+
+      jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
+        access_token: TEST_ACCESS_TOKEN,
+        state: TEST_STATE
+      });
+
+      await getTokenSilently(auth0, {
+        timeoutInSeconds: 1
+      });
+
+      expect(utils.runIframe).toHaveBeenCalledWith(
+        expect.any(String),
+        `https://${TEST_DOMAIN}`,
+        1
+      );
     });
   });
 
