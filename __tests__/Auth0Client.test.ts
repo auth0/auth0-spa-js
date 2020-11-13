@@ -20,7 +20,8 @@ import {
   checkSessionFn,
   loginWithPopupFn,
   loginWithRedirectFn,
-  setupFn
+  setupFn,
+  setupMessageEventLister
 } from './Auth0Client.helpers';
 
 import {
@@ -39,7 +40,7 @@ import {
 } from './constants';
 
 import { DEFAULT_POPUP_CONFIG_OPTIONS } from '../src/constants';
-import { Auth0ClientOptions } from '../src';
+import { Auth0ClientOptions, PopupConfigOptions } from '../src';
 
 jest.mock('unfetch');
 jest.mock('es-cookie');
@@ -2059,114 +2060,94 @@ describe('Auth0Client', () => {
   describe('getTokenWithPopup()', () => {
     const localSetup = async (clientOptions?: Partial<Auth0ClientOptions>) => {
       const auth0 = setup(clientOptions);
-      auth0.loginWithPopup = jest.fn();
 
-      jest.spyOn(auth0['cache'], 'get').mockReturnValue({
-        access_token: TEST_ACCESS_TOKEN
-      });
+      setupMessageEventLister(mockWindow, { state: TEST_STATE });
+
+      mockFetch.mockResolvedValueOnce(
+        fetchResponse(true, {
+          id_token: TEST_ID_TOKEN,
+          refresh_token: TEST_REFRESH_TOKEN,
+          access_token: TEST_ACCESS_TOKEN,
+          expires_in: 86400
+        })
+      );
 
       return auth0;
     };
 
     it('calls `loginWithPopup` with the correct default options', async () => {
       const auth0 = await localSetup();
-
-      await auth0.getTokenWithPopup();
-
-      expect(auth0.loginWithPopup).toHaveBeenCalledWith(
-        {
-          audience: undefined,
-          scope: TEST_SCOPES
-        },
-        DEFAULT_POPUP_CONFIG_OPTIONS
-      );
+      expect(await auth0.getTokenWithPopup()).toEqual(TEST_ACCESS_TOKEN);
     });
 
-    it('respects customized default scopes', async () => {
+    it('respects customized scopes', async () => {
       const auth0 = await localSetup({
         advancedOptions: {
           defaultScope: 'email'
-        }
+        },
+        scope: 'read:email'
       });
 
-      await auth0.getTokenWithPopup();
+      const config = {
+        popup: {
+          location: {
+            href: ''
+          },
+          close: jest.fn()
+        }
+      };
 
-      expect(auth0.loginWithPopup).toHaveBeenCalledWith(
-        {
-          audience: undefined,
-          scope: 'openid email'
-        },
-        DEFAULT_POPUP_CONFIG_OPTIONS
+      expect(await auth0.getTokenWithPopup({}, config)).toEqual(
+        TEST_ACCESS_TOKEN
+      );
+
+      expect(config.popup.location.href).toMatch(
+        /openid%20email%20read%3Aemail/
       );
     });
 
-    it('calls `loginWithPopup` with the correct custom options', async () => {
+    it('passes custom login options', async () => {
       const auth0 = await localSetup();
 
       const loginOptions = {
         audience: 'other-audience',
-        scope: 'other-scope'
+        screen_hint: 'signup'
       };
 
-      const configOptions = { timeoutInSeconds: 1 };
+      const config = {
+        popup: {
+          location: {
+            href: ''
+          },
+          close: jest.fn()
+        }
+      };
 
-      await auth0.getTokenWithPopup(loginOptions, configOptions);
+      await auth0.getTokenWithPopup(loginOptions, config);
 
-      expect(auth0.loginWithPopup).toHaveBeenCalledWith(
-        {
-          audience: 'other-audience',
-          scope: `${TEST_SCOPES} other-scope`
-        },
-        configOptions
-      );
+      expect(config.popup.location.href).toMatch(/other-audience/);
+      expect(config.popup.location.href).toMatch(/screen_hint/);
     });
 
-    it('calls `cache.get` with the correct options', async () => {
-      const auth0 = await localSetup();
-
-      await auth0.getTokenWithPopup();
-      jest.spyOn(auth0['cache'], 'get');
-
-      expect(auth0['cache']['get']).toHaveBeenCalledWith({
-        audience: 'default',
-        scope: TEST_SCOPES,
-        client_id: TEST_CLIENT_ID
+    it('can use the global audience', async () => {
+      const auth0 = await localSetup({
+        audience: 'global-audience'
       });
-    });
 
-    it('returns cached access_token', async () => {
-      const auth0 = await localSetup();
+      const config = {
+        popup: {
+          location: {
+            href: ''
+          },
+          close: jest.fn()
+        }
+      };
 
-      const token = await auth0.getTokenWithPopup();
-      expect(token).toBe(TEST_ACCESS_TOKEN);
-    });
+      await auth0.getTokenWithPopup({}, config);
 
-    it('accepts empty options and config', async () => {
-      const auth0 = await localSetup({ audience: 'foo' });
+      expect(config.popup.location.href).toMatch(/global-audience/);
 
-      await auth0.getTokenWithPopup();
-
-      expect(auth0.loginWithPopup).toHaveBeenCalledWith(
-        {
-          audience: 'foo',
-          scope: 'openid profile email'
-        },
-        { timeoutInSeconds: 60 }
-      );
-    });
-
-    it('accepts partial options and config', async () => {
-      const auth0 = await localSetup({ audience: 'foo' });
-
-      await auth0.getTokenWithPopup({ scope: 'bar' }, { popup: 'baz' });
-
-      expect(auth0.loginWithPopup).toHaveBeenCalledWith(
-        {
-          audience: 'foo',
-          scope: 'openid profile email bar'
-        },
-        { timeoutInSeconds: 60, popup: 'baz' }
-      );
+      console.log(auth0['cache']);
     });
   });
 

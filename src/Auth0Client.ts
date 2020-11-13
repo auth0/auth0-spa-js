@@ -680,11 +680,13 @@ export default class Auth0Client {
     config: PopupConfigOptions = {}
   ) {
     options.audience = options.audience || this.options.audience;
+
     options.scope = getUniqueScopes(
       this.defaultScope,
       this.scope,
       options.scope
     );
+
     config = {
       ...DEFAULT_POPUP_CONFIG_OPTIONS,
       ...config
