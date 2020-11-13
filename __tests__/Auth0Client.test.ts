@@ -2146,8 +2146,6 @@ describe('Auth0Client', () => {
       await auth0.getTokenWithPopup({}, config);
 
       expect(config.popup.location.href).toMatch(/global-audience/);
-
-      console.log(auth0['cache']);
     });
   });
 
