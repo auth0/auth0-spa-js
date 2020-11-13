@@ -23,8 +23,8 @@ jobs:
           paths:
             - dist
       - run:
-        name: Upload coverage
-        command: ./node_modules/.bin/codecov
+          name: Upload coverage
+          command: ./node_modules/.bin/codecov
   integration_test:
     docker:
       - image: << pipeline.parameters.docker_image >>
