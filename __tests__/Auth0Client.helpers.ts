@@ -261,24 +261,13 @@ const processDefaultGetTokenSilentlyOptions = config => {
     success: true,
     response: {}
   };
-  const defaultAuthorizeResponseOptions = {
-    code: TEST_CODE,
-    state: TEST_STATE
-  };
   const token = {
     ...defaultTokenResponseOptions,
     ...(config.token || {})
   };
-  const authorize = {
-    ...defaultAuthorizeResponseOptions,
-    ...(config.authorize || {})
-  };
 
   return {
-    token,
-    authorize,
-    useHash: config.useHash,
-    customCallbackUrl: config.customCallbackUrl
+    token
   };
 };
 
