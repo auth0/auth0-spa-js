@@ -1173,17 +1173,7 @@ describe('Auth0Client', () => {
         state: TEST_STATE
       });
 
-      mockFetch.mockReset();
-      mockFetch.mockResolvedValue(
-        fetchResponse(true, {
-          id_token: TEST_ID_TOKEN,
-          refresh_token: TEST_REFRESH_TOKEN,
-          access_token: TEST_ACCESS_TOKEN,
-          expires_in: 86400
-        })
-      );
-
-      await auth0.getTokenSilently({
+      await getTokenSilently(auth0, {
         foo: 'bar'
       });
 
@@ -1214,17 +1204,7 @@ describe('Auth0Client', () => {
         state: TEST_STATE
       });
 
-      mockFetch.mockReset();
-      mockFetch.mockResolvedValue(
-        fetchResponse(true, {
-          id_token: TEST_ID_TOKEN,
-          refresh_token: TEST_REFRESH_TOKEN,
-          access_token: TEST_ACCESS_TOKEN,
-          expires_in: 86400
-        })
-      );
-
-      await auth0.getTokenSilently();
+      await getTokenSilently(auth0);
 
       const [[url]] = (<jest.Mock>utils.runIframe).mock.calls;
 
@@ -1242,16 +1222,7 @@ describe('Auth0Client', () => {
         code: TEST_CODE
       });
 
-      mockFetch.mockResolvedValueOnce(
-        fetchResponse(true, {
-          id_token: TEST_ID_TOKEN,
-          refresh_token: TEST_REFRESH_TOKEN,
-          access_token: TEST_ACCESS_TOKEN,
-          expires_in: 86400
-        })
-      );
-
-      await auth0.getTokenSilently();
+      await getTokenSilently(auth0);
 
       assertPost('https://auth0_domain/oauth/token', {
         redirect_uri: TEST_REDIRECT_URI,
@@ -1274,16 +1245,7 @@ describe('Auth0Client', () => {
         code: TEST_CODE
       });
 
-      mockFetch.mockResolvedValueOnce(
-        fetchResponse(true, {
-          id_token: TEST_ID_TOKEN,
-          refresh_token: TEST_REFRESH_TOKEN,
-          access_token: TEST_ACCESS_TOKEN,
-          expires_in: 86400
-        })
-      );
-
-      await auth0.getTokenSilently();
+      await getTokenSilently(auth0);
 
       assertPost('https://auth0_domain/oauth/token', {
         redirect_uri: TEST_REDIRECT_URI,
@@ -1301,16 +1263,7 @@ describe('Auth0Client', () => {
         state: TEST_STATE
       });
 
-      mockFetch.mockResolvedValueOnce(
-        fetchResponse(true, {
-          id_token: TEST_ID_TOKEN,
-          refresh_token: TEST_REFRESH_TOKEN,
-          access_token: TEST_ACCESS_TOKEN,
-          expires_in: 86400
-        })
-      );
-
-      const token = await auth0.getTokenSilently();
+      const token = await getTokenSilently(auth0);
 
       expect(token).toBe(TEST_ACCESS_TOKEN);
       expect(utils.runIframe).toHaveBeenCalled();
@@ -1323,6 +1276,7 @@ describe('Auth0Client', () => {
           defaultScope: 'email'
         }
       });
+
       await loginWithRedirect(auth0, undefined, {
         token: {
           response: { expires_in: 0 }
@@ -1334,17 +1288,7 @@ describe('Auth0Client', () => {
         state: TEST_STATE
       });
 
-      mockFetch.mockReset();
-      mockFetch.mockResolvedValue(
-        fetchResponse(true, {
-          id_token: TEST_ID_TOKEN,
-          refresh_token: TEST_REFRESH_TOKEN,
-          access_token: TEST_ACCESS_TOKEN,
-          expires_in: 86400
-        })
-      );
-
-      await auth0.getTokenSilently();
+      await getTokenSilently(auth0);
 
       const [[url]] = (<jest.Mock>utils.runIframe).mock.calls;
       assertUrlEquals(url, 'auth0_domain', '/authorize', {
@@ -1369,16 +1313,8 @@ describe('Auth0Client', () => {
       jest.spyOn(<any>utils, 'runIframe');
 
       mockFetch.mockReset();
-      mockFetch.mockResolvedValue(
-        fetchResponse(true, {
-          id_token: TEST_ID_TOKEN,
-          refresh_token: TEST_REFRESH_TOKEN,
-          access_token: TEST_ACCESS_TOKEN,
-          expires_in: 86400
-        })
-      );
 
-      await auth0.getTokenSilently();
+      await getTokenSilently(auth0);
 
       expect(utils.runIframe).not.toHaveBeenCalled();
       expect(mockFetch).toHaveBeenCalledTimes(1);
@@ -1394,16 +1330,8 @@ describe('Auth0Client', () => {
       });
 
       mockFetch.mockReset();
-      mockFetch.mockResolvedValue(
-        fetchResponse(true, {
-          id_token: TEST_ID_TOKEN,
-          refresh_token: TEST_REFRESH_TOKEN,
-          access_token: TEST_ACCESS_TOKEN,
-          expires_in: 86400
-        })
-      );
 
-      await auth0.getTokenSilently();
+      await getTokenSilently(auth0);
 
       expectToHaveBeenCalledWithAuth0ClientParam(utils.runIframe, auth0Client);
     });
@@ -1422,16 +1350,8 @@ describe('Auth0Client', () => {
       });
 
       mockFetch.mockReset();
-      mockFetch.mockResolvedValue(
-        fetchResponse(true, {
-          id_token: TEST_ID_TOKEN,
-          refresh_token: TEST_REFRESH_TOKEN,
-          access_token: TEST_ACCESS_TOKEN,
-          expires_in: 86400
-        })
-      );
 
-      const token = await auth0.getTokenSilently();
+      const token = await getTokenSilently(auth0);
 
       expect(token).toBe(TEST_ACCESS_TOKEN);
       expect(utils.runIframe).toHaveBeenCalled();
@@ -1452,16 +1372,9 @@ describe('Auth0Client', () => {
       });
 
       mockFetch.mockReset();
-      mockFetch.mockResolvedValue(
-        fetchResponse(true, {
-          id_token: TEST_ID_TOKEN,
-          refresh_token: TEST_REFRESH_TOKEN,
-          access_token: TEST_ACCESS_TOKEN,
-          expires_in: 86400
-        })
-      );
 
-      await auth0.getTokenSilently();
+      await getTokenSilently(auth0);
+
       expect(mockFetch).toHaveBeenCalledTimes(1);
     });
 
@@ -1477,16 +1390,9 @@ describe('Auth0Client', () => {
       });
 
       mockFetch.mockReset();
-      mockFetch.mockResolvedValue(
-        fetchResponse(true, {
-          id_token: TEST_ID_TOKEN,
-          refresh_token: TEST_REFRESH_TOKEN,
-          access_token: TEST_ACCESS_TOKEN,
-          expires_in: 86400
-        })
-      );
 
-      await auth0.getTokenSilently();
+      await getTokenSilently(auth0);
+
       expect(mockFetch).not.toHaveBeenCalled();
     });
 
@@ -1502,16 +1408,9 @@ describe('Auth0Client', () => {
       });
 
       mockFetch.mockReset();
-      mockFetch.mockResolvedValue(
-        fetchResponse(true, {
-          id_token: TEST_ID_TOKEN,
-          refresh_token: TEST_REFRESH_TOKEN,
-          access_token: TEST_ACCESS_TOKEN,
-          expires_in: 86400
-        })
-      );
 
-      await auth0.getTokenSilently();
+      await getTokenSilently(auth0);
+
       expect(mockFetch).toHaveBeenCalledTimes(1);
     });
 
@@ -1524,16 +1423,7 @@ describe('Auth0Client', () => {
 
       await loginWithRedirect(auth0);
 
-      mockFetch.mockResolvedValueOnce(
-        fetchResponse(true, {
-          id_token: TEST_ID_TOKEN,
-          refresh_token: TEST_REFRESH_TOKEN,
-          access_token: TEST_ACCESS_TOKEN,
-          expires_in: 86400
-        })
-      );
-
-      const access_token = await auth0.getTokenSilently({ ignoreCache: true });
+      const access_token = await getTokenSilently(auth0, { ignoreCache: true });
 
       assertPost(
         'https://auth0_domain/oauth/token',
@@ -1612,16 +1502,7 @@ describe('Auth0Client', () => {
         code: TEST_CODE
       });
 
-      mockFetch.mockResolvedValueOnce(
-        fetchResponse(true, {
-          id_token: TEST_ID_TOKEN,
-          refresh_token: TEST_REFRESH_TOKEN,
-          access_token: TEST_ACCESS_TOKEN,
-          expires_in: 86400
-        })
-      );
-
-      const access_token = await auth0.getTokenSilently({ ignoreCache: true });
+      const access_token = await getTokenSilently(auth0, { ignoreCache: true });
 
       assertPost(
         'https://auth0_domain/oauth/token',
@@ -1703,12 +1584,16 @@ describe('Auth0Client', () => {
       });
 
       expect((<any>auth0).worker).toBeDefined();
+
       await loginWithRedirect(auth0);
+
       mockFetch.mockReset();
       mockFetch.mockImplementation(() => Promise.reject(new Error('my_error')));
+
       await expect(
         auth0.getTokenSilently({ ignoreCache: true })
       ).rejects.toThrow('my_error');
+
       expect(mockFetch).toBeCalledTimes(3);
     });
 
@@ -1716,8 +1601,11 @@ describe('Auth0Client', () => {
       const auth0 = setup({
         useRefreshTokens: true
       });
+
       expect((<any>auth0).worker).toBeDefined();
+
       await loginWithRedirect(auth0);
+
       mockFetch.mockReset();
       mockFetch.mockResolvedValue(
         fetchResponse(false, {
@@ -1725,9 +1613,11 @@ describe('Auth0Client', () => {
           error_description: 'my_error_description'
         })
       );
+
       await expect(
         auth0.getTokenSilently({ ignoreCache: true })
       ).rejects.toThrow('my_error_description');
+
       expect(mockFetch).toBeCalledTimes(1);
     });
 
@@ -1744,6 +1634,7 @@ describe('Auth0Client', () => {
       expect((<any>auth0).worker).toBeDefined();
 
       await loginWithRedirect(auth0);
+
       mockFetch.mockReset();
       mockFetch.mockImplementation(
         () =>
@@ -1759,13 +1650,16 @@ describe('Auth0Client', () => {
           )
       );
       jest.spyOn(AbortController.prototype, 'abort');
+
       await expect(
         auth0.getTokenSilently({ ignoreCache: true })
       ).rejects.toThrow(`Timeout when executing 'fetch'`);
+
       // Called thrice for the refresh token grant in utils (noop)
       // Called thrice for the refresh token grant in token worker
       expect(AbortController.prototype.abort).toBeCalledTimes(6);
       expect(mockFetch).toBeCalledTimes(3);
+
       Object.defineProperty(constants, 'DEFAULT_FETCH_TIMEOUT_MS', {
         get: () => originalDefaultFetchTimeoutMs
       });
