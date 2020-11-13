@@ -1,5 +1,13 @@
 # Change Log
 
+## [v1.13.3](https://github.com/auth0/auth0-spa-js/tree/v1.13.3) (2020-11-13)
+
+[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v1.13.2...v1.13.3)
+
+**Fixed**
+
+- [SDK-2156] Heed timeoutInSeconds when calling getTokenSilently with refresh tokens [\#639](https://github.com/auth0/auth0-spa-js/pull/639) ([stevehobbsdev](https://github.com/stevehobbsdev))
+
 ## [v1.13.2](https://github.com/auth0/auth0-spa-js/tree/v1.13.2) (2020-11-09)
 
 [Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v1.13.1...v1.13.2)
