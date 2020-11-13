@@ -39,6 +39,7 @@ import {
 } from './constants';
 
 import { DEFAULT_POPUP_CONFIG_OPTIONS } from '../src/constants';
+import { Auth0ClientOptions } from '../src';
 
 jest.mock('unfetch');
 jest.mock('es-cookie');
@@ -2052,6 +2053,120 @@ describe('Auth0Client', () => {
 
       const result = await auth0.isAuthenticated();
       expect(result).toBe(false);
+    });
+  });
+
+  describe('getTokenWithPopup()', () => {
+    const localSetup = async (clientOptions?: Partial<Auth0ClientOptions>) => {
+      const auth0 = setup(clientOptions);
+      auth0.loginWithPopup = jest.fn();
+
+      jest.spyOn(auth0['cache'], 'get').mockReturnValue({
+        access_token: TEST_ACCESS_TOKEN
+      });
+
+      return auth0;
+    };
+
+    it('calls `loginWithPopup` with the correct default options', async () => {
+      const auth0 = await localSetup();
+
+      await auth0.getTokenWithPopup();
+
+      expect(auth0.loginWithPopup).toHaveBeenCalledWith(
+        {
+          audience: undefined,
+          scope: TEST_SCOPES
+        },
+        DEFAULT_POPUP_CONFIG_OPTIONS
+      );
+    });
+
+    it('respects customized default scopes', async () => {
+      const auth0 = await localSetup({
+        advancedOptions: {
+          defaultScope: 'email'
+        }
+      });
+
+      await auth0.getTokenWithPopup();
+
+      expect(auth0.loginWithPopup).toHaveBeenCalledWith(
+        {
+          audience: undefined,
+          scope: 'openid email'
+        },
+        DEFAULT_POPUP_CONFIG_OPTIONS
+      );
+    });
+
+    it('calls `loginWithPopup` with the correct custom options', async () => {
+      const auth0 = await localSetup();
+
+      const loginOptions = {
+        audience: 'other-audience',
+        scope: 'other-scope'
+      };
+
+      const configOptions = { timeoutInSeconds: 1 };
+
+      await auth0.getTokenWithPopup(loginOptions, configOptions);
+
+      expect(auth0.loginWithPopup).toHaveBeenCalledWith(
+        {
+          audience: 'other-audience',
+          scope: `${TEST_SCOPES} other-scope`
+        },
+        configOptions
+      );
+    });
+
+    it('calls `cache.get` with the correct options', async () => {
+      const auth0 = await localSetup();
+
+      await auth0.getTokenWithPopup();
+      jest.spyOn(auth0['cache'], 'get');
+
+      expect(auth0['cache']['get']).toHaveBeenCalledWith({
+        audience: 'default',
+        scope: TEST_SCOPES,
+        client_id: TEST_CLIENT_ID
+      });
+    });
+
+    it('returns cached access_token', async () => {
+      const auth0 = await localSetup();
+
+      const token = await auth0.getTokenWithPopup();
+      expect(token).toBe(TEST_ACCESS_TOKEN);
+    });
+
+    it('accepts empty options and config', async () => {
+      const auth0 = await localSetup({ audience: 'foo' });
+
+      await auth0.getTokenWithPopup();
+
+      expect(auth0.loginWithPopup).toHaveBeenCalledWith(
+        {
+          audience: 'foo',
+          scope: 'openid profile email'
+        },
+        { timeoutInSeconds: 60 }
+      );
+    });
+
+    it('accepts partial options and config', async () => {
+      const auth0 = await localSetup({ audience: 'foo' });
+
+      await auth0.getTokenWithPopup({ scope: 'bar' }, { popup: 'baz' });
+
+      expect(auth0.loginWithPopup).toHaveBeenCalledWith(
+        {
+          audience: 'foo',
+          scope: 'openid profile email bar'
+        },
+        { timeoutInSeconds: 60, popup: 'baz' }
+      );
     });
   });
 
