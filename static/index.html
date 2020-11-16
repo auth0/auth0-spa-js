@@ -19,7 +19,11 @@
 
       <h1 class="mb-5">Auth0 SPA JS Playground</h1>
 
-      <p><strong>Is authenticated:</strong>&nbsp;{{ isAuthenticated }}</p>
+      <p>
+        <strong>Is authenticated:</strong>&nbsp;<span data-cy="authenticated"
+          >{{ isAuthenticated }}</span
+        >
+      </p>
 
       <div v-if="!loading">
         <div class="btn-toolbar justify-content-between">
@@ -40,6 +44,7 @@
               class="btn btn-success"
               @click="loginHandleRedirectCallback"
               id="handle_redirect_callback"
+              data-cy="handle-redirect-callback"
             >
               Login redirect callback
             </button>
@@ -72,6 +77,17 @@
               >
             </div>
             <div class="card-body">
+              <div class="form-group">
+                <label for="scope">Scope</label>
+                <input
+                  type="text"
+                  class="form-control"
+                  id="scope"
+                  v-model="current.scope"
+                  :data-cy="'scope' + current.suffix"
+                />
+              </div>
+
               <div class="btn-group mb-0">
                 <button
                   class="btn btn-outline-info"
@@ -439,8 +455,11 @@
               });
           },
           loginRedirect: function () {
+            var _self = this;
+
             this.auth0.loginWithRedirect({
-              redirect_uri: 'http://localhost:3000/'
+              redirect_uri: 'http://localhost:3000/',
+              scope: _self.audienceScopes[0].scope
             });
           },
           loginHandleRedirectCallback: function () {

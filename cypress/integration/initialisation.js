@@ -1,9 +1,9 @@
 import { whenReady } from '../support/utils';
 
-describe('initialisation', function() {
+describe('initialisation', function () {
   beforeEach(cy.resetTests);
 
-  it('should expose a factory method and constructor', function(done) {
+  it('should expose a factory method and constructor', function () {
     whenReady().then(win => {
       assert.isFunction(
         win.createAuth0Client,
@@ -13,7 +13,6 @@ describe('initialisation', function() {
         win.Auth0Client,
         'The Auth0Client constructor should be declared on the window.'
       );
-      done();
     });
   });
 });
