@@ -451,6 +451,7 @@ describe('Auth0Client', () => {
         })
       );
     });
+
     it('calls `tokenVerifier.verify` with the `leeway` from constructor', async () => {
       const auth0 = setup({ leeway: 10 });
 
@@ -462,6 +463,7 @@ describe('Auth0Client', () => {
         })
       );
     });
+
     it('calls `tokenVerifier.verify` with undefined `max_age` when value set in constructor is an empty string', async () => {
       const auth0 = setup({ max_age: '' });
 
@@ -473,6 +475,7 @@ describe('Auth0Client', () => {
         })
       );
     });
+
     it('calls `tokenVerifier.verify` with the parsed `max_age` string from constructor', async () => {
       const auth0 = setup({ max_age: '10' });
 
@@ -484,6 +487,7 @@ describe('Auth0Client', () => {
         })
       );
     });
+
     it('calls `tokenVerifier.verify` with the parsed `max_age` number from constructor', async () => {
       const auth0 = setup({ max_age: 10 });
 
@@ -574,6 +578,7 @@ describe('Auth0Client', () => {
         })
       );
     });
+
     it('should save refresh_token in local storage cache', async () => {
       const auth0 = setup({
         useRefreshTokens: true,
@@ -612,6 +617,7 @@ describe('Auth0Client', () => {
         }
       );
     });
+
     it('saves `auth0.is.authenticated` key in storage for an extended period', async () => {
       const auth0 = setup({
         sessionCheckExpiryDays: 2
@@ -649,8 +655,11 @@ describe('Auth0Client', () => {
   describe('loginWithRedirect', () => {
     it('should log the user in and get the token', async () => {
       const auth0 = setup();
+
       await loginWithRedirect(auth0);
+
       const url = new URL(mockWindow.location.assign.mock.calls[0][0]);
+
       assertUrlEquals(url, TEST_DOMAIN, '/authorize', {
         client_id: TEST_CLIENT_ID,
         redirect_uri: TEST_REDIRECT_URI,
@@ -662,6 +671,7 @@ describe('Auth0Client', () => {
         code_challenge: TEST_CODE_CHALLENGE,
         code_challenge_method: 'S256'
       });
+
       assertPost('https://auth0_domain/oauth/token', {
         redirect_uri: TEST_REDIRECT_URI,
         client_id: TEST_CLIENT_ID,
@@ -677,8 +687,11 @@ describe('Auth0Client', () => {
           defaultScope: 'email'
         }
       });
+
       await loginWithRedirect(auth0);
+
       const url = new URL(mockWindow.location.assign.mock.calls[0][0]);
+
       assertUrlEquals(url, TEST_DOMAIN, '/authorize', {
         scope: 'openid email'
       });
@@ -686,11 +699,15 @@ describe('Auth0Client', () => {
 
     it('should log the user in using different default redirect_uri', async () => {
       const redirect_uri = 'https://custom-redirect-uri/callback';
+
       const auth0 = setup({
         redirect_uri
       });
+
       await loginWithRedirect(auth0);
+
       const url = new URL(mockWindow.location.assign.mock.calls[0][0]);
+
       assertUrlEquals(url, TEST_DOMAIN, '/authorize', {
         redirect_uri
       });
@@ -698,13 +715,17 @@ describe('Auth0Client', () => {
 
     it('should log the user in when overriding default redirect_uri', async () => {
       const redirect_uri = 'https://custom-redirect-uri/callback';
+
       const auth0 = setup({
         redirect_uri
       });
+
       await loginWithRedirect(auth0, {
         redirect_uri: 'https://my-redirect-uri/callback'
       });
+
       const url = new URL(mockWindow.location.assign.mock.calls[0][0]);
+
       assertUrlEquals(url, TEST_DOMAIN, '/authorize', {
         redirect_uri: 'https://my-redirect-uri/callback'
       });
@@ -712,10 +733,13 @@ describe('Auth0Client', () => {
 
     it('should log the user in with custom params', async () => {
       const auth0 = setup();
+
       await loginWithRedirect(auth0, {
         audience: 'test_audience'
       });
+
       const url = new URL(mockWindow.location.assign.mock.calls[0][0]);
+
       assertUrlEquals(url, TEST_DOMAIN, '/authorize', {
         audience: 'test_audience'
       });
@@ -725,8 +749,11 @@ describe('Auth0Client', () => {
       const auth0 = setup({
         useRefreshTokens: true
       });
+
       await loginWithRedirect(auth0);
+
       const url = new URL(mockWindow.location.assign.mock.calls[0][0]);
+
       assertUrlEquals(url, TEST_DOMAIN, '/authorize', {
         scope: `${TEST_SCOPES} offline_access`
       });
@@ -754,6 +781,7 @@ describe('Auth0Client', () => {
           defaultScope: 'scope2'
         }
       });
+
       await loginWithRedirect(auth0, { scope: 'scope3' });
 
       const expectedUser = { sub: 'me' };
@@ -766,7 +794,9 @@ describe('Auth0Client', () => {
     it('should log the user in with custom auth0Client', async () => {
       const auth0Client = { name: '__test_client__', version: '0.0.0' };
       const auth0 = setup({ auth0Client });
+
       await loginWithRedirect(auth0);
+
       expectToHaveBeenCalledWithAuth0ClientParam(
         mockWindow.location.assign,
         auth0Client
@@ -814,6 +844,108 @@ describe('Auth0Client', () => {
         'HTTP error. Unable to fetch https://auth0_domain/oauth/token'
       );
     });
+
+    it('calls `tokenVerifier.verify` with the `id_token` from in the oauth/token response', async () => {
+      const auth0 = setup({
+        issuer: 'test-123.auth0.com'
+      });
+
+      await loginWithRedirect(auth0);
+      expect(tokenVerifier).toHaveBeenCalledWith(
+        expect.objectContaining({
+          iss: 'https://test-123.auth0.com/',
+          id_token: TEST_ID_TOKEN
+        })
+      );
+    });
+
+    it('calls `tokenVerifier.verify` with the global organization id', async () => {
+      const auth0 = setup({ organization: 'test_org_123' });
+
+      await loginWithRedirect(auth0);
+
+      expect(tokenVerifier).toHaveBeenCalledWith(
+        expect.objectContaining({
+          organizationId: 'test_org_123'
+        })
+      );
+    });
+
+    it('calls `tokenVerifier.verify` with the specific organization id', async () => {
+      const auth0 = setup({ organization: 'test_org_123' });
+
+      await loginWithRedirect(auth0, { organization: 'test_org_456' });
+
+      expect(tokenVerifier).toHaveBeenCalledWith(
+        expect.objectContaining({
+          organizationId: 'test_org_456'
+        })
+      );
+    });
+
+    it('saves into cache', async () => {
+      const auth0 = setup();
+
+      jest.spyOn(auth0['cache'], 'save');
+
+      await loginWithRedirect(auth0);
+
+      expect(auth0['cache']['save']).toHaveBeenCalledWith(
+        expect.objectContaining({
+          client_id: TEST_CLIENT_ID,
+          access_token: TEST_ACCESS_TOKEN,
+          expires_in: 86400,
+          audience: 'default',
+          id_token: TEST_ID_TOKEN,
+          scope: TEST_SCOPES
+        })
+      );
+    });
+
+    it('saves `auth0.is.authenticated` key in storage', async () => {
+      const auth0 = setup();
+
+      await loginWithRedirect(auth0);
+
+      expect(<jest.Mock>esCookie.set).toHaveBeenCalledWith(
+        '_legacy_auth0.is.authenticated',
+        'true',
+        {
+          expires: 1
+        }
+      );
+
+      expect(<jest.Mock>esCookie.set).toHaveBeenCalledWith(
+        'auth0.is.authenticated',
+        'true',
+        {
+          expires: 1
+        }
+      );
+    });
+
+    it('saves `auth0.is.authenticated` key in storage for an extended period', async () => {
+      const auth0 = setup({
+        sessionCheckExpiryDays: 2
+      });
+
+      await loginWithRedirect(auth0);
+
+      expect(<jest.Mock>esCookie.set).toHaveBeenCalledWith(
+        '_legacy_auth0.is.authenticated',
+        'true',
+        {
+          expires: 2
+        }
+      );
+      expect(<jest.Mock>esCookie.set).toHaveBeenCalledWith(
+        'auth0.is.authenticated',
+        'true',
+        {
+          expires: 2
+        }
+      );
+    });
   });
 
   describe('handleRedirectCallback', () => {
@@ -839,17 +971,214 @@ describe('Auth0Client', () => {
     it('should throw an error if the /authorize call redirects with an error param', async () => {
       const auth0 = setup();
       let error;
+      const appState = {
+        key: 'property'
+      };
       try {
-        await loginWithRedirect(auth0, undefined, {
-          authorize: {
-            error: 'some-error'
+        await loginWithRedirect(
+          auth0,
+          { appState },
+          {
+            authorize: {
+              state: 'error-state',
+              error: 'some-error',
+              errorDescription: 'some-error-description'
+            }
           }
-        });
+        );
       } catch (e) {
         error = e;
       }
       expect(error).toBeDefined();
       expect(error.error).toBe('some-error');
+      expect(error.error_description).toBe('some-error-description');
+      expect(error.state).toBe('error-state');
+      expect(error.appState).toBe(appState);
+    });
+
+    it('should clear the transaction data when the /authorize call redirects with a code param', async () => {
+      const auth0 = setup();
+
+      jest.spyOn(auth0['transactionManager'], 'remove');
+
+      await loginWithRedirect(auth0);
+
+      expect(auth0['transactionManager'].remove).toHaveBeenCalledWith();
+    });
+
+    it('should clear the transaction data when the /authorize call redirects with an error param', async () => {
+      const auth0 = setup();
+      let error;
+      jest.spyOn(auth0['transactionManager'], 'remove');
+
+      try {
+        await loginWithRedirect(
+          auth0,
+          {},
+          {
+            authorize: {
+              error: 'some-error'
+            }
+          }
+        );
+      } catch (e) {
+        error = e;
+      }
+
+      expect(error).toBeDefined();
+      expect(auth0['transactionManager'].remove).toHaveBeenCalledWith();
+    });
+
+    it('should throw an error if the /authorize call redirects with no params', async () => {
+      const auth0 = setup();
+      let error;
+      try {
+        await loginWithRedirect(
+          auth0,
+          {},
+          {
+            authorize: {
+              error: null,
+              state: null,
+              code: null
+            }
+          }
+        );
+      } catch (e) {
+        error = e;
+      }
+      expect(error).toBeDefined();
+      expect(error.message).toBe(
+        'There are no query params available for parsing.'
+      );
+    });
+
+    it('should throw an error if there is no transaction', async () => {
+      const auth0 = setup();
+      let error;
+      try {
+        await auth0.handleRedirectCallback('test?foo=bar');
+      } catch (e) {
+        error = e;
+      }
+      expect(error).toBeDefined();
+      expect(error.message).toBe('Invalid state');
+    });
+
+    it('returns the transactions appState', async () => {
+      const auth0 = setup();
+      const appState = {
+        key: 'property'
+      };
+      const result = await loginWithRedirect(auth0, { appState });
+      expect(result).toBeDefined();
+      expect(result.appState).toBe(appState);
+    });
+
+    describe('when there is a valid query string in a hash', () => {
+      it('should throw an error if the /authorize call redirects with an error param', async () => {
+        const auth0 = setup();
+        let error;
+        const appState = {
+          key: 'property'
+        };
+        try {
+          await loginWithRedirect(
+            auth0,
+            { appState },
+            {
+              authorize: {
+                state: 'error-state',
+                error: 'some-error',
+                errorDescription: 'some-error-description'
+              },
+              useHash: true
+            }
+          );
+        } catch (e) {
+          error = e;
+        }
+        expect(error).toBeDefined();
+        expect(error.error).toBe('some-error');
+        expect(error.error_description).toBe('some-error-description');
+        expect(error.state).toBe('error-state');
+        expect(error.appState).toBe(appState);
+      });
+
+      it('should clear the transaction data when the /authorize call redirects with a code param', async () => {
+        const auth0 = setup();
+
+        jest.spyOn(auth0['transactionManager'], 'remove');
+        await loginWithRedirect(
+          auth0,
+          {},
+          {
+            useHash: true
+          }
+        );
+
+        expect(auth0['transactionManager'].remove).toHaveBeenCalledWith();
+      });
+
+      it('should clear the transaction data when the /authorize call redirects with an error param', async () => {
+        const auth0 = setup();
+        let error;
+        jest.spyOn(auth0['transactionManager'], 'remove');
+
+        try {
+          await loginWithRedirect(
+            auth0,
+            {},
+            {
+              authorize: {
+                error: 'some-error'
+              },
+              useHash: true
+            }
+          );
+        } catch (e) {
+          error = e;
+        }
+
+        expect(error).toBeDefined();
+        expect(auth0['transactionManager'].remove).toHaveBeenCalledWith();
+      });
+
+      it('should throw an error if the /authorize call redirects with no params', async () => {
+        const auth0 = setup();
+        let error;
+        try {
+          await loginWithRedirect(
+            auth0,
+            {},
+            {
+              authorize: {
+                state: null,
+                code: null
+              },
+              useHash: true
+            }
+          );
+        } catch (e) {
+          error = e;
+        }
+        expect(error).toBeDefined();
+        expect(error.message).toBe(
+          'There are no query params available for parsing.'
+        );
+      });
+
+      it('should throw an error if there is no transaction', async () => {
+        const auth0 = setup();
+        let error;
+        try {
+          await auth0.handleRedirectCallback('#test?foo=bar');
+        } catch (e) {
+          error = e;
+        }
+        expect(error).toBeDefined();
+        expect(error.message).toBe('Invalid state');
+      });
     });
   });
 
