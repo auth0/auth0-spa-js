@@ -299,6 +299,29 @@ describe('Auth0Client', () => {
       });
     });
 
+    it('should log the user in with a popup and redirect when using refresh tokens', async () => {
+      const auth0 = setup({
+        useRefreshTokens: true
+      });
+      await loginWithPopup(auth0);
+      const [[url]] = (<jest.Mock>mockWindow.open).mock.calls;
+      assertUrlEquals(url, TEST_DOMAIN, '/authorize', {
+        scope: `${TEST_SCOPES} offline_access`
+      });
+    });
+
+    it('should log the user and redirect when using different default redirect_uri', async () => {
+      const redirect_uri = 'https://custom-redirect-uri/callback';
+      const auth0 = setup({
+        redirect_uri
+      });
+      await loginWithPopup(auth0);
+      const [[url]] = (<jest.Mock>mockWindow.open).mock.calls;
+      assertUrlEquals(url, TEST_DOMAIN, '/authorize', {
+        redirect_uri
+      });
+    });
+
     it('should log the user in with a popup and get the token', async () => {
       const auth0 = setup();
 
@@ -634,8 +657,11 @@ describe('Auth0Client', () => {
   describe('loginWithRedirect', () => {
     it('should log the user in and get the token', async () => {
       const auth0 = setup();
+
       await loginWithRedirect(auth0);
+
       const url = new URL(mockWindow.location.assign.mock.calls[0][0]);
+
       assertUrlEquals(url, TEST_DOMAIN, '/authorize', {
         client_id: TEST_CLIENT_ID,
         redirect_uri: TEST_REDIRECT_URI,
@@ -647,6 +673,7 @@ describe('Auth0Client', () => {
         code_challenge: TEST_CODE_CHALLENGE,
         code_challenge_method: 'S256'
       });
+
       assertPost('https://auth0_domain/oauth/token', {
         redirect_uri: TEST_REDIRECT_URI,
         client_id: TEST_CLIENT_ID,
@@ -656,60 +683,81 @@ describe('Auth0Client', () => {
       });
     });
 
-    it('should log the user in and get the token with a custom callback url', async () => {
-      const auth0 = setup();
-
-      await loginWithRedirect(
-        auth0,
-        {},
-        {
-          useHash: true,
-          customCallbackUrl: `https://test.auth0.com?code=${TEST_CODE}&state=${TEST_STATE}`
+    it('should log the user in using different default scope', async () => {
+      const auth0 = setup({
+        advancedOptions: {
+          defaultScope: 'email'
         }
-      );
+      });
+
+      await loginWithRedirect(auth0);
 
       const url = new URL(mockWindow.location.assign.mock.calls[0][0]);
+
       assertUrlEquals(url, TEST_DOMAIN, '/authorize', {
-        client_id: TEST_CLIENT_ID,
-        redirect_uri: TEST_REDIRECT_URI,
-        scope: TEST_SCOPES,
-        response_type: 'code',
-        response_mode: 'query',
-        state: TEST_STATE,
-        nonce: TEST_NONCE,
-        code_challenge: TEST_CODE_CHALLENGE,
-        code_challenge_method: 'S256'
-      });
-      assertPost('https://auth0_domain/oauth/token', {
-        redirect_uri: TEST_REDIRECT_URI,
-        client_id: TEST_CLIENT_ID,
-        code_verifier: TEST_CODE_VERIFIER,
-        grant_type: 'authorization_code',
-        code: TEST_CODE
+        scope: 'openid email'
       });
     });
 
-    it('should log the user in and get the token when using hash', async () => {
-      const auth0 = setup();
-      await loginWithRedirect(auth0, {}, { useHash: true });
-      const url = new URL(mockWindow.location.assign.mock.calls[0][0]);
-      assertUrlEquals(url, TEST_DOMAIN, '/authorize', {
-        client_id: TEST_CLIENT_ID,
-        redirect_uri: TEST_REDIRECT_URI,
-        scope: TEST_SCOPES,
-        response_type: 'code',
-        response_mode: 'query',
-        state: TEST_STATE,
-        nonce: TEST_NONCE,
-        code_challenge: TEST_CODE_CHALLENGE,
-        code_challenge_method: 'S256'
+    it('should log the user in using different default redirect_uri', async () => {
+      const redirect_uri = 'https://custom-redirect-uri/callback';
+
+      const auth0 = setup({
+        redirect_uri
       });
-      assertPost('https://auth0_domain/oauth/token', {
-        redirect_uri: TEST_REDIRECT_URI,
-        client_id: TEST_CLIENT_ID,
-        code_verifier: TEST_CODE_VERIFIER,
-        grant_type: 'authorization_code',
-        code: TEST_CODE
+
+      await loginWithRedirect(auth0);
+
+      const url = new URL(mockWindow.location.assign.mock.calls[0][0]);
+
+      assertUrlEquals(url, TEST_DOMAIN, '/authorize', {
+        redirect_uri
+      });
+    });
+
+    it('should log the user in when overriding default redirect_uri', async () => {
+      const redirect_uri = 'https://custom-redirect-uri/callback';
+
+      const auth0 = setup({
+        redirect_uri
+      });
+
+      await loginWithRedirect(auth0, {
+        redirect_uri: 'https://my-redirect-uri/callback'
+      });
+
+      const url = new URL(mockWindow.location.assign.mock.calls[0][0]);
+
+      assertUrlEquals(url, TEST_DOMAIN, '/authorize', {
+        redirect_uri: 'https://my-redirect-uri/callback'
+      });
+    });
+
+    it('should log the user in with custom params', async () => {
+      const auth0 = setup();
+
+      await loginWithRedirect(auth0, {
+        audience: 'test_audience'
+      });
+
+      const url = new URL(mockWindow.location.assign.mock.calls[0][0]);
+
+      assertUrlEquals(url, TEST_DOMAIN, '/authorize', {
+        audience: 'test_audience'
+      });
+    });
+
+    it('should log the user in using offline_access when using refresh tokens', async () => {
+      const auth0 = setup({
+        useRefreshTokens: true
+      });
+
+      await loginWithRedirect(auth0);
+
+      const url = new URL(mockWindow.location.assign.mock.calls[0][0]);
+
+      assertUrlEquals(url, TEST_DOMAIN, '/authorize', {
+        scope: `${TEST_SCOPES} offline_access`
       });
     });
 
@@ -735,6 +783,7 @@ describe('Auth0Client', () => {
           defaultScope: 'scope2'
         }
       });
+
       await loginWithRedirect(auth0, { scope: 'scope3' });
 
       const expectedUser = { sub: 'me' };
@@ -747,7 +796,9 @@ describe('Auth0Client', () => {
     it('should log the user in with custom auth0Client', async () => {
       const auth0Client = { name: '__test_client__', version: '0.0.0' };
       const auth0 = setup({ auth0Client });
+
       await loginWithRedirect(auth0);
+
       expectToHaveBeenCalledWithAuth0ClientParam(
         mockWindow.location.assign,
         auth0Client
