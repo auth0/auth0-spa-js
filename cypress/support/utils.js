@@ -18,7 +18,7 @@ module.exports.whenReady = () =>
  * @param {*} tolerance The tolerance value
  */
 module.exports.tolerance = (a, b, tolerance) => {
-  if (a > b - tolerance && a < b + tolerance) {
+  if (a >= b - tolerance && a <= b + tolerance) {
     return true;
   }
 };
