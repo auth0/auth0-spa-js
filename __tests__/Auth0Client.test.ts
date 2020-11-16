@@ -20,7 +20,8 @@ import {
   checkSessionFn,
   loginWithPopupFn,
   loginWithRedirectFn,
-  setupFn
+  setupFn,
+  setupMessageEventLister
 } from './Auth0Client.helpers';
 
 import {
@@ -39,6 +40,7 @@ import {
 } from './constants';
 
 import { DEFAULT_POPUP_CONFIG_OPTIONS } from '../src/constants';
+import { Auth0ClientOptions, PopupConfigOptions } from '../src';
 
 jest.mock('unfetch');
 jest.mock('es-cookie');
@@ -2052,6 +2054,98 @@ describe('Auth0Client', () => {
 
       const result = await auth0.isAuthenticated();
       expect(result).toBe(false);
+    });
+  });
+
+  describe('getTokenWithPopup()', () => {
+    const localSetup = async (clientOptions?: Partial<Auth0ClientOptions>) => {
+      const auth0 = setup(clientOptions);
+
+      setupMessageEventLister(mockWindow, { state: TEST_STATE });
+
+      mockFetch.mockResolvedValueOnce(
+        fetchResponse(true, {
+          id_token: TEST_ID_TOKEN,
+          refresh_token: TEST_REFRESH_TOKEN,
+          access_token: TEST_ACCESS_TOKEN,
+          expires_in: 86400
+        })
+      );
+
+      return auth0;
+    };
+
+    it('calls `loginWithPopup` with the correct default options', async () => {
+      const auth0 = await localSetup();
+      expect(await auth0.getTokenWithPopup()).toEqual(TEST_ACCESS_TOKEN);
+    });
+
+    it('respects customized scopes', async () => {
+      const auth0 = await localSetup({
+        advancedOptions: {
+          defaultScope: 'email'
+        },
+        scope: 'read:email'
+      });
+
+      const config = {
+        popup: {
+          location: {
+            href: ''
+          },
+          close: jest.fn()
+        }
+      };
+
+      expect(await auth0.getTokenWithPopup({}, config)).toEqual(
+        TEST_ACCESS_TOKEN
+      );
+
+      expect(config.popup.location.href).toMatch(
+        /openid%20email%20read%3Aemail/
+      );
+    });
+
+    it('passes custom login options', async () => {
+      const auth0 = await localSetup();
+
+      const loginOptions = {
+        audience: 'other-audience',
+        screen_hint: 'signup'
+      };
+
+      const config = {
+        popup: {
+          location: {
+            href: ''
+          },
+          close: jest.fn()
+        }
+      };
+
+      await auth0.getTokenWithPopup(loginOptions, config);
+
+      expect(config.popup.location.href).toMatch(/other-audience/);
+      expect(config.popup.location.href).toMatch(/screen_hint/);
+    });
+
+    it('can use the global audience', async () => {
+      const auth0 = await localSetup({
+        audience: 'global-audience'
+      });
+
+      const config = {
+        popup: {
+          location: {
+            href: ''
+          },
+          close: jest.fn()
+        }
+      };
+
+      await auth0.getTokenWithPopup({}, config);
+
+      expect(config.popup.location.href).toMatch(/global-audience/);
     });
   });
 

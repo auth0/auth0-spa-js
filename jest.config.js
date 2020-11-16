@@ -5,7 +5,8 @@ module.exports = {
   coveragePathIgnorePatterns: [
     '/node_modules/',
     './cypress',
-    './jest.config.js'
+    './jest.config.js',
+    './__tests__'
   ],
   reporters: [
     'default',
