@@ -32,9 +32,6 @@ import createAuth0Client, {
   GetTokenSilentlyOptions
 } from '../src/index';
 
-import { AuthenticationError } from '../src/errors';
-import { DEFAULT_POPUP_CONFIG_OPTIONS } from '../src/constants';
-
 import {
   GET_TOKEN_SILENTLY_LOCK_KEY,
   TEST_ACCESS_TOKEN,
@@ -47,7 +44,6 @@ import {
   TEST_DOMAIN,
   TEST_ENCODED_STATE,
   TEST_ID_TOKEN,
-  TEST_ORG_ID,
   TEST_QUERY_PARAMS,
   TEST_RANDOM_STRING,
   TEST_REFRESH_TOKEN,
@@ -906,49 +902,6 @@ describe('Auth0', () => {
           GET_TOKEN_SILENTLY_LOCK_KEY
         );
       });
-    });
-  });
-
-  describe('buildLogoutUrl()', () => {
-    it('creates correct query params with empty options', async () => {
-      const { auth0, utils } = await setup();
-
-      auth0.buildLogoutUrl();
-      expect(utils.createQueryParams).toHaveBeenCalledWith({
-        client_id: TEST_CLIENT_ID
-      });
-    });
-
-    it('creates correct query params with `options.client_id` is null', async () => {
-      const { auth0, utils } = await setup();
-
-      auth0.buildLogoutUrl({ client_id: null });
-      expect(utils.createQueryParams).toHaveBeenCalledWith({});
-    });
-
-    it('creates correct query params with `options.client_id` defined', async () => {
-      const { auth0, utils } = await setup();
-
-      auth0.buildLogoutUrl({ client_id: 'another-client-id' });
-      expect(utils.createQueryParams).toHaveBeenCalledWith({
-        client_id: 'another-client-id'
-      });
-    });
-
-    it('creates correct query params with `options.returnTo` defined', async () => {
-      const { auth0, utils } = await setup();
-
-      auth0.buildLogoutUrl({ returnTo: 'https://return.to', client_id: null });
-      expect(utils.createQueryParams).toHaveBeenCalledWith({
-        returnTo: 'https://return.to'
-      });
-    });
-
-    it('creates correct query params when `options.federated` is true', async () => {
-      const { auth0, utils } = await setup();
-
-      auth0.buildLogoutUrl({ federated: true, client_id: null });
-      expect(utils.createQueryParams).toHaveBeenCalledWith({});
     });
   });
 });
