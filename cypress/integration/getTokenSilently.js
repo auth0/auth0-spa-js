@@ -78,7 +78,7 @@ describe('getTokenSilently', function () {
       cy.getTokenSilently();
       cy.getAccessTokens().should('have.length', 2);
 
-      cy.wait('@tokenApiCheck').then(xhr => {
+      cy.wait('@tokenApiCheck').should(xhr => {
         assert.equal(
           xhr.request.body.grant_type,
           'refresh_token',
@@ -114,7 +114,7 @@ describe('getTokenSilently', function () {
       cy.getTokenSilently(1);
       cy.getAccessToken(1).should('have.length', 1);
 
-      cy.wait('@tokenApiCheck').then(xhr => {
+      cy.wait('@tokenApiCheck').should(xhr => {
         console.log(xhr);
         assert.equal(
           xhr.request.body.grant_type,
@@ -126,7 +126,7 @@ describe('getTokenSilently', function () {
       cy.getTokenSilently(1);
       cy.getAccessToken(1).should('have.length', 2);
 
-      cy.wait('@tokenApiCheck').then(xhr => {
+      cy.wait('@tokenApiCheck').should(xhr => {
         console.log(xhr);
         assert.equal(
           xhr.request.body.grant_type,
