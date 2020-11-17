@@ -112,7 +112,7 @@ describe('getTokenSilently', function () {
       });
 
       cy.getTokenSilently(1);
-      cy.getAccessToken(1).should('have.length', 1);
+      cy.getAccessTokens(1).should('have.length', 1);
 
       cy.wait('@tokenApiCheck').should(xhr => {
         console.log(xhr);
@@ -124,7 +124,7 @@ describe('getTokenSilently', function () {
       });
 
       cy.getTokenSilently(1);
-      cy.getAccessToken(1).should('have.length', 2);
+      cy.getAccessTokens(1).should('have.length', 2);
 
       cy.wait('@tokenApiCheck').should(xhr => {
         console.log(xhr);

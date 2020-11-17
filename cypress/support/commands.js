@@ -57,10 +57,8 @@ Cypress.Commands.add('getUser', () => cy.get('[data-cy=profile]'));
 
 Cypress.Commands.add('getError', () => cy.get(`[data-cy=error]`));
 
-Cypress.Commands.add('getAccessTokens', () => cy.get('[data-cy=access-token]'));
-
-Cypress.Commands.add('getAccessToken', index =>
-  cy.get(`[data-cy=access-token-${index}]`)
+Cypress.Commands.add('getAccessTokens', index =>
+  cy.get(index ? `[data-cy=access-token-${index}]` : '[data-cy=access-token]')
 );
 
 Cypress.Commands.add('getTokenSilently', index =>
