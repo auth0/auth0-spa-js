@@ -12,16 +12,15 @@ describe('loginWithRedirect', function () {
   beforeEach(cy.resetTests);
 
   it('Builds URL correctly', function () {
-    whenReady().then(win => {
-      return win.auth0.loginWithRedirect({
-        redirect_uri: 'http://localhost:3000/'
-      });
-    });
-    cy.wait(2000);
-    cy.url().then(url => {
+    whenReady();
+
+    cy.get('#login_redirect').click();
+
+    cy.url().should(url => {
       const parsedUrl = new URL(url);
-      shouldBe(parsedUrl.host, 'brucke.auth0.com');
       const pageParams = decode(parsedUrl.search.substr(1));
+
+      shouldBe(parsedUrl.host, 'brucke.auth0.com');
       shouldBeUndefined(pageParams.code_verifier);
       shouldNotBeUndefined(pageParams.code_challenge);
       shouldNotBeUndefined(pageParams.code_challenge_method);
@@ -37,26 +36,24 @@ describe('loginWithRedirect', function () {
   });
 
   it('Appends unique scopes to the default scopes', function () {
-    whenReady().then(win => {
-      return win.auth0.loginWithRedirect({
-        redirect_uri: 'http://localhost:3000/',
-        scope: 'openid profile email test test test2'
-      });
-    });
-    cy.wait(2000);
-    cy.url().then(url => {
-      const pageParams = decode(new URL(url).search.substr(1));
-      shouldBe(pageParams.scope, 'openid profile email test test2');
+    whenReady();
+
+    cy.setScope('openid profile email test test test2');
+    cy.get('#login_redirect').click();
+
+    cy.url().should(url => {
+      const { scope } = decode(new URL(url).search.substr(1));
+      shouldBe(scope, 'openid profile email test test2');
     });
   });
 
   it('can perform the login flow', () => {
-    whenReady().then(win => {
+    whenReady().then(() => {
       cy.loginNoCallback();
 
-      cy.url().then(url => shouldInclude(url, 'https://brucke.auth0.com'));
+      cy.url().should(url => shouldInclude(url, 'https://brucke.auth0.com'));
 
-      cy.get('#loaded').then(() => {
+      whenReady().then(win => {
         expect(win.sessionStorage.getItem('a0.spajs.txs')).to.exist;
 
         cy.handleRedirectCallback().then(() => {
@@ -67,28 +64,28 @@ describe('loginWithRedirect', function () {
   });
 
   it('can perform the login flow with cookie transactions', () => {
-    whenReady().then(win => {
-      cy.toggleSwitch('cookie-txns');
+    whenReady();
 
-      const tomorrowInSeconds = Math.floor(Date.now() / 1000) + 86400;
+    cy.toggleSwitch('cookie-txns');
 
-      cy.loginNoCallback();
+    const tomorrowInSeconds = Math.floor(Date.now() / 1000) + 86400;
 
-      cy.url().then(url => shouldInclude(url, 'https://brucke.auth0.com'));
+    cy.loginNoCallback();
 
-      cy.get('#loaded').then(() => {
-        cy.getCookie('a0.spajs.txs')
-          .should('exist')
-          .then(cookie => {
-            // Check that the cookie value is at least within a second of what we expect, to make
-            // the test a little less brittle.
-            expect(tolerance(cookie.expiry, tomorrowInSeconds, 1)).to.be.true;
-          });
+    cy.url().then(url => shouldInclude(url, 'https://brucke.auth0.com'));
 
-        cy.handleRedirectCallback().then(() => {
-          cy.getCookie('a0.spajs.txs').should('not.exist');
-        });
+    whenReady();
+
+    cy.getCookie('a0.spajs.txs')
+      .should('exist')
+      .should(cookie => {
+        // Check that the cookie value is at least within a second of what we expect, to make
+        // the test a little less brittle.
+        expect(tolerance(cookie.expiry, tomorrowInSeconds, 1)).to.be.true;
       });
+
+    cy.handleRedirectCallback().then(() => {
+      cy.getCookie('a0.spajs.txs').should('not.exist');
     });
   });
 });

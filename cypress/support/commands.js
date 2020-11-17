@@ -25,8 +25,10 @@ const login = () => {
 };
 
 const handleCallback = () => {
-  cy.get('#handle_redirect_callback').click();
-  return cy.get('[data-cy=profile]');
+  return cy
+    .get('[data-cy=handle-redirect-callback]')
+    .click()
+    .get('[data-cy=profile]');
 };
 
 Cypress.Commands.add('login', () => {
@@ -43,7 +45,31 @@ Cypress.Commands.add('toggleSwitch', name =>
   cy.get(`[data-cy=switch-${name}]`).click()
 );
 
-Cypress.Commands.add('loginNoCallback', () => login());
+Cypress.Commands.add('setScope', scope =>
+  cy.get(`[data-cy=scope]`).clear().type(scope)
+);
+
+Cypress.Commands.add('isAuthenticated', () =>
+  cy.get(`[data-cy=authenticated]`)
+);
+
+Cypress.Commands.add('getUser', () => cy.get('[data-cy=profile]'));
+
+Cypress.Commands.add('getError', () => cy.get(`[data-cy=error]`));
+
+Cypress.Commands.add('getAccessTokens', index =>
+  cy.get(index ? `[data-cy=access-token-${index}]` : '[data-cy=access-token]')
+);
+
+Cypress.Commands.add('getTokenSilently', index =>
+  cy.get(index ? `[data-cy=get-token-${index}]` : `[data-cy=get-token]`).click()
+);
+
+Cypress.Commands.add('loginNoCallback', () => {
+  login();
+
+  return whenReady();
+});
 
 Cypress.Commands.add('resetTests', () => {
   cy.server();
