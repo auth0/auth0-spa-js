@@ -1308,6 +1308,31 @@ describe('Auth0Client', () => {
       });
     });
 
+    it('calls the token endpoint with the correct timeout when using refresh tokens', async () => {
+      const auth0 = setup({
+        useRefreshTokens: true
+      });
+
+      jest.spyOn(<any>utils, 'oauthToken');
+      jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
+        access_token: TEST_ACCESS_TOKEN,
+        refresh_token: TEST_REFRESH_TOKEN,
+        state: TEST_STATE,
+        code: TEST_CODE
+      });
+
+      await getTokenSilently(auth0, {
+        timeoutInSeconds: 10
+      });
+
+      expect(utils.oauthToken).toHaveBeenCalledWith(
+        expect.objectContaining({
+          timeout: 10000
+        }),
+        expect.anything()
+      );
+    });
+
     it('refreshes the token when no cache available', async () => {
       const auth0 = setup();
 
