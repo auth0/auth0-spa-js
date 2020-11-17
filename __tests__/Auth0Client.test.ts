@@ -1330,6 +1330,29 @@ describe('Auth0Client', () => {
       });
     });
 
+    it('calls the token endpoint with the correct params when not providing any redirect uri and using refresh tokens', async () => {
+      const auth0 = setup({
+        useRefreshTokens: true,
+        redirect_uri: null
+      });
+
+      await loginWithRedirect(auth0);
+
+      mockFetch.mockReset();
+
+      await getTokenSilently(auth0, {
+        redirect_uri: null,
+        ignoreCache: true
+      });
+
+      assertPost('https://auth0_domain/oauth/token', {
+        redirect_uri: 'http://localhost',
+        client_id: TEST_CLIENT_ID,
+        grant_type: 'refresh_token',
+        refresh_token: TEST_REFRESH_TOKEN
+      });
+    });
+
     it('calls the token endpoint with the correct timeout when using refresh tokens', async () => {
       const auth0 = setup({
         useRefreshTokens: true
