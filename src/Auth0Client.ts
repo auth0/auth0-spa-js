@@ -418,7 +418,9 @@ export default class Auth0Client {
    *
    * @param options
    */
-  public async getUser(options: GetUserOptions = {}) {
+  public async getUser<TUser = any>(
+    options: GetUserOptions = {}
+  ): Promise<TUser> {
     const audience = options.audience || this.options.audience || 'default';
     const scope = getUniqueScopes(this.defaultScope, this.scope, options.scope);
 
