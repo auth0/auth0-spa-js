@@ -1291,14 +1291,13 @@ describe('Auth0Client', () => {
         useRefreshTokens: true
       });
 
-      jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
-        access_token: TEST_ACCESS_TOKEN,
-        refresh_token: TEST_REFRESH_TOKEN,
-        state: TEST_STATE,
-        code: TEST_CODE
-      });
+      await loginWithRedirect(auth0);
 
-      await getTokenSilently(auth0);
+      mockFetch.mockReset();
+
+      await getTokenSilently(auth0, {
+        ignoreCache: true
+      });
 
       assertPost('https://auth0_domain/oauth/token', {
         redirect_uri: TEST_REDIRECT_URI,
@@ -1314,15 +1313,13 @@ describe('Auth0Client', () => {
         useRefreshTokens: true
       });
 
-      jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
-        access_token: TEST_ACCESS_TOKEN,
-        refresh_token: TEST_REFRESH_TOKEN,
-        state: TEST_STATE,
-        code: TEST_CODE
-      });
+      await loginWithRedirect(auth0);
+
+      mockFetch.mockReset();
 
       await getTokenSilently(auth0, {
-        redirect_uri
+        redirect_uri,
+        ignoreCache: true
       });
 
       assertPost('https://auth0_domain/oauth/token', {
