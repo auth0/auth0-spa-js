@@ -183,6 +183,29 @@ const processDefaultLoginWithPopupOptions = config => {
   };
 };
 
+export const setupMessageEventLister = (
+  mockWindow: any,
+  response: any = {},
+  delay = 0
+) => {
+  mockWindow.addEventListener.mockImplementationOnce((type, cb) => {
+    if (type === 'message') {
+      setTimeout(() => {
+        cb({
+          data: {
+            type: 'authorization_response',
+            response
+          }
+        });
+      }, delay);
+    }
+  });
+
+  mockWindow.open.mockReturnValue({
+    close: () => {}
+  });
+};
+
 export const loginWithPopupFn = (mockWindow, mockFetch, fetchResponse) => {
   return async (
     auth0,
@@ -208,22 +231,9 @@ export const loginWithPopupFn = (mockWindow, mockFetch, fetchResponse) => {
       authorize: { response },
       delay
     } = processDefaultLoginWithPopupOptions(testConfig);
-    mockWindow.addEventListener.mockImplementationOnce((type, cb) => {
-      if (type === 'message') {
-        setTimeout(() => {
-          cb({
-            data: {
-              type: 'authorization_response',
-              response
-            }
-          });
-        }, delay);
-      }
-    });
 
-    mockWindow.open.mockReturnValue({
-      close: () => {}
-    });
+    setupMessageEventLister(mockWindow, response, delay);
+
     mockFetch.mockResolvedValueOnce(
       fetchResponse(
         token.success,
