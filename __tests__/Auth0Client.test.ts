@@ -1308,6 +1308,31 @@ describe('Auth0Client', () => {
       });
     });
 
+    it('calls the token endpoint with the correct params when passing redirect uri and using refresh tokens', async () => {
+      const redirect_uri = 'https://custom';
+      const auth0 = setup({
+        useRefreshTokens: true
+      });
+
+      jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
+        access_token: TEST_ACCESS_TOKEN,
+        refresh_token: TEST_REFRESH_TOKEN,
+        state: TEST_STATE,
+        code: TEST_CODE
+      });
+
+      await getTokenSilently(auth0, {
+        redirect_uri
+      });
+
+      assertPost('https://auth0_domain/oauth/token', {
+        redirect_uri,
+        client_id: TEST_CLIENT_ID,
+        grant_type: 'refresh_token',
+        refresh_token: TEST_REFRESH_TOKEN
+      });
+    });
+
     it('calls the token endpoint with the correct timeout when using refresh tokens', async () => {
       const auth0 = setup({
         useRefreshTokens: true
