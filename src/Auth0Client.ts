@@ -57,7 +57,7 @@ import {
 } from './global';
 
 // @ts-ignore
-import TokenWorker from './token.worker.ts';
+import TokenWorker from './worker/token.worker.ts';
 import { isIE11, isSafari10, isSafari11, isSafari12_0 } from './user-agent';
 
 /**
