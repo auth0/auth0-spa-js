@@ -53,7 +53,8 @@ import {
   RefreshTokenOptions,
   OAuthTokenOptions,
   CacheLocation,
-  LogoutUrlOptions
+  LogoutUrlOptions,
+  User
 } from './global';
 
 // @ts-ignore
@@ -419,7 +420,7 @@ export default class Auth0Client {
    * @typeparam TUser The User type to return. Defaults to `any` when omitted.
    * @param options
    */
-  public async getUser<TUser = any>(
+  public async getUser<TUser extends User = User>(
     options: GetUserOptions = {}
   ): Promise<TUser> {
     const audience = options.audience || this.options.audience || 'default';
@@ -431,7 +432,7 @@ export default class Auth0Client {
       scope
     });
 
-    return cache && cache.decodedToken && cache.decodedToken.user;
+    return cache && cache.decodedToken && (cache.decodedToken.user as TUser);
   }
 
   /**

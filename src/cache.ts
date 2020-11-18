@@ -1,4 +1,4 @@
-import { IdToken } from './global';
+import { IdToken, User } from './global';
 
 interface CacheKeyData {
   audience: string;
@@ -8,7 +8,7 @@ interface CacheKeyData {
 
 interface DecodedToken {
   claims: IdToken;
-  user: any;
+  user: User;
 }
 
 interface CacheEntry {
