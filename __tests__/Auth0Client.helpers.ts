@@ -1,6 +1,7 @@
 import {
   Auth0ClientOptions,
   AuthenticationResult,
+  GetTokenSilentlyOptions,
   IdToken,
   PopupConfigOptions,
   PopupLoginOptions,
@@ -262,5 +263,54 @@ export const checkSessionFn = (mockFetch, fetchResponse) => {
       })
     );
     await auth0.checkSession();
+  };
+};
+
+const processDefaultGetTokenSilentlyOptions = config => {
+  const defaultTokenResponseOptions = {
+    success: true,
+    response: {}
+  };
+  const token = {
+    ...defaultTokenResponseOptions,
+    ...(config.token || {})
+  };
+
+  return {
+    token
+  };
+};
+
+export const getTokenSilentlyFn = (mockWindow, mockFetch, fetchResponse) => {
+  return async (
+    auth0,
+    options: GetTokenSilentlyOptions = undefined,
+    testConfig: {
+      token?: {
+        success?: boolean;
+        response?: any;
+      };
+    } = {
+      token: {}
+    }
+  ) => {
+    const { token } = processDefaultGetTokenSilentlyOptions(testConfig);
+
+    mockFetch.mockResolvedValueOnce(
+      fetchResponse(
+        token.success,
+        Object.assign(
+          {
+            id_token: TEST_ID_TOKEN,
+            refresh_token: TEST_REFRESH_TOKEN,
+            access_token: TEST_ACCESS_TOKEN,
+            expires_in: 86400
+          },
+          token.response
+        )
+      )
+    );
+
+    return await auth0.getTokenSilently(options);
   };
 };
