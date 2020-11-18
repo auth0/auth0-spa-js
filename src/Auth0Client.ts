@@ -416,6 +416,7 @@ export default class Auth0Client {
    * Returns the user information if available (decoded
    * from the `id_token`).
    *
+   * @typeparam TUser The User type to return. Defaults to `any` when omitted.
    * @param options
    */
   public async getUser<TUser = any>(
