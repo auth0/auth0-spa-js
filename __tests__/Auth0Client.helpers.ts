@@ -25,6 +25,29 @@ const authorizationResponse: AuthenticationResult = {
   state: TEST_STATE
 };
 
+export const assertPostFn = mockFetch => {
+  return (url, body, callNum = 0) => {
+    const [actualUrl, opts] = mockFetch.mock.calls[callNum];
+    expect(url).toEqual(actualUrl);
+    expect(body).toEqual(JSON.parse(opts.body));
+  };
+};
+
+export const assertUrlEquals = (actualUrl, host, path, queryParams) => {
+  const url = new URL(actualUrl);
+  expect(url.host).toEqual(host);
+  expect(url.pathname).toEqual(path);
+  for (let [key, value] of Object.entries(queryParams)) {
+    expect(url.searchParams.get(key)).toEqual(value);
+  }
+};
+
+export const fetchResponse = (ok, json) =>
+  Promise.resolve({
+    ok,
+    json: () => Promise.resolve(json)
+  });
+
 export const setupFn = mockVerify => {
   return (config?: Partial<Auth0ClientOptions>, claims?: Partial<IdToken>) => {
     const auth0 = new Auth0Client(
@@ -80,7 +103,7 @@ const processDefaultLoginWithRedirectOptions = config => {
   };
 };
 
-export const loginWithRedirectFn = (mockWindow, mockFetch, fetchResponse) => {
+export const loginWithRedirectFn = (mockWindow, mockFetch) => {
   return async (
     auth0,
     options: RedirectLoginOptions = undefined,
@@ -206,7 +229,7 @@ export const setupMessageEventLister = (
   });
 };
 
-export const loginWithPopupFn = (mockWindow, mockFetch, fetchResponse) => {
+export const loginWithPopupFn = (mockWindow, mockFetch) => {
   return async (
     auth0,
     options: PopupLoginOptions = undefined,
@@ -252,7 +275,7 @@ export const loginWithPopupFn = (mockWindow, mockFetch, fetchResponse) => {
   };
 };
 
-export const checkSessionFn = (mockFetch, fetchResponse) => {
+export const checkSessionFn = mockFetch => {
   return async auth0 => {
     mockFetch.mockResolvedValueOnce(
       fetchResponse(true, {
@@ -281,7 +304,7 @@ const processDefaultGetTokenSilentlyOptions = config => {
   };
 };
 
-export const getTokenSilentlyFn = (mockWindow, mockFetch, fetchResponse) => {
+export const getTokenSilentlyFn = (mockWindow, mockFetch) => {
   return async (
     auth0,
     options: GetTokenSilentlyOptions = undefined,
