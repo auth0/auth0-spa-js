@@ -60,7 +60,7 @@ const wrapCacheEntry = (entry: CacheEntry): CachePayload => {
  *  - `prefix` is strict equal to Auth0's internally configured `keyPrefix`
  *  - `client_id` is strict equal to the `cacheKeyData.client_id`
  *  - `audience` is strict equal to the `cacheKeyData.audience`
- *  - `scope` contains at least all the `cacheKeyData.scope`
+ *  - `scope` contains at least all the `cacheKeyData.scope` values
  *  *
  * @param cacheKeyData The provided cacheKeyData
  * @param existingCacheKeys A list of existing cache keys
@@ -138,7 +138,7 @@ export class LocalStorageCache implements ICache {
 
   /**
    * Retrieves data from local storage and parses it into the correct format
-   * @param cacheKeyData The cache key Data
+   * @param cacheKeyData The cache key data
    */
   private readJson(cacheKeyData: CacheKeyData): CachePayload {
     const existingCacheKey = findExistingCacheKey(
