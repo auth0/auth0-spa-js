@@ -2725,4 +2725,56 @@ describe('Auth0Client', () => {
       expect(fn).toThrow();
     });
   });
+
+  describe('buildLogoutUrl', () => {
+    it('creates correct query params with empty options', async () => {
+      const auth0 = setup();
+
+      const url = auth0.buildLogoutUrl();
+
+      assertUrlEquals(url, TEST_DOMAIN, '/v2/logout', {
+        client_id: TEST_CLIENT_ID
+      });
+    });
+
+    it('creates correct query params with `options.client_id` is null', async () => {
+      const auth0 = setup();
+
+      const url = new URL(auth0.buildLogoutUrl({ client_id: null }));
+      expect(url.searchParams.get('client_id')).toBeNull();
+    });
+
+    it('creates correct query params with `options.client_id` defined', async () => {
+      const auth0 = setup();
+
+      const url = auth0.buildLogoutUrl({ client_id: 'another-client-id' });
+
+      assertUrlEquals(url, TEST_DOMAIN, '/v2/logout', {
+        client_id: 'another-client-id'
+      });
+    });
+
+    it('creates correct query params with `options.returnTo` defined', async () => {
+      const auth0 = setup();
+
+      const url = auth0.buildLogoutUrl({
+        returnTo: 'https://return.to',
+        client_id: null
+      });
+
+      assertUrlEquals(url, TEST_DOMAIN, '/v2/logout', {
+        returnTo: 'https://return.to'
+      });
+    });
+
+    it('creates correct query params when `options.federated` is true', async () => {
+      const auth0 = setup();
+
+      const url = auth0.buildLogoutUrl({ federated: true, client_id: null });
+
+      assertUrlEquals(url, TEST_DOMAIN, '/v2/logout', {
+        federated: ''
+      });
+    });
+  });
 });
