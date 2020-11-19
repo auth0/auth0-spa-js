@@ -53,6 +53,48 @@ const wrapCacheEntry = (entry: CacheEntry): CachePayload => {
   };
 };
 
+/**
+ * Finds the corresponding key in the cache based on the provided key data.
+ * The keys inside the cache are in the format {prefix}::{client_id}::{audience}::{scope}.
+ * The first key in the cache that satisfies the following conditions is returned
+ *  - `prefix` is strict equal to Auth0's internally configured `keyPrefix`
+ *  - `client_id` is strict equal to the `cacheKeyData.client_id`
+ *  - `audience` is strict equal to the `cacheKeyData.audience`
+ *  - `scope` contains at least all the `cacheKeyData.scope`
+ *  *
+ * @param cacheKeyData The provided cacheKeyData
+ * @param existingCacheKeys A list of existing cache keys
+ */
+const findExistingCacheKey = (
+  cacheKeyData: CacheKeyData,
+  existingCacheKeys: Array<string>
+) => {
+  const { client_id, audience, scope } = cacheKeyData;
+  return existingCacheKeys.find(key => {
+    const [
+      currentPrefix,
+      currentClientId,
+      currentAudience,
+      currentScopes
+    ] = key.split('::');
+    const currentScopesArr = currentScopes && currentScopes.split(' ');
+    const hasAllScopes =
+      currentScopes &&
+      scope
+        .split(' ')
+        .reduce(
+          (acc, current) => acc && currentScopesArr.includes(current),
+          true
+        );
+    return (
+      currentPrefix === keyPrefix &&
+      currentClientId === client_id &&
+      currentAudience === audience &&
+      hasAllScopes
+    );
+  });
+};
+
 export class LocalStorageCache implements ICache {
   public save(entry: CacheEntry): void {
     const cacheKey = createKey(entry);
@@ -66,7 +108,7 @@ export class LocalStorageCache implements ICache {
     expiryAdjustmentSeconds = DEFAULT_EXPIRY_ADJUSTMENT_SECONDS
   ): Partial<CacheEntry> {
     const cacheKey = createKey(key);
-    const payload = this.readJson(cacheKey);
+    const payload = this.readJson(key);
     const nowSeconds = Math.floor(Date.now() / 1000);
 
     if (!payload) return;
@@ -96,10 +138,16 @@ export class LocalStorageCache implements ICache {
 
   /**
    * Retrieves data from local storage and parses it into the correct format
-   * @param cacheKey The cache key
+   * @param cacheKeyData The cache key Data
    */
-  private readJson(cacheKey: string): CachePayload {
-    const json = window.localStorage.getItem(cacheKey);
+  private readJson(cacheKeyData: CacheKeyData): CachePayload {
+    const existingCacheKey = findExistingCacheKey(
+      cacheKeyData,
+      Object.keys(window.localStorage)
+    );
+    const json =
+      existingCacheKey && window.localStorage.getItem(existingCacheKey);
+
     let payload;
 
     if (!json) {
@@ -160,7 +208,8 @@ export class InMemoryCache {
         expiryAdjustmentSeconds = DEFAULT_EXPIRY_ADJUSTMENT_SECONDS
       ) {
         const cacheKey = createKey(key);
-        const wrappedEntry: CachePayload = cache[cacheKey];
+        const existingCacheKey = findExistingCacheKey(key, Object.keys(cache));
+        const wrappedEntry: CachePayload = cache[existingCacheKey];
         const nowSeconds = Math.floor(Date.now() / 1000);
 
         if (!wrappedEntry) {

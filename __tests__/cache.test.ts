@@ -75,6 +75,93 @@ describe('InMemoryCache', () => {
     ).toStrictEqual(data);
   });
 
+  it('retrieves values from the cache when scopes do not match', () => {
+    const data = {
+      client_id: 'test-client',
+      audience: 'the_audience',
+      scope: 'the_scope the_scope2',
+      id_token: 'idtoken',
+      access_token: 'accesstoken',
+      expires_in: dayInSeconds,
+      decodedToken: {
+        claims: {
+          __raw: 'idtoken',
+          exp: nowSeconds() + dayInSeconds,
+          name: 'Test'
+        },
+        user: { name: 'Test' }
+      }
+    };
+
+    cache.save(data);
+
+    expect(
+      cache.get({
+        client_id: 'test-client',
+        audience: 'the_audience',
+        scope: 'the_scope'
+      })
+    ).toStrictEqual(data);
+  });
+
+  it('retrieves values from the cache when scopes do not match and multiple scopes are provided in a different order', () => {
+    const data = {
+      client_id: 'test-client',
+      audience: 'the_audience',
+      scope: 'the_scope the_scope2 the_scope3',
+      id_token: 'idtoken',
+      access_token: 'accesstoken',
+      expires_in: dayInSeconds,
+      decodedToken: {
+        claims: {
+          __raw: 'idtoken',
+          exp: nowSeconds() + dayInSeconds,
+          name: 'Test'
+        },
+        user: { name: 'Test' }
+      }
+    };
+
+    cache.save(data);
+
+    expect(
+      cache.get({
+        client_id: 'test-client',
+        audience: 'the_audience',
+        scope: 'the_scope3 the_scope'
+      })
+    ).toStrictEqual(data);
+  });
+
+  it('returns undefined when not all scopes match', () => {
+    const data = {
+      client_id: 'test-client',
+      audience: 'the_audience',
+      scope: 'the_scope the_scope2 the_scope3',
+      id_token: 'idtoken',
+      access_token: 'accesstoken',
+      expires_in: dayInSeconds,
+      decodedToken: {
+        claims: {
+          __raw: 'idtoken',
+          exp: nowSeconds() + dayInSeconds,
+          name: 'Test'
+        },
+        user: { name: 'Test' }
+      }
+    };
+
+    cache.save(data);
+
+    expect(
+      cache.get({
+        client_id: 'test-client',
+        audience: 'the_audience',
+        scope: 'the_scope4 the_scope'
+      })
+    ).toBeUndefined();
+  });
+
   it('returns undefined from the cache when expires_in < expiryAdjustmentSeconds', () => {
     const data = {
       client_id: 'test-client',
@@ -298,6 +385,60 @@ describe('LocalStorageCache', () => {
           scope: '__TEST_SCOPE__'
         })
       ).toStrictEqual(defaultEntry);
+    });
+
+    it('can retrieve an item from the cache when scopes do not match', () => {
+      localStorage.setItem(
+        '@@auth0spajs@@::__TEST_CLIENT_ID__::__TEST_AUDIENCE__::__TEST_SCOPE__ __TEST_SCOPE2__',
+        JSON.stringify({
+          body: defaultEntry,
+          expiresAt: nowSeconds() + dayInSeconds
+        })
+      );
+
+      expect(
+        cache.get({
+          client_id: '__TEST_CLIENT_ID__',
+          audience: '__TEST_AUDIENCE__',
+          scope: '__TEST_SCOPE__'
+        })
+      ).toStrictEqual(defaultEntry);
+    });
+
+    it('can retrieve an item from the cache when scopes do not match and multiple scopes are provided in a different order', () => {
+      localStorage.setItem(
+        '@@auth0spajs@@::__TEST_CLIENT_ID__::__TEST_AUDIENCE__::__TEST_SCOPE__ __TEST_SCOPE2__ __TEST_SCOPE3__',
+        JSON.stringify({
+          body: defaultEntry,
+          expiresAt: nowSeconds() + dayInSeconds
+        })
+      );
+
+      expect(
+        cache.get({
+          client_id: '__TEST_CLIENT_ID__',
+          audience: '__TEST_AUDIENCE__',
+          scope: '__TEST_SCOPE3__ __TEST_SCOPE__'
+        })
+      ).toStrictEqual(defaultEntry);
+    });
+
+    it('returns undefined when not all scopes match', () => {
+      localStorage.setItem(
+        '@@auth0spajs@@::__TEST_CLIENT_ID__::__TEST_AUDIENCE__::__TEST_SCOPE__ __TEST_SCOPE2__ __TEST_SCOPE3__',
+        JSON.stringify({
+          body: defaultEntry,
+          expiresAt: nowSeconds() + dayInSeconds
+        })
+      );
+
+      expect(
+        cache.get({
+          client_id: '__TEST_CLIENT_ID__',
+          audience: '__TEST_AUDIENCE__',
+          scope: '__TEST_SCOPE4__ __TEST_SCOPE__'
+        })
+      ).toBeUndefined();
     });
 
     it('returns undefined when expires_in < expiryAdjustmentSeconds', () => {
