@@ -4,7 +4,6 @@ const excludeFiles = [
   'storage',
   'transaction-manager',
   'utils',
-  'token.worker',
   'user-agent'
 ];
 
@@ -17,6 +16,7 @@ module.exports = {
     '**/cypress/**/*',
     '**/node_modules/**/*',
     '**/__mocks__/**/*',
+    'src/worker/**/*',
     ...excludeFiles.map(f => `./src/${f}.ts`)
   ],
   mode: 'file',
