@@ -616,6 +616,14 @@ export default class Auth0Client {
     };
 
     const { scope, audience } = getTokenOptions;
+    /**
+     * Function used to match two promises
+     * This should be the same matcher as used to retrieve items from the cache
+     * once https://github.com/auth0/auth0-spa-js/pull/652 is merged.
+     * So we might wsant to refactor it to a helper and use it in both places
+     * @param p
+     * @param b
+     */
     const matcher = (p, b) => {
       return p.scope === b.scope && p.audience === b.audience;
     };
