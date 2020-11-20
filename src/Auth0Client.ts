@@ -126,29 +126,11 @@ const getCustomInitialOptions = (
   return customParams;
 };
 
-class Auth0ClientPromise {
-  static promises = [];
-  static getPromise(scope, audience) {
-    const entry = Auth0ClientPromise.promises.find(
-      p => p.scope === scope && p.audience === audience
-    );
-    return entry && entry.p;
-  }
+/**
+ * @ignore
+ */
+let getTokenSilentlyPromises = [];
 
-  static clearPromise(scope, audience) {
-    Auth0ClientPromise.promises = Auth0ClientPromise.promises.filter(
-      p => p.scope !== scope && p.audience !== audience
-    );
-  }
-
-  static setPromise(scope, audience, p) {
-    Auth0ClientPromise.promises.push({
-      scope,
-      audience,
-      p
-    });
-  }
-}
 /**
  * Auth0 SDK for Single Page Applications using [Authorization Code Grant Flow with PKCE](https://auth0.com/docs/api-auth/tutorials/authorization-code-grant-pkce).
  */
@@ -633,6 +615,33 @@ export default class Auth0Client {
       scope: getUniqueScopes(this.defaultScope, this.scope, options.scope)
     };
 
+    const { scope, audience } = getTokenOptions;
+    const matcher = (p, b) => {
+      return p.scope === b.scope && p.audience === b.audience;
+    };
+    let promise = getTokenSilentlyPromises.find(p =>
+      matcher(p, getTokenOptions)
+    );
+    if (!promise) {
+      promise = this._getTokenSilently({
+        ignoreCache,
+        getTokenOptions
+      }).finally(() => {
+        getTokenSilentlyPromises = getTokenSilentlyPromises.filter(
+          p => !matcher(p, getTokenOptions)
+        );
+        promise = null;
+      });
+      getTokenSilentlyPromises.push({
+        scope,
+        audience,
+        promise
+      });
+    }
+    return promise;
+  }
+
+  private async _getTokenSilently({ ignoreCache, getTokenOptions }) {
     const getAccessTokenFromCache = () => {
       const cache = this.cache.get(
         {
@@ -655,41 +664,6 @@ export default class Auth0Client {
       }
     }
 
-    let promise = Auth0ClientPromise.getPromise(
-      getTokenOptions.scope,
-      getTokenOptions.audience
-    );
-
-    if (!promise) {
-      console.log('Calling API');
-      promise = this._getTokenSilently({
-        ignoreCache,
-        getTokenOptions,
-        getAccessTokenFromCache
-      }).finally(() => {
-        Auth0ClientPromise.clearPromise(
-          getTokenOptions.scope,
-          getTokenOptions.audience
-        );
-        promise = null;
-      });
-      Auth0ClientPromise.setPromise(
-        getTokenOptions.scope,
-        getTokenOptions.audience,
-        promise
-      );
-    } else {
-      console.log('Promise already exists');
-    }
-
-    return await promise;
-  }
-
-  private async _getTokenSilently({
-    ignoreCache,
-    getTokenOptions,
-    getAccessTokenFromCache
-  }) {
     try {
       await lock.acquireLock(GET_TOKEN_SILENTLY_LOCK_KEY, 1000);
       // Check the cache a second time, because it may have been populated
