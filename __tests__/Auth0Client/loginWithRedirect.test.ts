@@ -1,15 +1,15 @@
 import 'fast-text-encoding';
 import * as esCookie from 'es-cookie';
 import unfetch from 'unfetch';
-import { verify } from '../src/jwt';
+import { verify } from '../../src/jwt';
 import { MessageChannel } from 'worker_threads';
-import * as utils from '../src/utils';
-import * as scope from '../src/scope';
+import * as utils from '../../src/utils';
+import * as scope from '../../src/scope';
 
 import {
   expectToHaveBeenCalledWithAuth0ClientParam,
   expectToHaveBeenCalledWithHash
-} from './helpers';
+} from '../helpers';
 
 // @ts-ignore
 
@@ -18,7 +18,7 @@ import {
   assertUrlEquals,
   loginWithRedirectFn,
   setupFn
-} from './Auth0Client.helpers';
+} from './helpers';
 
 import {
   TEST_ACCESS_TOKEN,
@@ -32,7 +32,7 @@ import {
   TEST_REDIRECT_URI,
   TEST_SCOPES,
   TEST_STATE
-} from './constants';
+} from '../constants';
 
 jest.mock('unfetch');
 jest.mock('es-cookie');
@@ -43,7 +43,7 @@ const mockWindow = <any>global;
 const mockFetch = (mockWindow.fetch = <jest.Mock>unfetch);
 const mockVerify = <jest.Mock>verify;
 const mockCookies = require('es-cookie');
-const tokenVerifier = require('../src/jwt').verify;
+const tokenVerifier = require('../../src/jwt').verify;
 
 jest
   .spyOn(utils, 'bufferToBase64UrlEncoded')

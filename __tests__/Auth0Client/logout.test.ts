@@ -1,20 +1,20 @@
 import 'fast-text-encoding';
 import * as esCookie from 'es-cookie';
 import unfetch from 'unfetch';
-import { verify } from '../src/jwt';
+import { verify } from '../../src/jwt';
 import { MessageChannel } from 'worker_threads';
-import * as utils from '../src/utils';
-import * as scope from '../src/scope';
+import * as utils from '../../src/utils';
+import * as scope from '../../src/scope';
 
-import { expectToHaveBeenCalledWithAuth0ClientParam } from './helpers';
+import { expectToHaveBeenCalledWithAuth0ClientParam } from '../helpers';
 
-import { TEST_AUTH0_CLIENT_QUERY_STRING } from './constants';
+import { TEST_AUTH0_CLIENT_QUERY_STRING } from '../constants';
 
 // @ts-ignore
 
-import { setupFn } from './Auth0Client.helpers';
+import { setupFn } from './helpers';
 
-import { TEST_CLIENT_ID, TEST_CODE_CHALLENGE, TEST_DOMAIN } from './constants';
+import { TEST_CLIENT_ID, TEST_CODE_CHALLENGE, TEST_DOMAIN } from '../constants';
 
 jest.mock('unfetch');
 jest.mock('es-cookie');

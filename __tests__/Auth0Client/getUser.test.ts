@@ -1,15 +1,15 @@
 import 'fast-text-encoding';
 import unfetch from 'unfetch';
-import { verify } from '../src/jwt';
+import { verify } from '../../src/jwt';
 import { MessageChannel } from 'worker_threads';
-import * as utils from '../src/utils';
-import * as scope from '../src/scope';
+import * as utils from '../../src/utils';
+import * as scope from '../../src/scope';
 
 // @ts-ignore
 
-import { setupFn } from './Auth0Client.helpers';
+import { setupFn } from './helpers';
 
-import { TEST_CODE_CHALLENGE } from './constants';
+import { TEST_CODE_CHALLENGE } from '../constants';
 
 jest.mock('unfetch');
 jest.mock('es-cookie');

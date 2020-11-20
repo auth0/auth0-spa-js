@@ -1,14 +1,14 @@
 import 'fast-text-encoding';
 import * as esCookie from 'es-cookie';
 import unfetch from 'unfetch';
-import { verify } from '../src/jwt';
+import { verify } from '../../src/jwt';
 import { MessageChannel } from 'worker_threads';
-import * as utils from '../src/utils';
-import * as scope from '../src/scope';
+import * as utils from '../../src/utils';
+import * as scope from '../../src/scope';
 
-import { expectToHaveBeenCalledWithAuth0ClientParam } from './helpers';
+import { expectToHaveBeenCalledWithAuth0ClientParam } from '../helpers';
 
-import { GET_TOKEN_SILENTLY_LOCK_KEY } from './constants';
+import { GET_TOKEN_SILENTLY_LOCK_KEY } from '../constants';
 
 // @ts-ignore
 import { acquireLockSpy } from 'browser-tabs-lock';
@@ -20,7 +20,7 @@ import {
   getTokenSilentlyFn,
   loginWithRedirectFn,
   setupFn
-} from './Auth0Client.helpers';
+} from './helpers';
 
 import {
   TEST_ACCESS_TOKEN,
@@ -35,9 +35,9 @@ import {
   TEST_REFRESH_TOKEN,
   TEST_SCOPES,
   TEST_STATE
-} from './constants';
+} from '../constants';
 
-import { releaseLockSpy } from '../__mocks__/browser-tabs-lock';
+import { releaseLockSpy } from '../../__mocks__/browser-tabs-lock';
 
 jest.mock('unfetch');
 jest.mock('es-cookie');
@@ -47,7 +47,7 @@ jest.mock('../src/token.worker');
 const mockWindow = <any>global;
 const mockFetch = (mockWindow.fetch = <jest.Mock>unfetch);
 const mockVerify = <jest.Mock>verify;
-const tokenVerifier = require('../src/jwt').verify;
+const tokenVerifier = require('../../src/jwt').verify;
 
 jest
   .spyOn(utils, 'bufferToBase64UrlEncoded')
@@ -647,7 +647,7 @@ describe('Auth0Client', () => {
     });
 
     it('handles timeout errors from the worker', async () => {
-      const constants = require('../src/constants');
+      const constants = require('../../src/constants');
       const originalDefaultFetchTimeoutMs = constants.DEFAULT_FETCH_TIMEOUT_MS;
       Object.defineProperty(constants, 'DEFAULT_FETCH_TIMEOUT_MS', {
         get: () => 100
@@ -753,7 +753,7 @@ describe('Auth0Client', () => {
     });
 
     it('handles timeout errors without the worker', async () => {
-      const constants = require('../src/constants');
+      const constants = require('../../src/constants');
       const originalDefaultFetchTimeoutMs = constants.DEFAULT_FETCH_TIMEOUT_MS;
       Object.defineProperty(constants, 'DEFAULT_FETCH_TIMEOUT_MS', {
         get: () => 100

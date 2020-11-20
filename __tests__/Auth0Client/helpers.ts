@@ -6,9 +6,9 @@ import {
   PopupConfigOptions,
   PopupLoginOptions,
   RedirectLoginOptions
-} from '../src';
+} from '../../src';
 
-import Auth0Client from '../src/Auth0Client';
+import Auth0Client from '../../src/Auth0Client';
 import {
   TEST_ACCESS_TOKEN,
   TEST_CLIENT_ID,
@@ -18,7 +18,7 @@ import {
   TEST_REDIRECT_URI,
   TEST_REFRESH_TOKEN,
   TEST_STATE
-} from './constants';
+} from '../constants';
 
 const authorizationResponse: AuthenticationResult = {
   code: 'my_code',

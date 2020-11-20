@@ -1,17 +1,13 @@
 import 'fast-text-encoding';
 import unfetch from 'unfetch';
-import { verify } from '../src/jwt';
+import { verify } from '../../src/jwt';
 import { MessageChannel } from 'worker_threads';
-import * as utils from '../src/utils';
-import * as scope from '../src/scope';
+import * as utils from '../../src/utils';
+import * as scope from '../../src/scope';
 
 // @ts-ignore
 
-import {
-  fetchResponse,
-  setupFn,
-  setupMessageEventLister
-} from './Auth0Client.helpers';
+import { fetchResponse, setupFn, setupMessageEventLister } from './helpers';
 
 import {
   TEST_ACCESS_TOKEN,
@@ -19,9 +15,9 @@ import {
   TEST_ID_TOKEN,
   TEST_REFRESH_TOKEN,
   TEST_STATE
-} from './constants';
+} from '../constants';
 
-import { Auth0ClientOptions } from '../src';
+import { Auth0ClientOptions } from '../../src';
 
 jest.mock('unfetch');
 jest.mock('es-cookie');
