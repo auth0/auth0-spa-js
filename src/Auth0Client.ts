@@ -94,10 +94,11 @@ const supportWebWorker = () =>
 /**
  * @ignore
  */
-const getTokenIssuer = (issuer, domainUrl) => {
+const getTokenIssuer = (issuer: string, domainUrl: string) => {
   if (issuer) {
     return issuer.startsWith('https://') ? issuer : `https://${issuer}/`;
   }
+
   return `${domainUrl}/`;
 };
 
