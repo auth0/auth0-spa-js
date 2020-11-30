@@ -661,11 +661,8 @@ export default class Auth0Client {
           });
 
           return authResult.access_token;
-        } catch (e) {
-          throw e;
         } finally {
           await lock.releaseLock(GET_TOKEN_SILENTLY_LOCK_KEY);
-          break;
         }
       }
     }
@@ -796,8 +793,8 @@ export default class Auth0Client {
       nonceIn,
       code_challenge,
       options.redirect_uri ||
-      this.options.redirect_uri ||
-      window.location.origin
+        this.options.redirect_uri ||
+        window.location.origin
     );
 
     const url = this._authorizeUrl({
