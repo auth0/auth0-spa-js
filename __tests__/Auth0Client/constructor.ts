@@ -13,8 +13,8 @@ import { TEST_CLIENT_ID, TEST_CODE_CHALLENGE, TEST_DOMAIN } from '../constants';
 
 jest.mock('unfetch');
 jest.mock('es-cookie');
-jest.mock('../src/jwt');
-jest.mock('../src/token.worker');
+jest.mock('../../src/jwt');
+jest.mock('../../src/token.worker');
 
 const mockWindow = <any>global;
 const mockFetch = (mockWindow.fetch = <jest.Mock>unfetch);

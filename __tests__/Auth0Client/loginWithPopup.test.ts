@@ -33,8 +33,8 @@ import { DEFAULT_POPUP_CONFIG_OPTIONS } from '../../src/constants';
 
 jest.mock('unfetch');
 jest.mock('es-cookie');
-jest.mock('../src/jwt');
-jest.mock('../src/token.worker');
+jest.mock('../../src/jwt');
+jest.mock('../../src/token.worker');
 
 const mockWindow = <any>global;
 const mockFetch = (mockWindow.fetch = <jest.Mock>unfetch);
