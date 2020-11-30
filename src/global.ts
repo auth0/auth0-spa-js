@@ -469,9 +469,6 @@ export interface IdToken {
   [key: string]: any;
 }
 
-/**
- * @ignore
- */
 export class User {
   name?: string;
   given_name?: string;

@@ -417,7 +417,7 @@ export default class Auth0Client {
    * Returns the user information if available (decoded
    * from the `id_token`).
    *
-   * @typeparam TUser The User type to return. Defaults to `User` when omitted.
+   * @typeparam TUser The type to return, has to extend {@link User}. Defaults to {@link User} when omitted.
    * @param options
    */
   public async getUser<TUser extends User = User>(
