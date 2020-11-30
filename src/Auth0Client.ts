@@ -638,32 +638,36 @@ export default class Auth0Client {
       }
     }
 
-    try {
-      await lock.acquireLock(GET_TOKEN_SILENTLY_LOCK_KEY, 5000);
-      // Check the cache a second time, because it may have been populated
-      // by a previous call while this call was waiting to acquire the lock.
-      if (!ignoreCache) {
-        let accessToken = getAccessTokenFromCache();
-        if (accessToken) {
-          return accessToken;
+    while (true) {
+      if (await lock.acquireLock(GET_TOKEN_SILENTLY_LOCK_KEY, 5000)) {
+        try {
+          // Check the cache a second time, because it may have been populated
+          // by a previous call while this call was waiting to acquire the lock.
+          if (!ignoreCache) {
+            let accessToken = getAccessTokenFromCache();
+            if (accessToken) {
+              return accessToken;
+            }
+          }
+
+          const authResult = this.options.useRefreshTokens
+            ? await this._getTokenUsingRefreshToken(getTokenOptions)
+            : await this._getTokenFromIFrame(getTokenOptions);
+
+          this.cache.save({ client_id: this.options.client_id, ...authResult });
+
+          this.cookieStorage.save('auth0.is.authenticated', true, {
+            daysUntilExpire: this.sessionCheckExpiryDays
+          });
+
+          return authResult.access_token;
+        } catch (e) {
+          throw e;
+        } finally {
+          await lock.releaseLock(GET_TOKEN_SILENTLY_LOCK_KEY);
+          break;
         }
       }
-
-      const authResult = this.options.useRefreshTokens
-        ? await this._getTokenUsingRefreshToken(getTokenOptions)
-        : await this._getTokenFromIFrame(getTokenOptions);
-
-      this.cache.save({ client_id: this.options.client_id, ...authResult });
-
-      this.cookieStorage.save('auth0.is.authenticated', true, {
-        daysUntilExpire: this.sessionCheckExpiryDays
-      });
-
-      return authResult.access_token;
-    } catch (e) {
-      throw e;
-    } finally {
-      await lock.releaseLock(GET_TOKEN_SILENTLY_LOCK_KEY);
     }
   }
 
@@ -792,8 +796,8 @@ export default class Auth0Client {
       nonceIn,
       code_challenge,
       options.redirect_uri ||
-        this.options.redirect_uri ||
-        window.location.origin
+      this.options.redirect_uri ||
+      window.location.origin
     );
 
     const url = this._authorizeUrl({
