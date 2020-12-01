@@ -275,12 +275,10 @@ describe('utils', () => {
           res({ ok: true, json: () => new Promise(ress => ress(true)) })
         )
       );
-      const auth0Client = btoa(
-        JSON.stringify({
-          name: 'auth0-spa-js',
-          version: version
-        })
-      );
+      const auth0Client = {
+        name: 'auth0-spa-js',
+        version: version
+      };
 
       await oauthToken({
         grant_type: 'authorization_code',
@@ -296,7 +294,7 @@ describe('utils', () => {
           '{"redirect_uri":"http://localhost","grant_type":"authorization_code","client_id":"client_idIn","code":"codeIn","code_verifier":"code_verifierIn"}',
         headers: {
           'Content-type': 'application/json',
-          'Auth0-Client': auth0Client
+          'Auth0-Client': btoa(JSON.stringify(auth0Client))
         },
         method: 'POST',
         signal: abortController.signal
@@ -320,12 +318,10 @@ describe('utils', () => {
         code: 'codeIn',
         code_verifier: 'code_verifierIn'
       };
-      const auth0Client = btoa(
-        JSON.stringify({
-          name: 'auth0-spa-js',
-          version: version
-        })
-      );
+      const auth0Client = {
+        name: 'auth0-spa-js',
+        version: version
+      };
 
       await oauthToken(
         {
@@ -345,7 +341,7 @@ describe('utils', () => {
         body: JSON.stringify(body),
         headers: {
           'Content-type': 'application/json',
-          'Auth0-Client': auth0Client
+          'Auth0-Client': btoa(JSON.stringify(auth0Client))
         },
         method: 'POST',
         signal: abortController.signal
@@ -359,7 +355,7 @@ describe('utils', () => {
           scope: '__test_scope__',
           headers: {
             'Content-type': 'application/json',
-            'Auth0-Client': auth0Client
+            'Auth0-Client': btoa(JSON.stringify(auth0Client))
           },
           method: 'POST',
           timeout: 10000,

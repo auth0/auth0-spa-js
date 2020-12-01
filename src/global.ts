@@ -391,6 +391,7 @@ export interface TokenEndpointOptions {
   client_id: string;
   grant_type: string;
   timeout?: number;
+  auth0Client: any;
   [key: string]: any;
 }
 
@@ -403,7 +404,6 @@ export interface OAuthTokenOptions extends TokenEndpointOptions {
   redirect_uri: string;
   audience: string;
   scope: string;
-  auth0Client: string;
 }
 
 /**

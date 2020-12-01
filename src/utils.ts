@@ -14,6 +14,7 @@ import {
 } from './constants';
 
 import { PopupTimeoutError, TimeoutError, GenericError } from './errors';
+import version from './version';
 
 export const createAbortController = () => new AbortController();
 
@@ -381,7 +382,14 @@ export const oauthToken = async (
       }),
       headers: {
         'Content-type': 'application/json',
-        'Auth0-Client': auth0Client
+        'Auth0-Client': btoa(
+          JSON.stringify(
+            auth0Client || {
+              name: 'auth0-spa-js',
+              version: version
+            }
+          )
+        )
       }
     },
     worker

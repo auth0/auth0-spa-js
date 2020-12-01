@@ -382,14 +382,7 @@ export default class Auth0Client {
         code: codeResult.code,
         grant_type: 'authorization_code',
         redirect_uri: params.redirect_uri,
-        auth0Client: btoa(
-          JSON.stringify(
-            this.options.auth0Client || {
-              name: 'auth0-spa-js',
-              version: version
-            }
-          )
-        )
+        auth0Client: this.options.auth0Client
       } as OAuthTokenOptions,
       this.worker
     );
@@ -526,14 +519,7 @@ export default class Auth0Client {
       code_verifier: transaction.code_verifier,
       grant_type: 'authorization_code',
       code,
-      auth0Client: btoa(
-        JSON.stringify(
-          this.options.auth0Client || {
-            name: 'auth0-spa-js',
-            version: version
-          }
-        )
-      )
+      auth0Client: this.options.auth0Client
     } as OAuthTokenOptions;
 
     // some old versions of the SDK might not have added redirect_uri to the
@@ -847,14 +833,7 @@ export default class Auth0Client {
         code: codeResult.code,
         grant_type: 'authorization_code',
         redirect_uri: params.redirect_uri,
-        auth0Client: btoa(
-          JSON.stringify(
-            this.options.auth0Client || {
-              name: 'auth0-spa-js',
-              version: version
-            }
-          )
-        )
+        auth0Client: this.options.auth0Client
       } as OAuthTokenOptions,
       this.worker
     );
@@ -924,14 +903,7 @@ export default class Auth0Client {
           refresh_token: cache && cache.refresh_token,
           redirect_uri,
           ...(timeout && { timeout }),
-          auth0Client: btoa(
-            JSON.stringify(
-              this.options.auth0Client || {
-                name: 'auth0-spa-js',
-                version: version
-              }
-            )
-          )
+          auth0Client: this.options.auth0Client
         } as RefreshTokenOptions,
         this.worker
       );
