@@ -11,11 +11,10 @@ import {
   DEFAULT_SILENT_TOKEN_RETRY_COUNT,
   DEFAULT_FETCH_TIMEOUT_MS,
   CLEANUP_IFRAME_TIMEOUT_IN_SECONDS,
-  DEFAULT_CLIENT
+  DEFAULT_AUTH0_CLIENT
 } from './constants';
 
 import { PopupTimeoutError, TimeoutError, GenericError } from './errors';
-import version from './version';
 
 export const createAbortController = () => new AbortController();
 
