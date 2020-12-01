@@ -403,6 +403,7 @@ export interface OAuthTokenOptions extends TokenEndpointOptions {
   redirect_uri: string;
   audience: string;
   scope: string;
+  auth0Client: string;
 }
 
 /**

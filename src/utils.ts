@@ -358,7 +358,14 @@ const getJSON = async (
 };
 
 export const oauthToken = async (
-  { baseUrl, timeout, audience, scope, ...options }: TokenEndpointOptions,
+  {
+    baseUrl,
+    timeout,
+    audience,
+    scope,
+    auth0Client,
+    ...options
+  }: TokenEndpointOptions,
   worker: Worker
 ) =>
   await getJSON(
@@ -373,7 +380,8 @@ export const oauthToken = async (
         ...options
       }),
       headers: {
-        'Content-type': 'application/json'
+        'Content-type': 'application/json',
+        'Auth0-Client': auth0Client
       }
     },
     worker

@@ -381,7 +381,15 @@ export default class Auth0Client {
         code_verifier,
         code: codeResult.code,
         grant_type: 'authorization_code',
-        redirect_uri: params.redirect_uri
+        redirect_uri: params.redirect_uri,
+        auth0Client: btoa(
+          JSON.stringify(
+            this.options.auth0Client || {
+              name: 'auth0-spa-js',
+              version: version
+            }
+          )
+        )
       } as OAuthTokenOptions,
       this.worker
     );
@@ -517,7 +525,15 @@ export default class Auth0Client {
       client_id: this.options.client_id,
       code_verifier: transaction.code_verifier,
       grant_type: 'authorization_code',
-      code
+      code,
+      auth0Client: btoa(
+        JSON.stringify(
+          this.options.auth0Client || {
+            name: 'auth0-spa-js',
+            version: version
+          }
+        )
+      )
     } as OAuthTokenOptions;
 
     // some old versions of the SDK might not have added redirect_uri to the
@@ -830,7 +846,15 @@ export default class Auth0Client {
         code_verifier,
         code: codeResult.code,
         grant_type: 'authorization_code',
-        redirect_uri: params.redirect_uri
+        redirect_uri: params.redirect_uri,
+        auth0Client: btoa(
+          JSON.stringify(
+            this.options.auth0Client || {
+              name: 'auth0-spa-js',
+              version: version
+            }
+          )
+        )
       } as OAuthTokenOptions,
       this.worker
     );
@@ -899,7 +923,15 @@ export default class Auth0Client {
           grant_type: 'refresh_token',
           refresh_token: cache && cache.refresh_token,
           redirect_uri,
-          ...(timeout && { timeout })
+          ...(timeout && { timeout }),
+          auth0Client: btoa(
+            JSON.stringify(
+              this.options.auth0Client || {
+                name: 'auth0-spa-js',
+                version: version
+              }
+            )
+          )
         } as RefreshTokenOptions,
         this.worker
       );

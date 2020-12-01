@@ -26,10 +26,15 @@ const authorizationResponse: AuthenticationResult = {
 };
 
 export const assertPostFn = mockFetch => {
-  return (url, body, callNum = 0) => {
+  return (url, body, headers = null, callNum = 0) => {
     const [actualUrl, opts] = mockFetch.mock.calls[callNum];
     expect(url).toEqual(actualUrl);
     expect(body).toEqual(JSON.parse(opts.body));
+    if (headers) {
+      Object.keys(headers).forEach(header =>
+        expect(headers[header]).toEqual(opts.headers[header])
+      );
+    }
   };
 };
 
