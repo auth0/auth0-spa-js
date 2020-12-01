@@ -611,7 +611,7 @@ export default class Auth0Client {
     }
 
     try {
-      await lock.acquireLock(GET_TOKEN_SILENTLY_LOCK_KEY, 5000);
+      // await lock.acquireLock(GET_TOKEN_SILENTLY_LOCK_KEY, 5000);
       // Check the cache a second time, because it may have been populated
       // by a previous call while this call was waiting to acquire the lock.
       if (!ignoreCache) {
@@ -635,7 +635,7 @@ export default class Auth0Client {
     } catch (e) {
       throw e;
     } finally {
-      await lock.releaseLock(GET_TOKEN_SILENTLY_LOCK_KEY);
+      // await lock.releaseLock(GET_TOKEN_SILENTLY_LOCK_KEY);
     }
   }
 
