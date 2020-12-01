@@ -10,7 +10,8 @@ import {
   DEFAULT_AUTHORIZE_TIMEOUT_IN_SECONDS,
   DEFAULT_SILENT_TOKEN_RETRY_COUNT,
   DEFAULT_FETCH_TIMEOUT_MS,
-  CLEANUP_IFRAME_TIMEOUT_IN_SECONDS
+  CLEANUP_IFRAME_TIMEOUT_IN_SECONDS,
+  DEFAULT_CLIENT
 } from './constants';
 
 import { PopupTimeoutError, TimeoutError, GenericError } from './errors';
@@ -383,12 +384,7 @@ export const oauthToken = async (
       headers: {
         'Content-type': 'application/json',
         'Auth0-Client': btoa(
-          JSON.stringify(
-            auth0Client || {
-              name: 'auth0-spa-js',
-              version: version
-            }
-          )
+          JSON.stringify(auth0Client || DEFAULT_AUTH0_CLIENT)
         )
       }
     },

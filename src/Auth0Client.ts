@@ -32,10 +32,9 @@ import {
   MISSING_REFRESH_TOKEN_ERROR_MESSAGE,
   DEFAULT_SCOPE,
   RECOVERABLE_ERRORS,
-  DEFAULT_SESSION_CHECK_EXPIRY_DAYS
+  DEFAULT_SESSION_CHECK_EXPIRY_DAYS,
+  DEFAULT_AUTH0_CLIENT
 } from './constants';
-
-import version from './version';
 
 import {
   Auth0ClientOptions,
@@ -200,14 +199,7 @@ export default class Auth0Client {
 
   private _url(path) {
     const auth0Client = encodeURIComponent(
-      btoa(
-        JSON.stringify(
-          this.options.auth0Client || {
-            name: 'auth0-spa-js',
-            version: version
-          }
-        )
-      )
+      btoa(JSON.stringify(this.options.auth0Client || DEFAULT_AUTH0_CLIENT))
     );
     return `${this.domainUrl}${path}&auth0Client=${auth0Client}`;
   }
