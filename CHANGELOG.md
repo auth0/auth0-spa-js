@@ -1,5 +1,17 @@
 # Change Log
 
+## [v1.13.4](https://github.com/auth0/auth0-spa-js/tree/v1.13.4) (2020-12-02)
+
+[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v1.13.3...v1.13.4)
+
+**Added**
+
+- [SDK-2172] Add SDK metrics to all API calls [\#659](https://github.com/auth0/auth0-spa-js/pull/659) ([frederikprijck](https://github.com/frederikprijck))
+
+**Changed**
+
+- [SDK-1159] Use generics for getUser [\#651](https://github.com/auth0/auth0-spa-js/pull/651) ([frederikprijck](https://github.com/frederikprijck))
+
 ## [v1.13.3](https://github.com/auth0/auth0-spa-js/tree/v1.13.3) (2020-11-13)
 
 [Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v1.13.2...v1.13.3)
