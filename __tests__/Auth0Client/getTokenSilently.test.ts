@@ -38,7 +38,7 @@ import {
 } from '../constants';
 
 import { releaseLockSpy } from '../../__mocks__/browser-tabs-lock';
-import version from '../../src/version';
+import { DEFAULT_AUTH0_CLIENT } from '../../src/constants';
 
 jest.mock('unfetch');
 jest.mock('es-cookie');
@@ -190,12 +190,7 @@ describe('Auth0Client', () => {
           code: TEST_CODE
         },
         {
-          'Auth0-Client': btoa(
-            JSON.stringify({
-              name: 'auth0-spa-js',
-              version: version
-            })
-          )
+          'Auth0-Client': btoa(JSON.stringify(DEFAULT_AUTH0_CLIENT))
         }
       );
     });
@@ -213,12 +208,18 @@ describe('Auth0Client', () => {
         ignoreCache: true
       });
 
-      assertPost('https://auth0_domain/oauth/token', {
-        redirect_uri: TEST_REDIRECT_URI,
-        client_id: TEST_CLIENT_ID,
-        grant_type: 'refresh_token',
-        refresh_token: TEST_REFRESH_TOKEN
-      });
+      assertPost(
+        'https://auth0_domain/oauth/token',
+        {
+          redirect_uri: TEST_REDIRECT_URI,
+          client_id: TEST_CLIENT_ID,
+          grant_type: 'refresh_token',
+          refresh_token: TEST_REFRESH_TOKEN
+        },
+        {
+          'Auth0-Client': btoa(JSON.stringify(DEFAULT_AUTH0_CLIENT))
+        }
+      );
     });
 
     it('calls the token endpoint with the correct params when passing redirect uri and using refresh tokens', async () => {
@@ -236,12 +237,18 @@ describe('Auth0Client', () => {
         ignoreCache: true
       });
 
-      assertPost('https://auth0_domain/oauth/token', {
-        redirect_uri,
-        client_id: TEST_CLIENT_ID,
-        grant_type: 'refresh_token',
-        refresh_token: TEST_REFRESH_TOKEN
-      });
+      assertPost(
+        'https://auth0_domain/oauth/token',
+        {
+          redirect_uri,
+          client_id: TEST_CLIENT_ID,
+          grant_type: 'refresh_token',
+          refresh_token: TEST_REFRESH_TOKEN
+        },
+        {
+          'Auth0-Client': btoa(JSON.stringify(DEFAULT_AUTH0_CLIENT))
+        }
+      );
     });
 
     it('calls the token endpoint with the correct params when not providing any redirect uri and using refresh tokens', async () => {
@@ -259,12 +266,18 @@ describe('Auth0Client', () => {
         ignoreCache: true
       });
 
-      assertPost('https://auth0_domain/oauth/token', {
-        redirect_uri: 'http://localhost',
-        client_id: TEST_CLIENT_ID,
-        grant_type: 'refresh_token',
-        refresh_token: TEST_REFRESH_TOKEN
-      });
+      assertPost(
+        'https://auth0_domain/oauth/token',
+        {
+          redirect_uri: 'http://localhost',
+          client_id: TEST_CLIENT_ID,
+          grant_type: 'refresh_token',
+          refresh_token: TEST_REFRESH_TOKEN
+        },
+        {
+          'Auth0-Client': btoa(JSON.stringify(DEFAULT_AUTH0_CLIENT))
+        }
+      );
     });
 
     it('calls the token endpoint with the correct timeout when using refresh tokens', async () => {
@@ -485,12 +498,7 @@ describe('Auth0Client', () => {
           refresh_token: TEST_REFRESH_TOKEN
         },
         {
-          'Auth0-Client': btoa(
-            JSON.stringify({
-              name: 'auth0-spa-js',
-              version: version
-            })
-          )
+          'Auth0-Client': btoa(JSON.stringify(DEFAULT_AUTH0_CLIENT))
         },
         1
       );
@@ -518,12 +526,7 @@ describe('Auth0Client', () => {
           code: TEST_CODE
         },
         {
-          'Auth0-Client': btoa(
-            JSON.stringify({
-              name: 'auth0-spa-js',
-              version: version
-            })
-          )
+          'Auth0-Client': btoa(JSON.stringify(DEFAULT_AUTH0_CLIENT))
         }
       );
 
@@ -547,12 +550,7 @@ describe('Auth0Client', () => {
           refresh_token: TEST_REFRESH_TOKEN
         },
         {
-          'Auth0-Client': btoa(
-            JSON.stringify({
-              name: 'auth0-spa-js',
-              version: version
-            })
-          )
+          'Auth0-Client': btoa(JSON.stringify(DEFAULT_AUTH0_CLIENT))
         },
         1
       );
@@ -582,12 +580,7 @@ describe('Auth0Client', () => {
           code: TEST_CODE
         },
         {
-          'Auth0-Client': btoa(
-            JSON.stringify({
-              name: 'auth0-spa-js',
-              version: version
-            })
-          )
+          'Auth0-Client': btoa(JSON.stringify(DEFAULT_AUTH0_CLIENT))
         }
       );
 
@@ -602,12 +595,7 @@ describe('Auth0Client', () => {
           refresh_token: TEST_REFRESH_TOKEN
         },
         {
-          'Auth0-Client': btoa(
-            JSON.stringify({
-              name: 'auth0-spa-js',
-              version: version
-            })
-          )
+          'Auth0-Client': btoa(JSON.stringify(DEFAULT_AUTH0_CLIENT))
         },
         1
       );

@@ -29,7 +29,11 @@ import {
   TEST_STATE
 } from '../constants';
 
-import { DEFAULT_POPUP_CONFIG_OPTIONS } from '../../src/constants';
+import {
+  DEFAULT_AUTH0_CLIENT,
+  DEFAULT_POPUP_CONFIG_OPTIONS
+} from '../../src/constants';
+import version from '../../src/version';
 
 jest.mock('unfetch');
 jest.mock('es-cookie');
@@ -236,13 +240,19 @@ describe('Auth0Client', () => {
       await loginWithPopup(auth0);
 
       expect(mockWindow.open).toHaveBeenCalled();
-      assertPost('https://auth0_domain/oauth/token', {
-        redirect_uri: TEST_REDIRECT_URI,
-        client_id: TEST_CLIENT_ID,
-        code_verifier: TEST_CODE_VERIFIER,
-        grant_type: 'authorization_code',
-        code: 'my_code'
-      });
+      assertPost(
+        'https://auth0_domain/oauth/token',
+        {
+          redirect_uri: TEST_REDIRECT_URI,
+          client_id: TEST_CLIENT_ID,
+          code_verifier: TEST_CODE_VERIFIER,
+          grant_type: 'authorization_code',
+          code: 'my_code'
+        },
+        {
+          'Auth0-Client': btoa(JSON.stringify(DEFAULT_AUTH0_CLIENT))
+        }
+      );
     });
 
     it('uses default config', async () => {
@@ -313,13 +323,19 @@ describe('Auth0Client', () => {
       await loginWithPopup(auth0, {}, { popup });
 
       expect(mockWindow.open).not.toHaveBeenCalled();
-      assertPost('https://auth0_domain/oauth/token', {
-        redirect_uri: TEST_REDIRECT_URI,
-        client_id: TEST_CLIENT_ID,
-        code_verifier: TEST_CODE_VERIFIER,
-        grant_type: 'authorization_code',
-        code: 'my_code'
-      });
+      assertPost(
+        'https://auth0_domain/oauth/token',
+        {
+          redirect_uri: TEST_REDIRECT_URI,
+          client_id: TEST_CLIENT_ID,
+          code_verifier: TEST_CODE_VERIFIER,
+          grant_type: 'authorization_code',
+          code: 'my_code'
+        },
+        {
+          'Auth0-Client': btoa(JSON.stringify(DEFAULT_AUTH0_CLIENT))
+        }
+      );
     });
 
     it('opens popup with custom auth0Client', async () => {
