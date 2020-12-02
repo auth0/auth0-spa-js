@@ -64,7 +64,7 @@ jest.mock('../src/cache', () => ({
   LocalStorageCache: () => mockEnclosedCache
 }));
 
-jest.mock('../src/token.worker');
+jest.mock('../src/worker/token.worker');
 
 const webWorkerMatcher = expect.objectContaining({
   postMessage: expect.any(Function)

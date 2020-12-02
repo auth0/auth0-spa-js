@@ -5,6 +5,7 @@ import { verify } from '../../src/jwt';
 import { MessageChannel } from 'worker_threads';
 import * as utils from '../../src/utils';
 import * as scope from '../../src/scope';
+import * as api from '../../src/api';
 
 import { expectToHaveBeenCalledWithAuth0ClientParam } from '../helpers';
 
@@ -43,7 +44,7 @@ import { DEFAULT_AUTH0_CLIENT } from '../../src/constants';
 jest.mock('unfetch');
 jest.mock('es-cookie');
 jest.mock('../../src/jwt');
-jest.mock('../../src/token.worker');
+jest.mock('../../src/worker/token.worker');
 
 const mockWindow = <any>global;
 const mockFetch = (mockWindow.fetch = <jest.Mock>unfetch);
@@ -297,7 +298,7 @@ describe('Auth0Client', () => {
         timeoutInSeconds: 10
       });
 
-      expect(utils.oauthToken).toHaveBeenCalledWith(
+      expect(api.oauthToken).toHaveBeenCalledWith(
         expect.objectContaining({
           timeout: 10000
         }),

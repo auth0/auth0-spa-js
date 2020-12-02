@@ -9,15 +9,17 @@ import {
   runIframe,
   sha256,
   bufferToBase64UrlEncoded,
-  oauthToken,
   validateCrypto
 } from './utils';
+
+import { oauthToken } from './api';
 
 import { getUniqueScopes } from './scope';
 import { InMemoryCache, ICache, LocalStorageCache } from './cache';
 import TransactionManager from './transaction-manager';
 import { verify as verifyIdToken } from './jwt';
 import { AuthenticationError } from './errors';
+
 import {
   ClientStorage,
   CookieStorage,
@@ -192,6 +194,7 @@ export default class Auth0Client {
       this.cacheLocation === CACHE_LOCATION_MEMORY &&
       supportWebWorker()
     ) {
+      console.log(TokenWorker);
       this.worker = new TokenWorker();
     }
 
