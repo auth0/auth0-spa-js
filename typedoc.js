@@ -4,7 +4,9 @@ const excludeFiles = [
   'storage',
   'transaction-manager',
   'utils',
-  'user-agent'
+  'user-agent',
+  'api',
+  'http'
 ];
 
 module.exports = {
