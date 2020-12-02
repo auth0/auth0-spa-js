@@ -10,8 +10,7 @@ import {
   sha256,
   bufferToBase64UrlEncoded,
   oauthToken,
-  validateCrypto,
-  retry
+  validateCrypto
 } from './utils';
 
 import { getUniqueScopes } from './scope';
@@ -60,6 +59,7 @@ import {
 // @ts-ignore
 import TokenWorker from './token.worker.ts';
 import { isIE11, isSafari10, isSafari11, isSafari12_0 } from './user-agent';
+import { singlePromise, retryPromise } from './promise-utils';
 
 /**
  * @ignore
@@ -130,7 +130,7 @@ const getCustomInitialOptions = (
 /**
  * @ignore
  */
-let getTokenSilentlyPromises = [];
+let getTokenSilentlyPromises = {};
 
 /**
  * Auth0 SDK for Single Page Applications using [Authorization Code Grant Flow with PKCE](https://auth0.com/docs/api-auth/tutorials/authorization-code-grant-pkce).
@@ -616,38 +616,14 @@ export default class Auth0Client {
       scope: getUniqueScopes(this.defaultScope, this.scope, options.scope)
     };
 
-    const { scope, audience } = getTokenOptions;
-    /**
-     * Function used to match two promises
-     * This should be the same matcher as used to retrieve items from the cache
-     * once https://github.com/auth0/auth0-spa-js/pull/652 is merged.
-     * So we might wsant to refactor it to a helper and use it in both places
-     * @param p
-     * @param b
-     */
-    const matcher = (p, b) => {
-      return p.scope === b.scope && p.audience === b.audience;
-    };
-    let promise = getTokenSilentlyPromises.find(p =>
-      matcher(p, getTokenOptions)
+    return singlePromise(
+      () =>
+        this._getTokenSilently({
+          ignoreCache,
+          getTokenOptions
+        }),
+      `${getTokenOptions.audience}::${getTokenOptions.scope}`
     );
-    if (!promise) {
-      promise = this._getTokenSilently({
-        ignoreCache,
-        getTokenOptions
-      }).finally(() => {
-        getTokenSilentlyPromises = getTokenSilentlyPromises.filter(
-          p => !matcher(p, getTokenOptions)
-        );
-        promise = null;
-      });
-      getTokenSilentlyPromises.push({
-        scope,
-        audience,
-        promise
-      });
-    }
-    return promise;
   }
 
   private async _getTokenSilently({ ignoreCache, getTokenOptions }) {
@@ -674,7 +650,10 @@ export default class Auth0Client {
     }
 
     if (
-      await retry(() => lock.acquireLock(GET_TOKEN_SILENTLY_LOCK_KEY, 5000), 5)
+      await retryPromise(
+        () => lock.acquireLock(GET_TOKEN_SILENTLY_LOCK_KEY, 5000),
+        10
+      )
     ) {
       try {
         // Check the cache a second time, because it may have been populated
