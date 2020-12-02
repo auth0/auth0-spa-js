@@ -10,14 +10,15 @@ import {
   sha256,
   bufferToBase64UrlEncoded,
   oauthToken,
-  validateCrypto
+  validateCrypto,
+  retry
 } from './utils';
 
 import { getUniqueScopes } from './scope';
 import { InMemoryCache, ICache, LocalStorageCache } from './cache';
 import TransactionManager from './transaction-manager';
 import { verify as verifyIdToken } from './jwt';
-import { AuthenticationError } from './errors';
+import { AuthenticationError, TimeoutError } from './errors';
 import {
   ClientStorage,
   CookieStorage,
@@ -672,33 +673,35 @@ export default class Auth0Client {
       }
     }
 
-    while (true) {
-      if (await lock.acquireLock(GET_TOKEN_SILENTLY_LOCK_KEY, 5000)) {
-        try {
-          // Check the cache a second time, because it may have been populated
-          // by a previous call while this call was waiting to acquire the lock.
-          if (!ignoreCache) {
-            let accessToken = getAccessTokenFromCache();
-            if (accessToken) {
-              return accessToken;
-            }
+    if (
+      await retry(() => lock.acquireLock(GET_TOKEN_SILENTLY_LOCK_KEY, 5000), 5)
+    ) {
+      try {
+        // Check the cache a second time, because it may have been populated
+        // by a previous call while this call was waiting to acquire the lock.
+        if (!ignoreCache) {
+          let accessToken = getAccessTokenFromCache();
+          if (accessToken) {
+            return accessToken;
           }
-
-          const authResult = this.options.useRefreshTokens
-            ? await this._getTokenUsingRefreshToken(getTokenOptions)
-            : await this._getTokenFromIFrame(getTokenOptions);
-
-          this.cache.save({ client_id: this.options.client_id, ...authResult });
-
-          this.cookieStorage.save('auth0.is.authenticated', true, {
-            daysUntilExpire: this.sessionCheckExpiryDays
-          });
-
-          return authResult.access_token;
-        } finally {
-          await lock.releaseLock(GET_TOKEN_SILENTLY_LOCK_KEY);
         }
+
+        const authResult = this.options.useRefreshTokens
+          ? await this._getTokenUsingRefreshToken(getTokenOptions)
+          : await this._getTokenFromIFrame(getTokenOptions);
+
+        this.cache.save({ client_id: this.options.client_id, ...authResult });
+
+        this.cookieStorage.save('auth0.is.authenticated', true, {
+          daysUntilExpire: this.sessionCheckExpiryDays
+        });
+
+        return authResult.access_token;
+      } finally {
+        await lock.releaseLock(GET_TOKEN_SILENTLY_LOCK_KEY);
       }
+    } else {
+      throw new TimeoutError();
     }
   }
 
