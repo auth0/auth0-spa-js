@@ -194,7 +194,6 @@ export default class Auth0Client {
       this.cacheLocation === CACHE_LOCATION_MEMORY &&
       supportWebWorker()
     ) {
-      console.log(TokenWorker);
       this.worker = new TokenWorker();
     }
 

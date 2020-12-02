@@ -1,3 +1,5 @@
+import fetch from 'unfetch';
+
 import {
   DEFAULT_FETCH_TIMEOUT_MS,
   DEFAULT_SILENT_TOKEN_RETRY_COUNT
@@ -13,10 +15,10 @@ const switchFetch = async (
   scope: string,
   opts: { [index: string]: any },
   timeout: number,
-  worker: Worker
+  worker?: Worker
 ) => {
   if (worker) {
-    console.log(opts);
+    // console.log(opts);
     // AbortSignal is not serializable, need to implement in the Web Worker
     delete opts.signal;
     return sendMessage({ url, audience, scope, timeout, ...opts }, worker);
@@ -34,7 +36,7 @@ export const fetchWithTimeout = (
   audience: string,
   scope: string,
   options: { [index: string]: any },
-  worker: Worker,
+  worker?: Worker,
   timeout = DEFAULT_FETCH_TIMEOUT_MS
 ) => {
   const controller = createAbortController();
@@ -66,7 +68,7 @@ export const getJSON = async (
   audience: string,
   scope: string,
   options: { [index: string]: any },
-  worker: Worker
+  worker?: Worker
 ) => {
   let fetchError: null | Error = null;
   let response: any;

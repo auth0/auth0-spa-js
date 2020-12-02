@@ -30,7 +30,8 @@ const messageHandler: (m: MessageEvent) => any = async ({
 
   try {
     const body = JSON.parse(opts.body);
-    console.log(body);
+    // console.log(body);
+    // console.log(fetch);
 
     if (!body.refresh_token && body.grant_type === 'refresh_token') {
       const refreshToken = getRefreshToken(audience, scope);

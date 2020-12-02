@@ -11,7 +11,7 @@ export const oauthToken = async (
     auth0Client,
     ...options
   }: TokenEndpointOptions,
-  worker: Worker
+  worker?: Worker
 ) =>
   await getJSON(
     `${baseUrl}/oauth/token`,

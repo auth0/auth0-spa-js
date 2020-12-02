@@ -286,7 +286,7 @@ describe('Auth0Client', () => {
         useRefreshTokens: true
       });
 
-      jest.spyOn(<any>utils, 'oauthToken');
+      jest.spyOn(<any>api, 'oauthToken');
       jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
         access_token: TEST_ACCESS_TOKEN,
         refresh_token: TEST_REFRESH_TOKEN,

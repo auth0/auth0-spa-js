@@ -18,10 +18,7 @@ import {
 
 import { DEFAULT_AUTHORIZE_TIMEOUT_IN_SECONDS } from '../src/constants';
 
-import { MessageChannel } from 'worker_threads';
-
 (<any>global).TextEncoder = TextEncoder;
-(<any>global).MessageChannel = MessageChannel;
 
 afterEach(() => {
   jest.resetAllMocks();

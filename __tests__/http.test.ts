@@ -1,10 +1,10 @@
-import unfetch from 'unfetch';
+import fetch from 'unfetch';
 import { fetchWithTimeout } from '../src/http';
 
 jest.mock('../src/worker/token.worker');
 jest.mock('unfetch');
 
-const mockUnfetch = <jest.Mock>unfetch;
+const mockUnfetch = <jest.Mock>fetch;
 
 describe('fetchWithTimeout', () => {
   it('clears timeout when successful', async () => {

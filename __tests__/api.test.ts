@@ -1,29 +1,44 @@
-import unfetch from 'unfetch';
-import { DEFAULT_SILENT_TOKEN_RETRY_COUNT } from '../src/constants';
+import fetch from 'unfetch';
+
+import {
+  DEFAULT_AUTH0_CLIENT,
+  DEFAULT_SILENT_TOKEN_RETRY_COUNT
+} from '../src/constants';
+
 import version from '../src/version';
+import { oauthToken } from '../src/api';
 
 // @ts-ignore
 import Worker from '../src/worker/token.worker';
+import { MessageChannel } from 'worker_threads';
+(<any>global).MessageChannel = MessageChannel;
 
+jest.mock('../src/worker/token.worker');
 jest.mock('unfetch');
-const mockUnfetch = <jest.Mock>unfetch;
+
+const mockFetch = <jest.Mock>fetch;
+// (<any>global).TextEncoder = TextEncoder;
+(<any>global).MessageChannel = MessageChannel;
+(<any>global).fetch = mockFetch;
 
 describe('oauthToken', () => {
-  let oauthToken;
   let abortController;
 
   beforeEach(() => {
-    const utils = require('../src/utils');
-    oauthToken = utils.oauthToken;
+    const http = require('../src/http');
 
     // Set up an AbortController that we can test has been called in the event of a timeout
     abortController = new AbortController();
     jest.spyOn(abortController, 'abort');
-    utils.createAbortController = jest.fn(() => abortController);
+    http.createAbortController = jest.fn(() => abortController);
+  });
+
+  afterEach(() => {
+    jest.resetAllMocks();
   });
 
   it('calls oauth/token with the correct url', async () => {
-    mockUnfetch.mockReturnValue(
+    mockFetch.mockReturnValue(
       new Promise(res =>
         res({ ok: true, json: () => new Promise(ress => ress(true)) })
       )
@@ -42,7 +57,7 @@ describe('oauthToken', () => {
       auth0Client
     });
 
-    expect(mockUnfetch).toBeCalledWith('https://test.com/oauth/token', {
+    expect(mockFetch).toBeCalledWith('https://test.com/oauth/token', {
       body:
         '{"redirect_uri":"http://localhost","grant_type":"authorization_code","client_id":"client_idIn","code":"codeIn","code_verifier":"code_verifierIn"}',
       headers: {
@@ -53,17 +68,19 @@ describe('oauthToken', () => {
       signal: abortController.signal
     });
 
-    expect(mockUnfetch.mock.calls[0][1].signal).not.toBeUndefined();
+    expect(mockFetch.mock.calls[0][1].signal).not.toBeUndefined();
   });
 
   it('calls oauth/token with a worker with the correct url', async () => {
-    mockUnfetch.mockReturnValue(
+    mockFetch.mockReturnValue(
       new Promise(res =>
         res({ ok: true, json: () => new Promise(ress => ress(true)) })
       )
     );
+
     const worker = new Worker();
     const spy = jest.spyOn(worker, 'postMessage');
+
     const body = {
       redirect_uri: 'http://localhost',
       grant_type: 'authorization_code',
@@ -71,6 +88,7 @@ describe('oauthToken', () => {
       code: 'codeIn',
       code_verifier: 'code_verifierIn'
     };
+
     const auth0Client = {
       name: 'auth0-spa-js',
       version: version
@@ -90,7 +108,7 @@ describe('oauthToken', () => {
       worker
     );
 
-    expect(mockUnfetch).toBeCalledWith('https://test.com/oauth/token', {
+    expect(mockFetch).toBeCalledWith('https://test.com/oauth/token', {
       body: JSON.stringify(body),
       headers: {
         'Content-type': 'application/json',
@@ -100,7 +118,8 @@ describe('oauthToken', () => {
       signal: abortController.signal
     });
 
-    expect(mockUnfetch.mock.calls[0][1].signal).not.toBeUndefined();
+    expect(mockFetch.mock.calls[0][1].signal).not.toBeUndefined();
+
     expect(spy).toHaveBeenCalledWith(
       {
         body: JSON.stringify(body),
@@ -124,7 +143,7 @@ describe('oauthToken', () => {
       error_description: 'the-error-description'
     };
 
-    mockUnfetch.mockReturnValue(
+    mockFetch.mockReturnValue(
       new Promise(res =>
         res({
           ok: false,
@@ -138,7 +157,9 @@ describe('oauthToken', () => {
         baseUrl: 'https://test.com',
         client_id: 'client_idIn',
         code: 'codeIn',
-        code_verifier: 'code_verifierIn'
+        code_verifier: 'code_verifierIn',
+        grant_type: 'authorization_code',
+        auth0Client: DEFAULT_AUTH0_CLIENT
       });
     } catch (error) {
       expect(error.message).toBe(theError.error_description);
@@ -148,7 +169,7 @@ describe('oauthToken', () => {
   });
 
   it('handles error without error response', async () => {
-    mockUnfetch.mockReturnValue(
+    mockFetch.mockReturnValue(
       new Promise(res =>
         res({
           ok: false,
@@ -162,7 +183,9 @@ describe('oauthToken', () => {
         baseUrl: 'https://test.com',
         client_id: 'client_idIn',
         code: 'codeIn',
-        code_verifier: 'code_verifierIn'
+        code_verifier: 'code_verifierIn',
+        grant_type: 'authorization_code',
+        auth0Client: DEFAULT_AUTH0_CLIENT
       });
     } catch (error) {
       expect(error.message).toBe(
@@ -180,21 +203,21 @@ describe('oauthToken', () => {
     // retried here. Failure status (4xx, 5xx, etc) return a resolved Promise
     // with the failure in the body.
     // https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API
-    mockUnfetch.mockReturnValue(Promise.reject(new Error('Network failure')));
+    mockFetch.mockReturnValue(Promise.reject(new Error('Network failure')));
 
     try {
       await oauthToken({
         baseUrl: 'https://test.com',
         client_id: 'client_idIn',
         code: 'codeIn',
-        code_verifier: 'code_verifierIn'
+        code_verifier: 'code_verifierIn',
+        grant_type: 'authorization_code',
+        auth0Client: DEFAULT_AUTH0_CLIENT
       });
     } catch (error) {
       expect(error.message).toBe('Network failure');
 
-      expect(mockUnfetch).toHaveBeenCalledTimes(
-        DEFAULT_SILENT_TOKEN_RETRY_COUNT
-      );
+      expect(mockFetch).toHaveBeenCalledTimes(DEFAULT_SILENT_TOKEN_RETRY_COUNT);
     }
   });
 
@@ -203,7 +226,7 @@ describe('oauthToken', () => {
     // retried here. Failure status (4xx, 5xx, etc) return a resolved Promise
     // with the failure in the body.
     // https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API
-    mockUnfetch
+    mockFetch
       .mockReturnValueOnce(Promise.reject(new Error('Network failure')))
       .mockReturnValueOnce(Promise.reject(new Error('Network failure')))
       .mockReturnValue(
@@ -217,23 +240,27 @@ describe('oauthToken', () => {
       baseUrl: 'https://test.com',
       client_id: 'client_idIn',
       code: 'codeIn',
-      code_verifier: 'code_verifierIn'
+      code_verifier: 'code_verifierIn',
+      grant_type: 'authorization_code',
+      auth0Client: DEFAULT_AUTH0_CLIENT
     });
 
     expect(result.access_token).toBe('access-token');
-    expect(mockUnfetch).toHaveBeenCalledTimes(3);
+    expect(mockFetch).toHaveBeenCalledTimes(3);
     expect(abortController.abort).not.toHaveBeenCalled();
   });
 
   it('throws a fetch error when the network is down', async () => {
-    mockUnfetch.mockReturnValue(Promise.reject(new ProgressEvent('error')));
+    mockFetch.mockReturnValue(Promise.reject(new ProgressEvent('error')));
 
     await expect(
       oauthToken({
         baseUrl: 'https://test.com',
         client_id: 'client_idIn',
         code: 'codeIn',
-        code_verifier: 'code_verifierIn'
+        code_verifier: 'code_verifierIn',
+        grant_type: 'authorization_code',
+        auth0Client: DEFAULT_AUTH0_CLIENT
       })
     ).rejects.toMatchObject({ message: 'Failed to fetch' });
   });
@@ -251,7 +278,7 @@ describe('oauthToken', () => {
         );
       });
 
-    mockUnfetch.mockReturnValue(createPromise());
+    mockFetch.mockReturnValue(createPromise());
 
     try {
       await oauthToken({
@@ -259,11 +286,13 @@ describe('oauthToken', () => {
         client_id: 'client_idIn',
         code: 'codeIn',
         code_verifier: 'code_verifierIn',
-        timeout: 100
+        timeout: 100,
+        grant_type: 'authorization_code',
+        auth0Client: DEFAULT_AUTH0_CLIENT
       });
     } catch (e) {
       expect(e.message).toBe("Timeout when executing 'fetch'");
-      expect(mockUnfetch).toHaveBeenCalledTimes(3);
+      expect(mockFetch).toHaveBeenCalledTimes(3);
       expect(abortController.abort).toHaveBeenCalledTimes(3);
     }
   });
@@ -274,24 +303,26 @@ describe('oauthToken', () => {
       json: () => Promise.resolve({ access_token: 'access-token' })
     };
 
-    mockUnfetch.mockReturnValueOnce(
+    mockFetch.mockReturnValueOnce(
       new Promise((resolve, _) => {
         setTimeout(() => resolve(fetchResult), 1000);
       })
     );
 
-    mockUnfetch.mockReturnValue(Promise.resolve(fetchResult));
+    mockFetch.mockReturnValue(Promise.resolve(fetchResult));
 
     const result = await oauthToken({
       baseUrl: 'https://test.com',
       client_id: 'client_idIn',
       code: 'codeIn',
       code_verifier: 'code_verifierIn',
-      timeout: 500
+      timeout: 500,
+      grant_type: 'authorization_code',
+      auth0Client: DEFAULT_AUTH0_CLIENT
     });
 
     expect(result.access_token).toBe('access-token');
-    expect(mockUnfetch).toHaveBeenCalledTimes(2);
+    expect(mockFetch).toHaveBeenCalledTimes(2);
     expect(abortController.abort).toHaveBeenCalled();
   });
 });

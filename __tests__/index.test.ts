@@ -1,4 +1,3 @@
-import { expectToHaveBeenCalledWithAuth0ClientParam } from './helpers';
 import { CacheLocation, Auth0ClientOptions } from '../src/global';
 import * as scope from '../src/scope';
 
@@ -26,18 +25,14 @@ jest.mock('../src/storage', () => ({
 
 jest.mock('../src/transaction-manager');
 jest.mock('../src/utils');
+jest.mock('../src/api');
 
-import createAuth0Client, {
-  Auth0Client,
-  GetTokenSilentlyOptions
-} from '../src/index';
+import createAuth0Client, { Auth0Client } from '../src/index';
 
 import {
-  GET_TOKEN_SILENTLY_LOCK_KEY,
   TEST_ACCESS_TOKEN,
   TEST_APP_STATE,
   TEST_ARRAY_BUFFER,
-  TEST_AUTH0_CLIENT_QUERY_STRING,
   TEST_BASE64_ENCODED_STRING,
   TEST_CLIENT_ID,
   TEST_CODE,
@@ -46,7 +41,6 @@ import {
   TEST_ID_TOKEN,
   TEST_QUERY_PARAMS,
   TEST_RANDOM_STRING,
-  TEST_REFRESH_TOKEN,
   TEST_SCOPES,
   TEST_USER_ID
 } from './constants';
@@ -75,6 +69,7 @@ const setup = async (clientOptions: Partial<Auth0ClientOptions> = {}) => {
   const cache = mockEnclosedCache;
   const tokenVerifier = require('../src/jwt').verify;
   const utils = require('../src/utils');
+  const api = require('../src/api');
 
   utils.createQueryParams.mockReturnValue(TEST_QUERY_PARAMS);
   utils.encode.mockReturnValue(TEST_ENCODED_STATE);
@@ -95,7 +90,7 @@ const setup = async (clientOptions: Partial<Auth0ClientOptions> = {}) => {
     Promise.resolve({ state: TEST_ENCODED_STATE, code: TEST_CODE })
   );
 
-  utils.oauthToken.mockReturnValue(
+  api.oauthToken.mockReturnValue(
     Promise.resolve({
       id_token: TEST_ID_TOKEN,
       access_token: TEST_ACCESS_TOKEN
@@ -131,7 +126,8 @@ const setup = async (clientOptions: Partial<Auth0ClientOptions> = {}) => {
     tokenVerifier,
     transactionManager,
     utils,
-    popup
+    popup,
+    api
   };
 };
 
@@ -288,16 +284,18 @@ describe('Auth0', () => {
       };
 
       xit('calls oauth/token without redirect uri if not set in transaction', async () => {
-        const { auth0, utils, transactionManager } = await localSetup();
-        const txn = transactionManager.get.mockReturnValue({
+        const { auth0, transactionManager, api } = await localSetup();
+
+        transactionManager.get.mockReturnValue({
           code_verifier: TEST_RANDOM_STRING,
           nonce: TEST_RANDOM_STRING,
           audience: 'default',
           scope: TEST_SCOPES,
           appState: TEST_APP_STATE
         });
+
         await auth0.handleRedirectCallback();
-        const arg = utils.oauthToken.mock.calls[0][0];
+        const arg = api.oauthToken.mock.calls[0][0];
         expect(arg.hasOwnProperty('redirect_uri')).toBeFalsy();
       });
     });

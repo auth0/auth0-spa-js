@@ -14,7 +14,7 @@ describe('token worker', () => {
     // The web worker uses native fetch.
     window.fetch = mockFetch;
 
-    const { messageHandler } = require('../src/token.worker');
+    const { messageHandler } = require('../src/worker/token.worker');
     messageHandlerAsync = opts =>
       new Promise(resolve =>
         messageHandler({ data: opts, ports: [{ postMessage: resolve }] })
