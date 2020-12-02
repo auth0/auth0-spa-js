@@ -10,7 +10,8 @@ import {
   DEFAULT_AUTHORIZE_TIMEOUT_IN_SECONDS,
   DEFAULT_SILENT_TOKEN_RETRY_COUNT,
   DEFAULT_FETCH_TIMEOUT_MS,
-  CLEANUP_IFRAME_TIMEOUT_IN_SECONDS
+  CLEANUP_IFRAME_TIMEOUT_IN_SECONDS,
+  DEFAULT_AUTH0_CLIENT
 } from './constants';
 
 import { PopupTimeoutError, TimeoutError, GenericError } from './errors';
@@ -358,7 +359,14 @@ const getJSON = async (
 };
 
 export const oauthToken = async (
-  { baseUrl, timeout, audience, scope, ...options }: TokenEndpointOptions,
+  {
+    baseUrl,
+    timeout,
+    audience,
+    scope,
+    auth0Client,
+    ...options
+  }: TokenEndpointOptions,
   worker: Worker
 ) =>
   await getJSON(
@@ -373,7 +381,10 @@ export const oauthToken = async (
         ...options
       }),
       headers: {
-        'Content-type': 'application/json'
+        'Content-type': 'application/json',
+        'Auth0-Client': btoa(
+          JSON.stringify(auth0Client || DEFAULT_AUTH0_CLIENT)
+        )
       }
     },
     worker

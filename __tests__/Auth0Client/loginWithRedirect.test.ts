@@ -33,6 +33,7 @@ import {
   TEST_SCOPES,
   TEST_STATE
 } from '../constants';
+import version from '../../src/version';
 
 jest.mock('unfetch');
 jest.mock('es-cookie');
@@ -115,13 +116,24 @@ describe('Auth0Client', () => {
         code_challenge_method: 'S256'
       });
 
-      assertPost('https://auth0_domain/oauth/token', {
-        redirect_uri: TEST_REDIRECT_URI,
-        client_id: TEST_CLIENT_ID,
-        code_verifier: TEST_CODE_VERIFIER,
-        grant_type: 'authorization_code',
-        code: TEST_CODE
-      });
+      assertPost(
+        'https://auth0_domain/oauth/token',
+        {
+          redirect_uri: TEST_REDIRECT_URI,
+          client_id: TEST_CLIENT_ID,
+          code_verifier: TEST_CODE_VERIFIER,
+          grant_type: 'authorization_code',
+          code: TEST_CODE
+        },
+        {
+          'Auth0-Client': btoa(
+            JSON.stringify({
+              name: 'auth0-spa-js',
+              version: version
+            })
+          )
+        }
+      );
     });
 
     it('should log the user in using different default scope', async () => {

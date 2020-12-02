@@ -38,6 +38,7 @@ import {
 } from '../constants';
 
 import { releaseLockSpy } from '../../__mocks__/browser-tabs-lock';
+import { DEFAULT_AUTH0_CLIENT } from '../../src/constants';
 
 jest.mock('unfetch');
 jest.mock('es-cookie');
@@ -179,13 +180,19 @@ describe('Auth0Client', () => {
 
       await getTokenSilently(auth0);
 
-      assertPost('https://auth0_domain/oauth/token', {
-        redirect_uri: TEST_REDIRECT_URI,
-        client_id: TEST_CLIENT_ID,
-        code_verifier: TEST_CODE_VERIFIER,
-        grant_type: 'authorization_code',
-        code: TEST_CODE
-      });
+      assertPost(
+        'https://auth0_domain/oauth/token',
+        {
+          redirect_uri: TEST_REDIRECT_URI,
+          client_id: TEST_CLIENT_ID,
+          code_verifier: TEST_CODE_VERIFIER,
+          grant_type: 'authorization_code',
+          code: TEST_CODE
+        },
+        {
+          'Auth0-Client': btoa(JSON.stringify(DEFAULT_AUTH0_CLIENT))
+        }
+      );
     });
 
     it('calls the token endpoint with the correct params when using refresh tokens', async () => {
@@ -201,12 +208,18 @@ describe('Auth0Client', () => {
         ignoreCache: true
       });
 
-      assertPost('https://auth0_domain/oauth/token', {
-        redirect_uri: TEST_REDIRECT_URI,
-        client_id: TEST_CLIENT_ID,
-        grant_type: 'refresh_token',
-        refresh_token: TEST_REFRESH_TOKEN
-      });
+      assertPost(
+        'https://auth0_domain/oauth/token',
+        {
+          redirect_uri: TEST_REDIRECT_URI,
+          client_id: TEST_CLIENT_ID,
+          grant_type: 'refresh_token',
+          refresh_token: TEST_REFRESH_TOKEN
+        },
+        {
+          'Auth0-Client': btoa(JSON.stringify(DEFAULT_AUTH0_CLIENT))
+        }
+      );
     });
 
     it('calls the token endpoint with the correct params when passing redirect uri and using refresh tokens', async () => {
@@ -224,12 +237,18 @@ describe('Auth0Client', () => {
         ignoreCache: true
       });
 
-      assertPost('https://auth0_domain/oauth/token', {
-        redirect_uri,
-        client_id: TEST_CLIENT_ID,
-        grant_type: 'refresh_token',
-        refresh_token: TEST_REFRESH_TOKEN
-      });
+      assertPost(
+        'https://auth0_domain/oauth/token',
+        {
+          redirect_uri,
+          client_id: TEST_CLIENT_ID,
+          grant_type: 'refresh_token',
+          refresh_token: TEST_REFRESH_TOKEN
+        },
+        {
+          'Auth0-Client': btoa(JSON.stringify(DEFAULT_AUTH0_CLIENT))
+        }
+      );
     });
 
     it('calls the token endpoint with the correct params when not providing any redirect uri and using refresh tokens', async () => {
@@ -247,12 +266,18 @@ describe('Auth0Client', () => {
         ignoreCache: true
       });
 
-      assertPost('https://auth0_domain/oauth/token', {
-        redirect_uri: 'http://localhost',
-        client_id: TEST_CLIENT_ID,
-        grant_type: 'refresh_token',
-        refresh_token: TEST_REFRESH_TOKEN
-      });
+      assertPost(
+        'https://auth0_domain/oauth/token',
+        {
+          redirect_uri: 'http://localhost',
+          client_id: TEST_CLIENT_ID,
+          grant_type: 'refresh_token',
+          refresh_token: TEST_REFRESH_TOKEN
+        },
+        {
+          'Auth0-Client': btoa(JSON.stringify(DEFAULT_AUTH0_CLIENT))
+        }
+      );
     });
 
     it('calls the token endpoint with the correct timeout when using refresh tokens', async () => {
@@ -351,6 +376,7 @@ describe('Auth0Client', () => {
 
       jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
         access_token: TEST_ACCESS_TOKEN,
+        code: TEST_CODE,
         state: TEST_STATE
       });
 
@@ -359,6 +385,19 @@ describe('Auth0Client', () => {
       await getTokenSilently(auth0);
 
       expectToHaveBeenCalledWithAuth0ClientParam(utils.runIframe, auth0Client);
+      assertPost(
+        'https://auth0_domain/oauth/token',
+        {
+          redirect_uri: TEST_REDIRECT_URI,
+          client_id: TEST_CLIENT_ID,
+          code_verifier: TEST_CODE_VERIFIER,
+          grant_type: 'authorization_code',
+          code: TEST_CODE
+        },
+        {
+          'Auth0-Client': btoa(JSON.stringify(auth0Client))
+        }
+      );
     });
 
     it('refreshes the token when cache available without access token', async () => {
@@ -458,6 +497,9 @@ describe('Auth0Client', () => {
           redirect_uri: TEST_REDIRECT_URI,
           refresh_token: TEST_REFRESH_TOKEN
         },
+        {
+          'Auth0-Client': btoa(JSON.stringify(DEFAULT_AUTH0_CLIENT))
+        },
         1
       );
 
@@ -474,13 +516,19 @@ describe('Auth0Client', () => {
 
       await loginWithRedirect(auth0);
 
-      assertPost('https://auth0_domain/oauth/token', {
-        redirect_uri: TEST_REDIRECT_URI,
-        client_id: TEST_CLIENT_ID,
-        code_verifier: TEST_CODE_VERIFIER,
-        grant_type: 'authorization_code',
-        code: TEST_CODE
-      });
+      assertPost(
+        'https://auth0_domain/oauth/token',
+        {
+          redirect_uri: TEST_REDIRECT_URI,
+          client_id: TEST_CLIENT_ID,
+          code_verifier: TEST_CODE_VERIFIER,
+          grant_type: 'authorization_code',
+          code: TEST_CODE
+        },
+        {
+          'Auth0-Client': btoa(JSON.stringify(DEFAULT_AUTH0_CLIENT))
+        }
+      );
 
       mockFetch.mockResolvedValueOnce(
         fetchResponse(true, {
@@ -501,6 +549,9 @@ describe('Auth0Client', () => {
           redirect_uri: TEST_REDIRECT_URI,
           refresh_token: TEST_REFRESH_TOKEN
         },
+        {
+          'Auth0-Client': btoa(JSON.stringify(DEFAULT_AUTH0_CLIENT))
+        },
         1
       );
 
@@ -519,13 +570,19 @@ describe('Auth0Client', () => {
 
       await loginWithRedirect(auth0);
 
-      assertPost('https://auth0_domain/oauth/token', {
-        redirect_uri: TEST_REDIRECT_URI,
-        client_id: TEST_CLIENT_ID,
-        code_verifier: TEST_CODE_VERIFIER,
-        grant_type: 'authorization_code',
-        code: TEST_CODE
-      });
+      assertPost(
+        'https://auth0_domain/oauth/token',
+        {
+          redirect_uri: TEST_REDIRECT_URI,
+          client_id: TEST_CLIENT_ID,
+          code_verifier: TEST_CODE_VERIFIER,
+          grant_type: 'authorization_code',
+          code: TEST_CODE
+        },
+        {
+          'Auth0-Client': btoa(JSON.stringify(DEFAULT_AUTH0_CLIENT))
+        }
+      );
 
       const access_token = await getTokenSilently(auth0, { ignoreCache: true });
 
@@ -536,6 +593,9 @@ describe('Auth0Client', () => {
           grant_type: 'refresh_token',
           redirect_uri: TEST_REDIRECT_URI,
           refresh_token: TEST_REFRESH_TOKEN
+        },
+        {
+          'Auth0-Client': btoa(JSON.stringify(DEFAULT_AUTH0_CLIENT))
         },
         1
       );
