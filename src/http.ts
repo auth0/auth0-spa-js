@@ -7,20 +7,21 @@ import {
 
 import { sendMessage } from './worker/worker.utils';
 import { FetchOptions } from './global';
+import { GenericError } from './errors';
 
 export const createAbortController = () => new AbortController();
 
 const switchFetch = async (
-  url: string,
+  fetchUrl: string,
   audience: string,
   scope: string,
-  opts: FetchOptions,
+  fetchOptions: FetchOptions,
   timeout: number,
   worker?: Worker
 ) => {
   if (worker) {
     // AbortSignal is not serializable, need to implement in the Web Worker
-    delete opts.signal;
+    delete fetchOptions.signal;
 
     return sendMessage(
       {
@@ -29,13 +30,13 @@ const switchFetch = async (
           scope
         },
         timeout,
-        fetchUrl: url,
-        fetchOptions: { ...opts }
+        fetchUrl,
+        fetchOptions
       },
       worker
     );
   } else {
-    const response = await fetch(url, opts);
+    const response = await fetch(fetchUrl, fetchOptions);
     return {
       ok: response.ok,
       json: await response.json()
@@ -59,7 +60,7 @@ export const fetchWithTimeout = (
     signal
   };
 
-  let timeoutId: ReturnType<typeof setTimeout>;
+  let timeoutId: NodeJS.Timeout;
 
   // The promise will resolve with one of these two promises (the fetch or the timeout), whichever completes first.
   return Promise.race([
@@ -122,12 +123,8 @@ export const getJSON = async (
   if (!ok) {
     const errorMessage =
       error_description || `HTTP error. Unable to fetch ${url}`;
-    const e: any = new Error(errorMessage);
 
-    e.error = error || 'request_error';
-    e.error_description = errorMessage;
-
-    throw e;
+    throw new GenericError(error || 'request_error', errorMessage);
   }
 
   return success;

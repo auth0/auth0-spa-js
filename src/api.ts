@@ -1,4 +1,4 @@
-import { TokenEndpointOptions } from '.';
+import { TokenEndpointOptions } from './global';
 import { DEFAULT_AUTH0_CLIENT } from './constants';
 import { getJSON } from './http';
 

@@ -41,8 +41,7 @@ describe('token worker', () => {
       fetchOptions: {
         method: 'POST',
         body: JSON.stringify({})
-      },
-      auth: {}
+      }
     });
 
     expect(response.json).toEqual({
@@ -64,8 +63,7 @@ describe('token worker', () => {
         body: JSON.stringify({
           grant_type: 'authorization_code'
         })
-      },
-      auth: {}
+      }
     });
 
     await messageHandlerAsync({
@@ -75,8 +73,7 @@ describe('token worker', () => {
         body: JSON.stringify({
           grant_type: 'refresh_token'
         })
-      },
-      auth: {}
+      }
     });
 
     expect(JSON.parse(mockFetch.mock.calls[1][1].body)).toEqual({
@@ -93,8 +90,7 @@ describe('token worker', () => {
         body: JSON.stringify({
           grant_type: 'refresh_token'
         })
-      },
-      auth: {}
+      }
     });
 
     expect(response.json.error_description).toEqual(
@@ -109,8 +105,7 @@ describe('token worker', () => {
       fetchOptions: {
         method: 'POST',
         body: JSON.stringify({})
-      },
-      auth: {}
+      }
     });
     expect(response.error).toEqual('fail');
   });
@@ -137,8 +132,7 @@ describe('token worker', () => {
         body: JSON.stringify({
           grant_type: 'authorization_code'
         })
-      },
-      auth: {}
+      }
     });
 
     await messageHandlerAsync({
@@ -148,8 +142,7 @@ describe('token worker', () => {
         body: JSON.stringify({
           grant_type: 'refresh_token'
         })
-      },
-      auth: {}
+      }
     });
 
     const result = await messageHandlerAsync({
@@ -159,8 +152,7 @@ describe('token worker', () => {
         body: JSON.stringify({
           grant_type: 'refresh_token'
         })
-      },
-      auth: {}
+      }
     });
 
     expect(result.ok).toBe(false);

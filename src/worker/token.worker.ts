@@ -20,14 +20,15 @@ const deleteRefreshToken = (audience: string, scope: string) =>
 const wait = (time: number) =>
   new Promise(resolve => setTimeout(resolve, time));
 
-const messageHandler = async (m: MessageEvent<WorkerRefreshTokenMessage>) => {
+const messageHandler = async ({
+  data: { timeout, auth, fetchUrl, fetchOptions },
+  ports: [port]
+}: MessageEvent<WorkerRefreshTokenMessage>) => {
   let json: {
     refresh_token?: string;
   };
 
-  const { auth, fetchUrl, fetchOptions, timeout } = m.data;
-  const [port] = m.ports;
-  const { audience, scope } = auth;
+  const { audience, scope } = auth || {};
 
   try {
     const body = JSON.parse(fetchOptions.body);
