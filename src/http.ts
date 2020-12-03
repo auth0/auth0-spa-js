@@ -18,7 +18,7 @@ const switchFetch = async (
   fetchOptions: FetchOptions,
   timeout: number,
   worker?: Worker
-) => {
+): Promise<any> => {
   if (worker) {
     // AbortSignal is not serializable, need to implement in the Web Worker
     delete fetchOptions.signal;
@@ -51,7 +51,7 @@ export const fetchWithTimeout = (
   options: FetchOptions,
   worker?: Worker,
   timeout = DEFAULT_FETCH_TIMEOUT_MS
-) => {
+): Promise<any> => {
   const controller = createAbortController();
   const signal = controller.signal;
 
@@ -83,7 +83,7 @@ export const getJSON = async (
   scope: string,
   options: FetchOptions,
   worker?: Worker
-) => {
+): Promise<any> => {
   let fetchError: null | Error = null;
   let response: any;
 

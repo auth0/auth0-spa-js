@@ -12,7 +12,7 @@ import {
   validateCrypto
 } from './utils';
 
-import { oauthToken } from './api';
+import { oauthToken, TokenEndpointResponse } from './api';
 
 import { getUniqueScopes } from './scope';
 import { InMemoryCache, ICache, LocalStorageCache } from './cache';
@@ -516,7 +516,6 @@ export default class Auth0Client {
       code,
       auth0Client: this.options.auth0Client
     } as OAuthTokenOptions;
-
     // some old versions of the SDK might not have added redirect_uri to the
     // transaction, we dont want the key to be set to undefined.
     if (undefined !== transaction.redirect_uri) {
@@ -870,7 +869,7 @@ export default class Auth0Client {
       this.options.redirect_uri ||
       window.location.origin;
 
-    let tokenResult;
+    let tokenResult: TokenEndpointResponse;
 
     const {
       scope,

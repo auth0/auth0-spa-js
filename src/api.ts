@@ -2,7 +2,15 @@ import { TokenEndpointOptions } from './global';
 import { DEFAULT_AUTH0_CLIENT } from './constants';
 import { getJSON } from './http';
 
-export const oauthToken = async (
+export type TokenEndpointResponse = {
+  id_token: string;
+  access_token: string;
+  refresh_token?: string;
+  expires_in: number;
+  scope?: string;
+};
+
+export async function oauthToken(
   {
     baseUrl,
     timeout,
@@ -12,18 +20,15 @@ export const oauthToken = async (
     ...options
   }: TokenEndpointOptions,
   worker?: Worker
-) =>
-  await getJSON(
+): Promise<TokenEndpointResponse> {
+  return await getJSON(
     `${baseUrl}/oauth/token`,
     timeout,
     audience || 'default',
     scope,
     {
       method: 'POST',
-      body: JSON.stringify({
-        redirect_uri: window.location.origin,
-        ...options
-      }),
+      body: JSON.stringify(options),
       headers: {
         'Content-type': 'application/json',
         'Auth0-Client': btoa(
@@ -33,3 +38,4 @@ export const oauthToken = async (
     },
     worker
   );
+}

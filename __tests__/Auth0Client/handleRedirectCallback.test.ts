@@ -11,10 +11,19 @@ import { fetchResponse, loginWithRedirectFn, setupFn } from './helpers';
 
 import {
   TEST_ACCESS_TOKEN,
+  TEST_APP_STATE,
+  TEST_CLIENT_ID,
+  TEST_CODE,
   TEST_CODE_CHALLENGE,
+  TEST_DOMAIN,
+  TEST_ENCODED_STATE,
   TEST_ID_TOKEN,
-  TEST_REFRESH_TOKEN
+  TEST_RANDOM_STRING,
+  TEST_REFRESH_TOKEN,
+  TEST_SCOPES,
+  TEST_USER_ID
 } from '../constants';
+import { Auth0ClientOptions } from '../../src/global';
 
 jest.mock('unfetch');
 jest.mock('es-cookie');
@@ -200,111 +209,139 @@ describe('Auth0Client', () => {
       expect(result).toBeDefined();
       expect(result.appState).toBe(appState);
     });
+  });
 
-    describe('when there is a valid query string in a hash', () => {
-      it('should throw an error if the /authorize call redirects with an error param', async () => {
-        const auth0 = setup();
-        let error;
-        const appState = {
-          key: 'property'
-        };
-        try {
-          await loginWithRedirect(
-            auth0,
-            { appState },
-            {
-              authorize: {
-                state: 'error-state',
-                error: 'some-error',
-                errorDescription: 'some-error-description'
-              },
-              useHash: true
-            }
-          );
-        } catch (e) {
-          error = e;
+  it('calls oauth/token without redirect uri if not set in transaction', async () => {
+    window.history.pushState(
+      {},
+      'Test',
+      `#/callback/?code=${TEST_CODE}&state=${TEST_ENCODED_STATE}`
+    );
+
+    mockFetch.mockResolvedValueOnce(
+      fetchResponse(true, {
+        id_token: TEST_ID_TOKEN,
+        refresh_token: TEST_REFRESH_TOKEN,
+        access_token: TEST_ACCESS_TOKEN,
+        expires_in: 86400
+      })
+    );
+
+    const auth0 = setup();
+    delete auth0['options']['redirect_uri'];
+
+    await auth0.loginWithRedirect();
+    await auth0.handleRedirectCallback();
+
+    expect(mockFetch.mock.calls[0][0]).toBe('https://auth0_domain/oauth/token');
+
+    const fetchBody = JSON.parse(mockFetch.mock.calls[0][1].body);
+    expect(fetchBody.redirect_uri).toBeUndefined();
+  });
+
+  describe('when there is a valid query string in a hash', () => {
+    it('should throw an error if the /authorize call redirects with an error param', async () => {
+      const auth0 = setup();
+      let error;
+      const appState = {
+        key: 'property'
+      };
+      try {
+        await loginWithRedirect(
+          auth0,
+          { appState },
+          {
+            authorize: {
+              state: 'error-state',
+              error: 'some-error',
+              errorDescription: 'some-error-description'
+            },
+            useHash: true
+          }
+        );
+      } catch (e) {
+        error = e;
+      }
+      expect(error).toBeDefined();
+      expect(error.error).toBe('some-error');
+      expect(error.error_description).toBe('some-error-description');
+      expect(error.state).toBe('error-state');
+      expect(error.appState).toBe(appState);
+    });
+
+    it('should clear the transaction data when the /authorize call redirects with a code param', async () => {
+      const auth0 = setup();
+
+      jest.spyOn(auth0['transactionManager'], 'remove');
+      await loginWithRedirect(
+        auth0,
+        {},
+        {
+          useHash: true
         }
-        expect(error).toBeDefined();
-        expect(error.error).toBe('some-error');
-        expect(error.error_description).toBe('some-error-description');
-        expect(error.state).toBe('error-state');
-        expect(error.appState).toBe(appState);
-      });
+      );
 
-      it('should clear the transaction data when the /authorize call redirects with a code param', async () => {
-        const auth0 = setup();
+      expect(auth0['transactionManager'].remove).toHaveBeenCalledWith();
+    });
 
-        jest.spyOn(auth0['transactionManager'], 'remove');
+    it('should clear the transaction data when the /authorize call redirects with an error param', async () => {
+      const auth0 = setup();
+      let error;
+      jest.spyOn(auth0['transactionManager'], 'remove');
+
+      try {
         await loginWithRedirect(
           auth0,
           {},
           {
+            authorize: {
+              error: 'some-error'
+            },
             useHash: true
           }
         );
+      } catch (e) {
+        error = e;
+      }
 
-        expect(auth0['transactionManager'].remove).toHaveBeenCalledWith();
-      });
+      expect(error).toBeDefined();
+      expect(auth0['transactionManager'].remove).toHaveBeenCalledWith();
+    });
 
-      it('should clear the transaction data when the /authorize call redirects with an error param', async () => {
-        const auth0 = setup();
-        let error;
-        jest.spyOn(auth0['transactionManager'], 'remove');
-
-        try {
-          await loginWithRedirect(
-            auth0,
-            {},
-            {
-              authorize: {
-                error: 'some-error'
-              },
-              useHash: true
-            }
-          );
-        } catch (e) {
-          error = e;
-        }
-
-        expect(error).toBeDefined();
-        expect(auth0['transactionManager'].remove).toHaveBeenCalledWith();
-      });
-
-      it('should throw an error if the /authorize call redirects with no params', async () => {
-        const auth0 = setup();
-        let error;
-        try {
-          await loginWithRedirect(
-            auth0,
-            {},
-            {
-              authorize: {
-                state: null,
-                code: null
-              },
-              useHash: true
-            }
-          );
-        } catch (e) {
-          error = e;
-        }
-        expect(error).toBeDefined();
-        expect(error.message).toBe(
-          'There are no query params available for parsing.'
+    it('should throw an error if the /authorize call redirects with no params', async () => {
+      const auth0 = setup();
+      let error;
+      try {
+        await loginWithRedirect(
+          auth0,
+          {},
+          {
+            authorize: {
+              state: null,
+              code: null
+            },
+            useHash: true
+          }
         );
-      });
+      } catch (e) {
+        error = e;
+      }
+      expect(error).toBeDefined();
+      expect(error.message).toBe(
+        'There are no query params available for parsing.'
+      );
+    });
 
-      it('should throw an error if there is no transaction', async () => {
-        const auth0 = setup();
-        let error;
-        try {
-          await auth0.handleRedirectCallback('#test?foo=bar');
-        } catch (e) {
-          error = e;
-        }
-        expect(error).toBeDefined();
-        expect(error.message).toBe('Invalid state');
-      });
+    it('should throw an error if there is no transaction', async () => {
+      const auth0 = setup();
+      let error;
+      try {
+        await auth0.handleRedirectCallback('#test?foo=bar');
+      } catch (e) {
+        error = e;
+      }
+      expect(error).toBeDefined();
+      expect(error.message).toBe('Invalid state');
     });
   });
 });

@@ -11,6 +11,7 @@ import { oauthToken } from '../src/api';
 // @ts-ignore
 import Worker from '../src/worker/token.worker';
 import { MessageChannel } from 'worker_threads';
+import { TEST_REDIRECT_URI } from './constants';
 (<any>global).MessageChannel = MessageChannel;
 
 jest.mock('../src/worker/token.worker');
@@ -48,6 +49,7 @@ describe('oauthToken', () => {
     };
 
     await oauthToken({
+      redirect_uri: 'http://localhost',
       grant_type: 'authorization_code',
       baseUrl: 'https://test.com',
       client_id: 'client_idIn',
@@ -95,6 +97,7 @@ describe('oauthToken', () => {
 
     await oauthToken(
       {
+        redirect_uri: 'http://localhost',
         grant_type: 'authorization_code',
         baseUrl: 'https://test.com',
         client_id: 'client_idIn',
