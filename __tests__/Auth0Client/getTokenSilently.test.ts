@@ -663,6 +663,68 @@ describe('Auth0Client', () => {
       );
     });
 
+    describe('concurrency', () => {
+      it('should call _getTokenSilently multiple times when no call in flight concurrently', async () => {
+        const client1 = setup();
+
+        jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
+          access_token: TEST_ACCESS_TOKEN,
+          state: TEST_STATE,
+          code: TEST_CODE
+        });
+
+        jest.spyOn(client1 as any, '_getTokenSilently');
+
+        await getTokenSilently(client1);
+        await getTokenSilently(client1);
+
+        expect(client1['_getTokenSilently']).toHaveBeenCalledTimes(2);
+      });
+
+      it('should not call _getTokenSilently if a call is already in flight', async () => {
+        const client1 = setup();
+
+        jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
+          access_token: TEST_ACCESS_TOKEN,
+          state: TEST_STATE,
+          code: TEST_CODE
+        });
+
+        jest.spyOn(client1 as any, '_getTokenSilently');
+
+        const tokens = await Promise.all([
+          getTokenSilently(client1),
+          getTokenSilently(client1)
+        ]);
+
+        expect(client1['_getTokenSilently']).toHaveBeenCalledTimes(1);
+        expect(tokens[0]).toEqual(tokens[1]);
+      });
+
+      it('should not call _getTokenSilently if a call is already in flight (cross instance)', async () => {
+        const client1 = setup();
+        const client2 = setup();
+
+        jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
+          access_token: TEST_ACCESS_TOKEN,
+          state: TEST_STATE,
+          code: TEST_CODE
+        });
+
+        jest.spyOn(client1 as any, '_getTokenSilently');
+        jest.spyOn(client2 as any, '_getTokenSilently');
+
+        const tokens = await Promise.all([
+          getTokenSilently(client1),
+          getTokenSilently(client2)
+        ]);
+
+        expect(client1['_getTokenSilently']).toHaveBeenCalledTimes(1);
+        expect(client2['_getTokenSilently']).not.toHaveBeenCalled();
+        expect(tokens[0]).toEqual(tokens[1]);
+      });
+    });
+
     it('handles fetch errors from the worker', async () => {
       const auth0 = setup({
         useRefreshTokens: true
