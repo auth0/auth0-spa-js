@@ -1,7 +1,7 @@
 import { MISSING_REFRESH_TOKEN_ERROR_MESSAGE } from '../constants';
 import { WorkerRefreshTokenMessage } from './worker.types';
 
-let refreshTokens: { [key: string]: string } = {};
+let refreshTokens: Record<string, string> = {};
 
 const cacheKey = (audience: string, scope: string) => `${audience}|${scope}`;
 
@@ -20,18 +20,17 @@ const deleteRefreshToken = (audience: string, scope: string) =>
 const wait = (time: number) =>
   new Promise(resolve => setTimeout(resolve, time));
 
-const messageHandler: (m: MessageEvent) => any = async ({
-  data: { url, timeout, audience, scope, ...opts },
-  ports: [port]
-}) => {
+const messageHandler = async (m: MessageEvent<WorkerRefreshTokenMessage>) => {
   let json: {
     refresh_token?: string;
   };
 
+  const { auth, fetchUrl, fetchOptions, timeout } = m.data;
+  const [port] = m.ports;
+  const { audience, scope } = auth;
+
   try {
-    const body = JSON.parse(opts.body);
-    // console.log(body);
-    // console.log(fetch);
+    const body = JSON.parse(fetchOptions.body);
 
     if (!body.refresh_token && body.grant_type === 'refresh_token') {
       const refreshToken = getRefreshToken(audience, scope);
@@ -40,17 +39,21 @@ const messageHandler: (m: MessageEvent) => any = async ({
         throw new Error(MISSING_REFRESH_TOKEN_ERROR_MESSAGE);
       }
 
-      opts.body = JSON.stringify({ ...body, refresh_token: refreshToken });
+      fetchOptions.body = JSON.stringify({
+        ...body,
+        refresh_token: refreshToken
+      });
     }
 
     const abortController = new AbortController();
     const { signal } = abortController;
 
     let response: any;
+
     try {
       response = await Promise.race([
         wait(timeout),
-        fetch(url, { ...opts, signal })
+        fetch(fetchUrl, { ...fetchOptions, signal })
       ]);
     } catch (error) {
       // fetch error, reject `sendMessage` using `error` key so that we retry.

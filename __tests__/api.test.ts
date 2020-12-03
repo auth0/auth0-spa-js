@@ -17,7 +17,6 @@ jest.mock('../src/worker/token.worker');
 jest.mock('unfetch');
 
 const mockFetch = <jest.Mock>fetch;
-// (<any>global).TextEncoder = TextEncoder;
 (<any>global).MessageChannel = MessageChannel;
 (<any>global).fetch = mockFetch;
 
@@ -122,16 +121,20 @@ describe('oauthToken', () => {
 
     expect(spy).toHaveBeenCalledWith(
       {
-        body: JSON.stringify(body),
-        audience: '__test_audience__',
-        scope: '__test_scope__',
-        headers: {
-          'Content-type': 'application/json',
-          'Auth0-Client': btoa(JSON.stringify(auth0Client))
+        fetchUrl: 'https://test.com/oauth/token',
+        fetchOptions: {
+          body: JSON.stringify(body),
+          headers: {
+            'Content-type': 'application/json',
+            'Auth0-Client': btoa(JSON.stringify(auth0Client))
+          },
+          method: 'POST'
         },
-        method: 'POST',
-        timeout: 10000,
-        url: 'https://test.com/oauth/token'
+        auth: {
+          audience: '__test_audience__',
+          scope: '__test_scope__'
+        },
+        timeout: 10000
       },
       expect.arrayContaining([expect.anything()])
     );

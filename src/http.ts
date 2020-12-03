@@ -6,6 +6,7 @@ import {
 } from './constants';
 
 import { sendMessage } from './worker/worker.utils';
+import { FetchOptions } from './global';
 
 export const createAbortController = () => new AbortController();
 
@@ -13,15 +14,26 @@ const switchFetch = async (
   url: string,
   audience: string,
   scope: string,
-  opts: { [index: string]: any },
+  opts: FetchOptions,
   timeout: number,
   worker?: Worker
 ) => {
   if (worker) {
-    // console.log(opts);
     // AbortSignal is not serializable, need to implement in the Web Worker
     delete opts.signal;
-    return sendMessage({ url, audience, scope, timeout, ...opts }, worker);
+
+    return sendMessage(
+      {
+        auth: {
+          audience,
+          scope
+        },
+        timeout,
+        fetchUrl: url,
+        fetchOptions: { ...opts }
+      },
+      worker
+    );
   } else {
     const response = await fetch(url, opts);
     return {
@@ -35,7 +47,7 @@ export const fetchWithTimeout = (
   url: string,
   audience: string,
   scope: string,
-  options: { [index: string]: any },
+  options: FetchOptions,
   worker?: Worker,
   timeout = DEFAULT_FETCH_TIMEOUT_MS
 ) => {
@@ -48,6 +60,7 @@ export const fetchWithTimeout = (
   };
 
   let timeoutId: ReturnType<typeof setTimeout>;
+
   // The promise will resolve with one of these two promises (the fetch or the timeout), whichever completes first.
   return Promise.race([
     switchFetch(url, audience, scope, fetchOptions, timeout, worker),
@@ -67,7 +80,7 @@ export const getJSON = async (
   timeout: number,
   audience: string,
   scope: string,
-  options: { [index: string]: any },
+  options: FetchOptions,
   worker?: Worker
 ) => {
   let fetchError: null | Error = null;
