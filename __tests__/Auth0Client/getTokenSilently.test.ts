@@ -4,6 +4,7 @@ import unfetch from 'unfetch';
 import { verify } from '../../src/jwt';
 import { MessageChannel } from 'worker_threads';
 import * as utils from '../../src/utils';
+import * as promiseUtils from '../../src/promise-utils';
 import * as scope from '../../src/scope';
 
 import { expectToHaveBeenCalledWithAuth0ClientParam } from '../helpers';
@@ -978,27 +979,35 @@ describe('Auth0Client', () => {
     });
 
     it('uses the cache for subsequent requests that occur before the response', async () => {
-      const auth0 = setup();
-      await loginWithRedirect(auth0);
-      (auth0 as any).cache.clear();
-      jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
-        access_token: TEST_ACCESS_TOKEN,
-        state: TEST_STATE
-      });
-      mockFetch.mockResolvedValue(
-        fetchResponse(true, {
-          id_token: TEST_ID_TOKEN,
+      let singlePromiseSpy = jest
+        .spyOn(promiseUtils, 'singlePromise')
+        .mockImplementation(cb => cb());
+
+      try {
+        const auth0 = setup();
+        await loginWithRedirect(auth0);
+        (auth0 as any).cache.clear();
+        jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
           access_token: TEST_ACCESS_TOKEN,
-          expires_in: 86400
-        })
-      );
-      let [access_token] = await Promise.all([
-        auth0.getTokenSilently(),
-        auth0.getTokenSilently(),
-        auth0.getTokenSilently()
-      ]);
-      expect(access_token).toEqual(TEST_ACCESS_TOKEN);
-      expect(utils.runIframe).toHaveBeenCalledTimes(1);
+          state: TEST_STATE
+        });
+        mockFetch.mockResolvedValue(
+          fetchResponse(true, {
+            id_token: TEST_ID_TOKEN,
+            access_token: TEST_ACCESS_TOKEN,
+            expires_in: 86400
+          })
+        );
+        let [access_token] = await Promise.all([
+          auth0.getTokenSilently(),
+          auth0.getTokenSilently(),
+          auth0.getTokenSilently()
+        ]);
+        expect(access_token).toEqual(TEST_ACCESS_TOKEN);
+        expect(utils.runIframe).toHaveBeenCalledTimes(1);
+      } finally {
+        singlePromiseSpy.mockRestore();
+      }
     });
 
     it('uses the cache for multiple token requests with audience and scope', async () => {
