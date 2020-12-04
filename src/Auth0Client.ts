@@ -9,15 +9,17 @@ import {
   runIframe,
   sha256,
   bufferToBase64UrlEncoded,
-  oauthToken,
   validateCrypto
 } from './utils';
+
+import { oauthToken, TokenEndpointResponse } from './api';
 
 import { getUniqueScopes } from './scope';
 import { InMemoryCache, ICache, LocalStorageCache } from './cache';
 import TransactionManager from './transaction-manager';
 import { verify as verifyIdToken } from './jwt';
 import { AuthenticationError } from './errors';
+
 import {
   ClientStorage,
   CookieStorage,
@@ -57,7 +59,7 @@ import {
 } from './global';
 
 // @ts-ignore
-import TokenWorker from './token.worker.ts';
+import TokenWorker from './worker/token.worker.ts';
 import { isIE11, isSafari10, isSafari11, isSafari12_0 } from './user-agent';
 
 /**
@@ -73,7 +75,7 @@ const GET_TOKEN_SILENTLY_LOCK_KEY = 'auth0.lock.getTokenSilently';
 /**
  * @ignore
  */
-const cacheLocationBuilders = {
+const cacheLocationBuilders: Record<string, () => ICache> = {
   memory: () => new InMemoryCache().enclosedCache,
   localstorage: () => new LocalStorageCache()
 };
@@ -94,10 +96,11 @@ const supportWebWorker = () =>
 /**
  * @ignore
  */
-const getTokenIssuer = (issuer, domainUrl) => {
+const getTokenIssuer = (issuer: string, domainUrl: string) => {
   if (issuer) {
     return issuer.startsWith('https://') ? issuer : `https://${issuer}/`;
   }
+
   return `${domainUrl}/`;
 };
 
@@ -197,7 +200,7 @@ export default class Auth0Client {
     this.customOptions = getCustomInitialOptions(options);
   }
 
-  private _url(path) {
+  private _url(path: string) {
     const auth0Client = encodeURIComponent(
       btoa(JSON.stringify(this.options.auth0Client || DEFAULT_AUTH0_CLIENT))
     );
@@ -415,7 +418,7 @@ export default class Auth0Client {
    */
   public async getUser<TUser extends User = User>(
     options: GetUserOptions = {}
-  ): Promise<TUser> {
+  ): Promise<TUser | undefined> {
     const audience = options.audience || this.options.audience || 'default';
     const scope = getUniqueScopes(this.defaultScope, this.scope, options.scope);
 
@@ -513,7 +516,6 @@ export default class Auth0Client {
       code,
       auth0Client: this.options.auth0Client
     } as OAuthTokenOptions;
-
     // some old versions of the SDK might not have added redirect_uri to the
     // transaction, we dont want the key to be set to undefined.
     if (undefined !== transaction.redirect_uri) {
@@ -867,7 +869,7 @@ export default class Auth0Client {
       this.options.redirect_uri ||
       window.location.origin;
 
-    let tokenResult;
+    let tokenResult: TokenEndpointResponse;
 
     const {
       scope,

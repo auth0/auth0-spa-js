@@ -493,3 +493,14 @@ export class User {
   sub?: string;
   [key: string]: any;
 }
+
+/**
+ * @ignore
+ */
+export type FetchOptions = {
+  method?: string;
+  headers?: Record<string, string>;
+  credentials?: 'include' | 'omit';
+  body?: string;
+  signal?: AbortSignal;
+};
