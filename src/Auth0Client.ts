@@ -564,8 +564,7 @@ export default class Auth0Client {
    *
    * It should be used for silently logging in the user when you instantiate the
    * `Auth0Client` constructor. You should not need this if you are using the
-   * `createAuth0Client` factory. If you are using the `Auth0Client` constructor
-   * directly, you can use `checkSession` immediately afterwards to check login state.
+   * `createAuth0Client` factory.
    *
    * @param options
    */
