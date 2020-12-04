@@ -1,4 +1,3 @@
-import { expectToHaveBeenCalledWithAuth0ClientParam } from './helpers';
 import { CacheLocation, Auth0ClientOptions } from '../src/global';
 import * as scope from '../src/scope';
 
@@ -26,18 +25,14 @@ jest.mock('../src/storage', () => ({
 
 jest.mock('../src/transaction-manager');
 jest.mock('../src/utils');
+jest.mock('../src/api');
 
-import createAuth0Client, {
-  Auth0Client,
-  GetTokenSilentlyOptions
-} from '../src/index';
+import createAuth0Client, { Auth0Client } from '../src/index';
 
 import {
-  GET_TOKEN_SILENTLY_LOCK_KEY,
   TEST_ACCESS_TOKEN,
   TEST_APP_STATE,
   TEST_ARRAY_BUFFER,
-  TEST_AUTH0_CLIENT_QUERY_STRING,
   TEST_BASE64_ENCODED_STRING,
   TEST_CLIENT_ID,
   TEST_CODE,
@@ -46,7 +41,6 @@ import {
   TEST_ID_TOKEN,
   TEST_QUERY_PARAMS,
   TEST_RANDOM_STRING,
-  TEST_REFRESH_TOKEN,
   TEST_SCOPES,
   TEST_USER_ID
 } from './constants';
@@ -64,7 +58,7 @@ jest.mock('../src/cache', () => ({
   LocalStorageCache: () => mockEnclosedCache
 }));
 
-jest.mock('../src/token.worker');
+jest.mock('../src/worker/token.worker');
 
 const webWorkerMatcher = expect.objectContaining({
   postMessage: expect.any(Function)
@@ -75,6 +69,7 @@ const setup = async (clientOptions: Partial<Auth0ClientOptions> = {}) => {
   const cache = mockEnclosedCache;
   const tokenVerifier = require('../src/jwt').verify;
   const utils = require('../src/utils');
+  const api = require('../src/api');
 
   utils.createQueryParams.mockReturnValue(TEST_QUERY_PARAMS);
   utils.encode.mockReturnValue(TEST_ENCODED_STATE);
@@ -95,7 +90,7 @@ const setup = async (clientOptions: Partial<Auth0ClientOptions> = {}) => {
     Promise.resolve({ state: TEST_ENCODED_STATE, code: TEST_CODE })
   );
 
-  utils.oauthToken.mockReturnValue(
+  api.oauthToken.mockReturnValue(
     Promise.resolve({
       id_token: TEST_ID_TOKEN,
       access_token: TEST_ACCESS_TOKEN
@@ -131,7 +126,8 @@ const setup = async (clientOptions: Partial<Auth0ClientOptions> = {}) => {
     tokenVerifier,
     transactionManager,
     utils,
-    popup
+    popup,
+    api
   };
 };
 
@@ -261,135 +257,6 @@ describe('Auth0', () => {
       ).rejects.toStrictEqual({
         error: 'some_other_error',
         error_message: 'This is a different error to login_required'
-      });
-    });
-  });
-
-  describe('handleRedirectCallback()', () => {
-    describe('when there is a valid query string in the url', () => {
-      const localSetup = async (
-        clientOptions?: Partial<Auth0ClientOptions>
-      ) => {
-        window.history.pushState(
-          {},
-          'Test',
-          `?code=${TEST_CODE}&state=${TEST_ENCODED_STATE}`
-        );
-        const result = await setup(clientOptions);
-        result.transactionManager.get.mockReturnValue({
-          code_verifier: TEST_RANDOM_STRING,
-          nonce: TEST_ENCODED_STATE,
-          audience: 'default',
-          scope: TEST_SCOPES,
-          appState: TEST_APP_STATE
-        });
-        result.cache.get.mockReturnValue({ access_token: TEST_ACCESS_TOKEN });
-        return result;
-      };
-
-      xit('calls oauth/token without redirect uri if not set in transaction', async () => {
-        const { auth0, utils, transactionManager } = await localSetup();
-        const txn = transactionManager.get.mockReturnValue({
-          code_verifier: TEST_RANDOM_STRING,
-          nonce: TEST_RANDOM_STRING,
-          audience: 'default',
-          scope: TEST_SCOPES,
-          appState: TEST_APP_STATE
-        });
-        await auth0.handleRedirectCallback();
-        const arg = utils.oauthToken.mock.calls[0][0];
-        expect(arg.hasOwnProperty('redirect_uri')).toBeFalsy();
-      });
-    });
-    describe('when there is a valid query string in a hash', () => {
-      const localSetup = async (
-        clientOptions?: Partial<Auth0ClientOptions>
-      ) => {
-        window.history.pushState({}, 'Test', `/`);
-        window.history.pushState(
-          {},
-          'Test',
-          `#/callback/?code=${TEST_CODE}&state=${TEST_ENCODED_STATE}`
-        );
-        const result = await setup(clientOptions);
-        result.transactionManager.get.mockReturnValue({
-          code_verifier: TEST_RANDOM_STRING,
-          nonce: TEST_ENCODED_STATE,
-          audience: 'default',
-          scope: TEST_SCOPES,
-          appState: TEST_APP_STATE
-        });
-        result.cache.get.mockReturnValue({ access_token: TEST_ACCESS_TOKEN });
-        return result;
-      };
-
-      it('calls `tokenVerifier.verify` with the `id_token` from in the oauth/token response', async () => {
-        const { auth0, tokenVerifier } = await localSetup();
-
-        await auth0.handleRedirectCallback();
-
-        expect(tokenVerifier).toHaveBeenCalledWith({
-          id_token: TEST_ID_TOKEN,
-          nonce: TEST_ENCODED_STATE,
-          aud: TEST_CLIENT_ID,
-          iss: `https://${TEST_DOMAIN}/`,
-          leeway: undefined,
-          max_age: undefined
-        });
-      });
-      it('saves cache', async () => {
-        const { auth0, cache } = await localSetup();
-
-        await auth0.handleRedirectCallback();
-
-        expect(cache.save).toHaveBeenCalledWith({
-          client_id: TEST_CLIENT_ID,
-          access_token: TEST_ACCESS_TOKEN,
-          audience: 'default',
-          id_token: TEST_ID_TOKEN,
-          scope: TEST_SCOPES,
-          decodedToken: {
-            claims: { sub: TEST_USER_ID, aud: TEST_CLIENT_ID },
-            user: { sub: TEST_USER_ID }
-          }
-        });
-      });
-      it('saves `auth0.is.authenticated` key in storage', async () => {
-        const { auth0, cookieStorage } = await localSetup();
-
-        await auth0.handleRedirectCallback();
-
-        expect(cookieStorage.save).toHaveBeenCalledWith(
-          'auth0.is.authenticated',
-          true,
-          {
-            daysUntilExpire: 1
-          }
-        );
-      });
-      it('saves `auth0.is.authenticated` key in storage for an extended period', async () => {
-        const { auth0, cookieStorage } = await localSetup({
-          sessionCheckExpiryDays: 2
-        });
-
-        await auth0.handleRedirectCallback();
-
-        expect(cookieStorage.save).toHaveBeenCalledWith(
-          'auth0.is.authenticated',
-          true,
-          {
-            daysUntilExpire: 2
-          }
-        );
-      });
-      it('returns the transactions appState', async () => {
-        const { auth0 } = await localSetup();
-
-        const response = await auth0.handleRedirectCallback();
-
-        expect(response).toEqual({
-          appState: TEST_APP_STATE
-        });
       });
     });
   });
