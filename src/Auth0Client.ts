@@ -128,11 +128,6 @@ const getCustomInitialOptions = (
 };
 
 /**
- * @ignore
- */
-let getTokenSilentlyPromises = {};
-
-/**
  * Auth0 SDK for Single Page Applications using [Authorization Code Grant Flow with PKCE](https://auth0.com/docs/api-auth/tutorials/authorization-code-grant-pkce).
  */
 export default class Auth0Client {
