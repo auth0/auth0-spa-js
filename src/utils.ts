@@ -6,7 +6,6 @@ import {
 } from './constants';
 
 import { PopupTimeoutError, TimeoutError, GenericError } from './errors';
-import { getMissingScope } from './scope';
 
 export const parseQueryResult = (queryString: string) => {
   if (queryString.indexOf('#') > -1) {
