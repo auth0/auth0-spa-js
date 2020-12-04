@@ -667,7 +667,7 @@ describe('Auth0Client', () => {
 
     describe('concurrency', () => {
       it('should call _getTokenSilently multiple times when no call in flight concurrently', async () => {
-        const client1 = setup();
+        const client = setup();
 
         jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
           access_token: TEST_ACCESS_TOKEN,
@@ -675,16 +675,16 @@ describe('Auth0Client', () => {
           code: TEST_CODE
         });
 
-        jest.spyOn(client1 as any, '_getTokenSilently');
+        jest.spyOn(client as any, '_getTokenSilently');
 
-        await getTokenSilently(client1);
-        await getTokenSilently(client1);
+        await getTokenSilently(client);
+        await getTokenSilently(client);
 
-        expect(client1['_getTokenSilently']).toHaveBeenCalledTimes(2);
+        expect(client['_getTokenSilently']).toHaveBeenCalledTimes(2);
       });
 
       it('should not call _getTokenSilently if a call is already in flight', async () => {
-        const client1 = setup();
+        const client = setup();
 
         jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
           access_token: TEST_ACCESS_TOKEN,
@@ -692,14 +692,14 @@ describe('Auth0Client', () => {
           code: TEST_CODE
         });
 
-        jest.spyOn(client1 as any, '_getTokenSilently');
+        jest.spyOn(client as any, '_getTokenSilently');
 
         const tokens = await Promise.all([
-          getTokenSilently(client1),
-          getTokenSilently(client1)
+          getTokenSilently(client),
+          getTokenSilently(client)
         ]);
 
-        expect(client1['_getTokenSilently']).toHaveBeenCalledTimes(1);
+        expect(client['_getTokenSilently']).toHaveBeenCalledTimes(1);
         expect(tokens[0]).toEqual(tokens[1]);
       });
 
