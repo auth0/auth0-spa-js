@@ -97,6 +97,7 @@ describe('Auth0Client', () => {
 
   afterEach(() => {
     mockFetch.mockReset();
+    acquireLockSpy.mockResolvedValue(true);
     jest.clearAllMocks();
     window.location = oldWindowLocation;
   });
@@ -1070,6 +1071,45 @@ describe('Auth0Client', () => {
         5000
       );
       expect(releaseLockSpy).toHaveBeenCalledWith(GET_TOKEN_SILENTLY_LOCK_KEY);
+    });
+
+    it('should retry acquiring a lock', async () => {
+      const auth0 = setup();
+
+      jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
+        access_token: TEST_ACCESS_TOKEN,
+        state: TEST_STATE
+      });
+
+      let i = 1;
+
+      acquireLockSpy.mockImplementation(() => {
+        if (i === 3) {
+          return Promise.resolve(true);
+        } else {
+          i++;
+          return Promise.resolve(false);
+        }
+      });
+
+      await getTokenSilently(auth0);
+
+      expect(acquireLockSpy).toHaveBeenCalledTimes(3);
+    });
+
+    it('should trow a Timeout error if it can not acquire a lock after retrying', async () => {
+      const auth0 = setup();
+
+      jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
+        access_token: TEST_ACCESS_TOKEN,
+        state: TEST_STATE
+      });
+
+      acquireLockSpy.mockResolvedValue(false);
+
+      await expect(getTokenSilently(auth0)).rejects.toThrow('Timeout');
+
+      expect(acquireLockSpy).toHaveBeenCalledTimes(10);
     });
 
     it('should release a browser lock when an error occurred', async () => {
