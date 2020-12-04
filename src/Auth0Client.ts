@@ -75,7 +75,7 @@ const GET_TOKEN_SILENTLY_LOCK_KEY = 'auth0.lock.getTokenSilently';
 /**
  * @ignore
  */
-const cacheLocationBuilders = {
+const cacheLocationBuilders: Record<string, () => ICache> = {
   memory: () => new InMemoryCache().enclosedCache,
   localstorage: () => new LocalStorageCache()
 };
@@ -200,7 +200,7 @@ export default class Auth0Client {
     this.customOptions = getCustomInitialOptions(options);
   }
 
-  private _url(path) {
+  private _url(path: string) {
     const auth0Client = encodeURIComponent(
       btoa(JSON.stringify(this.options.auth0Client || DEFAULT_AUTH0_CLIENT))
     );
