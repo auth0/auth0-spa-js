@@ -394,7 +394,7 @@ export const oauthToken = async (
   const missingScope = getMissingScope(scope, result.scope);
   if (missingScope.length) {
     console.warn(
-      `The requested scopes (${scope}) are different from the scopes part of the retrieved token (${result.scope}). This could result in unexpected behavior and might eventually become unsupported. It is advised to resolve this by either:
+      `The requested scopes (${scope}) are different from the scopes of the retrieved token (${result.scope}). This could mean that your access token may not include all the scopes that you expect. It is advised to resolve this by either:
   
   - Removing \`${missingScope}\` from the scope when requesting a new token.
   - Ensuring \`${missingScope}\` is returned as part of the requested token's scopes.`
