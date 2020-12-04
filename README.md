@@ -82,7 +82,7 @@ const auth0 = new Auth0Client({
 
 //if you do this, you'll need to check the session yourself
 try {
-  await checkSession();
+  await getTokenSilently();
 } catch (error) {
   if (error.error !== 'login_required') {
     throw error;
