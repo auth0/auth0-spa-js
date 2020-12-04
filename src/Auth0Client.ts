@@ -617,13 +617,15 @@ export default class Auth0Client {
       () =>
         this._getTokenSilently({
           ignoreCache,
-          getTokenOptions
+          ...getTokenOptions
         }),
       `${this.options.client_id}::${getTokenOptions.audience}::${getTokenOptions.scope}`
     );
   }
 
-  private async _getTokenSilently({ ignoreCache, getTokenOptions }) {
+  private async _getTokenSilently(options: GetTokenSilentlyOptions = {}) {
+    const { ignoreCache, ...getTokenOptions } = options;
+
     const getAccessTokenFromCache = () => {
       const cache = this.cache.get(
         {

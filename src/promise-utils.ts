@@ -1,4 +1,4 @@
-const singlePromiseMap = {};
+const singlePromiseMap: Record<string, Promise<any>> = {};
 
 export const singlePromise = <T>(cb: () => Promise<T>, key: string) => {
   let promise = singlePromiseMap[key];
