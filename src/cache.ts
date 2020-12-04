@@ -142,10 +142,7 @@ export class LocalStorageCache implements ICache {
 
 export class InMemoryCache {
   public enclosedCache: ICache = (function () {
-    let cache: CachePayload = {
-      body: {},
-      expiresAt: 0
-    };
+    let cache: Record<string, CachePayload> = {};
 
     return {
       save(entry: CacheEntry) {
@@ -185,10 +182,7 @@ export class InMemoryCache {
       },
 
       clear() {
-        cache = {
-          body: {},
-          expiresAt: 0
-        };
+        cache = {};
       }
     };
   })();

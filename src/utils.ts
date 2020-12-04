@@ -107,7 +107,7 @@ export const runPopup = (authorizeUrl: string, config: PopupConfigOptions) => {
   }
 
   return new Promise<AuthenticationResult>((resolve, reject) => {
-    let popupEventListener;
+    let popupEventListener: EventListenerOrEventListenerObject;
 
     const timeoutId = setTimeout(() => {
       reject(new PopupTimeoutError(popup));
@@ -130,7 +130,7 @@ export const runPopup = (authorizeUrl: string, config: PopupConfigOptions) => {
       resolve(e.data.response);
     };
 
-    window.addEventListener('message', e => popupEventListener(e));
+    window.addEventListener('message', popupEventListener);
   });
 };
 
