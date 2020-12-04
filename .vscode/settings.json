@@ -6,5 +6,6 @@
     "**/dist": true,
     "**/.rpt2_cache": true,
     "**/docs": true
-  }
+  },
+  "typescript.tsdk": "node_modules/typescript/lib"
 }

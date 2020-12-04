@@ -14,7 +14,8 @@ describe('token worker', () => {
     // The web worker uses native fetch.
     window.fetch = mockFetch;
 
-    const { messageHandler } = require('../src/token.worker');
+    const { messageHandler } = require('../src/worker/token.worker');
+
     messageHandlerAsync = opts =>
       new Promise(resolve =>
         messageHandler({ data: opts, ports: [{ postMessage: resolve }] })
@@ -36,10 +37,13 @@ describe('token worker', () => {
       })
     );
     const response = await messageHandlerAsync({
-      url: '/foo',
-      method: 'POST',
-      body: JSON.stringify({})
+      fetchUrl: '/foo',
+      fetchOptions: {
+        method: 'POST',
+        body: JSON.stringify({})
+      }
     });
+
     expect(response.json).toEqual({
       foo: 'bar'
     });
@@ -53,19 +57,25 @@ describe('token worker', () => {
       })
     );
     await messageHandlerAsync({
-      url: '/foo',
-      method: 'POST',
-      body: JSON.stringify({
-        grant_type: 'authorization_code'
-      })
+      fetchUrl: '/foo',
+      fetchOptions: {
+        method: 'POST',
+        body: JSON.stringify({
+          grant_type: 'authorization_code'
+        })
+      }
     });
+
     await messageHandlerAsync({
-      url: '/foo',
-      method: 'POST',
-      body: JSON.stringify({
-        grant_type: 'refresh_token'
-      })
+      fetchUrl: '/foo',
+      fetchOptions: {
+        method: 'POST',
+        body: JSON.stringify({
+          grant_type: 'refresh_token'
+        })
+      }
     });
+
     expect(JSON.parse(mockFetch.mock.calls[1][1].body)).toEqual({
       grant_type: 'refresh_token',
       refresh_token: 'foo'
@@ -74,12 +84,15 @@ describe('token worker', () => {
 
   it(`errors with grant_type='refresh_token' and no token is stored`, async () => {
     const response = await messageHandlerAsync({
-      url: '/foo',
-      method: 'POST',
-      body: JSON.stringify({
-        grant_type: 'refresh_token'
-      })
+      fetchUrl: '/foo',
+      fetchOptions: {
+        method: 'POST',
+        body: JSON.stringify({
+          grant_type: 'refresh_token'
+        })
+      }
     });
+
     expect(response.json.error_description).toEqual(
       MISSING_REFRESH_TOKEN_ERROR_MESSAGE
     );
@@ -88,9 +101,11 @@ describe('token worker', () => {
   it(`errors when fetch rejects`, async () => {
     mockFetch.mockReturnValue(Promise.reject(new Error('fail')));
     const response = await messageHandlerAsync({
-      url: '/foo',
-      method: 'POST',
-      body: JSON.stringify({})
+      fetchUrl: '/foo',
+      fetchOptions: {
+        method: 'POST',
+        body: JSON.stringify({})
+      }
     });
     expect(response.error).toEqual('fail');
   });
@@ -111,27 +126,33 @@ describe('token worker', () => {
       );
 
     await messageHandlerAsync({
-      url: '/foo',
-      method: 'POST',
-      body: JSON.stringify({
-        grant_type: 'authorization_code'
-      })
+      fetchUrl: '/foo',
+      fetchOptions: {
+        method: 'POST',
+        body: JSON.stringify({
+          grant_type: 'authorization_code'
+        })
+      }
     });
 
     await messageHandlerAsync({
-      url: '/foo',
-      method: 'POST',
-      body: JSON.stringify({
-        grant_type: 'refresh_token'
-      })
+      fetchUrl: '/foo',
+      fetchOptions: {
+        method: 'POST',
+        body: JSON.stringify({
+          grant_type: 'refresh_token'
+        })
+      }
     });
 
     const result = await messageHandlerAsync({
-      url: '/foo',
-      method: 'POST',
-      body: JSON.stringify({
-        grant_type: 'refresh_token'
-      })
+      fetchUrl: '/foo',
+      fetchOptions: {
+        method: 'POST',
+        body: JSON.stringify({
+          grant_type: 'refresh_token'
+        })
+      }
     });
 
     expect(result.ok).toBe(false);
