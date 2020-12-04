@@ -1,12 +1,14 @@
 const Lock = jest.requireActual('browser-tabs-lock').default;
 
-export const acquireLockSpy = jest.fn();
+export const acquireLockSpy = jest.fn().mockResolvedValue(true);
 export const releaseLockSpy = jest.fn();
 
 export default class extends Lock {
-  acquireLock(...args) {
-    acquireLockSpy(...args);
-    return super.acquireLock(...args);
+  async acquireLock(...args) {
+    const canProceed = await acquireLockSpy(...args);
+    if (canProceed) {
+      return super.acquireLock(...args);
+    }
   }
   releaseLock(...args) {
     releaseLockSpy(...args);

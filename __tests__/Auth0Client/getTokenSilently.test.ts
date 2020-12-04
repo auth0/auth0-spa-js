@@ -4,6 +4,7 @@ import unfetch from 'unfetch';
 import { verify } from '../../src/jwt';
 import { MessageChannel } from 'worker_threads';
 import * as utils from '../../src/utils';
+import * as promiseUtils from '../../src/promise-utils';
 import * as scope from '../../src/scope';
 import * as api from '../../src/api';
 
@@ -98,6 +99,7 @@ describe('Auth0Client', () => {
 
   afterEach(() => {
     mockFetch.mockReset();
+    acquireLockSpy.mockResolvedValue(true);
     jest.clearAllMocks();
     window.location = oldWindowLocation;
   });
@@ -664,6 +666,68 @@ describe('Auth0Client', () => {
       );
     });
 
+    describe('concurrency', () => {
+      it('should call _getTokenSilently multiple times when no call in flight concurrently', async () => {
+        const client = setup();
+
+        jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
+          access_token: TEST_ACCESS_TOKEN,
+          state: TEST_STATE,
+          code: TEST_CODE
+        });
+
+        jest.spyOn(client as any, '_getTokenSilently');
+
+        await getTokenSilently(client);
+        await getTokenSilently(client);
+
+        expect(client['_getTokenSilently']).toHaveBeenCalledTimes(2);
+      });
+
+      it('should not call _getTokenSilently if a call is already in flight', async () => {
+        const client = setup();
+
+        jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
+          access_token: TEST_ACCESS_TOKEN,
+          state: TEST_STATE,
+          code: TEST_CODE
+        });
+
+        jest.spyOn(client as any, '_getTokenSilently');
+
+        const tokens = await Promise.all([
+          getTokenSilently(client),
+          getTokenSilently(client)
+        ]);
+
+        expect(client['_getTokenSilently']).toHaveBeenCalledTimes(1);
+        expect(tokens[0]).toEqual(tokens[1]);
+      });
+
+      it('should not call _getTokenSilently if a call is already in flight (cross instance)', async () => {
+        const client1 = setup();
+        const client2 = setup();
+
+        jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
+          access_token: TEST_ACCESS_TOKEN,
+          state: TEST_STATE,
+          code: TEST_CODE
+        });
+
+        jest.spyOn(client1 as any, '_getTokenSilently');
+        jest.spyOn(client2 as any, '_getTokenSilently');
+
+        const tokens = await Promise.all([
+          getTokenSilently(client1),
+          getTokenSilently(client2)
+        ]);
+
+        expect(client1['_getTokenSilently']).toHaveBeenCalledTimes(1);
+        expect(client2['_getTokenSilently']).not.toHaveBeenCalled();
+        expect(tokens[0]).toEqual(tokens[1]);
+      });
+    });
+
     it('handles fetch errors from the worker', async () => {
       const auth0 = setup({
         useRefreshTokens: true
@@ -916,27 +980,35 @@ describe('Auth0Client', () => {
     });
 
     it('uses the cache for subsequent requests that occur before the response', async () => {
-      const auth0 = setup();
-      await loginWithRedirect(auth0);
-      (auth0 as any).cache.clear();
-      jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
-        access_token: TEST_ACCESS_TOKEN,
-        state: TEST_STATE
-      });
-      mockFetch.mockResolvedValue(
-        fetchResponse(true, {
-          id_token: TEST_ID_TOKEN,
+      let singlePromiseSpy = jest
+        .spyOn(promiseUtils, 'singlePromise')
+        .mockImplementation(cb => cb());
+
+      try {
+        const auth0 = setup();
+        await loginWithRedirect(auth0);
+        (auth0 as any).cache.clear();
+        jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
           access_token: TEST_ACCESS_TOKEN,
-          expires_in: 86400
-        })
-      );
-      let [access_token] = await Promise.all([
-        auth0.getTokenSilently(),
-        auth0.getTokenSilently(),
-        auth0.getTokenSilently()
-      ]);
-      expect(access_token).toEqual(TEST_ACCESS_TOKEN);
-      expect(utils.runIframe).toHaveBeenCalledTimes(1);
+          state: TEST_STATE
+        });
+        mockFetch.mockResolvedValue(
+          fetchResponse(true, {
+            id_token: TEST_ID_TOKEN,
+            access_token: TEST_ACCESS_TOKEN,
+            expires_in: 86400
+          })
+        );
+        let [access_token] = await Promise.all([
+          auth0.getTokenSilently(),
+          auth0.getTokenSilently(),
+          auth0.getTokenSilently()
+        ]);
+        expect(access_token).toEqual(TEST_ACCESS_TOKEN);
+        expect(utils.runIframe).toHaveBeenCalledTimes(1);
+      } finally {
+        singlePromiseSpy.mockRestore();
+      }
     });
 
     it('uses the cache for multiple token requests with audience and scope', async () => {
@@ -1009,6 +1081,45 @@ describe('Auth0Client', () => {
         5000
       );
       expect(releaseLockSpy).toHaveBeenCalledWith(GET_TOKEN_SILENTLY_LOCK_KEY);
+    });
+
+    it('should retry acquiring a lock', async () => {
+      const auth0 = setup();
+
+      jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
+        access_token: TEST_ACCESS_TOKEN,
+        state: TEST_STATE
+      });
+
+      let i = 1;
+
+      acquireLockSpy.mockImplementation(() => {
+        if (i === 3) {
+          return Promise.resolve(true);
+        } else {
+          i++;
+          return Promise.resolve(false);
+        }
+      });
+
+      await getTokenSilently(auth0);
+
+      expect(acquireLockSpy).toHaveBeenCalledTimes(3);
+    });
+
+    it('should trow a Timeout error if it can not acquire a lock after retrying', async () => {
+      const auth0 = setup();
+
+      jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
+        access_token: TEST_ACCESS_TOKEN,
+        state: TEST_STATE
+      });
+
+      acquireLockSpy.mockResolvedValue(false);
+
+      await expect(getTokenSilently(auth0)).rejects.toThrow('Timeout');
+
+      expect(acquireLockSpy).toHaveBeenCalledTimes(10);
     });
 
     it('should release a browser lock when an error occurred', async () => {

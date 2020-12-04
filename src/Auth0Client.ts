@@ -18,7 +18,7 @@ import { getUniqueScopes } from './scope';
 import { InMemoryCache, ICache, LocalStorageCache } from './cache';
 import TransactionManager from './transaction-manager';
 import { verify as verifyIdToken } from './jwt';
-import { AuthenticationError } from './errors';
+import { AuthenticationError, TimeoutError } from './errors';
 
 import {
   ClientStorage,
@@ -61,6 +61,7 @@ import {
 // @ts-ignore
 import TokenWorker from './worker/token.worker.ts';
 import { isIE11, isSafari10, isSafari11, isSafari12_0 } from './user-agent';
+import { singlePromise, retryPromise } from './promise-utils';
 
 /**
  * @ignore
@@ -616,6 +617,19 @@ export default class Auth0Client {
       scope: getUniqueScopes(this.defaultScope, this.scope, options.scope)
     };
 
+    return singlePromise(
+      () =>
+        this._getTokenSilently({
+          ignoreCache,
+          ...getTokenOptions
+        }),
+      `${this.options.client_id}::${getTokenOptions.audience}::${getTokenOptions.scope}`
+    );
+  }
+
+  private async _getTokenSilently(options: GetTokenSilentlyOptions = {}) {
+    const { ignoreCache, ...getTokenOptions } = options;
+
     const getAccessTokenFromCache = () => {
       const cache = this.cache.get(
         {
@@ -638,32 +652,38 @@ export default class Auth0Client {
       }
     }
 
-    try {
-      await lock.acquireLock(GET_TOKEN_SILENTLY_LOCK_KEY, 5000);
-      // Check the cache a second time, because it may have been populated
-      // by a previous call while this call was waiting to acquire the lock.
-      if (!ignoreCache) {
-        let accessToken = getAccessTokenFromCache();
-        if (accessToken) {
-          return accessToken;
+    if (
+      await retryPromise(
+        () => lock.acquireLock(GET_TOKEN_SILENTLY_LOCK_KEY, 5000),
+        10
+      )
+    ) {
+      try {
+        // Check the cache a second time, because it may have been populated
+        // by a previous call while this call was waiting to acquire the lock.
+        if (!ignoreCache) {
+          let accessToken = getAccessTokenFromCache();
+          if (accessToken) {
+            return accessToken;
+          }
         }
+
+        const authResult = this.options.useRefreshTokens
+          ? await this._getTokenUsingRefreshToken(getTokenOptions)
+          : await this._getTokenFromIFrame(getTokenOptions);
+
+        this.cache.save({ client_id: this.options.client_id, ...authResult });
+
+        this.cookieStorage.save('auth0.is.authenticated', true, {
+          daysUntilExpire: this.sessionCheckExpiryDays
+        });
+
+        return authResult.access_token;
+      } finally {
+        await lock.releaseLock(GET_TOKEN_SILENTLY_LOCK_KEY);
       }
-
-      const authResult = this.options.useRefreshTokens
-        ? await this._getTokenUsingRefreshToken(getTokenOptions)
-        : await this._getTokenFromIFrame(getTokenOptions);
-
-      this.cache.save({ client_id: this.options.client_id, ...authResult });
-
-      this.cookieStorage.save('auth0.is.authenticated', true, {
-        daysUntilExpire: this.sessionCheckExpiryDays
-      });
-
-      return authResult.access_token;
-    } catch (e) {
-      throw e;
-    } finally {
-      await lock.releaseLock(GET_TOKEN_SILENTLY_LOCK_KEY);
+    } else {
+      throw new TimeoutError();
     }
   }
 
