@@ -418,7 +418,7 @@ export default class Auth0Client {
    */
   public async getUser<TUser extends User = User>(
     options: GetUserOptions = {}
-  ): Promise<TUser> {
+  ): Promise<TUser | undefined> {
     const audience = options.audience || this.options.audience || 'default';
     const scope = getUniqueScopes(this.defaultScope, this.scope, options.scope);
 

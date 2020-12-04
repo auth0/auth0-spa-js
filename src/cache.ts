@@ -24,7 +24,10 @@ interface CacheEntry {
 
 export interface ICache {
   save(entry: CacheEntry): void;
-  get(key: CacheKeyData, expiryAdjustmentSeconds?: number): Partial<CacheEntry>;
+  get(
+    key: CacheKeyData,
+    expiryAdjustmentSeconds?: number
+  ): Partial<CacheEntry> | undefined;
   clear(): void;
 }
 
@@ -64,7 +67,7 @@ export class LocalStorageCache implements ICache {
   public get(
     key: CacheKeyData,
     expiryAdjustmentSeconds = DEFAULT_EXPIRY_ADJUSTMENT_SECONDS
-  ): Partial<CacheEntry> {
+  ): Partial<CacheEntry> | undefined {
     const cacheKey = createKey(key);
     const payload = this.readJson(cacheKey);
     const nowSeconds = Math.floor(Date.now() / 1000);
@@ -155,7 +158,7 @@ export class InMemoryCache {
       get(
         key: CacheKeyData,
         expiryAdjustmentSeconds = DEFAULT_EXPIRY_ADJUSTMENT_SECONDS
-      ) {
+      ): Partial<CacheEntry> | undefined {
         const cacheKey = createKey(key);
         const wrappedEntry: CachePayload = cache[cacheKey];
         const nowSeconds = Math.floor(Date.now() / 1000);
