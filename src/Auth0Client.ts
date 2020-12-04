@@ -617,7 +617,7 @@ export default class Auth0Client {
           ignoreCache,
           getTokenOptions
         }),
-      `${getTokenOptions.audience}::${getTokenOptions.scope}`
+      `${this.options.client_id}::${getTokenOptions.audience}::${getTokenOptions.scope}`
     );
   }
 
