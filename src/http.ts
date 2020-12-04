@@ -76,14 +76,14 @@ export const fetchWithTimeout = (
   });
 };
 
-export const getJSON = async (
+export async function getJSON<T>(
   url: string,
   timeout: number,
   audience: string,
   scope: string,
   options: FetchOptions,
   worker?: Worker
-): Promise<any> => {
+): Promise<T> {
   let fetchError: null | Error = null;
   let response: any;
 
@@ -128,4 +128,4 @@ export const getJSON = async (
   }
 
   return success;
-};
+}

@@ -20,8 +20,8 @@ export async function oauthToken(
     ...options
   }: TokenEndpointOptions,
   worker?: Worker
-): Promise<TokenEndpointResponse> {
-  return await getJSON(
+) {
+  return await getJSON<TokenEndpointResponse>(
     `${baseUrl}/oauth/token`,
     timeout,
     audience || 'default',
