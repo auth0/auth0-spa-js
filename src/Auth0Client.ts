@@ -559,6 +559,10 @@ export default class Auth0Client {
    * with `getTokenSilently` is that this doesn't return a token, but it will
    * pre-fill the token cache.
    *
+   * This method also heeds the `auth0.is.authenticated` cookie, as an optimization
+   *  to prevent calling Auth0 unnecessarily. If the cookie is not present because
+   * there was no previous login (or it has expired) then tokens will not be refreshed.
+   *
    * It should be used for silently logging in the user when you instantiate the
    * `Auth0Client` constructor. You should not need this if you are using the
    * `createAuth0Client` factory.
