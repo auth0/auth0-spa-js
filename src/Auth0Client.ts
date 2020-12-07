@@ -35,7 +35,8 @@ import {
   DEFAULT_SCOPE,
   RECOVERABLE_ERRORS,
   DEFAULT_SESSION_CHECK_EXPIRY_DAYS,
-  DEFAULT_AUTH0_CLIENT
+  DEFAULT_AUTH0_CLIENT,
+  INVALID_REFRESH_TOKEN_ERROR_MESSAGE
 } from './constants';
 
 import {
@@ -824,46 +825,56 @@ export default class Auth0Client {
 
     const timeout =
       options.timeoutInSeconds || this.options.authorizeTimeoutInSeconds;
-    const codeResult = await runIframe(url, this.domainUrl, timeout);
 
-    if (stateIn !== codeResult.state) {
-      throw new Error('Invalid state');
-    }
+    try {
+      const codeResult = await runIframe(url, this.domainUrl, timeout);
 
-    const {
-      scope,
-      audience,
-      redirect_uri,
-      ignoreCache,
-      timeoutInSeconds,
-      ...customOptions
-    } = options;
+      if (stateIn !== codeResult.state) {
+        throw new Error('Invalid state');
+      }
 
-    const tokenResult = await oauthToken(
-      {
-        ...this.customOptions,
-        ...customOptions,
+      const {
         scope,
         audience,
-        baseUrl: this.domainUrl,
-        client_id: this.options.client_id,
-        code_verifier,
-        code: codeResult.code,
-        grant_type: 'authorization_code',
-        redirect_uri: params.redirect_uri,
-        auth0Client: this.options.auth0Client
-      } as OAuthTokenOptions,
-      this.worker
-    );
+        redirect_uri,
+        ignoreCache,
+        timeoutInSeconds,
+        ...customOptions
+      } = options;
 
-    const decodedToken = this._verifyIdToken(tokenResult.id_token, nonceIn);
+      const tokenResult = await oauthToken(
+        {
+          ...this.customOptions,
+          ...customOptions,
+          scope,
+          audience,
+          baseUrl: this.domainUrl,
+          client_id: this.options.client_id,
+          code_verifier,
+          code: codeResult.code,
+          grant_type: 'authorization_code',
+          redirect_uri: params.redirect_uri,
+          auth0Client: this.options.auth0Client
+        } as OAuthTokenOptions,
+        this.worker
+      );
 
-    return {
-      ...tokenResult,
-      decodedToken,
-      scope: params.scope,
-      audience: params.audience || 'default'
-    };
+      const decodedToken = this._verifyIdToken(tokenResult.id_token, nonceIn);
+
+      return {
+        ...tokenResult,
+        decodedToken,
+        scope: params.scope,
+        audience: params.audience || 'default'
+      };
+    } catch (e) {
+      if (e.error === 'login_required') {
+        this.logout({
+          localOnly: true
+        });
+      }
+      throw e;
+    }
   }
 
   private async _getTokenUsingRefreshToken(
@@ -931,6 +942,15 @@ export default class Auth0Client {
       if (e.message === MISSING_REFRESH_TOKEN_ERROR_MESSAGE) {
         return await this._getTokenFromIFrame(options);
       }
+      // A refresh token was found, but is it no longer valid.
+      // Fallback to an iframe.
+      if (
+        e.message &&
+        e.message.indexOf(INVALID_REFRESH_TOKEN_ERROR_MESSAGE) > -1
+      ) {
+        return await this._getTokenFromIFrame(options);
+      }
+
       throw e;
     }
 
