@@ -92,6 +92,7 @@ const findExistingCacheKey = (
   existingCacheKeys: Array<string>
 ) => {
   const { client_id, audience, scope } = cacheKey;
+
   return existingCacheKeys.filter(key => {
     const {
       prefix: currentPrefix,
@@ -108,6 +109,7 @@ const findExistingCacheKey = (
           (acc, current) => acc && currentScopesArr.includes(current),
           true
         );
+
     return (
       currentPrefix === keyPrefix &&
       currentClientId === client_id &&
