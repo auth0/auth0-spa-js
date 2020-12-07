@@ -1,4 +1,9 @@
-import { InMemoryCache, LocalStorageCache, ICache } from '../src/cache';
+import {
+  InMemoryCache,
+  LocalStorageCache,
+  ICache,
+  CacheKey
+} from '../src/cache';
 import {
   TEST_ACCESS_TOKEN,
   TEST_AUDIENCE,
@@ -46,11 +51,13 @@ describe('InMemoryCache', () => {
 
   it('returns undefined when there is no data', () => {
     expect(
-      cache.get({
-        client_id: TEST_CLIENT_ID,
-        audience: 'a',
-        scope: 's'
-      })
+      cache.get(
+        new CacheKey({
+          client_id: TEST_CLIENT_ID,
+          audience: 'a',
+          scope: 's'
+        })
+      )
     ).toBeUndefined();
   });
 
@@ -75,11 +82,13 @@ describe('InMemoryCache', () => {
     cache.save(data);
 
     expect(
-      cache.get({
-        client_id: TEST_CLIENT_ID,
-        audience: 'the_audience',
-        scope: TEST_SCOPES
-      })
+      cache.get(
+        new CacheKey({
+          client_id: TEST_CLIENT_ID,
+          audience: 'the_audience',
+          scope: TEST_SCOPES
+        })
+      )
     ).toStrictEqual(data);
   });
 
@@ -104,11 +113,13 @@ describe('InMemoryCache', () => {
     cache.save(data);
 
     expect(
-      cache.get({
-        client_id: TEST_CLIENT_ID,
-        audience: 'the_audience',
-        scope: 'the_scope'
-      })
+      cache.get(
+        new CacheKey({
+          client_id: TEST_CLIENT_ID,
+          audience: 'the_audience',
+          scope: 'the_scope'
+        })
+      )
     ).toStrictEqual(data);
   });
 
@@ -133,11 +144,13 @@ describe('InMemoryCache', () => {
     cache.save(data);
 
     expect(
-      cache.get({
-        client_id: TEST_CLIENT_ID,
-        audience: 'the_audience',
-        scope: 'the_scope3 the_scope'
-      })
+      cache.get(
+        new CacheKey({
+          client_id: TEST_CLIENT_ID,
+          audience: 'the_audience',
+          scope: 'the_scope3 the_scope'
+        })
+      )
     ).toStrictEqual(data);
   });
 
@@ -162,11 +175,13 @@ describe('InMemoryCache', () => {
     cache.save(data);
 
     expect(
-      cache.get({
-        client_id: TEST_CLIENT_ID,
-        audience: 'the_audience',
-        scope: 'the_scope4 the_scope'
-      })
+      cache.get(
+        new CacheKey({
+          client_id: TEST_CLIENT_ID,
+          audience: 'the_audience',
+          scope: 'the_scope4 the_scope'
+        })
+      )
     ).toBeUndefined();
   });
 
@@ -192,11 +207,11 @@ describe('InMemoryCache', () => {
 
     expect(
       cache.get(
-        {
+        new CacheKey({
           client_id: TEST_CLIENT_ID,
           audience: 'the_audience',
           scope: TEST_SCOPES
-        },
+        }),
         60
       )
     ).toBeUndefined();
@@ -227,20 +242,20 @@ describe('InMemoryCache', () => {
 
       cache.save(data);
 
-      const cacheEntry = {
+      const cacheKey = new CacheKey({
         client_id: TEST_CLIENT_ID,
         audience: 'the_audience',
         scope: TEST_SCOPES
-      };
+      });
 
       // Test that the cache state is normal up until just before the expiry time..
-      expect(cache.get(cacheEntry)).toStrictEqual(data);
+      expect(cache.get(cacheKey)).toStrictEqual(data);
 
       // Advance the time to just past the expiry..
       const dateNowStub = jest.fn(() => now + (dayInSeconds + 60) * 1000);
       global.Date.now = dateNowStub;
 
-      expect(cache.get(cacheEntry)).toStrictEqual({
+      expect(cache.get(cacheKey)).toStrictEqual({
         refresh_token: 'refreshtoken'
       });
 
@@ -271,21 +286,21 @@ describe('InMemoryCache', () => {
 
     cache.save(data);
 
-    const cacheEntry = {
+    const cacheKey = new CacheKey({
       client_id: TEST_CLIENT_ID,
       audience: 'the_audience',
       scope: TEST_SCOPES
-    };
+    });
 
     // Test that the cache state is normal before we expire the data
-    expect(cache.get(cacheEntry)).toStrictEqual(data);
+    expect(cache.get(cacheKey)).toStrictEqual(data);
 
     // Advance the time to just past the expiry..
     const dateNowStub = jest.fn(() => (now + dayInSeconds + 100) * 1000);
     global.Date.now = dateNowStub;
 
     // And test that the cache has been emptied
-    expect(cache.get(cacheEntry)).toBeUndefined();
+    expect(cache.get(cacheKey)).toBeUndefined();
 
     global.Date.now = realDateNow;
   });
@@ -313,21 +328,21 @@ describe('InMemoryCache', () => {
 
     cache.save(data);
 
-    const cacheEntry = {
+    const cacheKey = new CacheKey({
       client_id: TEST_CLIENT_ID,
       audience: 'the_audience',
       scope: TEST_SCOPES
-    };
+    });
 
     // Test that the cache state is normal before we expire the data
-    expect(cache.get(cacheEntry)).toStrictEqual(data);
+    expect(cache.get(cacheKey)).toStrictEqual(data);
 
     // Advance the time to just past the expiry..
     const dateNowStub = jest.fn(() => (now + dayInSeconds + 100) * 1000);
     global.Date.now = dateNowStub;
 
     // And test that the cache has been emptied
-    expect(cache.get(cacheEntry)).toBeUndefined();
+    expect(cache.get(cacheKey)).toBeUndefined();
 
     global.Date.now = realDateNow;
   });
@@ -387,11 +402,13 @@ describe('LocalStorageCache', () => {
       );
 
       expect(
-        cache.get({
-          client_id: TEST_CLIENT_ID,
-          audience: TEST_AUDIENCE,
-          scope: TEST_SCOPES
-        })
+        cache.get(
+          new CacheKey({
+            client_id: TEST_CLIENT_ID,
+            audience: TEST_AUDIENCE,
+            scope: TEST_SCOPES
+          })
+        )
       ).toStrictEqual(defaultEntry);
     });
 
@@ -405,11 +422,13 @@ describe('LocalStorageCache', () => {
       );
 
       expect(
-        cache.get({
-          client_id: TEST_CLIENT_ID,
-          audience: TEST_AUDIENCE,
-          scope: '__TEST_SCOPE__'
-        })
+        cache.get(
+          new CacheKey({
+            client_id: TEST_CLIENT_ID,
+            audience: TEST_AUDIENCE,
+            scope: '__TEST_SCOPE__'
+          })
+        )
       ).toStrictEqual(defaultEntry);
     });
 
@@ -423,11 +442,13 @@ describe('LocalStorageCache', () => {
       );
 
       expect(
-        cache.get({
-          client_id: TEST_CLIENT_ID,
-          audience: TEST_AUDIENCE,
-          scope: '__TEST_SCOPE3__ __TEST_SCOPE__'
-        })
+        cache.get(
+          new CacheKey({
+            client_id: TEST_CLIENT_ID,
+            audience: TEST_AUDIENCE,
+            scope: '__TEST_SCOPE3__ __TEST_SCOPE__'
+          })
+        )
       ).toStrictEqual(defaultEntry);
     });
 
@@ -441,11 +462,13 @@ describe('LocalStorageCache', () => {
       );
 
       expect(
-        cache.get({
-          client_id: TEST_CLIENT_ID,
-          audience: TEST_AUDIENCE,
-          scope: '__TEST_SCOPE4__ __TEST_SCOPE__'
-        })
+        cache.get(
+          new CacheKey({
+            client_id: TEST_CLIENT_ID,
+            audience: TEST_AUDIENCE,
+            scope: '__TEST_SCOPE4__ __TEST_SCOPE__'
+          })
+        )
       ).toBeUndefined();
     });
 
@@ -460,11 +483,11 @@ describe('LocalStorageCache', () => {
 
       expect(
         cache.get(
-          {
+          new CacheKey({
             client_id: TEST_CLIENT_ID,
             audience: TEST_AUDIENCE,
             scope: TEST_SCOPES
-          },
+          }),
           60
         )
       ).toBeUndefined();
@@ -484,11 +507,11 @@ describe('LocalStorageCache', () => {
 
       expect(
         cache.get(
-          {
+          new CacheKey({
             client_id: TEST_CLIENT_ID,
             audience: TEST_AUDIENCE,
             scope: TEST_SCOPES
-          },
+          }),
           60
         )
       ).toStrictEqual({
@@ -529,11 +552,13 @@ describe('LocalStorageCache', () => {
       global.Date.now = jest.fn(() => (now + 30) * 1000);
 
       expect(
-        cache.get({
-          client_id: TEST_CLIENT_ID,
-          audience: TEST_AUDIENCE,
-          scope: TEST_SCOPES
-        })
+        cache.get(
+          new CacheKey({
+            client_id: TEST_CLIENT_ID,
+            audience: TEST_AUDIENCE,
+            scope: TEST_SCOPES
+          })
+        )
       ).toStrictEqual({
         refresh_token: TEST_REFRESH_TOKEN
       });
@@ -568,11 +593,13 @@ describe('LocalStorageCache', () => {
     global.Date.now = jest.fn(() => (now + 30) * 1000);
 
     expect(
-      cache.get({
-        client_id: TEST_CLIENT_ID,
-        audience: TEST_AUDIENCE,
-        scope: TEST_SCOPES
-      })
+      cache.get(
+        new CacheKey({
+          client_id: TEST_CLIENT_ID,
+          audience: TEST_AUDIENCE,
+          scope: TEST_SCOPES
+        })
+      )
     ).toBeUndefined();
 
     expect(localStorage.removeItem).toHaveBeenCalledWith(

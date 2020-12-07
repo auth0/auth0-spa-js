@@ -14,7 +14,7 @@ import {
 } from './utils';
 
 import { getUniqueScopes } from './scope';
-import { InMemoryCache, ICache, LocalStorageCache } from './cache';
+import { InMemoryCache, ICache, LocalStorageCache, CacheKey } from './cache';
 import TransactionManager from './transaction-manager';
 import { verify as verifyIdToken } from './jwt';
 import { AuthenticationError } from './errors';
@@ -422,11 +422,13 @@ export default class Auth0Client {
     const audience = options.audience || this.options.audience || 'default';
     const scope = getUniqueScopes(this.defaultScope, this.scope, options.scope);
 
-    const cache = this.cache.get({
-      client_id: this.options.client_id,
-      audience,
-      scope
-    });
+    const cache = this.cache.get(
+      new CacheKey({
+        client_id: this.options.client_id,
+        audience,
+        scope
+      })
+    );
 
     return cache && cache.decodedToken && cache.decodedToken.user;
   }
@@ -444,11 +446,13 @@ export default class Auth0Client {
     const audience = options.audience || this.options.audience || 'default';
     const scope = getUniqueScopes(this.defaultScope, this.scope, options.scope);
 
-    const cache = this.cache.get({
-      client_id: this.options.client_id,
-      audience,
-      scope
-    });
+    const cache = this.cache.get(
+      new CacheKey({
+        client_id: this.options.client_id,
+        audience,
+        scope
+      })
+    );
 
     return cache && cache.decodedToken && cache.decodedToken.claims;
   }
@@ -614,11 +618,11 @@ export default class Auth0Client {
 
     const getAccessTokenFromCache = () => {
       const cache = this.cache.get(
-        {
+        new CacheKey({
           scope: getTokenOptions.scope,
           audience: getTokenOptions.audience || 'default',
           client_id: this.options.client_id
-        },
+        }),
         60 // get a new token if within 60 seconds of expiring
       );
 
@@ -694,11 +698,13 @@ export default class Auth0Client {
 
     await this.loginWithPopup(options, config);
 
-    const cache = this.cache.get({
-      scope: options.scope,
-      audience: options.audience || 'default',
-      client_id: this.options.client_id
-    });
+    const cache = this.cache.get(
+      new CacheKey({
+        scope: options.scope,
+        audience: options.audience || 'default',
+        client_id: this.options.client_id
+      })
+    );
 
     return cache.access_token;
   }
@@ -850,11 +856,13 @@ export default class Auth0Client {
       options.scope
     );
 
-    const cache = this.cache.get({
-      scope: options.scope,
-      audience: options.audience || 'default',
-      client_id: this.options.client_id
-    });
+    const cache = this.cache.get(
+      new CacheKey({
+        scope: options.scope,
+        audience: options.audience || 'default',
+        client_id: this.options.client_id
+      })
+    );
 
     // If you don't have a refresh token in memory
     // and you don't have a refresh token in web worker memory

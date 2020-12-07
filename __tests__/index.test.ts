@@ -1,9 +1,7 @@
-import { expectToHaveBeenCalledWithAuth0ClientParam } from './helpers';
 import { CacheLocation, Auth0ClientOptions } from '../src/global';
 import * as scope from '../src/scope';
 
 // @ts-ignore
-import { acquireLockSpy, releaseLockSpy } from 'browser-tabs-lock';
 
 jest.mock('../src/jwt');
 jest.mock('../src/storage', () => ({
@@ -27,17 +25,12 @@ jest.mock('../src/storage', () => ({
 jest.mock('../src/transaction-manager');
 jest.mock('../src/utils');
 
-import createAuth0Client, {
-  Auth0Client,
-  GetTokenSilentlyOptions
-} from '../src/index';
+import createAuth0Client, { Auth0Client } from '../src/index';
 
 import {
-  GET_TOKEN_SILENTLY_LOCK_KEY,
   TEST_ACCESS_TOKEN,
   TEST_APP_STATE,
   TEST_ARRAY_BUFFER,
-  TEST_AUTH0_CLIENT_QUERY_STRING,
   TEST_BASE64_ENCODED_STRING,
   TEST_CLIENT_ID,
   TEST_CODE,
@@ -46,7 +39,6 @@ import {
   TEST_ID_TOKEN,
   TEST_QUERY_PARAMS,
   TEST_RANDOM_STRING,
-  TEST_REFRESH_TOKEN,
   TEST_SCOPES,
   TEST_USER_ID
 } from './constants';
@@ -56,13 +48,16 @@ const mockEnclosedCache = {
   save: jest.fn(),
   clear: jest.fn()
 };
-
-jest.mock('../src/cache', () => ({
-  InMemoryCache: () => ({
-    enclosedCache: mockEnclosedCache
-  }),
-  LocalStorageCache: () => mockEnclosedCache
-}));
+jest.mock('../src/cache', () => {
+  const { CacheKey } = jest.requireActual('../src/cache');
+  return {
+    InMemoryCache: () => ({
+      enclosedCache: mockEnclosedCache
+    }),
+    LocalStorageCache: () => mockEnclosedCache,
+    CacheKey: CacheKey
+  };
+});
 
 jest.mock('../src/token.worker');
 
