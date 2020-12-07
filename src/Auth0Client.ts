@@ -945,16 +945,14 @@ export default class Auth0Client {
         this.worker
       );
     } catch (e) {
-      // The web worker didn't have a refresh token in memory so
-      // fallback to an iframe.
-      if (e.message === MISSING_REFRESH_TOKEN_ERROR_MESSAGE) {
-        return await this._getTokenFromIFrame(options);
-      }
-      // A refresh token was found, but is it no longer valid.
-      // Fallback to an iframe.
       if (
-        e.message &&
-        e.message.indexOf(INVALID_REFRESH_TOKEN_ERROR_MESSAGE) > -1
+        // The web worker didn't have a refresh token in memory so
+        // fallback to an iframe.
+        e.message === MISSING_REFRESH_TOKEN_ERROR_MESSAGE ||
+        // A refresh token was found, but is it no longer valid.
+        // Fallback to an iframe.
+        (e.message &&
+          e.message.indexOf(INVALID_REFRESH_TOKEN_ERROR_MESSAGE) > -1)
       ) {
         return await this._getTokenFromIFrame(options);
       }
