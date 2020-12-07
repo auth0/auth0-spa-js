@@ -503,6 +503,10 @@
                 } else {
                   _self.error = e;
                 }
+
+                if (e.error === 'login_required') {
+                  _self.isAuthenticated = false;
+                }
               });
           },
           getTokenPopup: function (audience, scope, access_tokens) {
