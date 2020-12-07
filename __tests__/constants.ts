@@ -13,6 +13,7 @@ export const TEST_AUTH0_CLIENT_QUERY_STRING = `&auth0Client=${encodeURIComponent
 export const TEST_DOMAIN = 'auth0_domain';
 export const TEST_CLIENT_ID = 'auth0_client_id';
 export const TEST_REDIRECT_URI = 'my_callback_url';
+export const TEST_AUDIENCE = 'my_audience';
 export const TEST_ID_TOKEN = 'my_id_token';
 export const TEST_ACCESS_TOKEN = 'my_access_token';
 export const TEST_REFRESH_TOKEN = 'my_refresh_token';

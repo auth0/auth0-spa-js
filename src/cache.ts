@@ -6,6 +6,28 @@ interface CacheKeyData {
   client_id: string;
 }
 
+export class CacheKey {
+  public client_id: string;
+  public scope: string;
+  public audience: string;
+
+  constructor(data: CacheKeyData, public prefix: string = keyPrefix) {
+    this.client_id = data.client_id;
+    this.scope = data.scope;
+    this.audience = data.audience;
+  }
+
+  toKey(): string {
+    return `${this.prefix}::${this.client_id}::${this.audience}::${this.scope}`;
+  }
+
+  static fromKey(key: string): CacheKey {
+    const [prefix, client_id, audience, scope] = key.split('::');
+
+    return new CacheKey({ client_id, scope, audience }, prefix);
+  }
+}
+
 interface DecodedToken {
   claims: IdToken;
   user: User;
@@ -25,7 +47,7 @@ interface CacheEntry {
 export interface ICache {
   save(entry: CacheEntry): void;
   get(
-    key: CacheKeyData,
+    key: CacheKey,
     expiryAdjustmentSeconds?: number
   ): Partial<CacheEntry> | undefined;
   clear(): void;
@@ -33,9 +55,6 @@ export interface ICache {
 
 const keyPrefix = '@@auth0spajs@@';
 const DEFAULT_EXPIRY_ADJUSTMENT_SECONDS = 0;
-
-const createKey = (e: CacheKeyData) =>
-  `${keyPrefix}::${e.client_id}::${e.audience}::${e.scope}`;
 
 type CachePayload = {
   body: Partial<CacheEntry>;
@@ -56,19 +75,66 @@ const wrapCacheEntry = (entry: CacheEntry): CachePayload => {
   };
 };
 
+/**
+ * Finds the corresponding key in the cache based on the provided cache key.
+ * The keys inside the cache are in the format {prefix}::{client_id}::{audience}::{scope}.
+ * The first key in the cache that satisfies the following conditions is returned
+ *  - `prefix` is strict equal to Auth0's internally configured `keyPrefix`
+ *  - `client_id` is strict equal to the `cacheKey.client_id`
+ *  - `audience` is strict equal to the `cacheKey.audience`
+ *  - `scope` contains at least all the `cacheKey.scope` values
+ *  *
+ * @param cacheKey The provided cache key
+ * @param existingCacheKeys A list of existing cache keys
+ */
+const findExistingCacheKey = (
+  cacheKey: CacheKey,
+  existingCacheKeys: Array<string>
+) => {
+  const { client_id, audience, scope } = cacheKey;
+
+  return existingCacheKeys.filter(key => {
+    const {
+      prefix: currentPrefix,
+      client_id: currentClientId,
+      audience: currentAudience,
+      scope: currentScopes
+    } = CacheKey.fromKey(key);
+    const currentScopesArr = currentScopes && currentScopes.split(' ');
+    const hasAllScopes =
+      currentScopes &&
+      scope
+        .split(' ')
+        .reduce(
+          (acc, current) => acc && currentScopesArr.includes(current),
+          true
+        );
+
+    return (
+      currentPrefix === keyPrefix &&
+      currentClientId === client_id &&
+      currentAudience === audience &&
+      hasAllScopes
+    );
+  })[0];
+};
+
 export class LocalStorageCache implements ICache {
   public save(entry: CacheEntry): void {
-    const cacheKey = createKey(entry);
+    const cacheKey = new CacheKey({
+      client_id: entry.client_id,
+      scope: entry.scope,
+      audience: entry.audience
+    });
     const payload = wrapCacheEntry(entry);
 
-    window.localStorage.setItem(cacheKey, JSON.stringify(payload));
+    window.localStorage.setItem(cacheKey.toKey(), JSON.stringify(payload));
   }
 
   public get(
-    key: CacheKeyData,
+    cacheKey: CacheKey,
     expiryAdjustmentSeconds = DEFAULT_EXPIRY_ADJUSTMENT_SECONDS
   ): Partial<CacheEntry> | undefined {
-    const cacheKey = createKey(key);
     const payload = this.readJson(cacheKey);
     const nowSeconds = Math.floor(Date.now() / 1000);
 
@@ -77,12 +143,12 @@ export class LocalStorageCache implements ICache {
     if (payload.expiresAt - expiryAdjustmentSeconds < nowSeconds) {
       if (payload.body.refresh_token) {
         const newPayload = this.stripData(payload);
-        this.writeJson(cacheKey, newPayload);
+        this.writeJson(cacheKey.toKey(), newPayload);
 
         return newPayload.body;
       }
 
-      localStorage.removeItem(cacheKey);
+      localStorage.removeItem(cacheKey.toKey());
       return;
     }
 
@@ -101,8 +167,14 @@ export class LocalStorageCache implements ICache {
    * Retrieves data from local storage and parses it into the correct format
    * @param cacheKey The cache key
    */
-  private readJson(cacheKey: string): CachePayload {
-    const json = window.localStorage.getItem(cacheKey);
+  private readJson(cacheKey: CacheKey): CachePayload {
+    const existingCacheKey = findExistingCacheKey(
+      cacheKey,
+      Object.keys(window.localStorage)
+    );
+    const json =
+      existingCacheKey && window.localStorage.getItem(existingCacheKey);
+
     let payload;
 
     if (!json) {
@@ -149,18 +221,25 @@ export class InMemoryCache {
 
     return {
       save(entry: CacheEntry) {
-        const key = createKey(entry);
+        const cacheKey = new CacheKey({
+          client_id: entry.client_id,
+          scope: entry.scope,
+          audience: entry.audience
+        });
         const payload = wrapCacheEntry(entry);
 
-        cache[key] = payload;
+        cache[cacheKey.toKey()] = payload;
       },
 
       get(
-        key: CacheKeyData,
+        cacheKey: CacheKey,
         expiryAdjustmentSeconds = DEFAULT_EXPIRY_ADJUSTMENT_SECONDS
       ): Partial<CacheEntry> | undefined {
-        const cacheKey = createKey(key);
-        const wrappedEntry: CachePayload = cache[cacheKey];
+        const existingCacheKey = findExistingCacheKey(
+          cacheKey,
+          Object.keys(cache)
+        );
+        const wrappedEntry: CachePayload = cache[existingCacheKey];
         const nowSeconds = Math.floor(Date.now() / 1000);
 
         if (!wrappedEntry) {
@@ -176,7 +255,7 @@ export class InMemoryCache {
             return wrappedEntry.body;
           }
 
-          delete cache[cacheKey];
+          delete cache[cacheKey.toKey()];
 
           return;
         }
