@@ -9,15 +9,17 @@ import {
   runIframe,
   sha256,
   bufferToBase64UrlEncoded,
-  oauthToken,
   validateCrypto
 } from './utils';
+
+import { oauthToken, TokenEndpointResponse } from './api';
 
 import { getUniqueScopes } from './scope';
 import { InMemoryCache, ICache, LocalStorageCache, CacheKey } from './cache';
 import TransactionManager from './transaction-manager';
 import { verify as verifyIdToken } from './jwt';
-import { AuthenticationError } from './errors';
+import { AuthenticationError, TimeoutError } from './errors';
+
 import {
   ClientStorage,
   CookieStorage,
@@ -32,10 +34,9 @@ import {
   MISSING_REFRESH_TOKEN_ERROR_MESSAGE,
   DEFAULT_SCOPE,
   RECOVERABLE_ERRORS,
-  DEFAULT_SESSION_CHECK_EXPIRY_DAYS
+  DEFAULT_SESSION_CHECK_EXPIRY_DAYS,
+  DEFAULT_AUTH0_CLIENT
 } from './constants';
-
-import version from './version';
 
 import {
   Auth0ClientOptions,
@@ -53,12 +54,14 @@ import {
   RefreshTokenOptions,
   OAuthTokenOptions,
   CacheLocation,
-  LogoutUrlOptions
+  LogoutUrlOptions,
+  User
 } from './global';
 
 // @ts-ignore
-import TokenWorker from './token.worker.ts';
+import TokenWorker from './worker/token.worker.ts';
 import { isIE11, isSafari10, isSafari11, isSafari12_0 } from './user-agent';
+import { singlePromise, retryPromise } from './promise-utils';
 
 /**
  * @ignore
@@ -73,7 +76,7 @@ const GET_TOKEN_SILENTLY_LOCK_KEY = 'auth0.lock.getTokenSilently';
 /**
  * @ignore
  */
-const cacheLocationBuilders = {
+const cacheLocationBuilders: Record<string, () => ICache> = {
   memory: () => new InMemoryCache().enclosedCache,
   localstorage: () => new LocalStorageCache()
 };
@@ -94,10 +97,11 @@ const supportWebWorker = () =>
 /**
  * @ignore
  */
-const getTokenIssuer = (issuer, domainUrl) => {
+const getTokenIssuer = (issuer: string, domainUrl: string) => {
   if (issuer) {
     return issuer.startsWith('https://') ? issuer : `https://${issuer}/`;
   }
+
   return `${domainUrl}/`;
 };
 
@@ -197,16 +201,9 @@ export default class Auth0Client {
     this.customOptions = getCustomInitialOptions(options);
   }
 
-  private _url(path) {
+  private _url(path: string) {
     const auth0Client = encodeURIComponent(
-      btoa(
-        JSON.stringify(
-          this.options.auth0Client || {
-            name: 'auth0-spa-js',
-            version: version
-          }
-        )
-      )
+      btoa(JSON.stringify(this.options.auth0Client || DEFAULT_AUTH0_CLIENT))
     );
     return `${this.domainUrl}${path}&auth0Client=${auth0Client}`;
   }
@@ -380,7 +377,8 @@ export default class Auth0Client {
         code_verifier,
         code: codeResult.code,
         grant_type: 'authorization_code',
-        redirect_uri: params.redirect_uri
+        redirect_uri: params.redirect_uri,
+        auth0Client: this.options.auth0Client
       } as OAuthTokenOptions,
       this.worker
     );
@@ -416,9 +414,12 @@ export default class Auth0Client {
    * Returns the user information if available (decoded
    * from the `id_token`).
    *
+   * @typeparam TUser The type to return, has to extend {@link User}. Defaults to {@link User} when omitted.
    * @param options
    */
-  public async getUser(options: GetUserOptions = {}) {
+  public async getUser<TUser extends User = User>(
+    options: GetUserOptions = {}
+  ): Promise<TUser | undefined> {
     const audience = options.audience || this.options.audience || 'default';
     const scope = getUniqueScopes(this.defaultScope, this.scope, options.scope);
 
@@ -430,7 +431,7 @@ export default class Auth0Client {
       })
     );
 
-    return cache && cache.decodedToken && cache.decodedToken.user;
+    return cache && cache.decodedToken && (cache.decodedToken.user as TUser);
   }
 
   /**
@@ -517,9 +518,9 @@ export default class Auth0Client {
       client_id: this.options.client_id,
       code_verifier: transaction.code_verifier,
       grant_type: 'authorization_code',
-      code
+      code,
+      auth0Client: this.options.auth0Client
     } as OAuthTokenOptions;
-
     // some old versions of the SDK might not have added redirect_uri to the
     // transaction, we dont want the key to be set to undefined.
     if (undefined !== transaction.redirect_uri) {
@@ -561,6 +562,10 @@ export default class Auth0Client {
    * Check if the user is logged in using `getTokenSilently`. The difference
    * with `getTokenSilently` is that this doesn't return a token, but it will
    * pre-fill the token cache.
+   *
+   * This method also heeds the `auth0.is.authenticated` cookie, as an optimization
+   *  to prevent calling Auth0 unnecessarily. If the cookie is not present because
+   * there was no previous login (or it has expired) then tokens will not be refreshed.
    *
    * It should be used for silently logging in the user when you instantiate the
    * `Auth0Client` constructor. You should not need this if you are using the
@@ -616,6 +621,19 @@ export default class Auth0Client {
       scope: getUniqueScopes(this.defaultScope, this.scope, options.scope)
     };
 
+    return singlePromise(
+      () =>
+        this._getTokenSilently({
+          ignoreCache,
+          ...getTokenOptions
+        }),
+      `${this.options.client_id}::${getTokenOptions.audience}::${getTokenOptions.scope}`
+    );
+  }
+
+  private async _getTokenSilently(options: GetTokenSilentlyOptions = {}) {
+    const { ignoreCache, ...getTokenOptions } = options;
+
     const getAccessTokenFromCache = () => {
       const cache = this.cache.get(
         new CacheKey({
@@ -638,32 +656,38 @@ export default class Auth0Client {
       }
     }
 
-    try {
-      await lock.acquireLock(GET_TOKEN_SILENTLY_LOCK_KEY, 5000);
-      // Check the cache a second time, because it may have been populated
-      // by a previous call while this call was waiting to acquire the lock.
-      if (!ignoreCache) {
-        let accessToken = getAccessTokenFromCache();
-        if (accessToken) {
-          return accessToken;
+    if (
+      await retryPromise(
+        () => lock.acquireLock(GET_TOKEN_SILENTLY_LOCK_KEY, 5000),
+        10
+      )
+    ) {
+      try {
+        // Check the cache a second time, because it may have been populated
+        // by a previous call while this call was waiting to acquire the lock.
+        if (!ignoreCache) {
+          let accessToken = getAccessTokenFromCache();
+          if (accessToken) {
+            return accessToken;
+          }
         }
+
+        const authResult = this.options.useRefreshTokens
+          ? await this._getTokenUsingRefreshToken(getTokenOptions)
+          : await this._getTokenFromIFrame(getTokenOptions);
+
+        this.cache.save({ client_id: this.options.client_id, ...authResult });
+
+        this.cookieStorage.save('auth0.is.authenticated', true, {
+          daysUntilExpire: this.sessionCheckExpiryDays
+        });
+
+        return authResult.access_token;
+      } finally {
+        await lock.releaseLock(GET_TOKEN_SILENTLY_LOCK_KEY);
       }
-
-      const authResult = this.options.useRefreshTokens
-        ? await this._getTokenUsingRefreshToken(getTokenOptions)
-        : await this._getTokenFromIFrame(getTokenOptions);
-
-      this.cache.save({ client_id: this.options.client_id, ...authResult });
-
-      this.cookieStorage.save('auth0.is.authenticated', true, {
-        daysUntilExpire: this.sessionCheckExpiryDays
-      });
-
-      return authResult.access_token;
-    } catch (e) {
-      throw e;
-    } finally {
-      await lock.releaseLock(GET_TOKEN_SILENTLY_LOCK_KEY);
+    } else {
+      throw new TimeoutError();
     }
   }
 
@@ -832,7 +856,8 @@ export default class Auth0Client {
         code_verifier,
         code: codeResult.code,
         grant_type: 'authorization_code',
-        redirect_uri: params.redirect_uri
+        redirect_uri: params.redirect_uri,
+        auth0Client: this.options.auth0Client
       } as OAuthTokenOptions,
       this.worker
     );
@@ -876,7 +901,7 @@ export default class Auth0Client {
       this.options.redirect_uri ||
       window.location.origin;
 
-    let tokenResult;
+    let tokenResult: TokenEndpointResponse;
 
     const {
       scope,
@@ -903,7 +928,8 @@ export default class Auth0Client {
           grant_type: 'refresh_token',
           refresh_token: cache && cache.refresh_token,
           redirect_uri,
-          ...(timeout && { timeout })
+          ...(timeout && { timeout }),
+          auth0Client: this.options.auth0Client
         } as RefreshTokenOptions,
         this.worker
       );

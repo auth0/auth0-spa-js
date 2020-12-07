@@ -6,9 +6,9 @@ import {
   PopupConfigOptions,
   PopupLoginOptions,
   RedirectLoginOptions
-} from '../src';
+} from '../../src';
 
-import Auth0Client from '../src/Auth0Client';
+import Auth0Client from '../../src/Auth0Client';
 import {
   TEST_ACCESS_TOKEN,
   TEST_CLIENT_ID,
@@ -18,12 +18,40 @@ import {
   TEST_REDIRECT_URI,
   TEST_REFRESH_TOKEN,
   TEST_STATE
-} from './constants';
+} from '../constants';
 
 const authorizationResponse: AuthenticationResult = {
   code: 'my_code',
   state: TEST_STATE
 };
+
+export const assertPostFn = mockFetch => {
+  return (url, body, headers = null, callNum = 0) => {
+    const [actualUrl, opts] = mockFetch.mock.calls[callNum];
+    expect(url).toEqual(actualUrl);
+    expect(body).toEqual(JSON.parse(opts.body));
+    if (headers) {
+      Object.keys(headers).forEach(header =>
+        expect(headers[header]).toEqual(opts.headers[header])
+      );
+    }
+  };
+};
+
+export const assertUrlEquals = (actualUrl, host, path, queryParams) => {
+  const url = new URL(actualUrl);
+  expect(url.host).toEqual(host);
+  expect(url.pathname).toEqual(path);
+  for (let [key, value] of Object.entries(queryParams)) {
+    expect(url.searchParams.get(key)).toEqual(value);
+  }
+};
+
+export const fetchResponse = (ok, json) =>
+  Promise.resolve({
+    ok,
+    json: () => Promise.resolve(json)
+  });
 
 export const setupFn = mockVerify => {
   return (config?: Partial<Auth0ClientOptions>, claims?: Partial<IdToken>) => {
@@ -80,7 +108,7 @@ const processDefaultLoginWithRedirectOptions = config => {
   };
 };
 
-export const loginWithRedirectFn = (mockWindow, mockFetch, fetchResponse) => {
+export const loginWithRedirectFn = (mockWindow, mockFetch) => {
   return async (
     auth0,
     options: RedirectLoginOptions = undefined,
@@ -206,7 +234,7 @@ export const setupMessageEventLister = (
   });
 };
 
-export const loginWithPopupFn = (mockWindow, mockFetch, fetchResponse) => {
+export const loginWithPopupFn = (mockWindow, mockFetch) => {
   return async (
     auth0,
     options: PopupLoginOptions = undefined,
@@ -252,7 +280,7 @@ export const loginWithPopupFn = (mockWindow, mockFetch, fetchResponse) => {
   };
 };
 
-export const checkSessionFn = (mockFetch, fetchResponse) => {
+export const checkSessionFn = mockFetch => {
   return async auth0 => {
     mockFetch.mockResolvedValueOnce(
       fetchResponse(true, {
@@ -281,7 +309,7 @@ const processDefaultGetTokenSilentlyOptions = config => {
   };
 };
 
-export const getTokenSilentlyFn = (mockWindow, mockFetch, fetchResponse) => {
+export const getTokenSilentlyFn = (mockWindow, mockFetch) => {
   return async (
     auth0,
     options: GetTokenSilentlyOptions = undefined,

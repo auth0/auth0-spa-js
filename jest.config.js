@@ -1,7 +1,7 @@
 module.exports = {
   rootDir: './',
   moduleFileExtensions: ['ts', 'js'],
-  testMatch: ['**/__tests__/*.test.ts'],
+  testMatch: ['**/__tests__/**/*.test.ts'],
   coveragePathIgnorePatterns: [
     '/node_modules/',
     './cypress',
@@ -14,5 +14,10 @@ module.exports = {
   ],
   coverageReporters: ['lcov', 'text', 'text-summary'],
   preset: 'ts-jest',
-  setupFiles: ['jest-localstorage-mock']
+  setupFiles: ['jest-localstorage-mock'],
+  globals: {
+    'ts-jest': {
+      tsconfig: './tsconfig.test.json'
+    }
+  }
 };
