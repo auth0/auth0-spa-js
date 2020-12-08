@@ -40,7 +40,11 @@ import {
 } from '../constants';
 
 import { releaseLockSpy } from '../../__mocks__/browser-tabs-lock';
-import { DEFAULT_AUTH0_CLIENT } from '../../src/constants';
+import {
+  DEFAULT_AUTH0_CLIENT,
+  INVALID_REFRESH_TOKEN_ERROR_MESSAGE
+} from '../../src/constants';
+import { GenericError } from '../../src/errors';
 
 jest.mock('unfetch');
 jest.mock('es-cookie');
@@ -1387,6 +1391,101 @@ describe('Auth0Client', () => {
         `https://${TEST_DOMAIN}`,
         1
       );
+    });
+
+    it('when using Refresh Tokens, falls back to iframe when refresh token is expired', async () => {
+      const auth0 = setup({
+        useRefreshTokens: true
+      });
+
+      await loginWithRedirect(auth0);
+
+      mockFetch.mockReset();
+      mockFetch.mockImplementation(() =>
+        Promise.resolve({
+          ok: true,
+          json: () => ({
+            id_token: TEST_ID_TOKEN,
+            refresh_token: TEST_REFRESH_TOKEN,
+            access_token: TEST_ACCESS_TOKEN,
+            expires_in: 86400
+          })
+        })
+      );
+      // Fail only the first occurring /token request by providing it as mockImplementationOnce.
+      // The first request will use the mockImplementationOnce implementation,
+      // while any subsequent will use the mock configured above in mockImplementation.
+      mockFetch.mockImplementationOnce(() =>
+        Promise.resolve({
+          ok: false,
+          json: () => ({
+            error: 'invalid_grant',
+            error_description: INVALID_REFRESH_TOKEN_ERROR_MESSAGE
+          })
+        })
+      );
+
+      jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
+        code: TEST_CODE,
+        state: TEST_STATE
+      });
+
+      await auth0.getTokenSilently({ ignoreCache: true });
+
+      expect(utils['runIframe']).toHaveBeenCalled();
+    });
+
+    it('when using Refresh Tokens and fallback fails, ensure the user is logged out', async () => {
+      const auth0 = setup({
+        useRefreshTokens: true
+      });
+
+      await loginWithRedirect(auth0);
+
+      mockFetch.mockReset();
+      mockFetch.mockImplementationOnce(() =>
+        Promise.resolve({
+          ok: false,
+          json: () => ({
+            error: 'invalid_grant',
+            error_description: INVALID_REFRESH_TOKEN_ERROR_MESSAGE
+          })
+        })
+      );
+
+      jest.spyOn(auth0, 'logout');
+      jest.spyOn(utils, 'runIframe').mockRejectedValue(
+        GenericError.fromPayload({
+          error: 'login_required',
+          error_description: 'login_required'
+        })
+      );
+
+      await expect(
+        auth0.getTokenSilently({ ignoreCache: true })
+      ).rejects.toThrow('login_required');
+      expect(auth0.logout).toHaveBeenCalledWith({ localOnly: true });
+    });
+
+    it('when not using Refresh Tokens and login_required is returned, ensure the user is logged out', async () => {
+      const auth0 = setup();
+
+      await loginWithRedirect(auth0);
+
+      mockFetch.mockReset();
+
+      jest.spyOn(auth0, 'logout');
+      jest.spyOn(utils, 'runIframe').mockRejectedValue(
+        GenericError.fromPayload({
+          error: 'login_required',
+          error_description: 'login_required'
+        })
+      );
+
+      await expect(
+        auth0.getTokenSilently({ ignoreCache: true })
+      ).rejects.toThrow('login_required');
+      expect(auth0.logout).toHaveBeenCalledWith({ localOnly: true });
     });
   });
 });
