@@ -4,6 +4,7 @@ const excludeFiles = [
   'storage',
   'transaction-manager',
   'utils',
+  'promise-utils',
   'user-agent',
   'api',
   'http'
