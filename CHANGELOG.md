@@ -1,5 +1,21 @@
 # Change Log
 
+## [v1.13.5](https://github.com/auth0/auth0-spa-js/tree/v1.13.5) (2020-12-08)
+
+[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v1.13.4...v1.13.5)
+
+**Changed**
+
+- [SDK-2173] Expand on behaviour of checkSession in docs [\#666](https://github.com/auth0/auth0-spa-js/pull/666) ([stevehobbsdev](https://github.com/stevehobbsdev))
+- [SDK-2183] Add warning when requested scopes differ from retrieved scopes [\#665](https://github.com/auth0/auth0-spa-js/pull/665) ([frederikprijck](https://github.com/frederikprijck))
+- [SDK-2170] Avoid the possibility to do simultaneous calls to the token endpoint [\#664](https://github.com/auth0/auth0-spa-js/pull/664) ([frederikprijck](https://github.com/frederikprijck))
+- [SDK-2025] Internal module refactor [\#661](https://github.com/auth0/auth0-spa-js/pull/661) ([stevehobbsdev](https://github.com/stevehobbsdev))
+- [SDK-2039] Change cache lookup mechanism [\#652](https://github.com/auth0/auth0-spa-js/pull/652) ([frederikprijck](https://github.com/frederikprijck))
+
+**Fixed**
+
+- [SDK-1739] Recover and logout when throwing invalid_grant on Refresh Token [\#668](https://github.com/auth0/auth0-spa-js/pull/668) ([frederikprijck](https://github.com/frederikprijck))
+
 ## [v1.13.4](https://github.com/auth0/auth0-spa-js/tree/v1.13.4) (2020-12-02)
 
 [Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v1.13.3...v1.13.4)

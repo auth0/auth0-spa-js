@@ -30,8 +30,16 @@ export const DEFAULT_FETCH_TIMEOUT_MS = 10000;
 
 export const CACHE_LOCATION_MEMORY = 'memory';
 export const CACHE_LOCATION_LOCAL_STORAGE = 'localstorage';
+
+/**
+ * @ignore
+ */
 export const MISSING_REFRESH_TOKEN_ERROR_MESSAGE =
   'The web worker is missing the refresh token';
+
+/**
+ * @ignore
+ */
 export const INVALID_REFRESH_TOKEN_ERROR_MESSAGE = 'invalid refresh token';
 
 /**
