@@ -375,7 +375,8 @@
               cacheLocation: _self.useLocalStorage ? 'localstorage' : 'memory',
               useRefreshTokens: _self.useRefreshTokens,
               audience: _self.audience,
-              useCookiesForTransactions: _self.useCookiesForTransactions
+              useCookiesForTransactions: _self.useCookiesForTransactions,
+              redirect_uri: window.location.origin
             };
 
             var _init = function (auth0) {
@@ -445,7 +446,7 @@
 
             _self.auth0
               .loginWithPopup({
-                redirect_uri: 'http://localhost:3000/callback.html'
+                redirect_uri: `${window.location.origin}/callback.html`
               })
               .then(function () {
                 auth0.isAuthenticated().then(function (isAuthenticated) {
@@ -458,7 +459,6 @@
             var _self = this;
 
             this.auth0.loginWithRedirect({
-              redirect_uri: 'http://localhost:3000/',
               scope: _self.audienceScopes[0].scope
             });
           },
@@ -520,13 +520,13 @@
           },
           logout: function () {
             this.auth0.logout({
-              returnTo: 'http://localhost:3000/'
+              returnTo: window.location.origin
             });
           },
           logoutNoClient: function () {
             this.auth0.logout({
               client_id: null,
-              returnTo: 'http://localhost:3000/'
+              returnTo: window.location.origin
             });
           }
         }
