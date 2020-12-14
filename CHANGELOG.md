@@ -16,6 +16,10 @@
 
 - [SDK-1739] Recover and logout when throwing invalid_grant on Refresh Token [\#668](https://github.com/auth0/auth0-spa-js/pull/668) ([frederikprijck](https://github.com/frederikprijck))
 
+**Remarks**
+
+This release updates the `getUser` return type to be more correct. Instead of returning `Promise<TUser>`, it now returns `Promise<TUser | undefined>`, which might lead to an `Object is possible 'undefined'` compiler error in situation where the return value is not checked for being undefined while having set the TypeScript's `--strictNullChecks` compiler flag to `true`.
+
 ## [v1.13.4](https://github.com/auth0/auth0-spa-js/tree/v1.13.4) (2020-12-02)
 
 [Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v1.13.3...v1.13.4)
