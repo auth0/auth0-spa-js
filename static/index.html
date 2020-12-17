@@ -446,7 +446,7 @@
 
             _self.auth0
               .loginWithPopup({
-                redirect_uri: `${window.location.origin}/callback.html`
+                redirect_uri: window.location.origin + '/callback.html'
               })
               .then(function () {
                 auth0.isAuthenticated().then(function (isAuthenticated) {
