@@ -81,4 +81,10 @@ npm start
 
 This will open a web server on `http://localhost:3000` and display a simple web app that allows you to manually perform various features of the SDK. This is preconfigured with an Auth0 tenant and client ID but you may change this to your own for testing.
 
+You may specify a different port for the development server by specifying the `DEV_PORT` environment variable:
+
+```
+DEV_PORT=8080 npm start
+```
+
 The Playground may not cover all use cases. In this case, modify the [index.html file](https://github.com/auth0/auth0-spa-js/blob/master/static/index.html) to configure the SDK as desired to invoke different behaviors.

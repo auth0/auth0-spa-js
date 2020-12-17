@@ -26,7 +26,7 @@ describe('loginWithRedirect', function () {
       shouldNotBeUndefined(pageParams.code_challenge_method);
       shouldNotBeUndefined(pageParams.state);
       shouldNotBeUndefined(pageParams.nonce);
-      shouldBe(pageParams.redirect_uri, 'http://localhost:3000/');
+      shouldBe(pageParams.redirect_uri, 'http://localhost:3000');
       shouldBe(pageParams.response_mode, 'query');
       shouldBe(pageParams.response_type, 'code');
       shouldBe(pageParams.scope, 'openid profile email');

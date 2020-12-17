@@ -16,6 +16,7 @@ const EXPORT_NAME = 'createAuth0Client';
 
 const isProduction = process.env.NODE_ENV === 'production';
 const shouldGenerateStats = process.env.WITH_STATS === 'true';
+const defaultDevPort = 3000;
 
 const visualizerOptions = {
   filename: 'bundle-stats/index.html'
@@ -74,7 +75,7 @@ let bundles = [
         serve({
           contentBase: ['dist', 'static'],
           open: true,
-          port: 3000
+          port: process.env.DEV_PORT || defaultDevPort
         }),
       !isProduction && livereload()
     ],
