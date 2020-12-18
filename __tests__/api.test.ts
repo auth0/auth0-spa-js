@@ -131,7 +131,8 @@ describe('oauthToken', () => {
             'Content-type': 'application/json',
             'Auth0-Client': btoa(JSON.stringify(auth0Client))
           },
-          method: 'POST'
+          method: 'POST',
+          signal: new AbortController().signal
         },
         auth: {
           audience: '__test_audience__',
