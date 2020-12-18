@@ -92,8 +92,7 @@ const cacheFactory = (location: string) => {
 /**
  * @ignore
  */
-const supportWebWorker = () =>
-  !isIE11() && !isSafari10() && !isSafari11() && !isSafari12_0();
+const supportWebWorker = () => !isIE11();
 
 /**
  * @ignore
