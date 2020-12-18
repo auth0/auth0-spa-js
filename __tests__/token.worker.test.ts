@@ -36,6 +36,7 @@ describe('token worker', () => {
         json: () => ({ foo: 'bar', refresh_token: 'baz' })
       })
     );
+
     const response = await messageHandlerAsync({
       fetchUrl: '/foo',
       fetchOptions: {
@@ -47,6 +48,36 @@ describe('token worker', () => {
     expect(response.json).toEqual({
       foo: 'bar'
     });
+
+    expect(mockFetch.mock.calls[0][1].signal).toBeDefined();
+  });
+
+  it('calls fetch without AbortSignal if AbortController is not available', async () => {
+    const originalAbortController = window.AbortController;
+    window.AbortController = undefined;
+
+    mockFetch.mockReturnValue(
+      Promise.resolve({
+        ok: true,
+        json: () => ({ foo: 'bar', refresh_token: 'baz' })
+      })
+    );
+
+    const response = await messageHandlerAsync({
+      fetchUrl: '/foo',
+      fetchOptions: {
+        method: 'POST',
+        body: JSON.stringify({})
+      }
+    });
+
+    expect(response.json).toEqual({
+      foo: 'bar'
+    });
+
+    expect(mockFetch.mock.calls[0][1].signal).toBeUndefined();
+
+    window.AbortController = originalAbortController;
   });
 
   it(`stores the refresh token and uses it for grant_type='refresh_token'`, async () => {
