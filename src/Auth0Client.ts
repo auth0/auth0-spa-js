@@ -61,7 +61,7 @@ import {
 
 // @ts-ignore
 import TokenWorker from './worker/token.worker.ts';
-import { isIE11, isSafari10, isSafari11, isSafari12_0 } from './user-agent';
+import { isIE11 } from './user-agent';
 import { singlePromise, retryPromise } from './promise-utils';
 
 /**
@@ -92,8 +92,7 @@ const cacheFactory = (location: string) => {
 /**
  * @ignore
  */
-const supportWebWorker = () =>
-  !isIE11() && !isSafari10() && !isSafari11() && !isSafari12_0();
+const supportWebWorker = () => !isIE11();
 
 /**
  * @ignore

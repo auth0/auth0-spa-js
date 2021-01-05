@@ -46,15 +46,19 @@ const messageHandler = async ({
       });
     }
 
-    const abortController = new AbortController();
-    const { signal } = abortController;
+    let abortController: AbortController;
+
+    if (typeof AbortController === 'function') {
+      abortController = new AbortController();
+      fetchOptions.signal = abortController.signal;
+    }
 
     let response: any;
 
     try {
       response = await Promise.race([
         wait(timeout),
-        fetch(fetchUrl, { ...fetchOptions, signal })
+        fetch(fetchUrl, { ...fetchOptions })
       ]);
     } catch (error) {
       // fetch error, reject `sendMessage` using `error` key so that we retry.
@@ -67,7 +71,12 @@ const messageHandler = async ({
 
     if (!response) {
       // If the request times out, abort it and let `fetchWithTimeout` raise the error.
-      abortController.abort();
+      if (abortController) abortController.abort();
+
+      port.postMessage({
+        error: "Timeout when executing 'fetch'"
+      });
+
       return;
     }
 
