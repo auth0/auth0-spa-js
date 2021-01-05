@@ -73,6 +73,10 @@ const messageHandler = async ({
       // If the request times out, abort it and let `fetchWithTimeout` raise the error.
       if (abortController) abortController.abort();
 
+      port.postMessage({
+        error: "Timeout when executing 'fetch'"
+      });
+
       return;
     }
 

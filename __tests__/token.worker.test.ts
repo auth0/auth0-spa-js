@@ -54,7 +54,7 @@ describe('token worker', () => {
 
   it('calls fetch without AbortSignal if AbortController is not available', async () => {
     const originalAbortController = window.AbortController;
-    window.AbortController = undefined;
+    delete window.AbortController;
 
     mockFetch.mockReturnValue(
       Promise.resolve({
@@ -131,6 +131,7 @@ describe('token worker', () => {
 
   it(`errors when fetch rejects`, async () => {
     mockFetch.mockReturnValue(Promise.reject(new Error('fail')));
+
     const response = await messageHandlerAsync({
       fetchUrl: '/foo',
       fetchOptions: {
@@ -138,7 +139,60 @@ describe('token worker', () => {
         body: JSON.stringify({})
       }
     });
+
     expect(response.error).toEqual('fail');
+  });
+
+  it(`aborts when timed out`, async () => {
+    const originalAbortController = window.AbortController;
+    const abortFn = jest.fn();
+
+    window.AbortController = jest.fn(() => ({
+      signal: {},
+      abort: abortFn
+    })) as any;
+
+    mockFetch.mockReturnValue(
+      new Promise(resolve => {
+        setTimeout(resolve, 1000);
+      })
+    );
+
+    const response = await messageHandlerAsync({
+      fetchUrl: '/foo',
+      fetchOptions: {
+        method: 'POST',
+        body: JSON.stringify({})
+      },
+      timeout: 1
+    });
+
+    expect(response.error).toEqual("Timeout when executing 'fetch'");
+    expect(abortFn).toHaveBeenCalled();
+    window.AbortController = originalAbortController;
+  });
+
+  it(`does not abort when timed out if no abort controller`, async () => {
+    const originalAbortController = window.AbortController;
+    delete window.AbortController;
+
+    mockFetch.mockReturnValue(
+      new Promise(resolve => {
+        setTimeout(resolve, 1000);
+      })
+    );
+
+    const response = await messageHandlerAsync({
+      fetchUrl: '/foo',
+      fetchOptions: {
+        method: 'POST',
+        body: JSON.stringify({})
+      },
+      timeout: 1
+    });
+
+    expect(response.error).toEqual("Timeout when executing 'fetch'");
+    window.AbortController = originalAbortController;
   });
 
   it('removes the stored refresh token if none was returned from the server', async () => {
