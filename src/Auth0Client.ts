@@ -415,6 +415,10 @@ export default class Auth0Client {
    * Returns the user information if available (decoded
    * from the `id_token`).
    *
+   * If you provide an audience or scope, they should match an existing Access Token
+   * (the SDK stores a corresponding ID Token with every Access Token, and uses the
+   * scope and audience to look up the ID Token)
+   *
    * @typeparam TUser The type to return, has to extend {@link User}. Defaults to {@link User} when omitted.
    * @param options
    */
@@ -441,6 +445,10 @@ export default class Auth0Client {
    * ```
    *
    * Returns all claims from the id_token if available.
+   *
+   * If you provide an audience or scope, they should match an existing Access Token
+   * (the SDK stores a corresponding ID Token with every Access Token, and uses the
+   * scope and audience to look up the ID Token)
    *
    * @param options
    */
