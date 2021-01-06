@@ -65,14 +65,18 @@ export const fetchWithTimeout = (
   // The promise will resolve with one of these two promises (the fetch or the timeout), whichever completes first.
   return Promise.race([
     switchFetch(url, audience, scope, fetchOptions, timeout, worker),
-    new Promise((_, reject) => {
-      timeoutId = setTimeout(() => {
-        controller.abort();
-        reject(new Error("Timeout when executing 'fetch'"));
-      }, timeout);
-    })
+    ...(worker
+      ? []
+      : [
+          new Promise((_, reject) => {
+            timeoutId = setTimeout(() => {
+              controller.abort();
+              reject(new Error("Timeout when executing 'fetch'"));
+            }, timeout);
+          })
+        ])
   ]).finally(() => {
-    clearTimeout(timeoutId);
+    timeoutId && clearTimeout(timeoutId);
   });
 };
 
