@@ -893,7 +893,7 @@ describe('Auth0Client', () => {
       await expect(
         auth0.getTokenSilently({ ignoreCache: true })
       ).rejects.toThrow(`Timeout when executing 'fetch'`);
-      // Called thrice for the refresh token grant in http.fetchWithTimeout
+      // Called thrice for the refresh token grant in http.switchFetch
       expect(AbortController.prototype.abort).toBeCalledTimes(3);
       expect(mockFetch).toBeCalledTimes(3);
       Object.defineProperty(constants, 'DEFAULT_FETCH_TIMEOUT_MS', {

@@ -1,12 +1,12 @@
 import fetch from 'unfetch';
-import { fetchWithTimeout } from '../src/http';
+import { switchFetch } from '../src/http';
 
 jest.mock('../src/worker/token.worker');
 jest.mock('unfetch');
 
 const mockUnfetch = <jest.Mock>fetch;
 
-describe('fetchWithTimeout', () => {
+describe('switchFetch', () => {
   it('clears timeout when successful', async () => {
     mockUnfetch.mockImplementation(() =>
       Promise.resolve({
@@ -15,7 +15,7 @@ describe('fetchWithTimeout', () => {
       })
     );
     jest.spyOn(window, 'clearTimeout');
-    await fetchWithTimeout('https://test.com/', null, null, {}, undefined);
+    await switchFetch('https://test.com/', null, null, {}, undefined);
     expect(clearTimeout).toBeCalledTimes(1);
   });
 });

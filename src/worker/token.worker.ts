@@ -70,7 +70,7 @@ const messageHandler = async ({
     }
 
     if (!response) {
-      // If the request times out, abort it and let `fetchWithTimeout` raise the error.
+      // If the request times out, abort it and let `switchFetch` raise the error.
       if (abortController) abortController.abort();
 
       port.postMessage({
