@@ -11,60 +11,27 @@ import { GenericError } from './errors';
 
 export const createAbortController = () => new AbortController();
 
-const switchFetch = async (
-  fetchUrl: string,
-  audience: string,
-  scope: string,
-  fetchOptions: FetchOptions,
-  timeout: number,
-  worker?: Worker
-): Promise<any> => {
-  if (worker) {
-    // AbortSignal is not serializable, need to implement in the Web Worker
-    delete fetchOptions.signal;
-
-    return sendMessage(
-      {
-        auth: {
-          audience,
-          scope
-        },
-        timeout,
-        fetchUrl,
-        fetchOptions
-      },
-      worker
-    );
-  } else {
-    const response = await fetch(fetchUrl, fetchOptions);
-    return {
-      ok: response.ok,
-      json: await response.json()
-    };
-  }
+const dofetch = async (fetchUrl: string, fetchOptions: FetchOptions) => {
+  const response = await fetch(fetchUrl, fetchOptions);
+  return {
+    ok: response.ok,
+    json: await response.json()
+  };
 };
 
-export const fetchWithTimeout = (
-  url: string,
-  audience: string,
-  scope: string,
-  options: FetchOptions,
-  worker?: Worker,
-  timeout = DEFAULT_FETCH_TIMEOUT_MS
-): Promise<any> => {
+const fetchWithoutWorker = async (
+  fetchUrl: string,
+  fetchOptions: FetchOptions,
+  timeout: number
+) => {
   const controller = createAbortController();
-  const signal = controller.signal;
-
-  const fetchOptions = {
-    ...options,
-    signal
-  };
+  fetchOptions.signal = controller.signal;
 
   let timeoutId: NodeJS.Timeout;
 
   // The promise will resolve with one of these two promises (the fetch or the timeout), whichever completes first.
   return Promise.race([
-    switchFetch(url, audience, scope, fetchOptions, timeout, worker),
+    dofetch(fetchUrl, fetchOptions),
     new Promise((_, reject) => {
       timeoutId = setTimeout(() => {
         controller.abort();
@@ -74,6 +41,50 @@ export const fetchWithTimeout = (
   ]).finally(() => {
     clearTimeout(timeoutId);
   });
+};
+
+const fetchWithWorker = async (
+  fetchUrl: string,
+  audience: string,
+  scope: string,
+  fetchOptions: FetchOptions,
+  timeout: number,
+  worker?: Worker
+) => {
+  return sendMessage(
+    {
+      auth: {
+        audience,
+        scope
+      },
+      timeout,
+      fetchUrl,
+      fetchOptions
+    },
+    worker
+  );
+};
+
+export const switchFetch = async (
+  fetchUrl: string,
+  audience: string,
+  scope: string,
+  fetchOptions: FetchOptions,
+  worker?: Worker,
+  timeout = DEFAULT_FETCH_TIMEOUT_MS
+): Promise<any> => {
+  if (worker) {
+    return fetchWithWorker(
+      fetchUrl,
+      audience,
+      scope,
+      fetchOptions,
+      timeout,
+      worker
+    );
+  } else {
+    return fetchWithoutWorker(fetchUrl, fetchOptions, timeout);
+  }
 };
 
 export async function getJSON<T>(
@@ -89,7 +100,7 @@ export async function getJSON<T>(
 
   for (let i = 0; i < DEFAULT_SILENT_TOKEN_RETRY_COUNT; i++) {
     try {
-      response = await fetchWithTimeout(
+      response = await switchFetch(
         url,
         audience,
         scope,
