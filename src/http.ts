@@ -11,10 +11,7 @@ import { GenericError } from './errors';
 
 export const createAbortController = () => new AbortController();
 
-const fetchAndSerialize = async (
-  fetchUrl: string,
-  fetchOptions: FetchOptions
-) => {
+const dofetch = async (fetchUrl: string, fetchOptions: FetchOptions) => {
   const response = await fetch(fetchUrl, fetchOptions);
   return {
     ok: response.ok,
@@ -34,7 +31,7 @@ const fetchWithoutWorker = async (
 
   // The promise will resolve with one of these two promises (the fetch or the timeout), whichever completes first.
   return Promise.race([
-    fetchAndSerialize(fetchUrl, fetchOptions),
+    dofetch(fetchUrl, fetchOptions),
     new Promise((_, reject) => {
       timeoutId = setTimeout(() => {
         controller.abort();
