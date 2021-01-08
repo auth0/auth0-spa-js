@@ -107,6 +107,8 @@ export interface Auth0ClientOptions extends BaseLoginOptions {
   /**
    * The location to use when storing cache data. Valid values are `memory` or `localstorage`.
    * The default setting is `memory`.
+   *
+   * Read more about [changing storage options in the Auth0 docs](https://auth0.com/docs/libraries/auth0-single-page-app-sdk#change-storage-options)
    */
   cacheLocation?: CacheLocation;
 
