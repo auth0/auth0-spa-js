@@ -6,7 +6,7 @@ daysUntilStale: 30
 # Number of days of inactivity before an Issue or Pull Request with the stale label is closed.
 daysUntilClose: 7
 
-# Issues or Pull Requests with these labels will never be considered stale. Set to `[]` to disable
+# Only issues or pull requests with all of these labels are check if stale. Defaults to `[]` (disabled)
 onlyLabels:
   - 'waiting for customer'
 
