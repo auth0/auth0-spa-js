@@ -185,6 +185,15 @@ document.getElementById('logout').addEventListener('click', () => {
 });
 ```
 
+You can redirect users after logout:
+
+```js
+auth0.logout({
+  returnTo: 'https://your.custom.url.example.com/'
+})
+```
+
+
 ### Data caching options
 
 The SDK can be configured to cache ID tokens and access tokens either in memory or in local storage. The default is in memory. This setting can be controlled using the `cacheLocation` option when creating the Auth0 client.
