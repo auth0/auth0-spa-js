@@ -23,6 +23,7 @@ export const TEST_CODE = 'my_code';
 export const TEST_SCOPES = DEFAULT_SCOPE;
 export const TEST_CODE_CHALLENGE = 'TEST_CODE_CHALLENGE';
 export const TEST_CODE_VERIFIER = '123';
+export const TEST_CONNECTION = 'email';
 export const TEST_OTP = '1234';
 export const TEST_REALM = 'email';
 export const GET_TOKEN_SILENTLY_LOCK_KEY = 'auth0.lock.getTokenSilently';

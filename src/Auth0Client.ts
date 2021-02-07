@@ -12,7 +12,7 @@ import {
   validateCrypto
 } from './utils';
 
-import { oauthToken, TokenEndpointResponse } from './api';
+import { oauthToken, passwordlessStart, TokenEndpointResponse } from './api';
 
 import { getUniqueScopes } from './scope';
 import { InMemoryCache, ICache, LocalStorageCache, CacheKey } from './cache';
@@ -46,6 +46,7 @@ import {
   RedirectLoginOptions,
   PopupLoginOptions,
   PopupConfigOptions,
+  PasswordlessLoginOptions,
   PasswordlessCodeLoginOptions,
   PasswordlessTokenOptions,
   GetUserOptions,
@@ -285,36 +286,9 @@ export default class Auth0Client {
   public async buildAuthorizeUrl(
     options: RedirectLoginOptions = {}
   ): Promise<string> {
-    const { redirect_uri, appState, ...authorizeOptions } = options;
-
-    const stateIn = encode(createRandomString());
-    const nonceIn = encode(createRandomString());
-    const code_verifier = createRandomString();
-    const code_challengeBuffer = await sha256(code_verifier);
-    const code_challenge = bufferToBase64UrlEncoded(code_challengeBuffer);
-    const fragment = options.fragment ? `#${options.fragment}` : '';
-
-    const params = this._getParams(
-      authorizeOptions,
-      stateIn,
-      nonceIn,
-      code_challenge,
-      redirect_uri
-    );
-
+    const params = await this._buildAuthorizeParams(options, true);
     const url = this._authorizeUrl(params);
-    const organizationId = options.organization || this.options.organization;
-
-    this.transactionManager.create({
-      nonce: nonceIn,
-      code_verifier,
-      appState,
-      scope: params.scope,
-      audience: params.audience || 'default',
-      redirect_uri: params.redirect_uri,
-      ...(organizationId && { organizationId })
-    });
-
+    const fragment = options.fragment ? `#${options.fragment}` : '';
     return url + fragment;
   }
 
@@ -407,6 +381,44 @@ export default class Auth0Client {
     this.cookieStorage.save('auth0.is.authenticated', true, {
       daysUntilExpire: this.sessionCheckExpiryDays
     });
+  }
+
+  /**
+   * ```js
+   * await auth0.loginWithPasswordless(options);
+   * ```
+   *
+   * Start passwordless authentication.
+   *
+   * @param options
+   */
+  public async loginWithPasswordless(options: PasswordlessLoginOptions) {
+    const {
+      connection,
+      send,
+      email,
+      phoneNumber,
+      ...authorizeOptions
+    } = options;
+
+    const { client_id, ...authParams } = await this._buildAuthorizeParams(
+      authorizeOptions,
+      send === 'link'
+    );
+
+    await passwordlessStart(
+      {
+        baseUrl: this.domainUrl,
+        client_id: this.options.client_id,
+        connection,
+        send,
+        email,
+        phone_number: phoneNumber,
+        authParams,
+        auth0Client: this.options.auth0Client
+      },
+      this.worker
+    );
   }
 
   /**
@@ -867,6 +879,43 @@ export default class Auth0Client {
     }
     const url = this.buildLogoutUrl(logoutOptions);
     window.location.assign(url);
+  }
+
+  private async _buildAuthorizeParams(
+    options: RedirectLoginOptions,
+    createTransaction: boolean
+  ): Promise<AuthorizeOptions> {
+    const { redirect_uri, appState, ...authorizeOptions } = options;
+
+    const stateIn = encode(createRandomString());
+    const nonceIn = encode(createRandomString());
+    const code_verifier = createRandomString();
+    const code_challengeBuffer = await sha256(code_verifier);
+    const code_challenge = bufferToBase64UrlEncoded(code_challengeBuffer);
+
+    const params = this._getParams(
+      authorizeOptions,
+      stateIn,
+      nonceIn,
+      code_challenge,
+      redirect_uri
+    );
+
+    if (createTransaction) {
+      const organizationId = options.organization || this.options.organization;
+
+      this.transactionManager.create({
+        nonce: nonceIn,
+        code_verifier,
+        appState,
+        scope: params.scope,
+        audience: params.audience || 'default',
+        redirect_uri: params.redirect_uri,
+        ...(organizationId && { organizationId })
+      });
+    }
+
+    return params;
   }
 
   private async _getTokenFromIFrame(

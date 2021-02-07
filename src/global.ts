@@ -228,6 +228,36 @@ export interface PopupConfigOptions {
   popup?: any;
 }
 
+export interface PasswordlessLoginOptions extends BaseLoginOptions {
+  /**
+   * The URL where Auth0 will redirect your browser to with
+   * the authentication result. It must be whitelisted in
+   * the "Allowed Callback URLs" field in your Auth0 Application's
+   * settings.
+   */
+  redirect_uri?: string;
+
+  /**
+   * Use sms or email
+   */
+  connection: 'email';
+
+  /**
+   * Value must be either code or link.
+   */
+  send: 'code' | 'link';
+
+  /**
+   *  The user's email for delivery of a code or link via email.
+   */
+  email?: string;
+
+  /**
+   *  The user's phone number for delivery of a code or link via SMS.
+   */
+  phoneNumber?: string;
+}
+
 export interface PasswordlessCodeLoginOptions extends BaseLoginOptions {
   /**
    * Use sms or email
@@ -405,13 +435,19 @@ export interface AuthenticationResult {
 /**
  * @ignore
  */
-export interface TokenEndpointOptions {
+interface Auth0EndpointOptions {
   baseUrl: string;
   client_id: string;
-  grant_type: string;
   timeout?: number;
   auth0Client: any;
   [key: string]: any;
+}
+
+/**
+ * @ignore
+ */
+export interface TokenEndpointOptions extends Auth0EndpointOptions {
+  grant_type: string;
 }
 
 /**
@@ -442,6 +478,17 @@ export interface PasswordlessTokenOptions extends TokenEndpointOptions {
   otp: string;
   realm: 'email' | 'sms';
   username: string;
+}
+
+/**
+ * @ignore
+ */
+export interface PasswordlessStartEndpointOptions extends Auth0EndpointOptions {
+  connection: 'email' | 'sms';
+  send: 'link' | 'code';
+  email?: string;
+  phone_number?: string;
+  authParams: AuthorizeOptions;
 }
 
 /**

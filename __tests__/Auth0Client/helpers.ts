@@ -4,6 +4,7 @@ import {
   GetTokenSilentlyOptions,
   IdToken,
   PasswordlessCodeLoginOptions,
+  PasswordlessLoginOptions,
   PopupConfigOptions,
   PopupLoginOptions,
   RedirectLoginOptions
@@ -14,6 +15,7 @@ import {
   TEST_ACCESS_TOKEN,
   TEST_CLIENT_ID,
   TEST_CODE,
+  TEST_CONNECTION,
   TEST_DOMAIN,
   TEST_ID_TOKEN,
   TEST_OTP,
@@ -215,6 +217,40 @@ const processDefaultLoginWithPopupOptions = config => {
   };
 };
 
+const processDefaultLoginWithPasswordlessOptions = config => {
+  const defaultStartResponseOptions = {
+    success: true,
+    response: {}
+  };
+  const defaultTokenResponseOptions = {
+    success: true,
+    response: {}
+  };
+  const defaultAuthorizeResponseOptions = {
+    code: TEST_CODE,
+    state: TEST_STATE
+  };
+  const start = {
+    ...defaultStartResponseOptions,
+    ...(config.start || {})
+  };
+  const token = {
+    ...defaultTokenResponseOptions,
+    ...(config.token || {})
+  };
+  const authorize = {
+    ...defaultAuthorizeResponseOptions,
+    ...(config.authorize || {})
+  };
+
+  return {
+    start,
+    onlyStart: config.onlyStart || false,
+    token,
+    authorize
+  };
+};
+
 const processDefaultLoginWithPasswordlessCodeOptions = config => {
   const defaultTokenResponseOptions = {
     success: true,
@@ -297,6 +333,88 @@ export const loginWithPopupFn = (mockWindow, mockFetch) => {
       )
     );
     await auth0.loginWithPopup(options, config);
+  };
+};
+
+export const loginWithPasswordlessFn = mockFetch => {
+  return async (
+    auth0: Auth0Client,
+    options: PasswordlessLoginOptions,
+    testConfig: {
+      start?: {
+        success?: boolean;
+      };
+      onlyStart?: boolean;
+      token?: {
+        success?: boolean;
+        response?: any;
+      };
+      authorize?: {
+        code?: string;
+        state?: string;
+        error?: string;
+        errorDescription?: string;
+      };
+    } = {
+      token: {},
+      authorize: {}
+    }
+  ) => {
+    const {
+      start,
+      onlyStart,
+      token,
+      authorize: { code, state, error, errorDescription }
+    } = processDefaultLoginWithPasswordlessOptions(testConfig);
+
+    mockFetch.mockResolvedValueOnce(
+      fetchResponse(start.success, start.response)
+    );
+
+    await auth0.loginWithPasswordless(options);
+
+    if (!onlyStart) {
+      if (options.send === 'link') {
+        if (error && errorDescription) {
+          window.history.pushState(
+            {},
+            '',
+            `/?error=${error}&error_description=${errorDescription}&state=${state}`
+          );
+        } else if (error) {
+          window.history.pushState({}, '', `/?error=${error}&state=${state}`);
+        } else if (code) {
+          window.history.pushState({}, '', `/?code=${code}&state=${state}`);
+        } else {
+          window.history.pushState({}, '', `/`);
+        }
+      }
+
+      mockFetch.mockResolvedValueOnce(
+        fetchResponse(
+          token.success,
+          Object.assign(
+            {
+              id_token: TEST_ID_TOKEN,
+              refresh_token: TEST_REFRESH_TOKEN,
+              access_token: TEST_ACCESS_TOKEN,
+              expires_in: 86400
+            },
+            token.response
+          )
+        )
+      );
+
+      if (options.send === 'link') {
+        return await auth0.handleRedirectCallback();
+      } else if (options.send === 'code') {
+        return await auth0.loginWithPasswordlessCode({
+          realm: options.connection,
+          username: TEST_USER_EMAIL,
+          otp: TEST_OTP
+        });
+      }
+    }
   };
 };
 

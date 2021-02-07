@@ -1,4 +1,7 @@
-import { TokenEndpointOptions } from './global';
+import {
+  TokenEndpointOptions,
+  PasswordlessStartEndpointOptions
+} from './global';
 import { DEFAULT_AUTH0_CLIENT } from './constants';
 import { getJSON } from './http';
 import { getMissingScope } from './scope';
@@ -52,6 +55,42 @@ export async function oauthToken(
   - Ensuring \`${missingScope}\` is returned as part of the requested token's scopes.`
     );
   }
+
+  return result;
+}
+
+export type PasswordlessStartEndpointResponse = {
+  email?: string;
+  phone_number?: string;
+  email_verified?: boolean;
+};
+
+export async function passwordlessStart(
+  {
+    baseUrl,
+    timeout,
+    auth0Client,
+    ...options
+  }: PasswordlessStartEndpointOptions,
+  worker?: Worker
+) {
+  const result = await getJSON<PasswordlessStartEndpointResponse>(
+    `${baseUrl}/passwordless/start`,
+    timeout,
+    options.authParams.audience || 'default',
+    options.authParams.scope,
+    {
+      method: 'POST',
+      body: JSON.stringify(options),
+      headers: {
+        'Content-type': 'application/json',
+        'Auth0-Client': btoa(
+          JSON.stringify(auth0Client || DEFAULT_AUTH0_CLIENT)
+        )
+      }
+    },
+    worker
+  );
 
   return result;
 }

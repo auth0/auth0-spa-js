@@ -40,6 +40,10 @@
               Login redirect
             </button>
 
+            <button class="btn btn-primary" @click="loginPasswordlessLink">
+              Login passwordless link
+            </button>
+
             <button class="btn btn-primary" @click="loginPasswordlessCode">
               Login passwordless code
             </button>
@@ -459,19 +463,38 @@
                 });
               });
           },
+          loginPasswordlessLink: function () {
+            var _self = this;
+            var email = prompt('Enter the passwordless e-mail address');
+            if (!email) {
+              return;
+            }
+            _self.auth0.loginWithPasswordless({
+              connection: 'email',
+              send: 'link',
+              email: email
+            });
+          },
           loginPasswordlessCode: function () {
             var _self = this;
             var email = prompt('Enter the passwordless e-mail address');
             if (!email) {
               return;
             }
-            var otp = prompt('Enter the received code');
 
             _self.auth0
-              .loginWithPasswordlessCode({
-                username: email,
-                otp: otp,
-                realm: 'email'
+              .loginWithPasswordless({
+                connection: 'email',
+                send: 'code',
+                email: email
+              })
+              .then(function () {
+                var otp = prompt('Enter the received code');
+                return _self.auth0.loginWithPasswordlessCode({
+                  username: email,
+                  otp: otp,
+                  realm: 'email'
+                });
               })
               .then(function () {
                 auth0.isAuthenticated().then(function (isAuthenticated) {
