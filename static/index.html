@@ -40,6 +40,10 @@
               Login redirect
             </button>
 
+            <button class="btn btn-primary" @click="loginPasswordlessCode">
+              Login passwordless code
+            </button>
+
             <button
               class="btn btn-success"
               @click="loginHandleRedirectCallback"
@@ -447,6 +451,27 @@
             _self.auth0
               .loginWithPopup({
                 redirect_uri: window.location.origin + '/callback.html'
+              })
+              .then(function () {
+                auth0.isAuthenticated().then(function (isAuthenticated) {
+                  _self.isAuthenticated = isAuthenticated;
+                  _self.showAuth0Info();
+                });
+              });
+          },
+          loginPasswordlessCode: function () {
+            var _self = this;
+            var email = prompt('Enter the passwordless e-mail address');
+            if (!email) {
+              return;
+            }
+            var otp = prompt('Enter the received code');
+
+            _self.auth0
+              .loginWithPasswordlessCode({
+                username: email,
+                otp: otp,
+                realm: 'email'
               })
               .then(function () {
                 auth0.isAuthenticated().then(function (isAuthenticated) {

@@ -3,6 +3,7 @@ import {
   AuthenticationResult,
   GetTokenSilentlyOptions,
   IdToken,
+  PasswordlessCodeLoginOptions,
   PopupConfigOptions,
   PopupLoginOptions,
   RedirectLoginOptions
@@ -15,9 +16,12 @@ import {
   TEST_CODE,
   TEST_DOMAIN,
   TEST_ID_TOKEN,
+  TEST_OTP,
+  TEST_REALM,
   TEST_REDIRECT_URI,
   TEST_REFRESH_TOKEN,
-  TEST_STATE
+  TEST_STATE,
+  TEST_USER_EMAIL
 } from '../constants';
 
 const authorizationResponse: AuthenticationResult = {
@@ -211,6 +215,22 @@ const processDefaultLoginWithPopupOptions = config => {
   };
 };
 
+const processDefaultLoginWithPasswordlessCodeOptions = config => {
+  const defaultTokenResponseOptions = {
+    success: true,
+    response: {}
+  };
+
+  const token = {
+    ...defaultTokenResponseOptions,
+    ...(config.token || {})
+  };
+
+  return {
+    token
+  };
+};
+
 export const setupMessageEventLister = (
   mockWindow: any,
   response: any = {},
@@ -277,6 +297,45 @@ export const loginWithPopupFn = (mockWindow, mockFetch) => {
       )
     );
     await auth0.loginWithPopup(options, config);
+  };
+};
+
+export const loginWithPasswordlessCodeFn = mockFetch => {
+  return async (
+    auth0: Auth0Client,
+    options: PasswordlessCodeLoginOptions = {
+      otp: TEST_OTP,
+      realm: TEST_REALM,
+      username: TEST_USER_EMAIL
+    },
+    testConfig: {
+      token?: {
+        success?: boolean;
+        response?: any;
+      };
+    } = {
+      token: {}
+    }
+  ) => {
+    const { token } = processDefaultLoginWithPasswordlessCodeOptions(
+      testConfig
+    );
+
+    mockFetch.mockResolvedValueOnce(
+      fetchResponse(
+        token.success,
+        Object.assign(
+          {
+            id_token: TEST_ID_TOKEN,
+            refresh_token: TEST_REFRESH_TOKEN,
+            access_token: TEST_ACCESS_TOKEN,
+            expires_in: 86400
+          },
+          token.response
+        )
+      )
+    );
+    await auth0.loginWithPasswordlessCode(options);
   };
 };
 

@@ -46,6 +46,8 @@ import {
   RedirectLoginOptions,
   PopupLoginOptions,
   PopupConfigOptions,
+  PasswordlessCodeLoginOptions,
+  PasswordlessTokenOptions,
   GetUserOptions,
   GetIdTokenClaimsOptions,
   RedirectLoginResult,
@@ -210,10 +212,10 @@ export default class Auth0Client {
 
   private _getParams(
     authorizeOptions: BaseLoginOptions,
-    state: string,
-    nonce: string,
-    code_challenge: string,
-    redirect_uri: string
+    state?: string,
+    nonce?: string,
+    code_challenge?: string,
+    redirect_uri?: string
   ): AuthorizeOptions {
     const {
       domain,
@@ -389,6 +391,61 @@ export default class Auth0Client {
     const decodedToken = this._verifyIdToken(
       authResult.id_token,
       nonceIn,
+      organizationId
+    );
+
+    const cacheEntry = {
+      ...authResult,
+      decodedToken,
+      scope: params.scope,
+      audience: params.audience || 'default',
+      client_id: this.options.client_id
+    };
+
+    this.cache.save(cacheEntry);
+
+    this.cookieStorage.save('auth0.is.authenticated', true, {
+      daysUntilExpire: this.sessionCheckExpiryDays
+    });
+  }
+
+  /**
+   * ```js
+   * await auth0.loginWithPasswordlessCode(options);
+   * ```
+   *
+   * Completes based passwordless authentication.
+   *
+   * @param options
+   */
+  public async loginWithPasswordlessCode(
+    options: PasswordlessCodeLoginOptions
+  ) {
+    const { otp, realm, username, ...authorizeOptions } = options;
+    const params = this._getParams(authorizeOptions);
+
+    const authResult = await oauthToken(
+      {
+        audience: params.audience,
+        scope: params.scope,
+        // otp grant type needs these in the body of the token request
+        sendAudienceAndScope: true,
+        baseUrl: this.domainUrl,
+        client_id: this.options.client_id,
+        otp,
+        realm,
+        username,
+        grant_type: 'http://auth0.com/oauth/grant-type/passwordless/otp',
+        auth0Client: this.options.auth0Client
+      } as PasswordlessTokenOptions,
+      this.worker
+    );
+
+    const organizationId = options.organization || this.options.organization;
+
+    const decodedToken = this._verifyIdToken(
+      authResult.id_token,
+      undefined,
       organizationId
     );
 

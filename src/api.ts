@@ -17,6 +17,7 @@ export async function oauthToken(
     timeout,
     audience,
     scope,
+    sendAudienceAndScope,
     auth0Client,
     ...options
   }: TokenEndpointOptions,
@@ -29,7 +30,9 @@ export async function oauthToken(
     scope,
     {
       method: 'POST',
-      body: JSON.stringify(options),
+      body: JSON.stringify(
+        sendAudienceAndScope ? { audience, scope, ...options } : options
+      ),
       headers: {
         'Content-type': 'application/json',
         'Auth0-Client': btoa(

@@ -228,6 +228,23 @@ export interface PopupConfigOptions {
   popup?: any;
 }
 
+export interface PasswordlessCodeLoginOptions extends BaseLoginOptions {
+  /**
+   * Use sms or email
+   */
+  realm: 'email' | 'sms';
+
+  /**
+   * The user's phone number if realm=sms, or the user's email if realm=email
+   */
+  username: string;
+
+  /**
+   * The user's verification code
+   */
+  otp: string;
+}
+
 export interface GetUserOptions {
   /**
    * The scope that was used in the authentication request
@@ -413,6 +430,18 @@ export interface OAuthTokenOptions extends TokenEndpointOptions {
  */
 export interface RefreshTokenOptions extends TokenEndpointOptions {
   refresh_token: string;
+}
+
+/**
+ * @ignore
+ */
+export interface PasswordlessTokenOptions extends TokenEndpointOptions {
+  audience: string;
+  scope: string;
+  sendAudienceAndScope: true;
+  otp: string;
+  realm: 'email' | 'sms';
+  username: string;
 }
 
 /**
