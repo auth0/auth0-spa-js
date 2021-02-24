@@ -1,0 +1,13 @@
+<head>
+  <meta property="og:image" content={{ url_for('static', filename='picture.jpg', _external=True) }} />
+</head>
+<body>
+    <script>
+        // ruleid: var-in-script-tag
+        const mydata = {{ mydata_json|safe }};
+        // ruleid: var-in-script-tag
+        const moredata = {{ mydata_json }};
+    </script>
+    <a href = "{{ link }}" >{{ link_text }}</a>
+</body>
+
