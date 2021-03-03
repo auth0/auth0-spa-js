@@ -51,13 +51,13 @@ import {
   RedirectLoginResult,
   GetTokenSilentlyOptions,
   GetTokenWithPopupOptions,
-  IdToken,
   LogoutOptions,
   RefreshTokenOptions,
   OAuthTokenOptions,
   CacheLocation,
   LogoutUrlOptions,
-  User
+  User,
+  IdToken
 } from './global';
 
 // @ts-ignore
@@ -453,7 +453,7 @@ export default class Auth0Client {
    *
    * @param options
    */
-  public async getIdTokenClaims(options: GetIdTokenClaimsOptions = {}) {
+  public async getIdTokenClaims(options: GetIdTokenClaimsOptions = {}): Promise<IdToken> {
     const audience = options.audience || this.options.audience || 'default';
     const scope = getUniqueScopes(this.defaultScope, this.scope, options.scope);
 
