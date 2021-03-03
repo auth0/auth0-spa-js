@@ -1,7 +1,6 @@
 import { TokenEndpointOptions } from './global';
 import { DEFAULT_AUTH0_CLIENT } from './constants';
 import { getJSON } from './http';
-import { getMissingScope } from './scope';
 
 export type TokenEndpointResponse = {
   id_token: string;
@@ -22,7 +21,7 @@ export async function oauthToken(
   }: TokenEndpointOptions,
   worker?: Worker
 ) {
-  const result = await getJSON<TokenEndpointResponse>(
+  return await getJSON<TokenEndpointResponse>(
     `${baseUrl}/oauth/token`,
     timeout,
     audience || 'default',
@@ -39,16 +38,4 @@ export async function oauthToken(
     },
     worker
   );
-
-  const missingScope = getMissingScope(scope, result.scope);
-  if (missingScope.length) {
-    console.warn(
-      `The requested scopes (${scope}) are different from the scopes of the retrieved token (${result.scope}). This could mean that your access token may not include all the scopes that you expect. It is advised to resolve this by either:
-  
-  - Removing \`${missingScope}\` from the scope when requesting a new token.
-  - Ensuring \`${missingScope}\` is returned as part of the requested token's scopes.`
-    );
-  }
-
-  return result;
 }
