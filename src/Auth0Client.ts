@@ -420,7 +420,7 @@ export default class Auth0Client {
    * (the SDK stores a corresponding ID Token with every Access Token, and uses the
    * scope and audience to look up the ID Token)
    *
-   * @typeparam TUser The type to return, has to extend {@link User}. Defaults to {@link User} when omitted.
+   * @typeparam TUser The type to return, has to extend {@link User}. 
    * @param options
    */
   public async getUser<TUser extends User>(
@@ -828,8 +828,8 @@ export default class Auth0Client {
       nonceIn,
       code_challenge,
       options.redirect_uri ||
-        this.options.redirect_uri ||
-        window.location.origin
+      this.options.redirect_uri ||
+      window.location.origin
     );
 
     const url = this._authorizeUrl({
