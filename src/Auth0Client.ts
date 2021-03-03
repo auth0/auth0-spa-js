@@ -51,6 +51,7 @@ import {
   RedirectLoginResult,
   GetTokenSilentlyOptions,
   GetTokenWithPopupOptions,
+  IdToken,
   LogoutOptions,
   RefreshTokenOptions,
   OAuthTokenOptions,
@@ -422,7 +423,7 @@ export default class Auth0Client {
    * @typeparam TUser The type to return, has to extend {@link User}. Defaults to {@link User} when omitted.
    * @param options
    */
-  public async getUser<TUser extends User = User>(
+  public async getUser<TUser extends User>(
     options: GetUserOptions = {}
   ): Promise<TUser | undefined> {
     const audience = options.audience || this.options.audience || 'default';
@@ -827,8 +828,8 @@ export default class Auth0Client {
       nonceIn,
       code_challenge,
       options.redirect_uri ||
-        this.options.redirect_uri ||
-        window.location.origin
+      this.options.redirect_uri ||
+      window.location.origin
     );
 
     const url = this._authorizeUrl({
