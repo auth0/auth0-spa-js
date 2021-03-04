@@ -1,5 +1,25 @@
 # Change Log
 
+## [v1.13.6](https://github.com/auth0/auth0-spa-js/tree/v1.13.6) (2021-01-07)
+
+[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v1.13.5...v1.13.6)
+
+**Changed**
+
+- Update docs for getIdTokenClaims and getUser [\#690](https://github.com/auth0/auth0-spa-js/pull/690) ([adamjmcgrath](https://github.com/adamjmcgrath))
+- [SDK-2238] Only use timeout promise when using fetchWithTimeout without a worker [\#689](https://github.com/auth0/auth0-spa-js/pull/689) ([frederikprijck](https://github.com/frederikprijck))
+- Do not use AbortController in the worker if not available [\#679](https://github.com/auth0/auth0-spa-js/pull/679) ([stevehobbsdev](https://github.com/stevehobbsdev))
+- Do not send useCookiesForTransactions to authorize request [\#673](https://github.com/auth0/auth0-spa-js/pull/673) ([frederikprijck](https://github.com/frederikprijck))
+
+**Fixed**
+
+- Remove the nonce check in handleRedirectCallback [\#678](https://github.com/auth0/auth0-spa-js/pull/678) ([stevehobbsdev](https://github.com/stevehobbsdev))
+
+**Security**
+
+- Update wait-on to solve security vulnerability [\#687](https://github.com/auth0/auth0-spa-js/pull/687) ([frederikprijck](https://github.com/frederikprijck))
+- [Security] Bump ini from 1.3.5 to 1.3.7 [\#672](https://github.com/auth0/auth0-spa-js/pull/672) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
+
 ## [v1.13.5](https://github.com/auth0/auth0-spa-js/tree/v1.13.5) (2020-12-08)
 
 [Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v1.13.4...v1.13.5)
