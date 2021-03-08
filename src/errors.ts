@@ -1,3 +1,6 @@
+/**
+ * Thrown when network requests to the Auth server fail.
+ */
 export class GenericError extends Error {
   constructor(public error: string, public error_description: string) {
     super(error_description);
@@ -16,6 +19,10 @@ export class GenericError extends Error {
   }
 }
 
+/**
+ * Thrown when handling the redirect callback fails, will be one of Auth0's
+ * Authentication API's Standard Error Responses: https://auth0.com/docs/api/authentication?javascript#standard-error-responses
+ */
 export class AuthenticationError extends GenericError {
   constructor(
     error: string,
@@ -29,6 +36,10 @@ export class AuthenticationError extends GenericError {
   }
 }
 
+/**
+ * Thrown when silent auth times out (usually due to a configuration issue) or
+ * when network requests to the Auth server timeout.
+ */
 export class TimeoutError extends GenericError {
   constructor() {
     super('timeout', 'Timeout');
@@ -37,6 +48,9 @@ export class TimeoutError extends GenericError {
   }
 }
 
+/**
+ * Error thrown when the login popup times out (if the user does not complete auth)
+ */
 export class PopupTimeoutError extends TimeoutError {
   constructor(public popup: Window) {
     super();

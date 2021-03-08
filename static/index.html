@@ -289,6 +289,8 @@
       var defaultClientId = 'wLSIP47wM39wKdDmOj6Zb5eSEw3JVhVp';
       var defaultAudience = '';
 
+      var GenericError = createAuth0Client.GenericError;
+
       Vue.filter('concat', function (value) {
         if (value && value.length > 35) {
           return value.substr(0, 16) + '…  …' + value.substr(-16, 16);
@@ -504,7 +506,7 @@
                   _self.error = e;
                 }
 
-                if (e.error === 'login_required') {
+                if (e instanceof GenericError && e.error === 'login_required') {
                   _self.isAuthenticated = false;
                 }
               });
