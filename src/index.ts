@@ -23,3 +23,9 @@ export default async function createAuth0Client(options: Auth0ClientOptions) {
 }
 
 export { Auth0Client };
+export {
+  GenericError,
+  AuthenticationError,
+  TimeoutError,
+  PopupTimeoutError
+} from './errors';
