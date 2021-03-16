@@ -191,6 +191,16 @@
           />
         </div>
 
+        <div class="form-group">
+          <label for="organization">Organization</label>
+          <input
+            type="text"
+            v-model="organization"
+            class="form-control"
+            id="organization"
+          />
+        </div>
+
         <div class="btn-group mb-5">
           <button @click="saveForm" class="btn btn-primary">Save</button>
 
@@ -288,6 +298,7 @@
       var defaultDomain = 'brucke.auth0.com';
       var defaultClientId = 'wLSIP47wM39wKdDmOj6Zb5eSEw3JVhVp';
       var defaultAudience = '';
+      var defaultOrganization = '';
 
       var GenericError = createAuth0Client.GenericError;
 
@@ -303,7 +314,6 @@
         el: '#app',
         data: function () {
           var savedData = localStorage.getItem('spa-playground-data');
-
           var data = savedData ? JSON.parse(savedData) : {};
 
           return {
@@ -320,6 +330,7 @@
             domain: data.domain || defaultDomain,
             clientId: data.clientId || defaultClientId,
             audience: data.audience || defaultAudience,
+            organization: data.organization || defaultOrganization,
             audienceScopes: [
               {
                 audience: data.audience || defaultAudience,
@@ -376,10 +387,17 @@
               client_id: _self.clientId,
               cacheLocation: _self.useLocalStorage ? 'localstorage' : 'memory',
               useRefreshTokens: _self.useRefreshTokens,
-              audience: _self.audience,
               useCookiesForTransactions: _self.useCookiesForTransactions,
               redirect_uri: window.location.origin
             };
+
+            if (_self.audience) {
+              clientOptions.audience = _self.audience;
+            }
+
+            if (_self.organization) {
+              clientOptions.organization = _self.organization;
+            }
 
             var _init = function (auth0) {
               _self.auth0 = auth0;
@@ -412,7 +430,8 @@
                 useConstructor: this.useConstructor,
                 useCookiesForTransactions: this.useCookiesForTransactions,
                 useCache: this.useCache,
-                audience: this.audience
+                audience: this.audience,
+                organization: this.organization
               })
             );
           },
@@ -425,6 +444,7 @@
             this.audience = defaultAudience;
             this.useConstructor = false;
             this.useCookiesForTransactions = false;
+            this.organization = defaultOrganization;
             this.saveForm();
           },
           showAuth0Info: function () {
@@ -446,23 +466,30 @@
           loginPopup: function () {
             var _self = this;
 
-            _self.auth0
-              .loginWithPopup({
-                redirect_uri: window.location.origin + '/callback.html'
-              })
-              .then(function () {
-                auth0.isAuthenticated().then(function (isAuthenticated) {
-                  _self.isAuthenticated = isAuthenticated;
-                  _self.showAuth0Info();
-                });
+            var options = {
+              redirect_uri: window.location.origin + '/callback.html'
+            };
+
+            if (_self.organization) {
+              options.organization = _self.organization;
+            }
+
+            _self.auth0.loginWithPopup(options).then(function () {
+              auth0.isAuthenticated().then(function (isAuthenticated) {
+                _self.isAuthenticated = isAuthenticated;
+                _self.showAuth0Info();
               });
+            });
           },
           loginRedirect: function () {
             var _self = this;
+            var options = { scope: _self.audienceScopes[0].scope };
 
-            this.auth0.loginWithRedirect({
-              scope: _self.audienceScopes[0].scope
-            });
+            if (_self.organization) {
+              options.organization = _self.organization;
+            }
+
+            this.auth0.loginWithRedirect(options);
           },
           loginHandleRedirectCallback: function () {
             var _self = this;
