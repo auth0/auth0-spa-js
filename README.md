@@ -255,7 +255,7 @@ Using Organizations, you can:
 
 Note that Organizations is currently only available to customers on our Enterprise and Startup subscription plans.
 
-#### Usage
+#### Log in to an organization
 
 Log into an organization by specifying the `organization` parameter when setting up the client:
 
@@ -280,6 +280,23 @@ client.loginWithRedirect({
 client.loginWithPopup({
   organization: '<MY_ORG_ID>'
 });
+```
+
+### Accept user invitations
+
+Accept a user invitation through the SDK by creating a route within your application that can handle the invitation route, and log the user in by passing the `organization` and `invitation` parameters from this URL. You can either use `loginWithRedirect` or `loginWithPopup` as needed.
+
+```js
+const params = new URLSearchParams(invitationUrl);
+const organization = params.get('organization');
+const invitation = params.get('invitation');
+
+if (organization && invitation) {
+  client.loginWithRedirect({
+    organization,
+    invitation
+  });
+}
 ```
 
 ### Advanced options
