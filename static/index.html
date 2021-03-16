@@ -48,6 +48,14 @@
             >
               Login redirect callback
             </button>
+
+            <button
+              class="btn btn-dark"
+              id="handle_invite_url"
+              @click="loginHandleInvitationUrl"
+            >
+              Handle User Invitation
+            </button>
           </div>
 
           <div class="btn-group mb-3">
@@ -557,6 +565,24 @@
               client_id: null,
               returnTo: window.location.origin
             });
+          },
+          loginHandleInvitationUrl: function () {
+            var url = prompt('Your invitation URL');
+
+            if (url) {
+              const inviteMatches = url.match(/invitation=([a-zA-Z0-9_]+)/);
+
+              if (inviteMatches) {
+                var orgMatches = url.match(/organization=([a-zA-Z0-9_]+)/);
+
+                if (orgMatches) {
+                  this.auth0.loginWithRedirect({
+                    organization: orgMatches[1],
+                    invitation: inviteMatches[1]
+                  });
+                }
+              }
+            }
           }
         }
       });
