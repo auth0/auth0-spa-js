@@ -9,6 +9,7 @@ export interface BaseLoginOptions {
    * - `'wap'`: displays the UI with a "feature phone" type interface
    */
   display?: 'page' | 'popup' | 'touch' | 'wap';
+
   /**
    * - `'none'`: do not prompt user for login or consent on reauthentication
    * - `'login'`: prompt user for reauthentication
@@ -16,21 +17,25 @@ export interface BaseLoginOptions {
    * - `'select_account'`: prompt user to select an account
    */
   prompt?: 'none' | 'login' | 'consent' | 'select_account';
+
   /**
    * Maximum allowable elasped time (in seconds) since authentication.
    * If the last time the user authenticated is greater than this value,
    * the user must be reauthenticated.
    */
   max_age?: string | number;
+
   /**
    * The space-separated list of language tags, ordered by preference.
    * For example: `'fr-CA fr en'`.
    */
   ui_locales?: string;
+
   /**
    * Previously issued ID Token.
    */
   id_token_hint?: string;
+
   /**
    * The user's email address or other identifier. When your app knows
    * which user is trying to authenticate, you can provide this parameter
@@ -39,13 +44,16 @@ export interface BaseLoginOptions {
    * This currently only affects the classic Lock experience.
    */
   login_hint?: string;
+
   acr_values?: string;
+
   /**
    * The default scope to be used on authentication requests.
    * The defaultScope defined in the Auth0Client is included
    * along with this scope
    */
   scope?: string;
+
   /**
    * The default audience to be used for requesting API access.
    */
@@ -56,6 +64,16 @@ export interface BaseLoginOptions {
    * the Login Widget.
    */
   connection?: string;
+
+  /**
+   * The Id of the organization to log in to.
+   */
+  organization?: string;
+
+  /**
+   * The Id of an invitation to accept. This is available from the URL that is given when participating in a user invitation flow.
+   */
+  invitation?: string;
 
   /**
    * If you need to send custom parameters to the Authorization Server,
