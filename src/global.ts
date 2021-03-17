@@ -67,7 +67,7 @@ export interface BaseLoginOptions {
   connection?: string;
   
   /**
-   * Log users in to a specific organization (Organizations is currently a Closed Beta).
+   * The Id of an organization to log in to (Organizations is currently a Closed Beta).
    *
    * This will specify an `organization` parameter in your user's login request and will add a step to validate
    * the `org_id` claim in your user's ID Token.
