@@ -257,7 +257,7 @@ Note that Organizations is currently only available to customers on our Enterpri
 
 #### Log in to an organization
 
-Log into an organization by specifying the `organization` parameter when setting up the client:
+Log in to an organization by specifying the `organization` parameter when setting up the client:
 
 ```js
 createAuth0Client({
