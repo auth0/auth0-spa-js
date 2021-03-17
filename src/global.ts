@@ -64,12 +64,13 @@ export interface BaseLoginOptions {
    * the Login Widget.
    */
   connection?: string;
-
   /**
-   * The Id of the organization to log in to.
+   * Log users in to a specific organization (Organizations is currently a Closed Beta).
+   *
+   * This will specify an `organization` parameter in your user's login request and will add a step to validate
+   * the `org_id` claim in your user's ID Token.
    */
   organization?: string;
-
   /**
    * The Id of an invitation to accept. This is available from the URL that is given when participating in a user invitation flow.
    */
