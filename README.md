@@ -190,9 +190,8 @@ You can redirect users back to your app after logging out. This URL must appear 
 ```js
 auth0.logout({
   returnTo: 'https://your.custom.url.example.com/'
-})
+});
 ```
-
 
 ### Data caching options
 
@@ -237,6 +236,68 @@ In all cases where a refresh token is not available, the SDK falls back to the l
 If the fallback mechanism fails, a `login_required` error will be thrown and could be handled in order to put the user back through the authentication process.
 
 **Note**: This fallback mechanism does still require access to the Auth0 session cookie, so if third-party cookies are being blocked then this fallback will not work and the user must re-authenticate in order to get a new refresh token.
+
+### Organizations (Closed Beta)
+
+Organizations is a set of features that provide better support for developers who build and maintain SaaS and Business-to-Business (B2B) applications.
+
+Using Organizations, you can:
+
+- Represent teams, business customers, partner companies, or any logical grouping of users that should have different ways of accessing your applications, as organizations.
+
+- Manage their membership in a variety of ways, including user invitation.
+
+- Configure branded, federated login flows for each organization.
+
+- Implement role-based access control, such that users can have different roles when authenticating in the context of different organizations.
+
+- Build administration capabilities into your products, using Organizations APIs, so that those businesses can manage their own organizations.
+
+Note that Organizations is currently only available to customers on our Enterprise and Startup subscription plans.
+
+#### Log in to an organization
+
+Log in to an organization by specifying the `organization` parameter when setting up the client:
+
+```js
+createAuth0Client({
+  domain: '<AUTH0_DOMAIN>',
+  client_id: '<AUTH0_CLIENT_ID>',
+  redirect_uri: '<MY_CALLBACK_URL>',
+  organization: '<MY_ORG_ID>'
+});
+```
+
+You can also specify the organization when logging in:
+
+```js
+// Using a redirect
+client.loginWithRedirect({
+  organization: '<MY_ORG_ID>'
+});
+
+// Using a popup window
+client.loginWithPopup({
+  organization: '<MY_ORG_ID>'
+});
+```
+
+### Accept user invitations
+
+Accept a user invitation through the SDK by creating a route within your application that can handle the user invitation URL, and log the user in by passing the `organization` and `invitation` parameters from this URL. You can either use `loginWithRedirect` or `loginWithPopup` as needed.
+
+```js
+const params = new URLSearchParams(invitationUrl);
+const organization = params.get('organization');
+const invitation = params.get('invitation');
+
+if (organization && invitation) {
+  client.loginWithRedirect({
+    organization,
+    invitation
+  });
+}
+```
 
 ### Advanced options
 
