@@ -37,6 +37,15 @@ export interface BaseLoginOptions {
   id_token_hint?: string;
 
   /**
+   * Provides a hint to Auth0 as to what flow should be displayed.
+   * The default behavior is to show a login page but you can override
+   * this by passing 'signup' to show the signup page instead.
+   *
+   * This only affects the New Universal Login Experience.
+   */
+  screen_hint?: string;
+
+  /**
    * The user's email address or other identifier. When your app knows
    * which user is trying to authenticate, you can provide this parameter
    * to pre-fill the email box or select the right session for sign-in.
