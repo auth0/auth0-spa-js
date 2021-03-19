@@ -282,12 +282,13 @@ client.loginWithPopup({
 });
 ```
 
-### Accept user invitations
+#### Accept user invitations
 
 Accept a user invitation through the SDK by creating a route within your application that can handle the user invitation URL, and log the user in by passing the `organization` and `invitation` parameters from this URL. You can either use `loginWithRedirect` or `loginWithPopup` as needed.
 
 ```js
-const params = new URLSearchParams(invitationUrl);
+const url = new URL(invitationUrl);
+const params = new URLSearchParams(url.search);
 const organization = params.get('organization');
 const invitation = params.get('invitation');
 
