@@ -480,8 +480,9 @@ export default class Auth0Client {
    * @param options
    */
   public async loginWithRedirect(options: RedirectLoginOptions = {}) {
-    const url = await this.buildAuthorizeUrl(options);
-    window.location.assign(url);
+    const { redirectMethod, ...urlOptions } = options;
+    const url = await this.buildAuthorizeUrl(urlOptions);
+    window.location[redirectMethod || 'assign'](url);
   }
 
   /**

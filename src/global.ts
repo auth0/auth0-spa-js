@@ -233,6 +233,10 @@ export interface RedirectLoginOptions extends BaseLoginOptions {
    * Used to add to the URL fragment before redirecting
    */
   fragment?: string;
+  /**
+   * Used to select the window.location method used to redirect
+   */
+  redirectMethod?: 'replace' | 'assign';
 }
 
 export interface RedirectLoginResult {

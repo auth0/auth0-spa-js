@@ -69,6 +69,10 @@ describe('Auth0Client', () => {
         assign: {
           configurable: true,
           value: jest.fn()
+        },
+        replace: {
+          configurable: true,
+          value: jest.fn()
         }
       }
     );
@@ -183,6 +187,21 @@ describe('Auth0Client', () => {
 
       assertUrlEquals(url, TEST_DOMAIN, '/authorize', {
         redirect_uri: 'https://my-redirect-uri/callback'
+      });
+    });
+
+    it('should log the user in by calling window.location.replace when redirectMethod=replace param is passed', async () => {
+      const auth0 = setup();
+
+      await loginWithRedirect(auth0, {
+        audience: 'test_audience',
+        redirectMethod: 'replace'
+      });
+
+      const url = new URL(mockWindow.location.replace.mock.calls[0][0]);
+
+      assertUrlEquals(url, TEST_DOMAIN, '/authorize', {
+        audience: 'test_audience'
       });
     });
 

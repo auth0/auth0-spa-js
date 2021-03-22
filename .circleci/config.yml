@@ -125,8 +125,8 @@ jobs:
       - run:
           name: Install SPA JS
           command: |
-            pwd
             yarn add "../spa-js"
+            touch src/auth0.js
             echo -e "$AUTH0_CONTENT" > src/auth0.js;
             echo -e "$IMPORT_STATEMENT"|cat - src/main.js > /tmp/out && mv /tmp/out src/main.js;
           working_directory: my-app
