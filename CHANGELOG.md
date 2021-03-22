@@ -1,5 +1,23 @@
 # Change Log
 
+## [v1.14.0](https://github.com/auth0/auth0-spa-js/tree/v1.14.0) (2021-03-22)
+
+[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v1.13.6...v1.14.0)
+
+**Added**
+
+- feat(loginWithRedirect): add redirectMethod option [\#717](https://github.com/auth0/auth0-spa-js/pull/717) ([slaywell](https://github.com/slaywell))
+- Export errors for type checking [\#716](https://github.com/auth0/auth0-spa-js/pull/716) ([adamjmcgrath](https://github.com/adamjmcgrath))
+
+**Changed**
+
+- Add screen_hint parameter to BaseLoginOptions [\#721](https://github.com/auth0/auth0-spa-js/pull/721) ([damieng](https://github.com/damieng))
+
+**Fixed**
+
+- Updated minor syntax, to allow for TypeScript compiler to be happier [\#714](https://github.com/auth0/auth0-spa-js/pull/714) ([kachihro](https://github.com/kachihro))
+- Revert [SDK-2183] Add warning when requested scopes differ from retrieved scopes [\#712](https://github.com/auth0/auth0-spa-js/pull/712) ([frederikprijck](https://github.com/frederikprijck))
+
 ## [v1.13.6](https://github.com/auth0/auth0-spa-js/tree/v1.13.6) (2021-01-07)
 
 [Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v1.13.5...v1.13.6)
