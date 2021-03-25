@@ -320,7 +320,14 @@ export default class Auth0Client {
 
   /**
    * ```js
-   * await auth0.loginWithPopup(options);
+   * try {
+   *  await auth0.loginWithPopup(options);
+   * } catch(e) {
+   *  if (e instanceof PopupCancelledError) {
+   *    // Popup was closed before login completed
+   *  }
+   * }
+   *
    * ```
    *
    * Opens a popup with the `/authorize` URL using the parameters

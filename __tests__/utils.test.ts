@@ -237,12 +237,18 @@ describe('utils', () => {
       message: 'Timeout'
     };
 
+    const POPUP_CANCEL_ERROR = {
+      error: 'cancelled',
+      error_description: 'Popup closed'
+    };
+
     const url = 'https://authorize.com';
 
     const setup = customMessage => {
       const popup = {
         location: { href: url },
-        close: jest.fn()
+        close: jest.fn(),
+        closed: false
       };
 
       window.addEventListener = <any>jest.fn((message, callback) => {
@@ -265,7 +271,9 @@ describe('utils', () => {
              * then using fake timers then rolling back to real timers
              */
             setTimeout(() => {
-              jest.runAllTimers();
+              // Since RunPopup function uses setInterval, we have a recursive timer,
+              // In order to prevent an enless loop we need to use runOnlyPendingTimers.
+              jest.runOnlyPendingTimers();
             }, 10);
             jest.useFakeTimers();
             await expect(runPopup({ popup })).rejects.toMatchObject(
@@ -328,7 +336,8 @@ describe('utils', () => {
        * then rolling back to real timers
        */
       setTimeout(() => {
-        jest.runTimersToTime(seconds * 1000);
+        jest.runOnlyPendingTimers();
+        jest.advanceTimersByTime(seconds * 1000);
       }, 10);
 
       jest.useFakeTimers();
@@ -352,12 +361,37 @@ describe('utils', () => {
        * then rolling back to real timers
        */
       setTimeout(() => {
-        jest.runTimersToTime(DEFAULT_AUTHORIZE_TIMEOUT_IN_SECONDS * 1000);
+        jest.runOnlyPendingTimers();
+        jest.advanceTimersByTime(DEFAULT_AUTHORIZE_TIMEOUT_IN_SECONDS * 1000);
       }, 10);
 
       jest.useFakeTimers();
 
       await expect(runPopup({ popup })).rejects.toMatchObject(TIMEOUT_ERROR);
+
+      jest.useRealTimers();
+    });
+
+    it('rejects with PopupCancelledError if popup is closed early', async () => {
+      const { popup, url } = setup('');
+      popup.closed = true;
+
+      /**
+       * We need to run the timers after we start `runPopup`, but we also
+       * need to use `jest.useFakeTimers` to trigger the timeout.
+       * That's why we're using a real `setTimeout`, then using fake timers
+       * then rolling back to real timers
+       */
+      setTimeout(() => {
+        jest.runOnlyPendingTimers();
+        jest.advanceTimersByTime(DEFAULT_AUTHORIZE_TIMEOUT_IN_SECONDS * 1000);
+      }, 10);
+
+      jest.useFakeTimers();
+
+      await expect(runPopup({ popup })).rejects.toMatchObject(
+        POPUP_CANCEL_ERROR
+      );
 
       jest.useRealTimers();
     });
@@ -403,7 +437,7 @@ describe('utils', () => {
       const { iframe, url } = setup(message);
       jest.useFakeTimers();
       await runIframe(url, origin);
-      jest.runAllTimers();
+      jest.runOnlyPendingTimers();
       expect(message.source.close).toHaveBeenCalled();
       expect(window.document.body.appendChild).toHaveBeenCalledWith(iframe);
       expect(window.document.body.removeChild).toHaveBeenCalledWith(iframe);
@@ -426,7 +460,7 @@ describe('utils', () => {
           const { iframe, url, origin } = setup(m);
           jest.useFakeTimers();
           const promise = runIframe(url, origin);
-          jest.runAllTimers();
+          jest.runOnlyPendingTimers();
           await expect(promise).rejects.toMatchObject(TIMEOUT_ERROR);
           expect(window.document.body.removeChild).toHaveBeenCalledWith(iframe);
         });
@@ -447,7 +481,7 @@ describe('utils', () => {
       await expect(runIframe(url, origin)).resolves.toMatchObject(
         message.data.response
       );
-      jest.runAllTimers();
+      jest.runOnlyPendingTimers();
       expect(message.source.close).toHaveBeenCalled();
       expect(window.document.body.removeChild).toHaveBeenCalledWith(iframe);
     });
@@ -470,7 +504,7 @@ describe('utils', () => {
         ...message.data.response,
         message: 'error_description'
       });
-      jest.runAllTimers();
+      jest.runOnlyPendingTimers();
       expect(message.source.close).toHaveBeenCalled();
       expect(window.document.body.removeChild).toHaveBeenCalledWith(iframe);
       expect(window.removeEventListener).toBeCalled();

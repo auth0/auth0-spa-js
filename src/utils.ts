@@ -5,7 +5,12 @@ import {
   CLEANUP_IFRAME_TIMEOUT_IN_SECONDS
 } from './constants';
 
-import { PopupTimeoutError, TimeoutError, GenericError } from './errors';
+import {
+  PopupTimeoutError,
+  TimeoutError,
+  GenericError,
+  PopupCancelledError
+} from './errors';
 
 export const parseQueryResult = (queryString: string) => {
   if (queryString.indexOf('#') > -1) {
@@ -97,7 +102,18 @@ export const runPopup = (config: PopupConfigOptions) => {
   return new Promise<AuthenticationResult>((resolve, reject) => {
     let popupEventListener: EventListenerOrEventListenerObject;
 
+    // Check each second if the popup is closed triggering a PopupCancelledError
+    const popupTimer = setInterval(() => {
+      if (config.popup && config.popup.closed) {
+        clearInterval(popupTimer);
+        clearTimeout(timeoutId);
+        window.removeEventListener('message', popupEventListener, false);
+        reject(new PopupCancelledError(config.popup));
+      }
+    }, 1000);
+
     const timeoutId = setTimeout(() => {
+      clearInterval(popupTimer);
       reject(new PopupTimeoutError(config.popup));
       window.removeEventListener('message', popupEventListener, false);
     }, (config.timeoutInSeconds || DEFAULT_AUTHORIZE_TIMEOUT_IN_SECONDS) * 1000);
@@ -108,6 +124,7 @@ export const runPopup = (config: PopupConfigOptions) => {
       }
 
       clearTimeout(timeoutId);
+      clearInterval(popupTimer);
       window.removeEventListener('message', popupEventListener, false);
       config.popup.close();
 
