@@ -80,7 +80,7 @@ export const runIframe = (
   });
 };
 
-const openPopup = (url: string) => {
+export const openPopup = (url: string) => {
   const width = 400;
   const height = 600;
   const left = window.screenX + (window.innerWidth - width) / 2;
@@ -93,19 +93,7 @@ const openPopup = (url: string) => {
   );
 };
 
-export const runPopup = (authorizeUrl: string, config: PopupConfigOptions) => {
-  let popup = config.popup;
-
-  if (popup) {
-    popup.location.href = authorizeUrl;
-  } else {
-    popup = openPopup(authorizeUrl);
-  }
-
-  if (!popup) {
-    throw new Error('Could not open popup');
-  }
-
+export const runPopup = (config: PopupConfigOptions, popup: any) => {
   return new Promise<AuthenticationResult>((resolve, reject) => {
     let popupEventListener: EventListenerOrEventListenerObject;
 
