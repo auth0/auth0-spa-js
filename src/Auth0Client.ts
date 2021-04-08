@@ -336,9 +336,12 @@ export default class Auth0Client {
    * @param config
    */
   public async loginWithPopup(
-    options: PopupLoginOptions = {},
-    config: PopupConfigOptions = {}
+    options?: PopupLoginOptions,
+    config?: PopupConfigOptions
   ) {
+    options = options || {};
+    config = config || {};
+
     let popup = config.popup;
 
     if (!popup) {
