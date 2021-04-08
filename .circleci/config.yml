@@ -121,12 +121,11 @@ jobs:
       - run: mv dist spa-js
       - run:
           name: Create App
-          command: npx -p @vue/cli vue create my-app -d -m yarn < /dev/null
+          command: npx -p @vue/cli vue create my-app -d -m yarn --useTaobaoRegistry=false < /dev/null
       - run:
           name: Install SPA JS
           command: |
             yarn add "../spa-js"
-            ls -lah
             touch src/auth0.js
             echo -e "$AUTH0_CONTENT" > src/auth0.js;
             echo -e "$IMPORT_STATEMENT"|cat - src/main.js > /tmp/out && mv /tmp/out src/main.js;
