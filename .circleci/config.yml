@@ -121,7 +121,7 @@ jobs:
       - run: mv dist spa-js
       - run:
           name: Create App
-          command: npx -p @vue/cli vue create my-app -d -m yarn --useTaobaoRegistry=false < /dev/null
+          command: npx -p @vue/cli vue create my-app -d -m yarn -r http://registry.npmjs.org/ < /dev/null
       - run:
           name: Install SPA JS
           command: |
