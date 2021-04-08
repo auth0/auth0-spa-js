@@ -2991,10 +2991,10 @@ createAuth0Client({
 			<p>In all cases where a refresh token is not available, the SDK falls back to the legacy technique of using a hidden iframe with <code>prompt=none</code> to try and get a new access token and refresh token. This scenario would occur for example if you are using the in-memory cache and you have refreshed the page. In this case, any refresh token that was stored previously would be lost.</p>
 			<p>If the fallback mechanism fails, a <code>login_required</code> error will be thrown and could be handled in order to put the user back through the authentication process.</p>
 			<p><strong>Note</strong>: This fallback mechanism does still require access to the Auth0 session cookie, so if third-party cookies are being blocked then this fallback will not work and the user must re-authenticate in order to get a new refresh token.</p>
-			<a href="#organizations-closed-beta" id="organizations-closed-beta" style="color: inherit; text-decoration: none;">
-				<h3>Organizations (Closed Beta)</h3>
+			<a href="#organizations" id="organizations" style="color: inherit; text-decoration: none;">
+				<h3>Organizations</h3>
 			</a>
-			<p>Organizations is a set of features that provide better support for developers who build and maintain SaaS and Business-to-Business (B2B) applications.</p>
+			<p><a href="https://auth0.com/docs/organizations">Organizations</a> is a set of features that provide better support for developers who build and maintain SaaS and Business-to-Business (B2B) applications.</p>
 			<p>Using Organizations, you can:</p>
 			<ul>
 				<li><p>Represent teams, business customers, partner companies, or any logical grouping of users that should have different ways of accessing your applications, as organizations.</p>
@@ -3158,7 +3158,7 @@ client.loginWithPopup({
 				<div class="tsd-signature tsd-kind-icon">Cache<wbr>Location<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">"memory"</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">"localstorage"</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/c2dd91e/src/global.ts#L204">src/global.ts:204</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/92c95c9/src/global.ts#L204">src/global.ts:204</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-comment tsd-typography">
@@ -3173,7 +3173,7 @@ client.loginWithPopup({
 				<div class="tsd-signature tsd-kind-icon">get<wbr>IdToken<wbr>Claims<wbr>Options<span class="tsd-signature-symbol">:</span> <a href="interfaces/getidtokenclaimsoptions.html" class="tsd-signature-type">GetIdTokenClaimsOptions</a></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/c2dd91e/src/global.ts#L291">src/global.ts:291</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/92c95c9/src/global.ts#L291">src/global.ts:291</a></li>
 					</ul>
 				</aside>
 			</section>
@@ -3186,7 +3186,7 @@ client.loginWithPopup({
 				<div class="tsd-signature tsd-kind-icon">CACHE_<wbr>LOCATION_<wbr>LOCAL_<wbr>STORAGE<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">"localstorage"</span><span class="tsd-signature-symbol"> = &quot;localstorage&quot;</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/c2dd91e/src/constants.ts#L32">src/constants.ts:32</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/92c95c9/src/constants.ts#L32">src/constants.ts:32</a></li>
 					</ul>
 				</aside>
 			</section>
@@ -3196,7 +3196,7 @@ client.loginWithPopup({
 				<div class="tsd-signature tsd-kind-icon">CACHE_<wbr>LOCATION_<wbr>MEMORY<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">"memory"</span><span class="tsd-signature-symbol"> = &quot;memory&quot;</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/c2dd91e/src/constants.ts#L31">src/constants.ts:31</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/92c95c9/src/constants.ts#L31">src/constants.ts:31</a></li>
 					</ul>
 				</aside>
 			</section>
@@ -3213,7 +3213,7 @@ client.loginWithPopup({
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/c2dd91e/src/index.ts#L19">src/index.ts:19</a></li>
+								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/92c95c9/src/index.ts#L19">src/index.ts:19</a></li>
 							</ul>
 						</aside>
 						<h4 class="tsd-parameters-title">Parameters</h4>
