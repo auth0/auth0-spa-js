@@ -237,9 +237,9 @@ If the fallback mechanism fails, a `login_required` error will be thrown and cou
 
 **Note**: This fallback mechanism does still require access to the Auth0 session cookie, so if third-party cookies are being blocked then this fallback will not work and the user must re-authenticate in order to get a new refresh token.
 
-### Organizations (Closed Beta)
+### Organizations
 
-Organizations is a set of features that provide better support for developers who build and maintain SaaS and Business-to-Business (B2B) applications.
+[Organizations](https://auth0.com/docs/organizations) is a set of features that provide better support for developers who build and maintain SaaS and Business-to-Business (B2B) applications.
 
 Using Organizations, you can:
 
