@@ -342,14 +342,8 @@ export default class Auth0Client {
     options = options || {};
     config = config || {};
 
-    let popup = config.popup;
-
-    if (!popup) {
-      popup = openPopup('');
-    }
-
-    if (!popup) {
-      throw new Error('Could not open popup');
+    if (!config.popup) {
+      config.popup = openPopup('');
     }
 
     const { ...authorizeOptions } = options;
@@ -372,18 +366,15 @@ export default class Auth0Client {
       response_mode: 'web_message'
     });
 
-    popup.location.href = url;
+    config.popup.location.href = url;
 
-    const codeResult = await runPopup(
-      {
-        ...config,
-        timeoutInSeconds:
-          config.timeoutInSeconds ||
-          this.options.authorizeTimeoutInSeconds ||
-          DEFAULT_AUTHORIZE_TIMEOUT_IN_SECONDS
-      },
-      popup
-    );
+    const codeResult = await runPopup({
+      ...config,
+      timeoutInSeconds:
+        config.timeoutInSeconds ||
+        this.options.authorizeTimeoutInSeconds ||
+        DEFAULT_AUTHORIZE_TIMEOUT_IN_SECONDS
+    });
 
     if (stateIn !== codeResult.state) {
       throw new Error('Invalid state');

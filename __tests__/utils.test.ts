@@ -268,7 +268,7 @@ describe('utils', () => {
               jest.runAllTimers();
             }, 10);
             jest.useFakeTimers();
-            await expect(runPopup(url, { popup })).rejects.toMatchObject(
+            await expect(runPopup({ popup })).rejects.toMatchObject(
               TIMEOUT_ERROR
             );
             jest.useRealTimers();
@@ -287,7 +287,7 @@ describe('utils', () => {
 
       const { popup, url } = setup(message);
 
-      await expect(runPopup(url, { popup })).resolves.toMatchObject(
+      await expect(runPopup({ popup })).resolves.toMatchObject(
         message.data.response
       );
 
@@ -308,7 +308,7 @@ describe('utils', () => {
 
       const { popup, url } = setup(message);
 
-      await expect(runPopup(url, { popup })).rejects.toMatchObject({
+      await expect(runPopup({ popup })).rejects.toMatchObject({
         ...message.data.response,
         message: 'error_description'
       });
@@ -334,7 +334,7 @@ describe('utils', () => {
       jest.useFakeTimers();
 
       await expect(
-        runPopup(url, {
+        runPopup({
           timeoutInSeconds: seconds,
           popup
         })
@@ -357,34 +357,9 @@ describe('utils', () => {
 
       jest.useFakeTimers();
 
-      await expect(runPopup(url, { popup })).rejects.toMatchObject(
-        TIMEOUT_ERROR
-      );
+      await expect(runPopup({ popup })).rejects.toMatchObject(TIMEOUT_ERROR);
 
       jest.useRealTimers();
-    });
-
-    it('creates and uses a popup window if none was given', async () => {
-      const message = {
-        data: {
-          type: 'authorization_response',
-          response: { id_token: 'id_token' }
-        }
-      };
-
-      const { popup, url } = setup(message);
-      const oldOpenFn = window.open;
-
-      window.open = <any>jest.fn(() => popup);
-
-      await expect(runPopup(url, {})).resolves.toMatchObject(
-        message.data.response
-      );
-
-      expect(popup.location.href).toBe(url);
-      expect(popup.close).toHaveBeenCalled();
-
-      window.open = oldOpenFn;
     });
   });
   describe('runIframe', () => {

@@ -231,7 +231,10 @@ export const setupMessageEventLister = (
   });
 
   mockWindow.open.mockReturnValue({
-    close: () => {}
+    close: () => {},
+    location: {
+      href: ''
+    }
   });
 };
 
