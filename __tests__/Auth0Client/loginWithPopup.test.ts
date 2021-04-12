@@ -33,7 +33,6 @@ import {
   DEFAULT_AUTH0_CLIENT,
   DEFAULT_POPUP_CONFIG_OPTIONS
 } from '../../src/constants';
-import version from '../../src/version';
 
 jest.mock('unfetch');
 jest.mock('es-cookie');
@@ -76,6 +75,7 @@ describe('Auth0Client', () => {
 
     mockWindow.open = jest.fn();
     mockWindow.addEventListener = jest.fn();
+
     mockWindow.crypto = {
       subtle: {
         digest: () => 'foo'
@@ -99,6 +99,9 @@ describe('Auth0Client', () => {
   describe('loginWithPopup', () => {
     it('should log the user in and get the user and claims', async () => {
       const auth0 = setup({ scope: 'foo' });
+
+      mockWindow.open.mockReturnValue({ hello: 'world' });
+
       await loginWithPopup(auth0);
 
       const expectedUser = { sub: 'me' };
@@ -142,7 +145,9 @@ describe('Auth0Client', () => {
 
       await loginWithPopup(auth0);
 
-      const [[url]] = (<jest.Mock>mockWindow.open).mock.calls;
+      // prettier-ignore
+      const url = (utils.runPopup as jest.Mock).mock.calls[0][0].popup.location.href;
+
       assertUrlEquals(url, 'auth0_domain', '/authorize', {
         state: TEST_STATE,
         nonce: TEST_NONCE
@@ -154,7 +159,9 @@ describe('Auth0Client', () => {
 
       await loginWithPopup(auth0);
 
-      const [[url]] = (<jest.Mock>mockWindow.open).mock.calls;
+      // prettier-ignore
+      const url = (utils.runPopup as jest.Mock).mock.calls[0][0].popup.location.href;
+
       assertUrlEquals(url, 'auth0_domain', '/authorize', {
         code_challenge: TEST_CODE_CHALLENGE,
         code_challenge_method: 'S256'
@@ -170,7 +177,10 @@ describe('Auth0Client', () => {
       });
 
       expect(mockWindow.open).toHaveBeenCalled();
-      const [[url]] = (<jest.Mock>mockWindow.open).mock.calls;
+
+      // prettier-ignore
+      const url = (utils.runPopup as jest.Mock).mock.calls[0][0].popup.location.href;
+
       assertUrlEquals(url, 'auth0_domain', '/authorize', {
         redirect_uri: 'http://localhost',
         client_id: TEST_CLIENT_ID,
@@ -195,7 +205,10 @@ describe('Auth0Client', () => {
       });
 
       expect(mockWindow.open).toHaveBeenCalled();
-      const [[url]] = (<jest.Mock>mockWindow.open).mock.calls;
+
+      // prettier-ignore
+      const url = (utils.runPopup as jest.Mock).mock.calls[0][0].popup.location.href;
+
       assertUrlEquals(url, TEST_DOMAIN, '/authorize', {
         redirect_uri: TEST_REDIRECT_URI,
         client_id: TEST_CLIENT_ID,
@@ -215,8 +228,12 @@ describe('Auth0Client', () => {
       const auth0 = setup({
         useRefreshTokens: true
       });
+
       await loginWithPopup(auth0);
-      const [[url]] = (<jest.Mock>mockWindow.open).mock.calls;
+
+      // prettier-ignore
+      const url = (utils.runPopup as jest.Mock).mock.calls[0][0].popup.location.href;
+
       assertUrlEquals(url, TEST_DOMAIN, '/authorize', {
         scope: `${TEST_SCOPES} offline_access`
       });
@@ -228,7 +245,10 @@ describe('Auth0Client', () => {
         redirect_uri
       });
       await loginWithPopup(auth0);
-      const [[url]] = (<jest.Mock>mockWindow.open).mock.calls;
+
+      // prettier-ignore
+      const url = (utils.runPopup as jest.Mock).mock.calls[0][0].popup.location.href;
+
       assertUrlEquals(url, TEST_DOMAIN, '/authorize', {
         redirect_uri
       });
@@ -236,10 +256,9 @@ describe('Auth0Client', () => {
 
     it('should log the user in with a popup and get the token', async () => {
       const auth0 = setup();
-
       await loginWithPopup(auth0);
-
       expect(mockWindow.open).toHaveBeenCalled();
+
       assertPost(
         'https://auth0_domain/oauth/token',
         {
@@ -260,10 +279,10 @@ describe('Auth0Client', () => {
 
       await loginWithPopup(auth0);
 
-      expect(utils.runPopup).toHaveBeenCalledWith(
-        expect.any(String),
-        DEFAULT_POPUP_CONFIG_OPTIONS
-      );
+      expect(utils.runPopup).toHaveBeenCalledWith({
+        ...DEFAULT_POPUP_CONFIG_OPTIONS,
+        popup: expect.anything()
+      });
     });
 
     it('should be able to provide custom config', async () => {
@@ -271,8 +290,9 @@ describe('Auth0Client', () => {
 
       await loginWithPopup(auth0, {}, { timeoutInSeconds: 3 });
 
-      expect(utils.runPopup).toHaveBeenCalledWith(expect.any(String), {
-        timeoutInSeconds: 3
+      expect(utils.runPopup).toHaveBeenCalledWith({
+        timeoutInSeconds: 3,
+        popup: expect.anything()
       });
     });
 
@@ -345,7 +365,10 @@ describe('Auth0Client', () => {
       await loginWithPopup(auth0);
 
       expect(mockWindow.open).toHaveBeenCalled();
-      const [[url]] = (<jest.Mock>mockWindow.open).mock.calls;
+
+      // prettier-ignore
+      const url = (utils.runPopup as jest.Mock).mock.calls[0][0].popup.location.href;
+
       assertUrlEquals(url, TEST_DOMAIN, '/authorize', {
         auth0Client: btoa(JSON.stringify(auth0Client))
       });

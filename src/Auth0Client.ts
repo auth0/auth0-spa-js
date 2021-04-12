@@ -9,7 +9,8 @@ import {
   runIframe,
   sha256,
   bufferToBase64UrlEncoded,
-  validateCrypto
+  validateCrypto,
+  openPopup
 } from './utils';
 
 import { oauthToken, TokenEndpointResponse } from './api';
@@ -335,9 +336,16 @@ export default class Auth0Client {
    * @param config
    */
   public async loginWithPopup(
-    options: PopupLoginOptions = {},
-    config: PopupConfigOptions = {}
+    options?: PopupLoginOptions,
+    config?: PopupConfigOptions
   ) {
+    options = options || {};
+    config = config || {};
+
+    if (!config.popup) {
+      config.popup = openPopup('');
+    }
+
     const { ...authorizeOptions } = options;
     const stateIn = encode(createRandomString());
     const nonceIn = encode(createRandomString());
@@ -358,7 +366,9 @@ export default class Auth0Client {
       response_mode: 'web_message'
     });
 
-    const codeResult = await runPopup(url, {
+    config.popup.location.href = url;
+
+    const codeResult = await runPopup({
       ...config,
       timeoutInSeconds:
         config.timeoutInSeconds ||
@@ -420,7 +430,7 @@ export default class Auth0Client {
    * (the SDK stores a corresponding ID Token with every Access Token, and uses the
    * scope and audience to look up the ID Token)
    *
-   * @typeparam TUser The type to return, has to extend {@link User}. 
+   * @typeparam TUser The type to return, has to extend {@link User}.
    * @param options
    */
   public async getUser<TUser extends User>(
@@ -453,7 +463,9 @@ export default class Auth0Client {
    *
    * @param options
    */
-  public async getIdTokenClaims(options: GetIdTokenClaimsOptions = {}): Promise<IdToken> {
+  public async getIdTokenClaims(
+    options: GetIdTokenClaimsOptions = {}
+  ): Promise<IdToken> {
     const audience = options.audience || this.options.audience || 'default';
     const scope = getUniqueScopes(this.defaultScope, this.scope, options.scope);
 
@@ -829,8 +841,8 @@ export default class Auth0Client {
       nonceIn,
       code_challenge,
       options.redirect_uri ||
-      this.options.redirect_uri ||
-      window.location.origin
+        this.options.redirect_uri ||
+        window.location.origin
     );
 
     const url = this._authorizeUrl({

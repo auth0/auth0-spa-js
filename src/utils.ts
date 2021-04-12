@@ -80,7 +80,7 @@ export const runIframe = (
   });
 };
 
-const openPopup = (url: string) => {
+export const openPopup = (url: string) => {
   const width = 400;
   const height = 600;
   const left = window.screenX + (window.innerWidth - width) / 2;
@@ -93,24 +93,12 @@ const openPopup = (url: string) => {
   );
 };
 
-export const runPopup = (authorizeUrl: string, config: PopupConfigOptions) => {
-  let popup = config.popup;
-
-  if (popup) {
-    popup.location.href = authorizeUrl;
-  } else {
-    popup = openPopup(authorizeUrl);
-  }
-
-  if (!popup) {
-    throw new Error('Could not open popup');
-  }
-
+export const runPopup = (config: PopupConfigOptions) => {
   return new Promise<AuthenticationResult>((resolve, reject) => {
     let popupEventListener: EventListenerOrEventListenerObject;
 
     const timeoutId = setTimeout(() => {
-      reject(new PopupTimeoutError(popup));
+      reject(new PopupTimeoutError(config.popup));
       window.removeEventListener('message', popupEventListener, false);
     }, (config.timeoutInSeconds || DEFAULT_AUTHORIZE_TIMEOUT_IN_SECONDS) * 1000);
 
@@ -121,7 +109,7 @@ export const runPopup = (authorizeUrl: string, config: PopupConfigOptions) => {
 
       clearTimeout(timeoutId);
       window.removeEventListener('message', popupEventListener, false);
-      popup.close();
+      config.popup.close();
 
       if (e.data.response.error) {
         return reject(GenericError.fromPayload(e.data.response));
