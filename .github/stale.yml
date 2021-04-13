@@ -8,7 +8,7 @@ daysUntilClose: 7
 
 # Only issues or pull requests with all of these labels are considered by StaleBot. Defaults to `[]` (disabled)
 onlyLabels:
-  - 'waiting for customer'
+  - 'more info needed'
 
 # Ignore issues in projects
 exemptProjects: true
