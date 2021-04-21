@@ -482,12 +482,17 @@
               options.organization = _self.organization;
             }
 
-            _self.auth0.loginWithPopup(options).then(function () {
-              auth0.isAuthenticated().then(function (isAuthenticated) {
-                _self.isAuthenticated = isAuthenticated;
-                _self.showAuth0Info();
+            _self.auth0
+              .loginWithPopup(options)
+              .then(function () {
+                auth0.isAuthenticated().then(function (isAuthenticated) {
+                  _self.isAuthenticated = isAuthenticated;
+                  _self.showAuth0Info();
+                });
+              })
+              .catch(err => {
+                _self.error = err;
               });
-            });
           },
           loginRedirect: function () {
             var _self = this;
@@ -553,6 +558,9 @@
               .getTokenWithPopup({ audience: audience, scope: scope })
               .then(function (token) {
                 access_tokens.push(token);
+              })
+              .catch(err => {
+                _self.error = err;
               });
           },
           logout: function () {

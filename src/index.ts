@@ -27,5 +27,6 @@ export {
   GenericError,
   AuthenticationError,
   TimeoutError,
-  PopupTimeoutError
+  PopupTimeoutError,
+  PopupCancelledError
 } from './errors';
