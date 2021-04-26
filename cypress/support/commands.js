@@ -20,7 +20,9 @@ const login = () => {
     .clear()
     .type('johnfoo+integration@gmail.com');
 
-  cy.get('.auth0-lock-input-password .auth0-lock-input').clear().type('1234');
+  cy.get('.auth0-lock-input-password .auth0-lock-input')
+    .clear()
+    .type(Cypress.env('INTEGRATION_PASSWORD'));
   cy.get('.auth0-lock-submit').click();
 };
 
