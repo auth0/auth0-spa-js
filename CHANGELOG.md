@@ -1,5 +1,14 @@
 # Change Log
 
+## [v1.15.0](https://github.com/auth0/auth0-spa-js/tree/v1.15.0) (2021-04-29)
+[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v1.14.0...v1.15.0)
+
+**Added**
+- Add Popup cancelled event [\#724](https://github.com/auth0/auth0-spa-js/pull/724) ([degrammer](https://github.com/degrammer))
+
+**Fixed**
+- Fix popup blocker showing for loginWithPopup in Firefox & Safari [\#732](https://github.com/auth0/auth0-spa-js/pull/732) ([stevehobbsdev](https://github.com/stevehobbsdev))
+
 ## [v1.14.0](https://github.com/auth0/auth0-spa-js/tree/v1.14.0) (2021-03-22)
 
 [Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v1.13.6...v1.14.0)
