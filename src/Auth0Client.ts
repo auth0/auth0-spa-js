@@ -327,7 +327,6 @@ export default class Auth0Client {
    *    // Popup was closed before login completed
    *  }
    * }
-   *
    * ```
    *
    * Opens a popup with the `/authorize` URL using the parameters
