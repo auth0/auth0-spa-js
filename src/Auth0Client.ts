@@ -60,12 +60,12 @@ import {
   User,
   IdToken
 } from './global';
+import { IosASWebauthenticationSession } from '@ionic-native/ios-aswebauthenticationsession-api';
 
 // @ts-ignore
 import TokenWorker from './worker/token.worker.ts';
 import { isIE11 } from './user-agent';
 import { singlePromise, retryPromise } from './promise-utils';
-import { IosASWebauthenticationSession } from '@ionic-native/ios-aswebauthenticationsession-api';
 
 /**
  * @ignore
@@ -501,10 +501,12 @@ export default class Auth0Client {
   public async loginWithRedirect(options: RedirectLoginOptions = {}) {
     const { redirectMethod, platform = 'web', ...urlOptions } = options;
     const url = await this.buildAuthorizeUrl(urlOptions);
+
     if (platform === 'web') {
       window.location[redirectMethod || 'assign'](url);
       return;
     }
+
     if (platform === 'ios')
       return IosASWebauthenticationSession.start(urlOptions.redirect_uri, url);
   }

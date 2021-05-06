@@ -19,5 +19,12 @@ module.exports = {
     'ts-jest': {
       tsconfig: './tsconfig.test.json'
     }
-  }
+  },
+  transform: {
+    '^.+\\.(ts|tsx)?$': 'ts-jest',
+    '^.+\\.(js|jsx)$': 'babel-jest'
+  },
+  transformIgnorePatterns: [
+    '[/\\\\]node_modules[/\\\\](?!@ionic-native/).+\\.js$'
+  ]
 };
