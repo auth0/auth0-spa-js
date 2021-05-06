@@ -118,7 +118,7 @@ export default class Auth0Client {
    *
    * @param options
    */
-  loginWithRedirect(options?: RedirectLoginOptions): Promise<void>;
+  loginWithRedirect(options?: RedirectLoginOptions): Promise<string>;
   /**
    * After the browser redirects back to the callback page,
    * call `handleRedirectCallback` to handle success and error

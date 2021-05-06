@@ -25,8 +25,8 @@
     ***************************************************************************** */
   /* global Reflect, Promise */
 
-  var extendStatics = function (d, b) {
-    extendStatics =
+  var extendStatics$1 = function (d, b) {
+    extendStatics$1 =
       Object.setPrototypeOf ||
       ({ __proto__: [] } instanceof Array &&
         function (d, b) {
@@ -36,15 +36,15 @@
         for (var p in b)
           if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p];
       };
-    return extendStatics(d, b);
+    return extendStatics$1(d, b);
   };
 
-  function __extends(d, b) {
+  function __extends$2(d, b) {
     if (typeof b !== 'function' && b !== null)
       throw new TypeError(
         'Class extends value ' + String(b) + ' is not a constructor or null'
       );
-    extendStatics(d, b);
+    extendStatics$1(d, b);
     function __() {
       this.constructor = d;
     }
@@ -338,7 +338,7 @@
     return indexedObject(requireObjectCoercible(it));
   };
 
-  var isObject = function (it) {
+  var isObject$1 = function (it) {
     return typeof it === 'object' ? it !== null : typeof it === 'function';
   };
 
@@ -347,23 +347,23 @@
   // instead of the ES6 spec version, we didn't implement @@toPrimitive case
   // and the second argument - flag - preferred type is a string
   var toPrimitive = function (input, PREFERRED_STRING) {
-    if (!isObject(input)) return input;
+    if (!isObject$1(input)) return input;
     var fn, val;
     if (
       PREFERRED_STRING &&
       typeof (fn = input.toString) == 'function' &&
-      !isObject((val = fn.call(input)))
+      !isObject$1((val = fn.call(input)))
     )
       return val;
     if (
       typeof (fn = input.valueOf) == 'function' &&
-      !isObject((val = fn.call(input)))
+      !isObject$1((val = fn.call(input)))
     )
       return val;
     if (
       !PREFERRED_STRING &&
       typeof (fn = input.toString) == 'function' &&
-      !isObject((val = fn.call(input)))
+      !isObject$1((val = fn.call(input)))
     )
       return val;
     throw TypeError("Can't convert object to primitive value");
@@ -383,7 +383,7 @@
 
   var document$1 = global_1.document;
   // typeof document.createElement is 'object' in old IE
-  var EXISTS = isObject(document$1) && isObject(document$1.createElement);
+  var EXISTS = isObject$1(document$1) && isObject$1(document$1.createElement);
 
   var documentCreateElement = function (it) {
     return EXISTS ? document$1.createElement(it) : {};
@@ -431,7 +431,7 @@
   };
 
   var anObject = function (it) {
-    if (!isObject(it)) {
+    if (!isObject$1(it)) {
       throw TypeError(String(it) + ' is not an object');
     }
     return it;
@@ -543,16 +543,16 @@
 
   var OBJECT_ALREADY_INITIALIZED = 'Object already initialized';
   var WeakMap = global_1.WeakMap;
-  var set, get, has;
+  var set, get$2, has;
 
   var enforce = function (it) {
-    return has(it) ? get(it) : set(it, {});
+    return has(it) ? get$2(it) : set(it, {});
   };
 
   var getterFor = function (TYPE) {
     return function (it) {
       var state;
-      if (!isObject(it) || (state = get(it)).type !== TYPE) {
+      if (!isObject$1(it) || (state = get$2(it)).type !== TYPE) {
         throw TypeError('Incompatible receiver, ' + TYPE + ' required');
       }
       return state;
@@ -571,7 +571,7 @@
       wmset.call(store, it, metadata);
       return metadata;
     };
-    get = function (it) {
+    get$2 = function (it) {
       return wmget.call(store, it) || {};
     };
     has = function (it) {
@@ -586,7 +586,7 @@
       createNonEnumerableProperty(it, STATE, metadata);
       return metadata;
     };
-    get = function (it) {
+    get$2 = function (it) {
       return has$1(it, STATE) ? it[STATE] : {};
     };
     has = function (it) {
@@ -596,7 +596,7 @@
 
   var internalState = {
     set: set,
-    get: get,
+    get: get$2,
     has: has,
     enforce: enforce,
     getterFor: getterFor
@@ -868,8 +868,8 @@
 
   var engineUserAgent = getBuiltIn('navigator', 'userAgent') || '';
 
-  var process = global_1.process;
-  var versions = process && process.versions;
+  var process$1 = global_1.process;
+  var versions = process$1 && process$1.versions;
   var v8 = versions && versions.v8;
   var match, version$1;
 
@@ -932,7 +932,7 @@
   var isRegexp = function (it) {
     var isRegExp;
     return (
-      isObject(it) &&
+      isObject$1(it) &&
       ((isRegExp = it[MATCH$1]) !== undefined
         ? !!isRegExp
         : classofRaw(it) == 'RegExp')
@@ -1050,7 +1050,7 @@
   // `IsArray` abstract operation
   // https://tc39.es/ecma262/#sec-isarray
   // eslint-disable-next-line es/no-array-isarray -- safe
-  var isArray$1 =
+  var isArray$2 =
     Array.isArray ||
     function isArray(arg) {
       return classofRaw(arg) == 'Array';
@@ -1073,12 +1073,12 @@
   // https://tc39.es/ecma262/#sec-arrayspeciescreate
   var arraySpeciesCreate = function (originalArray, length) {
     var C;
-    if (isArray$1(originalArray)) {
+    if (isArray$2(originalArray)) {
       C = originalArray.constructor;
       // cross-realm fallback
-      if (typeof C == 'function' && (C === Array || isArray$1(C.prototype)))
+      if (typeof C == 'function' && (C === Array || isArray$2(C.prototype)))
         C = undefined;
-      else if (isObject(C)) {
+      else if (isObject$1(C)) {
         C = C[SPECIES$3];
         if (C === null) C = undefined;
       }
@@ -1123,9 +1123,9 @@
   var SPECIES_SUPPORT = arrayMethodHasSpeciesSupport('concat');
 
   var isConcatSpreadable = function (O) {
-    if (!isObject(O)) return false;
+    if (!isObject$1(O)) return false;
     var spreadable = O[IS_CONCAT_SPREADABLE];
-    return spreadable !== undefined ? !!spreadable : isArray$1(O);
+    return spreadable !== undefined ? !!spreadable : isArray$2(O);
   };
 
   var FORCED$1 = !IS_CONCAT_SPREADABLE_SUPPORT || !SPECIES_SUPPORT;
@@ -1524,7 +1524,7 @@
         }
       : nativeDefineProperty;
 
-  var wrap = function (tag, description) {
+  var wrap$1 = function (tag, description) {
     var symbol = (AllSymbols[tag] = objectCreate($Symbol[PROTOTYPE]));
     setInternalState$3(symbol, {
       type: SYMBOL,
@@ -1671,7 +1671,7 @@
           configurable: true,
           set: setter
         });
-      return wrap(tag, description);
+      return wrap$1(tag, description);
     };
 
     redefine($Symbol[PROTOTYPE], 'toString', function toString() {
@@ -1679,7 +1679,7 @@
     });
 
     redefine($Symbol, 'withoutSetter', function (description) {
-      return wrap(uid(description), description);
+      return wrap$1(uid(description), description);
     });
 
     objectPropertyIsEnumerable.f = $propertyIsEnumerable;
@@ -1689,7 +1689,7 @@
     objectGetOwnPropertySymbols.f = $getOwnPropertySymbols;
 
     wellKnownSymbolWrapped.f = function (name) {
-      return wrap(wellKnownSymbol(name), name);
+      return wrap$1(wellKnownSymbol(name), name);
     };
 
     if (descriptors) {
@@ -1826,8 +1826,9 @@
           var $replacer;
           while (arguments.length > index) args.push(arguments[index++]);
           $replacer = replacer;
-          if ((!isObject(replacer) && it === undefined) || isSymbol(it)) return; // IE8 returns string on undefined
-          if (!isArray$1(replacer))
+          if ((!isObject$1(replacer) && it === undefined) || isSymbol(it))
+            return; // IE8 returns string on undefined
+          if (!isArray$2(replacer))
             replacer = function (key, value) {
               if (typeof $replacer == 'function')
                 value = $replacer.call(this, key, value);
@@ -1897,7 +1898,7 @@
     defineProperty$2(symbolPrototype, 'description', {
       configurable: true,
       get: function description() {
-        var symbol = isObject(this) ? this.valueOf() : this;
+        var symbol = isObject$1(this) ? this.valueOf() : this;
         var string = symbolToString.call(symbol);
         if (has$1(EmptyStringDescriptionStore, symbol)) return '';
         var desc = native ? string.slice(7, -1) : string.replace(regexp, '$1');
@@ -2100,7 +2101,7 @@
   };
 
   var aPossiblePrototype = function (it) {
-    if (!isObject(it) && it !== null) {
+    if (!isObject$1(it) && it !== null) {
       throw TypeError("Can't set " + String(it) + ' as a prototype');
     }
     return it;
@@ -2501,7 +2502,7 @@
   };
 
   var isView = function isView(it) {
-    if (!isObject(it)) return false;
+    if (!isObject$1(it)) return false;
     var klass = classof(it);
     return (
       klass === 'DataView' ||
@@ -2511,7 +2512,7 @@
   };
 
   var isTypedArray = function (it) {
-    if (!isObject(it)) return false;
+    if (!isObject$1(it)) return false;
     var klass = classof(it);
     return (
       has$1(TypedArrayConstructorsList, klass) ||
@@ -2650,7 +2651,7 @@
     TYPED_ARRAY_TAG_REQIRED = true;
     defineProperty$1(TypedArrayPrototype, TO_STRING_TAG$1, {
       get: function () {
-        return isObject(this) ? this[TYPED_ARRAY_TAG] : undefined;
+        return isObject$1(this) ? this[TYPED_ARRAY_TAG] : undefined;
       }
     });
     for (NAME in TypedArrayConstructorsList)
@@ -2798,7 +2799,7 @@
 
     var fastKey = function (it, create) {
       // return a primitive with prefix
-      if (!isObject(it))
+      if (!isObject$1(it))
         return typeof it == 'symbol'
           ? it
           : (typeof it == 'string' ? 'S' : 'P') + it;
@@ -2931,7 +2932,7 @@
       // we haven't completely correct pre-ES6 way for getting `new.target`, so use this
       typeof (NewTarget = dummy.constructor) == 'function' &&
       NewTarget !== Wrapper &&
-      isObject((NewTargetPrototype = NewTarget.prototype)) &&
+      isObject$1((NewTargetPrototype = NewTarget.prototype)) &&
       NewTargetPrototype !== Wrapper.prototype
     )
       objectSetPrototypeOf($this, NewTargetPrototype);
@@ -2959,19 +2960,19 @@
             }
           : KEY == 'delete'
           ? function (key) {
-              return IS_WEAK && !isObject(key)
+              return IS_WEAK && !isObject$1(key)
                 ? false
                 : nativeMethod.call(this, key === 0 ? 0 : key);
             }
           : KEY == 'get'
           ? function get(key) {
-              return IS_WEAK && !isObject(key)
+              return IS_WEAK && !isObject$1(key)
                 ? undefined
                 : nativeMethod.call(this, key === 0 ? 0 : key);
             }
           : KEY == 'has'
           ? function has(key) {
-              return IS_WEAK && !isObject(key)
+              return IS_WEAK && !isObject$1(key)
                 ? false
                 : nativeMethod.call(this, key === 0 ? 0 : key);
             }
@@ -3514,7 +3515,7 @@
   // other code modifying setTimeout (like sinon.useFakeTimers())
   var setTimeoutFunc = setTimeout;
 
-  function isArray(x) {
+  function isArray$1(x) {
     return Boolean(x && typeof x.length !== 'undefined');
   }
 
@@ -3675,7 +3676,7 @@
 
   Promise$1.all = function (arr) {
     return new Promise$1(function (resolve, reject) {
-      if (!isArray(arr)) {
+      if (!isArray$1(arr)) {
         return reject(new TypeError('Promise.all accepts an array'));
       }
 
@@ -3733,7 +3734,7 @@
 
   Promise$1.race = function (arr) {
     return new Promise$1(function (resolve, reject) {
-      if (!isArray(arr)) {
+      if (!isArray$1(arr)) {
         return reject(new TypeError('Promise.race accepts an array'));
       }
 
@@ -4944,7 +4945,7 @@
    * Thrown when network requests to the Auth server fail.
    */
   var GenericError = /** @class */ (function (_super) {
-    __extends(GenericError, _super);
+    __extends$2(GenericError, _super);
     function GenericError(error, error_description) {
       var _this = _super.call(this, error_description) || this;
       _this.error = error;
@@ -4964,7 +4965,7 @@
    * Authentication API's Standard Error Responses: https://auth0.com/docs/api/authentication?javascript#standard-error-responses
    */
   var AuthenticationError = /** @class */ (function (_super) {
-    __extends(AuthenticationError, _super);
+    __extends$2(AuthenticationError, _super);
     function AuthenticationError(error, error_description, state, appState) {
       if (appState === void 0) {
         appState = null;
@@ -4983,7 +4984,7 @@
    * when network requests to the Auth server timeout.
    */
   var TimeoutError = /** @class */ (function (_super) {
-    __extends(TimeoutError, _super);
+    __extends$2(TimeoutError, _super);
     function TimeoutError() {
       var _this = _super.call(this, 'timeout', 'Timeout') || this;
       //https://github.com/Microsoft/TypeScript-wiki/blob/master/Breaking-Changes.md#extending-built-ins-like-error-array-and-map-may-no-longer-work
@@ -4996,7 +4997,7 @@
    * Error thrown when the login popup times out (if the user does not complete auth)
    */
   var PopupTimeoutError = /** @class */ (function (_super) {
-    __extends(PopupTimeoutError, _super);
+    __extends$2(PopupTimeoutError, _super);
     function PopupTimeoutError(popup) {
       var _this = _super.call(this) || this;
       _this.popup = popup;
@@ -5007,7 +5008,7 @@
     return PopupTimeoutError;
   })(TimeoutError);
   var PopupCancelledError = /** @class */ (function (_super) {
-    __extends(PopupCancelledError, _super);
+    __extends$2(PopupCancelledError, _super);
     function PopupCancelledError(popup) {
       var _this = _super.call(this, 'cancelled', 'Popup closed') || this;
       _this.popup = popup;
@@ -6209,6 +6210,1375 @@
     }
   };
 
+  function checkReady() {
+    if (typeof process === 'undefined') {
+      var win_1 = typeof window !== 'undefined' ? window : {};
+      var DEVICE_READY_TIMEOUT_1 = 5000;
+      // To help developers using cordova, we listen for the device ready event and
+      // log an error if it didn't fire in a reasonable amount of time. Generally,
+      // when this happens, developers should remove and reinstall plugins, since
+      // an inconsistent plugin is often the culprit.
+      var before_1 = Date.now();
+      var didFireReady_1 = false;
+      win_1.document.addEventListener('deviceready', function () {
+        console.log(
+          'Ionic Native: deviceready event fired after ' +
+            (Date.now() - before_1) +
+            ' ms'
+        );
+        didFireReady_1 = true;
+      });
+      setTimeout(function () {
+        if (!didFireReady_1 && win_1.cordova) {
+          console.warn(
+            'Ionic Native: deviceready did not fire within ' +
+              DEVICE_READY_TIMEOUT_1 +
+              'ms. This can happen when plugins are in an inconsistent state. Try removing plugins from plugins/ and reinstalling them.'
+          );
+        }
+      }, DEVICE_READY_TIMEOUT_1);
+    }
+  }
+
+  /*! *****************************************************************************
+    Copyright (c) Microsoft Corporation.
+
+    Permission to use, copy, modify, and/or distribute this software for any
+    purpose with or without fee is hereby granted.
+
+    THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH
+    REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY
+    AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,
+    INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM
+    LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
+    OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
+    PERFORMANCE OF THIS SOFTWARE.
+    ***************************************************************************** */
+  /* global Reflect, Promise */
+
+  var extendStatics = function (d, b) {
+    extendStatics =
+      Object.setPrototypeOf ||
+      ({ __proto__: [] } instanceof Array &&
+        function (d, b) {
+          d.__proto__ = b;
+        }) ||
+      function (d, b) {
+        for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+      };
+    return extendStatics(d, b);
+  };
+
+  function __extends$1(d, b) {
+    extendStatics(d, b);
+    function __() {
+      this.constructor = d;
+    }
+    d.prototype =
+      b === null ? Object.create(b) : ((__.prototype = b.prototype), new __());
+  }
+
+  /** PURE_IMPORTS_START  PURE_IMPORTS_END */
+  function isFunction(x) {
+    return typeof x === 'function';
+  }
+
+  /** PURE_IMPORTS_START  PURE_IMPORTS_END */
+  var _enable_super_gross_mode_that_will_cause_bad_things = false;
+  var config = {
+    Promise: undefined,
+    set useDeprecatedSynchronousErrorHandling(value) {
+      if (value) {
+        var error = /*@__PURE__*/ new Error();
+        /*@__PURE__*/ console.warn(
+          'DEPRECATED! RxJS was set to use deprecated synchronous error handling behavior by code at: \n' +
+            error.stack
+        );
+      }
+      _enable_super_gross_mode_that_will_cause_bad_things = value;
+    },
+    get useDeprecatedSynchronousErrorHandling() {
+      return _enable_super_gross_mode_that_will_cause_bad_things;
+    }
+  };
+
+  /** PURE_IMPORTS_START  PURE_IMPORTS_END */
+  function hostReportError(err) {
+    setTimeout(function () {
+      throw err;
+    }, 0);
+  }
+
+  /** PURE_IMPORTS_START _config,_util_hostReportError PURE_IMPORTS_END */
+  var empty = {
+    closed: true,
+    next: function (value) {},
+    error: function (err) {
+      if (config.useDeprecatedSynchronousErrorHandling) {
+        throw err;
+      } else {
+        hostReportError(err);
+      }
+    },
+    complete: function () {}
+  };
+
+  /** PURE_IMPORTS_START  PURE_IMPORTS_END */
+  var isArray = /*@__PURE__*/ (function () {
+    return (
+      Array.isArray ||
+      function (x) {
+        return x && typeof x.length === 'number';
+      }
+    );
+  })();
+
+  /** PURE_IMPORTS_START  PURE_IMPORTS_END */
+  function isObject(x) {
+    return x !== null && typeof x === 'object';
+  }
+
+  /** PURE_IMPORTS_START  PURE_IMPORTS_END */
+  var UnsubscriptionErrorImpl = /*@__PURE__*/ (function () {
+    function UnsubscriptionErrorImpl(errors) {
+      Error.call(this);
+      this.message = errors
+        ? errors.length +
+          ' errors occurred during unsubscription:\n' +
+          errors
+            .map(function (err, i) {
+              return i + 1 + ') ' + err.toString();
+            })
+            .join('\n  ')
+        : '';
+      this.name = 'UnsubscriptionError';
+      this.errors = errors;
+      return this;
+    }
+    UnsubscriptionErrorImpl.prototype = /*@__PURE__*/ Object.create(
+      Error.prototype
+    );
+    return UnsubscriptionErrorImpl;
+  })();
+  var UnsubscriptionError = UnsubscriptionErrorImpl;
+
+  /** PURE_IMPORTS_START _util_isArray,_util_isObject,_util_isFunction,_util_UnsubscriptionError PURE_IMPORTS_END */
+  var Subscription = /*@__PURE__*/ (function () {
+    function Subscription(unsubscribe) {
+      this.closed = false;
+      this._parentOrParents = null;
+      this._subscriptions = null;
+      if (unsubscribe) {
+        this._ctorUnsubscribe = true;
+        this._unsubscribe = unsubscribe;
+      }
+    }
+    Subscription.prototype.unsubscribe = function () {
+      var errors;
+      if (this.closed) {
+        return;
+      }
+      var _a = this,
+        _parentOrParents = _a._parentOrParents,
+        _ctorUnsubscribe = _a._ctorUnsubscribe,
+        _unsubscribe = _a._unsubscribe,
+        _subscriptions = _a._subscriptions;
+      this.closed = true;
+      this._parentOrParents = null;
+      this._subscriptions = null;
+      if (_parentOrParents instanceof Subscription) {
+        _parentOrParents.remove(this);
+      } else if (_parentOrParents !== null) {
+        for (var index = 0; index < _parentOrParents.length; ++index) {
+          var parent_1 = _parentOrParents[index];
+          parent_1.remove(this);
+        }
+      }
+      if (isFunction(_unsubscribe)) {
+        if (_ctorUnsubscribe) {
+          this._unsubscribe = undefined;
+        }
+        try {
+          _unsubscribe.call(this);
+        } catch (e) {
+          errors =
+            e instanceof UnsubscriptionError
+              ? flattenUnsubscriptionErrors(e.errors)
+              : [e];
+        }
+      }
+      if (isArray(_subscriptions)) {
+        var index = -1;
+        var len = _subscriptions.length;
+        while (++index < len) {
+          var sub = _subscriptions[index];
+          if (isObject(sub)) {
+            try {
+              sub.unsubscribe();
+            } catch (e) {
+              errors = errors || [];
+              if (e instanceof UnsubscriptionError) {
+                errors = errors.concat(flattenUnsubscriptionErrors(e.errors));
+              } else {
+                errors.push(e);
+              }
+            }
+          }
+        }
+      }
+      if (errors) {
+        throw new UnsubscriptionError(errors);
+      }
+    };
+    Subscription.prototype.add = function (teardown) {
+      var subscription = teardown;
+      if (!teardown) {
+        return Subscription.EMPTY;
+      }
+      switch (typeof teardown) {
+        case 'function':
+          subscription = new Subscription(teardown);
+        case 'object':
+          if (
+            subscription === this ||
+            subscription.closed ||
+            typeof subscription.unsubscribe !== 'function'
+          ) {
+            return subscription;
+          } else if (this.closed) {
+            subscription.unsubscribe();
+            return subscription;
+          } else if (!(subscription instanceof Subscription)) {
+            var tmp = subscription;
+            subscription = new Subscription();
+            subscription._subscriptions = [tmp];
+          }
+          break;
+        default: {
+          throw new Error(
+            'unrecognized teardown ' + teardown + ' added to Subscription.'
+          );
+        }
+      }
+      var _parentOrParents = subscription._parentOrParents;
+      if (_parentOrParents === null) {
+        subscription._parentOrParents = this;
+      } else if (_parentOrParents instanceof Subscription) {
+        if (_parentOrParents === this) {
+          return subscription;
+        }
+        subscription._parentOrParents = [_parentOrParents, this];
+      } else if (_parentOrParents.indexOf(this) === -1) {
+        _parentOrParents.push(this);
+      } else {
+        return subscription;
+      }
+      var subscriptions = this._subscriptions;
+      if (subscriptions === null) {
+        this._subscriptions = [subscription];
+      } else {
+        subscriptions.push(subscription);
+      }
+      return subscription;
+    };
+    Subscription.prototype.remove = function (subscription) {
+      var subscriptions = this._subscriptions;
+      if (subscriptions) {
+        var subscriptionIndex = subscriptions.indexOf(subscription);
+        if (subscriptionIndex !== -1) {
+          subscriptions.splice(subscriptionIndex, 1);
+        }
+      }
+    };
+    Subscription.EMPTY = (function (empty) {
+      empty.closed = true;
+      return empty;
+    })(new Subscription());
+    return Subscription;
+  })();
+  function flattenUnsubscriptionErrors(errors) {
+    return errors.reduce(function (errs, err) {
+      return errs.concat(err instanceof UnsubscriptionError ? err.errors : err);
+    }, []);
+  }
+
+  /** PURE_IMPORTS_START  PURE_IMPORTS_END */
+  var rxSubscriber = /*@__PURE__*/ (function () {
+    return typeof Symbol === 'function'
+      ? /*@__PURE__*/ Symbol('rxSubscriber')
+      : '@@rxSubscriber_' + /*@__PURE__*/ Math.random();
+  })();
+
+  /** PURE_IMPORTS_START tslib,_util_isFunction,_Observer,_Subscription,_internal_symbol_rxSubscriber,_config,_util_hostReportError PURE_IMPORTS_END */
+  var Subscriber = /*@__PURE__*/ (function (_super) {
+    __extends$1(Subscriber, _super);
+    function Subscriber(destinationOrNext, error, complete) {
+      var _this = _super.call(this) || this;
+      _this.syncErrorValue = null;
+      _this.syncErrorThrown = false;
+      _this.syncErrorThrowable = false;
+      _this.isStopped = false;
+      switch (arguments.length) {
+        case 0:
+          _this.destination = empty;
+          break;
+        case 1:
+          if (!destinationOrNext) {
+            _this.destination = empty;
+            break;
+          }
+          if (typeof destinationOrNext === 'object') {
+            if (destinationOrNext instanceof Subscriber) {
+              _this.syncErrorThrowable = destinationOrNext.syncErrorThrowable;
+              _this.destination = destinationOrNext;
+              destinationOrNext.add(_this);
+            } else {
+              _this.syncErrorThrowable = true;
+              _this.destination = new SafeSubscriber(_this, destinationOrNext);
+            }
+            break;
+          }
+        default:
+          _this.syncErrorThrowable = true;
+          _this.destination = new SafeSubscriber(
+            _this,
+            destinationOrNext,
+            error,
+            complete
+          );
+          break;
+      }
+      return _this;
+    }
+    Subscriber.prototype[rxSubscriber] = function () {
+      return this;
+    };
+    Subscriber.create = function (next, error, complete) {
+      var subscriber = new Subscriber(next, error, complete);
+      subscriber.syncErrorThrowable = false;
+      return subscriber;
+    };
+    Subscriber.prototype.next = function (value) {
+      if (!this.isStopped) {
+        this._next(value);
+      }
+    };
+    Subscriber.prototype.error = function (err) {
+      if (!this.isStopped) {
+        this.isStopped = true;
+        this._error(err);
+      }
+    };
+    Subscriber.prototype.complete = function () {
+      if (!this.isStopped) {
+        this.isStopped = true;
+        this._complete();
+      }
+    };
+    Subscriber.prototype.unsubscribe = function () {
+      if (this.closed) {
+        return;
+      }
+      this.isStopped = true;
+      _super.prototype.unsubscribe.call(this);
+    };
+    Subscriber.prototype._next = function (value) {
+      this.destination.next(value);
+    };
+    Subscriber.prototype._error = function (err) {
+      this.destination.error(err);
+      this.unsubscribe();
+    };
+    Subscriber.prototype._complete = function () {
+      this.destination.complete();
+      this.unsubscribe();
+    };
+    Subscriber.prototype._unsubscribeAndRecycle = function () {
+      var _parentOrParents = this._parentOrParents;
+      this._parentOrParents = null;
+      this.unsubscribe();
+      this.closed = false;
+      this.isStopped = false;
+      this._parentOrParents = _parentOrParents;
+      return this;
+    };
+    return Subscriber;
+  })(Subscription);
+  var SafeSubscriber = /*@__PURE__*/ (function (_super) {
+    __extends$1(SafeSubscriber, _super);
+    function SafeSubscriber(
+      _parentSubscriber,
+      observerOrNext,
+      error,
+      complete
+    ) {
+      var _this = _super.call(this) || this;
+      _this._parentSubscriber = _parentSubscriber;
+      var next;
+      var context = _this;
+      if (isFunction(observerOrNext)) {
+        next = observerOrNext;
+      } else if (observerOrNext) {
+        next = observerOrNext.next;
+        error = observerOrNext.error;
+        complete = observerOrNext.complete;
+        if (observerOrNext !== empty) {
+          context = Object.create(observerOrNext);
+          if (isFunction(context.unsubscribe)) {
+            _this.add(context.unsubscribe.bind(context));
+          }
+          context.unsubscribe = _this.unsubscribe.bind(_this);
+        }
+      }
+      _this._context = context;
+      _this._next = next;
+      _this._error = error;
+      _this._complete = complete;
+      return _this;
+    }
+    SafeSubscriber.prototype.next = function (value) {
+      if (!this.isStopped && this._next) {
+        var _parentSubscriber = this._parentSubscriber;
+        if (
+          !config.useDeprecatedSynchronousErrorHandling ||
+          !_parentSubscriber.syncErrorThrowable
+        ) {
+          this.__tryOrUnsub(this._next, value);
+        } else if (this.__tryOrSetError(_parentSubscriber, this._next, value)) {
+          this.unsubscribe();
+        }
+      }
+    };
+    SafeSubscriber.prototype.error = function (err) {
+      if (!this.isStopped) {
+        var _parentSubscriber = this._parentSubscriber;
+        var useDeprecatedSynchronousErrorHandling =
+          config.useDeprecatedSynchronousErrorHandling;
+        if (this._error) {
+          if (
+            !useDeprecatedSynchronousErrorHandling ||
+            !_parentSubscriber.syncErrorThrowable
+          ) {
+            this.__tryOrUnsub(this._error, err);
+            this.unsubscribe();
+          } else {
+            this.__tryOrSetError(_parentSubscriber, this._error, err);
+            this.unsubscribe();
+          }
+        } else if (!_parentSubscriber.syncErrorThrowable) {
+          this.unsubscribe();
+          if (useDeprecatedSynchronousErrorHandling) {
+            throw err;
+          }
+          hostReportError(err);
+        } else {
+          if (useDeprecatedSynchronousErrorHandling) {
+            _parentSubscriber.syncErrorValue = err;
+            _parentSubscriber.syncErrorThrown = true;
+          } else {
+            hostReportError(err);
+          }
+          this.unsubscribe();
+        }
+      }
+    };
+    SafeSubscriber.prototype.complete = function () {
+      var _this = this;
+      if (!this.isStopped) {
+        var _parentSubscriber = this._parentSubscriber;
+        if (this._complete) {
+          var wrappedComplete = function () {
+            return _this._complete.call(_this._context);
+          };
+          if (
+            !config.useDeprecatedSynchronousErrorHandling ||
+            !_parentSubscriber.syncErrorThrowable
+          ) {
+            this.__tryOrUnsub(wrappedComplete);
+            this.unsubscribe();
+          } else {
+            this.__tryOrSetError(_parentSubscriber, wrappedComplete);
+            this.unsubscribe();
+          }
+        } else {
+          this.unsubscribe();
+        }
+      }
+    };
+    SafeSubscriber.prototype.__tryOrUnsub = function (fn, value) {
+      try {
+        fn.call(this._context, value);
+      } catch (err) {
+        this.unsubscribe();
+        if (config.useDeprecatedSynchronousErrorHandling) {
+          throw err;
+        } else {
+          hostReportError(err);
+        }
+      }
+    };
+    SafeSubscriber.prototype.__tryOrSetError = function (parent, fn, value) {
+      if (!config.useDeprecatedSynchronousErrorHandling) {
+        throw new Error('bad call');
+      }
+      try {
+        fn.call(this._context, value);
+      } catch (err) {
+        if (config.useDeprecatedSynchronousErrorHandling) {
+          parent.syncErrorValue = err;
+          parent.syncErrorThrown = true;
+          return true;
+        } else {
+          hostReportError(err);
+          return true;
+        }
+      }
+      return false;
+    };
+    SafeSubscriber.prototype._unsubscribe = function () {
+      var _parentSubscriber = this._parentSubscriber;
+      this._context = null;
+      this._parentSubscriber = null;
+      _parentSubscriber.unsubscribe();
+    };
+    return SafeSubscriber;
+  })(Subscriber);
+
+  /** PURE_IMPORTS_START _Subscriber PURE_IMPORTS_END */
+  function canReportError(observer) {
+    while (observer) {
+      var _a = observer,
+        closed_1 = _a.closed,
+        destination = _a.destination,
+        isStopped = _a.isStopped;
+      if (closed_1 || isStopped) {
+        return false;
+      } else if (destination && destination instanceof Subscriber) {
+        observer = destination;
+      } else {
+        observer = null;
+      }
+    }
+    return true;
+  }
+
+  /** PURE_IMPORTS_START _Subscriber,_symbol_rxSubscriber,_Observer PURE_IMPORTS_END */
+  function toSubscriber(nextOrObserver, error, complete) {
+    if (nextOrObserver) {
+      if (nextOrObserver instanceof Subscriber) {
+        return nextOrObserver;
+      }
+      if (nextOrObserver[rxSubscriber]) {
+        return nextOrObserver[rxSubscriber]();
+      }
+    }
+    if (!nextOrObserver && !error && !complete) {
+      return new Subscriber(empty);
+    }
+    return new Subscriber(nextOrObserver, error, complete);
+  }
+
+  /** PURE_IMPORTS_START  PURE_IMPORTS_END */
+  var observable = /*@__PURE__*/ (function () {
+    return (
+      (typeof Symbol === 'function' && Symbol.observable) || '@@observable'
+    );
+  })();
+
+  /** PURE_IMPORTS_START  PURE_IMPORTS_END */
+  function identity(x) {
+    return x;
+  }
+
+  /** PURE_IMPORTS_START _identity PURE_IMPORTS_END */
+  function pipeFromArray(fns) {
+    if (fns.length === 0) {
+      return identity;
+    }
+    if (fns.length === 1) {
+      return fns[0];
+    }
+    return function piped(input) {
+      return fns.reduce(function (prev, fn) {
+        return fn(prev);
+      }, input);
+    };
+  }
+
+  /** PURE_IMPORTS_START _util_canReportError,_util_toSubscriber,_symbol_observable,_util_pipe,_config PURE_IMPORTS_END */
+  var Observable = /*@__PURE__*/ (function () {
+    function Observable(subscribe) {
+      this._isScalar = false;
+      if (subscribe) {
+        this._subscribe = subscribe;
+      }
+    }
+    Observable.prototype.lift = function (operator) {
+      var observable = new Observable();
+      observable.source = this;
+      observable.operator = operator;
+      return observable;
+    };
+    Observable.prototype.subscribe = function (
+      observerOrNext,
+      error,
+      complete
+    ) {
+      var operator = this.operator;
+      var sink = toSubscriber(observerOrNext, error, complete);
+      if (operator) {
+        sink.add(operator.call(sink, this.source));
+      } else {
+        sink.add(
+          this.source ||
+            (config.useDeprecatedSynchronousErrorHandling &&
+              !sink.syncErrorThrowable)
+            ? this._subscribe(sink)
+            : this._trySubscribe(sink)
+        );
+      }
+      if (config.useDeprecatedSynchronousErrorHandling) {
+        if (sink.syncErrorThrowable) {
+          sink.syncErrorThrowable = false;
+          if (sink.syncErrorThrown) {
+            throw sink.syncErrorValue;
+          }
+        }
+      }
+      return sink;
+    };
+    Observable.prototype._trySubscribe = function (sink) {
+      try {
+        return this._subscribe(sink);
+      } catch (err) {
+        if (config.useDeprecatedSynchronousErrorHandling) {
+          sink.syncErrorThrown = true;
+          sink.syncErrorValue = err;
+        }
+        if (canReportError(sink)) {
+          sink.error(err);
+        } else {
+          console.warn(err);
+        }
+      }
+    };
+    Observable.prototype.forEach = function (next, promiseCtor) {
+      var _this = this;
+      promiseCtor = getPromiseCtor(promiseCtor);
+      return new promiseCtor(function (resolve, reject) {
+        var subscription;
+        subscription = _this.subscribe(
+          function (value) {
+            try {
+              next(value);
+            } catch (err) {
+              reject(err);
+              if (subscription) {
+                subscription.unsubscribe();
+              }
+            }
+          },
+          reject,
+          resolve
+        );
+      });
+    };
+    Observable.prototype._subscribe = function (subscriber) {
+      var source = this.source;
+      return source && source.subscribe(subscriber);
+    };
+    Observable.prototype[observable] = function () {
+      return this;
+    };
+    Observable.prototype.pipe = function () {
+      var operations = [];
+      for (var _i = 0; _i < arguments.length; _i++) {
+        operations[_i] = arguments[_i];
+      }
+      if (operations.length === 0) {
+        return this;
+      }
+      return pipeFromArray(operations)(this);
+    };
+    Observable.prototype.toPromise = function (promiseCtor) {
+      var _this = this;
+      promiseCtor = getPromiseCtor(promiseCtor);
+      return new promiseCtor(function (resolve, reject) {
+        var value;
+        _this.subscribe(
+          function (x) {
+            return (value = x);
+          },
+          function (err) {
+            return reject(err);
+          },
+          function () {
+            return resolve(value);
+          }
+        );
+      });
+    };
+    Observable.create = function (subscribe) {
+      return new Observable(subscribe);
+    };
+    return Observable;
+  })();
+  function getPromiseCtor(promiseCtor) {
+    if (!promiseCtor) {
+      promiseCtor = Promise;
+    }
+    if (!promiseCtor) {
+      throw new Error('no Promise impl found');
+    }
+    return promiseCtor;
+  }
+
+  /** PURE_IMPORTS_START tslib,_Subscriber PURE_IMPORTS_END */
+  function map(project, thisArg) {
+    return function mapOperation(source) {
+      if (typeof project !== 'function') {
+        throw new TypeError(
+          'argument is not a function. Are you looking for `mapTo()`?'
+        );
+      }
+      return source.lift(new MapOperator(project, thisArg));
+    };
+  }
+  var MapOperator = /*@__PURE__*/ (function () {
+    function MapOperator(project, thisArg) {
+      this.project = project;
+      this.thisArg = thisArg;
+    }
+    MapOperator.prototype.call = function (subscriber, source) {
+      return source.subscribe(
+        new MapSubscriber(subscriber, this.project, this.thisArg)
+      );
+    };
+    return MapOperator;
+  })();
+  var MapSubscriber = /*@__PURE__*/ (function (_super) {
+    __extends$1(MapSubscriber, _super);
+    function MapSubscriber(destination, project, thisArg) {
+      var _this = _super.call(this, destination) || this;
+      _this.project = project;
+      _this.count = 0;
+      _this.thisArg = thisArg || _this;
+      return _this;
+    }
+    MapSubscriber.prototype._next = function (value) {
+      var result;
+      try {
+        result = this.project.call(this.thisArg, value, this.count++);
+      } catch (err) {
+        this.destination.error(err);
+        return;
+      }
+      this.destination.next(result);
+    };
+    return MapSubscriber;
+  })(Subscriber);
+
+  /** PURE_IMPORTS_START _Observable,_util_isArray,_util_isFunction,_operators_map PURE_IMPORTS_END */
+  function fromEvent(target, eventName, options, resultSelector) {
+    if (isFunction(options)) {
+      resultSelector = options;
+      options = undefined;
+    }
+    if (resultSelector) {
+      return fromEvent(target, eventName, options).pipe(
+        map(function (args) {
+          return isArray(args)
+            ? resultSelector.apply(void 0, args)
+            : resultSelector(args);
+        })
+      );
+    }
+    return new Observable(function (subscriber) {
+      function handler(e) {
+        if (arguments.length > 1) {
+          subscriber.next(Array.prototype.slice.call(arguments));
+        } else {
+          subscriber.next(e);
+        }
+      }
+      setupSubscription(target, eventName, handler, subscriber, options);
+    });
+  }
+  function setupSubscription(
+    sourceObj,
+    eventName,
+    handler,
+    subscriber,
+    options
+  ) {
+    var unsubscribe;
+    if (isEventTarget(sourceObj)) {
+      var source_1 = sourceObj;
+      sourceObj.addEventListener(eventName, handler, options);
+      unsubscribe = function () {
+        return source_1.removeEventListener(eventName, handler, options);
+      };
+    } else if (isJQueryStyleEventEmitter(sourceObj)) {
+      var source_2 = sourceObj;
+      sourceObj.on(eventName, handler);
+      unsubscribe = function () {
+        return source_2.off(eventName, handler);
+      };
+    } else if (isNodeStyleEventEmitter(sourceObj)) {
+      var source_3 = sourceObj;
+      sourceObj.addListener(eventName, handler);
+      unsubscribe = function () {
+        return source_3.removeListener(eventName, handler);
+      };
+    } else if (sourceObj && sourceObj.length) {
+      for (var i = 0, len = sourceObj.length; i < len; i++) {
+        setupSubscription(
+          sourceObj[i],
+          eventName,
+          handler,
+          subscriber,
+          options
+        );
+      }
+    } else {
+      throw new TypeError('Invalid event target');
+    }
+    subscriber.add(unsubscribe);
+  }
+  function isNodeStyleEventEmitter(sourceObj) {
+    return (
+      sourceObj &&
+      typeof sourceObj.addListener === 'function' &&
+      typeof sourceObj.removeListener === 'function'
+    );
+  }
+  function isJQueryStyleEventEmitter(sourceObj) {
+    return (
+      sourceObj &&
+      typeof sourceObj.on === 'function' &&
+      typeof sourceObj.off === 'function'
+    );
+  }
+  function isEventTarget(sourceObj) {
+    return (
+      sourceObj &&
+      typeof sourceObj.addEventListener === 'function' &&
+      typeof sourceObj.removeEventListener === 'function'
+    );
+  }
+
+  var ERR_CORDOVA_NOT_AVAILABLE = { error: 'cordova_not_available' };
+  var ERR_PLUGIN_NOT_INSTALLED = { error: 'plugin_not_installed' };
+  function getPromise(callback) {
+    var tryNativePromise = function () {
+      if (Promise) {
+        return new Promise(function (resolve, reject) {
+          callback(resolve, reject);
+        });
+      } else {
+        console.error(
+          'No Promise support or polyfill found. To enable Ionic Native support, please add the es6-promise polyfill before this script, or run with a library like Angular or on a recent browser.'
+        );
+      }
+    };
+    if (typeof window !== 'undefined' && window.angular) {
+      var doc = window.document;
+      var injector = window.angular
+        .element(doc.querySelector('[ng-app]') || doc.body)
+        .injector();
+      if (injector) {
+        var $q = injector.get('$q');
+        return $q(function (resolve, reject) {
+          callback(resolve, reject);
+        });
+      }
+      console.warn(
+        "Angular 1 was detected but $q couldn't be retrieved. This is usually when the app is not bootstrapped on the html or body tag. Falling back to native promises which won't trigger an automatic digest when promises resolve."
+      );
+    }
+    return tryNativePromise();
+  }
+  function wrapPromise(pluginObj, methodName, args, opts) {
+    if (opts === void 0) {
+      opts = {};
+    }
+    var pluginResult, rej;
+    var p = getPromise(function (resolve, reject) {
+      if (opts.destruct) {
+        pluginResult = callCordovaPlugin(
+          pluginObj,
+          methodName,
+          args,
+          opts,
+          function () {
+            var args = [];
+            for (var _i = 0; _i < arguments.length; _i++) {
+              args[_i] = arguments[_i];
+            }
+            return resolve(args);
+          },
+          function () {
+            var args = [];
+            for (var _i = 0; _i < arguments.length; _i++) {
+              args[_i] = arguments[_i];
+            }
+            return reject(args);
+          }
+        );
+      } else {
+        pluginResult = callCordovaPlugin(
+          pluginObj,
+          methodName,
+          args,
+          opts,
+          resolve,
+          reject
+        );
+      }
+      rej = reject;
+    });
+    // Angular throws an error on unhandled rejection, but in this case we have already printed
+    // a warning that Cordova is undefined or the plugin is uninstalled, so there is no reason
+    // to error
+    if (pluginResult && pluginResult.error) {
+      p.catch(function () {});
+      typeof rej === 'function' && rej(pluginResult.error);
+    }
+    return p;
+  }
+  function wrapOtherPromise(pluginObj, methodName, args, opts) {
+    if (opts === void 0) {
+      opts = {};
+    }
+    return getPromise(function (resolve, reject) {
+      var pluginResult = callCordovaPlugin(pluginObj, methodName, args, opts);
+      if (pluginResult) {
+        if (pluginResult.error) {
+          reject(pluginResult.error);
+        } else if (pluginResult.then) {
+          pluginResult.then(resolve).catch(reject);
+        }
+      } else {
+        reject({ error: 'unexpected_error' });
+      }
+    });
+  }
+  function wrapObservable(pluginObj, methodName, args, opts) {
+    if (opts === void 0) {
+      opts = {};
+    }
+    return new Observable(function (observer) {
+      var pluginResult;
+      if (opts.destruct) {
+        pluginResult = callCordovaPlugin(
+          pluginObj,
+          methodName,
+          args,
+          opts,
+          function () {
+            var args = [];
+            for (var _i = 0; _i < arguments.length; _i++) {
+              args[_i] = arguments[_i];
+            }
+            return observer.next(args);
+          },
+          function () {
+            var args = [];
+            for (var _i = 0; _i < arguments.length; _i++) {
+              args[_i] = arguments[_i];
+            }
+            return observer.error(args);
+          }
+        );
+      } else {
+        pluginResult = callCordovaPlugin(
+          pluginObj,
+          methodName,
+          args,
+          opts,
+          observer.next.bind(observer),
+          observer.error.bind(observer)
+        );
+      }
+      if (pluginResult && pluginResult.error) {
+        observer.error(pluginResult.error);
+        observer.complete();
+      }
+      return function () {
+        try {
+          if (opts.clearFunction) {
+            if (opts.clearWithArgs) {
+              return callCordovaPlugin(
+                pluginObj,
+                opts.clearFunction,
+                args,
+                opts,
+                observer.next.bind(observer),
+                observer.error.bind(observer)
+              );
+            }
+            return callCordovaPlugin(pluginObj, opts.clearFunction, []);
+          }
+        } catch (e) {
+          console.warn(
+            'Unable to clear the previous observable watch for',
+            pluginObj.constructor.getPluginName(),
+            methodName
+          );
+          console.warn(e);
+        }
+      };
+    });
+  }
+  /**
+   * Wrap the event with an observable
+   * @private
+   * @param event event name
+   * @param element The element to attach the event listener to
+   * @returns {Observable}
+   */
+  function wrapEventObservable(event, element) {
+    element =
+      typeof window !== 'undefined' && element
+        ? get$1(window, element)
+        : element || (typeof window !== 'undefined' ? window : {});
+    return fromEvent(element, event);
+  }
+  function checkAvailability(plugin, methodName, pluginName) {
+    var pluginRef, pluginInstance, pluginPackage;
+    if (typeof plugin === 'string') {
+      pluginRef = plugin;
+    } else {
+      pluginRef = plugin.constructor.getPluginRef();
+      pluginName = plugin.constructor.getPluginName();
+      pluginPackage = plugin.constructor.getPluginInstallName();
+    }
+    pluginInstance = getPlugin(pluginRef);
+    if (
+      !pluginInstance ||
+      (!!methodName && typeof pluginInstance[methodName] === 'undefined')
+    ) {
+      if (typeof window === 'undefined' || !window.cordova) {
+        cordovaWarn(pluginName, methodName);
+        return ERR_CORDOVA_NOT_AVAILABLE;
+      }
+      pluginWarn(pluginName, pluginPackage, methodName);
+      return ERR_PLUGIN_NOT_INSTALLED;
+    }
+    return true;
+  }
+  function setIndex(args, opts, resolve, reject) {
+    if (opts === void 0) {
+      opts = {};
+    }
+    // ignore resolve and reject in case sync
+    if (opts.sync) {
+      return args;
+    }
+    // If the plugin method expects myMethod(success, err, options)
+    if (opts.callbackOrder === 'reverse') {
+      // Get those arguments in the order [resolve, reject, ...restOfArgs]
+      args.unshift(reject);
+      args.unshift(resolve);
+    } else if (opts.callbackStyle === 'node') {
+      args.push(function (err, result) {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(result);
+        }
+      });
+    } else if (
+      opts.callbackStyle === 'object' &&
+      opts.successName &&
+      opts.errorName
+    ) {
+      var obj = {};
+      obj[opts.successName] = resolve;
+      obj[opts.errorName] = reject;
+      args.push(obj);
+    } else if (
+      typeof opts.successIndex !== 'undefined' ||
+      typeof opts.errorIndex !== 'undefined'
+    ) {
+      var setSuccessIndex = function () {
+        // If we've specified a success/error index
+        if (opts.successIndex > args.length) {
+          args[opts.successIndex] = resolve;
+        } else {
+          args.splice(opts.successIndex, 0, resolve);
+        }
+      };
+      var setErrorIndex = function () {
+        // We don't want that the reject cb gets spliced into the position of an optional argument that has not been
+        // defined and thus causing non expected behavior.
+        if (opts.errorIndex > args.length) {
+          args[opts.errorIndex] = reject; // insert the reject fn at the correct specific index
+        } else {
+          args.splice(opts.errorIndex, 0, reject); // otherwise just splice it into the array
+        }
+      };
+      if (opts.successIndex > opts.errorIndex) {
+        setErrorIndex();
+        setSuccessIndex();
+      } else {
+        setSuccessIndex();
+        setErrorIndex();
+      }
+    } else {
+      // Otherwise, let's tack them on to the end of the argument list
+      // which is 90% of cases
+      args.push(resolve);
+      args.push(reject);
+    }
+    return args;
+  }
+  function callCordovaPlugin(
+    pluginObj,
+    methodName,
+    args,
+    opts,
+    resolve,
+    reject
+  ) {
+    if (opts === void 0) {
+      opts = {};
+    }
+    // Try to figure out where the success/error callbacks need to be bound
+    // to our promise resolve/reject handlers.
+    args = setIndex(args, opts, resolve, reject);
+    var availabilityCheck = checkAvailability(pluginObj, methodName);
+    if (availabilityCheck === true) {
+      var pluginInstance = getPlugin(pluginObj.constructor.getPluginRef());
+      return pluginInstance[methodName].apply(pluginInstance, args);
+    } else {
+      return availabilityCheck;
+    }
+  }
+  function getPlugin(pluginRef) {
+    if (typeof window !== 'undefined') {
+      return get$1(window, pluginRef);
+    }
+    return null;
+  }
+  function get$1(element, path) {
+    var paths = path.split('.');
+    var obj = element;
+    for (var i = 0; i < paths.length; i++) {
+      if (!obj) {
+        return null;
+      }
+      obj = obj[paths[i]];
+    }
+    return obj;
+  }
+  function pluginWarn(pluginName, plugin, method) {
+    if (method) {
+      console.warn(
+        'Native: tried calling ' +
+          pluginName +
+          '.' +
+          method +
+          ', but the ' +
+          pluginName +
+          ' plugin is not installed.'
+      );
+    } else {
+      console.warn(
+        'Native: tried accessing the ' +
+          pluginName +
+          " plugin but it's not installed."
+      );
+    }
+    if (plugin) {
+      console.warn(
+        'Install the ' +
+          pluginName +
+          " plugin: 'ionic cordova plugin add " +
+          plugin +
+          "'"
+      );
+    }
+  }
+  /**
+   * @private
+   * @param pluginName
+   * @param method
+   */
+  function cordovaWarn(pluginName, method) {
+    if (typeof process === 'undefined') {
+      if (method) {
+        console.warn(
+          'Native: tried calling ' +
+            pluginName +
+            '.' +
+            method +
+            ', but Cordova is not available. Make sure to include cordova.js or run in a device/simulator'
+        );
+      } else {
+        console.warn(
+          'Native: tried accessing the ' +
+            pluginName +
+            ' plugin but Cordova is not available. Make sure to include cordova.js or run in a device/simulator'
+        );
+      }
+    }
+  }
+  /**
+   * @private
+   */
+  var wrap = function (pluginObj, methodName, opts) {
+    if (opts === void 0) {
+      opts = {};
+    }
+    return function () {
+      var args = [];
+      for (var _i = 0; _i < arguments.length; _i++) {
+        args[_i] = arguments[_i];
+      }
+      if (opts.sync) {
+        // Sync doesn't wrap the plugin with a promise or observable, it returns the result as-is
+        return callCordovaPlugin(pluginObj, methodName, args, opts);
+      } else if (opts.observable) {
+        return wrapObservable(pluginObj, methodName, args, opts);
+      } else if (opts.eventObservable && opts.event) {
+        return wrapEventObservable(opts.event, opts.element);
+      } else if (opts.otherPromise) {
+        return wrapOtherPromise(pluginObj, methodName, args, opts);
+      } else {
+        return wrapPromise(pluginObj, methodName, args, opts);
+      }
+    };
+  };
+
+  /**
+   * @private
+   */
+  function get(element, path) {
+    var paths = path.split('.');
+    var obj = element;
+    for (var i = 0; i < paths.length; i++) {
+      if (!obj) {
+        return null;
+      }
+      obj = obj[paths[i]];
+    }
+    return obj;
+  }
+
+  var IonicNativePlugin = /** @class */ (function () {
+    function IonicNativePlugin() {}
+    /**
+     * Returns a boolean that indicates whether the plugin is installed
+     * @return {boolean}
+     */
+    IonicNativePlugin.installed = function () {
+      var isAvailable = checkAvailability(this.pluginRef) === true;
+      return isAvailable;
+    };
+    /**
+     * Returns the original plugin object
+     */
+    IonicNativePlugin.getPlugin = function () {
+      if (typeof window !== 'undefined') {
+        return get(window, this.pluginRef);
+      }
+      return null;
+    };
+    /**
+     * Returns the plugin's name
+     */
+    IonicNativePlugin.getPluginName = function () {
+      var pluginName = this.pluginName;
+      return pluginName;
+    };
+    /**
+     * Returns the plugin's reference
+     */
+    IonicNativePlugin.getPluginRef = function () {
+      var pluginRef = this.pluginRef;
+      return pluginRef;
+    };
+    /**
+     * Returns the plugin's install name
+     */
+    IonicNativePlugin.getPluginInstallName = function () {
+      var plugin = this.plugin;
+      return plugin;
+    };
+    /**
+     * Returns the plugin's supported platforms
+     */
+    IonicNativePlugin.getSupportedPlatforms = function () {
+      var platform = this.platforms;
+      return platform;
+    };
+    IonicNativePlugin.pluginName = '';
+    IonicNativePlugin.pluginRef = '';
+    IonicNativePlugin.plugin = '';
+    IonicNativePlugin.repo = '';
+    IonicNativePlugin.platforms = [];
+    IonicNativePlugin.install = '';
+    return IonicNativePlugin;
+  })();
+
+  function cordova(pluginObj, methodName, config, args) {
+    return wrap(pluginObj, methodName, config).apply(this, args);
+  }
+
+  checkReady();
+
+  var __extends =
+    (undefined && undefined.__extends) ||
+    (function () {
+      var extendStatics = function (d, b) {
+        extendStatics =
+          Object.setPrototypeOf ||
+          ({ __proto__: [] } instanceof Array &&
+            function (d, b) {
+              d.__proto__ = b;
+            }) ||
+          function (d, b) {
+            for (var p in b)
+              if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p];
+          };
+        return extendStatics(d, b);
+      };
+      return function (d, b) {
+        extendStatics(d, b);
+        function __() {
+          this.constructor = d;
+        }
+        d.prototype =
+          b === null
+            ? Object.create(b)
+            : ((__.prototype = b.prototype), new __());
+      };
+    })();
+  var IosASWebauthenticationSessionOriginal = /** @class */ (function (_super) {
+    __extends(IosASWebauthenticationSessionOriginal, _super);
+    function IosASWebauthenticationSessionOriginal() {
+      return (_super !== null && _super.apply(this, arguments)) || this;
+    }
+    IosASWebauthenticationSessionOriginal.prototype.start = function (
+      callbackUrl,
+      authorizeURL
+    ) {
+      return cordova(this, 'start', {}, arguments);
+    };
+    IosASWebauthenticationSessionOriginal.pluginName =
+      'IosASWebauthenticationSession';
+    IosASWebauthenticationSessionOriginal.plugin =
+      'cordova-plugin-ios-aswebauthenticationsession-api';
+    IosASWebauthenticationSessionOriginal.pluginRef =
+      'plugins.ASWebAuthSession';
+    IosASWebauthenticationSessionOriginal.repo =
+      'https://github.com/jwelker110/cordova-plugin-ios-aswebauthenticationsession-api';
+    IosASWebauthenticationSessionOriginal.platforms = ['iOS'];
+    return IosASWebauthenticationSessionOriginal;
+  })(IonicNativePlugin);
+  var IosASWebauthenticationSession = new IosASWebauthenticationSessionOriginal();
+
   function decodeBase64(base64, enableUnicode) {
     var binaryString = atob(base64);
     if (enableUnicode) {
@@ -6780,7 +8150,7 @@
         options = {};
       }
       return __awaiter(this, void 0, void 0, function () {
-        var redirectMethod, _a, platform, urlOptions, url;
+        var redirectMethod, _a, platform, urlOptions, url, redirect_uri;
         return __generator(this, function (_b) {
           switch (_b.label) {
             case 0:
@@ -6791,9 +8161,12 @@
               return [4 /*yield*/, this.buildAuthorizeUrl(urlOptions)];
             case 1:
               url = _b.sent();
+              redirect_uri =
+                urlOptions.redirect_uri || this.options.redirect_uri;
               console.log({
                 platform: platform,
-                redirect_uri: urlOptions.redirect_uri,
+                redirect_uri: redirect_uri,
+                urlOptions: urlOptions,
                 url: url
               });
               if (platform === 'web') {
@@ -6801,8 +8174,10 @@
                 return [2 /*return*/];
               }
               if (platform === 'ios') {
-                // return IosASWebauthenticationSession.start(urlOptions.redirect_uri, url);
-                return [2 /*return*/];
+                return [
+                  2 /*return*/,
+                  IosASWebauthenticationSession.start(redirect_uri, url)
+                ];
               }
               return [2 /*return*/];
           }

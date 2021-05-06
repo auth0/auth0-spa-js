@@ -4,6 +4,7 @@ require('fast-text-encoding');
 var Lock = require('browser-tabs-lock');
 var fetch = require('unfetch');
 var Cookies = require('es-cookie');
+var iosAswebauthenticationsessionApi = require('@ionic-native/ios-aswebauthenticationsession-api');
 
 function _interopDefaultLegacy(e) {
   return e && typeof e === 'object' && 'default' in e ? e : { default: e };
@@ -5876,7 +5877,7 @@ var Auth0Client = /** @class */ (function () {
       options = {};
     }
     return __awaiter(this, void 0, void 0, function () {
-      var redirectMethod, _a, platform, urlOptions, url;
+      var redirectMethod, _a, platform, urlOptions, url, redirect_uri;
       return __generator(this, function (_b) {
         switch (_b.label) {
           case 0:
@@ -5887,9 +5888,11 @@ var Auth0Client = /** @class */ (function () {
             return [4 /*yield*/, this.buildAuthorizeUrl(urlOptions)];
           case 1:
             url = _b.sent();
+            redirect_uri = urlOptions.redirect_uri || this.options.redirect_uri;
             console.log({
               platform: platform,
-              redirect_uri: urlOptions.redirect_uri,
+              redirect_uri: redirect_uri,
+              urlOptions: urlOptions,
               url: url
             });
             if (platform === 'web') {
@@ -5897,8 +5900,13 @@ var Auth0Client = /** @class */ (function () {
               return [2 /*return*/];
             }
             if (platform === 'ios') {
-              // return IosASWebauthenticationSession.start(urlOptions.redirect_uri, url);
-              return [2 /*return*/];
+              return [
+                2 /*return*/,
+                iosAswebauthenticationsessionApi.IosASWebauthenticationSession.start(
+                  redirect_uri,
+                  url
+                )
+              ];
             }
             return [2 /*return*/];
         }
