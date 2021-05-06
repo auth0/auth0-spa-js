@@ -511,6 +511,7 @@ export default class Auth0Client {
 
     if (platform === 'ios') {
       // return IosASWebauthenticationSession.start(urlOptions.redirect_uri, url);
+      return;
     }
   }
 

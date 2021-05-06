@@ -1,6 +1,6 @@
 .rpt2_cache
 node_modules
-dist
+#dist
 coverage
 stats.html
 cypress/screenshots
