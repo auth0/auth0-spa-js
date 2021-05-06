@@ -45,35 +45,69 @@ interface CacheEntry {
 }
 
 export interface ICache {
-  save(entry: CacheEntry): void;
-  get(
-    key: CacheKey,
-    expiryAdjustmentSeconds?: number
-  ): Partial<CacheEntry> | undefined;
-  clear(): void;
+  set(key: string, entry: unknown): Promise<void>;
+  get(key: string): Promise<unknown>;
+  remove(key: string): Promise<void>;
+  clear(): Promise<void>;
 }
 
 const keyPrefix = '@@auth0spajs@@';
 const DEFAULT_EXPIRY_ADJUSTMENT_SECONDS = 0;
 
-type CachePayload = {
+type WrappedCacheEntry = {
   body: Partial<CacheEntry>;
   expiresAt: number;
 };
 
-/**
- * Wraps the specified cache entry and returns the payload
- * @param entry The cache entry to wrap
- */
-const wrapCacheEntry = (entry: CacheEntry): CachePayload => {
-  const expiresInTime = Math.floor(Date.now() / 1000) + entry.expires_in;
-  const expirySeconds = Math.min(expiresInTime, entry.decodedToken.claims.exp);
+export class CacheManager {
+  constructor(private cache: ICache) {}
 
-  return {
-    body: entry,
-    expiresAt: expirySeconds
-  };
-};
+  async get(
+    cacheKey: CacheKey,
+    expiryAdjustmentSeconds = DEFAULT_EXPIRY_ADJUSTMENT_SECONDS
+  ): Promise<Partial<CacheEntry> | undefined> {
+    const key = cacheKey.toKey();
+    const payload = (await this.cache.get(key)) as WrappedCacheEntry;
+    const nowSeconds = Math.floor(Date.now() / 1000);
+
+    if (!payload) return;
+
+    if (payload.expiresAt - expiryAdjustmentSeconds < nowSeconds) {
+      await this.cache.remove(key);
+      return;
+    }
+  }
+
+  set(entry: CacheEntry): Promise<void> {
+    const cacheKey = new CacheKey({
+      client_id: entry.client_id,
+      scope: entry.scope,
+      audience: entry.audience
+    });
+
+    const wrappedEntry = this.wrapCacheEntry(entry);
+
+    return this.cache.set(cacheKey.toKey(), wrappedEntry);
+  }
+
+  clear(): Promise<void> {
+    return this.cache.clear();
+  }
+
+  private wrapCacheEntry(entry: CacheEntry): WrappedCacheEntry {
+    const expiresInTime = Math.floor(Date.now() / 1000) + entry.expires_in;
+
+    const expirySeconds = Math.min(
+      expiresInTime,
+      entry.decodedToken.claims.exp
+    );
+
+    return {
+      body: entry,
+      expiresAt: expirySeconds
+    };
+  }
+}
 
 /**
  * Finds the corresponding key in the cache based on the provided cache key.
@@ -100,7 +134,9 @@ const findExistingCacheKey = (
       audience: currentAudience,
       scope: currentScopes
     } = CacheKey.fromKey(key);
+
     const currentScopesArr = currentScopes && currentScopes.split(' ');
+
     const hasAllScopes =
       currentScopes &&
       scope
@@ -120,54 +156,55 @@ const findExistingCacheKey = (
 };
 
 export class LocalStorageCache implements ICache {
-  public save(entry: CacheEntry): void {
-    const cacheKey = new CacheKey({
-      client_id: entry.client_id,
-      scope: entry.scope,
-      audience: entry.audience
-    });
-    const payload = wrapCacheEntry(entry);
-
-    window.localStorage.setItem(cacheKey.toKey(), JSON.stringify(payload));
+  public set(key: string, entry: unknown): Promise<void> {
+    return Promise.resolve(
+      window.localStorage.setItem(key, JSON.stringify(entry))
+    );
   }
 
-  public get(
-    cacheKey: CacheKey,
-    expiryAdjustmentSeconds = DEFAULT_EXPIRY_ADJUSTMENT_SECONDS
-  ): Partial<CacheEntry> | undefined {
-    const payload = this.readJson(cacheKey);
-    const nowSeconds = Math.floor(Date.now() / 1000);
+  public get(key: string): Promise<unknown> {
+    return new Promise(resolve => {
+      const cacheKey = CacheKey.fromKey(key);
+      const payload = this.readJson(cacheKey);
 
-    if (!payload) return;
+      if (!payload) resolve(null);
 
-    if (payload.expiresAt - expiryAdjustmentSeconds < nowSeconds) {
+      resolve(payload.body);
+    });
+  }
+
+  public remove(key: string): Promise<void> {
+    return new Promise(resolve => {
+      const payload = this.readJson(key);
+
       if (payload.body.refresh_token) {
         const newPayload = this.stripData(payload);
-        this.writeJson(cacheKey.toKey(), newPayload);
-
-        return newPayload.body;
+        this.writeJson(key, newPayload);
+        return resolve();
       }
 
-      localStorage.removeItem(cacheKey.toKey());
-      return;
-    }
-
-    return payload.body;
+      localStorage.removeItem(key);
+      resolve();
+    });
   }
 
-  public clear() {
-    for (var i = localStorage.length - 1; i >= 0; i--) {
-      if (localStorage.key(i).startsWith(keyPrefix)) {
-        localStorage.removeItem(localStorage.key(i));
+  public clear(): Promise<void> {
+    return new Promise(resolve => {
+      for (var i = localStorage.length - 1; i >= 0; i--) {
+        if (localStorage.key(i).startsWith(keyPrefix)) {
+          localStorage.removeItem(localStorage.key(i));
+        }
       }
-    }
+
+      resolve();
+    });
   }
 
   /**
    * Retrieves data from local storage and parses it into the correct format
    * @param cacheKey The cache key
    */
-  private readJson(cacheKey: CacheKey): CachePayload {
+  private readJson(cacheKey: CacheKey): WrappedCacheEntry {
     const existingCacheKey = findExistingCacheKey(
       cacheKey,
       Object.keys(window.localStorage)
@@ -192,21 +229,21 @@ export class LocalStorageCache implements ICache {
 
   /**
    * Writes the payload as JSON to localstorage
-   * @param cacheKey The cache key
+   * @param key The cache key
    * @param payload The payload to write as JSON
    */
-  private writeJson(cacheKey: string, payload: CachePayload) {
-    localStorage.setItem(cacheKey, JSON.stringify(payload));
+  private writeJson(key: string, payload: unknown) {
+    localStorage.setItem(key, JSON.stringify(payload));
   }
 
   /**
    * Produce a copy of the payload with everything removed except the refresh token
    * @param payload The payload
    */
-  private stripData(payload: CachePayload): CachePayload {
+  private stripData(payload: WrappedCacheEntry): WrappedCacheEntry {
     const { refresh_token } = payload.body;
 
-    const strippedPayload: CachePayload = {
+    const strippedPayload: WrappedCacheEntry = {
       body: { refresh_token: refresh_token },
       expiresAt: payload.expiresAt
     };
@@ -217,7 +254,7 @@ export class LocalStorageCache implements ICache {
 
 export class InMemoryCache {
   public enclosedCache: ICache = (function () {
-    let cache: Record<string, CachePayload> = {};
+    let cache: Record<string, WrappedCacheEntry> = {};
 
     return {
       save(entry: CacheEntry) {
@@ -239,7 +276,7 @@ export class InMemoryCache {
           cacheKey,
           Object.keys(cache)
         );
-        const wrappedEntry: CachePayload = cache[existingCacheKey];
+        const wrappedEntry: WrappedCacheEntry = cache[existingCacheKey];
         const nowSeconds = Math.floor(Date.now() / 1000);
 
         if (!wrappedEntry) {
