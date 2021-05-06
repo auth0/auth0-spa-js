@@ -502,13 +502,16 @@ export default class Auth0Client {
     const { redirectMethod, platform = 'web', ...urlOptions } = options;
     const url = await this.buildAuthorizeUrl(urlOptions);
 
+    console.log({ platform, redirect_uri: urlOptions.redirect_uri, url });
+
     if (platform === 'web') {
       window.location[redirectMethod || 'assign'](url);
       return;
     }
 
-    if (platform === 'ios')
-      return IosASWebauthenticationSession.start(urlOptions.redirect_uri, url);
+    if (platform === 'ios') {
+      // return IosASWebauthenticationSession.start(urlOptions.redirect_uri, url);
+    }
   }
 
   /**
