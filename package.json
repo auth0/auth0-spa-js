@@ -1,7 +1,7 @@
 {
-  "author": "Auth0",
-  "name": "@auth0/auth0-spa-js",
-  "description": "Auth0 SDK for Single Page Applications using Authorization Code Grant Flow with PKCE",
+  "author": "Marcin Krysiak",
+  "name": "auth0-spa-js-ionic",
+  "description": "Auth0 SDK for Single Page Applications and Ionic/Capacitor/React using Authorization Code Grant Flow with PKCE",
   "license": "MIT",
   "version": "1.15.0",
   "main": "dist/lib/auth0-spa-js.cjs.js",
@@ -93,22 +93,23 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git://github.com/auth0/auth0-spa-js.git"
+    "url": "git@github.com:marcin-krysiak/auth0-spa-js-ionic.git"
   },
   "bugs": {
-    "url": "https://github.com/auth0/auth0-spa-js/issues"
+    "url": "https://github.com/marcin-krysiak/auth0-spa-js-ionic/issues"
   },
-  "homepage": "https://github.com/auth0/auth0-spa-js#readme",
+  "homepage": "https://github.com/marcin-krysiak/auth0-spa-js-ionic#readme",
   "keywords": [
     "auth0",
     "login",
+    "ionic",
     "Authorization Code Grant Flow",
     "PKCE",
     "Single Page Application authentication",
     "SPA authentication"
   ],
   "ccu": {
-    "name": "auth0-spa-js",
+    "name": "auth0-spa-js-ionic",
     "cdn": "https://cdn.auth0.com",
     "mainBundleFile": "auth0-spa-js.production.js",
     "bucket": "assets.us.auth0.com",

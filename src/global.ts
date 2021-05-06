@@ -62,19 +62,19 @@ export interface BaseLoginOptions {
    * along with this scope
    */
   scope?: string;
-  
+
   /**
    * The default audience to be used for requesting API access.
    */
   audience?: string;
-  
+
   /**
    * The name of the connection configured for your application.
    * If null, it will redirect to the Auth0 Login Page and show
    * the Login Widget.
    */
   connection?: string;
-  
+
   /**
    * The Id of an organization to log in to.
    *
@@ -82,12 +82,12 @@ export interface BaseLoginOptions {
    * the `org_id` claim in your user's ID Token.
    */
   organization?: string;
-  
+
   /**
    * The Id of an invitation to accept. This is available from the user invitation URL that is given when participating in a user invitation flow.
    */
   invitation?: string;
-  
+
   /**
    * If you need to send custom parameters to the Authorization Server,
    * make sure to use the original parameter name.
@@ -237,6 +237,11 @@ export interface RedirectLoginOptions extends BaseLoginOptions {
    * Used to select the window.location method used to redirect
    */
   redirectMethod?: 'replace' | 'assign';
+
+  /**
+   * Set the platform name to enable platform specific behaviour, like ASWebAuthenticationSession for iOS
+   */
+  platform?: 'web' | 'ios' | 'android';
 }
 
 export interface RedirectLoginResult {

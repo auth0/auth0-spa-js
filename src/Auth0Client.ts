@@ -498,9 +498,9 @@ export default class Auth0Client {
    * @param options
    */
   public async loginWithRedirect(options: RedirectLoginOptions = {}) {
-    const { redirectMethod, ...urlOptions } = options;
+    const { redirectMethod, platform = 'web', ...urlOptions } = options;
     const url = await this.buildAuthorizeUrl(urlOptions);
-    window.location[redirectMethod || 'assign'](url);
+    if (platform === 'web') window.location[redirectMethod || 'assign'](url);
   }
 
   /**
