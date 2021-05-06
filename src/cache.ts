@@ -1,5 +1,8 @@
 import { IdToken, User } from './global';
 
+const keyPrefix = '@@auth0spajs@@';
+const DEFAULT_EXPIRY_ADJUSTMENT_SECONDS = 0;
+
 interface CacheKeyData {
   audience: string;
   scope: string;
@@ -51,9 +54,6 @@ export interface ICache {
   clear(): Promise<void>;
 }
 
-const keyPrefix = '@@auth0spajs@@';
-const DEFAULT_EXPIRY_ADJUSTMENT_SECONDS = 0;
-
 type WrappedCacheEntry = {
   body: Partial<CacheEntry>;
   expiresAt: number;
@@ -67,15 +67,26 @@ export class CacheManager {
     expiryAdjustmentSeconds = DEFAULT_EXPIRY_ADJUSTMENT_SECONDS
   ): Promise<Partial<CacheEntry> | undefined> {
     const key = cacheKey.toKey();
-    const payload = (await this.cache.get(key)) as WrappedCacheEntry;
+    const wrappedEntry = (await this.cache.get(key)) as WrappedCacheEntry;
     const nowSeconds = Math.floor(Date.now() / 1000);
 
-    if (!payload) return;
+    if (!wrappedEntry) return;
 
-    if (payload.expiresAt - expiryAdjustmentSeconds < nowSeconds) {
+    if (wrappedEntry.expiresAt - expiryAdjustmentSeconds < nowSeconds) {
+      if (wrappedEntry.body.refresh_token) {
+        wrappedEntry.body = {
+          refresh_token: wrappedEntry.body.refresh_token
+        };
+
+        await this.cache.set(key, wrappedEntry);
+        return wrappedEntry.body;
+      }
+
       await this.cache.remove(key);
       return;
     }
+
+    return wrappedEntry.body;
   }
 
   set(entry: CacheEntry): Promise<void> {
@@ -157,9 +168,8 @@ const findExistingCacheKey = (
 
 export class LocalStorageCache implements ICache {
   public set(key: string, entry: unknown): Promise<void> {
-    return Promise.resolve(
-      window.localStorage.setItem(key, JSON.stringify(entry))
-    );
+    window.localStorage.setItem(key, JSON.stringify(entry));
+    return Promise.resolve();
   }
 
   public get(key: string): Promise<unknown> {
@@ -169,24 +179,13 @@ export class LocalStorageCache implements ICache {
 
       if (!payload) resolve(null);
 
-      resolve(payload.body);
+      resolve(payload);
     });
   }
 
   public remove(key: string): Promise<void> {
-    return new Promise(resolve => {
-      const cacheKey = CacheKey.fromKey(key);
-      const payload = this.readJson(cacheKey);
-
-      if (payload?.body?.refresh_token) {
-        const newPayload = this.stripData(payload);
-        this.writeJson(key, newPayload);
-        return resolve();
-      }
-
-      localStorage.removeItem(key);
-      resolve();
-    });
+    localStorage.removeItem(key);
+    return Promise.resolve();
   }
 
   public clear(): Promise<void> {
@@ -205,7 +204,7 @@ export class LocalStorageCache implements ICache {
    * Retrieves data from local storage and parses it into the correct format
    * @param cacheKey The cache key
    */
-  private readJson(cacheKey: CacheKey): any {
+  private readJson(cacheKey: CacheKey): unknown {
     const existingCacheKey = findExistingCacheKey(
       cacheKey,
       Object.keys(window.localStorage)
@@ -227,32 +226,7 @@ export class LocalStorageCache implements ICache {
 
     return payload;
   }
-
-  /**
-   * Writes the payload as JSON to localstorage
-   * @param key The cache key
-   * @param payload The payload to write as JSON
-   */
-  private writeJson(key: string, payload: unknown) {
-    localStorage.setItem(key, JSON.stringify(payload));
-  }
-
-  /**
-   * Produce a copy of the payload with everything removed except the refresh token
-   * @param payload The payload
-   */
-  private stripData(payload: any): WrappedCacheEntry {
-    const { refresh_token } = payload.body;
-
-    const strippedPayload: WrappedCacheEntry = {
-      body: { refresh_token: refresh_token },
-      expiresAt: payload.expiresAt
-    };
-
-    return strippedPayload;
-  }
 }
-
 export class InMemoryCache {
   public enclosedCache: ICache = (function () {
     let cache: Record<string, unknown> = {};
