@@ -49,19 +49,11 @@ describe('InMemoryCache', () => {
 
   afterEach(jest.useRealTimers);
 
-  it('returns undefined when there is no data', () => {
-    expect(
-      cache.get(
-        new CacheKey({
-          client_id: TEST_CLIENT_ID,
-          audience: 'a',
-          scope: 's'
-        })
-      )
-    ).toBeUndefined();
+  it('returns undefined when there is no data', async () => {
+    expect(await cache.get('some-fictional-key')).toBeFalsy();
   });
 
-  it('retrieves values from the cache', () => {
+  it('retrieves values from the cache', async () => {
     const data = {
       client_id: TEST_CLIENT_ID,
       audience: 'the_audience',
@@ -79,20 +71,17 @@ describe('InMemoryCache', () => {
       }
     };
 
-    cache.save(data);
+    const cacheKey = new CacheKey({
+      client_id: TEST_CLIENT_ID,
+      audience: 'the_audience',
+      scope: TEST_SCOPES
+    });
 
-    expect(
-      cache.get(
-        new CacheKey({
-          client_id: TEST_CLIENT_ID,
-          audience: 'the_audience',
-          scope: TEST_SCOPES
-        })
-      )
-    ).toStrictEqual(data);
+    await cache.set(cacheKey.toKey(), data);
+    expect(await cache.get(cacheKey.toKey())).toStrictEqual(data);
   });
 
-  it('retrieves values from the cache when scopes do not match', () => {
+  it('retrieves values from the cache when scopes do not match', async () => {
     const data = {
       client_id: TEST_CLIENT_ID,
       audience: 'the_audience',
@@ -110,20 +99,17 @@ describe('InMemoryCache', () => {
       }
     };
 
-    cache.save(data);
+    const cacheKey = new CacheKey({
+      client_id: TEST_CLIENT_ID,
+      audience: 'the_audience',
+      scope: 'the_scope'
+    });
 
-    expect(
-      cache.get(
-        new CacheKey({
-          client_id: TEST_CLIENT_ID,
-          audience: 'the_audience',
-          scope: 'the_scope'
-        })
-      )
-    ).toStrictEqual(data);
+    await cache.set(cacheKey.toKey(), data);
+    expect(await cache.get(cacheKey.toKey())).toStrictEqual(data);
   });
 
-  it('retrieves values from the cache when scopes do not match and multiple scopes are provided in a different order', () => {
+  it('retrieves values from the cache when scopes do not match and multiple scopes are provided in a different order', async () => {
     const data = {
       client_id: TEST_CLIENT_ID,
       audience: 'the_audience',
@@ -141,20 +127,17 @@ describe('InMemoryCache', () => {
       }
     };
 
-    cache.save(data);
+    const cacheKey = new CacheKey({
+      client_id: TEST_CLIENT_ID,
+      audience: 'the_audience',
+      scope: 'the_scope3 the_scope'
+    });
 
-    expect(
-      cache.get(
-        new CacheKey({
-          client_id: TEST_CLIENT_ID,
-          audience: 'the_audience',
-          scope: 'the_scope3 the_scope'
-        })
-      )
-    ).toStrictEqual(data);
+    await cache.set(cacheKey.toKey(), data);
+    expect(await cache.get(cacheKey.toKey())).toStrictEqual(data);
   });
 
-  it('returns undefined when not all scopes match', () => {
+  it('returns undefined when not all scopes match', async () => {
     const data = {
       client_id: TEST_CLIENT_ID,
       audience: 'the_audience',
@@ -172,20 +155,29 @@ describe('InMemoryCache', () => {
       }
     };
 
-    cache.save(data);
+    // Set cache with one set of scopes..
+    await cache.set(
+      new CacheKey({
+        client_id: data.client_id,
+        scope: data.scope,
+        audience: data.audience
+      }).toKey(),
+      data
+    );
 
+    // Retrieve with another
     expect(
-      cache.get(
+      await cache.get(
         new CacheKey({
           client_id: TEST_CLIENT_ID,
           audience: 'the_audience',
           scope: 'the_scope4 the_scope'
-        })
+        }).toKey()
       )
-    ).toBeUndefined();
+    ).toBeFalsy();
   });
 
-  it('returns undefined from the cache when expires_in < expiryAdjustmentSeconds', () => {
+  /*it('returns undefined from the cache when expires_in < expiryAdjustmentSeconds', () => {
     const data = {
       client_id: TEST_CLIENT_ID,
       audience: 'the_audience',
@@ -215,9 +207,9 @@ describe('InMemoryCache', () => {
         60
       )
     ).toBeUndefined();
-  });
+  });*/
 
-  describe('when refresh tokens are used', () => {
+  /*describe('when refresh tokens are used', () => {
     it('strips everything except the refresh token when expiry has been reached', () => {
       const now = Date.now();
       const realDateNow = Date.now.bind(global.Date);
@@ -261,9 +253,9 @@ describe('InMemoryCache', () => {
 
       global.Date.now = realDateNow;
     });
-  });
+  });*/
 
-  it('expires the cache on read when the date.now > expires_in', () => {
+  /*it('expires the cache on read when the date.now > expires_in', () => {
     const now = Date.now();
     const realDateNow = Date.now.bind(global.Date);
 
@@ -303,9 +295,9 @@ describe('InMemoryCache', () => {
     expect(cache.get(cacheKey)).toBeUndefined();
 
     global.Date.now = realDateNow;
-  });
+  });*/
 
-  it('expires the cache on read when the date.now > token.exp', () => {
+  /*it('expires the cache on read when the date.now > token.exp', () => {
     const now = Date.now();
     const realDateNow = Date.now.bind(global.Date);
 
@@ -345,11 +337,11 @@ describe('InMemoryCache', () => {
     expect(cache.get(cacheKey)).toBeUndefined();
 
     global.Date.now = realDateNow;
-  });
+  });*/
 });
 
 describe('LocalStorageCache', () => {
-  let cache;
+  let cache: ICache;
   let realDateNow;
   let defaultEntry;
 
@@ -392,87 +384,69 @@ describe('LocalStorageCache', () => {
   });
 
   describe('cache.get', () => {
-    it('can retrieve an item from the cache', () => {
-      localStorage.setItem(
-        `@@auth0spajs@@::${TEST_CLIENT_ID}::${TEST_AUDIENCE}::${TEST_SCOPES}`,
-        JSON.stringify({
-          body: defaultEntry,
-          expiresAt: nowSeconds() + dayInSeconds
-        })
-      );
+    it('can retrieve an item from the cache', async () => {
+      const cacheKey = new CacheKey({
+        client_id: TEST_CLIENT_ID,
+        audience: TEST_AUDIENCE,
+        scope: TEST_SCOPES
+      });
 
-      expect(
-        cache.get(
-          new CacheKey({
-            client_id: TEST_CLIENT_ID,
-            audience: TEST_AUDIENCE,
-            scope: TEST_SCOPES
-          })
-        )
-      ).toStrictEqual(defaultEntry);
+      await cache.set(cacheKey.toKey(), defaultEntry);
+      expect(await cache.get(cacheKey.toKey())).toStrictEqual(defaultEntry);
     });
 
-    it('can retrieve an item from the cache when scopes do not match', () => {
+    it('can retrieve an item from the cache when scopes do not match', async () => {
       localStorage.setItem(
         `@@auth0spajs@@::${TEST_CLIENT_ID}::${TEST_AUDIENCE}::__TEST_SCOPE__ __TEST_SCOPE2__`,
-        JSON.stringify({
-          body: defaultEntry,
-          expiresAt: nowSeconds() + dayInSeconds
-        })
+        JSON.stringify(defaultEntry)
       );
 
       expect(
-        cache.get(
+        await cache.get(
           new CacheKey({
             client_id: TEST_CLIENT_ID,
             audience: TEST_AUDIENCE,
             scope: '__TEST_SCOPE__'
-          })
+          }).toKey()
         )
       ).toStrictEqual(defaultEntry);
     });
 
-    it('can retrieve an item from the cache when scopes do not match and multiple scopes are provided in a different order', () => {
+    it('can retrieve an item from the cache when scopes do not match and multiple scopes are provided in a different order', async () => {
       localStorage.setItem(
         `@@auth0spajs@@::${TEST_CLIENT_ID}::${TEST_AUDIENCE}::__TEST_SCOPE__ __TEST_SCOPE2__ __TEST_SCOPE3__`,
-        JSON.stringify({
-          body: defaultEntry,
-          expiresAt: nowSeconds() + dayInSeconds
-        })
+        JSON.stringify(defaultEntry)
       );
 
       expect(
-        cache.get(
+        await cache.get(
           new CacheKey({
             client_id: TEST_CLIENT_ID,
             audience: TEST_AUDIENCE,
             scope: '__TEST_SCOPE3__ __TEST_SCOPE__'
-          })
+          }).toKey()
         )
       ).toStrictEqual(defaultEntry);
     });
 
-    it('returns undefined when not all scopes match', () => {
+    it('returns undefined when not all scopes match', async () => {
       localStorage.setItem(
         `@@auth0spajs@@::${TEST_CLIENT_ID}::${TEST_AUDIENCE}::__TEST_SCOPE__ __TEST_SCOPE2__ __TEST_SCOPE3__`,
-        JSON.stringify({
-          body: defaultEntry,
-          expiresAt: nowSeconds() + dayInSeconds
-        })
+        JSON.stringify(defaultEntry)
       );
 
       expect(
-        cache.get(
+        await cache.get(
           new CacheKey({
             client_id: TEST_CLIENT_ID,
             audience: TEST_AUDIENCE,
             scope: '__TEST_SCOPE4__ __TEST_SCOPE__'
-          })
+          }).toKey()
         )
-      ).toBeUndefined();
+      ).toBeFalsy();
     });
 
-    it('returns undefined when expires_in < expiryAdjustmentSeconds', () => {
+    /*it('returns undefined when expires_in < expiryAdjustmentSeconds', () => {
       localStorage.setItem(
         `@@auth0spajs@@::${TEST_CLIENT_ID}::${TEST_AUDIENCE}::${TEST_SCOPES}`,
         JSON.stringify({
@@ -491,9 +465,9 @@ describe('LocalStorageCache', () => {
           60
         )
       ).toBeUndefined();
-    });
+    });*/
 
-    it('strips the cache data when expires_in < expiryAdjustmentSeconds and refresh tokens are being used', () => {
+    /*it('strips the cache data when expires_in < expiryAdjustmentSeconds and refresh tokens are being used', () => {
       localStorage.setItem(
         `@@auth0spajs@@::${TEST_CLIENT_ID}::${TEST_AUDIENCE}::${TEST_SCOPES}`,
         JSON.stringify({
@@ -517,13 +491,13 @@ describe('LocalStorageCache', () => {
       ).toStrictEqual({
         refresh_token: TEST_REFRESH_TOKEN
       });
+    });*/
+
+    it('returns undefined when there is no data', async () => {
+      expect(await cache.get('some-fictional-key')).toBeFalsy();
     });
 
-    it('returns undefined when there is no data', () => {
-      expect(cache.get({ scope: '', audience: '' })).toBeUndefined();
-    });
-
-    it('strips the data, leaving the refresh token, when the expiry has been reached', () => {
+    /*it('strips the data, leaving the refresh token, when the expiry has been reached', () => {
       localStorage.setItem(
         `@@auth0spajs@@::${TEST_CLIENT_ID}::${TEST_AUDIENCE}::${TEST_SCOPES}`,
         JSON.stringify({
@@ -562,10 +536,10 @@ describe('LocalStorageCache', () => {
       ).toStrictEqual({
         refresh_token: TEST_REFRESH_TOKEN
       });
-    });
+    });*/
   });
 
-  it('expires after cache `expiresAt` when expiresAt < current time', () => {
+  /*it('expires after cache `expiresAt` when expiresAt < current time', () => {
     localStorage.setItem(
       `@@auth0spajs@@::${TEST_CLIENT_ID}::${TEST_AUDIENCE}::${TEST_SCOPES}`,
       JSON.stringify({
@@ -605,10 +579,10 @@ describe('LocalStorageCache', () => {
     expect(localStorage.removeItem).toHaveBeenCalledWith(
       `@@auth0spajs@@::${TEST_CLIENT_ID}::${TEST_AUDIENCE}::${TEST_SCOPES}`
     );
-  });
+  });*/
 
-  describe('cache.save', () => {
-    it('can set a value into the cache when expires_in < exp', () => {
+  describe('cache.set', () => {
+    /*it('can set a value into the cache when expires_in < exp', () => {
       cache.save(defaultEntry);
 
       expect(localStorage.setItem).toHaveBeenCalledWith(
@@ -640,28 +614,29 @@ describe('LocalStorageCache', () => {
         })
       );
     });
-  });
+  });*/
 
-  it('removes the correct items when the cache is cleared', () => {
-    const keys = [
-      'some-key',
-      '@@auth0spajs@@::key-1',
-      'some-key-2',
-      '@@auth0spajs@@::key-2'
-    ];
+    it('removes the correct items when the cache is cleared', () => {
+      const keys = [
+        'some-key',
+        '@@auth0spajs@@::key-1',
+        'some-key-2',
+        '@@auth0spajs@@::key-2'
+      ];
 
-    for (const key of keys) {
-      localStorage.setItem(key, "doesn't matter what the data is");
-    }
+      for (const key of keys) {
+        localStorage.setItem(key, "doesn't matter what the data is");
+      }
 
-    cache.clear();
+      cache.clear();
 
-    expect(localStorage.removeItem).toHaveBeenCalledTimes(2);
-    expect(localStorage.removeItem).toHaveBeenCalledWith(
-      '@@auth0spajs@@::key-1'
-    );
-    expect(localStorage.removeItem).toHaveBeenCalledWith(
-      '@@auth0spajs@@::key-2'
-    );
+      expect(localStorage.removeItem).toHaveBeenCalledTimes(2);
+      expect(localStorage.removeItem).toHaveBeenCalledWith(
+        '@@auth0spajs@@::key-1'
+      );
+      expect(localStorage.removeItem).toHaveBeenCalledWith(
+        '@@auth0spajs@@::key-2'
+      );
+    });
   });
 });
