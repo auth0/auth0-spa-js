@@ -5903,7 +5903,7 @@ var Auth0Client = /** @class */ (function () {
               return [
                 2 /*return*/,
                 iosAswebauthenticationsessionApi.IosASWebauthenticationSession.start(
-                  'capacitor://localhost',
+                  redirect_uri.split('://')[0],
                   url
                 )
               ];

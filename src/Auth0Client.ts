@@ -516,7 +516,10 @@ export default class Auth0Client {
     }
 
     if (platform === 'ios') {
-      return IosASWebauthenticationSession.start('capacitor://localhost', url);
+      return IosASWebauthenticationSession.start(
+        redirect_uri.split('://')[0],
+        url
+      );
     }
   }
 

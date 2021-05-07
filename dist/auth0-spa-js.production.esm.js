@@ -5332,7 +5332,7 @@ var Qi,
                     'web' === o
                       ? (window.location[t || 'assign'](s), [2])
                       : 'ios' === o
-                      ? [2, Hi.start('capacitor://localhost', s)]
+                      ? [2, Hi.start(a.split('://')[0], s)]
                       : [2]
                   );
               }

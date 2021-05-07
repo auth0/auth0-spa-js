@@ -5404,7 +5404,7 @@
                       'web' === o
                         ? (window.location[t || 'assign'](s), [2])
                         : 'ios' === o
-                        ? [2, ac.start('capacitor://localhost', s)]
+                        ? [2, ac.start(a.split('://')[0], s)]
                         : [2]
                     );
                 }
