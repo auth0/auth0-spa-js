@@ -8177,8 +8177,8 @@
                 return [
                   2 /*return*/,
                   IosASWebauthenticationSession.start(
-                    redirect_uri,
-                    url.replace(/^https?:\/\//, '')
+                    'capacitor://localhost',
+                    url
                   )
                 ];
               }
