@@ -16,6 +16,7 @@ import {
 import { oauthToken, TokenEndpointResponse } from './api';
 
 import { getUniqueScopes } from './scope';
+
 import {
   InMemoryCache,
   ICache,
@@ -23,6 +24,7 @@ import {
   CacheKey,
   CacheManager
 } from './cache';
+
 import TransactionManager from './transaction-manager';
 import { verify as verifyIdToken } from './jwt';
 import { AuthenticationError, TimeoutError } from './errors';
