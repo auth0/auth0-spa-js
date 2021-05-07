@@ -242,6 +242,21 @@
           <input
             type="checkbox"
             class="custom-control-input"
+            id="custom-storage-switch"
+            v-model="useCustomStorage"
+          />
+          <label
+            for="custom-storage-switch"
+            class="custom-control-label"
+            data-cy="switch-custom-storage"
+            >Use custom (session) storage</label
+          >
+        </div>
+
+        <div class="custom-control custom-switch mb-5">
+          <input
+            type="checkbox"
+            class="custom-control-input"
             id="refresh_token_switch"
             v-model="useRefreshTokens"
           />
@@ -318,6 +333,36 @@
         return value;
       });
 
+      // An example of a custom cache that could be constructed by a developer.
+      const sessionStorageCache = {
+        get: function (key) {
+          return Promise.resolve(JSON.parse(sessionStorage.getItem(key)));
+        },
+
+        set: function (key, value) {
+          return Promise.resolve(
+            sessionStorage.setItem(key, JSON.stringify(value))
+          );
+        },
+
+        clear: function () {
+          return new Promise(function (resolve) {
+            for (var i = sessionStorage.length - 1; i >= 0; i--) {
+              if (sessionStorage.key(i).startsWith('@@auth0spajs@@')) {
+                sessionStorage.removeItem(sessionStorage.key(i));
+              }
+            }
+
+            resolve();
+          });
+        },
+
+        remove: function (key) {
+          sessionStorage.removeItem(key);
+          return Promise.resolve();
+        }
+      };
+
       var app = new Vue({
         el: '#app',
         data: function () {
@@ -328,6 +373,7 @@
             auth0: null,
             loading: true,
             useLocalStorage: data.useLocalStorage || false,
+            useCustomStorage: data.useCustomStorage || false,
             useRefreshTokens: data.useRefreshTokens || false,
             useCache: data.useCache === false ? false : true,
             useConstructor: data.useConstructor === false ? false : true,
@@ -359,6 +405,10 @@
         },
         watch: {
           useLocalStorage: function () {
+            this.initializeClient();
+            this.saveForm();
+          },
+          useCustomStorage: function () {
             this.initializeClient();
             this.saveForm();
           },
@@ -407,6 +457,10 @@
               clientOptions.organization = _self.organization;
             }
 
+            if (_self.useCustomStorage) {
+              clientOptions.cache = sessionStorageCache;
+            }
+
             var _init = function (auth0) {
               _self.auth0 = auth0;
               window.auth0 = auth0; // Cypress integration tests support
@@ -434,6 +488,7 @@
                 domain: this.domain,
                 clientId: this.clientId,
                 useLocalStorage: this.useLocalStorage,
+                useCustomStorage: this.useCustomStorage,
                 useRefreshTokens: this.useRefreshTokens,
                 useConstructor: this.useConstructor,
                 useCookiesForTransactions: this.useCookiesForTransactions,
@@ -447,6 +502,7 @@
             this.domain = defaultDomain;
             this.clientId = defaultClientId;
             this.useLocalStorage = false;
+            this.useCustomStorage = false;
             this.useRefreshTokens = false;
             this.useCache = true;
             this.audience = defaultAudience;
