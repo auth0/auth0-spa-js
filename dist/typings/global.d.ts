@@ -1,6 +1,7 @@
 /**
  * @ignore
  */
+export declare type Platform = 'web' | 'ios' | 'android';
 export interface BaseLoginOptions {
   /**
    * - `'page'`: displays the UI with a full page view
@@ -217,7 +218,7 @@ export interface RedirectLoginOptions extends BaseLoginOptions {
   /**
    * Set the platform name to enable platform specific behaviour, like ASWebAuthenticationSession for iOS
    */
-  platform?: 'web' | 'ios' | 'android';
+  platform?: Platform;
 }
 export interface RedirectLoginResult {
   /**
@@ -365,6 +366,10 @@ export interface LogoutOptions {
    * This option cannot be specified along with the `federated` option.
    */
   localOnly?: boolean;
+  /**
+   * Set the platform name to enable platform specific behaviour, like ASWebAuthenticationSession for iOS
+   */
+  platform?: Platform;
 }
 /**
  * @ignore

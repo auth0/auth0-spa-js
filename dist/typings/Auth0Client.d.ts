@@ -120,6 +120,22 @@ export default class Auth0Client {
    */
   loginWithRedirect(options?: RedirectLoginOptions): Promise<string>;
   /**
+   * ```js
+   * auth0.logout();
+   * ```
+   *
+   * Clears the application session and performs a redirect to `/v2/logout`, using
+   * the parameters provided as arguments, to clear the Auth0 session.
+   * If the `federated` option is specified it also clears the Identity Provider session.
+   * If the `localOnly` option is specified, it only clears the application session.
+   * It is invalid to set both the `federated` and `localOnly` options to `true`,
+   * and an error will be thrown if you do.
+   * [Read more about how Logout works at Auth0](https://auth0.com/docs/logout).
+   *
+   * @param options
+   */
+  logout(options?: LogoutOptions): Promise<string>;
+  /**
    * After the browser redirects back to the callback page,
    * call `handleRedirectCallback` to handle success and error
    * responses from Auth0. If the response is successful, results
@@ -209,22 +225,6 @@ export default class Auth0Client {
    * @param options
    */
   buildLogoutUrl(options?: LogoutUrlOptions): string;
-  /**
-   * ```js
-   * auth0.logout();
-   * ```
-   *
-   * Clears the application session and performs a redirect to `/v2/logout`, using
-   * the parameters provided as arguments, to clear the Auth0 session.
-   * If the `federated` option is specified it also clears the Identity Provider session.
-   * If the `localOnly` option is specified, it only clears the application session.
-   * It is invalid to set both the `federated` and `localOnly` options to `true`,
-   * and an error will be thrown if you do.
-   * [Read more about how Logout works at Auth0](https://auth0.com/docs/logout).
-   *
-   * @param options
-   */
-  logout(options?: LogoutOptions): void;
   private _getTokenFromIFrame;
   private _getTokenUsingRefreshToken;
 }

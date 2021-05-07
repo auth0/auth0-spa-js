@@ -5883,18 +5883,15 @@ var Auth0Client = /** @class */ (function () {
           case 0:
             (redirectMethod = options.redirectMethod),
               (_a = options.platform),
-              (platform = _a === void 0 ? 'web' : _a),
+              (platform = _a === void 0 ? this.options.platform || 'web' : _a),
               (urlOptions = __rest(options, ['redirectMethod', 'platform']));
             return [4 /*yield*/, this.buildAuthorizeUrl(urlOptions)];
           case 1:
             url = _b.sent();
-            redirect_uri = urlOptions.redirect_uri || this.options.redirect_uri;
-            console.log({
-              platform: platform,
-              redirect_uri: redirect_uri,
-              urlOptions: urlOptions,
-              url: url.replace(/^https?:\/\//, '')
-            });
+            redirect_uri =
+              urlOptions.redirect_uri ||
+              this.options.redirect_uri ||
+              window.location.origin;
             if (platform === 'web') {
               window.location[redirectMethod || 'assign'](url);
               return [2 /*return*/];
@@ -5912,6 +5909,52 @@ var Auth0Client = /** @class */ (function () {
         }
       });
     });
+  };
+  /**
+   * ```js
+   * auth0.logout();
+   * ```
+   *
+   * Clears the application session and performs a redirect to `/v2/logout`, using
+   * the parameters provided as arguments, to clear the Auth0 session.
+   * If the `federated` option is specified it also clears the Identity Provider session.
+   * If the `localOnly` option is specified, it only clears the application session.
+   * It is invalid to set both the `federated` and `localOnly` options to `true`,
+   * and an error will be thrown if you do.
+   * [Read more about how Logout works at Auth0](https://auth0.com/docs/logout).
+   *
+   * @param options
+   */
+  Auth0Client.prototype.logout = function (options) {
+    if (options === void 0) {
+      options = {};
+    }
+    var localOnly = options.localOnly,
+      _a = options.platform,
+      platform = _a === void 0 ? this.options.platform || 'web' : _a,
+      logoutOptions = __rest(options, ['localOnly', 'platform']);
+    if (localOnly && logoutOptions.federated) {
+      throw new Error(
+        'It is invalid to set both the `federated` and `localOnly` options to `true`'
+      );
+    }
+    this.cache.clear();
+    this.cookieStorage.remove('auth0.is.authenticated');
+    if (localOnly) {
+      return;
+    }
+    var url = this.buildLogoutUrl(logoutOptions);
+    var redirect_uri = logoutOptions.returnTo;
+    if (platform === 'web') {
+      window.location.assign(url);
+      return;
+    }
+    if (platform === 'ios') {
+      return iosAswebauthenticationsessionApi.IosASWebauthenticationSession.start(
+        redirect_uri.split('://')[0],
+        url
+      );
+    }
   };
   /**
    * After the browser redirects back to the callback page,
@@ -6300,40 +6343,6 @@ var Auth0Client = /** @class */ (function () {
     var federatedQuery = federated ? '&federated' : '';
     var url = this._url('/v2/logout?' + createQueryParams(logoutOptions));
     return url + federatedQuery;
-  };
-  /**
-   * ```js
-   * auth0.logout();
-   * ```
-   *
-   * Clears the application session and performs a redirect to `/v2/logout`, using
-   * the parameters provided as arguments, to clear the Auth0 session.
-   * If the `federated` option is specified it also clears the Identity Provider session.
-   * If the `localOnly` option is specified, it only clears the application session.
-   * It is invalid to set both the `federated` and `localOnly` options to `true`,
-   * and an error will be thrown if you do.
-   * [Read more about how Logout works at Auth0](https://auth0.com/docs/logout).
-   *
-   * @param options
-   */
-  Auth0Client.prototype.logout = function (options) {
-    if (options === void 0) {
-      options = {};
-    }
-    var localOnly = options.localOnly,
-      logoutOptions = __rest(options, ['localOnly']);
-    if (localOnly && logoutOptions.federated) {
-      throw new Error(
-        'It is invalid to set both the `federated` and `localOnly` options to `true`'
-      );
-    }
-    this.cache.clear();
-    this.cookieStorage.remove('auth0.is.authenticated');
-    if (localOnly) {
-      return;
-    }
-    var url = this.buildLogoutUrl(logoutOptions);
-    window.location.assign(url);
   };
   Auth0Client.prototype._getTokenFromIFrame = function (options) {
     return __awaiter(this, void 0, void 0, function () {

@@ -5315,20 +5315,17 @@ var Qi,
                   return (
                     (t = e.redirectMethod),
                     (n = e.platform),
-                    (o = void 0 === n ? 'web' : n),
+                    (o = void 0 === n ? this.options.platform || 'web' : n),
                     (c = r(e, ['redirectMethod', 'platform'])),
                     [4, this.buildAuthorizeUrl(c)]
                   );
                 case 1:
                   return (
                     (s = i.sent()),
-                    (a = c.redirect_uri || this.options.redirect_uri),
-                    console.log({
-                      platform: o,
-                      redirect_uri: a,
-                      urlOptions: c,
-                      url: s.replace(/^https?:\/\//, '')
-                    }),
+                    (a =
+                      c.redirect_uri ||
+                      this.options.redirect_uri ||
+                      window.location.origin),
                     'web' === o
                       ? (window.location[t || 'assign'](s), [2])
                       : 'ios' === o
@@ -5339,6 +5336,28 @@ var Qi,
             });
           })
         );
+      }),
+      (e.prototype.logout = function (e) {
+        void 0 === e && (e = {});
+        var t = e.localOnly,
+          n = e.platform,
+          o = void 0 === n ? this.options.platform || 'web' : n,
+          i = r(e, ['localOnly', 'platform']);
+        if (t && i.federated)
+          throw new Error(
+            'It is invalid to set both the `federated` and `localOnly` options to `true`'
+          );
+        if (
+          (this.cache.clear(),
+          this.cookieStorage.remove('auth0.is.authenticated'),
+          !t)
+        ) {
+          var c = this.buildLogoutUrl(i),
+            s = i.returnTo;
+          if ('web' !== o)
+            return 'ios' === o ? Hi.start(s.split('://')[0], c) : void 0;
+          window.location.assign(c);
+        }
       }),
       (e.prototype.handleRedirectCallback = function (e) {
         return (
@@ -5638,23 +5657,6 @@ var Qi,
           n = r(e, ['federated']),
           o = t ? '&federated' : '';
         return this._url('/v2/logout?' + Wo(n)) + o;
-      }),
-      (e.prototype.logout = function (e) {
-        void 0 === e && (e = {});
-        var t = e.localOnly,
-          n = r(e, ['localOnly']);
-        if (t && n.federated)
-          throw new Error(
-            'It is invalid to set both the `federated` and `localOnly` options to `true`'
-          );
-        if (
-          (this.cache.clear(),
-          this.cookieStorage.remove('auth0.is.authenticated'),
-          !t)
-        ) {
-          var o = this.buildLogoutUrl(n);
-          window.location.assign(o);
-        }
       }),
       (e.prototype._getTokenFromIFrame = function (e) {
         return o(this, void 0, void 0, function () {

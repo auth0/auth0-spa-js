@@ -296,9 +296,9 @@
     I = function (e) {
       return Object(S(e));
     },
-    O = {}.hasOwnProperty,
-    T = function (e, t) {
-      return O.call(I(e), t);
+    T = {}.hasOwnProperty,
+    O = function (e, t) {
+      return T.call(I(e), t);
     },
     x = l.document,
     R = E(x) && E(x.createElement),
@@ -326,7 +326,7 @@
               try {
                 return P(e, t);
               } catch (e) {}
-            if (T(e, t)) return v(!y.f.call(e, t), e[t]);
+            if (O(e, t)) return v(!y.f.call(e, t), e[t]);
           }
     },
     j = function (e) {
@@ -420,14 +420,14 @@
     var se = $('state');
     (ee[se] = !0),
       (Z = function (e, t) {
-        if (T(e, se)) throw new TypeError(te);
+        if (O(e, se)) throw new TypeError(te);
         return (t.facade = e), K(e, se, t), t;
       }),
       (X = function (e) {
-        return T(e, se) ? e[se] : {};
+        return O(e, se) ? e[se] : {};
       }),
       (D = function (e) {
-        return T(e, se);
+        return O(e, se);
       });
   }
   var ae,
@@ -458,7 +458,7 @@
           a = !!i && !!i.enumerable,
           u = !!i && !!i.noTargetGet;
         'function' == typeof o &&
-          ('string' != typeof t || T(o, 'name') || K(o, 'name', t),
+          ('string' != typeof t || O(o, 'name') || K(o, 'name', t),
           (c = n(o)).source ||
             (c.source = r.join('string' == typeof t ? t : ''))),
           e !== l
@@ -515,11 +515,11 @@
         r = _(e),
         o = 0,
         i = [];
-      for (n in r) !T(ee, n) && T(r, n) && i.push(n);
-      for (; t.length > o; ) T(r, (n = t[o++])) && (~ke(i, n) || i.push(n));
+      for (n in r) !O(ee, n) && O(r, n) && i.push(n);
+      for (; t.length > o; ) O(r, (n = t[o++])) && (~ke(i, n) || i.push(n));
       return i;
     },
-    Oe = [
+    Te = [
       'constructor',
       'hasOwnProperty',
       'isPrototypeOf',
@@ -528,12 +528,12 @@
       'toString',
       'valueOf'
     ],
-    Te = Oe.concat('length', 'prototype'),
+    Oe = Te.concat('length', 'prototype'),
     xe = {
       f:
         Object.getOwnPropertyNames ||
         function (e) {
-          return Ie(e, Te);
+          return Ie(e, Oe);
         }
     },
     Re = { f: Object.getOwnPropertySymbols },
@@ -547,7 +547,7 @@
     Le = function (e, t) {
       for (var n = Ce(t), r = F.f, o = A.f, i = 0; i < n.length; i++) {
         var c = n[i];
-        T(e, c) || r(e, c, o(t, c));
+        O(e, c) || r(e, c, o(t, c));
       }
     },
     Pe = /#|\.prototype\./,
@@ -608,8 +608,8 @@
     qe = Be ? He : (He && He.withoutSetter) || q,
     Qe = function (e) {
       return (
-        (T(Me, e) && (Ye || 'string' == typeof Me[e])) ||
-          (Ye && T(He, e) ? (Me[e] = He[e]) : (Me[e] = qe('Symbol.' + e))),
+        (O(Me, e) && (Ye || 'string' == typeof Me[e])) ||
+          (Ye && O(He, e) ? (Me[e] = He[e]) : (Me[e] = qe('Symbol.' + e))),
         Me[e]
       );
     },
@@ -767,14 +767,14 @@
   Et[Qe('toStringTag')] = 'z';
   var kt = '[object z]' === String(Et),
     It = Qe('toStringTag'),
-    Ot =
+    Tt =
       'Arguments' ==
       g(
         (function () {
           return arguments;
         })()
       ),
-    Tt = kt
+    Ot = kt
       ? g
       : function (e) {
           var t, n, r;
@@ -789,7 +789,7 @@
                 } catch (e) {}
               })((t = Object(e)), It))
             ? n
-            : Ot
+            : Tt
             ? g(t)
             : 'Object' == (r = g(t)) && 'function' == typeof t.callee
             ? 'Arguments'
@@ -798,14 +798,14 @@
     xt = kt
       ? {}.toString
       : function () {
-          return '[object ' + Tt(this) + ']';
+          return '[object ' + Ot(this) + ']';
         };
   kt || fe(Object.prototype, 'toString', xt, { unsafe: !0 });
   var Rt,
     Ct =
       Object.keys ||
       function (e) {
-        return Ie(e, Oe);
+        return Ie(e, Te);
       },
     Lt = d
       ? Object.defineProperties
@@ -839,7 +839,7 @@
           e.write(Ut('document.F=Object')),
           e.close(),
           e.F);
-      for (var n = Oe.length; n--; ) delete Ft.prototype[Oe[n]];
+      for (var n = Te.length; n--; ) delete Ft.prototype[Te[n]];
       return Ft();
     };
   ee[At] = !0;
@@ -880,13 +880,13 @@
     Xt = F.f,
     Dt = function (e) {
       var t = de.Symbol || (de.Symbol = {});
-      T(t, e) || Xt(t, e, { value: Zt.f(e) });
+      O(t, e) || Xt(t, e, { value: Zt.f(e) });
     },
     Gt = F.f,
     Jt = Qe('toStringTag'),
     Yt = function (e, t, n) {
       e &&
-        !T((e = n ? e : e.prototype), Jt) &&
+        !O((e = n ? e : e.prototype), Jt) &&
         Gt(e, Jt, { configurable: !0, value: t });
     },
     Bt = [].push,
@@ -1001,11 +1001,11 @@
       var r = k(t, !0);
       return (
         j(n),
-        T(ln, r)
+        O(ln, r)
           ? (n.enumerable
-              ? (T(e, qt) && e[qt][r] && (e[qt][r] = !1),
+              ? (O(e, qt) && e[qt][r] && (e[qt][r] = !1),
                 (n = Kt(n, { enumerable: v(0, !1) })))
-              : (T(e, qt) || sn(e, qt, v(1, {})), (e[qt][r] = !0)),
+              : (O(e, qt) || sn(e, qt, v(1, {})), (e[qt][r] = !0)),
             bn(e, r, n))
           : sn(e, r, n)
       );
@@ -1025,17 +1025,17 @@
       var t = k(e, !0),
         n = un.call(this, t);
       return (
-        !(this === nn && T(ln, t) && !T(fn, t)) &&
-        (!(n || !T(this, t) || !T(ln, t) || (T(this, qt) && this[qt][t])) || n)
+        !(this === nn && O(ln, t) && !O(fn, t)) &&
+        (!(n || !O(this, t) || !O(ln, t) || (O(this, qt) && this[qt][t])) || n)
       );
     },
     En = function (e, t) {
       var n = _(e),
         r = k(t, !0);
-      if (n !== nn || !T(ln, r) || T(fn, r)) {
+      if (n !== nn || !O(ln, r) || O(fn, r)) {
         var o = cn(n, r);
         return (
-          !o || !T(ln, r) || (T(n, qt) && n[qt][r]) || (o.enumerable = !0), o
+          !o || !O(ln, r) || (O(n, qt) && n[qt][r]) || (o.enumerable = !0), o
         );
       }
     },
@@ -1044,7 +1044,7 @@
         n = [];
       return (
         Ht(t, function (e) {
-          T(ln, e) || T(ee, e) || n.push(e);
+          O(ln, e) || O(ee, e) || n.push(e);
         }),
         n
       );
@@ -1055,7 +1055,7 @@
         r = [];
       return (
         Ht(n, function (e) {
-          !T(ln, e) || (t && !T(nn, e)) || r.push(ln[e]);
+          !O(ln, e) || (t && !O(nn, e)) || r.push(ln[e]);
         }),
         r
       );
@@ -1073,7 +1073,7 @@
             t = q(e),
             n = function (e) {
               this === nn && n.call(fn, e),
-                T(this, qt) && T(this[qt], t) && (this[qt][t] = !1),
+                O(this, qt) && O(this[qt], t) && (this[qt][t] = !1),
                 bn(this, t, v(1, e));
             };
           return d && vn && bn(nn, t, { configurable: !0, set: n }), gn(t, e);
@@ -1111,13 +1111,13 @@
       {
         for: function (e) {
           var t = String(e);
-          if (T(dn, t)) return dn[t];
+          if (O(dn, t)) return dn[t];
           var n = rn(t);
           return (dn[t] = n), (pn[n] = t), n;
         },
         keyFor: function (e) {
           if (!mn(e)) throw TypeError(e + ' is not a symbol');
-          if (T(pn, e)) return pn[e];
+          if (O(pn, e)) return pn[e];
         },
         useSetter: function () {
           vn = !0;
@@ -1158,7 +1158,7 @@
     ),
     on)
   ) {
-    var On =
+    var Tn =
       !Ye ||
       f(function () {
         var e = rn();
@@ -1167,7 +1167,7 @@
         );
       });
     ze(
-      { target: 'JSON', stat: !0, forced: On },
+      { target: 'JSON', stat: !0, forced: Tn },
       {
         stringify: function (e, t, n) {
           for (var r, o = [e], i = 1; arguments.length > i; )
@@ -1192,7 +1192,7 @@
     Yt(rn, Qt),
     (ee[qt] = !0),
     Dt('asyncIterator');
-  var Tn = F.f,
+  var On = F.f,
     xn = l.Symbol;
   if (
     d &&
@@ -1214,12 +1214,12 @@
     var Pn = Ln.toString,
       An = 'Symbol(test)' == String(xn('test')),
       jn = /^Symbol\((.*)\)[^)]+$/;
-    Tn(Ln, 'description', {
+    On(Ln, 'description', {
       configurable: !0,
       get: function () {
         var e = E(this) ? this.valueOf() : this,
           t = Pn.call(e);
-        if (T(Rn, e)) return '';
+        if (O(Rn, e)) return '';
         var n = An ? t.slice(7, -1) : t.replace(jn, '$1');
         return '' === n ? void 0 : n;
       }
@@ -1285,7 +1285,7 @@
       : function (e) {
           return (
             (e = I(e)),
-            T(e, Vn)
+            O(e, Vn)
               ? e[Vn]
               : 'function' == typeof e.constructor && e instanceof e.constructor
               ? e.constructor.prototype
@@ -1306,7 +1306,7 @@
         return Un[Dn].call(e) !== e;
       })) &&
       (Un = {}),
-    T(Un, Dn) ||
+    O(Un, Dn) ||
       K(Un, Dn, function () {
         return this;
       });
@@ -1445,7 +1445,7 @@
     },
     hr = Qe('iterator'),
     yr = function (e) {
-      if (null != e) return e[hr] || e['@@iterator'] || Yn[Tt(e)];
+      if (null != e) return e[hr] || e['@@iterator'] || Yn[Ot(e)];
     },
     vr = Qe('iterator'),
     br = !1;
@@ -1524,16 +1524,16 @@
     Er = 'undefined' != typeof ArrayBuffer && 'undefined' != typeof DataView,
     kr = F.f,
     Ir = l.Int8Array,
-    Or = Ir && Ir.prototype,
-    Tr = l.Uint8ClampedArray,
-    xr = Tr && Tr.prototype,
+    Tr = Ir && Ir.prototype,
+    Or = l.Uint8ClampedArray,
+    xr = Or && Or.prototype,
     Rr = Ir && Xn(Ir),
-    Cr = Or && Xn(Or),
+    Cr = Tr && Xn(Tr),
     Lr = Object.prototype,
     Pr = Lr.isPrototypeOf,
     Ar = Qe('toStringTag'),
     jr = q('TYPED_ARRAY_TAG'),
-    Ur = Er && !!Hn && 'Opera' !== Tt(l.opera),
+    Ur = Er && !!Hn && 'Opera' !== Ot(l.opera),
     Fr = {
       Int8Array: 1,
       Uint8Array: 1,
@@ -1548,8 +1548,8 @@
     Kr = { BigInt64Array: 8, BigUint64Array: 8 },
     Wr = function (e) {
       if (!E(e)) return !1;
-      var t = Tt(e);
-      return T(Fr, t) || T(Kr, t);
+      var t = Ot(e);
+      return O(Fr, t) || O(Kr, t);
     };
   for (_r in Fr) l[_r] || (Ur = !1);
   if (
@@ -1562,7 +1562,7 @@
     for (_r in Fr) l[_r] && Hn(l[_r], Rr);
   if ((!Ur || !Cr || Cr === Lr) && ((Cr = Rr.prototype), Ur))
     for (_r in Fr) l[_r] && Hn(l[_r].prototype, Cr);
-  if ((Ur && Xn(xr) !== Cr && Hn(xr, Cr), d && !T(Cr, Ar)))
+  if ((Ur && Xn(xr) !== Cr && Hn(xr, Cr), d && !O(Cr, Ar)))
     for (_r in (!0,
     kr(Cr, Ar, {
       get: function () {
@@ -1580,7 +1580,7 @@
         if (Pr.call(Rr, e)) return e;
       } else
         for (var t in Fr)
-          if (T(Fr, _r)) {
+          if (O(Fr, _r)) {
             var n = l[t];
             if (n && (e === n || Pr.call(n, e))) return e;
           }
@@ -1591,12 +1591,12 @@
         if (n)
           for (var r in Fr) {
             var o = l[r];
-            if (o && T(o.prototype, e))
+            if (o && O(o.prototype, e))
               try {
                 delete o.prototype[e];
               } catch (e) {}
           }
-        (Cr[e] && !n) || fe(Cr, e, n ? t : (Ur && Or[e]) || t);
+        (Cr[e] && !n) || fe(Cr, e, n ? t : (Ur && Tr[e]) || t);
       }
     },
     Zr = Qe('species'),
@@ -1677,7 +1677,7 @@
               return 'symbol' == typeof e
                 ? e
                 : ('string' == typeof e ? 'S' : 'P') + e;
-            if (!T(e, n)) {
+            if (!O(e, n)) {
               if (!o(e)) return 'F';
               if (!t) return 'E';
               i(e);
@@ -1685,7 +1685,7 @@
             return e[n].objectID;
           },
           getWeakData: function (e, t) {
-            if (!T(e, n)) {
+            if (!O(e, n)) {
               if (!o(e)) return !0;
               if (!t) return !1;
               i(e);
@@ -1693,7 +1693,7 @@
             return e[n].weakData;
           },
           onFreeze: function (e) {
-            return Hr && c.REQUIRED && o(e) && !T(e, n) && i(e), e;
+            return Hr && c.REQUIRED && o(e) && !O(e, n) && i(e), e;
           }
         });
       ee[n] = !0;
@@ -2161,7 +2161,7 @@
       (this._deferreds = []),
       Lo(e, this);
   }
-  function Oo(e, t) {
+  function To(e, t) {
     for (; 3 === e._state; ) e = e._value;
     0 !== e._state
       ? ((e._handled = !0),
@@ -2174,12 +2174,12 @@
             } catch (e) {
               return void xo(t.promise, e);
             }
-            To(t.promise, r);
-          } else (1 === e._state ? To : xo)(t.promise, e._value);
+            Oo(t.promise, r);
+          } else (1 === e._state ? Oo : xo)(t.promise, e._value);
         }))
       : e._deferreds.push(t);
   }
-  function To(e, t) {
+  function Oo(e, t) {
     try {
       if (t === e)
         throw new TypeError('A promise cannot be resolved with itself.');
@@ -2211,7 +2211,7 @@
       Io._immediateFn(function () {
         e._handled || Io._unhandledRejectionFn(e._value);
       });
-    for (var t = 0, n = e._deferreds.length; t < n; t++) Oo(e, e._deferreds[t]);
+    for (var t = 0, n = e._deferreds.length; t < n; t++) To(e, e._deferreds[t]);
     e._deferreds = null;
   }
   function Co(e, t, n) {
@@ -2224,7 +2224,7 @@
     try {
       e(
         function (e) {
-          n || ((n = !0), To(t, e));
+          n || ((n = !0), Oo(t, e));
         },
         function (e) {
           n || ((n = !0), xo(t, e));
@@ -2240,7 +2240,7 @@
   }),
     (Io.prototype.then = function (e, t) {
       var n = new this.constructor(ko);
-      return Oo(this, new Co(e, t, n)), n;
+      return To(this, new Co(e, t, n)), n;
     }),
     (Io.prototype.finally = wo),
     (Io.all = function (e) {
@@ -4056,7 +4056,7 @@
         for (var n in t) t.hasOwnProperty(n) && (e[n] = t[n]);
       })(e, t);
   };
-  function Oi(e, t) {
+  function Ti(e, t) {
     function n() {
       this.constructor = e;
     }
@@ -4064,7 +4064,7 @@
       (e.prototype =
         null === t ? Object.create(t) : ((n.prototype = t.prototype), new n()));
   }
-  function Ti(e) {
+  function Oi(e) {
     return 'function' == typeof e;
   }
   var xi = !1,
@@ -4148,7 +4148,7 @@
               for (var a = 0; a < o.length; ++a) {
                 o[a].remove(this);
               }
-            if (Ti(c)) {
+            if (Oi(c)) {
               i && (this._unsubscribe = void 0);
               try {
                 c.call(this);
@@ -4261,7 +4261,7 @@
         return i;
       }
       return (
-        Oi(t, e),
+        Ti(t, e),
         (t.prototype[Fi] = function () {
           return this;
         }),
@@ -4312,14 +4312,14 @@
         c._parentSubscriber = t;
         var s = c;
         return (
-          Ti(n)
+          Oi(n)
             ? (i = n)
             : n &&
               ((i = n.next),
               (r = n.error),
               (o = n.complete),
               n !== Li &&
-                (Ti((s = Object.create(n)).unsubscribe) &&
+                (Oi((s = Object.create(n)).unsubscribe) &&
                   c.add(s.unsubscribe.bind(s)),
                 (s.unsubscribe = c.unsubscribe.bind(c)))),
           (c._context = s),
@@ -4330,7 +4330,7 @@
         );
       }
       return (
-        Oi(t, e),
+        Ti(t, e),
         (t.prototype.next = function (e) {
           if (!this.isStopped && this._next) {
             var t = this._parentSubscriber;
@@ -4545,7 +4545,7 @@
         return (o.project = n), (o.count = 0), (o.thisArg = r || o), o;
       }
       return (
-        Oi(t, e),
+        Ti(t, e),
         (t.prototype._next = function (e) {
           var t;
           try {
@@ -4560,7 +4560,7 @@
     })(Ki);
   function Ji(e, t, n, r) {
     return (
-      Ti(n) && ((r = n), (n = void 0)),
+      Oi(n) && ((r = n), (n = void 0)),
       r
         ? Ji(e, t, n).pipe(
             ((o = function (e) {
@@ -5387,20 +5387,17 @@
                     return (
                       (t = e.redirectMethod),
                       (n = e.platform),
-                      (o = void 0 === n ? 'web' : n),
+                      (o = void 0 === n ? this.options.platform || 'web' : n),
                       (c = r(e, ['redirectMethod', 'platform'])),
                       [4, this.buildAuthorizeUrl(c)]
                     );
                   case 1:
                     return (
                       (s = i.sent()),
-                      (a = c.redirect_uri || this.options.redirect_uri),
-                      console.log({
-                        platform: o,
-                        redirect_uri: a,
-                        urlOptions: c,
-                        url: s.replace(/^https?:\/\//, '')
-                      }),
+                      (a =
+                        c.redirect_uri ||
+                        this.options.redirect_uri ||
+                        window.location.origin),
                       'web' === o
                         ? (window.location[t || 'assign'](s), [2])
                         : 'ios' === o
@@ -5411,6 +5408,28 @@
               });
             })
           );
+        }),
+        (e.prototype.logout = function (e) {
+          void 0 === e && (e = {});
+          var t = e.localOnly,
+            n = e.platform,
+            o = void 0 === n ? this.options.platform || 'web' : n,
+            i = r(e, ['localOnly', 'platform']);
+          if (t && i.federated)
+            throw new Error(
+              'It is invalid to set both the `federated` and `localOnly` options to `true`'
+            );
+          if (
+            (this.cache.clear(),
+            this.cookieStorage.remove('auth0.is.authenticated'),
+            !t)
+          ) {
+            var c = this.buildLogoutUrl(i),
+              s = i.returnTo;
+            if ('web' !== o)
+              return 'ios' === o ? ac.start(s.split('://')[0], c) : void 0;
+            window.location.assign(c);
+          }
         }),
         (e.prototype.handleRedirectCallback = function (e) {
           return (
@@ -5710,23 +5729,6 @@
             n = r(e, ['federated']),
             o = t ? '&federated' : '';
           return this._url('/v2/logout?' + Mo(n)) + o;
-        }),
-        (e.prototype.logout = function (e) {
-          void 0 === e && (e = {});
-          var t = e.localOnly,
-            n = r(e, ['localOnly']);
-          if (t && n.federated)
-            throw new Error(
-              'It is invalid to set both the `federated` and `localOnly` options to `true`'
-            );
-          if (
-            (this.cache.clear(),
-            this.cookieStorage.remove('auth0.is.authenticated'),
-            !t)
-          ) {
-            var o = this.buildLogoutUrl(n);
-            window.location.assign(o);
-          }
         }),
         (e.prototype._getTokenFromIFrame = function (e) {
           return o(this, void 0, void 0, function () {
