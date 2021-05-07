@@ -159,7 +159,26 @@ export default class Auth0Client {
 
   constructor(private options: Auth0ClientOptions) {
     typeof window !== 'undefined' && validateCrypto();
-    this.cacheLocation = options.cacheLocation || CACHE_LOCATION_MEMORY;
+
+    if (options.cache && options.cacheLocation) {
+      console.warn(
+        'Both `cache` and `cacheLocation` options have been specified in the Auth0Client configuration; ignoring `cacheLocation` and using `cache`.'
+      );
+    }
+
+    let cache: ICache;
+
+    if (options.cache) {
+      cache = options.cache;
+    } else {
+      this.cacheLocation = options.cacheLocation || CACHE_LOCATION_MEMORY;
+
+      if (!cacheFactory(this.cacheLocation)) {
+        throw new Error(`Invalid cache location "${this.cacheLocation}"`);
+      }
+
+      cache = cacheFactory(this.cacheLocation)();
+    }
 
     this.cookieStorage =
       options.legacySameSiteCookie === false
@@ -169,15 +188,9 @@ export default class Auth0Client {
     this.sessionCheckExpiryDays =
       options.sessionCheckExpiryDays || DEFAULT_SESSION_CHECK_EXPIRY_DAYS;
 
-    if (!cacheFactory(this.cacheLocation)) {
-      throw new Error(`Invalid cache location "${this.cacheLocation}"`);
-    }
-
     const transactionStorage = options.useCookiesForTransactions
       ? this.cookieStorage
       : SessionStorage;
-
-    const cache = cacheFactory(this.cacheLocation)();
 
     this.scope = this.options.scope;
     this.transactionManager = new TransactionManager(transactionStorage);

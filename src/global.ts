@@ -1,3 +1,5 @@
+import { ICache } from './cache';
+
 /**
  * @ignore
  */
@@ -62,19 +64,19 @@ export interface BaseLoginOptions {
    * along with this scope
    */
   scope?: string;
-  
+
   /**
    * The default audience to be used for requesting API access.
    */
   audience?: string;
-  
+
   /**
    * The name of the connection configured for your application.
    * If null, it will redirect to the Auth0 Login Page and show
    * the Login Widget.
    */
   connection?: string;
-  
+
   /**
    * The Id of an organization to log in to.
    *
@@ -82,12 +84,12 @@ export interface BaseLoginOptions {
    * the `org_id` claim in your user's ID Token.
    */
   organization?: string;
-  
+
   /**
    * The Id of an invitation to accept. This is available from the user invitation URL that is given when participating in a user invitation flow.
    */
   invitation?: string;
-  
+
   /**
    * If you need to send custom parameters to the Authorization Server,
    * make sure to use the original parameter name.
@@ -142,6 +144,11 @@ export interface Auth0ClientOptions extends BaseLoginOptions {
    * Read more about [changing storage options in the Auth0 docs](https://auth0.com/docs/libraries/auth0-single-page-app-sdk#change-storage-options)
    */
   cacheLocation?: CacheLocation;
+
+  /**
+   * Specify a custom cache implementation to use for token storage and retrieval. This setting takes precedence over `cacheLocation` if they are both specified.
+   */
+  cache?: ICache;
 
   /**
    * If true, refresh tokens are used to fetch new access tokens from the Auth0 server. If false, the legacy technique of using a hidden iframe and the `authorization_code` grant with `prompt=none` is used.
