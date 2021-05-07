@@ -503,7 +503,12 @@ export default class Auth0Client {
     const url = await this.buildAuthorizeUrl(urlOptions);
     const redirect_uri = urlOptions.redirect_uri || this.options.redirect_uri;
 
-    console.log({ platform, redirect_uri, urlOptions, url });
+    console.log({
+      platform,
+      redirect_uri,
+      urlOptions,
+      url: url.replace(/^https?:\/\//, '')
+    });
 
     if (platform === 'web') {
       window.location[redirectMethod || 'assign'](url);
@@ -511,7 +516,10 @@ export default class Auth0Client {
     }
 
     if (platform === 'ios') {
-      return IosASWebauthenticationSession.start(redirect_uri, url);
+      return IosASWebauthenticationSession.start(
+        redirect_uri,
+        url.replace(/^https?:\/\//, '')
+      );
     }
   }
 

@@ -5399,12 +5399,12 @@
                         platform: o,
                         redirect_uri: a,
                         urlOptions: c,
-                        url: s
+                        url: s.replace(/^https?:\/\//, '')
                       }),
                       'web' === o
                         ? (window.location[t || 'assign'](s), [2])
                         : 'ios' === o
-                        ? [2, ac.start(a, s)]
+                        ? [2, ac.start(a, s.replace(/^https?:\/\//, ''))]
                         : [2]
                     );
                 }

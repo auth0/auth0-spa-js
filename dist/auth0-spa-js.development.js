@@ -8167,7 +8167,7 @@
                 platform: platform,
                 redirect_uri: redirect_uri,
                 urlOptions: urlOptions,
-                url: url
+                url: url.replace(/^https?:\/\//, '')
               });
               if (platform === 'web') {
                 window.location[redirectMethod || 'assign'](url);
@@ -8176,7 +8176,10 @@
               if (platform === 'ios') {
                 return [
                   2 /*return*/,
-                  IosASWebauthenticationSession.start(redirect_uri, url)
+                  IosASWebauthenticationSession.start(
+                    redirect_uri,
+                    url.replace(/^https?:\/\//, '')
+                  )
                 ];
               }
               return [2 /*return*/];

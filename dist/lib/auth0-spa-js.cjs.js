@@ -5893,7 +5893,7 @@ var Auth0Client = /** @class */ (function () {
               platform: platform,
               redirect_uri: redirect_uri,
               urlOptions: urlOptions,
-              url: url
+              url: url.replace(/^https?:\/\//, '')
             });
             if (platform === 'web') {
               window.location[redirectMethod || 'assign'](url);
@@ -5904,7 +5904,7 @@ var Auth0Client = /** @class */ (function () {
                 2 /*return*/,
                 iosAswebauthenticationsessionApi.IosASWebauthenticationSession.start(
                   redirect_uri,
-                  url
+                  url.replace(/^https?:\/\//, '')
                 )
               ];
             }
