@@ -57,12 +57,11 @@ export class LocalStorageCache implements ICache {
       return;
     }
 
-    payload = JSON.parse(json);
-
-    if (!payload) {
+    try {
+      payload = JSON.parse(json);
+      return payload;
+    } catch (e) {
       return;
     }
-
-    return payload;
   }
 }

@@ -33,3 +33,6 @@ export const TEST_USER_ID = 'user-id';
 export const TEST_USER_EMAIL = 'user@email.com';
 export const TEST_APP_STATE = { bestPet: 'dog' };
 export const TEST_ORG_ID = 'org_id_123';
+
+export const nowSeconds = () => Math.floor(Date.now() / 1000);
+export const dayInSeconds = 86400;
