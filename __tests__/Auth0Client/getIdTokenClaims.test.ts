@@ -73,10 +73,8 @@ describe('Auth0Client', () => {
   describe('getIdTokenClaims', () => {
     it('returns undefined if there is no cache', async () => {
       const auth0 = setup();
-
-      jest.spyOn(auth0['cache'], 'get').mockReturnValueOnce(undefined);
-
       const decodedToken = await auth0.getIdTokenClaims();
+
       expect(decodedToken).toBeUndefined();
     });
 

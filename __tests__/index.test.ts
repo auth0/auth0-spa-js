@@ -4,6 +4,7 @@ import * as scope from '../src/scope';
 // @ts-ignore
 
 jest.mock('../src/jwt');
+
 jest.mock('../src/storage', () => ({
   SessionStorage: {
     get: jest.fn(),
@@ -30,7 +31,6 @@ import createAuth0Client, { Auth0Client } from '../src/index';
 
 import {
   TEST_ACCESS_TOKEN,
-  TEST_APP_STATE,
   TEST_ARRAY_BUFFER,
   TEST_BASE64_ENCODED_STRING,
   TEST_CLIENT_ID,
@@ -40,35 +40,13 @@ import {
   TEST_ID_TOKEN,
   TEST_QUERY_PARAMS,
   TEST_RANDOM_STRING,
-  TEST_SCOPES,
   TEST_USER_ID
 } from './constants';
 
-const mockEnclosedCache = {
-  get: jest.fn(),
-  save: jest.fn(),
-  clear: jest.fn()
-};
-jest.mock('../src/cache', () => {
-  const { CacheKey } = jest.requireActual('../src/cache');
-  return {
-    InMemoryCache: () => ({
-      enclosedCache: mockEnclosedCache
-    }),
-    LocalStorageCache: () => mockEnclosedCache,
-    CacheKey: CacheKey
-  };
-});
-
 jest.mock('../src/worker/token.worker');
-
-const webWorkerMatcher = expect.objectContaining({
-  postMessage: expect.any(Function)
-});
 
 const setup = async (clientOptions: Partial<Auth0ClientOptions> = {}) => {
   const getDefaultInstance = m => require(m).default.mock.instances[0];
-  const cache = mockEnclosedCache;
   const tokenVerifier = require('../src/jwt').verify;
   const utils = require('../src/utils');
   const api = require('../src/api');
@@ -124,7 +102,6 @@ const setup = async (clientOptions: Partial<Auth0ClientOptions> = {}) => {
   return {
     auth0,
     cookieStorage: require('../src/storage').CookieStorageWithLegacySameSite,
-    cache,
     tokenVerifier,
     transactionManager,
     utils,

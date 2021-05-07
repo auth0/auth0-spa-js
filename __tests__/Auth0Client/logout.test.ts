@@ -115,11 +115,11 @@ describe('Auth0Client', () => {
 
     it('clears the cache', async () => {
       const auth0 = setup();
-      jest.spyOn(auth0['cache'], 'clear').mockReturnValueOnce(undefined);
+      jest.spyOn(auth0['cacheManager'], 'clear').mockReturnValueOnce(undefined);
 
       auth0.logout();
 
-      expect(auth0['cache']['clear']).toHaveBeenCalled();
+      expect(auth0['cacheManager']['clear']).toHaveBeenCalled();
     });
 
     it('removes `auth0.is.authenticated` key from storage when `options.localOnly` is true', async () => {

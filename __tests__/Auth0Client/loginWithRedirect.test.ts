@@ -360,11 +360,11 @@ describe('Auth0Client', () => {
     it('saves into cache', async () => {
       const auth0 = setup();
 
-      jest.spyOn(auth0['cache'], 'save');
+      jest.spyOn(auth0['cacheManager'], 'set');
 
       await loginWithRedirect(auth0);
 
-      expect(auth0['cache']['save']).toHaveBeenCalledWith(
+      expect(auth0['cacheManager']['set']).toHaveBeenCalledWith(
         expect.objectContaining({
           client_id: TEST_CLIENT_ID,
           access_token: TEST_ACCESS_TOKEN,
