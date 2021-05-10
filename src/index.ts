@@ -23,6 +23,7 @@ export default async function createAuth0Client(options: Auth0ClientOptions) {
 }
 
 export { Auth0Client };
+
 export {
   GenericError,
   AuthenticationError,
@@ -30,3 +31,5 @@ export {
   PopupTimeoutError,
   PopupCancelledError
 } from './errors';
+
+export { ICache, LocalStorageCache, InMemoryCache } from './cache';
