@@ -7,7 +7,7 @@ import {
 
 export class LocalStorageCache implements ICache {
   public set(key: string, entry: unknown): Promise<void> {
-    window.localStorage.setItem(key, JSON.stringify(entry));
+    localStorage.setItem(key, JSON.stringify(entry));
     return Promise.resolve();
   }
 
@@ -61,6 +61,7 @@ export class LocalStorageCache implements ICache {
       payload = JSON.parse(json);
       return payload;
     } catch (e) {
+      /* istanbul ignore next */
       return;
     }
   }
