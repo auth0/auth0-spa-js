@@ -1,4 +1,16 @@
-# @auth0/auth0-spa-js
+# auth0-spa-js-ionic
+
+This is a fork from `@auth0/auth0-spa-js` to enable using auth0 in ionic+react apps.
+For iOS it uses ASWebauthenticationSession to handle redirection to auth0 with is the recommended way by Apple
+
+Please make sure you have the below plugins installed in you ionic app.
+
+```
+@ionic-native/ios-aswebauthenticationsession-api
+cordova-plugin-ios-aswebauthenticationsession-api
+```
+
+Any PR's most welcome.
 
 Auth0 SDK for Single Page Applications using [Authorization Code Grant Flow with PKCE](https://auth0.com/docs/api-auth/tutorials/authorization-code-grant-pkce).
 
@@ -59,7 +71,8 @@ import createAuth0Client from '@auth0/auth0-spa-js';
 const auth0 = await createAuth0Client({
   domain: '<AUTH0_DOMAIN>',
   client_id: '<AUTH0_CLIENT_ID>',
-  redirect_uri: '<MY_CALLBACK_URL>'
+  redirect_uri: '<MY_CALLBACK_URL>',
+  platform: 'ios' // or 'web' or 'android'. if empty sets to 'web'
 });
 
 //with promises
