@@ -7,9 +7,10 @@ import * as scope from '../../src/scope';
 
 // @ts-ignore
 
-import { setupFn } from './helpers';
+import { loginWithRedirectFn, setupFn } from './helpers';
 
 import { TEST_CLIENT_ID, TEST_CODE_CHALLENGE, TEST_DOMAIN } from '../constants';
+import { ICache } from '../../src/cache';
 
 jest.mock('unfetch');
 jest.mock('es-cookie');
@@ -19,6 +20,13 @@ jest.mock('../../src/worker/token.worker');
 const mockWindow = <any>global;
 const mockFetch = (mockWindow.fetch = <jest.Mock>unfetch);
 const mockVerify = <jest.Mock>verify;
+
+const mockCache: ICache = {
+  set: jest.fn().mockResolvedValue(null),
+  get: jest.fn().mockResolvedValue(null),
+  remove: jest.fn().mockResolvedValue(null),
+  clear: jest.fn().mockResolvedValue(null)
+};
 
 jest
   .spyOn(utils, 'bufferToBase64UrlEncoded')
@@ -129,6 +137,27 @@ describe('Auth0Client', () => {
       });
 
       expect((<any>auth0).tokenIssuer).toEqual('https://some.issuer.com/');
+    });
+
+    it('uses a custom cache if one was given in the configuration', async () => {
+      const auth0 = setup({
+        cache: mockCache
+      });
+
+      await loginWithRedirectFn(mockWindow, mockFetch)(auth0);
+
+      expect(mockCache.set).toHaveBeenCalled();
+    });
+
+    it('uses a custom cache if both `cache` and `cacheLocation` were specified', async () => {
+      const auth0 = setup({
+        cache: mockCache,
+        cacheLocation: 'localstorage'
+      });
+
+      await loginWithRedirectFn(mockWindow, mockFetch)(auth0);
+
+      expect(mockCache.set).toHaveBeenCalled();
     });
   });
 
