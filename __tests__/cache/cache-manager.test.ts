@@ -20,7 +20,7 @@ describe('CacheManager', () => {
   it('returns undefined from the cache when expires_in < expiryAdjustmentSeconds', async () => {
     const data = {
       client_id: TEST_CLIENT_ID,
-      audience: 'the_audience',
+      audience: TEST_AUDIENCE,
       scope: TEST_SCOPES,
       id_token: TEST_ID_TOKEN,
       access_token: TEST_ACCESS_TOKEN,
@@ -56,7 +56,7 @@ describe('CacheManager', () => {
 
       const data = {
         client_id: TEST_CLIENT_ID,
-        audience: 'the_audience',
+        audience: TEST_AUDIENCE,
         scope: TEST_SCOPES,
         id_token: TEST_ID_TOKEN,
         access_token: TEST_ACCESS_TOKEN,
@@ -76,7 +76,7 @@ describe('CacheManager', () => {
 
       const cacheKey = new CacheKey({
         client_id: TEST_CLIENT_ID,
-        audience: 'the_audience',
+        audience: TEST_AUDIENCE,
         scope: TEST_SCOPES
       });
 
@@ -101,7 +101,7 @@ describe('CacheManager', () => {
 
     const data = {
       client_id: TEST_CLIENT_ID,
-      audience: 'the_audience',
+      audience: TEST_AUDIENCE,
       scope: TEST_SCOPES,
       id_token: TEST_ID_TOKEN,
       access_token: TEST_ACCESS_TOKEN,
@@ -120,7 +120,7 @@ describe('CacheManager', () => {
 
     const cacheKey = new CacheKey({
       client_id: TEST_CLIENT_ID,
-      audience: 'the_audience',
+      audience: TEST_AUDIENCE,
       scope: TEST_SCOPES
     });
 
@@ -143,7 +143,7 @@ describe('CacheManager', () => {
 
     const data = {
       client_id: TEST_CLIENT_ID,
-      audience: 'the_audience',
+      audience: TEST_AUDIENCE,
       scope: TEST_SCOPES,
       id_token: TEST_ID_TOKEN,
       access_token: TEST_ACCESS_TOKEN,
@@ -162,7 +162,7 @@ describe('CacheManager', () => {
 
     const cacheKey = new CacheKey({
       client_id: TEST_CLIENT_ID,
-      audience: 'the_audience',
+      audience: TEST_AUDIENCE,
       scope: TEST_SCOPES
     });
 
