@@ -3,7 +3,7 @@
   "name": "auth0-spa-js-ionic",
   "description": "Auth0 SDK for Single Page Applications and Ionic/Capacitor/React using Authorization Code Grant Flow with PKCE",
   "license": "MIT",
-  "version": "1.15.2",
+  "version": "1.15.1",
   "main": "dist/lib/auth0-spa-js.cjs.js",
   "types": "dist/typings/index.d.ts",
   "module": "dist/auth0-spa-js.production.esm.js",
@@ -28,10 +28,7 @@
     "serve:coverage": "serve coverage/lcov-report -n",
     "serve:stats": "serve bundle-stats -n",
     "print-bundle-size": "node ./scripts/print-bundle-size",
-    "prepack": "npm run build && npm run test && node ./scripts/prepack",
-    "release": "node ./scripts/release",
-    "release:clean": "node ./scripts/cleanup",
-    "publish:cdn": "ccu --trace"
+    "prepack": "npm run build && npm run test && node ./scripts/prepack"
   },
   "devDependencies": {
     "@auth0/component-cdn-uploader": "github:auth0/component-cdn-uploader#v2.2.2",
