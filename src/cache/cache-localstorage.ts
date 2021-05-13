@@ -12,14 +12,12 @@ export class LocalStorageCache implements ICache {
   }
 
   public get(key: string): Promise<unknown> {
-    return new Promise(resolve => {
-      const cacheKey = CacheKey.fromKey(key);
-      const payload = this.readJson(cacheKey);
+    const cacheKey = CacheKey.fromKey(key);
+    const payload = this.readJson(cacheKey);
 
-      if (!payload) resolve(null);
+    if (!payload) return Promise.resolve(null);
 
-      resolve(payload);
-    });
+    return Promise.resolve(payload);
   }
 
   public remove(key: string): Promise<void> {
@@ -28,15 +26,13 @@ export class LocalStorageCache implements ICache {
   }
 
   public clear(): Promise<void> {
-    return new Promise(resolve => {
-      for (var i = localStorage.length - 1; i >= 0; i--) {
-        if (localStorage.key(i).startsWith(CACHE_KEY_PREFIX)) {
-          localStorage.removeItem(localStorage.key(i));
-        }
+    for (var i = localStorage.length - 1; i >= 0; i--) {
+      if (localStorage.key(i).startsWith(CACHE_KEY_PREFIX)) {
+        localStorage.removeItem(localStorage.key(i));
       }
+    }
 
-      resolve();
-    });
+    return Promise.resolve();
   }
 
   /**
@@ -48,6 +44,7 @@ export class LocalStorageCache implements ICache {
       cacheKey,
       Object.keys(window.localStorage)
     );
+
     const json =
       existingCacheKey && window.localStorage.getItem(existingCacheKey);
 

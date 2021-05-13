@@ -11,22 +11,20 @@ export class InMemoryCache {
       },
 
       get(key: string): Promise<Partial<CacheEntry> | undefined> {
-        return new Promise(resolve => {
-          const cacheKey = CacheKey.fromKey(key);
+        const cacheKey = CacheKey.fromKey(key);
 
-          const existingCacheKey = findExistingCacheKey(
-            cacheKey,
-            Object.keys(cache)
-          );
+        const existingCacheKey = findExistingCacheKey(
+          cacheKey,
+          Object.keys(cache)
+        );
 
-          const cacheEntry = cache[existingCacheKey];
+        const cacheEntry = cache[existingCacheKey];
 
-          if (!cacheEntry) {
-            return resolve(null);
-          }
+        if (!cacheEntry) {
+          return Promise.resolve(null);
+        }
 
-          resolve(cacheEntry);
-        });
+        return Promise.resolve(cacheEntry);
       },
 
       remove(key: string): Promise<void> {
