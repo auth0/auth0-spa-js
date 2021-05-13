@@ -47,8 +47,8 @@ export interface CacheEntry {
 }
 
 export interface ICache {
-  set(key: string, entry: unknown): Promise<void>;
-  get(key: string): Promise<unknown>;
+  set<T = unknown>(key: string, entry: T): Promise<void>;
+  get<T = unknown>(key: string): Promise<T>;
   remove(key: string): Promise<void>;
   clear(): Promise<void>;
 }

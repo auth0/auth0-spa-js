@@ -15,7 +15,7 @@ export class CacheManager {
     expiryAdjustmentSeconds = DEFAULT_EXPIRY_ADJUSTMENT_SECONDS
   ): Promise<Partial<CacheEntry> | undefined> {
     const key = cacheKey.toKey();
-    const wrappedEntry = (await this.cache.get(key)) as WrappedCacheEntry;
+    const wrappedEntry = await this.cache.get<WrappedCacheEntry>(key);
     const nowSeconds = Math.floor(Date.now() / 1000);
 
     if (!wrappedEntry) return;

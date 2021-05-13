@@ -1,16 +1,16 @@
-import { ICache, CacheEntry, CacheKey, findExistingCacheKey } from './shared';
+import { ICache, CacheKey, findExistingCacheKey } from './shared';
 
 export class InMemoryCache {
   public enclosedCache: ICache = (function () {
     let cache: Record<string, unknown> = {};
 
     return {
-      set(key: string, entry: unknown): Promise<void> {
+      set<T = unknown>(key: string, entry: T): Promise<void> {
         cache[key] = entry;
         return Promise.resolve();
       },
 
-      get(key: string): Promise<Partial<CacheEntry> | undefined> {
+      get<T = unknown>(key: string): Promise<T> {
         const cacheKey = CacheKey.fromKey(key);
 
         const existingCacheKey = findExistingCacheKey(
@@ -18,7 +18,7 @@ export class InMemoryCache {
           Object.keys(cache)
         );
 
-        const cacheEntry = cache[existingCacheKey];
+        const cacheEntry = cache[existingCacheKey] as T;
 
         if (!cacheEntry) {
           return Promise.resolve(null);

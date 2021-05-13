@@ -6,14 +6,14 @@ import {
 } from './shared';
 
 export class LocalStorageCache implements ICache {
-  public set(key: string, entry: unknown): Promise<void> {
+  public set<T = unknown>(key: string, entry: T): Promise<void> {
     localStorage.setItem(key, JSON.stringify(entry));
     return Promise.resolve();
   }
 
-  public get(key: string): Promise<unknown> {
+  public get<T = unknown>(key: string): Promise<T> {
     const cacheKey = CacheKey.fromKey(key);
-    const payload = this.readJson(cacheKey);
+    const payload = this.readJson<T>(cacheKey);
 
     if (!payload) return Promise.resolve(null);
 
@@ -39,7 +39,7 @@ export class LocalStorageCache implements ICache {
    * Retrieves data from local storage and parses it into the correct format
    * @param cacheKey The cache key
    */
-  private readJson(cacheKey: CacheKey): unknown {
+  private readJson<T>(cacheKey: CacheKey): T {
     const existingCacheKey = findExistingCacheKey(
       cacheKey,
       Object.keys(window.localStorage)
