@@ -28,6 +28,16 @@ export class CacheKey {
 
     return new CacheKey({ client_id, scope, audience }, prefix);
   }
+
+  static fromCacheEntry(entry: CacheEntry): CacheKey {
+    const { scope, audience, client_id } = entry;
+
+    return new CacheKey({
+      scope,
+      audience,
+      client_id
+    });
+  }
 }
 
 interface DecodedToken {

@@ -56,12 +56,7 @@ cacheDescriptors.forEach(descriptor => {
 
     it('retrieves values from the cache', async () => {
       const data = {
-        client_id: TEST_CLIENT_ID,
-        audience: 'the_audience',
-        scope: TEST_SCOPES,
-        id_token: TEST_ID_TOKEN,
-        access_token: TEST_ACCESS_TOKEN,
-        expires_in: dayInSeconds,
+        ...defaultEntry,
         decodedToken: {
           claims: {
             __raw: TEST_ID_TOKEN,
@@ -72,11 +67,7 @@ cacheDescriptors.forEach(descriptor => {
         }
       };
 
-      const cacheKey = new CacheKey({
-        client_id: TEST_CLIENT_ID,
-        audience: 'the_audience',
-        scope: TEST_SCOPES
-      });
+      const cacheKey = CacheKey.fromCacheEntry(data);
 
       await cache.set(cacheKey.toKey(), data);
       expect(await cache.get(cacheKey.toKey())).toStrictEqual(data);
@@ -84,12 +75,8 @@ cacheDescriptors.forEach(descriptor => {
 
     it('retrieves values from the cache when scopes do not match', async () => {
       const data = {
-        client_id: TEST_CLIENT_ID,
-        audience: 'the_audience',
+        ...defaultEntry,
         scope: 'the_scope the_scope2',
-        id_token: TEST_ID_TOKEN,
-        access_token: TEST_ACCESS_TOKEN,
-        expires_in: dayInSeconds,
         decodedToken: {
           claims: {
             __raw: TEST_ID_TOKEN,
@@ -102,7 +89,7 @@ cacheDescriptors.forEach(descriptor => {
 
       const cacheKey = new CacheKey({
         client_id: TEST_CLIENT_ID,
-        audience: 'the_audience',
+        audience: TEST_AUDIENCE,
         scope: 'the_scope'
       });
 
@@ -112,12 +99,8 @@ cacheDescriptors.forEach(descriptor => {
 
     it('retrieves values from the cache when scopes do not match and multiple scopes are provided in a different order', async () => {
       const data = {
-        client_id: TEST_CLIENT_ID,
-        audience: 'the_audience',
+        ...defaultEntry,
         scope: 'the_scope the_scope2 the_scope3',
-        id_token: TEST_ID_TOKEN,
-        access_token: TEST_ACCESS_TOKEN,
-        expires_in: dayInSeconds,
         decodedToken: {
           claims: {
             __raw: TEST_ID_TOKEN,
@@ -130,7 +113,7 @@ cacheDescriptors.forEach(descriptor => {
 
       const cacheKey = new CacheKey({
         client_id: TEST_CLIENT_ID,
-        audience: 'the_audience',
+        audience: TEST_AUDIENCE,
         scope: 'the_scope3 the_scope'
       });
 
@@ -141,7 +124,7 @@ cacheDescriptors.forEach(descriptor => {
     it('returns undefined when not all scopes match', async () => {
       const data = {
         client_id: TEST_CLIENT_ID,
-        audience: 'the_audience',
+        audience: TEST_AUDIENCE,
         scope: 'the_scope the_scope2 the_scope3',
         id_token: TEST_ID_TOKEN,
         access_token: TEST_ACCESS_TOKEN,
@@ -156,22 +139,17 @@ cacheDescriptors.forEach(descriptor => {
         }
       };
 
+      const cacheKey = CacheKey.fromCacheEntry(data);
+
       // Set cache with one set of scopes..
-      await cache.set(
-        new CacheKey({
-          client_id: data.client_id,
-          scope: data.scope,
-          audience: data.audience
-        }).toKey(),
-        data
-      );
+      await cache.set(cacheKey.toKey(), data);
 
       // Retrieve with another
       expect(
         await cache.get(
           new CacheKey({
             client_id: TEST_CLIENT_ID,
-            audience: 'the_audience',
+            audience: TEST_AUDIENCE,
             scope: 'the_scope4 the_scope'
           }).toKey()
         )
@@ -179,11 +157,7 @@ cacheDescriptors.forEach(descriptor => {
     });
 
     it('can remove an item from the cache', async () => {
-      const cacheKey = new CacheKey({
-        client_id: defaultEntry.client_id,
-        audience: defaultEntry.audience,
-        scope: defaultEntry.scope
-      }).toKey();
+      const cacheKey = CacheKey.fromCacheEntry(defaultEntry).toKey();
 
       await cache.set(cacheKey, defaultEntry);
       expect(await cache.get(cacheKey)).toStrictEqual(defaultEntry);
@@ -202,11 +176,7 @@ describe('LocalStorage Cache', () => {
     localStorage.setItem('some-key-2', "doesn't matter what the data is");
 
     const keys = [
-      new CacheKey({
-        client_id: defaultEntry.client_id,
-        audience: defaultEntry.audience,
-        scope: defaultEntry.scope
-      }),
+      CacheKey.fromCacheEntry(defaultEntry),
       new CacheKey({
         client_id: 'client-id-2',
         audience: defaultEntry.audience,

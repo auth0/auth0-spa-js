@@ -74,11 +74,7 @@ describe('CacheManager', () => {
 
       await manager.set(data);
 
-      const cacheKey = new CacheKey({
-        client_id: TEST_CLIENT_ID,
-        audience: TEST_AUDIENCE,
-        scope: TEST_SCOPES
-      });
+      const cacheKey = CacheKey.fromCacheEntry(data);
 
       // Test that the cache state is normal up until just before the expiry time..
       expect(await manager.get(cacheKey)).toStrictEqual(data);
@@ -118,11 +114,7 @@ describe('CacheManager', () => {
 
     await manager.set(data);
 
-    const cacheKey = new CacheKey({
-      client_id: TEST_CLIENT_ID,
-      audience: TEST_AUDIENCE,
-      scope: TEST_SCOPES
-    });
+    const cacheKey = CacheKey.fromCacheEntry(data);
 
     // Test that the cache state is normal before we expire the data
     expect(await manager.get(cacheKey)).toStrictEqual(data);
@@ -160,11 +152,7 @@ describe('CacheManager', () => {
 
     await manager.set(data);
 
-    const cacheKey = new CacheKey({
-      client_id: TEST_CLIENT_ID,
-      audience: TEST_AUDIENCE,
-      scope: TEST_SCOPES
-    });
+    const cacheKey = CacheKey.fromCacheEntry(data);
 
     // Test that the cache state is normal before we expire the data
     expect(await manager.get(cacheKey)).toStrictEqual(data);
