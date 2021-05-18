@@ -1,4 +1,5 @@
 import { AuthenticationResult, PopupConfigOptions } from './global';
+import digestSync from 'crypto-digest-sync';
 
 import {
   DEFAULT_AUTHORIZE_TIMEOUT_IN_SECONDS,
@@ -170,36 +171,9 @@ export const createQueryParams = (params: any) => {
     .join('&');
 };
 
-export const sha256 = async (s: string) => {
-  const digestOp: any = getCryptoSubtle().digest(
-    { name: 'SHA-256' },
-    new TextEncoder().encode(s)
-  );
-
-  // msCrypto (IE11) uses the old spec, which is not Promise based
-  // https://msdn.microsoft.com/en-us/expression/dn904640(v=vs.71)
-  // Instead of returning a promise, it returns a CryptoOperation
-  // with a result property in it.
-  // As a result, the various events need to be handled in the event that we're
-  // working in IE11 (hence the msCrypto check). These events just call resolve
-  // or reject depending on their intention.
-  if ((window as any).msCrypto) {
-    return new Promise((res, rej) => {
-      digestOp.oncomplete = (e: any) => {
-        res(e.target.result);
-      };
-
-      digestOp.onerror = (e: ErrorEvent) => {
-        rej(e.error);
-      };
-
-      digestOp.onabort = () => {
-        rej('The digest operation was aborted');
-      };
-    });
-  }
-
-  return await digestOp;
+export const sha256 = (s: string): ArrayBuffer => {
+  const buffer = new TextEncoder().encode(s);
+  return digestSync('SHA-256', buffer);
 };
 
 const urlEncodeB64 = (input: string) => {
@@ -221,7 +195,9 @@ const decodeB64 = (input: string) =>
 export const urlDecodeB64 = (input: string) =>
   decodeB64(input.replace(/_/g, '/').replace(/-/g, '+'));
 
-export const bufferToBase64UrlEncoded = (input: number[] | Uint8Array) => {
+export const bufferToBase64UrlEncoded = (
+  input: number[] | Uint8Array | ArrayBuffer
+) => {
   const ie11SafeInput = new Uint8Array(input);
   return urlEncodeB64(
     window.btoa(String.fromCharCode(...Array.from(ie11SafeInput)))

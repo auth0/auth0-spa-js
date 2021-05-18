@@ -290,7 +290,7 @@ export default class Auth0Client {
     const stateIn = encode(createRandomString());
     const nonceIn = encode(createRandomString());
     const code_verifier = createRandomString();
-    const code_challengeBuffer = await sha256(code_verifier);
+    const code_challengeBuffer = sha256(code_verifier);
     const code_challenge = bufferToBase64UrlEncoded(code_challengeBuffer);
     const fragment = options.fragment ? `#${options.fragment}` : '';
 
@@ -352,7 +352,7 @@ export default class Auth0Client {
     const stateIn = encode(createRandomString());
     const nonceIn = encode(createRandomString());
     const code_verifier = createRandomString();
-    const code_challengeBuffer = await sha256(code_verifier);
+    const code_challengeBuffer = sha256(code_verifier);
     const code_challenge = bufferToBase64UrlEncoded(code_challengeBuffer);
 
     const params = this._getParams(
@@ -369,9 +369,9 @@ export default class Auth0Client {
     });
 
     if (config.popup) {
-        config.popup.location.href = url;
+      config.popup.location.href = url;
     } else {
-        config.popup = openPopup(url);
+      config.popup = openPopup(url);
     }
     const codeResult = await runPopup({
       ...config,
@@ -837,7 +837,7 @@ export default class Auth0Client {
     const stateIn = encode(createRandomString());
     const nonceIn = encode(createRandomString());
     const code_verifier = createRandomString();
-    const code_challengeBuffer = await sha256(code_verifier);
+    const code_challengeBuffer = sha256(code_verifier);
     const code_challenge = bufferToBase64UrlEncoded(code_challengeBuffer);
 
     const params = this._getParams(

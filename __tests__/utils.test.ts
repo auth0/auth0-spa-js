@@ -1,4 +1,6 @@
 import 'fast-text-encoding';
+import { mocked } from 'ts-jest/utils';
+import digestSync from 'crypto-digest-sync';
 
 import {
   parseQueryResult,
@@ -19,6 +21,8 @@ import {
 import { DEFAULT_AUTHORIZE_TIMEOUT_IN_SECONDS } from '../src/constants';
 
 (<any>global).TextEncoder = TextEncoder;
+
+jest.mock('crypto-digest-sync');
 
 afterEach(() => {
   jest.resetAllMocks();
@@ -139,88 +143,23 @@ describe('utils', () => {
   });
 
   describe('sha256', () => {
-    it('generates a digest of the given data', async () => {
-      (<any>global).crypto = {
-        subtle: {
-          digest: jest.fn((alg, encoded) => {
-            expect(alg).toMatchObject({ name: 'SHA-256' });
-            expect(Array.from(encoded)).toMatchObject([116, 101, 115, 116]);
-            return new Promise(res => res(true));
-          })
-        }
-      };
-      const result = await sha256('test');
-      expect(result).toBe(true);
+    it('calls digestSync with proper parameters and returns them properly', async () => {
+      const buf = new ArrayBuffer(1);
+      mocked(digestSync).mockReturnValue(buf);
+      const result = sha256('test');
+      expect(result).toBe(buf);
+      expect(digestSync).toHaveBeenCalledWith(
+        'SHA-256',
+        new TextEncoder().encode('test')
+      );
     });
-    it('handles ie11 digest.result scenario', () => {
-      (<any>global).msCrypto = {};
-
-      const digestResult = {
-        oncomplete: null
-      };
-
-      (<any>global).crypto = {
-        subtle: {
-          digest: jest.fn(() => {
-            return digestResult;
-          })
-        }
-      };
-
-      const sha = sha256('test').then(r => {
-        expect(r).toBe(true);
-      });
-
-      digestResult.oncomplete({ target: { result: true } });
-
-      return sha;
-    });
-    it('handles ie11 digest.result error scenario', () => {
-      (<any>global).msCrypto = {};
-
-      const digestResult = {
-        onerror: null
-      };
-
-      (<any>global).crypto = {
-        subtle: {
-          digest: jest.fn(() => {
-            return digestResult;
-          })
-        }
-      };
-
-      const sha = sha256('test').catch(e => {
-        expect(e).toBe('An error occurred');
-      });
-
-      digestResult.onerror({ error: 'An error occurred' });
-
-      return sha;
-    });
-
-    it('handles ie11 digest.result abort scenario', () => {
-      (<any>global).msCrypto = {};
-
-      const digestResult = {
-        onabort: null
-      };
-
-      (<any>global).crypto = {
-        subtle: {
-          digest: jest.fn(() => {
-            return digestResult;
-          })
-        }
-      };
-
-      const sha = sha256('test').catch(e => {
-        expect(e).toBe('The digest operation was aborted');
-      });
-
-      digestResult.onabort();
-
-      return sha;
+    it('generates a digest with the given data', () => {
+      mocked(digestSync).mockImplementation((alg, buf) =>
+        jest.requireActual('crypto-digest-sync')(alg, buf)
+      );
+      const result = sha256('test');
+      const encoded = bufferToBase64UrlEncoded(result);
+      expect(encoded).toBe('n4bQgYhMfWWaL-qgxVrQFaO_TxsrC4Is0V1sFbDwCgg');
     });
   });
   describe('bufferToBase64UrlEncoded ', () => {
