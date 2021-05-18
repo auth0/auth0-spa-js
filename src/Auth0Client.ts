@@ -348,10 +348,6 @@ export default class Auth0Client {
     options = options || {};
     config = config || {};
 
-    if (!config.popup) {
-      config.popup = openPopup('');
-    }
-
     const { ...authorizeOptions } = options;
     const stateIn = encode(createRandomString());
     const nonceIn = encode(createRandomString());
@@ -372,8 +368,11 @@ export default class Auth0Client {
       response_mode: 'web_message'
     });
 
-    config.popup.location.href = url;
-
+    if (config.popup) {
+        config.popup.location.href = url;
+    } else {
+        config.popup = openPopup(url);
+    }
     const codeResult = await runPopup({
       ...config,
       timeoutInSeconds:
