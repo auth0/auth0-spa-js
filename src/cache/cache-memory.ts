@@ -11,14 +11,7 @@ export class InMemoryCache {
       },
 
       get<T = unknown>(key: string): Promise<T> {
-        const cacheKey = CacheKey.fromKey(key);
-
-        const existingCacheKey = findExistingCacheKey(
-          cacheKey,
-          Object.keys(cache)
-        );
-
-        const cacheEntry = cache[existingCacheKey] as T;
+        const cacheEntry = cache[key] as T;
 
         if (!cacheEntry) {
           return Promise.resolve(null);

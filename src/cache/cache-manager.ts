@@ -1,3 +1,4 @@
+import { CacheKeyManifest } from './key-manifest';
 import { CacheEntry, ICache, CacheKey } from './shared';
 
 const DEFAULT_EXPIRY_ADJUSTMENT_SECONDS = 0;
@@ -8,7 +9,11 @@ type WrappedCacheEntry = {
 };
 
 export class CacheManager {
-  constructor(private cache: ICache) {}
+  private readonly keyManifest: CacheKeyManifest;
+
+  constructor(private cache: ICache) {
+    this.keyManifest = new CacheKeyManifest(cache);
+  }
 
   async get(
     cacheKey: CacheKey,
