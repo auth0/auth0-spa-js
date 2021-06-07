@@ -20,13 +20,17 @@ export class CacheManager {
     expiryAdjustmentSeconds = DEFAULT_EXPIRY_ADJUSTMENT_SECONDS
   ): Promise<Partial<CacheEntry> | undefined> {
     const keySet = await this.keyManifest.get(cacheKey);
+    let key: string;
 
-    if (!keySet) return;
+    if (keySet) {
+      // Find the actual key by loosely matching it
+      key = this.findExistingCacheKey(cacheKey, keySet.keys);
+    }
 
-    // Find the actual key by loosely matching on scope
-    const key = this.findExistingCacheKey(cacheKey, keySet.keys);
-
-    if (!key) return;
+    if (!key) {
+      // If we couldn't loosely find a matching key, just try to match it exactly
+      key = cacheKey.toKey();
+    }
 
     const wrappedEntry = await this.cache.get<WrappedCacheEntry>(key);
     const nowSeconds = Math.floor(Date.now() / 1000);
@@ -35,6 +39,9 @@ export class CacheManager {
       await this.keyManifest.remove(cacheKey);
       return;
     }
+
+    // Make sure the key manifest knows about it
+    await this.keyManifest.add(cacheKey);
 
     if (wrappedEntry.expiresAt - expiryAdjustmentSeconds < nowSeconds) {
       if (wrappedEntry.body.refresh_token) {

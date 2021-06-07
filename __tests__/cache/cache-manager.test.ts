@@ -1,5 +1,11 @@
 import { CacheManager, InMemoryCache } from '../../src/cache';
-import { CacheEntry, CacheKey, ICache } from '../../src/cache/shared';
+import { CacheKeyManifest } from '../../src/cache/key-manifest';
+import {
+  CacheEntry,
+  CacheKey,
+  CACHE_KEY_PREFIX,
+  ICache
+} from '../../src/cache/shared';
 import {
   TEST_ACCESS_TOKEN,
   TEST_AUDIENCE,
@@ -81,6 +87,20 @@ describe('CacheManager', () => {
     });
 
     expect(await manager.get(key)).toStrictEqual(data);
+  });
+
+  it('should update the key manifest when the key has only been added to the underlying cache', async () => {
+    const manifestKey = `${CACHE_KEY_PREFIX}::${defaultData.client_id}`;
+
+    await manager.set(defaultData);
+
+    // Remove the manifest entry that is created by the manifest
+    await cache.remove(manifestKey);
+
+    const result = await manager.get(defaultKey);
+
+    expect(result).toStrictEqual(defaultData);
+    expect(await cache.get(manifestKey)).toBeTruthy();
   });
 
   it('should not return an entry if not all of the scopes match', async () => {
