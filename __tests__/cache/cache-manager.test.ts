@@ -170,6 +170,7 @@ describe('CacheManager', () => {
   it('expires the cache on read when the date.now > expires_in', async () => {
     const now = Date.now();
     const realDateNow = Date.now.bind(global.Date);
+    const cacheRemoveSpy = jest.spyOn(cache, 'remove');
 
     const data = {
       ...defaultData,
@@ -192,17 +193,26 @@ describe('CacheManager', () => {
 
     // Advance the time to just past the expiry..
     const dateNowStub = jest.fn(() => (now + dayInSeconds + 100) * 1000);
+
     global.Date.now = dateNowStub;
 
-    // And test that the cache has been emptied
-    expect(await manager.get(cacheKey)).toBeFalsy();
+    const result = await manager.get(cacheKey);
 
     global.Date.now = realDateNow;
+
+    // And test that the cache has been emptied
+    expect(result).toBeFalsy();
+
+    // And that the data has been removed from the key manifest
+    expect(cacheRemoveSpy).toHaveBeenCalledWith(
+      `@@auth0spajs@@::${data.client_id}`
+    );
   });
 
   it('expires the cache on read when the date.now > token.exp', async () => {
     const now = Date.now();
     const realDateNow = Date.now.bind(global.Date);
+    const cacheRemoveSpy = jest.spyOn(cache, 'remove');
 
     const data = {
       ...defaultData,
@@ -220,10 +230,17 @@ describe('CacheManager', () => {
     const dateNowStub = jest.fn(() => (now + dayInSeconds + 100) * 1000);
     global.Date.now = dateNowStub;
 
-    // And test that the cache has been emptied
-    expect(await manager.get(cacheKey)).toBeFalsy();
+    const result = await manager.get(cacheKey);
 
     global.Date.now = realDateNow;
+
+    // And test that the cache has been emptied
+    expect(result).toBeFalsy();
+
+    // And that the data has been removed from the key manifest
+    expect(cacheRemoveSpy).toHaveBeenCalledWith(
+      `@@auth0spajs@@::${data.client_id}`
+    );
   });
 
   it('clears the cache', async () => {

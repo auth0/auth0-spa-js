@@ -47,6 +47,7 @@ export class CacheManager {
       }
 
       await this.cache.remove(key);
+      await this.keyManifest.remove(cacheKey);
       return;
     }
 
@@ -67,6 +68,8 @@ export class CacheManager {
   }
 
   clear(): Promise<void> {
+    // As the key manifest use the same cache instance, this operation
+    // will also clear the manifest.
     return this.cache.clear();
   }
 
