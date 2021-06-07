@@ -1,5 +1,5 @@
 import { CacheManager, InMemoryCache } from '../../src/cache';
-import { CacheEntry, CacheKey } from '../../src/cache/shared';
+import { CacheEntry, CacheKey, ICache } from '../../src/cache/shared';
 import {
   TEST_ACCESS_TOKEN,
   TEST_AUDIENCE,
@@ -7,32 +7,103 @@ import {
   TEST_ID_TOKEN,
   TEST_SCOPES,
   dayInSeconds,
-  nowSeconds
+  nowSeconds,
+  TEST_REFRESH_TOKEN
 } from '../constants';
+
+const defaultKey = new CacheKey({
+  client_id: TEST_CLIENT_ID,
+  audience: TEST_AUDIENCE,
+  scope: TEST_SCOPES
+});
+
+const defaultData: CacheEntry = {
+  client_id: TEST_CLIENT_ID,
+  audience: TEST_AUDIENCE,
+  scope: TEST_SCOPES,
+  id_token: TEST_ID_TOKEN,
+  access_token: TEST_ACCESS_TOKEN,
+  expires_in: dayInSeconds,
+  decodedToken: {
+    claims: {
+      __raw: TEST_ID_TOKEN,
+      exp: nowSeconds() + dayInSeconds,
+      name: 'Test'
+    },
+    user: { name: 'Test' }
+  }
+};
 
 describe('CacheManager', () => {
   let manager: CacheManager;
+  let cache: ICache;
 
   beforeEach(() => {
-    manager = new CacheManager(new InMemoryCache().enclosedCache);
+    cache = new InMemoryCache().enclosedCache;
+    manager = new CacheManager(cache);
+  });
+
+  it('returns undefined when there is nothing in the key manifest', async () => {
+    const result = await manager.get(defaultKey);
+
+    expect(result).toBeFalsy();
+  });
+
+  it('should return an entry from the cache if any of the scopes match', async () => {
+    const data = {
+      ...defaultData,
+      scope: 'read:messages write:messages'
+    };
+
+    await manager.set(data);
+
+    const key = new CacheKey({
+      client_id: TEST_CLIENT_ID,
+      audience: TEST_AUDIENCE,
+      scope: 'read:messages'
+    });
+
+    expect(await manager.get(key)).toStrictEqual(data);
+  });
+
+  it('should return an entry from the cache if multiple scopes match', async () => {
+    const data = {
+      ...defaultData,
+      scope: 'read:messages write:messages'
+    };
+
+    await manager.set(data);
+
+    const key = new CacheKey({
+      client_id: TEST_CLIENT_ID,
+      audience: TEST_AUDIENCE,
+      scope: 'read:messages write:messages'
+    });
+
+    expect(await manager.get(key)).toStrictEqual(data);
+  });
+
+  it('should not return an entry if not all of the scopes match', async () => {
+    const data = {
+      ...defaultData,
+      scope: 'read:messages write:messages'
+    };
+
+    await manager.set(data);
+
+    const key = new CacheKey({
+      client_id: TEST_CLIENT_ID,
+      audience: TEST_AUDIENCE,
+      scope: 'read:messages read:actions'
+    });
+
+    expect(await manager.get(key)).toBeFalsy();
   });
 
   it('returns undefined from the cache when expires_in < expiryAdjustmentSeconds', async () => {
     const data = {
-      client_id: TEST_CLIENT_ID,
-      audience: TEST_AUDIENCE,
-      scope: TEST_SCOPES,
-      id_token: TEST_ID_TOKEN,
-      access_token: TEST_ACCESS_TOKEN,
-      expires_in: 40,
-      decodedToken: {
-        claims: {
-          __raw: TEST_ID_TOKEN,
-          exp: nowSeconds() + dayInSeconds,
-          name: 'Test'
-        },
-        user: { name: 'Test' }
-      }
+      ...defaultData,
+      expires_in: 40
     };
 
     await manager.set(data);
@@ -55,13 +126,8 @@ describe('CacheManager', () => {
       const realDateNow = Date.now.bind(global.Date);
 
       const data = {
-        client_id: TEST_CLIENT_ID,
-        audience: TEST_AUDIENCE,
-        scope: TEST_SCOPES,
-        id_token: TEST_ID_TOKEN,
-        access_token: TEST_ACCESS_TOKEN,
-        refresh_token: 'refreshtoken',
-        expires_in: dayInSeconds,
+        ...defaultData,
+        refresh_token: TEST_REFRESH_TOKEN,
         decodedToken: {
           claims: {
             __raw: TEST_ID_TOKEN,
@@ -84,7 +150,7 @@ describe('CacheManager', () => {
       global.Date.now = dateNowStub;
 
       expect(await manager.get(cacheKey)).toStrictEqual({
-        refresh_token: 'refreshtoken'
+        refresh_token: TEST_REFRESH_TOKEN
       });
 
       global.Date.now = realDateNow;
@@ -96,12 +162,7 @@ describe('CacheManager', () => {
     const realDateNow = Date.now.bind(global.Date);
 
     const data = {
-      client_id: TEST_CLIENT_ID,
-      audience: TEST_AUDIENCE,
-      scope: TEST_SCOPES,
-      id_token: TEST_ID_TOKEN,
-      access_token: TEST_ACCESS_TOKEN,
-      expires_in: dayInSeconds,
+      ...defaultData,
       decodedToken: {
         claims: {
           __raw: TEST_ID_TOKEN,
@@ -134,20 +195,8 @@ describe('CacheManager', () => {
     const realDateNow = Date.now.bind(global.Date);
 
     const data = {
-      client_id: TEST_CLIENT_ID,
-      audience: TEST_AUDIENCE,
-      scope: TEST_SCOPES,
-      id_token: TEST_ID_TOKEN,
-      access_token: TEST_ACCESS_TOKEN,
-      expires_in: dayInSeconds * 2,
-      decodedToken: {
-        claims: {
-          __raw: TEST_ID_TOKEN,
-          name: 'Test',
-          exp: nowSeconds() + dayInSeconds
-        },
-        user: { name: 'Test' }
-      }
+      ...defaultData,
+      expires_in: dayInSeconds * 120
     };
 
     await manager.set(data);

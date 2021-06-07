@@ -1,5 +1,5 @@
 import { CacheKeyManifest } from './key-manifest';
-import { CacheEntry, ICache, CacheKey } from './shared';
+import { CacheEntry, ICache, CacheKey, findExistingCacheKey } from './shared';
 
 const DEFAULT_EXPIRY_ADJUSTMENT_SECONDS = 0;
 
@@ -19,7 +19,15 @@ export class CacheManager {
     cacheKey: CacheKey,
     expiryAdjustmentSeconds = DEFAULT_EXPIRY_ADJUSTMENT_SECONDS
   ): Promise<Partial<CacheEntry> | undefined> {
-    const key = cacheKey.toKey();
+    const keySet = await this.keyManifest.get(cacheKey);
+
+    if (!keySet) return;
+
+    // Find the actual key by loosely matching on scope
+    const key = findExistingCacheKey(cacheKey, keySet.keys);
+
+    if (!key) return;
+
     const wrappedEntry = await this.cache.get<WrappedCacheEntry>(key);
     const nowSeconds = Math.floor(Date.now() / 1000);
 
@@ -42,7 +50,7 @@ export class CacheManager {
     return wrappedEntry.body;
   }
 
-  set(entry: CacheEntry): Promise<void> {
+  async set(entry: CacheEntry): Promise<void> {
     const cacheKey = new CacheKey({
       client_id: entry.client_id,
       scope: entry.scope,
@@ -51,7 +59,8 @@ export class CacheManager {
 
     const wrappedEntry = this.wrapCacheEntry(entry);
 
-    return this.cache.set(cacheKey.toKey(), wrappedEntry);
+    await this.cache.set(cacheKey.toKey(), wrappedEntry);
+    await this.keyManifest.add(cacheKey);
   }
 
   clear(): Promise<void> {
