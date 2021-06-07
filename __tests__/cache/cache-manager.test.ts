@@ -120,6 +120,16 @@ describe('CacheManager', () => {
     ).toBeFalsy();
   });
 
+  it('returns undefined if the item was not found in the underlying cache', async () => {
+    const cacheSpy = jest.spyOn(cache, 'remove');
+
+    await manager.set(defaultData);
+    expect(await manager.get(defaultKey)).toStrictEqual(defaultData);
+    cache.remove(defaultKey.toKey());
+    expect(await manager.get(defaultKey)).toBeFalsy();
+    expect(cacheSpy).toHaveBeenCalledWith(defaultKey.toKey());
+  });
+
   describe('when refresh tokens are used', () => {
     it('strips everything except the refresh token when expiry has been reached', async () => {
       const now = Date.now();
@@ -214,5 +224,12 @@ describe('CacheManager', () => {
     expect(await manager.get(cacheKey)).toBeFalsy();
 
     global.Date.now = realDateNow;
+  });
+
+  it('clears the cache', async () => {
+    await manager.set(defaultData);
+    expect(await manager.get(defaultKey)).toStrictEqual(defaultData);
+    await manager.clear();
+    expect(await manager.get(defaultKey)).toBeFalsy();
   });
 });

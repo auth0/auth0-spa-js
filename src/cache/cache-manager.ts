@@ -31,7 +31,10 @@ export class CacheManager {
     const wrappedEntry = await this.cache.get<WrappedCacheEntry>(key);
     const nowSeconds = Math.floor(Date.now() / 1000);
 
-    if (!wrappedEntry) return;
+    if (!wrappedEntry) {
+      await this.keyManifest.remove(cacheKey);
+      return;
+    }
 
     if (wrappedEntry.expiresAt - expiryAdjustmentSeconds < nowSeconds) {
       if (wrappedEntry.body.refresh_token) {
