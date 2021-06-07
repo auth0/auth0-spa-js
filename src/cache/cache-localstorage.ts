@@ -1,9 +1,4 @@
-import {
-  CacheKey,
-  findExistingCacheKey,
-  ICache,
-  CACHE_KEY_PREFIX
-} from './shared';
+import { ICache, CACHE_KEY_PREFIX } from './shared';
 
 export class LocalStorageCache implements ICache {
   public set<T = unknown>(key: string, entry: T): Promise<void> {
@@ -12,12 +7,17 @@ export class LocalStorageCache implements ICache {
   }
 
   public get<T = unknown>(key: string): Promise<T> {
-    const cacheKey = CacheKey.fromKey(key);
-    const payload = this.readJson<T>(cacheKey);
+    const json = window.localStorage.getItem(key);
 
-    if (!payload) return Promise.resolve(null);
+    if (!json) return Promise.resolve(null);
 
-    return Promise.resolve(payload);
+    try {
+      const payload = JSON.parse(json);
+      return Promise.resolve(payload);
+    } catch (e) {
+      /* istanbul ignore next */
+      return Promise.resolve(null);
+    }
   }
 
   public remove(key: string): Promise<void> {
@@ -33,33 +33,5 @@ export class LocalStorageCache implements ICache {
     }
 
     return Promise.resolve();
-  }
-
-  /**
-   * Retrieves data from local storage and parses it into the correct format
-   * @param cacheKey The cache key
-   */
-  private readJson<T>(cacheKey: CacheKey): T {
-    const existingCacheKey = findExistingCacheKey(
-      cacheKey,
-      Object.keys(window.localStorage)
-    );
-
-    const json =
-      existingCacheKey && window.localStorage.getItem(existingCacheKey);
-
-    let payload;
-
-    if (!json) {
-      return;
-    }
-
-    try {
-      payload = JSON.parse(json);
-      return payload;
-    } catch (e) {
-      /* istanbul ignore next */
-      return;
-    }
   }
 }
