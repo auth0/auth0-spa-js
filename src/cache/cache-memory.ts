@@ -1,4 +1,4 @@
-import { ICache, CacheKey, findExistingCacheKey } from './shared';
+import { ICache, CacheKey } from './shared';
 
 export class InMemoryCache {
   public enclosedCache: ICache = (function () {

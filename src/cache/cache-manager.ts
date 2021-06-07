@@ -1,5 +1,5 @@
 import { CacheKeyManifest } from './key-manifest';
-import { CacheEntry, ICache, CacheKey, findExistingCacheKey } from './shared';
+import { CacheEntry, ICache, CacheKey, CACHE_KEY_PREFIX } from './shared';
 
 const DEFAULT_EXPIRY_ADJUSTMENT_SECONDS = 0;
 
@@ -24,7 +24,7 @@ export class CacheManager {
     if (!keySet) return;
 
     // Find the actual key by loosely matching on scope
-    const key = findExistingCacheKey(cacheKey, keySet.keys);
+    const key = this.findExistingCacheKey(cacheKey, keySet.keys);
 
     if (!key) return;
 
@@ -85,5 +85,48 @@ export class CacheManager {
       body: entry,
       expiresAt: expirySeconds
     };
+  }
+
+  /**
+   * Finds the corresponding key in the cache based on the provided cache key.
+   * The keys inside the cache are in the format {prefix}::{client_id}::{audience}::{scope}.
+   * The first key in the cache that satisfies the following conditions is returned
+   *  - `prefix` is strict equal to Auth0's internally configured `keyPrefix`
+   *  - `client_id` is strict equal to the `cacheKey.client_id`
+   *  - `audience` is strict equal to the `cacheKey.audience`
+   *  - `scope` contains at least all the `cacheKey.scope` values
+   *  *
+   * @param cacheKey The provided cache key
+   * @param existingCacheKeys A list of existing cache keys
+   */
+  findExistingCacheKey(cacheKey: CacheKey, existingCacheKeys: Array<string>) {
+    const { client_id, audience, scope } = cacheKey;
+
+    return existingCacheKeys.filter(key => {
+      const {
+        prefix: currentPrefix,
+        client_id: currentClientId,
+        audience: currentAudience,
+        scope: currentScopes
+      } = CacheKey.fromKey(key);
+
+      const currentScopesArr = currentScopes && currentScopes.split(' ');
+
+      const hasAllScopes =
+        currentScopes &&
+        scope
+          .split(' ')
+          .reduce(
+            (acc, current) => acc && currentScopesArr.includes(current),
+            true
+          );
+
+      return (
+        currentPrefix === CACHE_KEY_PREFIX &&
+        currentClientId === client_id &&
+        currentAudience === audience &&
+        hasAllScopes
+      );
+    })[0];
   }
 }
