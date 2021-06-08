@@ -28,6 +28,10 @@
       <div v-if="!loading">
         <div class="btn-toolbar justify-content-between">
           <div class="btn-group mb-3">
+            <button class="btn btn-info" @click="checkSession">
+              Check session
+            </button>
+
             <button class="btn btn-primary" @click="loginPopup">
               Login popup
             </button>
@@ -513,7 +517,7 @@
             var _self = this;
             _self.access_tokens = [];
 
-            _self.auth0.getTokenSilently().then(function (token) {
+            return _self.auth0.getTokenSilently().then(function (token) {
               _self.audienceScopes[0].access_tokens.push(token);
 
               _self.auth0.getUser().then(function (user) {
@@ -524,6 +528,20 @@
                 _self.id_token = claims.__raw;
               });
             });
+          },
+          checkSession: function () {
+            var _self = this;
+
+            _self.auth0
+              .checkSession()
+              .then(function () {
+                return auth0.isAuthenticated().then(function (isAuthenticated) {
+                  _self.isAuthenticated = isAuthenticated;
+                });
+              })
+              .catch(function (e) {
+                _self.error = e;
+              });
           },
           loginPopup: function () {
             var _self = this;
@@ -544,7 +562,7 @@
                   _self.showAuth0Info();
                 });
               })
-              .catch(err => {
+              .catch(function () {
                 _self.error = err;
               });
           },
