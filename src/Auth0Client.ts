@@ -73,7 +73,6 @@ import {
 import TokenWorker from './worker/token.worker.ts';
 import { isIE11 } from './user-agent';
 import { singlePromise, retryPromise } from './promise-utils';
-import { CacheKeyManifest } from './cache/key-manifest';
 
 /**
  * @ignore
