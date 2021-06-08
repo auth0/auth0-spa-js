@@ -19,28 +19,31 @@ export class CacheManager {
     cacheKey: CacheKey,
     expiryAdjustmentSeconds = DEFAULT_EXPIRY_ADJUSTMENT_SECONDS
   ): Promise<Partial<CacheEntry> | undefined> {
-    const keySet = await this.keyManifest.get(cacheKey);
-    let key: string;
+    let wrappedEntry = await this.cache.get<WrappedCacheEntry>(
+      cacheKey.toKey()
+    );
 
-    if (keySet) {
-      // Find the actual key by loosely matching it
-      key = this.findExistingCacheKey(cacheKey, keySet.keys);
+    if (!wrappedEntry) {
+      // Try again by loosely-matching the key against a set of keys we've stored
+      // in the key manifest.
+      const keySet = await this.keyManifest.get(cacheKey);
+
+      if (keySet) {
+        const matchedKey = this.findExistingCacheKey(cacheKey, keySet.keys);
+        wrappedEntry = await this.cache.get<WrappedCacheEntry>(matchedKey);
+      }
     }
-
-    if (!key) {
-      // If we couldn't loosely find a matching key, just try to match it exactly
-      key = cacheKey.toKey();
-    }
-
-    const wrappedEntry = await this.cache.get<WrappedCacheEntry>(key);
-    const nowSeconds = Math.floor(Date.now() / 1000);
 
     if (!wrappedEntry) {
       await this.keyManifest.remove(cacheKey);
       return;
     }
 
-    // Make sure the key manifest knows about it
+    const nowSeconds = Math.floor(Date.now() / 1000);
+
+    // Make sure the key manifest knows about the key.
+    // This helps to migrate keys into the manifest, as the manifest takes care
+    // of duplicates for us.
     await this.keyManifest.add(cacheKey);
 
     if (wrappedEntry.expiresAt - expiryAdjustmentSeconds < nowSeconds) {
@@ -49,11 +52,11 @@ export class CacheManager {
           refresh_token: wrappedEntry.body.refresh_token
         };
 
-        await this.cache.set(key, wrappedEntry);
+        await this.cache.set(cacheKey.toKey(), wrappedEntry);
         return wrappedEntry.body;
       }
 
-      await this.cache.remove(key);
+      await this.cache.remove(cacheKey.toKey());
       await this.keyManifest.remove(cacheKey);
       return;
     }
