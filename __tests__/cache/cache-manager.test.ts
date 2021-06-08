@@ -1,11 +1,12 @@
 import { CacheManager, InMemoryCache } from '../../src/cache';
-import { CacheKeyManifest } from '../../src/cache/key-manifest';
+
 import {
   CacheEntry,
   CacheKey,
   CACHE_KEY_PREFIX,
   ICache
 } from '../../src/cache/shared';
+
 import {
   TEST_ACCESS_TOKEN,
   TEST_AUDIENCE,
@@ -49,7 +50,7 @@ describe('CacheManager', () => {
     manager = new CacheManager(cache);
   });
 
-  it('returns undefined when there is nothing in the key manifest', async () => {
+  it('returns undefined when there is nothing in the cache', async () => {
     const result = await manager.get(defaultKey);
 
     expect(result).toBeFalsy();

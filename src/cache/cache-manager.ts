@@ -32,11 +32,11 @@ export class CacheManager {
         const matchedKey = this.findExistingCacheKey(cacheKey, keySet.keys);
         wrappedEntry = await this.cache.get<WrappedCacheEntry>(matchedKey);
       }
-    }
 
-    if (!wrappedEntry) {
-      await this.keyManifest.remove(cacheKey);
-      return;
+      // If we still don't have an entry..
+      if (!wrappedEntry) {
+        return;
+      }
     }
 
     const nowSeconds = Math.floor(Date.now() / 1000);
