@@ -26,10 +26,13 @@ export class CacheManager {
     if (!wrappedEntry) {
       // Try again by loosely-matching the key against a set of keys we've stored
       // in the key manifest.
-      const keySet = await this.keyManifest.get(cacheKey);
+      const keyManifestEntry = await this.keyManifest.get(cacheKey);
 
-      if (keySet) {
-        const matchedKey = this.findExistingCacheKey(cacheKey, keySet.keys);
+      if (keyManifestEntry) {
+        const matchedKey = this.matchExistingCacheKey(
+          cacheKey,
+          keyManifestEntry.keys
+        );
         wrappedEntry = await this.cache.get<WrappedCacheEntry>(matchedKey);
       }
 
@@ -109,7 +112,7 @@ export class CacheManager {
    * @param cacheKey The provided cache key
    * @param existingCacheKeys A list of existing cache keys
    */
-  findExistingCacheKey(cacheKey: CacheKey, existingCacheKeys: Array<string>) {
+  matchExistingCacheKey(cacheKey: CacheKey, existingCacheKeys: Array<string>) {
     const { client_id, audience, scope } = cacheKey;
 
     return existingCacheKeys.filter(key => {
