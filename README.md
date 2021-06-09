@@ -210,6 +210,63 @@ await createAuth0Client({
 
 **Important:** This feature will allow the caching of data **such as ID and access tokens** to be stored in local storage. Exercising this option changes the security characteristics of your application and **should not be used lightly**. Extra care should be taken to mitigate against XSS attacks and minimize the risk of tokens being stolen from local storage.
 
+#### Creating a custom cache
+
+The SDK can be configured to use a custom cache store that is implemented by your application. This is useful if you are using this SDK in an environment where more secure token storage is available, such as potentially a hybrid mobile app.
+
+To do this, provide an object to the `cache` property of the SDK configuration.
+
+The object should implement the following functions:
+
+| Signature                                            | Description                                                                                   |
+| ---------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| `async get(key)`                                     | Returns the item from the cache with the specified key, or `undefined` if it was not found    |
+| `async set(key: string, object: any): Promise<void>` | Sets an item into the cache                                                                   |
+| `async clear()`                                      | Removes all the items in the cache                                                            |
+| `async remove(key)`                                  | Removes a single item from the cache at the specified key, or no-op if the item was not found |
+
+Here's an example of a custom cache implementation that uses `sessionStorage` to store tokens and apply it to the Auth0 SPA SDK:
+
+```js
+const sessionStorageCache = {
+  get: function (key) {
+    JSON.parse(sessionStorage.getItem(key));
+    return Promise.resolve();
+  },
+
+  set: function (key, value) {
+    sessionStorage.setItem(key, JSON.stringify(value));
+    return Promise.resolve();
+  },
+
+  clear: function () {
+    for (var i = sessionStorage.length - 1; i >= 0; i--) {
+      if (sessionStorage.key(i).startsWith('@@auth0spajs@@')) {
+        sessionStorage.removeItem(sessionStorage.key(i));
+      }
+    }
+
+    return Promise.resolve();
+  },
+
+  remove: function (key) {
+    sessionStorage.removeItem(key);
+    return Promise.resolve();
+  }
+};
+
+await createAuth0Client({
+  domain: '<AUTH0_DOMAIN>',
+  client_id: '<AUTH0_CLIENT_ID>',
+  redirect_uri: '<MY_CALLBACK_URL>',
+  cache: sessionStorageCache
+});
+```
+
+**Note:** The `cache` property takes precedence over the `cacheLocation` property if both are set. A warning is displayed in the console if this scenario occurs.
+
+We also export the internal `InMemoryCache` and `LocalStorageCache` implementations, so you can wrap your custom cache around these implementations if you wish.
+
 ### Refresh Tokens
 
 Refresh tokens can be used to request new access tokens. [Read more about how our refresh tokens work for browser-based applications](https://auth0.com/docs/tokens/concepts/refresh-token-rotation) to help you decide whether or not you need to use them.
