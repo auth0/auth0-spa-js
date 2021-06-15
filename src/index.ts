@@ -38,6 +38,5 @@ export {
   InMemoryCache,
   isWrappedCacheEntry,
   isKeyManifestEntry,
-  Cacheable,
-  WrappedCacheEntry
+  Cacheable
 } from './cache';

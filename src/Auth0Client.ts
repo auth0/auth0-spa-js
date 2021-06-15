@@ -73,6 +73,7 @@ import {
 import TokenWorker from './worker/token.worker.ts';
 import { isIE11 } from './user-agent';
 import { singlePromise, retryPromise } from './promise-utils';
+import { CacheKeyManifest } from './cache/key-manifest';
 
 /**
  * @ignore
@@ -194,7 +195,12 @@ export default class Auth0Client {
 
     this.scope = this.options.scope;
     this.transactionManager = new TransactionManager(transactionStorage);
-    this.cacheManager = new CacheManager(cache);
+
+    this.cacheManager = new CacheManager(
+      cache,
+      new CacheKeyManifest(cache, this.options.client_id)
+    );
+
     this.domainUrl = `https://${this.options.domain}`;
     this.tokenIssuer = getTokenIssuer(this.options.issuer, this.domainUrl);
 
@@ -702,7 +708,8 @@ export default class Auth0Client {
     // Check the cache before acquiring the lock to avoid the latency of
     // `lock.acquireLock` when the cache is populated.
     if (!ignoreCache) {
-      let accessToken = await getAccessTokenFromCache();
+      const accessToken = await getAccessTokenFromCache();
+
       if (accessToken) {
         return accessToken;
       }
@@ -718,7 +725,8 @@ export default class Auth0Client {
         // Check the cache a second time, because it may have been populated
         // by a previous call while this call was waiting to acquire the lock.
         if (!ignoreCache) {
-          let accessToken = await getAccessTokenFromCache();
+          const accessToken = await getAccessTokenFromCache();
+
           if (accessToken) {
             return accessToken;
           }

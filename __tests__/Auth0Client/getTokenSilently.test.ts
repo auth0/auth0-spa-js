@@ -10,7 +10,7 @@ import * as api from '../../src/api';
 
 import { expectToHaveBeenCalledWithAuth0ClientParam } from '../helpers';
 
-import { GET_TOKEN_SILENTLY_LOCK_KEY } from '../constants';
+import { GET_TOKEN_SILENTLY_LOCK_KEY, TEST_AUDIENCE } from '../constants';
 
 // @ts-ignore
 import { acquireLockSpy } from 'browser-tabs-lock';
@@ -45,6 +45,7 @@ import {
   INVALID_REFRESH_TOKEN_ERROR_MESSAGE
 } from '../../src/constants';
 import { GenericError } from '../../src/errors';
+import { CacheKey } from '../../src/cache';
 
 jest.mock('unfetch');
 jest.mock('es-cookie');
@@ -973,7 +974,7 @@ describe('Auth0Client', () => {
       try {
         const auth0 = setup();
         await loginWithRedirect(auth0);
-        (auth0 as any).cacheManager.clear();
+        await (auth0 as any).cacheManager.clear();
 
         jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
           access_token: TEST_ACCESS_TOKEN,
@@ -988,7 +989,7 @@ describe('Auth0Client', () => {
           })
         );
 
-        let [access_token] = await Promise.all([
+        const [access_token] = await Promise.all([
           auth0.getTokenSilently(),
           auth0.getTokenSilently(),
           auth0.getTokenSilently()

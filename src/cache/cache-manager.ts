@@ -11,11 +11,10 @@ import {
 const DEFAULT_EXPIRY_ADJUSTMENT_SECONDS = 0;
 
 export class CacheManager {
-  private readonly keyManifest: CacheKeyManifest;
-
-  constructor(private cache: ICache) {
-    this.keyManifest = new CacheKeyManifest(cache);
-  }
+  constructor(
+    private cache: ICache,
+    private readonly keyManifest: CacheKeyManifest
+  ) {}
 
   async get(
     cacheKey: CacheKey,
@@ -28,7 +27,7 @@ export class CacheManager {
     if (!wrappedEntry) {
       // Try again by loosely-matching the key against a set of keys we've stored
       // in the key manifest.
-      const keyManifestEntry = await this.keyManifest.get(cacheKey);
+      const keyManifestEntry = await this.keyManifest.get();
 
       if (keyManifestEntry) {
         const matchedKey = this.matchExistingCacheKey(
@@ -49,7 +48,7 @@ export class CacheManager {
     // Make sure the key manifest knows about the key.
     // This helps to migrate keys into the manifest, as the manifest takes care
     // of duplicates for us.
-    await this.keyManifest.add(cacheKey);
+    await this.keyManifest.add(cacheKey.toKey());
 
     if (wrappedEntry.expiresAt - expiryAdjustmentSeconds < nowSeconds) {
       if (wrappedEntry.body.refresh_token) {
@@ -62,7 +61,7 @@ export class CacheManager {
       }
 
       await this.cache.remove(cacheKey.toKey());
-      await this.keyManifest.remove(cacheKey);
+      await this.keyManifest.remove(cacheKey.toKey());
       return;
     }
 
@@ -79,13 +78,19 @@ export class CacheManager {
     const wrappedEntry = this.wrapCacheEntry(entry);
 
     await this.cache.set(cacheKey.toKey(), wrappedEntry);
-    await this.keyManifest.add(cacheKey);
+    await this.keyManifest.add(cacheKey.toKey());
   }
 
-  clear(): Promise<void> {
-    // As the key manifest use the same cache instance, this operation
-    // will also clear the manifest.
-    return this.cache.clear();
+  async clear(): Promise<void> {
+    const keyManifest = await this.keyManifest.get();
+
+    if (keyManifest) {
+      keyManifest.keys.forEach(async key => {
+        await this.cache.remove(key);
+      });
+
+      await this.keyManifest.clear();
+    }
   }
 
   private wrapCacheEntry(entry: CacheEntry): WrappedCacheEntry {

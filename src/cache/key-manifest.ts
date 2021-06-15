@@ -1,50 +1,60 @@
 import { CACHE_KEY_PREFIX, ICache, CacheKey, KeyManifestEntry } from './shared';
 
 export class CacheKeyManifest {
-  constructor(private cache: ICache) {}
+  private readonly manifestKey: string;
 
-  async add(key: CacheKey): Promise<void> {
-    const manifestKey = this.createManifestKeyFrom(key);
-    const existingEntry = await this.cache.get<KeyManifestEntry>(manifestKey);
+  constructor(private cache: ICache, private clientId: string) {
+    this.manifestKey = this.createManifestKeyFrom(clientId);
+  }
+
+  async add(key: string): Promise<void> {
+    const existingEntry = await this.cache.get<KeyManifestEntry>(
+      this.manifestKey
+    );
 
     if (!existingEntry) {
-      return await this.cache.set<KeyManifestEntry>(manifestKey, {
-        keys: [key.toKey()]
+      return await this.cache.set<KeyManifestEntry>(this.manifestKey, {
+        keys: [key]
       });
     }
 
-    if (!existingEntry.keys.includes(key.toKey())) {
-      existingEntry.keys.push(key.toKey());
-      await this.cache.set<KeyManifestEntry>(manifestKey, existingEntry);
+    if (!existingEntry.keys.includes(key)) {
+      existingEntry.keys.push(key);
+      await this.cache.set<KeyManifestEntry>(this.manifestKey, existingEntry);
     }
   }
 
-  async remove(key: CacheKey): Promise<void> {
-    const manifestKey = this.createManifestKeyFrom(key);
-    const existingEntry = await this.cache.get<KeyManifestEntry>(manifestKey);
+  async remove(key: string): Promise<void> {
+    const existingEntry = await this.cache.get<KeyManifestEntry>(
+      this.manifestKey
+    );
 
     if (existingEntry) {
-      const itemKey = key.toKey();
-      const index = existingEntry.keys.indexOf(itemKey);
+      const index = existingEntry.keys.indexOf(key);
 
       if (index > -1) {
         existingEntry.keys.splice(index, 1);
       }
 
       if (existingEntry.keys.length > 0) {
-        return await this.cache.set(manifestKey, existingEntry);
+        return await this.cache.set(this.manifestKey, existingEntry);
       }
 
-      return await this.cache.remove(manifestKey);
+      return await this.cache.remove(this.manifestKey);
     }
   }
 
-  get(key: CacheKey): Promise<KeyManifestEntry> {
-    const manifestKey = this.createManifestKeyFrom(key);
+  get(): Promise<KeyManifestEntry> {
+    const manifestKey = this.createManifestKeyFrom(this.clientId);
     return this.cache.get<KeyManifestEntry>(manifestKey);
   }
 
-  private createManifestKeyFrom(cacheKey: CacheKey): string {
-    return `${CACHE_KEY_PREFIX}::${cacheKey.client_id}`;
+  clear(): Promise<void> {
+    const manifestKey = this.createManifestKeyFrom(this.clientId);
+    return this.cache.remove(manifestKey);
+  }
+
+  private createManifestKeyFrom(clientId: string): string {
+    return `${CACHE_KEY_PREFIX}::${clientId}`;
   }
 }

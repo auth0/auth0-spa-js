@@ -1,4 +1,5 @@
 import { CacheManager, InMemoryCache } from '../../src/cache';
+import { CacheKeyManifest } from '../../src/cache/key-manifest';
 
 import {
   CacheEntry,
@@ -47,7 +48,11 @@ describe('CacheManager', () => {
 
   beforeEach(() => {
     cache = new InMemoryCache().enclosedCache;
-    manager = new CacheManager(cache);
+
+    manager = new CacheManager(
+      cache,
+      new CacheKeyManifest(cache, TEST_CLIENT_ID)
+    );
   });
 
   it('returns undefined when there is nothing in the cache', async () => {
@@ -265,9 +270,22 @@ describe('CacheManager', () => {
   });
 
   it('clears the cache', async () => {
-    await manager.set(defaultData);
-    expect(await manager.get(defaultKey)).toStrictEqual(defaultData);
+    const entry1 = { ...defaultData };
+    const entry2 = { ...defaultData, scope: 'scope-1' };
+
+    await manager.set(entry1);
+    await manager.set(entry2);
+
+    expect(await manager.get(CacheKey.fromCacheEntry(entry1))).toStrictEqual(
+      entry1
+    );
+
+    expect(await manager.get(CacheKey.fromCacheEntry(entry2))).toStrictEqual(
+      entry2
+    );
+
     await manager.clear();
-    expect(await manager.get(defaultKey)).toBeFalsy();
+    expect(await manager.get(CacheKey.fromCacheEntry(entry1))).toBeFalsy();
+    expect(await manager.get(CacheKey.fromCacheEntry(entry2))).toBeFalsy();
   });
 });

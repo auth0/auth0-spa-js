@@ -23,11 +23,6 @@ export class InMemoryCache {
       remove(key: string): Promise<void> {
         delete cache[key];
         return Promise.resolve();
-      },
-
-      clear(): Promise<void> {
-        cache = {};
-        return Promise.resolve();
       }
     };
   })();

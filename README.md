@@ -222,7 +222,6 @@ The object should implement the following functions:
 | ---------------------------------------------------- | --------------------------------------------------------------------------------------------- |
 | `async get(key)`                                     | Returns the item from the cache with the specified key, or `undefined` if it was not found    |
 | `async set(key: string, object: any): Promise<void>` | Sets an item into the cache                                                                   |
-| `async clear()`                                      | Removes all the items in the cache                                                            |
 | `async remove(key)`                                  | Removes a single item from the cache at the specified key, or no-op if the item was not found |
 
 Here's an example of a custom cache implementation that uses `sessionStorage` to store tokens and apply it to the Auth0 SPA SDK:
@@ -236,16 +235,6 @@ const sessionStorageCache = {
 
   set: function (key, value) {
     sessionStorage.setItem(key, JSON.stringify(value));
-    return Promise.resolve();
-  },
-
-  clear: function () {
-    for (var i = sessionStorage.length - 1; i >= 0; i--) {
-      if (sessionStorage.key(i).startsWith('@@auth0spajs@@')) {
-        sessionStorage.removeItem(sessionStorage.key(i));
-      }
-    }
-
     return Promise.resolve();
   },
 

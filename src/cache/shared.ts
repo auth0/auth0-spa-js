@@ -67,6 +67,7 @@ export interface KeyManifestEntry {
 
 export type Cacheable = WrappedCacheEntry | KeyManifestEntry;
 
+/* istanbul ignore next */
 export function isWrappedCacheEntry(value: any): value is WrappedCacheEntry {
   if ((value as WrappedCacheEntry).body) {
     return true;
@@ -75,6 +76,7 @@ export function isWrappedCacheEntry(value: any): value is WrappedCacheEntry {
   return false;
 }
 
+/* istanbul ignore next */
 export function isKeyManifestEntry(value: any): value is KeyManifestEntry {
   if ((value as KeyManifestEntry).keys) {
     return true;
@@ -87,5 +89,4 @@ export interface ICache {
   set<T = Cacheable>(key: string, entry: T): Promise<void>;
   get<T = Cacheable>(key: string): Promise<T>;
   remove(key: string): Promise<void>;
-  clear(): Promise<void>;
 }
