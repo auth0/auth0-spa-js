@@ -24,8 +24,7 @@ const mockVerify = <jest.Mock>verify;
 const mockCache: ICache = {
   set: jest.fn().mockResolvedValue(null),
   get: jest.fn().mockResolvedValue(null),
-  remove: jest.fn().mockResolvedValue(null),
-  clear: jest.fn().mockResolvedValue(null)
+  remove: jest.fn().mockResolvedValue(null)
 };
 
 jest
