@@ -1,8 +1,4 @@
-import { CACHE_KEY_PREFIX, ICache, CacheKey } from './shared';
-
-type KeyManifestEntry = {
-  keys: string[];
-};
+import { CACHE_KEY_PREFIX, ICache, CacheKey, KeyManifestEntry } from './shared';
 
 export class CacheKeyManifest {
   constructor(private cache: ICache) {}

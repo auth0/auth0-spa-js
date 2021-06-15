@@ -56,9 +56,36 @@ export interface CacheEntry {
   refresh_token?: string;
 }
 
+export interface WrappedCacheEntry {
+  body: Partial<CacheEntry>;
+  expiresAt: number;
+}
+
+export interface KeyManifestEntry {
+  keys: string[];
+}
+
+export type Cacheable = WrappedCacheEntry | KeyManifestEntry;
+
+export function isWrappedCacheEntry(value: any): value is WrappedCacheEntry {
+  if ((value as WrappedCacheEntry).body) {
+    return true;
+  }
+
+  return false;
+}
+
+export function isKeyManifestEntry(value: any): value is KeyManifestEntry {
+  if ((value as KeyManifestEntry).keys) {
+    return true;
+  }
+
+  return false;
+}
+
 export interface ICache {
-  set<T = unknown>(key: string, entry: T): Promise<void>;
-  get<T = unknown>(key: string): Promise<T>;
+  set<T = Cacheable>(key: string, entry: T): Promise<void>;
+  get<T = Cacheable>(key: string): Promise<T>;
   remove(key: string): Promise<void>;
   clear(): Promise<void>;
 }

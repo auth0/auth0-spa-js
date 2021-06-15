@@ -1,12 +1,12 @@
-import { ICache, CACHE_KEY_PREFIX } from './shared';
+import { ICache, CACHE_KEY_PREFIX, Cacheable } from './shared';
 
 export class LocalStorageCache implements ICache {
-  public set<T = unknown>(key: string, entry: T): Promise<void> {
+  public set<T = Cacheable>(key: string, entry: T): Promise<void> {
     localStorage.setItem(key, JSON.stringify(entry));
     return Promise.resolve();
   }
 
-  public get<T = unknown>(key: string): Promise<T> {
+  public get<T = Cacheable>(key: string): Promise<T> {
     const json = window.localStorage.getItem(key);
 
     if (!json) return Promise.resolve(null);

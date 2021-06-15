@@ -1,12 +1,14 @@
 import { CacheKeyManifest } from './key-manifest';
-import { CacheEntry, ICache, CacheKey, CACHE_KEY_PREFIX } from './shared';
+
+import {
+  CacheEntry,
+  ICache,
+  CacheKey,
+  CACHE_KEY_PREFIX,
+  WrappedCacheEntry
+} from './shared';
 
 const DEFAULT_EXPIRY_ADJUSTMENT_SECONDS = 0;
-
-type WrappedCacheEntry = {
-  body: Partial<CacheEntry>;
-  expiresAt: number;
-};
 
 export class CacheManager {
   private readonly keyManifest: CacheKeyManifest;

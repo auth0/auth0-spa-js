@@ -1,16 +1,16 @@
-import { ICache } from './shared';
+import { Cacheable, ICache } from './shared';
 
 export class InMemoryCache {
   public enclosedCache: ICache = (function () {
     let cache: Record<string, unknown> = {};
 
     return {
-      set<T = unknown>(key: string, entry: T): Promise<void> {
+      set<T = Cacheable>(key: string, entry: T): Promise<void> {
         cache[key] = entry;
         return Promise.resolve();
       },
 
-      get<T = unknown>(key: string): Promise<T> {
+      get<T = Cacheable>(key: string): Promise<T> {
         const cacheEntry = cache[key] as T;
 
         if (!cacheEntry) {
