@@ -115,6 +115,13 @@
                 >
                   Get access token with a popup
                 </button>
+
+                <button
+                  class="btn btn-outline-info"
+                  @click="getMultipleTokens(current.audience, current.scope, current.access_tokens)"
+                >
+                  Get multiple access tokens
+                </button>
               </div>
 
               <div
@@ -390,7 +397,7 @@
             audienceScopes: [
               {
                 audience: data.audience || defaultAudience,
-                scope: 'openid profile email',
+                scope: 'openid profile email Scope1 Scope2',
                 access_tokens: []
               },
               {
@@ -448,7 +455,8 @@
               cacheLocation: _self.useLocalStorage ? 'localstorage' : 'memory',
               useRefreshTokens: _self.useRefreshTokens,
               useCookiesForTransactions: _self.useCookiesForTransactions,
-              redirect_uri: window.location.origin
+              redirect_uri: window.location.origin,
+              scope: 'openid email profile'
             };
 
             if (_self.audience) {
@@ -621,6 +629,56 @@
                 if (e instanceof GenericError && e.error === 'login_required') {
                   _self.isAuthenticated = false;
                 }
+              });
+          },
+          getMultipleTokens: function (audience, scope, access_tokens) {
+            var _self = this;
+            // scope: openid email profile scope1 scope2
+            var scopes = scope.split(' ');
+
+            /*_self.auth0.getTokenSilently({
+              audience: audience,
+              scope: scopes[4],
+              ignoreCache: true
+            });*/
+
+            Promise.all([
+              _self.auth0.getTokenSilently({
+                audience: audience,
+                scope: scope,
+                ignoreCache: true
+              }),
+              _self.auth0.getTokenSilently({
+                audience: audience,
+                scope: scopes[3], //scope2
+                ignoreCache: true
+              }),
+              _self.auth0.getTokenSilently({
+                audience: audience,
+                scope: scopes[4], // scope2
+                ignoreCache: true
+              })
+            ])
+              .then(() => {
+                return _self.auth0.getTokenSilently({
+                  audience: audience,
+                  scope: scopes[3], // scope1
+                  ignoreCache: true
+                });
+              })
+              .then(() => {
+                return _self.auth0.getTokenSilently({
+                  audience: audience,
+                  scope: scopes[3], // scope1
+                  ignoreCache: true
+                });
+              })
+              .then(() => {
+                return _self.auth0.getTokenSilently({
+                  audience: audience,
+                  scope: scopes[4],
+                  ignoreCache: true
+                });
               });
           },
           getTokenPopup: function (audience, scope, access_tokens) {
