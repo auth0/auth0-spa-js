@@ -67,18 +67,24 @@ export interface KeyManifestEntry {
 
 export type Cacheable = WrappedCacheEntry | KeyManifestEntry;
 
-/* istanbul ignore next */
+/* This is not used internally but could serve useful for those that
+   implement their own caches */
 export function isWrappedCacheEntry(value: any): value is WrappedCacheEntry {
-  if ((value as WrappedCacheEntry).body) {
+  const maybeCacheEntry: WrappedCacheEntry = value;
+
+  if (maybeCacheEntry.body && maybeCacheEntry.expiresAt) {
     return true;
   }
 
   return false;
 }
 
-/* istanbul ignore next */
+/* This is not used internally but could serve useful for those that
+   implement their own caches */
 export function isKeyManifestEntry(value: any): value is KeyManifestEntry {
-  if ((value as KeyManifestEntry).keys) {
+  const maybeKeyManifestEntry: KeyManifestEntry = value;
+
+  if (maybeKeyManifestEntry.keys && Array.isArray(maybeKeyManifestEntry.keys)) {
     return true;
   }
 
