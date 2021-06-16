@@ -1,4 +1,4 @@
-import { CACHE_KEY_PREFIX, ICache, CacheKey, KeyManifestEntry } from './shared';
+import { CACHE_KEY_PREFIX, ICache, KeyManifestEntry } from './shared';
 
 export class CacheKeyManifest {
   private readonly manifestKey: string;
