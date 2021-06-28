@@ -67,30 +67,6 @@ export interface KeyManifestEntry {
 
 export type Cacheable = WrappedCacheEntry | KeyManifestEntry;
 
-/* This is not used internally but could serve useful for those that
-   implement their own caches */
-export function isWrappedCacheEntry(value: any): value is WrappedCacheEntry {
-  const maybeCacheEntry: WrappedCacheEntry = value;
-
-  if (maybeCacheEntry.body && maybeCacheEntry.expiresAt) {
-    return true;
-  }
-
-  return false;
-}
-
-/* This is not used internally but could serve useful for those that
-   implement their own caches */
-export function isKeyManifestEntry(value: any): value is KeyManifestEntry {
-  const maybeKeyManifestEntry: KeyManifestEntry = value;
-
-  if (maybeKeyManifestEntry.keys && Array.isArray(maybeKeyManifestEntry.keys)) {
-    return true;
-  }
-
-  return false;
-}
-
 export interface ICache {
   set<T = Cacheable>(key: string, entry: T): Promise<void>;
   get<T = Cacheable>(key: string): Promise<T>;

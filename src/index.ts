@@ -32,11 +32,4 @@ export {
   PopupCancelledError
 } from './errors';
 
-export {
-  ICache,
-  LocalStorageCache,
-  InMemoryCache,
-  isWrappedCacheEntry,
-  isKeyManifestEntry,
-  Cacheable
-} from './cache';
+export { ICache, LocalStorageCache, InMemoryCache, Cacheable } from './cache';

@@ -4,7 +4,7 @@ import {
   InMemoryCache,
   LocalStorageCache
 } from '../../src/cache';
-import { CacheEntry } from '../../src/cache/shared';
+import { CacheEntry, WrappedCacheEntry } from '../../src/cache/shared';
 
 import {
   TEST_CLIENT_ID,
@@ -25,7 +25,7 @@ const cacheDescriptors = [
   { ctor: () => new InMemoryCache().enclosedCache, name: 'In-memory Cache' }
 ];
 
-const defaultEntry = {
+const defaultEntry: CacheEntry = {
   client_id: TEST_CLIENT_ID,
   audience: TEST_AUDIENCE,
   scope: TEST_SCOPES,
@@ -70,7 +70,7 @@ cacheDescriptors.forEach(descriptor => {
       const cacheKey = CacheKey.fromCacheEntry(data);
 
       await cache.set(cacheKey.toKey(), data);
-      expect(await cache.get(cacheKey.toKey())).toStrictEqual(data);
+      expect(await cache.get<CacheEntry>(cacheKey.toKey())).toStrictEqual(data);
     });
 
     it('retrieves values from the cache when scopes do not match', async () => {
@@ -94,7 +94,7 @@ cacheDescriptors.forEach(descriptor => {
       });
 
       await cache.set(cacheKey.toKey(), data);
-      expect(await cache.get(cacheKey.toKey())).toStrictEqual(data);
+      expect(await cache.get<CacheEntry>(cacheKey.toKey())).toStrictEqual(data);
     });
 
     it('retrieves values from the cache when scopes do not match and multiple scopes are provided in a different order', async () => {
@@ -118,7 +118,7 @@ cacheDescriptors.forEach(descriptor => {
       });
 
       await cache.set(cacheKey.toKey(), data);
-      expect(await cache.get(cacheKey.toKey())).toStrictEqual(data);
+      expect(await cache.get<CacheEntry>(cacheKey.toKey())).toStrictEqual(data);
     });
 
     it('returns undefined when not all scopes match', async () => {
@@ -160,7 +160,7 @@ cacheDescriptors.forEach(descriptor => {
       const cacheKey = CacheKey.fromCacheEntry(defaultEntry).toKey();
 
       await cache.set(cacheKey, defaultEntry);
-      expect(await cache.get(cacheKey)).toStrictEqual(defaultEntry);
+      expect(await cache.get<CacheEntry>(cacheKey)).toStrictEqual(defaultEntry);
       await cache.remove(cacheKey);
       expect(await cache.get(cacheKey)).toBeFalsy();
     });
