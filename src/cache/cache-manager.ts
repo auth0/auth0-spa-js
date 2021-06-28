@@ -131,15 +131,14 @@ export class CacheManager {
       } = CacheKey.fromKey(key);
 
       const currentScopesArr = currentScopes && currentScopes.split(' ');
+      const existingScopeArr = scope.split(' ');
 
       const hasAllScopes =
         currentScopes &&
-        scope
-          .split(' ')
-          .reduce(
-            (acc, current) => acc && currentScopesArr.includes(current),
-            true
-          );
+        existingScopeArr.reduce(
+          (acc, current) => acc && currentScopesArr.includes(current),
+          true
+        );
 
       return (
         currentPrefix === CACHE_KEY_PREFIX &&
