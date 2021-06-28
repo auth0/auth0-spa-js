@@ -229,8 +229,7 @@ Here's an example of a custom cache implementation that uses `sessionStorage` to
 ```js
 const sessionStorageCache = {
   get: function (key) {
-    JSON.parse(sessionStorage.getItem(key));
-    return Promise.resolve();
+    return Promise.resolve(JSON.parse(sessionStorage.getItem(key)));
   },
 
   set: function (key, value) {

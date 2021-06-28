@@ -344,9 +344,8 @@
         },
 
         set: function (key, value) {
-          return Promise.resolve(
-            sessionStorage.setItem(key, JSON.stringify(value))
-          );
+          sessionStorage.setItem(key, JSON.stringify(value));
+          return Promise.resolve();
         },
 
         clear: function () {
