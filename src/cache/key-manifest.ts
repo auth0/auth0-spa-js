@@ -41,13 +41,11 @@ export class CacheKeyManifest {
   }
 
   get(): Promise<KeyManifestEntry> {
-    const manifestKey = this.createManifestKeyFrom(this.clientId);
-    return this.cache.get<KeyManifestEntry>(manifestKey);
+    return this.cache.get<KeyManifestEntry>(this.manifestKey);
   }
 
   clear(): Promise<void> {
-    const manifestKey = this.createManifestKeyFrom(this.clientId);
-    return this.cache.remove(manifestKey);
+    return this.cache.remove(this.manifestKey);
   }
 
   private createManifestKeyFrom(clientId: string): string {
