@@ -25,22 +25,19 @@ export class CacheManager {
     );
 
     if (!wrappedEntry) {
-      // Try again by loosely-matching the key against a set of keys we've stored
-      // in the key manifest.
-      const keyManifestEntry = await this.keyManifest.get();
+      const keys = this.cache.allKeys
+        ? await this.cache.allKeys()
+        : (await this.keyManifest.get())?.keys;
 
-      if (keyManifestEntry) {
-        const matchedKey = this.matchExistingCacheKey(
-          cacheKey,
-          keyManifestEntry.keys
-        );
-        wrappedEntry = await this.cache.get<WrappedCacheEntry>(matchedKey);
-      }
+      if (!keys) return;
 
-      // If we still don't have an entry..
-      if (!wrappedEntry) {
-        return;
-      }
+      const matchedKey = this.matchExistingCacheKey(cacheKey, keys);
+      wrappedEntry = await this.cache.get<WrappedCacheEntry>(matchedKey);
+    }
+
+    // If we still don't have an entry, exit.
+    if (!wrappedEntry) {
+      return;
     }
 
     const nowSeconds = Math.floor(Date.now() / 1000);

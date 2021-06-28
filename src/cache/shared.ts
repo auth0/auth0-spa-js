@@ -19,16 +19,30 @@ export class CacheKey {
     this.audience = data.audience;
   }
 
+  /**
+   * Converts this `CacheKey` instance into a string for use in a cache
+   * @returns A string representation of the key
+   */
   toKey(): string {
     return `${this.prefix}::${this.client_id}::${this.audience}::${this.scope}`;
   }
 
+  /**
+   * Converts a cache key string into a `CacheKey` instance.
+   * @param key The key to convert
+   * @returns An instance of `CacheKey`
+   */
   static fromKey(key: string): CacheKey {
     const [prefix, client_id, audience, scope] = key.split('::');
 
     return new CacheKey({ client_id, scope, audience }, prefix);
   }
 
+  /**
+   * Utility function to build a `CacheKey` instance from a cache entry
+   * @param entry The entry
+   * @returns An instance of `CacheKey`
+   */
   static fromCacheEntry(entry: CacheEntry): CacheKey {
     const { scope, audience, client_id } = entry;
 
@@ -71,4 +85,5 @@ export interface ICache {
   set<T = Cacheable>(key: string, entry: T): Promise<void>;
   get<T = Cacheable>(key: string): Promise<T>;
   remove(key: string): Promise<void>;
+  allKeys?(): Promise<string[]>;
 }
