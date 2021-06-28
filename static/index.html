@@ -630,7 +630,7 @@
               .then(function (token) {
                 access_tokens.push(token);
               })
-              .catch(err => {
+              .catch(function (err) {
                 _self.error = err;
               });
           },
