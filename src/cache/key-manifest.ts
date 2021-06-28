@@ -8,20 +8,16 @@ export class CacheKeyManifest {
   }
 
   async add(key: string): Promise<void> {
-    const existingEntry = await this.cache.get<KeyManifestEntry>(
-      this.manifestKey
+    const keySet = new Set(
+      ((await this.cache.get<KeyManifestEntry>(this.manifestKey)) || {}).keys ||
+        []
     );
 
-    if (!existingEntry) {
-      return await this.cache.set<KeyManifestEntry>(this.manifestKey, {
-        keys: [key]
-      });
-    }
+    keySet.add(key);
 
-    if (!existingEntry.keys.includes(key)) {
-      existingEntry.keys.push(key);
-      await this.cache.set<KeyManifestEntry>(this.manifestKey, existingEntry);
-    }
+    await this.cache.set<KeyManifestEntry>(this.manifestKey, {
+      keys: [...keySet]
+    });
   }
 
   async remove(key: string): Promise<void> {
