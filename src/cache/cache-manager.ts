@@ -116,34 +116,26 @@ export class CacheManager {
    *  - `audience` is strict equal to the `cacheKey.audience`
    *  - `scope` contains at least all the `cacheKey.scope` values
    *  *
-   * @param cacheKey The provided cache key
-   * @param existingCacheKeys A list of existing cache keys
+   * @param keyToMatch The provided cache key
+   * @param allKeys A list of existing cache keys
    */
-  matchExistingCacheKey(cacheKey: CacheKey, existingCacheKeys: Array<string>) {
-    const { client_id, audience, scope } = cacheKey;
-
-    return existingCacheKeys.filter(key => {
-      const {
-        prefix: currentPrefix,
-        client_id: currentClientId,
-        audience: currentAudience,
-        scope: currentScopes
-      } = CacheKey.fromKey(key);
-
-      const currentScopesArr = currentScopes && currentScopes.split(' ');
-      const existingScopeArr = scope.split(' ');
+  matchExistingCacheKey(keyToMatch: CacheKey, allKeys: Array<string>) {
+    return allKeys.filter(key => {
+      const cacheKey = CacheKey.fromKey(key);
+      const scopeSet = new Set(cacheKey.scope && cacheKey.scope.split(' '));
+      const scopesToMatch = keyToMatch.scope.split(' ');
 
       const hasAllScopes =
-        currentScopes &&
-        existingScopeArr.reduce(
-          (acc, current) => acc && currentScopesArr.includes(current),
+        cacheKey.scope &&
+        scopesToMatch.reduce(
+          (acc, current) => acc && scopeSet.has(current),
           true
         );
 
       return (
-        currentPrefix === CACHE_KEY_PREFIX &&
-        currentClientId === client_id &&
-        currentAudience === audience &&
+        cacheKey.prefix === CACHE_KEY_PREFIX &&
+        cacheKey.client_id === keyToMatch.client_id &&
+        cacheKey.audience === keyToMatch.audience &&
         hasAllScopes
       );
     })[0];
