@@ -2,11 +2,11 @@ import { IdToken, User } from '../global';
 
 export const CACHE_KEY_PREFIX = '@@auth0spajs@@';
 
-export interface CacheKeyData {
+export type CacheKeyData = {
   audience: string;
   scope: string;
   client_id: string;
-}
+};
 
 export class CacheKey {
   public client_id: string;
@@ -45,7 +45,7 @@ interface DecodedToken {
   user: User;
 }
 
-export interface CacheEntry {
+export type CacheEntry = {
   id_token: string;
   access_token: string;
   expires_in: number;
@@ -54,16 +54,16 @@ export interface CacheEntry {
   scope: string;
   client_id: string;
   refresh_token?: string;
-}
+};
 
-export interface WrappedCacheEntry {
+export type WrappedCacheEntry = {
   body: Partial<CacheEntry>;
   expiresAt: number;
-}
+};
 
-export interface KeyManifestEntry {
+export type KeyManifestEntry = {
   keys: string[];
-}
+};
 
 export type Cacheable = WrappedCacheEntry | KeyManifestEntry;
 
