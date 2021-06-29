@@ -1,7 +1,10 @@
-import { CacheManager, InMemoryCache } from '../../src/cache';
+import {
+  CacheManager,
+  InMemoryCache,
+  LocalStorageCache
+} from '../../src/cache';
 
 import {
-  Cacheable,
   CacheEntry,
   CacheKey,
   CACHE_KEY_PREFIX,
@@ -18,35 +21,6 @@ import {
   nowSeconds,
   TEST_REFRESH_TOKEN
 } from '../constants';
-import { CacheConstructor } from './shared';
-
-class CacheWithAllKeys implements ICache {
-  cache: Record<string, unknown> = {};
-
-  set<T = Cacheable>(key: string, entry: T): Promise<void> {
-    this.cache[key] = entry;
-    return Promise.resolve();
-  }
-
-  get<T = Cacheable>(key: string): Promise<T> {
-    const cacheEntry = this.cache[key] as T;
-
-    if (!cacheEntry) {
-      return Promise.resolve(null);
-    }
-
-    return Promise.resolve(cacheEntry);
-  }
-
-  remove(key: string): Promise<void> {
-    delete this.cache[key];
-    return Promise.resolve();
-  }
-
-  allKeys(): Promise<string[]> {
-    return Promise.resolve(Object.keys(this.cache));
-  }
-}
 
 const defaultKey = new CacheKey({
   client_id: TEST_CLIENT_ID,
@@ -72,11 +46,10 @@ const defaultData: CacheEntry = {
 };
 
 const cacheDescriptors = [
-  { ctor: CacheWithAllKeys, name: 'In-memory Cache, with allKeys' },
+  { ctor: () => new LocalStorageCache(), name: 'Cache with allKeys' },
   {
     ctor: () => new InMemoryCache().enclosedCache,
-    name: 'In-memory Cache using key manifest',
-    withKeyManifest: true
+    name: 'Cache using key manifest'
   }
 ];
 
@@ -84,12 +57,14 @@ cacheDescriptors.forEach(descriptor => {
   describe(`CacheManager using ${descriptor.name}`, () => {
     let manager: CacheManager;
     let cache: ICache;
+    let withKeyManifest: boolean;
 
     beforeEach(() => {
-      cache = new (descriptor.ctor as CacheConstructor)();
+      cache = descriptor.ctor();
       manager = new CacheManager(cache, TEST_CLIENT_ID);
+      withKeyManifest = !!!cache.allKeys;
 
-      if (manager['keyManifest']) {
+      if (withKeyManifest) {
         ['get', 'add', 'clear'].forEach((method: any) =>
           jest.spyOn(manager['keyManifest'], method)
         );
@@ -100,6 +75,14 @@ cacheDescriptors.forEach(descriptor => {
       const result = await manager.get(defaultKey);
 
       expect(result).toBeFalsy();
+    });
+
+    it('sets up the key manifest correctly', () => {
+      if (cache.allKeys) {
+        expect(manager['keyManifest']).toBeUndefined();
+      } else {
+        expect(manager['keyManifest']).toBeTruthy();
+      }
     });
 
     it('should return an entry from the cache if any of the scopes match', async () => {
@@ -136,7 +119,7 @@ cacheDescriptors.forEach(descriptor => {
       expect(await manager.get(key)).toStrictEqual(data);
     });
 
-    if (descriptor.withKeyManifest) {
+    if (withKeyManifest) {
       it('should update the key manifest when the key has only been added to the underlying cache', async () => {
         const manifestKey = `${CACHE_KEY_PREFIX}::${defaultData.client_id}`;
 
@@ -273,7 +256,7 @@ cacheDescriptors.forEach(descriptor => {
       expect(result).toBeFalsy();
 
       // And that the data has been removed from the key manifest
-      if (descriptor.withKeyManifest) {
+      if (withKeyManifest) {
         expect(cacheRemoveSpy).toHaveBeenCalledWith(
           `@@auth0spajs@@::${data.client_id}`
         );
@@ -309,7 +292,7 @@ cacheDescriptors.forEach(descriptor => {
       expect(result).toBeFalsy();
 
       // And that the data has been removed from the key manifest
-      if (descriptor.withKeyManifest) {
+      if (withKeyManifest) {
         expect(cacheRemoveSpy).toHaveBeenCalledWith(
           `@@auth0spajs@@::${data.client_id}`
         );

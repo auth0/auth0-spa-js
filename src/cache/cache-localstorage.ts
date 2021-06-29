@@ -1,4 +1,4 @@
-import { ICache, Cacheable } from './shared';
+import { ICache, Cacheable, CACHE_KEY_PREFIX } from './shared';
 
 export class LocalStorageCache implements ICache {
   public set<T = Cacheable>(key: string, entry: T): Promise<void> {
@@ -23,5 +23,13 @@ export class LocalStorageCache implements ICache {
   public remove(key: string): Promise<void> {
     localStorage.removeItem(key);
     return Promise.resolve();
+  }
+
+  public allKeys(): Promise<string[]> {
+    return Promise.resolve(
+      Object.keys(window.localStorage).filter(key =>
+        key.startsWith(CACHE_KEY_PREFIX)
+      )
+    );
   }
 }

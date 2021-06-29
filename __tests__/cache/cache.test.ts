@@ -4,7 +4,7 @@ import {
   InMemoryCache,
   LocalStorageCache
 } from '../../src/cache';
-import { CacheEntry, WrappedCacheEntry } from '../../src/cache/shared';
+import { CacheEntry } from '../../src/cache/shared';
 
 import {
   TEST_CLIENT_ID,
@@ -15,10 +15,9 @@ import {
   nowSeconds,
   TEST_AUDIENCE
 } from '../constants';
-import { CacheConstructor } from './shared';
 
 const cacheDescriptors = [
-  { ctor: LocalStorageCache, name: 'LocalStorage Cache' },
+  { ctor: () => new LocalStorageCache(), name: 'LocalStorage Cache' },
   { ctor: () => new InMemoryCache().enclosedCache, name: 'In-memory Cache' }
 ];
 
@@ -44,7 +43,7 @@ cacheDescriptors.forEach(descriptor => {
     let cache: ICache;
 
     beforeEach(() => {
-      cache = new (descriptor.ctor as CacheConstructor)();
+      cache = descriptor.ctor();
     });
 
     it('returns undefined when there is no data', async () => {
