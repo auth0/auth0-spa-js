@@ -11,10 +11,15 @@ import {
 const DEFAULT_EXPIRY_ADJUSTMENT_SECONDS = 0;
 
 export class CacheManager {
-  constructor(
-    private cache: ICache,
-    private readonly keyManifest: CacheKeyManifest
-  ) {}
+  private readonly keyManifest?: CacheKeyManifest;
+
+  constructor(private cache: ICache, clientId: string) {
+    // If the cache implementation doesn't provide an `allKeys` method,
+    // use a built-in key manifest.
+    if (!cache.allKeys) {
+      this.keyManifest = new CacheKeyManifest(this.cache, clientId);
+    }
+  }
 
   async get(
     cacheKey: CacheKey,
@@ -25,9 +30,7 @@ export class CacheManager {
     );
 
     if (!wrappedEntry) {
-      const keys = this.cache.allKeys
-        ? await this.cache.allKeys()
-        : (await this.keyManifest.get())?.keys;
+      const keys = await this.getCacheKeys();
 
       if (!keys) return;
 
@@ -45,7 +48,7 @@ export class CacheManager {
     // Make sure the key manifest knows about the key.
     // This helps to migrate keys into the manifest, as the manifest takes care
     // of duplicates for us.
-    await this.keyManifest.add(cacheKey.toKey());
+    await this.keyManifest?.add(cacheKey.toKey());
 
     if (wrappedEntry.expiresAt - expiryAdjustmentSeconds < nowSeconds) {
       if (wrappedEntry.body.refresh_token) {
@@ -58,7 +61,8 @@ export class CacheManager {
       }
 
       await this.cache.remove(cacheKey.toKey());
-      await this.keyManifest.remove(cacheKey.toKey());
+      await this.keyManifest?.remove(cacheKey.toKey());
+
       return;
     }
 
@@ -75,18 +79,18 @@ export class CacheManager {
     const wrappedEntry = this.wrapCacheEntry(entry);
 
     await this.cache.set(cacheKey.toKey(), wrappedEntry);
-    await this.keyManifest.add(cacheKey.toKey());
+    await this.keyManifest?.add(cacheKey.toKey());
   }
 
   async clear(): Promise<void> {
-    const keyManifest = await this.keyManifest.get();
+    const keys = await this.getCacheKeys();
 
-    if (keyManifest) {
-      keyManifest.keys.forEach(async key => {
+    if (keys) {
+      keys.forEach(async key => {
         await this.cache.remove(key);
       });
 
-      await this.keyManifest.clear();
+      await this.keyManifest?.clear();
     }
   }
 
@@ -104,6 +108,12 @@ export class CacheManager {
     };
   }
 
+  private async getCacheKeys(): Promise<string[]> {
+    return this.keyManifest
+      ? (await this.keyManifest.get())?.keys
+      : await this.cache.allKeys();
+  }
+
   /**
    * Finds the corresponding key in the cache based on the provided cache key.
    * The keys inside the cache are in the format {prefix}::{client_id}::{audience}::{scope}.
@@ -116,7 +126,7 @@ export class CacheManager {
    * @param keyToMatch The provided cache key
    * @param allKeys A list of existing cache keys
    */
-  matchExistingCacheKey(keyToMatch: CacheKey, allKeys: Array<string>) {
+  private matchExistingCacheKey(keyToMatch: CacheKey, allKeys: Array<string>) {
     return allKeys.filter(key => {
       const cacheKey = CacheKey.fromKey(key);
       const scopeSet = new Set(cacheKey.scope && cacheKey.scope.split(' '));

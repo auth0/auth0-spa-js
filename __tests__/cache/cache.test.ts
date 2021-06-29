@@ -15,10 +15,7 @@ import {
   nowSeconds,
   TEST_AUDIENCE
 } from '../constants';
-
-interface CacheConstructor {
-  new (): ICache;
-}
+import { CacheConstructor } from './shared';
 
 const cacheDescriptors = [
   { ctor: LocalStorageCache, name: 'LocalStorage Cache' },

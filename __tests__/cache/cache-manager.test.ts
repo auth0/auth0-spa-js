@@ -1,7 +1,7 @@
 import { CacheManager, InMemoryCache } from '../../src/cache';
-import { CacheKeyManifest } from '../../src/cache/key-manifest';
 
 import {
+  Cacheable,
   CacheEntry,
   CacheKey,
   CACHE_KEY_PREFIX,
@@ -18,6 +18,35 @@ import {
   nowSeconds,
   TEST_REFRESH_TOKEN
 } from '../constants';
+import { CacheConstructor } from './shared';
+
+class CacheWithAllKeys implements ICache {
+  cache: Record<string, unknown> = {};
+
+  set<T = Cacheable>(key: string, entry: T): Promise<void> {
+    this.cache[key] = entry;
+    return Promise.resolve();
+  }
+
+  get<T = Cacheable>(key: string): Promise<T> {
+    const cacheEntry = this.cache[key] as T;
+
+    if (!cacheEntry) {
+      return Promise.resolve(null);
+    }
+
+    return Promise.resolve(cacheEntry);
+  }
+
+  remove(key: string): Promise<void> {
+    delete this.cache[key];
+    return Promise.resolve();
+  }
+
+  allKeys(): Promise<string[]> {
+    return Promise.resolve(Object.keys(this.cache));
+  }
+}
 
 const defaultKey = new CacheKey({
   client_id: TEST_CLIENT_ID,
@@ -42,128 +71,178 @@ const defaultData: CacheEntry = {
   }
 };
 
-describe('CacheManager', () => {
-  let manager: CacheManager;
-  let cache: ICache;
+const cacheDescriptors = [
+  { ctor: CacheWithAllKeys, name: 'In-memory Cache, with allKeys' },
+  {
+    ctor: () => new InMemoryCache().enclosedCache,
+    name: 'In-memory Cache using key manifest',
+    withKeyManifest: true
+  }
+];
 
-  beforeEach(() => {
-    cache = new InMemoryCache().enclosedCache;
+cacheDescriptors.forEach(descriptor => {
+  describe(`CacheManager using ${descriptor.name}`, () => {
+    let manager: CacheManager;
+    let cache: ICache;
 
-    manager = new CacheManager(
-      cache,
-      new CacheKeyManifest(cache, TEST_CLIENT_ID)
-    );
-  });
+    beforeEach(() => {
+      cache = new (descriptor.ctor as CacheConstructor)();
+      manager = new CacheManager(cache, TEST_CLIENT_ID);
 
-  it('returns undefined when there is nothing in the cache', async () => {
-    const result = await manager.get(defaultKey);
-
-    expect(result).toBeFalsy();
-  });
-
-  it('should return an entry from the cache if any of the scopes match', async () => {
-    const data = {
-      ...defaultData,
-      scope: 'read:messages write:messages'
-    };
-
-    await manager.set(data);
-
-    const key = new CacheKey({
-      client_id: TEST_CLIENT_ID,
-      audience: TEST_AUDIENCE,
-      scope: 'read:messages'
+      if (manager['keyManifest']) {
+        ['get', 'add', 'clear'].forEach((method: any) =>
+          jest.spyOn(manager['keyManifest'], method)
+        );
+      }
     });
 
-    expect(await manager.get(key)).toStrictEqual(data);
-  });
+    it('returns undefined when there is nothing in the cache', async () => {
+      const result = await manager.get(defaultKey);
 
-  it('should return an entry from the cache if multiple scopes match', async () => {
-    const data = {
-      ...defaultData,
-      scope: 'read:messages write:messages'
-    };
-
-    await manager.set(data);
-
-    const key = new CacheKey({
-      client_id: TEST_CLIENT_ID,
-      audience: TEST_AUDIENCE,
-      scope: 'read:messages write:messages'
+      expect(result).toBeFalsy();
     });
 
-    expect(await manager.get(key)).toStrictEqual(data);
-  });
+    it('should return an entry from the cache if any of the scopes match', async () => {
+      const data = {
+        ...defaultData,
+        scope: 'read:messages write:messages'
+      };
 
-  it('should update the key manifest when the key has only been added to the underlying cache', async () => {
-    const manifestKey = `${CACHE_KEY_PREFIX}::${defaultData.client_id}`;
+      await manager.set(data);
 
-    await manager.set(defaultData);
+      const key = new CacheKey({
+        client_id: TEST_CLIENT_ID,
+        audience: TEST_AUDIENCE,
+        scope: 'read:messages'
+      });
 
-    // Remove the manifest entry that is created by the manifest
-    await cache.remove(manifestKey);
-
-    const result = await manager.get(defaultKey);
-
-    expect(result).toStrictEqual(defaultData);
-    expect(await cache.get(manifestKey)).toBeTruthy();
-  });
-
-  it('should not return an entry if not all of the scopes match', async () => {
-    const data = {
-      ...defaultData,
-      scope: 'read:messages write:messages'
-    };
-
-    await manager.set(data);
-
-    const key = new CacheKey({
-      client_id: TEST_CLIENT_ID,
-      audience: TEST_AUDIENCE,
-      scope: 'read:messages read:actions'
+      expect(await manager.get(key)).toStrictEqual(data);
     });
 
-    expect(await manager.get(key)).toBeFalsy();
-  });
+    it('should return an entry directly from the cache if the key matches exactly', async () => {
+      const data = {
+        ...defaultData,
+        scope: 'read:messages write:messages'
+      };
 
-  it('returns undefined from the cache when expires_in < expiryAdjustmentSeconds', async () => {
-    const data = {
-      ...defaultData,
-      expires_in: 40
-    };
+      await manager.set(data);
 
-    await manager.set(data);
+      const key = new CacheKey({
+        client_id: TEST_CLIENT_ID,
+        audience: TEST_AUDIENCE,
+        scope: 'read:messages write:messages'
+      });
 
-    expect(
-      await manager.get(
-        new CacheKey({
-          client_id: TEST_CLIENT_ID,
-          audience: 'the_audience',
-          scope: TEST_SCOPES
-        }),
-        60
-      )
-    ).toBeFalsy();
-  });
+      expect(await manager.get(key)).toStrictEqual(data);
+    });
 
-  it('returns undefined if the item was not found in the underlying cache', async () => {
-    const cacheSpy = jest.spyOn(cache, 'remove');
+    if (descriptor.withKeyManifest) {
+      it('should update the key manifest when the key has only been added to the underlying cache', async () => {
+        const manifestKey = `${CACHE_KEY_PREFIX}::${defaultData.client_id}`;
 
-    await manager.set(defaultData);
-    expect(await manager.get(defaultKey)).toStrictEqual(defaultData);
-    cache.remove(defaultKey.toKey());
-    expect(await manager.get(defaultKey)).toBeFalsy();
-    expect(cacheSpy).toHaveBeenCalledWith(defaultKey.toKey());
-  });
+        await manager.set(defaultData);
 
-  describe('when refresh tokens are used', () => {
-    it('strips everything except the refresh token when expiry has been reached', async () => {
+        // Remove the manifest entry that is created by the manifest
+        await cache.remove(manifestKey);
+
+        const result = await manager.get(defaultKey);
+
+        expect(result).toStrictEqual(defaultData);
+        expect(await cache.get(manifestKey)).toBeTruthy();
+      });
+    }
+
+    it('should not return an entry if not all of the scopes match', async () => {
+      const data = {
+        ...defaultData,
+        scope: 'read:messages write:messages'
+      };
+
+      await manager.set(data);
+
+      const key = new CacheKey({
+        client_id: TEST_CLIENT_ID,
+        audience: TEST_AUDIENCE,
+        scope: 'read:messages read:actions'
+      });
+
+      expect(await manager.get(key)).toBeFalsy();
+    });
+
+    it('returns undefined from the cache when expires_in < expiryAdjustmentSeconds', async () => {
+      const data = {
+        ...defaultData,
+        expires_in: 40
+      };
+
+      await manager.set(data);
+
+      expect(
+        await manager.get(
+          new CacheKey({
+            client_id: TEST_CLIENT_ID,
+            audience: 'the_audience',
+            scope: TEST_SCOPES
+          }),
+          60
+        )
+      ).toBeFalsy();
+    });
+
+    it('returns undefined if the item was not found in the underlying cache', async () => {
+      const cacheSpy = jest.spyOn(cache, 'remove');
+
+      await manager.set(defaultData);
+      expect(await manager.get(defaultKey)).toStrictEqual(defaultData);
+      cache.remove(defaultKey.toKey());
+      expect(await manager.get(defaultKey)).toBeFalsy();
+      expect(cacheSpy).toHaveBeenCalledWith(defaultKey.toKey());
+    });
+
+    describe('when refresh tokens are used', () => {
+      it('strips everything except the refresh token when expiry has been reached', async () => {
+        const now = Date.now();
+        const realDateNow = Date.now.bind(global.Date);
+
+        const data = {
+          ...defaultData,
+          refresh_token: TEST_REFRESH_TOKEN,
+          decodedToken: {
+            claims: {
+              __raw: TEST_ID_TOKEN,
+              name: 'Test',
+              exp: nowSeconds() + dayInSeconds * 2
+            },
+            user: { name: 'Test' }
+          }
+        };
+
+        await manager.set(data);
+
+        const cacheKey = CacheKey.fromCacheEntry(data);
+
+        // Test that the cache state is normal up until just before the expiry time..
+        expect(await manager.get(cacheKey)).toStrictEqual(data);
+
+        // Advance the time to just past the expiry..
+        const dateNowStub = jest.fn(() => now + (dayInSeconds + 60) * 1000);
+        global.Date.now = dateNowStub;
+
+        expect(await manager.get(cacheKey)).toStrictEqual({
+          refresh_token: TEST_REFRESH_TOKEN
+        });
+
+        global.Date.now = realDateNow;
+      });
+    });
+
+    it('expires the cache on read when the date.now > expires_in', async () => {
       const now = Date.now();
       const realDateNow = Date.now.bind(global.Date);
+      const cacheRemoveSpy = jest.spyOn(cache, 'remove');
 
       const data = {
         ...defaultData,
-        refresh_token: TEST_REFRESH_TOKEN,
         decodedToken: {
           claims: {
             __raw: TEST_ID_TOKEN,
@@ -178,114 +257,83 @@ describe('CacheManager', () => {
 
       const cacheKey = CacheKey.fromCacheEntry(data);
 
-      // Test that the cache state is normal up until just before the expiry time..
+      // Test that the cache state is normal before we expire the data
       expect(await manager.get(cacheKey)).toStrictEqual(data);
 
       // Advance the time to just past the expiry..
-      const dateNowStub = jest.fn(() => now + (dayInSeconds + 60) * 1000);
+      const dateNowStub = jest.fn(() => (now + dayInSeconds + 100) * 1000);
+
       global.Date.now = dateNowStub;
 
-      expect(await manager.get(cacheKey)).toStrictEqual({
-        refresh_token: TEST_REFRESH_TOKEN
-      });
+      const result = await manager.get(cacheKey);
 
       global.Date.now = realDateNow;
-    });
-  });
 
-  it('expires the cache on read when the date.now > expires_in', async () => {
-    const now = Date.now();
-    const realDateNow = Date.now.bind(global.Date);
-    const cacheRemoveSpy = jest.spyOn(cache, 'remove');
+      // And test that the cache has been emptied
+      expect(result).toBeFalsy();
 
-    const data = {
-      ...defaultData,
-      decodedToken: {
-        claims: {
-          __raw: TEST_ID_TOKEN,
-          name: 'Test',
-          exp: nowSeconds() + dayInSeconds * 2
-        },
-        user: { name: 'Test' }
+      // And that the data has been removed from the key manifest
+      if (descriptor.withKeyManifest) {
+        expect(cacheRemoveSpy).toHaveBeenCalledWith(
+          `@@auth0spajs@@::${data.client_id}`
+        );
       }
-    };
+    });
 
-    await manager.set(data);
+    it('expires the cache on read when the date.now > token.exp', async () => {
+      const now = Date.now();
+      const realDateNow = Date.now.bind(global.Date);
+      const cacheRemoveSpy = jest.spyOn(cache, 'remove');
 
-    const cacheKey = CacheKey.fromCacheEntry(data);
+      const data = {
+        ...defaultData,
+        expires_in: dayInSeconds * 120
+      };
 
-    // Test that the cache state is normal before we expire the data
-    expect(await manager.get(cacheKey)).toStrictEqual(data);
+      await manager.set(data);
 
-    // Advance the time to just past the expiry..
-    const dateNowStub = jest.fn(() => (now + dayInSeconds + 100) * 1000);
+      const cacheKey = CacheKey.fromCacheEntry(data);
 
-    global.Date.now = dateNowStub;
+      // Test that the cache state is normal before we expire the data
+      expect(await manager.get(cacheKey)).toStrictEqual(data);
 
-    const result = await manager.get(cacheKey);
+      // Advance the time to just past the expiry..
+      const dateNowStub = jest.fn(() => (now + dayInSeconds + 100) * 1000);
+      global.Date.now = dateNowStub;
 
-    global.Date.now = realDateNow;
+      const result = await manager.get(cacheKey);
 
-    // And test that the cache has been emptied
-    expect(result).toBeFalsy();
+      global.Date.now = realDateNow;
 
-    // And that the data has been removed from the key manifest
-    expect(cacheRemoveSpy).toHaveBeenCalledWith(
-      `@@auth0spajs@@::${data.client_id}`
-    );
-  });
+      // And test that the cache has been emptied
+      expect(result).toBeFalsy();
 
-  it('expires the cache on read when the date.now > token.exp', async () => {
-    const now = Date.now();
-    const realDateNow = Date.now.bind(global.Date);
-    const cacheRemoveSpy = jest.spyOn(cache, 'remove');
+      // And that the data has been removed from the key manifest
+      if (descriptor.withKeyManifest) {
+        expect(cacheRemoveSpy).toHaveBeenCalledWith(
+          `@@auth0spajs@@::${data.client_id}`
+        );
+      }
+    });
 
-    const data = {
-      ...defaultData,
-      expires_in: dayInSeconds * 120
-    };
+    it('clears the cache', async () => {
+      const entry1 = { ...defaultData };
+      const entry2 = { ...defaultData, scope: 'scope-1' };
 
-    await manager.set(data);
+      await manager.set(entry1);
+      await manager.set(entry2);
 
-    const cacheKey = CacheKey.fromCacheEntry(data);
+      expect(await manager.get(CacheKey.fromCacheEntry(entry1))).toStrictEqual(
+        entry1
+      );
 
-    // Test that the cache state is normal before we expire the data
-    expect(await manager.get(cacheKey)).toStrictEqual(data);
+      expect(await manager.get(CacheKey.fromCacheEntry(entry2))).toStrictEqual(
+        entry2
+      );
 
-    // Advance the time to just past the expiry..
-    const dateNowStub = jest.fn(() => (now + dayInSeconds + 100) * 1000);
-    global.Date.now = dateNowStub;
-
-    const result = await manager.get(cacheKey);
-
-    global.Date.now = realDateNow;
-
-    // And test that the cache has been emptied
-    expect(result).toBeFalsy();
-
-    // And that the data has been removed from the key manifest
-    expect(cacheRemoveSpy).toHaveBeenCalledWith(
-      `@@auth0spajs@@::${data.client_id}`
-    );
-  });
-
-  it('clears the cache', async () => {
-    const entry1 = { ...defaultData };
-    const entry2 = { ...defaultData, scope: 'scope-1' };
-
-    await manager.set(entry1);
-    await manager.set(entry2);
-
-    expect(await manager.get(CacheKey.fromCacheEntry(entry1))).toStrictEqual(
-      entry1
-    );
-
-    expect(await manager.get(CacheKey.fromCacheEntry(entry2))).toStrictEqual(
-      entry2
-    );
-
-    await manager.clear();
-    expect(await manager.get(CacheKey.fromCacheEntry(entry1))).toBeFalsy();
-    expect(await manager.get(CacheKey.fromCacheEntry(entry2))).toBeFalsy();
+      await manager.clear();
+      expect(await manager.get(CacheKey.fromCacheEntry(entry1))).toBeFalsy();
+      expect(await manager.get(CacheKey.fromCacheEntry(entry2))).toBeFalsy();
+    });
   });
 });

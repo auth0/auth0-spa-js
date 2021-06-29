@@ -195,12 +195,7 @@ export default class Auth0Client {
 
     this.scope = this.options.scope;
     this.transactionManager = new TransactionManager(transactionStorage);
-
-    this.cacheManager = new CacheManager(
-      cache,
-      new CacheKeyManifest(cache, this.options.client_id)
-    );
-
+    this.cacheManager = new CacheManager(cache, this.options.client_id);
     this.domainUrl = `https://${this.options.domain}`;
     this.tokenIssuer = getTokenIssuer(this.options.issuer, this.domainUrl);
 
