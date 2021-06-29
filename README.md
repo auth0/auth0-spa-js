@@ -218,11 +218,12 @@ To do this, provide an object to the `cache` property of the SDK configuration.
 
 The object should implement the following functions:
 
-| Signature                                            | Description                                                                                   |
-| ---------------------------------------------------- | --------------------------------------------------------------------------------------------- |
-| `async get(key)`                                     | Returns the item from the cache with the specified key, or `undefined` if it was not found    |
-| `async set(key: string, object: any): Promise<void>` | Sets an item into the cache                                                                   |
-| `async remove(key)`                                  | Removes a single item from the cache at the specified key, or no-op if the item was not found |
+| Signature                                            | Description                                                                                                                                                                                                                                                                                       |
+| ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `async get(key)`                                     | Returns the item from the cache with the specified key, or `undefined` if it was not found                                                                                                                                                                                                        |
+| `async set(key: string, object: any): Promise<void>` | Sets an item into the cache                                                                                                                                                                                                                                                                       |
+| `async remove(key)`                                  | Removes a single item from the cache at the specified key, or no-op if the item was not found                                                                                                                                                                                                     |
+| `async allKeys()`                                    | (optional) Implement this if your cache has the ability to return a list of all keys. Otherwise, the SDK internally records its own key manifest using your cache. **Note**: if you only want to ensure you only return keys used by this SDK, the keys we use are prefixed with `@@auth0spajs@@` |
 
 Here's an example of a custom cache implementation that uses `sessionStorage` to store tokens and apply it to the Auth0 SPA SDK:
 
@@ -240,6 +241,11 @@ const sessionStorageCache = {
   remove: function (key) {
     sessionStorage.removeItem(key);
     return Promise.resolve();
+  },
+
+  // Optional
+  allKeys: function () {
+    return Promise.resolve(Object.keys(sessionStorage));
   }
 };
 
