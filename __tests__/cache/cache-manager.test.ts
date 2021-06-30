@@ -45,22 +45,22 @@ const defaultData: CacheEntry = {
   }
 };
 
-const cacheDescriptors = [
-  { ctor: () => new LocalStorageCache(), name: 'Cache with allKeys' },
+const cacheFactories = [
+  { new: () => new LocalStorageCache(), name: 'Cache with allKeys' },
   {
-    ctor: () => new InMemoryCache().enclosedCache,
+    new: () => new InMemoryCache().enclosedCache,
     name: 'Cache using key manifest'
   }
 ];
 
-cacheDescriptors.forEach(descriptor => {
-  describe(`CacheManager using ${descriptor.name}`, () => {
+cacheFactories.forEach(cacheFactory => {
+  describe(`CacheManager using ${cacheFactory.name}`, () => {
     let manager: CacheManager;
     let cache: ICache;
     let withKeyManifest: boolean;
 
     beforeEach(() => {
-      cache = descriptor.ctor();
+      cache = cacheFactory.new();
       manager = new CacheManager(cache, TEST_CLIENT_ID);
       withKeyManifest = !!!cache.allKeys;
 
@@ -69,6 +69,10 @@ cacheDescriptors.forEach(descriptor => {
           jest.spyOn(manager['keyManifest'], method)
         );
       }
+    });
+
+    afterEach(() => {
+      jest.clearAllMocks();
     });
 
     it('returns undefined when there is nothing in the cache', async () => {

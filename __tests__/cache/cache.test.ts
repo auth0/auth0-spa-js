@@ -16,9 +16,9 @@ import {
   TEST_AUDIENCE
 } from '../constants';
 
-const cacheDescriptors = [
-  { ctor: () => new LocalStorageCache(), name: 'LocalStorage Cache' },
-  { ctor: () => new InMemoryCache().enclosedCache, name: 'In-memory Cache' }
+const cacheFactories = [
+  { new: () => new LocalStorageCache(), name: 'LocalStorage Cache' },
+  { new: () => new InMemoryCache().enclosedCache, name: 'In-memory Cache' }
 ];
 
 const defaultEntry: CacheEntry = {
@@ -38,12 +38,12 @@ const defaultEntry: CacheEntry = {
   }
 };
 
-cacheDescriptors.forEach(descriptor => {
-  describe(descriptor.name, () => {
+cacheFactories.forEach(cacheFactory => {
+  describe(cacheFactory.name, () => {
     let cache: ICache;
 
     beforeEach(() => {
-      cache = descriptor.ctor();
+      cache = cacheFactory.new();
     });
 
     it('returns undefined when there is no data', async () => {
