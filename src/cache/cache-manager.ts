@@ -80,13 +80,14 @@ export class CacheManager {
   async clear(): Promise<void> {
     const keys = await this.getCacheKeys();
 
-    if (keys) {
-      keys.forEach(async key => {
-        await this.cache.remove(key);
-      });
+    /* istanbul ignore next */
+    if (!keys) return;
 
-      await this.keyManifest?.clear();
-    }
+    keys.forEach(async key => {
+      await this.cache.remove(key);
+    });
+
+    await this.keyManifest?.clear();
   }
 
   private wrapCacheEntry(entry: CacheEntry): WrappedCacheEntry {
