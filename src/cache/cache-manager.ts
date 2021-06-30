@@ -45,11 +45,6 @@ export class CacheManager {
 
     const nowSeconds = Math.floor(Date.now() / 1000);
 
-    // Make sure the key manifest knows about the key.
-    // This helps to migrate keys into the manifest, as the manifest takes care
-    // of duplicates for us.
-    await this.keyManifest?.add(cacheKey.toKey());
-
     if (wrappedEntry.expiresAt - expiryAdjustmentSeconds < nowSeconds) {
       if (wrappedEntry.body.refresh_token) {
         wrappedEntry.body = {
