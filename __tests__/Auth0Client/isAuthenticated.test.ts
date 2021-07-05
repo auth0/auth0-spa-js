@@ -50,6 +50,7 @@ describe('Auth0Client', () => {
 
     mockWindow.open = jest.fn();
     mockWindow.addEventListener = jest.fn();
+
     mockWindow.crypto = {
       subtle: {
         digest: () => 'foo'
@@ -58,9 +59,12 @@ describe('Auth0Client', () => {
         return '123';
       }
     };
+
     mockWindow.MessageChannel = MessageChannel;
     mockWindow.Worker = {};
+
     jest.spyOn(scope, 'getUniqueScopes');
+
     sessionStorage.clear();
   });
 
@@ -72,7 +76,7 @@ describe('Auth0Client', () => {
 
   describe('isAuthenticated', () => {
     describe('loginWithRedirect', () => {
-      it('returns true if there is an user', async () => {
+      it('returns true if there is a user', async () => {
         const auth0 = setup();
         await loginWithRedirect(auth0);
 
@@ -82,6 +86,7 @@ describe('Auth0Client', () => {
 
       it('returns false if error was returned', async () => {
         const auth0 = setup();
+
         try {
           await loginWithRedirect(auth0, undefined, {
             authorize: {
@@ -89,7 +94,9 @@ describe('Auth0Client', () => {
             }
           });
         } catch {}
+
         const result = await auth0.isAuthenticated();
+
         expect(result).toBe(false);
       });
 
@@ -106,7 +113,7 @@ describe('Auth0Client', () => {
     });
 
     describe('loginWithPopup', () => {
-      it('returns true if there is an user', async () => {
+      it('returns true if there is a user', async () => {
         const auth0 = setup();
         await loginWithPopup(auth0);
 
@@ -117,6 +124,7 @@ describe('Auth0Client', () => {
 
     it('returns false if code not part of URL', async () => {
       const auth0 = setup();
+
       try {
         await loginWithPopup(auth0, undefined, undefined, {
           authorize: {
@@ -126,16 +134,16 @@ describe('Auth0Client', () => {
           }
         });
       } catch {}
+
       const result = await auth0.isAuthenticated();
+
       expect(result).toBe(false);
     });
 
     it('returns false if there is no user', async () => {
       const auth0 = setup();
-
-      jest.spyOn(auth0['cache'], 'get').mockReturnValueOnce(undefined);
-
       const result = await auth0.isAuthenticated();
+
       expect(result).toBe(false);
     });
   });

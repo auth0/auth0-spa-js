@@ -475,11 +475,11 @@ describe('Auth0Client', () => {
     it('saves into cache', async () => {
       const auth0 = setup();
 
-      jest.spyOn(auth0['cache'], 'save');
+      jest.spyOn(auth0['cacheManager'], 'set');
 
       await loginWithPopup(auth0);
 
-      expect(auth0['cache']['save']).toHaveBeenCalledWith(
+      expect(auth0['cacheManager']['set']).toHaveBeenCalledWith(
         expect.objectContaining({
           client_id: TEST_CLIENT_ID,
           access_token: TEST_ACCESS_TOKEN,
@@ -500,11 +500,11 @@ describe('Auth0Client', () => {
       };
       tokenVerifier.mockReturnValue(mockDecodedToken);
 
-      jest.spyOn(auth0['cache'], 'save');
+      jest.spyOn(auth0['cacheManager'], 'set');
 
       await loginWithPopup(auth0);
 
-      expect(auth0['cache']['save']).toHaveBeenCalledWith(
+      expect(auth0['cacheManager']['set']).toHaveBeenCalledWith(
         expect.objectContaining({
           decodedToken: mockDecodedToken
         })
@@ -516,12 +516,12 @@ describe('Auth0Client', () => {
         useRefreshTokens: true
       });
 
-      jest.spyOn(auth0['cache'], 'save');
-
+      jest.spyOn(auth0['cacheManager'], 'set');
       await loginWithPopup(auth0);
 
-      expect(auth0['cache']['save']).toHaveBeenCalled();
-      expect(auth0['cache']['save']).not.toHaveBeenCalledWith(
+      expect(auth0['cacheManager']['set']).toHaveBeenCalled();
+
+      expect(auth0['cacheManager']['set']).not.toHaveBeenCalledWith(
         expect.objectContaining({
           refresh_token: TEST_REFRESH_TOKEN
         })
@@ -534,11 +534,11 @@ describe('Auth0Client', () => {
         cacheLocation: 'localstorage'
       });
 
-      jest.spyOn(auth0['cache'], 'save');
+      jest.spyOn(auth0['cacheManager'], 'set');
 
       await loginWithPopup(auth0);
 
-      expect(auth0['cache']['save']).toHaveBeenCalledWith(
+      expect(auth0['cacheManager']['set']).toHaveBeenCalledWith(
         expect.objectContaining({
           refresh_token: TEST_REFRESH_TOKEN
         })

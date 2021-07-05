@@ -15,7 +15,7 @@
     "build:stats": "npm run build -- --environment WITH_STATS:true && open stats.html",
     "lint:security": "eslint ./src --ext ts --no-eslintrc --config ./.eslintrc.security",
     "test": "jest --coverage --silent",
-    "test:watch": "jest --coverage --watch --silent",
+    "test:watch": "jest --coverage --watch",
     "test:debug": "node --inspect node_modules/.bin/jest --runInBand",
     "test:open:integration": "cypress open",
     "test:watch:integration": "concurrently --raw npm:dev 'npm:test:open:integration'",

@@ -10,7 +10,7 @@ import * as api from '../../src/api';
 
 import { expectToHaveBeenCalledWithAuth0ClientParam } from '../helpers';
 
-import { GET_TOKEN_SILENTLY_LOCK_KEY } from '../constants';
+import { GET_TOKEN_SILENTLY_LOCK_KEY, TEST_AUDIENCE } from '../constants';
 
 // @ts-ignore
 import { acquireLockSpy } from 'browser-tabs-lock';
@@ -45,6 +45,7 @@ import {
   INVALID_REFRESH_TOKEN_ERROR_MESSAGE
 } from '../../src/constants';
 import { GenericError } from '../../src/errors';
+import { CacheKey } from '../../src/cache';
 
 jest.mock('unfetch');
 jest.mock('es-cookie');
@@ -973,11 +974,13 @@ describe('Auth0Client', () => {
       try {
         const auth0 = setup();
         await loginWithRedirect(auth0);
-        (auth0 as any).cache.clear();
+        await (auth0 as any).cacheManager.clear();
+
         jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
           access_token: TEST_ACCESS_TOKEN,
           state: TEST_STATE
         });
+
         mockFetch.mockResolvedValue(
           fetchResponse(true, {
             id_token: TEST_ID_TOKEN,
@@ -985,11 +988,13 @@ describe('Auth0Client', () => {
             expires_in: 86400
           })
         );
-        let [access_token] = await Promise.all([
+
+        const [access_token] = await Promise.all([
           auth0.getTokenSilently(),
           auth0.getTokenSilently(),
           auth0.getTokenSilently()
         ]);
+
         expect(access_token).toEqual(TEST_ACCESS_TOKEN);
         expect(utils.runIframe).toHaveBeenCalledTimes(1);
       } finally {
@@ -1264,7 +1269,8 @@ describe('Auth0Client', () => {
     it('saves into cache', async () => {
       const auth0 = setup();
 
-      jest.spyOn(auth0['cache'], 'save');
+      jest.spyOn(auth0['cacheManager'], 'set');
+
       jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
         access_token: TEST_ACCESS_TOKEN,
         state: TEST_STATE
@@ -1272,7 +1278,7 @@ describe('Auth0Client', () => {
 
       await getTokenSilently(auth0);
 
-      expect(auth0['cache']['save']).toHaveBeenCalledWith(
+      expect(auth0['cacheManager']['set']).toHaveBeenCalledWith(
         expect.objectContaining({
           client_id: TEST_CLIENT_ID,
           access_token: TEST_ACCESS_TOKEN,

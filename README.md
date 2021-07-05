@@ -210,6 +210,57 @@ await createAuth0Client({
 
 **Important:** This feature will allow the caching of data **such as ID and access tokens** to be stored in local storage. Exercising this option changes the security characteristics of your application and **should not be used lightly**. Extra care should be taken to mitigate against XSS attacks and minimize the risk of tokens being stolen from local storage.
 
+#### Creating a custom cache
+
+The SDK can be configured to use a custom cache store that is implemented by your application. This is useful if you are using this SDK in an environment where more secure token storage is available, such as potentially a hybrid mobile app.
+
+To do this, provide an object to the `cache` property of the SDK configuration.
+
+The object should implement the following functions:
+
+| Signature                                            | Description                                                                                                                                                                                                                                                                                       |
+| ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `async get(key)`                                     | Returns the item from the cache with the specified key, or `undefined` if it was not found                                                                                                                                                                                                        |
+| `async set(key: string, object: any): Promise<void>` | Sets an item into the cache                                                                                                                                                                                                                                                                       |
+| `async remove(key)`                                  | Removes a single item from the cache at the specified key, or no-op if the item was not found                                                                                                                                                                                                     |
+| `async allKeys()`                                    | (optional) Implement this if your cache has the ability to return a list of all keys. Otherwise, the SDK internally records its own key manifest using your cache. **Note**: if you only want to ensure you only return keys used by this SDK, the keys we use are prefixed with `@@auth0spajs@@` |
+
+Here's an example of a custom cache implementation that uses `sessionStorage` to store tokens and apply it to the Auth0 SPA SDK:
+
+```js
+const sessionStorageCache = {
+  get: function (key) {
+    return Promise.resolve(JSON.parse(sessionStorage.getItem(key)));
+  },
+
+  set: function (key, value) {
+    sessionStorage.setItem(key, JSON.stringify(value));
+    return Promise.resolve();
+  },
+
+  remove: function (key) {
+    sessionStorage.removeItem(key);
+    return Promise.resolve();
+  },
+
+  // Optional
+  allKeys: function () {
+    return Promise.resolve(Object.keys(sessionStorage));
+  }
+};
+
+await createAuth0Client({
+  domain: '<AUTH0_DOMAIN>',
+  client_id: '<AUTH0_CLIENT_ID>',
+  redirect_uri: '<MY_CALLBACK_URL>',
+  cache: sessionStorageCache
+});
+```
+
+**Note:** The `cache` property takes precedence over the `cacheLocation` property if both are set. A warning is displayed in the console if this scenario occurs.
+
+We also export the internal `InMemoryCache` and `LocalStorageCache` implementations, so you can wrap your custom cache around these implementations if you wish.
+
 ### Refresh Tokens
 
 Refresh tokens can be used to request new access tokens. [Read more about how our refresh tokens work for browser-based applications](https://auth0.com/docs/tokens/concepts/refresh-token-rotation) to help you decide whether or not you need to use them.
@@ -240,20 +291,6 @@ If the fallback mechanism fails, a `login_required` error will be thrown and cou
 ### Organizations
 
 [Organizations](https://auth0.com/docs/organizations) is a set of features that provide better support for developers who build and maintain SaaS and Business-to-Business (B2B) applications.
-
-Using Organizations, you can:
-
-- Represent teams, business customers, partner companies, or any logical grouping of users that should have different ways of accessing your applications, as organizations.
-
-- Manage their membership in a variety of ways, including user invitation.
-
-- Configure branded, federated login flows for each organization.
-
-- Implement role-based access control, such that users can have different roles when authenticating in the context of different organizations.
-
-- Build administration capabilities into your products, using Organizations APIs, so that those businesses can manage their own organizations.
-
-Note that Organizations is currently only available to customers on our Enterprise and Startup subscription plans.
 
 #### Log in to an organization
 

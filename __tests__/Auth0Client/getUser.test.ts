@@ -69,12 +69,10 @@ describe('Auth0Client', () => {
   });
 
   describe('getUser', () => {
-    it('returns undefined if there is no cache', async () => {
+    it('returns undefined if there is no user in the cache', async () => {
       const auth0 = setup();
-
-      jest.spyOn(auth0['cache'], 'get').mockReturnValueOnce(undefined);
-
       const decodedToken = await auth0.getUser();
+
       expect(decodedToken).toBeUndefined();
     });
   });

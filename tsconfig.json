@@ -7,7 +7,8 @@
     "declaration": true,
     "declarationDir": "./dist/typings",
     "moduleResolution": "node",
-    "noImplicitAny": true
+    "noImplicitAny": true,
+    "downlevelIteration": true
   },
   "exclude": ["./__tests__", "./dist/typings", "**/__mocks__/**"]
 }
