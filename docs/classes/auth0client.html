@@ -2771,7 +2771,22 @@ img {
 			<a href="authenticationerror.html" class="tsd-kind-icon">Authentication<wbr>Error</a>
 		</li>
 		<li class=" tsd-kind-class">
+			<a href="cachekey.html" class="tsd-kind-icon">Cache<wbr>Key</a>
+		</li>
+		<li class=" tsd-kind-class">
+			<a href="cachekeymanifest.html" class="tsd-kind-icon">Cache<wbr>Key<wbr>Manifest</a>
+		</li>
+		<li class=" tsd-kind-class">
+			<a href="cachemanager.html" class="tsd-kind-icon">Cache<wbr>Manager</a>
+		</li>
+		<li class=" tsd-kind-class">
 			<a href="genericerror.html" class="tsd-kind-icon">Generic<wbr>Error</a>
+		</li>
+		<li class=" tsd-kind-class">
+			<a href="inmemorycache.html" class="tsd-kind-icon">In<wbr>Memory<wbr>Cache</a>
+		</li>
+		<li class=" tsd-kind-class">
+			<a href="localstoragecache.html" class="tsd-kind-icon">Local<wbr>Storage<wbr>Cache</a>
 		</li>
 		<li class=" tsd-kind-class">
 			<a href="popupcancellederror.html" class="tsd-kind-icon">Popup<wbr>Cancelled<wbr>Error</a>
@@ -2792,6 +2807,9 @@ img {
 			<a href="../interfaces/auth0clientoptions.html" class="tsd-kind-icon">Auth0<wbr>Client<wbr>Options</a>
 		</li>
 		<li class=" tsd-kind-interface">
+			<a href="../interfaces/decodedtoken.html" class="tsd-kind-icon">Decoded<wbr>Token</a>
+		</li>
+		<li class=" tsd-kind-interface">
 			<a href="../interfaces/getidtokenclaimsoptions.html" class="tsd-kind-icon">Get<wbr>IdToken<wbr>Claims<wbr>Options</a>
 		</li>
 		<li class=" tsd-kind-interface">
@@ -2802,6 +2820,9 @@ img {
 		</li>
 		<li class=" tsd-kind-interface">
 			<a href="../interfaces/getuseroptions.html" class="tsd-kind-icon">Get<wbr>User<wbr>Options</a>
+		</li>
+		<li class=" tsd-kind-interface">
+			<a href="../interfaces/icache.html" class="tsd-kind-icon">ICache</a>
 		</li>
 		<li class=" tsd-kind-interface">
 			<a href="../interfaces/logoutoptions.html" class="tsd-kind-icon">Logout<wbr>Options</a>
@@ -2822,16 +2843,37 @@ img {
 			<a href="../interfaces/redirectloginresult.html" class="tsd-kind-icon">Redirect<wbr>Login<wbr>Result</a>
 		</li>
 		<li class=" tsd-kind-type-alias">
+			<a href="../globals.html#cacheentry" class="tsd-kind-icon">Cache<wbr>Entry</a>
+		</li>
+		<li class=" tsd-kind-type-alias">
+			<a href="../globals.html#cachekeydata" class="tsd-kind-icon">Cache<wbr>Key<wbr>Data</a>
+		</li>
+		<li class=" tsd-kind-type-alias">
 			<a href="../globals.html#cachelocation" class="tsd-kind-icon">Cache<wbr>Location</a>
 		</li>
 		<li class=" tsd-kind-type-alias">
+			<a href="../globals.html#cacheable" class="tsd-kind-icon">Cacheable</a>
+		</li>
+		<li class=" tsd-kind-type-alias">
+			<a href="../globals.html#keymanifestentry" class="tsd-kind-icon">Key<wbr>Manifest<wbr>Entry</a>
+		</li>
+		<li class=" tsd-kind-type-alias">
+			<a href="../globals.html#wrappedcacheentry" class="tsd-kind-icon">Wrapped<wbr>Cache<wbr>Entry</a>
+		</li>
+		<li class=" tsd-kind-type-alias">
 			<a href="../globals.html#getidtokenclaimsoptions" class="tsd-kind-icon">get<wbr>IdToken<wbr>Claims<wbr>Options</a>
+		</li>
+		<li class=" tsd-kind-variable">
+			<a href="../globals.html#cache_key_prefix" class="tsd-kind-icon">CACHE_<wbr>KEY_<wbr>PREFIX</a>
 		</li>
 		<li class=" tsd-kind-variable">
 			<a href="../globals.html#cache_location_local_storage" class="tsd-kind-icon">CACHE_<wbr>LOCATION_<wbr>LOCAL_<wbr>STORAGE</a>
 		</li>
 		<li class=" tsd-kind-variable">
 			<a href="../globals.html#cache_location_memory" class="tsd-kind-icon">CACHE_<wbr>LOCATION_<wbr>MEMORY</a>
+		</li>
+		<li class=" tsd-kind-variable">
+			<a href="../globals.html#default_expiry_adjustment_seconds" class="tsd-kind-icon">DEFAULT_<wbr>EXPIRY_<wbr>ADJUSTMENT_<wbr>SECONDS</a>
 		</li>
 		<li class=" tsd-kind-function">
 			<a href="../globals.html#createauth0client" class="tsd-kind-icon">create<wbr>Auth0<wbr>Client</a>
@@ -2903,7 +2945,7 @@ img {
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/ac8d8bb/src/Auth0Client.ts#L150">src/Auth0Client.ts:150</a></li>
+								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/e6d2507/src/Auth0Client.ts#L158">src/Auth0Client.ts:158</a></li>
 							</ul>
 						</aside>
 						<h4 class="tsd-parameters-title">Parameters</h4>
@@ -2925,7 +2967,7 @@ img {
 				<div class="tsd-signature tsd-kind-icon">cache<wbr>Location<span class="tsd-signature-symbol">:</span> <a href="../globals.html#cachelocation" class="tsd-signature-type">CacheLocation</a></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/ac8d8bb/src/Auth0Client.ts#L149">src/Auth0Client.ts:149</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/e6d2507/src/Auth0Client.ts#L157">src/Auth0Client.ts:157</a></li>
 					</ul>
 				</aside>
 			</section>
@@ -2942,12 +2984,13 @@ img {
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/ac8d8bb/src/Auth0Client.ts#L285">src/Auth0Client.ts:285</a></li>
+								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/e6d2507/src/Auth0Client.ts#L308">src/Auth0Client.ts:308</a></li>
 							</ul>
 						</aside>
 						<div class="tsd-comment tsd-typography">
 							<div class="lead">
-								<pre><code class="language-js"><span class="hljs-keyword">await</span> auth0.buildAuthorizeUrl(options);</code></pre>
+								<pre><code class="language-js"><span class="hljs-keyword">await</span> auth0.buildAuthorizeUrl(options);
+</code></pre>
 							</div>
 							<p>Builds an <code>/authorize</code> URL for loginWithRedirect using the parameters
 								provided as arguments. Random and secure <code>state</code> and <code>nonce</code>
@@ -2975,12 +3018,13 @@ img {
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/ac8d8bb/src/Auth0Client.ts#L787">src/Auth0Client.ts:787</a></li>
+								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/e6d2507/src/Auth0Client.ts#L815">src/Auth0Client.ts:815</a></li>
 							</ul>
 						</aside>
 						<div class="tsd-comment tsd-typography">
 							<div class="lead">
-								<pre><code class="language-js"><span class="hljs-keyword">await</span> auth0.buildLogoutUrl(options);</code></pre>
+								<pre><code class="language-js"><span class="hljs-keyword">await</span> auth0.buildLogoutUrl(options);
+</code></pre>
 							</div>
 							<p>Builds a URL to the logout endpoint using the parameters provided as arguments.</p>
 						</div>
@@ -3006,12 +3050,13 @@ img {
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/ac8d8bb/src/Auth0Client.ts#L605">src/Auth0Client.ts:605</a></li>
+								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/e6d2507/src/Auth0Client.ts#L628">src/Auth0Client.ts:628</a></li>
 							</ul>
 						</aside>
 						<div class="tsd-comment tsd-typography">
 							<div class="lead">
-								<pre><code class="language-js"><span class="hljs-keyword">await</span> auth0.checkSession();</code></pre>
+								<pre><code class="language-js"><span class="hljs-keyword">await</span> auth0.checkSession();
+</code></pre>
 							</div>
 							<p>Check if the user is logged in using <code>getTokenSilently</code>. The difference
 								with <code>getTokenSilently</code> is that this doesn&#39;t return a token, but it will
@@ -3045,12 +3090,13 @@ img {
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/ac8d8bb/src/Auth0Client.ts#L472">src/Auth0Client.ts:472</a></li>
+								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/e6d2507/src/Auth0Client.ts#L495">src/Auth0Client.ts:495</a></li>
 							</ul>
 						</aside>
 						<div class="tsd-comment tsd-typography">
 							<div class="lead">
-								<pre><code class="language-js"><span class="hljs-keyword">const</span> claims = <span class="hljs-keyword">await</span> auth0.getIdTokenClaims();</code></pre>
+								<pre><code class="language-js"><span class="hljs-keyword">const</span> claims = <span class="hljs-keyword">await</span> auth0.getIdTokenClaims();
+</code></pre>
 							</div>
 							<p>Returns all claims from the id_token if available.</p>
 							<p>If you provide an audience or scope, they should match an existing Access Token
@@ -3079,12 +3125,13 @@ img {
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/ac8d8bb/src/Auth0Client.ts#L645">src/Auth0Client.ts:645</a></li>
+								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/e6d2507/src/Auth0Client.ts#L668">src/Auth0Client.ts:668</a></li>
 							</ul>
 						</aside>
 						<div class="tsd-comment tsd-typography">
 							<div class="lead">
-								<pre><code class="language-js"><span class="hljs-keyword">const</span> token = <span class="hljs-keyword">await</span> auth0.getTokenSilently(options);</code></pre>
+								<pre><code class="language-js"><span class="hljs-keyword">const</span> token = <span class="hljs-keyword">await</span> auth0.getTokenSilently(options);
+</code></pre>
 							</div>
 							<p>If there&#39;s a valid token stored, return it. Otherwise, opens an
 								iframe with the <code>/authorize</code> URL using the parameters provided
@@ -3123,12 +3170,13 @@ img {
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/ac8d8bb/src/Auth0Client.ts#L735">src/Auth0Client.ts:735</a></li>
+								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/e6d2507/src/Auth0Client.ts#L763">src/Auth0Client.ts:763</a></li>
 							</ul>
 						</aside>
 						<div class="tsd-comment tsd-typography">
 							<div class="lead">
-								<pre><code class="language-js"><span class="hljs-keyword">const</span> token = <span class="hljs-keyword">await</span> auth0.getTokenWithPopup(options);</code></pre>
+								<pre><code class="language-js"><span class="hljs-keyword">const</span> token = <span class="hljs-keyword">await</span> auth0.getTokenWithPopup(options);
+</code></pre>
 								<p>Opens a popup with the <code>/authorize</code> URL using the parameters
 									provided as arguments. Random and secure <code>state</code> and <code>nonce</code>
 									parameters will be auto-generated. If the response is successful,
@@ -3160,12 +3208,13 @@ img {
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/ac8d8bb/src/Auth0Client.ts#L442">src/Auth0Client.ts:442</a></li>
+								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/e6d2507/src/Auth0Client.ts#L465">src/Auth0Client.ts:465</a></li>
 							</ul>
 						</aside>
 						<div class="tsd-comment tsd-typography">
 							<div class="lead">
-								<pre><code class="language-js"><span class="hljs-keyword">const</span> user = <span class="hljs-keyword">await</span> auth0.getUser();</code></pre>
+								<pre><code class="language-js"><span class="hljs-keyword">const</span> user = <span class="hljs-keyword">await</span> auth0.getUser();
+</code></pre>
 							</div>
 							<p>Returns the user information if available (decoded
 							from the <code>id_token</code>).</p>
@@ -3204,7 +3253,7 @@ img {
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/ac8d8bb/src/Auth0Client.ts#L512">src/Auth0Client.ts:512</a></li>
+								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/e6d2507/src/Auth0Client.ts#L535">src/Auth0Client.ts:535</a></li>
 							</ul>
 						</aside>
 						<div class="tsd-comment tsd-typography">
@@ -3235,12 +3284,13 @@ img {
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/ac8d8bb/src/Auth0Client.ts#L774">src/Auth0Client.ts:774</a></li>
+								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/e6d2507/src/Auth0Client.ts#L802">src/Auth0Client.ts:802</a></li>
 							</ul>
 						</aside>
 						<div class="tsd-comment tsd-typography">
 							<div class="lead">
-								<pre><code class="language-js"><span class="hljs-keyword">const</span> isAuthenticated = <span class="hljs-keyword">await</span> auth0.isAuthenticated();</code></pre>
+								<pre><code class="language-js"><span class="hljs-keyword">const</span> isAuthenticated = <span class="hljs-keyword">await</span> auth0.isAuthenticated();
+</code></pre>
 							</div>
 							<p>Returns <code>true</code> if there&#39;s valid information stored,
 							otherwise returns <code>false</code>.</p>
@@ -3259,7 +3309,7 @@ img {
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/ac8d8bb/src/Auth0Client.ts#L344">src/Auth0Client.ts:344</a></li>
+								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/e6d2507/src/Auth0Client.ts#L367">src/Auth0Client.ts:367</a></li>
 							</ul>
 						</aside>
 						<div class="tsd-comment tsd-typography">
@@ -3270,7 +3320,8 @@ img {
  <span class="hljs-keyword">if</span> (e <span class="hljs-keyword">instanceof</span> PopupCancelledError) {
    <span class="hljs-comment">// Popup was closed before login completed</span>
  }
-}</code></pre>
+}
+</code></pre>
 							</div>
 							<p>Opens a popup with the <code>/authorize</code> URL using the parameters
 								provided as arguments. Random and secure <code>state</code> and <code>nonce</code>
@@ -3305,12 +3356,13 @@ img {
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/ac8d8bb/src/Auth0Client.ts#L500">src/Auth0Client.ts:500</a></li>
+								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/e6d2507/src/Auth0Client.ts#L523">src/Auth0Client.ts:523</a></li>
 							</ul>
 						</aside>
 						<div class="tsd-comment tsd-typography">
 							<div class="lead">
-								<pre><code class="language-js"><span class="hljs-keyword">await</span> auth0.loginWithRedirect(options);</code></pre>
+								<pre><code class="language-js"><span class="hljs-keyword">await</span> auth0.loginWithRedirect(options);
+</code></pre>
 							</div>
 							<p>Performs a redirect to <code>/authorize</code> using the parameters
 								provided as arguments. Random and secure <code>state</code> and <code>nonce</code>
@@ -3338,12 +3390,13 @@ img {
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/ac8d8bb/src/Auth0Client.ts#L816">src/Auth0Client.ts:816</a></li>
+								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/e6d2507/src/Auth0Client.ts#L844">src/Auth0Client.ts:844</a></li>
 							</ul>
 						</aside>
 						<div class="tsd-comment tsd-typography">
 							<div class="lead">
-								<pre><code class="language-js">auth0.logout();</code></pre>
+								<pre><code class="language-js">auth0.logout();
+</code></pre>
 							</div>
 							<p>Clears the application session and performs a redirect to <code>/v2/logout</code>, using
 								the parameters provided as arguments, to clear the Auth0 session.
@@ -3376,11 +3429,12 @@ img {
 						<li class="tsd-kind-method tsd-parent-kind-class"><span class="tsd-kind-icon">Method</span></li>
 					</ul>
 					<ul class="tsd-legend">
-						<li class="tsd-kind-property tsd-parent-kind-class tsd-is-static"><span class="tsd-kind-icon">Static property</span></li>
-						<li class="tsd-kind-method tsd-parent-kind-class tsd-is-static"><span class="tsd-kind-icon">Static method</span></li>
+						<li class="tsd-kind-property tsd-parent-kind-interface"><span class="tsd-kind-icon">Property</span></li>
+						<li class="tsd-kind-method tsd-parent-kind-interface"><span class="tsd-kind-icon">Method</span></li>
 					</ul>
 					<ul class="tsd-legend">
-						<li class="tsd-kind-property tsd-parent-kind-interface"><span class="tsd-kind-icon">Property</span></li>
+						<li class="tsd-kind-property tsd-parent-kind-class tsd-is-static"><span class="tsd-kind-icon">Static property</span></li>
+						<li class="tsd-kind-method tsd-parent-kind-class tsd-is-static"><span class="tsd-kind-icon">Static method</span></li>
 					</ul>
 					<ul class="tsd-legend">
 						<li class="tsd-kind-property tsd-parent-kind-class tsd-is-inherited"><span class="tsd-kind-icon">Inherited property</span></li>

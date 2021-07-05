@@ -2727,7 +2727,22 @@ img {
 			<a href="../classes/authenticationerror.html" class="tsd-kind-icon">Authentication<wbr>Error</a>
 		</li>
 		<li class=" tsd-kind-class">
+			<a href="../classes/cachekey.html" class="tsd-kind-icon">Cache<wbr>Key</a>
+		</li>
+		<li class=" tsd-kind-class">
+			<a href="../classes/cachekeymanifest.html" class="tsd-kind-icon">Cache<wbr>Key<wbr>Manifest</a>
+		</li>
+		<li class=" tsd-kind-class">
+			<a href="../classes/cachemanager.html" class="tsd-kind-icon">Cache<wbr>Manager</a>
+		</li>
+		<li class=" tsd-kind-class">
 			<a href="../classes/genericerror.html" class="tsd-kind-icon">Generic<wbr>Error</a>
+		</li>
+		<li class=" tsd-kind-class">
+			<a href="../classes/inmemorycache.html" class="tsd-kind-icon">In<wbr>Memory<wbr>Cache</a>
+		</li>
+		<li class=" tsd-kind-class">
+			<a href="../classes/localstoragecache.html" class="tsd-kind-icon">Local<wbr>Storage<wbr>Cache</a>
 		</li>
 		<li class=" tsd-kind-class">
 			<a href="../classes/popupcancellederror.html" class="tsd-kind-icon">Popup<wbr>Cancelled<wbr>Error</a>
@@ -2758,6 +2773,9 @@ img {
 				</li>
 				<li class=" tsd-kind-property tsd-parent-kind-interface">
 					<a href="auth0clientoptions.html#authorizetimeoutinseconds" class="tsd-kind-icon">authorize<wbr>Timeout<wbr>InSeconds</a>
+				</li>
+				<li class=" tsd-kind-property tsd-parent-kind-interface">
+					<a href="auth0clientoptions.html#cache" class="tsd-kind-icon">cache</a>
 				</li>
 				<li class=" tsd-kind-property tsd-parent-kind-interface">
 					<a href="auth0clientoptions.html#cachelocation" class="tsd-kind-icon">cache<wbr>Location</a>
@@ -2825,6 +2843,9 @@ img {
 			</ul>
 		</li>
 		<li class=" tsd-kind-interface">
+			<a href="decodedtoken.html" class="tsd-kind-icon">Decoded<wbr>Token</a>
+		</li>
+		<li class=" tsd-kind-interface">
 			<a href="getidtokenclaimsoptions.html" class="tsd-kind-icon">Get<wbr>IdToken<wbr>Claims<wbr>Options</a>
 		</li>
 		<li class=" tsd-kind-interface">
@@ -2835,6 +2856,9 @@ img {
 		</li>
 		<li class=" tsd-kind-interface">
 			<a href="getuseroptions.html" class="tsd-kind-icon">Get<wbr>User<wbr>Options</a>
+		</li>
+		<li class=" tsd-kind-interface">
+			<a href="icache.html" class="tsd-kind-icon">ICache</a>
 		</li>
 		<li class=" tsd-kind-interface">
 			<a href="logoutoptions.html" class="tsd-kind-icon">Logout<wbr>Options</a>
@@ -2855,16 +2879,37 @@ img {
 			<a href="redirectloginresult.html" class="tsd-kind-icon">Redirect<wbr>Login<wbr>Result</a>
 		</li>
 		<li class=" tsd-kind-type-alias">
+			<a href="../globals.html#cacheentry" class="tsd-kind-icon">Cache<wbr>Entry</a>
+		</li>
+		<li class=" tsd-kind-type-alias">
+			<a href="../globals.html#cachekeydata" class="tsd-kind-icon">Cache<wbr>Key<wbr>Data</a>
+		</li>
+		<li class=" tsd-kind-type-alias">
 			<a href="../globals.html#cachelocation" class="tsd-kind-icon">Cache<wbr>Location</a>
 		</li>
 		<li class=" tsd-kind-type-alias">
+			<a href="../globals.html#cacheable" class="tsd-kind-icon">Cacheable</a>
+		</li>
+		<li class=" tsd-kind-type-alias">
+			<a href="../globals.html#keymanifestentry" class="tsd-kind-icon">Key<wbr>Manifest<wbr>Entry</a>
+		</li>
+		<li class=" tsd-kind-type-alias">
+			<a href="../globals.html#wrappedcacheentry" class="tsd-kind-icon">Wrapped<wbr>Cache<wbr>Entry</a>
+		</li>
+		<li class=" tsd-kind-type-alias">
 			<a href="../globals.html#getidtokenclaimsoptions" class="tsd-kind-icon">get<wbr>IdToken<wbr>Claims<wbr>Options</a>
+		</li>
+		<li class=" tsd-kind-variable">
+			<a href="../globals.html#cache_key_prefix" class="tsd-kind-icon">CACHE_<wbr>KEY_<wbr>PREFIX</a>
 		</li>
 		<li class=" tsd-kind-variable">
 			<a href="../globals.html#cache_location_local_storage" class="tsd-kind-icon">CACHE_<wbr>LOCATION_<wbr>LOCAL_<wbr>STORAGE</a>
 		</li>
 		<li class=" tsd-kind-variable">
 			<a href="../globals.html#cache_location_memory" class="tsd-kind-icon">CACHE_<wbr>LOCATION_<wbr>MEMORY</a>
+		</li>
+		<li class=" tsd-kind-variable">
+			<a href="../globals.html#default_expiry_adjustment_seconds" class="tsd-kind-icon">DEFAULT_<wbr>EXPIRY_<wbr>ADJUSTMENT_<wbr>SECONDS</a>
 		</li>
 		<li class=" tsd-kind-function">
 			<a href="../globals.html#createauth0client" class="tsd-kind-icon">create<wbr>Auth0<wbr>Client</a>
@@ -2907,6 +2952,7 @@ img {
 							<li class="tsd-kind-property tsd-parent-kind-interface"><a href="auth0clientoptions.html#advancedoptions" class="tsd-kind-icon">advanced<wbr>Options</a></li>
 							<li class="tsd-kind-property tsd-parent-kind-interface tsd-is-inherited"><a href="auth0clientoptions.html#audience" class="tsd-kind-icon">audience</a></li>
 							<li class="tsd-kind-property tsd-parent-kind-interface"><a href="auth0clientoptions.html#authorizetimeoutinseconds" class="tsd-kind-icon">authorize<wbr>Timeout<wbr>InSeconds</a></li>
+							<li class="tsd-kind-property tsd-parent-kind-interface"><a href="auth0clientoptions.html#cache" class="tsd-kind-icon">cache</a></li>
 							<li class="tsd-kind-property tsd-parent-kind-interface"><a href="auth0clientoptions.html#cachelocation" class="tsd-kind-icon">cache<wbr>Location</a></li>
 							<li class="tsd-kind-property tsd-parent-kind-interface"><a href="auth0clientoptions.html#client_id" class="tsd-kind-icon">client_<wbr>id</a></li>
 							<li class="tsd-kind-property tsd-parent-kind-interface tsd-is-inherited"><a href="auth0clientoptions.html#connection" class="tsd-kind-icon">connection</a></li>
@@ -2942,7 +2988,7 @@ img {
 				<aside class="tsd-sources">
 					<p>Inherited from BaseLoginOptions.acr_values</p>
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/ac8d8bb/src/global.ts#L57">src/global.ts:57</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/e6d2507/src/global.ts#L59">src/global.ts:59</a></li>
 					</ul>
 				</aside>
 			</section>
@@ -2952,7 +2998,7 @@ img {
 				<div class="tsd-signature tsd-kind-icon">advanced<wbr>Options<span class="tsd-signature-symbol">:</span> <a href="advancedoptions.html" class="tsd-signature-type">AdvancedOptions</a></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/ac8d8bb/src/global.ts#L192">src/global.ts:192</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/e6d2507/src/global.ts#L199">src/global.ts:199</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-comment tsd-typography">
@@ -2968,7 +3014,7 @@ img {
 				<aside class="tsd-sources">
 					<p>Inherited from BaseLoginOptions.audience</p>
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/ac8d8bb/src/global.ts#L69">src/global.ts:69</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/e6d2507/src/global.ts#L71">src/global.ts:71</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-comment tsd-typography">
@@ -2983,7 +3029,7 @@ img {
 				<div class="tsd-signature tsd-kind-icon">authorize<wbr>Timeout<wbr>InSeconds<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/ac8d8bb/src/global.ts#L158">src/global.ts:158</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/e6d2507/src/global.ts#L165">src/global.ts:165</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-comment tsd-typography">
@@ -2994,12 +3040,27 @@ img {
 				</div>
 			</section>
 			<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
+				<a name="cache" class="tsd-anchor"></a>
+				<h3><span class="tsd-flag ts-flagOptional">Optional</span> cache</h3>
+				<div class="tsd-signature tsd-kind-icon">cache<span class="tsd-signature-symbol">:</span> <a href="icache.html" class="tsd-signature-type">ICache</a></div>
+				<aside class="tsd-sources">
+					<ul>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/e6d2507/src/global.ts#L151">src/global.ts:151</a></li>
+					</ul>
+				</aside>
+				<div class="tsd-comment tsd-typography">
+					<div class="lead">
+						<p>Specify a custom cache implementation to use for token storage and retrieval. This setting takes precedence over <code>cacheLocation</code> if they are both specified.</p>
+					</div>
+				</div>
+			</section>
+			<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
 				<a name="cachelocation" class="tsd-anchor"></a>
 				<h3><span class="tsd-flag ts-flagOptional">Optional</span> cache<wbr>Location</h3>
 				<div class="tsd-signature tsd-kind-icon">cache<wbr>Location<span class="tsd-signature-symbol">:</span> <a href="../globals.html#cachelocation" class="tsd-signature-type">CacheLocation</a></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/ac8d8bb/src/global.ts#L144">src/global.ts:144</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/e6d2507/src/global.ts#L146">src/global.ts:146</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-comment tsd-typography">
@@ -3016,7 +3077,7 @@ img {
 				<div class="tsd-signature tsd-kind-icon">client_<wbr>id<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/ac8d8bb/src/global.ts#L122">src/global.ts:122</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/e6d2507/src/global.ts#L124">src/global.ts:124</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-comment tsd-typography">
@@ -3032,7 +3093,7 @@ img {
 				<aside class="tsd-sources">
 					<p>Inherited from BaseLoginOptions.connection</p>
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/ac8d8bb/src/global.ts#L76">src/global.ts:76</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/e6d2507/src/global.ts#L78">src/global.ts:78</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-comment tsd-typography">
@@ -3050,7 +3111,7 @@ img {
 				<aside class="tsd-sources">
 					<p>Inherited from BaseLoginOptions.display</p>
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/ac8d8bb/src/global.ts#L11">src/global.ts:11</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/e6d2507/src/global.ts#L13">src/global.ts:13</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-comment tsd-typography">
@@ -3070,7 +3131,7 @@ img {
 				<div class="tsd-signature tsd-kind-icon">domain<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/ac8d8bb/src/global.ts#L114">src/global.ts:114</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/e6d2507/src/global.ts#L116">src/global.ts:116</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-comment tsd-typography">
@@ -3088,7 +3149,7 @@ img {
 				<aside class="tsd-sources">
 					<p>Inherited from BaseLoginOptions.id_token_hint</p>
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/ac8d8bb/src/global.ts#L37">src/global.ts:37</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/e6d2507/src/global.ts#L39">src/global.ts:39</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-comment tsd-typography">
@@ -3104,7 +3165,7 @@ img {
 				<aside class="tsd-sources">
 					<p>Inherited from BaseLoginOptions.invitation</p>
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/ac8d8bb/src/global.ts#L89">src/global.ts:89</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/e6d2507/src/global.ts#L91">src/global.ts:91</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-comment tsd-typography">
@@ -3119,7 +3180,7 @@ img {
 				<div class="tsd-signature tsd-kind-icon">issuer<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/ac8d8bb/src/global.ts#L118">src/global.ts:118</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/e6d2507/src/global.ts#L120">src/global.ts:120</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-comment tsd-typography">
@@ -3134,7 +3195,7 @@ img {
 				<div class="tsd-signature tsd-kind-icon">leeway<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/ac8d8bb/src/global.ts#L136">src/global.ts:136</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/e6d2507/src/global.ts#L138">src/global.ts:138</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-comment tsd-typography">
@@ -3151,7 +3212,7 @@ img {
 				<div class="tsd-signature tsd-kind-icon">legacy<wbr>Same<wbr>Site<wbr>Cookie<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">boolean</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/ac8d8bb/src/global.ts#L174">src/global.ts:174</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/e6d2507/src/global.ts#L181">src/global.ts:181</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-comment tsd-typography">
@@ -3172,7 +3233,7 @@ img {
 				<aside class="tsd-sources">
 					<p>Inherited from BaseLoginOptions.login_hint</p>
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/ac8d8bb/src/global.ts#L55">src/global.ts:55</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/e6d2507/src/global.ts#L57">src/global.ts:57</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-comment tsd-typography">
@@ -3191,7 +3252,7 @@ img {
 				<aside class="tsd-sources">
 					<p>Inherited from BaseLoginOptions.max_age</p>
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/ac8d8bb/src/global.ts#L26">src/global.ts:26</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/e6d2507/src/global.ts#L28">src/global.ts:28</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-comment tsd-typography">
@@ -3209,7 +3270,7 @@ img {
 				<aside class="tsd-sources">
 					<p>Inherited from BaseLoginOptions.organization</p>
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/ac8d8bb/src/global.ts#L84">src/global.ts:84</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/e6d2507/src/global.ts#L86">src/global.ts:86</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-comment tsd-typography">
@@ -3227,7 +3288,7 @@ img {
 				<aside class="tsd-sources">
 					<p>Inherited from BaseLoginOptions.prompt</p>
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/ac8d8bb/src/global.ts#L19">src/global.ts:19</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/e6d2507/src/global.ts#L21">src/global.ts:21</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-comment tsd-typography">
@@ -3247,7 +3308,7 @@ img {
 				<div class="tsd-signature tsd-kind-icon">redirect_<wbr>uri<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/ac8d8bb/src/global.ts#L130">src/global.ts:130</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/e6d2507/src/global.ts#L132">src/global.ts:132</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-comment tsd-typography">
@@ -3267,7 +3328,7 @@ img {
 				<aside class="tsd-sources">
 					<p>Inherited from BaseLoginOptions.scope</p>
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/ac8d8bb/src/global.ts#L64">src/global.ts:64</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/e6d2507/src/global.ts#L66">src/global.ts:66</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-comment tsd-typography">
@@ -3285,7 +3346,7 @@ img {
 				<aside class="tsd-sources">
 					<p>Inherited from BaseLoginOptions.screen_hint</p>
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/ac8d8bb/src/global.ts#L46">src/global.ts:46</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/e6d2507/src/global.ts#L48">src/global.ts:48</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-comment tsd-typography">
@@ -3303,7 +3364,7 @@ img {
 				<div class="tsd-signature tsd-kind-icon">session<wbr>Check<wbr>Expiry<wbr>Days<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/ac8d8bb/src/global.ts#L198">src/global.ts:198</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/e6d2507/src/global.ts#L205">src/global.ts:205</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-comment tsd-typography">
@@ -3320,7 +3381,7 @@ img {
 				<aside class="tsd-sources">
 					<p>Inherited from BaseLoginOptions.ui_locales</p>
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/ac8d8bb/src/global.ts#L32">src/global.ts:32</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/e6d2507/src/global.ts#L34">src/global.ts:34</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-comment tsd-typography">
@@ -3336,7 +3397,7 @@ img {
 				<div class="tsd-signature tsd-kind-icon">use<wbr>Cookies<wbr>For<wbr>Transactions<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">boolean</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/ac8d8bb/src/global.ts#L187">src/global.ts:187</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/e6d2507/src/global.ts#L194">src/global.ts:194</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-comment tsd-typography">
@@ -3359,7 +3420,7 @@ img {
 				<div class="tsd-signature tsd-kind-icon">use<wbr>Refresh<wbr>Tokens<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">boolean</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/ac8d8bb/src/global.ts#L152">src/global.ts:152</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/e6d2507/src/global.ts#L159">src/global.ts:159</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-comment tsd-typography">
@@ -3381,11 +3442,12 @@ img {
 						<li class="tsd-kind-method tsd-parent-kind-class"><span class="tsd-kind-icon">Method</span></li>
 					</ul>
 					<ul class="tsd-legend">
-						<li class="tsd-kind-property tsd-parent-kind-class tsd-is-static"><span class="tsd-kind-icon">Static property</span></li>
-						<li class="tsd-kind-method tsd-parent-kind-class tsd-is-static"><span class="tsd-kind-icon">Static method</span></li>
+						<li class="tsd-kind-property tsd-parent-kind-interface"><span class="tsd-kind-icon">Property</span></li>
+						<li class="tsd-kind-method tsd-parent-kind-interface"><span class="tsd-kind-icon">Method</span></li>
 					</ul>
 					<ul class="tsd-legend">
-						<li class="tsd-kind-property tsd-parent-kind-interface"><span class="tsd-kind-icon">Property</span></li>
+						<li class="tsd-kind-property tsd-parent-kind-class tsd-is-static"><span class="tsd-kind-icon">Static property</span></li>
+						<li class="tsd-kind-method tsd-parent-kind-class tsd-is-static"><span class="tsd-kind-icon">Static method</span></li>
 					</ul>
 					<ul class="tsd-legend">
 						<li class="tsd-kind-property tsd-parent-kind-class tsd-is-inherited"><span class="tsd-kind-icon">Inherited property</span></li>

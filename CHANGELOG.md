@@ -1,12 +1,23 @@
 # Change Log
 
+## [v1.16.0](https://github.com/auth0/auth0-spa-js/tree/v1.16.0) (2021-07-05)
+
+[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v1.15.0...v1.16.0)
+
+**Added**
+
+- [SDK-2555] Extensible Cache [\#743](https://github.com/auth0/auth0-spa-js/pull/743) ([stevehobbsdev](https://github.com/stevehobbsdev))
+
 ## [v1.15.0](https://github.com/auth0/auth0-spa-js/tree/v1.15.0) (2021-04-29)
+
 [Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v1.14.0...v1.15.0)
 
 **Added**
+
 - Add Popup cancelled event [\#724](https://github.com/auth0/auth0-spa-js/pull/724) ([degrammer](https://github.com/degrammer))
 
 **Fixed**
+
 - Fix popup blocker showing for loginWithPopup in Firefox & Safari [\#732](https://github.com/auth0/auth0-spa-js/pull/732) ([stevehobbsdev](https://github.com/stevehobbsdev))
 
 ## [v1.14.0](https://github.com/auth0/auth0-spa-js/tree/v1.14.0) (2021-03-22)
