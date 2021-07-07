@@ -90,6 +90,20 @@ export class CacheManager {
     await this.keyManifest?.clear();
   }
 
+  /**
+   * Note: only call this if you're sure one of our internal (synchronous) caches are being used.
+   */
+  clearSync(): void {
+    const keys = this.cache.allKeys() as string[];
+
+    /* istanbul ignore next */
+    if (!keys) return;
+
+    keys.forEach(key => {
+      this.cache.remove(key);
+    });
+  }
+
   private wrapCacheEntry(entry: CacheEntry): WrappedCacheEntry {
     const expiresInTime = Math.floor(Date.now() / 1000) + entry.expires_in;
 

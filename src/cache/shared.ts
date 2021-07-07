@@ -81,9 +81,11 @@ export type KeyManifestEntry = {
 
 export type Cacheable = WrappedCacheEntry | KeyManifestEntry;
 
+export type MaybePromise<T> = Promise<T> | T;
+
 export interface ICache {
-  set<T = Cacheable>(key: string, entry: T): Promise<void>;
-  get<T = Cacheable>(key: string): Promise<T>;
-  remove(key: string): Promise<void>;
-  allKeys?(): Promise<string[]>;
+  set<T = Cacheable>(key: string, entry: T): MaybePromise<void>;
+  get<T = Cacheable>(key: string): MaybePromise<T>;
+  remove(key: string): MaybePromise<void>;
+  allKeys?(): MaybePromise<string[]>;
 }
