@@ -5,8 +5,7 @@ import {
   ICache,
   CacheKey,
   CACHE_KEY_PREFIX,
-  WrappedCacheEntry,
-  MaybePromise
+  WrappedCacheEntry
 } from './shared';
 
 const DEFAULT_EXPIRY_ADJUSTMENT_SECONDS = 0;
