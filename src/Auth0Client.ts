@@ -841,7 +841,7 @@ export default class Auth0Client {
    *
    * @param options
    */
-  public logout(options: LogoutOptions = {}) {
+  public logout(options: LogoutOptions = {}): Promise<void> | void {
     const { localOnly, ...logoutOptions } = options;
 
     if (localOnly && logoutOptions.federated) {
@@ -850,16 +850,24 @@ export default class Auth0Client {
       );
     }
 
-    this.cacheManager.clear();
-    this.cookieStorage.remove('auth0.is.authenticated');
+    const postCacheClear = () => {
+      this.cookieStorage.remove('auth0.is.authenticated');
 
-    if (localOnly) {
-      return;
+      if (localOnly) {
+        return;
+      }
+
+      const url = this.buildLogoutUrl(logoutOptions);
+
+      window.location.assign(url);
+    };
+
+    if (this.options.cache) {
+      return this.cacheManager.clear().then(() => postCacheClear());
+    } else {
+      this.cacheManager.clearSync();
+      postCacheClear();
     }
-
-    const url = this.buildLogoutUrl(logoutOptions);
-
-    window.location.assign(url);
   }
 
   private async _getTokenFromIFrame(

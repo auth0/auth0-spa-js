@@ -15,10 +15,15 @@ import {
   nowSeconds,
   TEST_AUDIENCE
 } from '../constants';
+import { InMemoryAsyncCacheNoKeys } from './shared';
 
 const cacheFactories = [
   { new: () => new LocalStorageCache(), name: 'LocalStorage Cache' },
-  { new: () => new InMemoryCache().enclosedCache, name: 'In-memory Cache' }
+  { new: () => new InMemoryCache().enclosedCache, name: 'In-memory Cache' },
+  {
+    new: () => new InMemoryAsyncCacheNoKeys(),
+    name: 'In-memory async cache with no allKeys'
+  }
 ];
 
 const defaultEntry: CacheEntry = {

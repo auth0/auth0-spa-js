@@ -5,7 +5,8 @@ import {
   ICache,
   CacheKey,
   CACHE_KEY_PREFIX,
-  WrappedCacheEntry
+  WrappedCacheEntry,
+  MaybePromise
 } from './shared';
 
 const DEFAULT_EXPIRY_ADJUSTMENT_SECONDS = 0;
@@ -88,6 +89,19 @@ export class CacheManager {
     });
 
     await this.keyManifest?.clear();
+  }
+
+  /**
+   * Note: only call this if you're sure one of our internal (synchronous) caches are being used.
+   */
+  clearSync(): void {
+    const keys = this.cache.allKeys() as string[];
+
+    if (!keys) return;
+
+    keys.forEach(key => {
+      this.cache.remove(key);
+    });
   }
 
   private wrapCacheEntry(entry: CacheEntry): WrappedCacheEntry {

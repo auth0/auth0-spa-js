@@ -1,4 +1,9 @@
-import { CACHE_KEY_PREFIX, ICache, KeyManifestEntry } from './shared';
+import {
+  CACHE_KEY_PREFIX,
+  ICache,
+  KeyManifestEntry,
+  MaybePromise
+} from './shared';
 
 export class CacheKeyManifest {
   private readonly manifestKey: string;
@@ -34,11 +39,11 @@ export class CacheKeyManifest {
     }
   }
 
-  get(): Promise<KeyManifestEntry> {
+  get(): MaybePromise<KeyManifestEntry> {
     return this.cache.get<KeyManifestEntry>(this.manifestKey);
   }
 
-  clear(): Promise<void> {
+  clear(): MaybePromise<void> {
     return this.cache.remove(this.manifestKey);
   }
 

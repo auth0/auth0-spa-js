@@ -5,7 +5,6 @@ import {
 } from '../../src/cache';
 
 import {
-  Cacheable,
   CacheEntry,
   CacheKey,
   CACHE_KEY_PREFIX,
@@ -22,30 +21,7 @@ import {
   nowSeconds,
   TEST_REFRESH_TOKEN
 } from '../constants';
-
-class InMemoryCacheNoKeys implements ICache {
-  private cache: Record<string, unknown> = {};
-
-  set<T = Cacheable>(key: string, entry: T): Promise<void> {
-    this.cache[key] = entry;
-    return Promise.resolve();
-  }
-
-  get<T = Cacheable>(key: string): Promise<T> {
-    const cacheEntry = this.cache[key] as T;
-
-    if (!cacheEntry) {
-      return Promise.resolve(null);
-    }
-
-    return Promise.resolve(cacheEntry);
-  }
-
-  remove(key: string): Promise<void> {
-    delete this.cache[key];
-    return Promise.resolve();
-  }
-}
+import { InMemoryAsyncCacheNoKeys } from './shared';
 
 const defaultKey = new CacheKey({
   client_id: TEST_CLIENT_ID,
@@ -77,8 +53,8 @@ const cacheFactories = [
     name: 'Cache with allKeys'
   },
   {
-    new: () => new InMemoryCacheNoKeys(),
-    name: 'Cache using key manifest'
+    new: () => new InMemoryAsyncCacheNoKeys(),
+    name: 'Async cache using key manifest'
   }
 ];
 

@@ -1,35 +1,31 @@
 import { ICache, Cacheable, CACHE_KEY_PREFIX } from './shared';
 
 export class LocalStorageCache implements ICache {
-  public set<T = Cacheable>(key: string, entry: T): Promise<void> {
+  public set<T = Cacheable>(key: string, entry: T) {
     localStorage.setItem(key, JSON.stringify(entry));
-    return Promise.resolve();
   }
 
-  public get<T = Cacheable>(key: string): Promise<T> {
+  public get<T = Cacheable>(key: string) {
     const json = window.localStorage.getItem(key);
 
-    if (!json) return Promise.resolve(null);
+    if (!json) return;
 
     try {
-      const payload = JSON.parse(json);
-      return Promise.resolve(payload);
+      const payload = JSON.parse(json) as T;
+      return payload;
     } catch (e) {
       /* istanbul ignore next */
-      return Promise.resolve(null);
+      return;
     }
   }
 
-  public remove(key: string): Promise<void> {
+  public remove(key: string) {
     localStorage.removeItem(key);
-    return Promise.resolve();
   }
 
-  public allKeys(): Promise<string[]> {
-    return Promise.resolve(
-      Object.keys(window.localStorage).filter(key =>
-        key.startsWith(CACHE_KEY_PREFIX)
-      )
+  public allKeys() {
+    return Object.keys(window.localStorage).filter(key =>
+      key.startsWith(CACHE_KEY_PREFIX)
     );
   }
 }

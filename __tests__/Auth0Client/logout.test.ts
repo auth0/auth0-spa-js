@@ -12,9 +12,10 @@ import { TEST_AUTH0_CLIENT_QUERY_STRING } from '../constants';
 
 // @ts-ignore
 
-import { setupFn } from './helpers';
+import { loginWithPopupFn, loginWithRedirectFn, setupFn } from './helpers';
 
 import { TEST_CLIENT_ID, TEST_CODE_CHALLENGE, TEST_DOMAIN } from '../constants';
+import { InMemoryAsyncCacheNoKeys } from '../cache/shared';
 
 jest.mock('unfetch');
 jest.mock('es-cookie');
@@ -24,6 +25,7 @@ jest.mock('../../src/worker/token.worker');
 const mockWindow = <any>global;
 const mockFetch = (mockWindow.fetch = <jest.Mock>unfetch);
 const mockVerify = <jest.Mock>verify;
+const loginWithRedirect = loginWithRedirectFn(mockWindow, mockFetch);
 
 jest
   .spyOn(utils, 'bufferToBase64UrlEncoded')
@@ -115,11 +117,13 @@ describe('Auth0Client', () => {
 
     it('clears the cache', async () => {
       const auth0 = setup();
-      jest.spyOn(auth0['cacheManager'], 'clear').mockReturnValueOnce(undefined);
+      jest
+        .spyOn(auth0['cacheManager'], 'clearSync')
+        .mockReturnValueOnce(undefined);
 
       auth0.logout();
 
-      expect(auth0['cacheManager']['clear']).toHaveBeenCalled();
+      expect(auth0['cacheManager']['clearSync']).toHaveBeenCalled();
     });
 
     it('removes `auth0.is.authenticated` key from storage when `options.localOnly` is true', async () => {
@@ -150,6 +154,28 @@ describe('Auth0Client', () => {
 
       const fn = () => auth0.logout({ localOnly: true, federated: true });
       expect(fn).toThrow();
+    });
+
+    it('can access isAuthenticated immediately after local logout', async () => {
+      const auth0 = setup();
+
+      await loginWithRedirect(auth0);
+      expect(await auth0.isAuthenticated()).toBe(true);
+      auth0.logout({ localOnly: true });
+
+      expect(await auth0.isAuthenticated()).toBe(false);
+    });
+
+    it('can access isAuthenticated immediately after local logout when using a custom async cache', async () => {
+      const auth0 = setup({
+        cache: new InMemoryAsyncCacheNoKeys()
+      });
+
+      await loginWithRedirect(auth0);
+      expect(await auth0.isAuthenticated()).toBe(true);
+      await auth0.logout({ localOnly: true });
+
+      expect(await auth0.isAuthenticated()).toBe(false);
     });
   });
 });

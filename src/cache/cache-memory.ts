@@ -5,28 +5,26 @@ export class InMemoryCache {
     let cache: Record<string, unknown> = {};
 
     return {
-      set<T = Cacheable>(key: string, entry: T): Promise<void> {
+      set<T = Cacheable>(key: string, entry: T) {
         cache[key] = entry;
-        return Promise.resolve();
       },
 
-      get<T = Cacheable>(key: string): Promise<T> {
+      get<T = Cacheable>(key: string) {
         const cacheEntry = cache[key] as T;
 
         if (!cacheEntry) {
-          return Promise.resolve(null);
+          return;
         }
 
-        return Promise.resolve(cacheEntry);
+        return cacheEntry;
       },
 
-      remove(key: string): Promise<void> {
+      remove(key: string) {
         delete cache[key];
-        return Promise.resolve();
       },
 
-      allKeys(): Promise<string[]> {
-        return Promise.resolve(Object.keys(cache));
+      allKeys(): string[] {
+        return Object.keys(cache);
       }
     };
   })();
