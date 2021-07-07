@@ -96,6 +96,7 @@ export class CacheManager {
   clearSync(): void {
     const keys = this.cache.allKeys() as string[];
 
+    /* istanbul ignore next */
     if (!keys) return;
 
     keys.forEach(key => {
