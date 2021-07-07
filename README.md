@@ -216,36 +216,34 @@ The SDK can be configured to use a custom cache store that is implemented by you
 
 To do this, provide an object to the `cache` property of the SDK configuration.
 
-The object should implement the following functions:
+The object should implement the following functions. Note that all of these functions can optionally return a Promise or a static value.
 
-| Signature                                            | Description                                                                                                                                                                                                                                                                                       |
-| ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `async get(key)`                                     | Returns the item from the cache with the specified key, or `undefined` if it was not found                                                                                                                                                                                                        |
-| `async set(key: string, object: any): Promise<void>` | Sets an item into the cache                                                                                                                                                                                                                                                                       |
-| `async remove(key)`                                  | Removes a single item from the cache at the specified key, or no-op if the item was not found                                                                                                                                                                                                     |
-| `async allKeys()`                                    | (optional) Implement this if your cache has the ability to return a list of all keys. Otherwise, the SDK internally records its own key manifest using your cache. **Note**: if you only want to ensure you only return keys used by this SDK, the keys we use are prefixed with `@@auth0spajs@@` |
+| Signature                        | Return type                    | Description                                                                                                                                                                                                                                                                                       |
+| -------------------------------- | ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `get(key)`                       | Promise<object> or object      | Returns the item from the cache with the specified key, or `undefined` if it was not found                                                                                                                                                                                                        |
+| `set(key: string, object: any) ` | Promise<void> or void          | Sets an item into the cache                                                                                                                                                                                                                                                                       |
+| `remove(key)`                    | Promise<void> or void          | Removes a single item from the cache at the specified key, or no-op if the item was not found                                                                                                                                                                                                     |
+| `allKeys()`                      | Promise<string[]> or string [] | (optional) Implement this if your cache has the ability to return a list of all keys. Otherwise, the SDK internally records its own key manifest using your cache. **Note**: if you only want to ensure you only return keys used by this SDK, the keys we use are prefixed with `@@auth0spajs@@` |
 
 Here's an example of a custom cache implementation that uses `sessionStorage` to store tokens and apply it to the Auth0 SPA SDK:
 
 ```js
 const sessionStorageCache = {
   get: function (key) {
-    return Promise.resolve(JSON.parse(sessionStorage.getItem(key)));
+    return JSON.parse(sessionStorage.getItem(key));
   },
 
   set: function (key, value) {
     sessionStorage.setItem(key, JSON.stringify(value));
-    return Promise.resolve();
   },
 
   remove: function (key) {
     sessionStorage.removeItem(key);
-    return Promise.resolve();
   },
 
   // Optional
   allKeys: function () {
-    return Promise.resolve(Object.keys(sessionStorage));
+    return Object.keys(sessionStorage);
   }
 };
 

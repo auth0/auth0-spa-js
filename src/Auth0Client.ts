@@ -833,6 +833,9 @@ export default class Auth0Client {
    *
    * Clears the application session and performs a redirect to `/v2/logout`, using
    * the parameters provided as arguments, to clear the Auth0 session.
+   *
+   * **Note:** If you are using a custom cache, and specifying `localOnly: true`, and you want to perform actions or read state from the SDK immediately after logout, you should `await` the result of calling `logout`.
+   *
    * If the `federated` option is specified it also clears the Identity Provider session.
    * If the `localOnly` option is specified, it only clears the application session.
    * It is invalid to set both the `federated` and `localOnly` options to `true`,
