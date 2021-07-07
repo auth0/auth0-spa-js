@@ -340,27 +340,15 @@
       // An example of a custom cache that could be constructed by a developer.
       const sessionStorageCache = {
         get: function (key) {
-          return Promise.resolve(JSON.parse(sessionStorage.getItem(key)));
+          return JSON.parse(sessionStorage.getItem(key));
         },
 
         set: function (key, value) {
           sessionStorage.setItem(key, JSON.stringify(value));
-          return Promise.resolve();
-        },
-
-        clear: function () {
-          for (var i = sessionStorage.length - 1; i >= 0; i--) {
-            if (sessionStorage.key(i).startsWith('@@auth0spajs@@')) {
-              sessionStorage.removeItem(sessionStorage.key(i));
-            }
-          }
-
-          return Promise.resolve();
         },
 
         remove: function (key) {
           sessionStorage.removeItem(key);
-          return Promise.resolve();
         }
       };
 
