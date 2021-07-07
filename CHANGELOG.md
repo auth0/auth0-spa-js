@@ -1,5 +1,13 @@
 # Change Log
 
+## [v1.16.1](https://github.com/auth0/auth0-spa-js/tree/v1.16.1) (2021-07-07)
+
+[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v1.16.0...v1.16.1)
+
+**Fixed**
+
+- Changes to logout and cache synchronicity [\#758](https://github.com/auth0/auth0-spa-js/pull/758) ([stevehobbsdev](https://github.com/stevehobbsdev))
+
 ## [v1.16.0](https://github.com/auth0/auth0-spa-js/tree/v1.16.0) (2021-07-05)
 
 [Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v1.15.0...v1.16.0)

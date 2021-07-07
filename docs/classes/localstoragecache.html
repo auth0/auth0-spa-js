@@ -2827,6 +2827,9 @@ img {
 		<li class=" tsd-kind-type-alias">
 			<a href="../globals.html#keymanifestentry" class="tsd-kind-icon">Key<wbr>Manifest<wbr>Entry</a>
 		</li>
+		<li class=" tsd-kind-type-alias tsd-has-type-parameter">
+			<a href="../globals.html#maybepromise" class="tsd-kind-icon">Maybe<wbr>Promise</a>
+		</li>
 		<li class=" tsd-kind-type-alias">
 			<a href="../globals.html#wrappedcacheentry" class="tsd-kind-icon">Wrapped<wbr>Cache<wbr>Entry</a>
 		</li>
@@ -2888,17 +2891,17 @@ img {
 				<a name="allkeys" class="tsd-anchor"></a>
 				<h3>all<wbr>Keys</h3>
 				<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
-					<li class="tsd-signature tsd-kind-icon">all<wbr>Keys<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">&gt;</span></li>
+					<li class="tsd-signature tsd-kind-icon">all<wbr>Keys<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">[]</span></li>
 				</ul>
 				<ul class="tsd-descriptions">
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<p>Implementation of <a href="../interfaces/icache.html">ICache</a>.<a href="../interfaces/icache.html#allkeys">allKeys</a></p>
 							<ul>
-								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/e6d2507/src/cache/cache-localstorage.ts#L28">src/cache/cache-localstorage.ts:28</a></li>
+								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/e84aecb/src/cache/cache-localstorage.ts#L26">src/cache/cache-localstorage.ts:26</a></li>
 							</ul>
 						</aside>
-						<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">&gt;</span></h4>
+						<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">[]</span></h4>
 					</li>
 				</ul>
 			</section>
@@ -2906,14 +2909,14 @@ img {
 				<a name="get" class="tsd-anchor"></a>
 				<h3>get</h3>
 				<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-has-type-parameter">
-					<li class="tsd-signature tsd-kind-icon">get&lt;T&gt;<span class="tsd-signature-symbol">(</span>key<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">T</span><span class="tsd-signature-symbol">&gt;</span></li>
+					<li class="tsd-signature tsd-kind-icon">get&lt;T&gt;<span class="tsd-signature-symbol">(</span>key<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">T</span></li>
 				</ul>
 				<ul class="tsd-descriptions">
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<p>Implementation of <a href="../interfaces/icache.html">ICache</a>.<a href="../interfaces/icache.html#get">get</a></p>
 							<ul>
-								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/e6d2507/src/cache/cache-localstorage.ts#L9">src/cache/cache-localstorage.ts:9</a></li>
+								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/e84aecb/src/cache/cache-localstorage.ts#L8">src/cache/cache-localstorage.ts:8</a></li>
 							</ul>
 						</aside>
 						<h4 class="tsd-type-parameters-title">Type parameters</h4>
@@ -2928,7 +2931,7 @@ img {
 								<h5>key: <span class="tsd-signature-type">string</span></h5>
 							</li>
 						</ul>
-						<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">T</span><span class="tsd-signature-symbol">&gt;</span></h4>
+						<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">T</span></h4>
 					</li>
 				</ul>
 			</section>
@@ -2936,14 +2939,14 @@ img {
 				<a name="remove" class="tsd-anchor"></a>
 				<h3>remove</h3>
 				<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
-					<li class="tsd-signature tsd-kind-icon">remove<span class="tsd-signature-symbol">(</span>key<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">&gt;</span></li>
+					<li class="tsd-signature tsd-kind-icon">remove<span class="tsd-signature-symbol">(</span>key<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
 				</ul>
 				<ul class="tsd-descriptions">
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<p>Implementation of <a href="../interfaces/icache.html">ICache</a>.<a href="../interfaces/icache.html#remove">remove</a></p>
 							<ul>
-								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/e6d2507/src/cache/cache-localstorage.ts#L23">src/cache/cache-localstorage.ts:23</a></li>
+								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/e84aecb/src/cache/cache-localstorage.ts#L22">src/cache/cache-localstorage.ts:22</a></li>
 							</ul>
 						</aside>
 						<h4 class="tsd-parameters-title">Parameters</h4>
@@ -2952,7 +2955,7 @@ img {
 								<h5>key: <span class="tsd-signature-type">string</span></h5>
 							</li>
 						</ul>
-						<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">&gt;</span></h4>
+						<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
 					</li>
 				</ul>
 			</section>
@@ -2960,14 +2963,14 @@ img {
 				<a name="set" class="tsd-anchor"></a>
 				<h3>set</h3>
 				<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-has-type-parameter">
-					<li class="tsd-signature tsd-kind-icon">set&lt;T&gt;<span class="tsd-signature-symbol">(</span>key<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span>, entry<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">T</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">&gt;</span></li>
+					<li class="tsd-signature tsd-kind-icon">set&lt;T&gt;<span class="tsd-signature-symbol">(</span>key<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span>, entry<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">T</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
 				</ul>
 				<ul class="tsd-descriptions">
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<p>Implementation of <a href="../interfaces/icache.html">ICache</a>.<a href="../interfaces/icache.html#set">set</a></p>
 							<ul>
-								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/e6d2507/src/cache/cache-localstorage.ts#L4">src/cache/cache-localstorage.ts:4</a></li>
+								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/e84aecb/src/cache/cache-localstorage.ts#L4">src/cache/cache-localstorage.ts:4</a></li>
 							</ul>
 						</aside>
 						<h4 class="tsd-type-parameters-title">Type parameters</h4>
@@ -2985,7 +2988,7 @@ img {
 								<h5>entry: <span class="tsd-signature-type">T</span></h5>
 							</li>
 						</ul>
-						<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">&gt;</span></h4>
+						<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
 					</li>
 				</ul>
 			</section>

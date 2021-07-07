@@ -2818,6 +2818,9 @@ img {
 		<li class=" tsd-kind-type-alias">
 			<a href="../globals.html#keymanifestentry" class="tsd-kind-icon">Key<wbr>Manifest<wbr>Entry</a>
 		</li>
+		<li class=" tsd-kind-type-alias tsd-has-type-parameter">
+			<a href="../globals.html#maybepromise" class="tsd-kind-icon">Maybe<wbr>Promise</a>
+		</li>
 		<li class=" tsd-kind-type-alias">
 			<a href="../globals.html#wrappedcacheentry" class="tsd-kind-icon">Wrapped<wbr>Cache<wbr>Entry</a>
 		</li>
@@ -2869,10 +2872,10 @@ img {
 			<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class">
 				<a name="enclosedcache" class="tsd-anchor"></a>
 				<h3>enclosed<wbr>Cache</h3>
-				<div class="tsd-signature tsd-kind-icon">enclosed<wbr>Cache<span class="tsd-signature-symbol">:</span> <a href="../interfaces/icache.html" class="tsd-signature-type">ICache</a><span class="tsd-signature-symbol"> = (function () {let cache: Record&lt;string, unknown&gt; &#x3D; {};return {set&lt;T &#x3D; Cacheable&gt;(key: string, entry: T): Promise&lt;void&gt; {cache[key] &#x3D; entry;return Promise.resolve();},get&lt;T &#x3D; Cacheable&gt;(key: string): Promise&lt;T&gt; {const cacheEntry &#x3D; cache[key] as T;if (!cacheEntry) {return Promise.resolve(null);}return Promise.resolve(cacheEntry);},remove(key: string): Promise&lt;void&gt; {delete cache[key];return Promise.resolve();},allKeys(): Promise&lt;string[]&gt; {return Promise.resolve(Object.keys(cache));}};})()</span></div>
+				<div class="tsd-signature tsd-kind-icon">enclosed<wbr>Cache<span class="tsd-signature-symbol">:</span> <a href="../interfaces/icache.html" class="tsd-signature-type">ICache</a><span class="tsd-signature-symbol"> = (function () {let cache: Record&lt;string, unknown&gt; &#x3D; {};return {set&lt;T &#x3D; Cacheable&gt;(key: string, entry: T) {cache[key] &#x3D; entry;},get&lt;T &#x3D; Cacheable&gt;(key: string) {const cacheEntry &#x3D; cache[key] as T;if (!cacheEntry) {return;}return cacheEntry;},remove(key: string) {delete cache[key];},allKeys(): string[] {return Object.keys(cache);}};})()</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/e6d2507/src/cache/cache-memory.ts#L4">src/cache/cache-memory.ts:4</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/e84aecb/src/cache/cache-memory.ts#L4">src/cache/cache-memory.ts:4</a></li>
 					</ul>
 				</aside>
 			</section>
