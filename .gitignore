@@ -12,3 +12,4 @@ yarn.lock
 
 release-tmp*
 bundle-stats
+log
