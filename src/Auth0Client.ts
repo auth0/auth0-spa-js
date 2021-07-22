@@ -501,7 +501,7 @@ export default class Auth0Client {
    *
    * Returns all claims from the id_token if available.
    *
-   * If you provide an audience or scope, they should match an existing Access Token
+   * If you provide an audience or scope, they should match an existing token response
    * (the SDK stores a corresponding ID Token with every Access Token, and uses the
    * scope and audience to look up the ID Token)
    *
@@ -522,6 +522,36 @@ export default class Auth0Client {
     );
 
     return cache && cache.decodedToken && cache.decodedToken.claims;
+  }
+
+  /**
+   * ```js
+   * const claims = await auth0.getIdToken();
+   * ```
+   *
+   * Returns the raw id_token if available.
+   *
+   * If you provide an audience or scope, they should match an existing token response
+   * (the SDK stores a corresponding ID Token with every Access Token, and uses the
+   * scope and audience to look up the ID Token)
+   *
+   * @param options
+   */
+  public async getIdToken(
+    options: GetIdTokenClaimsOptions = {}
+  ): Promise<string> {
+    const audience = options.audience || this.options.audience || 'default';
+    const scope = getUniqueScopes(this.defaultScope, this.scope, options.scope);
+
+    const cache = await this.cacheManager.get(
+      new CacheKey({
+        client_id: this.options.client_id,
+        audience,
+        scope
+      })
+    );
+
+    return cache && cache.id_token;
   }
 
   /**

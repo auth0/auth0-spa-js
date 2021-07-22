@@ -27,7 +27,7 @@ const fetchWithoutWorker = async (
   const controller = createAbortController();
   fetchOptions.signal = controller.signal;
 
-  let timeoutId: NodeJS.Timeout;
+  let timeoutId: ReturnType<typeof setTimeout>;
 
   // The promise will resolve with one of these two promises (the fetch or the timeout), whichever completes first.
   return Promise.race([
