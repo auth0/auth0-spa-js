@@ -3,47 +3,7 @@
     {
       "browser": "chrome",
       "os": "Windows 10",
-      "versions": ["latest", "latest-1"]
-    },
-    {
-      "browser": "firefox",
-      "os": "Windows 10",
-      "versions": ["latest", "latest-1"]
-    },
-    {
-      "browser": "edge",
-      "os": "Windows 10",
-      "versions": ["latest", "latest-1"]
-    },
-    {
-      "browser": "chrome",
-      "os": "OS X Mojave",
-      "versions": ["latest", "latest-1"]
-    },
-    {
-      "browser": "firefox",
-      "os": "OS X Mojave",
-      "versions": ["latest", "latest-1"]
-    },
-    {
-      "browser": "edge",
-      "os": "OS X Mojave",
-      "versions": ["latest", "latest-1"]
-    },
-    {
-      "browser": "chrome",
-      "os": "OS X Catalina",
-      "versions": ["latest", "latest-1"]
-    },
-    {
-      "browser": "firefox",
-      "os": "OS X Catalina",
-      "versions": ["latest", "latest-1"]
-    },
-    {
-      "browser": "edge",
-      "os": "OS X Catalina",
-      "versions": ["latest", "latest-1"]
+      "versions": ["latest"]
     }
   ],
   "run_settings": {
@@ -57,9 +17,9 @@
     "headless": true
   },
   "connection_settings": {
-    "local": false,
+    "local": true,
     "local_identifier": null,
-    "local_mode": null,
+    "local_mode": "always-on",
     "local_config_file": null
   },
   "disable_usage_reporting": false

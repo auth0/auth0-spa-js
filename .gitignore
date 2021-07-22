@@ -5,6 +5,7 @@ coverage
 stats.html
 cypress/screenshots
 cypress/videos
+cypress.env.json
 .release
 .idea
 test-results
@@ -12,4 +13,8 @@ yarn.lock
 
 release-tmp*
 bundle-stats
-log
+
+# BrowserStack
+log/
+*.log
+results/
