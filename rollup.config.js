@@ -3,12 +3,12 @@ import commonjs from 'rollup-plugin-commonjs';
 import typescript from 'rollup-plugin-typescript2';
 import { terser } from 'rollup-plugin-terser';
 import sourcemaps from 'rollup-plugin-sourcemaps';
-import serve from 'rollup-plugin-serve';
 import livereload from 'rollup-plugin-livereload';
 import visualizer from 'rollup-plugin-visualizer';
 import webWorkerLoader from 'rollup-plugin-web-worker-loader';
 import replace from '@rollup/plugin-replace';
 import analyze from 'rollup-plugin-analyzer';
+import dev from 'rollup-plugin-dev';
 
 import pkg from './package.json';
 
@@ -72,9 +72,8 @@ let bundles = [
     plugins: [
       ...getPlugins(false),
       !isProduction &&
-        serve({
-          contentBase: ['dist', 'static'],
-          open: true,
+        dev({
+          dirs: ['dist', 'static'],
           port: process.env.DEV_PORT || defaultDevPort
         }),
       !isProduction && livereload()
