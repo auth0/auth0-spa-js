@@ -12,7 +12,8 @@ const config = {
   ],
   routes: {
     authorization: '/authorize',
-    token: '/oauth/token'
+    token: '/oauth/token',
+    end_session: '/v2/logout'
   },
   scopes: ['openid', 'offline_access'],
   clientBasedCORS(ctx, origin, client) {
@@ -28,5 +29,15 @@ const config = {
 
 export function createApp(opts) {
   const issuer = `http://localhost:${opts.port || 3000}/`;
-  return new Provider(issuer, config).app;
+  const provider = new Provider(issuer, config);
+
+  provider.use(async (ctx, next) => {
+    await next();
+
+    if (ctx.oidc?.route === 'end_session_success') {
+      ctx.redirect('http://localhost:3000');
+    }
+  });
+
+  return provider.app;
 }
