@@ -9,6 +9,7 @@ import webWorkerLoader from 'rollup-plugin-web-worker-loader';
 import replace from '@rollup/plugin-replace';
 import analyze from 'rollup-plugin-analyzer';
 import dev from 'rollup-plugin-dev';
+import { createApp } from './scripts/oidc-provider';
 
 import pkg from './package.json';
 
@@ -17,6 +18,7 @@ const EXPORT_NAME = 'createAuth0Client';
 const isProduction = process.env.NODE_ENV === 'production';
 const shouldGenerateStats = process.env.WITH_STATS === 'true';
 const defaultDevPort = 3000;
+const serverPort = process.env.DEV_PORT || defaultDevPort;
 
 const visualizerOptions = {
   filename: 'bundle-stats/index.html'
@@ -74,7 +76,10 @@ let bundles = [
       !isProduction &&
         dev({
           dirs: ['dist', 'static'],
-          port: process.env.DEV_PORT || defaultDevPort
+          port: serverPort,
+          extend(app, modules) {
+            app.use(modules.mount(createApp({ port: serverPort })));
+          }
         }),
       !isProduction && livereload()
     ],

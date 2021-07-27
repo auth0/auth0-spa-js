@@ -20,8 +20,27 @@ const deleteRefreshToken = (audience: string, scope: string) =>
 const wait = (time: number) =>
   new Promise(resolve => setTimeout(resolve, time));
 
+const parseFormData = (formData: string) => {
+  const queryParams = formData.split('&');
+  const parsedQuery: any = {};
+
+  queryParams.forEach(param => {
+    const [key, val] = param.split('=');
+    parsedQuery[key] = decodeURIComponent(val);
+  });
+
+  return parsedQuery;
+};
+
+const createFormData = (params: any) => {
+  return Object.keys(params)
+    .filter(k => typeof params[k] !== 'undefined')
+    .map(k => encodeURIComponent(k) + '=' + encodeURIComponent(params[k]))
+    .join('&');
+};
+
 const messageHandler = async ({
-  data: { timeout, auth, fetchUrl, fetchOptions },
+  data: { timeout, auth, fetchUrl, fetchOptions, useFormData },
   ports: [port]
 }: MessageEvent<WorkerRefreshTokenMessage>) => {
   let json: {
@@ -31,7 +50,9 @@ const messageHandler = async ({
   const { audience, scope } = auth || {};
 
   try {
-    const body = JSON.parse(fetchOptions.body);
+    const body = useFormData
+      ? (parseFormData(fetchOptions.body) as any)
+      : JSON.parse(fetchOptions.body);
 
     if (!body.refresh_token && body.grant_type === 'refresh_token') {
       const refreshToken = getRefreshToken(audience, scope);
@@ -40,10 +61,15 @@ const messageHandler = async ({
         throw new Error(MISSING_REFRESH_TOKEN_ERROR_MESSAGE);
       }
 
-      fetchOptions.body = JSON.stringify({
-        ...body,
-        refresh_token: refreshToken
-      });
+      fetchOptions.body = useFormData
+        ? createFormData({
+            ...body,
+            refresh_token: refreshToken
+          })
+        : JSON.stringify({
+            ...body,
+            refresh_token: refreshToken
+          });
     }
 
     let abortController: AbortController;

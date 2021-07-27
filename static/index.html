@@ -435,7 +435,8 @@
               cacheLocation: _self.useLocalStorage ? 'localstorage' : 'memory',
               useRefreshTokens: _self.useRefreshTokens,
               useCookiesForTransactions: _self.useCookiesForTransactions,
-              redirect_uri: window.location.origin
+              redirect_uri: window.location.origin,
+              prompt: 'consent'
             };
 
             if (_self.audience) {

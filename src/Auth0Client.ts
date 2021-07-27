@@ -115,6 +115,14 @@ const getTokenIssuer = (issuer: string, domainUrl: string) => {
   return `${domainUrl}/`;
 };
 
+const getDomain = (domainUrl: string) => {
+  if (!/^https?:\/\//.test(domainUrl)) {
+    return `https:${domainUrl}`;
+  }
+
+  return domainUrl;
+};
+
 /**
  * @ignore
  */
@@ -195,8 +203,9 @@ export default class Auth0Client {
     this.scope = this.options.scope;
     this.transactionManager = new TransactionManager(transactionStorage);
     this.cacheManager = new CacheManager(cache, this.options.client_id);
-    this.domainUrl = `https://${this.options.domain}`;
+    this.domainUrl = getDomain(this.options.domain);
     this.tokenIssuer = getTokenIssuer(this.options.issuer, this.domainUrl);
+    this.options.useFormData = true;
 
     this.defaultScope = getUniqueScopes(
       'openid',
@@ -419,7 +428,8 @@ export default class Auth0Client {
         code: codeResult.code,
         grant_type: 'authorization_code',
         redirect_uri: params.redirect_uri,
-        auth0Client: this.options.auth0Client
+        auth0Client: this.options.auth0Client,
+        useFormData: this.options.useFormData
       } as OAuthTokenOptions,
       this.worker
     );
@@ -571,7 +581,8 @@ export default class Auth0Client {
       code_verifier: transaction.code_verifier,
       grant_type: 'authorization_code',
       code,
-      auth0Client: this.options.auth0Client
+      auth0Client: this.options.auth0Client,
+      useFormData: this.options.useFormData
     } as OAuthTokenOptions;
     // some old versions of the SDK might not have added redirect_uri to the
     // transaction, we dont want the key to be set to undefined.
@@ -929,7 +940,8 @@ export default class Auth0Client {
           code: codeResult.code,
           grant_type: 'authorization_code',
           redirect_uri: params.redirect_uri,
-          auth0Client: this.options.auth0Client
+          auth0Client: this.options.auth0Client,
+          useFormData: this.options.useFormData
         } as OAuthTokenOptions,
         this.worker
       );
@@ -983,13 +995,8 @@ export default class Auth0Client {
 
     let tokenResult: TokenEndpointResponse;
 
-    const {
-      scope,
-      audience,
-      ignoreCache,
-      timeoutInSeconds,
-      ...customOptions
-    } = options;
+    const { scope, audience, ignoreCache, timeoutInSeconds, ...customOptions } =
+      options;
 
     const timeout =
       typeof options.timeoutInSeconds === 'number'
@@ -1009,7 +1016,8 @@ export default class Auth0Client {
           refresh_token: cache && cache.refresh_token,
           redirect_uri,
           ...(timeout && { timeout }),
-          auth0Client: this.options.auth0Client
+          auth0Client: this.options.auth0Client,
+          useFormData: this.options.useFormData
         } as RefreshTokenOptions,
         this.worker
       );
