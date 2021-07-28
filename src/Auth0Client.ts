@@ -117,7 +117,7 @@ const getTokenIssuer = (issuer: string, domainUrl: string) => {
 
 const getDomain = (domainUrl: string) => {
   if (!/^https?:\/\//.test(domainUrl)) {
-    return `https:${domainUrl}`;
+    return `https://${domainUrl}`;
   }
 
   return domainUrl;
@@ -205,7 +205,6 @@ export default class Auth0Client {
     this.cacheManager = new CacheManager(cache, this.options.client_id);
     this.domainUrl = getDomain(this.options.domain);
     this.tokenIssuer = getTokenIssuer(this.options.issuer, this.domainUrl);
-    this.options.useFormData = true;
 
     this.defaultScope = getUniqueScopes(
       'openid',
@@ -995,8 +994,13 @@ export default class Auth0Client {
 
     let tokenResult: TokenEndpointResponse;
 
-    const { scope, audience, ignoreCache, timeoutInSeconds, ...customOptions } =
-      options;
+    const {
+      scope,
+      audience,
+      ignoreCache,
+      timeoutInSeconds,
+      ...customOptions
+    } = options;
 
     const timeout =
       typeof options.timeoutInSeconds === 'number'
