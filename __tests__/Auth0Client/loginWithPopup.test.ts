@@ -256,6 +256,7 @@ describe('Auth0Client', () => {
 
     it('should log the user in with a popup and get the token', async () => {
       const auth0 = setup();
+
       await loginWithPopup(auth0);
       expect(mockWindow.open).toHaveBeenCalled();
 
@@ -269,8 +270,35 @@ describe('Auth0Client', () => {
           code: 'my_code'
         },
         {
-          'Auth0-Client': btoa(JSON.stringify(DEFAULT_AUTH0_CLIENT))
+          'Auth0-Client': btoa(JSON.stringify(DEFAULT_AUTH0_CLIENT)),
+          'Content-type': 'application/json'
         }
+      );
+    });
+
+    it('should log the user in with a popup and get the token with form data', async () => {
+      const auth0 = setup({
+        useFormData: true
+      });
+
+      await loginWithPopup(auth0);
+      expect(mockWindow.open).toHaveBeenCalled();
+
+      assertPost(
+        'https://auth0_domain/oauth/token',
+        {
+          redirect_uri: TEST_REDIRECT_URI,
+          client_id: TEST_CLIENT_ID,
+          code_verifier: TEST_CODE_VERIFIER,
+          grant_type: 'authorization_code',
+          code: 'my_code'
+        },
+        {
+          'Auth0-Client': btoa(JSON.stringify(DEFAULT_AUTH0_CLIENT)),
+          'Content-type': 'application/x-www-form-urlencoded'
+        },
+        0,
+        false
       );
     });
 

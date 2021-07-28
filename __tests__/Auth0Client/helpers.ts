@@ -8,7 +8,9 @@ import {
   RedirectLoginOptions
 } from '../../src';
 
+import * as utils from '../../src/utils';
 import Auth0Client from '../../src/Auth0Client';
+
 import {
   TEST_ACCESS_TOKEN,
   TEST_CLIENT_ID,
@@ -26,13 +28,24 @@ const authorizationResponse: AuthenticationResult = {
 };
 
 export const assertPostFn = mockFetch => {
-  return (url, body, headers = null, callNum = 0) => {
-    const [actualUrl, opts] = mockFetch.mock.calls[callNum];
+  return (
+    url: string,
+    body: any,
+    headers: Record<string, string> = null,
+    callNum = 0,
+    json = true
+  ) => {
+    const [actualUrl, call] = mockFetch.mock.calls[callNum];
+
     expect(url).toEqual(actualUrl);
-    expect(body).toEqual(JSON.parse(opts.body));
+
+    expect(body).toEqual(
+      json ? JSON.parse(call.body) : utils.parseQueryResult(call.body)
+    );
+
     if (headers) {
       Object.keys(headers).forEach(header =>
-        expect(headers[header]).toEqual(opts.headers[header])
+        expect(headers[header]).toEqual(call.headers[header])
       );
     }
   };
