@@ -1,5 +1,8 @@
 import unfetch from 'unfetch';
 import { MISSING_REFRESH_TOKEN_ERROR_MESSAGE } from '../src/constants';
+import { assertPostFn } from './Auth0Client/helpers';
+import { TEST_CODE } from './constants';
+import * as utils from '../src/utils';
 
 jest.mock('unfetch');
 
@@ -50,6 +53,28 @@ describe('token worker', () => {
     });
 
     expect(mockFetch.mock.calls[0][1].signal).toBeDefined();
+  });
+
+  it('calls fetch and uses form post data', async () => {
+    mockFetch.mockReturnValue(
+      Promise.resolve({
+        ok: true,
+        json: () => ({ foo: 'bar' })
+      })
+    );
+
+    const response = await messageHandlerAsync({
+      fetchUrl: '/foo',
+      fetchOptions: {
+        method: 'POST',
+        body: utils.createQueryParams({
+          code: TEST_CODE
+        })
+      },
+      useFormData: true
+    });
+
+    assertPostFn(mockFetch)('/foo', { code: TEST_CODE }, {}, 0, false);
   });
 
   it('calls fetch without AbortSignal if AbortController is not available', async () => {
