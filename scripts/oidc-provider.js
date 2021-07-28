@@ -11,7 +11,7 @@ const config = {
     }
   ],
   routes: {
-    authorization: '/authorize',
+    authorization: '/authorize', // lgtm [js/hardcoded-credentials]
     token: '/oauth/token',
     end_session: '/v2/logout'
   },
