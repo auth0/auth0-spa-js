@@ -70,7 +70,7 @@ describe('getTokenSilently', function () {
 
       cy.login();
 
-      cy.route({
+      cy.intercept({
         method: 'POST',
         url: '**/oauth/token'
       }).as('tokenApiCheck');
@@ -94,7 +94,8 @@ describe('getTokenSilently', function () {
       cy.toggleSwitch('use-cache');
       cy.toggleSwitch('refresh-tokens');
       cy.login();
-      cy.route({
+
+      cy.intercept({
         method: 'POST',
         url: '**/oauth/token'
       }).as('tokenApiCheck');
