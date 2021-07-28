@@ -137,8 +137,6 @@ export async function getJSON<T>(
     ok
   } = response;
 
-  console.log(response);
-
   if (!ok) {
     const errorMessage =
       error_description || `HTTP error. Unable to fetch ${url}`;
