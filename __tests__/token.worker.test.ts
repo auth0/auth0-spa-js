@@ -59,22 +59,41 @@ describe('token worker', () => {
     mockFetch.mockReturnValue(
       Promise.resolve({
         ok: true,
-        json: () => ({ foo: 'bar' })
+        json: () => ({ refresh_token: 'foo' })
       })
     );
-
-    const response = await messageHandlerAsync({
+    await messageHandlerAsync({
       fetchUrl: '/foo',
       fetchOptions: {
         method: 'POST',
         body: utils.createQueryParams({
-          code: TEST_CODE
+          grant_type: 'authorization_code'
         })
       },
       useFormData: true
     });
 
-    assertPostFn(mockFetch)('/foo', { code: TEST_CODE }, {}, 0, false);
+    await messageHandlerAsync({
+      fetchUrl: '/foo',
+      fetchOptions: {
+        method: 'POST',
+        body: utils.createQueryParams({
+          grant_type: 'refresh_token'
+        })
+      },
+      useFormData: true
+    });
+
+    assertPostFn(mockFetch)(
+      '/foo',
+      {
+        grant_type: 'refresh_token',
+        refresh_token: 'foo'
+      },
+      {},
+      1,
+      false
+    );
   });
 
   it('calls fetch without AbortSignal if AbortController is not available', async () => {
