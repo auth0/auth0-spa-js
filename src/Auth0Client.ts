@@ -143,6 +143,7 @@ const getCustomInitialOptions = (
     redirect_uri,
     scope,
     useRefreshTokens,
+    useCookiesForTransactions,
     ...customParams
   } = options;
   return customParams;
