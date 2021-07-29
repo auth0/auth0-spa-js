@@ -51,7 +51,7 @@ const messageHandler = async ({
 
   try {
     const body = useFormData
-      ? (parseFormData(fetchOptions.body) as any)
+      ? parseFormData(fetchOptions.body)
       : JSON.parse(fetchOptions.body);
 
     if (!body.refresh_token && body.grant_type === 'refresh_token') {
