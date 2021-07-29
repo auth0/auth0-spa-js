@@ -20,23 +20,15 @@ const deleteRefreshToken = (audience: string, scope: string) =>
 const wait = (time: number) =>
   new Promise(resolve => setTimeout(resolve, time));
 
-const parseFormData = (formData: string) => {
-  const queryParams = formData.split('&');
+const formDataToObject = (formData: string): Record<string, any> => {
+  const queryParams = new URLSearchParams(formData);
   const parsedQuery: any = {};
 
-  queryParams.forEach(param => {
-    const [key, val] = param.split('=');
-    parsedQuery[key] = decodeURIComponent(val);
+  queryParams.forEach((val, key) => {
+    parsedQuery[key] = val;
   });
 
   return parsedQuery;
-};
-
-const createFormData = (params: any) => {
-  return Object.keys(params)
-    .filter(k => typeof params[k] !== 'undefined')
-    .map(k => encodeURIComponent(k) + '=' + encodeURIComponent(params[k]))
-    .join('&');
 };
 
 const messageHandler = async ({
@@ -51,7 +43,7 @@ const messageHandler = async ({
 
   try {
     const body = useFormData
-      ? parseFormData(fetchOptions.body)
+      ? formDataToObject(fetchOptions.body)
       : JSON.parse(fetchOptions.body);
 
     if (!body.refresh_token && body.grant_type === 'refresh_token') {
@@ -62,10 +54,10 @@ const messageHandler = async ({
       }
 
       fetchOptions.body = useFormData
-        ? createFormData({
+        ? new URLSearchParams({
             ...body,
             refresh_token: refreshToken
-          })
+          }).toString()
         : JSON.stringify({
             ...body,
             refresh_token: refreshToken
