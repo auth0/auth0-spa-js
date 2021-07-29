@@ -4,7 +4,6 @@ const config = {
   clients: [
     {
       client_id: 'testing',
-      client_secret: 'auth0-spa-js-testing-secret',
       redirect_uris: ['http://localhost:3000'],
       token_endpoint_auth_method: 'none',
       grant_types: ['authorization_code', 'refresh_token']
