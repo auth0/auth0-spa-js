@@ -138,6 +138,22 @@ describe('Auth0Client', () => {
       expect((<any>auth0).tokenIssuer).toEqual('https://some.issuer.com/');
     });
 
+    it('should allow specifying domain with http scheme', () => {
+      const auth0 = setup({
+        domain: 'http://localhost'
+      });
+
+      expect((<any>auth0).domainUrl).toEqual('http://localhost');
+    });
+
+    it('should allow specifying domain with https scheme', () => {
+      const auth0 = setup({
+        domain: 'https://localhost'
+      });
+
+      expect((<any>auth0).domainUrl).toEqual('https://localhost');
+    });
+
     it('uses a custom cache if one was given in the configuration', async () => {
       const auth0 = setup({
         cache: mockCache

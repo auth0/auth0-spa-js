@@ -203,6 +203,15 @@ export interface Auth0ClientOptions extends BaseLoginOptions {
    * Defaults to 1.
    */
   sessionCheckExpiryDays?: number;
+
+  /**
+   * When true, data to the token endpoint is transmitted as x-www-form-urlencoded data instead of JSON. The default is false, but will default to true in a
+   * future major version.
+   *
+   * **Note:** Setting this to `true` may affect you if you use Auth0 Rules and are sending custom, non-primative data. If you enable this, please verify that your Auth0 Rules
+   * continue to work as intended.
+   */
+  useFormData?: boolean;
 }
 
 /**
@@ -436,6 +445,7 @@ export interface TokenEndpointOptions {
   grant_type: string;
   timeout?: number;
   auth0Client: any;
+  useFormData?: boolean;
   [key: string]: any;
 }
 

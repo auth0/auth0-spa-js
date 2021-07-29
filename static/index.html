@@ -227,94 +227,114 @@
 
         <h3 class="mb-5">Other switches</h3>
 
-        <div class="custom-control custom-switch mb-5">
-          <input
-            type="checkbox"
-            class="custom-control-input"
-            id="storage-switch"
-            v-model="useLocalStorage"
-          />
-          <label
-            for="storage-switch"
-            class="custom-control-label"
-            data-cy="switch-local-storage"
-            >Use local storage</label
-          >
-        </div>
+        <div class="row">
+          <div class="col-md-6">
+            <div class="custom-control custom-switch mb-5">
+              <input
+                type="checkbox"
+                class="custom-control-input"
+                id="storage-switch"
+                v-model="useLocalStorage"
+              />
+              <label
+                for="storage-switch"
+                class="custom-control-label"
+                data-cy="switch-local-storage"
+                >Use local storage</label
+              >
+            </div>
 
-        <div class="custom-control custom-switch mb-5">
-          <input
-            type="checkbox"
-            class="custom-control-input"
-            id="custom-storage-switch"
-            v-model="useCustomStorage"
-          />
-          <label
-            for="custom-storage-switch"
-            class="custom-control-label"
-            data-cy="switch-custom-storage"
-            >Use custom (session) storage</label
-          >
-        </div>
+            <div class="custom-control custom-switch mb-5">
+              <input
+                type="checkbox"
+                class="custom-control-input"
+                id="custom-storage-switch"
+                v-model="useCustomStorage"
+              />
+              <label
+                for="custom-storage-switch"
+                class="custom-control-label"
+                data-cy="switch-custom-storage"
+                >Use custom (session) storage</label
+              >
+            </div>
 
-        <div class="custom-control custom-switch mb-5">
-          <input
-            type="checkbox"
-            class="custom-control-input"
-            id="refresh_token_switch"
-            v-model="useRefreshTokens"
-          />
-          <label
-            for="refresh_token_switch"
-            class="custom-control-label"
-            data-cy="switch-refresh-tokens"
-            >Use refresh tokens</label
-          >
-        </div>
+            <div class="custom-control custom-switch mb-5">
+              <input
+                type="checkbox"
+                class="custom-control-input"
+                id="cache-switch"
+                v-model="useCache"
+              />
+              <label
+                for="cache-switch"
+                class="custom-control-label"
+                data-cy="switch-use-cache"
+                >Use token cache when fetching new tokens</label
+              >
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="custom-control custom-switch mb-5">
+              <input
+                type="checkbox"
+                class="custom-control-input"
+                id="refresh_token_switch"
+                v-model="useRefreshTokens"
+              />
+              <label
+                for="refresh_token_switch"
+                class="custom-control-label"
+                data-cy="switch-refresh-tokens"
+                >Use refresh tokens</label
+              >
+            </div>
 
-        <div class="custom-control custom-switch mb-5">
-          <input
-            type="checkbox"
-            class="custom-control-input"
-            id="cache-switch"
-            v-model="useCache"
-          />
-          <label
-            for="cache-switch"
-            class="custom-control-label"
-            data-cy="switch-use-cache"
-            >Use token cache when fetching new tokens</label
-          >
-        </div>
+            <div class="custom-control custom-switch mb-5">
+              <input
+                type="checkbox"
+                class="custom-control-input"
+                id="constructor-switch"
+                v-model="useConstructor"
+              />
+              <label
+                for="constructor-switch"
+                class="custom-control-label"
+                data-cy="switch-use-constructor"
+                >Use Auth0Client constructor</label
+              >
+            </div>
 
-        <div class="custom-control custom-switch mb-5">
-          <input
-            type="checkbox"
-            class="custom-control-input"
-            id="constructor-switch"
-            v-model="useConstructor"
-          />
-          <label
-            for="constructor-switch"
-            class="custom-control-label"
-            data-cy="switch-use-constructor"
-            >Use Auth0Client constructor</label
-          >
-        </div>
+            <div class="custom-control custom-switch mb-5">
+              <input
+                type="checkbox"
+                class="custom-control-input"
+                id="cookie-txn-switch"
+                v-model="useCookiesForTransactions"
+              />
+              <label
+                for="cookie-txn-switch"
+                class="custom-control-label"
+                data-cy="switch-cookie-txns"
+                >Use cookies for transactions</label
+              >
+            </div>
 
-        <div class="custom-control custom-switch mb-5">
-          <input
-            type="checkbox"
-            class="custom-control-input"
-            id="cookie-txn-switch"
-            v-model="useCookiesForTransactions"
-          />
-          <label
-            for="cookie-txn-switch"
-            class="custom-control-label"
-            data-cy="switch-cookie-txns"
-            >Use cookies for transactions</label
-          >
+            <div class="custom-control custom-switch mb-5">
+              <input
+                type="checkbox"
+                class="custom-control-input"
+                id="form-data-switch"
+                v-model="useFormData"
+              />
+              <label
+                for="form-data-switch"
+                class="custom-control-label"
+                data-cy="switch-use-form-data"
+                >Use form data for token endpoint call</label
+              >
+            </div>
+          </div>
         </div>
       </form>
     </div>
@@ -374,6 +394,7 @@
             clientId: data.clientId || defaultClientId,
             audience: data.audience || defaultAudience,
             organization: data.organization || defaultOrganization,
+            useFormData: data.useFormData || false,
             audienceScopes: [
               {
                 audience: data.audience || defaultAudience,
@@ -406,6 +427,7 @@
             this.saveForm();
           },
           useCache: function () {
+            this.initializeClient();
             this.saveForm();
           },
           useConstructor: function () {
@@ -413,6 +435,10 @@
             this.saveForm();
           },
           useCookiesForTransactions: function () {
+            this.initializeClient();
+            this.saveForm();
+          },
+          useFormData: function () {
             this.initializeClient();
             this.saveForm();
           }
@@ -435,7 +461,8 @@
               cacheLocation: _self.useLocalStorage ? 'localstorage' : 'memory',
               useRefreshTokens: _self.useRefreshTokens,
               useCookiesForTransactions: _self.useCookiesForTransactions,
-              redirect_uri: window.location.origin
+              redirect_uri: window.location.origin,
+              useFormData: _self.useFormData
             };
 
             if (_self.audience) {
@@ -462,11 +489,9 @@
 
             if (_self.useConstructor) {
               console.log('Initializing using the constructor');
-
               _init(new Auth0Client(clientOptions));
             } else {
               console.log('Initializing using the factory function');
-
               createAuth0Client(clientOptions).then(_init);
             }
           },
@@ -483,7 +508,8 @@
                 useCookiesForTransactions: this.useCookiesForTransactions,
                 useCache: this.useCache,
                 audience: this.audience,
-                organization: this.organization
+                organization: this.organization,
+                useFormData: this.useFormData
               })
             );
           },
@@ -498,6 +524,7 @@
             this.useConstructor = false;
             this.useCookiesForTransactions = false;
             this.organization = defaultOrganization;
+            this.useFormData = false;
             this.saveForm();
           },
           showAuth0Info: function () {

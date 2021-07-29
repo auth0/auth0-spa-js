@@ -7,23 +7,26 @@ import * as scope from '../../src/scope';
 
 // @ts-ignore
 
-import { fetchResponse, loginWithRedirectFn, setupFn } from './helpers';
+import {
+  assertPostFn,
+  fetchResponse,
+  loginWithRedirectFn,
+  setupFn
+} from './helpers';
 
 import {
   TEST_ACCESS_TOKEN,
-  TEST_APP_STATE,
   TEST_CLIENT_ID,
   TEST_CODE,
   TEST_CODE_CHALLENGE,
-  TEST_DOMAIN,
+  TEST_CODE_VERIFIER,
   TEST_ENCODED_STATE,
   TEST_ID_TOKEN,
-  TEST_RANDOM_STRING,
-  TEST_REFRESH_TOKEN,
-  TEST_SCOPES,
-  TEST_USER_ID
+  TEST_REDIRECT_URI,
+  TEST_REFRESH_TOKEN
 } from '../constants';
-import { Auth0ClientOptions } from '../../src/global';
+
+import { DEFAULT_AUTH0_CLIENT } from '../../src/constants';
 
 jest.mock('unfetch');
 jest.mock('es-cookie');
@@ -237,6 +240,47 @@ describe('Auth0Client', () => {
 
     const fetchBody = JSON.parse(mockFetch.mock.calls[0][1].body);
     expect(fetchBody.redirect_uri).toBeUndefined();
+  });
+
+  it('calls oauth/token and uses form data if specified in the options', async () => {
+    window.history.pushState(
+      {},
+      'Test',
+      `#/callback/?code=${TEST_CODE}&state=${TEST_ENCODED_STATE}`
+    );
+
+    mockFetch.mockResolvedValueOnce(
+      fetchResponse(true, {
+        id_token: TEST_ID_TOKEN,
+        refresh_token: TEST_REFRESH_TOKEN,
+        access_token: TEST_ACCESS_TOKEN,
+        expires_in: 86400
+      })
+    );
+
+    const auth0 = setup({
+      useFormData: true
+    });
+
+    await auth0.loginWithRedirect();
+    await auth0.handleRedirectCallback();
+
+    assertPostFn(mockFetch)(
+      'https://auth0_domain/oauth/token',
+      {
+        redirect_uri: TEST_REDIRECT_URI,
+        client_id: TEST_CLIENT_ID,
+        code_verifier: TEST_CODE_VERIFIER,
+        grant_type: 'authorization_code',
+        code: TEST_CODE
+      },
+      {
+        'Auth0-Client': btoa(JSON.stringify(DEFAULT_AUTH0_CLIENT)),
+        'Content-Type': 'application/x-www-form-urlencoded'
+      },
+      0,
+      false
+    );
   });
 
   describe('when there is a valid query string in a hash', () => {

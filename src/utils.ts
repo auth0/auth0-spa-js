@@ -12,23 +12,24 @@ import {
   PopupCancelledError
 } from './errors';
 
-export const parseQueryResult = (queryString: string) => {
+export const parseQueryResult = (queryString: string): AuthenticationResult => {
   if (queryString.indexOf('#') > -1) {
     queryString = queryString.substr(0, queryString.indexOf('#'));
   }
 
   const queryParams = queryString.split('&');
+  const parsedQuery: Record<string, any> = {};
 
-  const parsedQuery: any = {};
   queryParams.forEach(qp => {
     const [key, val] = qp.split('=');
     parsedQuery[key] = decodeURIComponent(val);
   });
 
-  return {
-    ...parsedQuery,
-    expires_in: parseInt(parsedQuery.expires_in)
-  } as AuthenticationResult;
+  if (parsedQuery.expires_in) {
+    parsedQuery.expires_in = parseInt(parsedQuery.expires_in);
+  }
+
+  return parsedQuery as AuthenticationResult;
 };
 
 export const runIframe = (

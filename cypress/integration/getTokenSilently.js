@@ -1,16 +1,37 @@
 import { whenReady } from '../support/utils';
 
-describe('getTokenSilently', function () {
+describe('getTokenSilently', () => {
   beforeEach(cy.resetTests);
   afterEach(cy.logout);
 
-  it('returns an error when not logged in', function () {
+  it('returns an error when not logged in', () => {
     whenReady();
 
     cy.getTokenSilently();
 
     cy.getError().should('exist');
     cy.getError().should('contain', 'Login required');
+  });
+
+  it('can use form post data to call the token endpoint', () => {
+    cy.intercept({
+      method: 'POST',
+      url: '**/oauth/token'
+    }).as('tokenApiCheck');
+
+    whenReady();
+    cy.toggleSwitch('use-form-data');
+    cy.login();
+    cy.getTokenSilently();
+    cy.getAccessTokens().should('have.length', 2); // 1 from handleRedirectCallback, 1 from clicking "Get access token"
+    cy.getError().should('not.exist');
+
+    cy.wait('@tokenApiCheck').should(xhr => {
+      assert.equal(
+        xhr.request.headers['content-type'],
+        'application/x-www-form-urlencoded'
+      );
+    });
   });
 
   describe('when using an iframe', () => {
@@ -70,7 +91,7 @@ describe('getTokenSilently', function () {
 
       cy.login();
 
-      cy.route({
+      cy.intercept({
         method: 'POST',
         url: '**/oauth/token'
       }).as('tokenApiCheck');
@@ -94,7 +115,8 @@ describe('getTokenSilently', function () {
       cy.toggleSwitch('use-cache');
       cy.toggleSwitch('refresh-tokens');
       cy.login();
-      cy.route({
+
+      cy.intercept({
         method: 'POST',
         url: '**/oauth/token'
       }).as('tokenApiCheck');
@@ -103,7 +125,6 @@ describe('getTokenSilently', function () {
       cy.getAccessTokens().should('have.length', 2);
 
       cy.wait('@tokenApiCheck').should(xhr => {
-        console.log(xhr);
         assert.equal(
           xhr.request.body.grant_type,
           'refresh_token',
@@ -115,7 +136,6 @@ describe('getTokenSilently', function () {
       cy.getAccessTokens(1).should('have.length', 1);
 
       cy.wait('@tokenApiCheck').should(xhr => {
-        console.log(xhr);
         assert.equal(
           xhr.request.body.grant_type,
           'authorization_code',
@@ -127,7 +147,6 @@ describe('getTokenSilently', function () {
       cy.getAccessTokens(1).should('have.length', 2);
 
       cy.wait('@tokenApiCheck').should(xhr => {
-        console.log(xhr);
         assert.equal(
           xhr.request.body.grant_type,
           'refresh_token',
