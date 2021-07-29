@@ -36,7 +36,7 @@ export async function oauthToken(
       method: 'POST',
       body,
       headers: {
-        'Content-type': useFormData
+        'Content-Type': useFormData
           ? 'application/x-www-form-urlencoded'
           : 'application/json',
         'Auth0-Client': btoa(

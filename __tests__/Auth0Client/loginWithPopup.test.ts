@@ -271,7 +271,7 @@ describe('Auth0Client', () => {
         },
         {
           'Auth0-Client': btoa(JSON.stringify(DEFAULT_AUTH0_CLIENT)),
-          'Content-type': 'application/json'
+          'Content-Type': 'application/json'
         }
       );
     });
@@ -295,7 +295,7 @@ describe('Auth0Client', () => {
         },
         {
           'Auth0-Client': btoa(JSON.stringify(DEFAULT_AUTH0_CLIENT)),
-          'Content-type': 'application/x-www-form-urlencoded'
+          'Content-Type': 'application/x-www-form-urlencoded'
         },
         0,
         false
