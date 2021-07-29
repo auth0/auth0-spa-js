@@ -3,12 +3,13 @@ import commonjs from 'rollup-plugin-commonjs';
 import typescript from 'rollup-plugin-typescript2';
 import { terser } from 'rollup-plugin-terser';
 import sourcemaps from 'rollup-plugin-sourcemaps';
-import serve from 'rollup-plugin-serve';
 import livereload from 'rollup-plugin-livereload';
 import visualizer from 'rollup-plugin-visualizer';
 import webWorkerLoader from 'rollup-plugin-web-worker-loader';
 import replace from '@rollup/plugin-replace';
 import analyze from 'rollup-plugin-analyzer';
+import dev from 'rollup-plugin-dev';
+import { createApp } from './scripts/oidc-provider';
 
 import pkg from './package.json';
 
@@ -17,6 +18,7 @@ const EXPORT_NAME = 'createAuth0Client';
 const isProduction = process.env.NODE_ENV === 'production';
 const shouldGenerateStats = process.env.WITH_STATS === 'true';
 const defaultDevPort = 3000;
+const serverPort = process.env.DEV_PORT || defaultDevPort;
 
 const visualizerOptions = {
   filename: 'bundle-stats/index.html'
@@ -72,10 +74,12 @@ let bundles = [
     plugins: [
       ...getPlugins(false),
       !isProduction &&
-        serve({
-          contentBase: ['dist', 'static'],
-          open: true,
-          port: process.env.DEV_PORT || defaultDevPort
+        dev({
+          dirs: ['dist', 'static'],
+          port: serverPort,
+          extend(app, modules) {
+            app.use(modules.mount(createApp({ port: serverPort })));
+          }
         }),
       !isProduction && livereload()
     ],

@@ -59,10 +59,9 @@ describe('oauthToken', () => {
     });
 
     expect(mockFetch).toBeCalledWith('https://test.com/oauth/token', {
-      body:
-        '{"redirect_uri":"http://localhost","grant_type":"authorization_code","client_id":"client_idIn","code":"codeIn","code_verifier":"code_verifierIn"}',
+      body: '{"redirect_uri":"http://localhost","grant_type":"authorization_code","client_id":"client_idIn","code":"codeIn","code_verifier":"code_verifierIn"}',
       headers: {
-        'Content-type': 'application/json',
+        'Content-Type': 'application/json',
         'Auth0-Client': btoa(JSON.stringify(auth0Client))
       },
       method: 'POST',
@@ -113,7 +112,7 @@ describe('oauthToken', () => {
     expect(mockFetch).toBeCalledWith('https://test.com/oauth/token', {
       body: JSON.stringify(body),
       headers: {
-        'Content-type': 'application/json',
+        'Content-Type': 'application/json',
         'Auth0-Client': btoa(JSON.stringify(auth0Client))
       },
       method: 'POST',
@@ -128,7 +127,7 @@ describe('oauthToken', () => {
         fetchOptions: {
           body: JSON.stringify(body),
           headers: {
-            'Content-type': 'application/json',
+            'Content-Type': 'application/json',
             'Auth0-Client': btoa(JSON.stringify(auth0Client))
           },
           method: 'POST',

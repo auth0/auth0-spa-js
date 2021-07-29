@@ -198,8 +198,40 @@ describe('Auth0Client', () => {
           code: TEST_CODE
         },
         {
-          'Auth0-Client': btoa(JSON.stringify(DEFAULT_AUTH0_CLIENT))
+          'Auth0-Client': btoa(JSON.stringify(DEFAULT_AUTH0_CLIENT)),
+          'Content-Type': 'application/json'
         }
+      );
+    });
+
+    it('calls the token endpoint with the correct data format when using useFormData', async () => {
+      const auth0 = setup({
+        useFormData: true
+      });
+
+      jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
+        access_token: TEST_ACCESS_TOKEN,
+        state: TEST_STATE,
+        code: TEST_CODE
+      });
+
+      await getTokenSilently(auth0);
+
+      assertPost(
+        'https://auth0_domain/oauth/token',
+        {
+          redirect_uri: TEST_REDIRECT_URI,
+          client_id: TEST_CLIENT_ID,
+          code_verifier: TEST_CODE_VERIFIER,
+          grant_type: 'authorization_code',
+          code: TEST_CODE
+        },
+        {
+          'Auth0-Client': btoa(JSON.stringify(DEFAULT_AUTH0_CLIENT)),
+          'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        0,
+        false
       );
     });
 
