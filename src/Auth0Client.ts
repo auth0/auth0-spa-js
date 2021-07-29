@@ -144,6 +144,7 @@ const getCustomInitialOptions = (
     scope,
     useRefreshTokens,
     useCookiesForTransactions,
+    useFormData,
     ...customParams
   } = options;
   return customParams;
@@ -254,14 +255,15 @@ export default class Auth0Client {
       leeway,
       useRefreshTokens,
       useCookiesForTransactions,
+      useFormData,
       auth0Client,
       cacheLocation,
       advancedOptions,
-      ...withoutDomain
+      ...withoutClientOptions
     } = this.options;
 
     return {
-      ...withoutDomain,
+      ...withoutClientOptions,
       ...authorizeOptions,
       scope: getUniqueScopes(
         this.defaultScope,
