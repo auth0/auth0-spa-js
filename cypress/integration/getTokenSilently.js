@@ -1,4 +1,4 @@
-import { whenReady } from '../support/utils';
+import { whenReady, configureTenant } from '../support/utils';
 
 describe('getTokenSilently', () => {
   beforeEach(cy.resetTests);
@@ -10,7 +10,7 @@ describe('getTokenSilently', () => {
     cy.getTokenSilently();
 
     cy.getError().should('exist');
-    cy.getError().should('contain', 'Login required');
+    cy.getError().should('contain', 'End-User authentication is required');
   });
 
   it('can use form post data to call the token endpoint', () => {
@@ -20,7 +20,9 @@ describe('getTokenSilently', () => {
     }).as('tokenApiCheck');
 
     whenReady();
-    cy.toggleSwitch('use-form-data');
+
+    configureTenant();
+
     cy.login();
     cy.getTokenSilently();
     cy.getAccessTokens().should('have.length', 2); // 1 from handleRedirectCallback, 1 from clicking "Get access token"
@@ -38,6 +40,7 @@ describe('getTokenSilently', () => {
     describe('using an in-memory store', () => {
       it('gets a new access token', () => {
         whenReady();
+        configureTenant();
 
         cy.login();
         cy.getTokenSilently();
@@ -48,9 +51,11 @@ describe('getTokenSilently', () => {
 
       it('can get the access token after refreshing the page', () => {
         whenReady();
+        configureTenant();
 
         cy.login();
         cy.reload();
+        configureTenant();
         cy.getTokenSilently();
 
         cy.getAccessTokens().should('have.length', 1);
@@ -61,17 +66,19 @@ describe('getTokenSilently', () => {
     describe('using local storage', () => {
       it('can get the access token after refreshing the page', () => {
         whenReady();
+        configureTenant();
 
         cy.toggleSwitch('local-storage');
         cy.login();
         cy.reload();
+        configureTenant();
         cy.getTokenSilently();
 
         cy.getAccessTokens().should('have.length', 1);
         cy.window().then(win => {
           expect(
             win.localStorage.getItem(
-              '@@auth0spajs@@::wLSIP47wM39wKdDmOj6Zb5eSEw3JVhVp::default::openid profile email'
+              '@@auth0spajs@@::testing::default::openid profile email'
             )
           ).to.not.be.null;
         });
@@ -81,9 +88,21 @@ describe('getTokenSilently', () => {
     });
   });
 
+  const formDataToObject = formData => {
+    const queryParams = new URLSearchParams(formData);
+    const parsedQuery = {};
+
+    queryParams.forEach((val, key) => {
+      parsedQuery[key] = val;
+    });
+
+    return parsedQuery;
+  };
+
   describe('when using refresh tokens', () => {
     it('retrieves an access token using a refresh token', () => {
       whenReady();
+      configureTenant();
 
       cy.toggleSwitch('local-storage');
       cy.toggleSwitch('use-cache');
@@ -102,7 +121,7 @@ describe('getTokenSilently', () => {
 
       cy.wait('@tokenApiCheck').should(xhr => {
         assert.equal(
-          xhr.request.body.grant_type,
+          formDataToObject(xhr.request.body).grant_type,
           'refresh_token',
           'used a refresh_token to get an access_token'
         );
@@ -111,6 +130,7 @@ describe('getTokenSilently', () => {
 
     it('retrieves an access token for another audience using a refresh token', () => {
       whenReady();
+      configureTenant();
 
       cy.toggleSwitch('local-storage');
       cy.toggleSwitch('use-cache');
@@ -127,7 +147,7 @@ describe('getTokenSilently', () => {
 
       cy.wait('@tokenApiCheck').should(xhr => {
         assert.equal(
-          xhr.request.body.grant_type,
+          formDataToObject(xhr.request.body).grant_type,
           'refresh_token',
           'used a refresh_token to get an access_token'
         );
@@ -138,7 +158,7 @@ describe('getTokenSilently', () => {
 
       cy.wait('@tokenApiCheck').should(xhr => {
         assert.equal(
-          xhr.request.body.grant_type,
+          formDataToObject(xhr.request.body).grant_type,
           'authorization_code',
           'get a refresh_token for a new audience with an iframe'
         );
@@ -149,7 +169,7 @@ describe('getTokenSilently', () => {
 
       cy.wait('@tokenApiCheck').should(xhr => {
         assert.equal(
-          xhr.request.body.grant_type,
+          formDataToObject(xhr.request.body).grant_type,
           'refresh_token',
           'use a refresh_token to get a new access_token'
         );

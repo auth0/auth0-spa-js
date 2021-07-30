@@ -16,14 +16,14 @@ import { whenReady } from './utils';
 const login = () => {
   cy.get('#login_redirect').click();
 
-  cy.get('.auth0-lock-input-username .auth0-lock-input')
-    .clear()
-    .type('johnfoo+integration@gmail.com');
+  cy.get('.login-card input[name=login]').clear().type('asd@asd.asd');
 
-  cy.get('.auth0-lock-input-password .auth0-lock-input')
+  cy.get('.login-card input[name=password]')
     .clear()
     .type(Cypress.env('INTEGRATION_PASSWORD'));
-  cy.get('.auth0-lock-submit').click();
+
+  cy.get('.login-submit').click();
+  cy.get('.login-submit').click();
 };
 
 const handleCallback = () => {
@@ -41,11 +41,27 @@ Cypress.Commands.add('login', () => {
 
 Cypress.Commands.add('handleRedirectCallback', () => handleCallback());
 
-Cypress.Commands.add('logout', () => cy.get('[data-cy=logout]').click());
+Cypress.Commands.add('logout', () => {
+  cy.get('[data-cy=logout]').click();
+  cy.url().then(url => {
+    console.log(url);
+    if (url.indexOf('v2/logout') > -1) {
+      cy.get('[name=logout]').click();
+    }
+  });
+});
 
 Cypress.Commands.add('toggleSwitch', name =>
   cy.get(`[data-cy=switch-${name}]`).click()
 );
+
+Cypress.Commands.add('setSwitch', (name, value) => {
+  if (value) {
+    cy.get(`#${name}-switch`).check({ force: true });
+  } else {
+    cy.get(`#${name}-switch`).uncheck({ force: true });
+  }
+});
 
 Cypress.Commands.add('setScope', scope =>
   cy.get(`[data-cy=scope]`).clear().type(scope)
@@ -79,4 +95,5 @@ Cypress.Commands.add('resetTests', () => {
   cy.get('#reset-config').click();
   cy.get('#logout').click();
   cy.window().then(win => win.localStorage.clear());
+  cy.get('[data-cy=use-node-oidc-provider]').click();
 });

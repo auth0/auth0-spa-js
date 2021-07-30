@@ -1,7 +1,10 @@
+import { configureTenant } from '../support/utils';
+
 describe('handleRedirectCallback', function () {
   beforeEach(cy.resetTests);
 
   it('caches token and user', function () {
+    configureTenant();
     cy.loginNoCallback();
     cy.handleRedirectCallback();
     cy.isAuthenticated().should('contain', 'true');

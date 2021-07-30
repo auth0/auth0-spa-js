@@ -28,6 +28,19 @@
       <div v-if="!loading">
         <div class="btn-toolbar justify-content-between">
           <div class="btn-group mb-3">
+            <button class="btn btn-info" @click="useAuth0" data-cy="use-auth0">
+              Use Auth0
+            </button>
+
+            <button
+              class="btn btn-info"
+              @click="useNodeOidcProvider"
+              data-cy="use-node-oidc-provider"
+            >
+              Use Node OIDC Provider
+            </button>
+          </div>
+          <div class="btn-group mb-3">
             <button class="btn btn-info" @click="checkSession">
               Check session
             </button>
@@ -214,7 +227,9 @@
         </div>
 
         <div class="btn-group mb-5">
-          <button @click="saveForm" class="btn btn-primary">Save</button>
+          <button @click="saveForm" class="btn btn-primary" id="save-config">
+            Save
+          </button>
 
           <button
             @click="resetForm"
@@ -402,8 +417,11 @@
                 access_tokens: []
               },
               {
-                audience: 'https://' + data.domain + '/api/v2/',
-                scope: 'read:rules',
+                audience:
+                  data.domain?.indexOf('http') > -1
+                    ? data.domain + '/api/v2/'
+                    : 'https://' + data.domain + '/api/v2/',
+                scope: 'openid profile email',
                 access_tokens: []
               }
             ],
@@ -512,6 +530,8 @@
                 useFormData: this.useFormData
               })
             );
+
+            this.initializeClient();
           },
           resetForm: function () {
             this.domain = defaultDomain;
@@ -535,6 +555,7 @@
               _self.audienceScopes[0].access_tokens.push(token);
 
               _self.auth0.getUser().then(function (user) {
+                console.log(user);
                 _self.profile = user;
               });
 
@@ -542,6 +563,20 @@
                 _self.id_token = claims.__raw;
               });
             });
+          },
+          useAuth0: function () {
+            this.domain = defaultDomain;
+            this.clientId = defaultClientId;
+            this.audience = defaultAudience;
+            this.organization = defaultOrganization;
+            this.useFormData = false;
+          },
+          useNodeOidcProvider() {
+            this.domain = 'http://localhost:3000';
+            this.clientId = 'testing';
+            this.audience = '';
+            this.organization = '';
+            this.useFormData = true;
           },
           checkSession: function () {
             var _self = this;
@@ -587,6 +622,7 @@
             if (_self.organization) {
               options.organization = _self.organization;
             }
+            //options.prompt = 'consent';
 
             this.auth0.loginWithRedirect(options);
           },

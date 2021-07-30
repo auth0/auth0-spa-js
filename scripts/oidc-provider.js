@@ -1,4 +1,20 @@
-import { Provider } from 'oidc-provider';
+import { Provider, interactionPolicy } from 'oidc-provider';
+
+const { base, Prompt, Check } = interactionPolicy;
+
+const policy = base();
+policy.add(
+  new Prompt(
+    { name: 'noop', requestable: false },
+    new Check('foo', 'bar', ctx => {
+      if (ctx.query?.scope?.includes('offline_access')) {
+        ctx.oidc.params.scope = `${ctx.oidc.params.scope} offline_access`;
+      }
+      return Check.NO_NEED_TO_PROMPT;
+    })
+  ),
+  0
+);
 
 const config = {
   clients: [
@@ -23,7 +39,10 @@ const config = {
       enabled: true
     }
   },
-  rotateRefreshToken: true
+  rotateRefreshToken: true,
+  interactions: {
+    policy
+  }
 };
 
 export function createApp(opts) {
@@ -33,7 +52,7 @@ export function createApp(opts) {
   provider.use(async (ctx, next) => {
     await next();
 
-    if (ctx.oidc?.route === 'end_session_success') {
+    if (ctx.oidc.route === 'end_session_success') {
       ctx.redirect('http://localhost:3000');
     }
   });
