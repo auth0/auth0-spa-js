@@ -20,7 +20,7 @@ const config = {
   clients: [
     {
       client_id: 'testing',
-      redirect_uris: ['http://localhost:3000'],
+      redirect_uris: ['http://127.0.0.1:3000'],
       token_endpoint_auth_method: 'none',
       grant_types: ['authorization_code', 'refresh_token']
     }
@@ -46,14 +46,14 @@ const config = {
 };
 
 export function createApp(opts) {
-  const issuer = `http://localhost:${opts.port || 3000}/`;
+  const issuer = `http://127.0.0.1:${opts.port || 3000}/`;
   const provider = new Provider(issuer, config);
 
   provider.use(async (ctx, next) => {
     await next();
 
     if (ctx.oidc.route === 'end_session_success') {
-      ctx.redirect('http://localhost:3000');
+      ctx.redirect('http://127.0.0.1:3000');
     }
   });
 

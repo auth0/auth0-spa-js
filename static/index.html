@@ -357,8 +357,8 @@
     <script src="/auth0-spa-js.development.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
     <script type="text/javascript">
-      var defaultDomain = 'brucke.auth0.com';
-      var defaultClientId = 'wLSIP47wM39wKdDmOj6Zb5eSEw3JVhVp';
+      var defaultDomain = 'http://127.0.0.1:3000';
+      var defaultClientId = 'testing';
       var defaultAudience = '';
       var defaultOrganization = '';
 
@@ -572,7 +572,7 @@
             this.useFormData = false;
           },
           useNodeOidcProvider() {
-            this.domain = 'http://localhost:3000';
+            this.domain = 'http://127.0.0.1:3000';
             this.clientId = 'testing';
             this.audience = '';
             this.organization = '';

@@ -91,7 +91,7 @@ Cypress.Commands.add('loginNoCallback', () => {
 
 Cypress.Commands.add('resetTests', () => {
   cy.server();
-  cy.visit('http://localhost:3000');
+  cy.visit('http://127.0.0.1:3000');
   cy.get('#reset-config').click();
   cy.get('#logout').click();
   cy.window().then(win => win.localStorage.clear());

@@ -1,9 +1,4 @@
-import { decode } from 'qss';
-
 import {
-  shouldBe,
-  shouldBeUndefined,
-  shouldNotBeUndefined,
   whenReady,
   shouldInclude,
   tolerance,
@@ -19,7 +14,7 @@ describe('loginWithRedirect', function () {
 
       cy.loginNoCallback();
 
-      cy.url().should(url => shouldInclude(url, 'http://localhost:3000'));
+      cy.url().should(url => shouldInclude(url, 'http://127.0.0.1:3000'));
 
       whenReady().then(win => {
         expect(win.sessionStorage.getItem('a0.spajs.txs')).to.exist;
@@ -41,7 +36,7 @@ describe('loginWithRedirect', function () {
 
     cy.loginNoCallback();
 
-    cy.url().then(url => shouldInclude(url, 'https://brucke.auth0.com'));
+    cy.url().should(url => shouldInclude(url, 'http://127.0.0.1:3000'));
 
     whenReady();
 
