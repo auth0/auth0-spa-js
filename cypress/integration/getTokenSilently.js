@@ -51,7 +51,6 @@ describe('getTokenSilently', () => {
 
         cy.login();
         cy.reload();
-
         cy.getTokenSilently();
 
         cy.getAccessTokens().should('have.length', 1);
@@ -66,7 +65,6 @@ describe('getTokenSilently', () => {
         cy.toggleSwitch('local-storage');
         cy.login();
         cy.reload();
-
         cy.getTokenSilently();
 
         cy.getAccessTokens().should('have.length', 1);
