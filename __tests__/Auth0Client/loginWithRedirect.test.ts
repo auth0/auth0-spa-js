@@ -75,7 +75,7 @@ describe('Auth0Client', () => {
           value: jest.fn()
         }
       }
-    );
+    ) as Location;
     // --
 
     mockWindow.open = jest.fn();

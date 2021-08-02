@@ -997,13 +997,8 @@ export default class Auth0Client {
 
     let tokenResult: TokenEndpointResponse;
 
-    const {
-      scope,
-      audience,
-      ignoreCache,
-      timeoutInSeconds,
-      ...customOptions
-    } = options;
+    const { scope, audience, ignoreCache, timeoutInSeconds, ...customOptions } =
+      options;
 
     const timeout =
       typeof options.timeoutInSeconds === 'number'

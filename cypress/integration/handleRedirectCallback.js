@@ -1,5 +1,6 @@
 describe('handleRedirectCallback', function () {
   beforeEach(cy.resetTests);
+  afterEach(cy.fixCookies);
 
   it('caches token and user', function () {
     cy.loginNoCallback();

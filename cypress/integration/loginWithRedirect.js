@@ -1,57 +1,14 @@
-import { decode } from 'qss';
-import {
-  shouldBe,
-  shouldBeUndefined,
-  shouldNotBeUndefined,
-  whenReady,
-  shouldInclude,
-  tolerance
-} from '../support/utils';
+import { whenReady, shouldInclude, tolerance } from '../support/utils';
 
 describe('loginWithRedirect', function () {
   beforeEach(cy.resetTests);
-
-  it('Builds URL correctly', function () {
-    whenReady();
-
-    cy.get('#login_redirect').click();
-
-    cy.url().should(url => {
-      const parsedUrl = new URL(url);
-      const pageParams = decode(parsedUrl.search.substr(1));
-
-      shouldBe(parsedUrl.host, 'brucke.auth0.com');
-      shouldBeUndefined(pageParams.code_verifier);
-      shouldNotBeUndefined(pageParams.code_challenge);
-      shouldNotBeUndefined(pageParams.code_challenge_method);
-      shouldNotBeUndefined(pageParams.state);
-      shouldNotBeUndefined(pageParams.nonce);
-      shouldBe(pageParams.redirect_uri, 'http://localhost:3000');
-      shouldBe(pageParams.response_mode, 'query');
-      shouldBe(pageParams.response_type, 'code');
-      shouldBe(pageParams.scope, 'openid profile email');
-      shouldBe(pageParams.protocol, 'oauth2');
-      shouldBe(pageParams.client, 'wLSIP47wM39wKdDmOj6Zb5eSEw3JVhVp');
-    });
-  });
-
-  it('Appends unique scopes to the default scopes', function () {
-    whenReady();
-
-    cy.setScope('openid profile email test test test2');
-    cy.get('#login_redirect').click();
-
-    cy.url().should(url => {
-      const { scope } = decode(new URL(url).search.substr(1));
-      shouldBe(scope, 'openid profile email test test2');
-    });
-  });
+  afterEach(cy.fixCookies);
 
   it('can perform the login flow', () => {
     whenReady().then(() => {
       cy.loginNoCallback();
 
-      cy.url().should(url => shouldInclude(url, 'https://brucke.auth0.com'));
+      cy.url().should(url => shouldInclude(url, 'http://127.0.0.1:3000'));
 
       whenReady().then(win => {
         expect(win.sessionStorage.getItem('a0.spajs.txs')).to.exist;
@@ -72,7 +29,7 @@ describe('loginWithRedirect', function () {
 
     cy.loginNoCallback();
 
-    cy.url().then(url => shouldInclude(url, 'https://brucke.auth0.com'));
+    cy.url().should(url => shouldInclude(url, 'http://127.0.0.1:3000'));
 
     whenReady();
 

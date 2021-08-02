@@ -126,7 +126,7 @@ describe('Auth0', () => {
           value: jest.fn()
         }
       }
-    );
+    ) as Location;
     // --
 
     window.Worker = jest.fn();
