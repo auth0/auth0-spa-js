@@ -16,13 +16,17 @@ import { whenReady } from './utils';
 const login = () => {
   cy.get('#login_redirect').click();
 
-  cy.get('.login-card input[name=login]').clear().type('asd@asd.asd');
+  cy.get('.login-card input[name=login]')
+    .clear()
+    .type('johnfoo+integration@gmail.com');
 
   cy.get('.login-card input[name=password]')
     .clear()
     .type(Cypress.env('INTEGRATION_PASSWORD'));
 
   cy.get('.login-submit').click();
+  // Need to click one more time to give consent.
+  // It is actually a different button with the same class.
   cy.get('.login-submit').click();
 };
 
@@ -43,10 +47,10 @@ Cypress.Commands.add('handleRedirectCallback', () => handleCallback());
 
 Cypress.Commands.add('logout', () => {
   cy.get('[data-cy=logout]').click();
+  // When hitting the Node OIDC v2/logout, we need to confirm logout
   cy.url().then(url => {
-    console.log(url);
-    if (url.indexOf('v2/logout') > -1) {
-      cy.get('[name=logout]').click();
+    if (url.indexOf('/v2/logout') > -1) {
+      cy.get('button[name=logout]').click();
     }
   });
 });
@@ -54,14 +58,6 @@ Cypress.Commands.add('logout', () => {
 Cypress.Commands.add('toggleSwitch', name =>
   cy.get(`[data-cy=switch-${name}]`).click()
 );
-
-Cypress.Commands.add('setSwitch', (name, value) => {
-  if (value) {
-    cy.get(`#${name}-switch`).check({ force: true });
-  } else {
-    cy.get(`#${name}-switch`).uncheck({ force: true });
-  }
-});
 
 Cypress.Commands.add('setScope', scope =>
   cy.get(`[data-cy=scope]`).clear().type(scope)
@@ -93,9 +89,9 @@ Cypress.Commands.add('resetTests', () => {
   cy.server();
   cy.visit('http://127.0.0.1:3000');
   cy.get('#reset-config').click();
-  cy.get('#logout').click();
   cy.window().then(win => win.localStorage.clear());
   cy.get('[data-cy=use-node-oidc-provider]').click();
+  cy.get('#logout').click();
 });
 
 Cypress.Commands.add('fixCookies', () => {

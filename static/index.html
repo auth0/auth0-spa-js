@@ -357,8 +357,8 @@
     <script src="/auth0-spa-js.development.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
     <script type="text/javascript">
-      var defaultDomain = 'http://127.0.0.1:3000';
-      var defaultClientId = 'testing';
+      var defaultDomain = 'brucke.auth0.com';
+      var defaultClientId = 'wLSIP47wM39wKdDmOj6Zb5eSEw3JVhVp';
       var defaultAudience = '';
       var defaultOrganization = '';
 
@@ -555,7 +555,6 @@
               _self.audienceScopes[0].access_tokens.push(token);
 
               _self.auth0.getUser().then(function (user) {
-                console.log(user);
                 _self.profile = user;
               });
 
@@ -570,6 +569,7 @@
             this.audience = defaultAudience;
             this.organization = defaultOrganization;
             this.useFormData = false;
+            this.saveForm();
           },
           useNodeOidcProvider() {
             this.domain = 'http://127.0.0.1:3000';
@@ -577,6 +577,7 @@
             this.audience = '';
             this.organization = '';
             this.useFormData = true;
+            this.saveForm();
           },
           checkSession: function () {
             var _self = this;
@@ -622,7 +623,6 @@
             if (_self.organization) {
               options.organization = _self.organization;
             }
-            //options.prompt = 'consent';
 
             this.auth0.loginWithRedirect(options);
           },
