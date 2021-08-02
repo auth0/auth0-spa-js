@@ -421,7 +421,7 @@
                   data.domain?.indexOf('http') > -1
                     ? data.domain + '/api/v2/'
                     : 'https://' + data.domain + '/api/v2/',
-                scope: 'openid profile email',
+                scope: 'read:rules',
                 access_tokens: []
               }
             ],
