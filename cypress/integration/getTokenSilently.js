@@ -1,4 +1,4 @@
-import { whenReady, configureTenant } from '../support/utils';
+import { whenReady } from '../support/utils';
 
 describe('getTokenSilently', () => {
   beforeEach(cy.resetTests);
@@ -21,8 +21,6 @@ describe('getTokenSilently', () => {
 
     whenReady();
 
-    configureTenant();
-
     cy.login();
     cy.getTokenSilently();
     cy.getAccessTokens().should('have.length', 2); // 1 from handleRedirectCallback, 1 from clicking "Get access token"
@@ -40,7 +38,6 @@ describe('getTokenSilently', () => {
     describe('using an in-memory store', () => {
       it('gets a new access token', () => {
         whenReady();
-        configureTenant();
 
         cy.login();
         cy.getTokenSilently();
@@ -51,11 +48,10 @@ describe('getTokenSilently', () => {
 
       it('can get the access token after refreshing the page', () => {
         whenReady();
-        configureTenant();
 
         cy.login();
         cy.reload();
-        configureTenant();
+
         cy.getTokenSilently();
 
         cy.getAccessTokens().should('have.length', 1);
@@ -66,12 +62,11 @@ describe('getTokenSilently', () => {
     describe('using local storage', () => {
       it('can get the access token after refreshing the page', () => {
         whenReady();
-        configureTenant();
 
         cy.toggleSwitch('local-storage');
         cy.login();
         cy.reload();
-        configureTenant();
+
         cy.getTokenSilently();
 
         cy.getAccessTokens().should('have.length', 1);
@@ -102,7 +97,6 @@ describe('getTokenSilently', () => {
   describe('when using refresh tokens', () => {
     it('retrieves an access token using a refresh token', () => {
       whenReady();
-      configureTenant();
 
       cy.toggleSwitch('local-storage');
       cy.toggleSwitch('use-cache');
@@ -130,7 +124,6 @@ describe('getTokenSilently', () => {
 
     it('retrieves an access token for another audience using a refresh token', () => {
       whenReady();
-      configureTenant();
 
       cy.toggleSwitch('local-storage');
       cy.toggleSwitch('use-cache');

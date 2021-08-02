@@ -1,9 +1,4 @@
-import {
-  whenReady,
-  shouldInclude,
-  tolerance,
-  configureTenant
-} from '../support/utils';
+import { whenReady, shouldInclude, tolerance } from '../support/utils';
 
 describe('loginWithRedirect', function () {
   beforeEach(cy.resetTests);
@@ -11,8 +6,6 @@ describe('loginWithRedirect', function () {
 
   it('can perform the login flow', () => {
     whenReady().then(() => {
-      configureTenant();
-
       cy.loginNoCallback();
 
       cy.url().should(url => shouldInclude(url, 'http://127.0.0.1:3000'));
@@ -29,7 +22,6 @@ describe('loginWithRedirect', function () {
 
   it('can perform the login flow with cookie transactions', () => {
     whenReady();
-    configureTenant();
 
     cy.toggleSwitch('cookie-txns');
 

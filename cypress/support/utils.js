@@ -11,14 +11,6 @@ module.exports.shouldNotBe = (expected, actual) =>
 module.exports.whenReady = () =>
   cy.get('#loaded', { timeout: 10000 }).then(() => cy.window());
 
-module.exports.configureTenant = () => {
-  //cy.get('#domain').clear().type('http://localhost:3000');
-  //cy.get('#client_id').clear().type('testing');
-  // cy.toggleSwitch('use-form-data');
-  //cy.setSwitch('form-data', true);
-  //cy.get('#save-config').click();
-};
-
 /**
  * Returns true if a is within b +- tolerance
  * @param {*} a The value to check
