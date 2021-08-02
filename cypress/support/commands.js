@@ -97,3 +97,15 @@ Cypress.Commands.add('resetTests', () => {
   cy.window().then(win => win.localStorage.clear());
   cy.get('[data-cy=use-node-oidc-provider]').click();
 });
+
+Cypress.Commands.add('fixCookies', () => {
+  // Temporary fix for https://github.com/cypress-io/cypress/issues/6375
+  if (Cypress.isBrowser('firefox')) {
+    cy.getCookies({ log: false }).then(cookies =>
+      cookies.forEach(cookie => cy.clearCookie(cookie.name, { log: false }))
+    );
+    cy.log('clearCookies');
+  } else {
+    cy.clearCookies();
+  }
+});

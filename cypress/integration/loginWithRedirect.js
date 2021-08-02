@@ -7,6 +7,7 @@ import {
 
 describe('loginWithRedirect', function () {
   beforeEach(cy.resetTests);
+  afterEach(cy.fixCookies);
 
   it('can perform the login flow', () => {
     whenReady().then(() => {

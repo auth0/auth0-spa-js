@@ -2,6 +2,7 @@ import { configureTenant } from '../support/utils';
 
 describe('logout', function () {
   beforeEach(cy.resetTests);
+  afterEach(cy.fixCookies);
 
   it('works correctly', function () {
     configureTenant();

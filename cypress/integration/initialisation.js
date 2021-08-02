@@ -2,6 +2,7 @@ import { whenReady } from '../support/utils';
 
 describe('initialisation', function () {
   beforeEach(cy.resetTests);
+  afterEach(cy.fixCookies);
 
   it('should expose a factory method and constructor', function () {
     whenReady().then(win => {

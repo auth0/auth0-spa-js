@@ -2,7 +2,7 @@ import { whenReady, configureTenant } from '../support/utils';
 
 describe('getTokenSilently', () => {
   beforeEach(cy.resetTests);
-  afterEach(cy.logout);
+  afterEach(cy.fixCookies);
 
   it('returns an error when not logged in', () => {
     whenReady();
