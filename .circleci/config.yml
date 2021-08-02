@@ -16,6 +16,8 @@ jobs:
           command: npm run build
           environment:
             WITH_STATS: true
+      - run: npm run test:es-check
+      - run: npm run print-bundle-size
       - run: npm run test -- --maxWorkers=2
       - run: npm run print-bundle-size
       - save_cache:
@@ -35,8 +37,6 @@ jobs:
       - restore_cache:
           key: spa-dist-{{ .Revision }}
       - run: npm run test:integration
-      - run: npm run test:es-check
-      - run: npm run print-bundle-size
       - store_test_results:
           path: test-results
       - store_artifacts:
