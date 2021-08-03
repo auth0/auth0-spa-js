@@ -24,7 +24,7 @@
     "test:es-check:es2015:module": "es-check es2015 --module 'dist/auth0-spa-js.production.esm.js'",
     "test:integration:server": "npm run dev",
     "test:integration:tests": "wait-on http://localhost:3000/ && cypress run",
-    "test:integration:tests:browserstack": "wait-on http://127.0.0.1:3000/ && browserstack-cypress run run",
+    "test:integration:tests:browserstack": "wait-on http://127.0.0.1:3000/ && browserstack-cypress run",
     "test:integration": "concurrently --raw --kill-others --success first npm:test:integration:server npm:test:integration:tests",
     "test:integration:browserstack": "concurrently --raw --kill-others --success first npm:test:integration:server npm:test:integration:tests:browserstack",
     "serve:coverage": "serve coverage/lcov-report -n",
