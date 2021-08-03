@@ -199,6 +199,9 @@ workflows:
       - integration_test:
           requires:
             - build
+      - browserstack_test:
+          requires:
+            - build
       - test_gatsby:
           requires:
             - build
