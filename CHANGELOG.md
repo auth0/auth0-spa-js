@@ -1,5 +1,17 @@
 # Change Log
 
+## [v1.17.0](https://github.com/auth0/auth0-spa-js/tree/v1.17.0) (2021-08-03)
+
+[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v1.16.1...v1.17.0)
+
+**Added**
+
+- Add `useFormData` to enable `application/x-www-form-urlencoded` requests [\#768](https://github.com/auth0/auth0-spa-js/pull/768) ([stevehobbsdev](https://github.com/stevehobbsdev))
+
+**Changed**
+
+- Allow providing a `domain` that includes `http` or `https`. [\#768](https://github.com/auth0/auth0-spa-js/pull/768) ([stevehobbsdev](https://github.com/stevehobbsdev))
+
 ## [v1.16.1](https://github.com/auth0/auth0-spa-js/tree/v1.16.1) (2021-07-07)
 
 [Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v1.16.0...v1.16.1)
