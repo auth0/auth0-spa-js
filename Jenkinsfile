@@ -4,7 +4,7 @@ pipeline {
   }
 
   tools {
-    nodejs '14.16.0'
+    nodejs '14.16.1'
   }
 
   options {
