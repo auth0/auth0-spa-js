@@ -27,22 +27,6 @@ jobs:
       - run:
           name: Upload coverage
           command: ./node_modules/.bin/codecov
-  integration_test:
-    docker:
-      - image: << pipeline.parameters.docker_image >>
-    working_directory: ~/repo
-    steps:
-      - checkout
-      - run: npm ci
-      - restore_cache:
-          key: spa-dist-{{ .Revision }}
-      - run: npm run test:integration
-      - store_test_results:
-          path: test-results
-      - store_artifacts:
-          path: cypress/screenshots
-      - store_artifacts:
-          path: cypress/videos
   browserstack:
     docker:
       - image: << pipeline.parameters.docker_image >>
@@ -190,10 +174,9 @@ workflows:
   build_and_test:
     jobs:
       - build
-      - integration_test:
+      - browserstack:
           requires:
             - build
-      - browserstack
       - test_gatsby:
           requires:
             - build
