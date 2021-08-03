@@ -16,13 +16,9 @@ import { whenReady } from './utils';
 const login = () => {
   cy.get('#login_redirect').click();
 
-  cy.get('.login-card input[name=login]')
-    .clear()
-    .type('johnfoo+integration@gmail.com');
+  cy.get('.login-card input[name=login]').clear().type('test');
 
-  cy.get('.login-card input[name=password]')
-    .clear()
-    .type(Cypress.env('INTEGRATION_PASSWORD'));
+  cy.get('.login-card input[name=password]').clear().type('test');
 
   cy.get('.login-submit').click();
   // Need to click one more time to give consent.
