@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Organizations Example</title>
+  </head>
+  <body>
+    <div>
+      <form id="init-form">
+        <div>
+          <label for="org-id">Organization ID:</label>
+          <input type="text" id="org-id-textbox" />
+        </div>
+        <button type="submit">Log in</button
+        ><button type="button" id="logoutButton">Log out</button>
+      </form>
+
+      <p>Organization: <span id="org-id-output"></span></p>
+    </div>
+
+    <script src="/auth0-spa-js.development.js"></script>
+    <script>
+      const ORG_ID_STORAGE_KEY = 'auth0.org_id';
+
+      const config = {
+        domain: 'elkdanger.eu.auth0.com',
+        client_id: 'TgqxTDJFG2G3H5TjqvIEEVL5i6IcZGye',
+        redirect_uri: `${window.location.origin}/org.html`
+      };
+
+      if (localStorage.getItem(ORG_ID_STORAGE_KEY)) {
+        config.organization = localStorage.getItem(ORG_ID_STORAGE_KEY);
+      }
+
+      createAuth0Client(config).then(async client => {
+        if (
+          window.location.search.includes('code=') &&
+          window.location.search.includes('state=')
+        ) {
+          await client.handleRedirectCallback();
+
+          // Store the organization ID, if we received one in the ID token
+          const orgId = (await client.getIdTokenClaims()).org_id;
+
+          if (orgId) {
+            localStorage.setItem(ORG_ID_STORAGE_KEY, orgId);
+            document.getElementById('org-id-output').innerHTML = orgId;
+          } else {
+            localStorage.removeItem(ORG_ID_STORAGE_KEY);
+            document.getElementById('org-id-output').innerText = '';
+          }
+
+          window.history.replaceState(null, null, '/org.html');
+        }
+
+        const orgId = (await client.getIdTokenClaims())?.org_id;
+        console.log('Authenticated', await client.isAuthenticated());
+        console.log('Organization', orgId);
+        document.getElementById('org-id-output').innerText = orgId;
+        document.getElementById('org-id-textbox').value = orgId ?? '';
+
+        const form = document.getElementById('init-form');
+
+        form.addEventListener('submit', e => {
+          e.preventDefault();
+          const orgId = document.getElementById('org-id-textbox').value;
+
+          // Remove any org ID from the options to force it to go through
+          // loginWithRedirect
+          const { organization, ...options } = config;
+          const client = new Auth0Client(options);
+
+          // Login and pass the organization ID (if we have one)
+          client.loginWithRedirect({
+            ...(orgId ? { organization: orgId } : null)
+          });
+        });
+
+        document.getElementById('logoutButton').addEventListener('click', e => {
+          e.preventDefault();
+          // Remove storage on logout
+          localStorage.removeItem(ORG_ID_STORAGE_KEY);
+          client.logout({ returnTo: `${window.location.origin}/org.html` });
+        });
+      });
+    </script>
+  </body>
+</html>

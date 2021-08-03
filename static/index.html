@@ -361,6 +361,7 @@
       var defaultClientId = 'wLSIP47wM39wKdDmOj6Zb5eSEw3JVhVp';
       var defaultAudience = '';
       var defaultOrganization = '';
+      var AUTH0_ORG_STORAGE_KEY = 'auth0.org_id';
 
       var GenericError = createAuth0Client.GenericError;
 
@@ -487,6 +488,12 @@
               clientOptions.audience = _self.audience;
             }
 
+            var lsOrgId = localStorage.getItem(AUTH0_ORG_STORAGE_KEY);
+
+            if (lsOrgId) {
+              clientOptions.organization = lsOrgId;
+            }
+
             if (_self.organization) {
               clientOptions.organization = _self.organization;
             }
@@ -545,6 +552,7 @@
             this.useCookiesForTransactions = false;
             this.organization = defaultOrganization;
             this.useFormData = false;
+            localStorage.removeItem(AUTH0_ORG_STORAGE_KEY);
             this.saveForm();
           },
           showAuth0Info: function () {
@@ -587,6 +595,7 @@
               .then(function () {
                 return auth0.isAuthenticated().then(function (isAuthenticated) {
                   _self.isAuthenticated = isAuthenticated;
+                  _self.showAuth0Info();
                 });
               })
               .catch(function (e) {
@@ -618,7 +627,11 @@
           },
           loginRedirect: function () {
             var _self = this;
-            var options = { scope: _self.audienceScopes[0].scope };
+
+            var options = {
+              scope: _self.audienceScopes[0].scope,
+              organization: 'org_KGZvWnYaUz8jTCxU'
+            };
 
             if (_self.organization) {
               options.organization = _self.organization;
@@ -639,6 +652,14 @@
               auth0.isAuthenticated().then(function (isAuthenticated) {
                 _self.isAuthenticated = isAuthenticated;
                 _self.showAuth0Info();
+
+                auth0.getIdTokenClaims().then(claims => {
+                  if (claims.org_id) {
+                    localStorage.setItem(AUTH0_ORG_STORAGE_KEY, claims.org_id);
+                  } else {
+                    localStorage.removeItem(AUTH0_ORG_STORAGE_KEY);
+                  }
+                });
               });
             });
           },
@@ -686,11 +707,13 @@
               });
           },
           logout: function () {
+            localStorage.removeItem(AUTH0_ORG_STORAGE_KEY);
             this.auth0.logout({
               returnTo: window.location.origin
             });
           },
           logoutNoClient: function () {
+            localStorage.removeItem(AUTH0_ORG_STORAGE_KEY);
             this.auth0.logout({
               client_id: null,
               returnTo: window.location.origin
