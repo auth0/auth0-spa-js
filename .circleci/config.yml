@@ -43,6 +43,22 @@ jobs:
           path: cypress/screenshots
       - store_artifacts:
           path: cypress/videos
+  browserstack_test:
+    docker:
+      - image: << pipeline.parameters.docker_image >>
+    working_directory: ~/repo
+    steps:
+      - checkout
+      - run: npm ci
+      - restore_cache:
+          key: spa-dist-{{ .Revision }}
+      - run: npm run test:integration:browserstack
+      - store_test_results:
+          path: test-results
+      - store_artifacts:
+          path: cypress/screenshots
+      - store_artifacts:
+          path: cypress/videos
   test_gatsby:
     docker:
       - image: << pipeline.parameters.docker_image >>
