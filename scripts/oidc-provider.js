@@ -7,7 +7,11 @@ policy.add(
   new Prompt(
     { name: 'noop', requestable: false },
     new Check('foo', 'bar', ctx => {
-      if (ctx.query?.scope?.includes('offline_access')) {
+      if (
+        ctx.query &&
+        ctx.query.scope &&
+        ctx.query.scope.includes('offline_access')
+      ) {
         ctx.oidc.params.scope = `${ctx.oidc.params.scope} offline_access`;
       }
       return Check.NO_NEED_TO_PROMPT;
