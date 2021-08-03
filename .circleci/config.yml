@@ -43,7 +43,7 @@ jobs:
           path: cypress/screenshots
       - store_artifacts:
           path: cypress/videos
-  browserstack_test:
+  browserstack:
     docker:
       - image: << pipeline.parameters.docker_image >>
     working_directory: ~/repo
@@ -199,7 +199,7 @@ workflows:
       - integration_test:
           requires:
             - build
-      - browserstack_test:
+      - browserstack:
           requires:
             - build
       - test_gatsby:
