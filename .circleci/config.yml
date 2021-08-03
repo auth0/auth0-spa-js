@@ -52,7 +52,7 @@ jobs:
       - run: npm ci
       - restore_cache:
           key: spa-dist-{{ .Revision }}
-      - run: npm run dev && wait-on http://127.0.0.1:3000/ && browserstack-cypress run --env CYPRESS_INTEGRATION_PASSWORD=$CYPRESS_INTEGRATION_PASSWORD --build-name $CIRCLE_BRANCH
+      - run: npx concurrently --raw --kill-others --success first "npm:dev" "wait-on http://127.0.0.1:3000/ && browserstack-cypress run --build-name $CIRCLE_BRANCH"
   test_gatsby:
     docker:
       - image: << pipeline.parameters.docker_image >>
@@ -193,9 +193,7 @@ workflows:
       - integration_test:
           requires:
             - build
-      - browserstack:
-          requires:
-            - build
+      - browserstack
       - test_gatsby:
           requires:
             - build

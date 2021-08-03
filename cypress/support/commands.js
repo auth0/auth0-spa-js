@@ -22,7 +22,7 @@ const login = () => {
 
   cy.get('.login-card input[name=password]')
     .clear()
-    .type(Cypress.env('INTEGRATION_PASSWORD'));
+    .type('johnfoo+integration+password');
 
   cy.get('.login-submit').click();
   // Need to click one more time to give consent.
