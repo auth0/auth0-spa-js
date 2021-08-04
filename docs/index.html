@@ -2877,11 +2877,14 @@ img {
 				<h2>Installation</h2>
 			</a>
 			<p>From the CDN:</p>
-			<pre><code class="language-html"><span class="hljs-tag">&lt;<span class="hljs-name">script</span> <span class="hljs-attr">src</span>=<span class="hljs-string">&quot;https://cdn.auth0.com/js/auth0-spa-js/1.13/auth0-spa-js.production.js&quot;</span>&gt;</span><span class="hljs-tag">&lt;/<span class="hljs-name">script</span>&gt;</span></code></pre>
+			<pre><code class="language-html"><span class="hljs-tag">&lt;<span class="hljs-name">script</span> <span class="hljs-attr">src</span>=<span class="hljs-string">&quot;https://cdn.auth0.com/js/auth0-spa-js/1.13/auth0-spa-js.production.js&quot;</span>&gt;</span><span class="hljs-tag">&lt;/<span class="hljs-name">script</span>&gt;</span>
+</code></pre>
 			<p>Using <a href="https://npmjs.org">npm</a>:</p>
-			<pre><code class="language-sh">npm install @auth0/auth0-spa-js</code></pre>
+			<pre><code class="language-sh">npm install @auth0/auth0-spa-js
+</code></pre>
 			<p>Using <a href="https://yarnpkg.com">yarn</a>:</p>
-			<pre><code class="language-sh">yarn add @auth0/auth0-spa-js</code></pre>
+			<pre><code class="language-sh">yarn add @auth0/auth0-spa-js
+</code></pre>
 			<a href="#getting-started" id="getting-started" style="color: inherit; text-decoration: none;">
 				<h2>Getting Started</h2>
 			</a>
@@ -2923,11 +2926,13 @@ createAuth0Client({
   <span class="hljs-keyword">if</span> (error.error !== <span class="hljs-string">&#x27;login_required&#x27;</span>) {
     <span class="hljs-keyword">throw</span> error;
   }
-}</code></pre>
+}
+</code></pre>
 			<a href="#1---login" id="1---login" style="color: inherit; text-decoration: none;">
 				<h3>1 - Login</h3>
 			</a>
-			<pre><code class="language-html"><span class="hljs-tag">&lt;<span class="hljs-name">button</span> <span class="hljs-attr">id</span>=<span class="hljs-string">&quot;login&quot;</span>&gt;</span>Click to Login<span class="hljs-tag">&lt;/<span class="hljs-name">button</span>&gt;</span></code></pre>
+			<pre><code class="language-html"><span class="hljs-tag">&lt;<span class="hljs-name">button</span> <span class="hljs-attr">id</span>=<span class="hljs-string">&quot;login&quot;</span>&gt;</span>Click to Login<span class="hljs-tag">&lt;/<span class="hljs-name">button</span>&gt;</span>
+</code></pre>
 			<pre><code class="language-js"><span class="hljs-comment">//with async/await</span>
 
 <span class="hljs-comment">//redirect to the Universal Login Page</span>
@@ -2960,11 +2965,13 @@ createAuth0Client({
       <span class="hljs-built_in">console</span>.log(user);
     });
   });
-});</code></pre>
+});
+</code></pre>
 			<a href="#2---calling-an-api" id="2---calling-an-api" style="color: inherit; text-decoration: none;">
 				<h3>2 - Calling an API</h3>
 			</a>
-			<pre><code class="language-html"><span class="hljs-tag">&lt;<span class="hljs-name">button</span> <span class="hljs-attr">id</span>=<span class="hljs-string">&quot;call-api&quot;</span>&gt;</span>Call an API<span class="hljs-tag">&lt;/<span class="hljs-name">button</span>&gt;</span></code></pre>
+			<pre><code class="language-html"><span class="hljs-tag">&lt;<span class="hljs-name">button</span> <span class="hljs-attr">id</span>=<span class="hljs-string">&quot;call-api&quot;</span>&gt;</span>Call an API<span class="hljs-tag">&lt;/<span class="hljs-name">button</span>&gt;</span>
+</code></pre>
 			<pre><code class="language-js"><span class="hljs-comment">//with async/await</span>
 <span class="hljs-built_in">document</span>.getElementById(<span class="hljs-string">&#x27;call-api&#x27;</span>).addEventListener(<span class="hljs-string">&#x27;click&#x27;</span>, <span class="hljs-keyword">async</span> () =&gt; {
   <span class="hljs-keyword">const</span> accessToken = <span class="hljs-keyword">await</span> auth0.getTokenSilently();
@@ -2994,20 +3001,24 @@ createAuth0Client({
     .then(<span class="hljs-function"><span class="hljs-params">data</span> =&gt;</span> {
       <span class="hljs-built_in">console</span>.log(data);
     });
-});</code></pre>
+});
+</code></pre>
 			<a href="#3---logout" id="3---logout" style="color: inherit; text-decoration: none;">
 				<h3>3 - Logout</h3>
 			</a>
-			<pre><code class="language-html"><span class="hljs-tag">&lt;<span class="hljs-name">button</span> <span class="hljs-attr">id</span>=<span class="hljs-string">&quot;logout&quot;</span>&gt;</span>Logout<span class="hljs-tag">&lt;/<span class="hljs-name">button</span>&gt;</span></code></pre>
+			<pre><code class="language-html"><span class="hljs-tag">&lt;<span class="hljs-name">button</span> <span class="hljs-attr">id</span>=<span class="hljs-string">&quot;logout&quot;</span>&gt;</span>Logout<span class="hljs-tag">&lt;/<span class="hljs-name">button</span>&gt;</span>
+</code></pre>
 			<pre><code class="language-js"><span class="hljs-keyword">import</span> createAuth0Client <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;@auth0/auth0-spa-js&#x27;</span>;
 
 <span class="hljs-built_in">document</span>.getElementById(<span class="hljs-string">&#x27;logout&#x27;</span>).addEventListener(<span class="hljs-string">&#x27;click&#x27;</span>, <span class="hljs-function">() =&gt;</span> {
   auth0.logout();
-});</code></pre>
+});
+</code></pre>
 			<p>You can redirect users back to your app after logging out. This URL must appear in the <strong>Allowed Logout URLs</strong> setting for the app in your <a href="https://manage.auth0.com">Auth0 Dashboard</a>:</p>
 			<pre><code class="language-js">auth0.logout({
   <span class="hljs-attr">returnTo</span>: <span class="hljs-string">&#x27;https://your.custom.url.example.com/&#x27;</span>
-});</code></pre>
+});
+</code></pre>
 			<a href="#data-caching-options" id="data-caching-options" style="color: inherit; text-decoration: none;">
 				<h3>Data caching options</h3>
 			</a>
@@ -3018,7 +3029,8 @@ createAuth0Client({
   <span class="hljs-attr">client_id</span>: <span class="hljs-string">&#x27;&lt;AUTH0_CLIENT_ID&gt;&#x27;</span>,
   <span class="hljs-attr">redirect_uri</span>: <span class="hljs-string">&#x27;&lt;MY_CALLBACK_URL&gt;&#x27;</span>,
   <span class="hljs-attr">cacheLocation</span>: <span class="hljs-string">&#x27;localstorage&#x27;</span> <span class="hljs-comment">// valid values are: &#x27;memory&#x27; or &#x27;localstorage&#x27;</span>
-});</code></pre>
+});
+</code></pre>
 			<p><strong>Important:</strong> This feature will allow the caching of data <strong>such as ID and access tokens</strong> to be stored in local storage. Exercising this option changes the security characteristics of your application and <strong>should not be used lightly</strong>. Extra care should be taken to mitigate against XSS attacks and minimize the risk of tokens being stolen from local storage.</p>
 			<a href="#creating-a-custom-cache" id="creating-a-custom-cache" style="color: inherit; text-decoration: none;">
 				<h4>Creating a custom cache</h4>
@@ -3080,7 +3092,8 @@ createAuth0Client({
   <span class="hljs-attr">client_id</span>: <span class="hljs-string">&#x27;&lt;AUTH0_CLIENT_ID&gt;&#x27;</span>,
   <span class="hljs-attr">redirect_uri</span>: <span class="hljs-string">&#x27;&lt;MY_CALLBACK_URL&gt;&#x27;</span>,
   <span class="hljs-attr">cache</span>: sessionStorageCache
-});</code></pre>
+});
+</code></pre>
 			<p><strong>Note:</strong> The <code>cache</code> property takes precedence over the <code>cacheLocation</code> property if both are set. A warning is displayed in the console if this scenario occurs.</p>
 			<p>We also export the internal <code>InMemoryCache</code> and <code>LocalStorageCache</code> implementations, so you can wrap your custom cache around these implementations if you wish.</p>
 			<a href="#refresh-tokens" id="refresh-tokens" style="color: inherit; text-decoration: none;">
@@ -3093,7 +3106,8 @@ createAuth0Client({
   <span class="hljs-attr">client_id</span>: <span class="hljs-string">&#x27;&lt;AUTH0_CLIENT_ID&gt;&#x27;</span>,
   <span class="hljs-attr">redirect_uri</span>: <span class="hljs-string">&#x27;&lt;MY_CALLBACK_URL&gt;&#x27;</span>,
   <span class="hljs-attr">useRefreshTokens</span>: <span class="hljs-literal">true</span>
-});</code></pre>
+});
+</code></pre>
 			<p>Using this setting will cause the SDK to automatically send the <code>offline_access</code> scope to the authorization server. Refresh tokens will then be used to exchange for new access tokens instead of using a hidden iframe, and calls the <code>/oauth/token</code> endpoint directly. This means that in most cases the SDK does not rely on third-party cookies when using refresh tokens.</p>
 			<p><strong>Note</strong> This configuration option requires Rotating Refresh Tokens to be <a href="https://auth0.com/docs/tokens/guides/configure-refresh-token-rotation">enabled for your Auth0 Tenant</a>.</p>
 			<a href="#refresh-token-fallback" id="refresh-token-fallback" style="color: inherit; text-decoration: none;">
@@ -3115,7 +3129,8 @@ createAuth0Client({
   <span class="hljs-attr">client_id</span>: <span class="hljs-string">&#x27;&lt;AUTH0_CLIENT_ID&gt;&#x27;</span>,
   <span class="hljs-attr">redirect_uri</span>: <span class="hljs-string">&#x27;&lt;MY_CALLBACK_URL&gt;&#x27;</span>,
   <span class="hljs-attr">organization</span>: <span class="hljs-string">&#x27;&lt;MY_ORG_ID&gt;&#x27;</span>
-});</code></pre>
+});
+</code></pre>
 			<p>You can also specify the organization when logging in:</p>
 			<pre><code class="language-js"><span class="hljs-comment">// Using a redirect</span>
 client.loginWithRedirect({
@@ -3125,7 +3140,8 @@ client.loginWithRedirect({
 <span class="hljs-comment">// Using a popup window</span>
 client.loginWithPopup({
   <span class="hljs-attr">organization</span>: <span class="hljs-string">&#x27;&lt;MY_ORG_ID&gt;&#x27;</span>
-});</code></pre>
+});
+</code></pre>
 			<a href="#accept-user-invitations" id="accept-user-invitations" style="color: inherit; text-decoration: none;">
 				<h4>Accept user invitations</h4>
 			</a>
@@ -3140,7 +3156,8 @@ client.loginWithPopup({
     organization,
     invitation
   });
-}</code></pre>
+}
+</code></pre>
 			<a href="#advanced-options" id="advanced-options" style="color: inherit; text-decoration: none;">
 				<h3>Advanced options</h3>
 			</a>
@@ -3151,7 +3168,8 @@ client.loginWithPopup({
   <span class="hljs-attr">advancedOptions</span>: {
     <span class="hljs-attr">defaultScope</span>: <span class="hljs-string">&#x27;email&#x27;</span> <span class="hljs-comment">// change the scopes that are applied to every authz request. **Note**: `openid` is always specified regardless of this setting</span>
   }
-});</code></pre>
+});
+</code></pre>
 			<a href="#contributing" id="contributing" style="color: inherit; text-decoration: none;">
 				<h2>Contributing</h2>
 			</a>
@@ -3271,7 +3289,7 @@ client.loginWithPopup({
 				<div class="tsd-signature tsd-kind-icon">Cache<wbr>Entry<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">{ </span>access_token<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span>audience<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span>client_id<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span>decodedToken<span class="tsd-signature-symbol">: </span><a href="interfaces/decodedtoken.html" class="tsd-signature-type">DecodedToken</a><span class="tsd-signature-symbol">; </span>expires_in<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">; </span>id_token<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span>refresh_token<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span>scope<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> }</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/e84aecb/src/cache/shared.ts#L62">src/cache/shared.ts:62</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/b751744/src/cache/shared.ts#L62">src/cache/shared.ts:62</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-type-declaration">
@@ -3310,7 +3328,7 @@ client.loginWithPopup({
 				<div class="tsd-signature tsd-kind-icon">Cache<wbr>Key<wbr>Data<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">{ </span>audience<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span>client_id<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span>scope<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> }</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/e84aecb/src/cache/shared.ts#L5">src/cache/shared.ts:5</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/b751744/src/cache/shared.ts#L5">src/cache/shared.ts:5</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-type-declaration">
@@ -3334,7 +3352,7 @@ client.loginWithPopup({
 				<div class="tsd-signature tsd-kind-icon">Cache<wbr>Location<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">"memory"</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">"localstorage"</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/e84aecb/src/global.ts#L211">src/global.ts:211</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/b751744/src/global.ts#L220">src/global.ts:220</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-comment tsd-typography">
@@ -3349,7 +3367,7 @@ client.loginWithPopup({
 				<div class="tsd-signature tsd-kind-icon">Cacheable<span class="tsd-signature-symbol">:</span> <a href="globals.html#wrappedcacheentry" class="tsd-signature-type">WrappedCacheEntry</a><span class="tsd-signature-symbol"> | </span><a href="globals.html#keymanifestentry" class="tsd-signature-type">KeyManifestEntry</a></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/e84aecb/src/cache/shared.ts#L82">src/cache/shared.ts:82</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/b751744/src/cache/shared.ts#L82">src/cache/shared.ts:82</a></li>
 					</ul>
 				</aside>
 			</section>
@@ -3359,7 +3377,7 @@ client.loginWithPopup({
 				<div class="tsd-signature tsd-kind-icon">Key<wbr>Manifest<wbr>Entry<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">{ </span>keys<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol"> }</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/e84aecb/src/cache/shared.ts#L78">src/cache/shared.ts:78</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/b751744/src/cache/shared.ts#L78">src/cache/shared.ts:78</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-type-declaration">
@@ -3377,7 +3395,7 @@ client.loginWithPopup({
 				<div class="tsd-signature tsd-kind-icon">Maybe<wbr>Promise&lt;T&gt;<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">T</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">T</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/e84aecb/src/cache/shared.ts#L84">src/cache/shared.ts:84</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/b751744/src/cache/shared.ts#L84">src/cache/shared.ts:84</a></li>
 					</ul>
 				</aside>
 				<h4 class="tsd-type-parameters-title">Type parameters</h4>
@@ -3393,7 +3411,7 @@ client.loginWithPopup({
 				<div class="tsd-signature tsd-kind-icon">Wrapped<wbr>Cache<wbr>Entry<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">{ </span>body<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Partial</span><span class="tsd-signature-symbol">&lt;</span><a href="globals.html#cacheentry" class="tsd-signature-type">CacheEntry</a><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">; </span>expiresAt<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> }</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/e84aecb/src/cache/shared.ts#L73">src/cache/shared.ts:73</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/b751744/src/cache/shared.ts#L73">src/cache/shared.ts:73</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-type-declaration">
@@ -3414,7 +3432,7 @@ client.loginWithPopup({
 				<div class="tsd-signature tsd-kind-icon">get<wbr>IdToken<wbr>Claims<wbr>Options<span class="tsd-signature-symbol">:</span> <a href="interfaces/getidtokenclaimsoptions.html" class="tsd-signature-type">GetIdTokenClaimsOptions</a></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/e84aecb/src/global.ts#L298">src/global.ts:298</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/b751744/src/global.ts#L307">src/global.ts:307</a></li>
 					</ul>
 				</aside>
 			</section>
@@ -3427,7 +3445,7 @@ client.loginWithPopup({
 				<div class="tsd-signature tsd-kind-icon">CACHE_<wbr>KEY_<wbr>PREFIX<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">"@@auth0spajs@@"</span><span class="tsd-signature-symbol"> = &quot;@@auth0spajs@@&quot;</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/e84aecb/src/cache/shared.ts#L3">src/cache/shared.ts:3</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/b751744/src/cache/shared.ts#L3">src/cache/shared.ts:3</a></li>
 					</ul>
 				</aside>
 			</section>
@@ -3437,7 +3455,7 @@ client.loginWithPopup({
 				<div class="tsd-signature tsd-kind-icon">CACHE_<wbr>LOCATION_<wbr>LOCAL_<wbr>STORAGE<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">"localstorage"</span><span class="tsd-signature-symbol"> = &quot;localstorage&quot;</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/e84aecb/src/constants.ts#L32">src/constants.ts:32</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/b751744/src/constants.ts#L32">src/constants.ts:32</a></li>
 					</ul>
 				</aside>
 			</section>
@@ -3447,7 +3465,7 @@ client.loginWithPopup({
 				<div class="tsd-signature tsd-kind-icon">CACHE_<wbr>LOCATION_<wbr>MEMORY<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">"memory"</span><span class="tsd-signature-symbol"> = &quot;memory&quot;</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/e84aecb/src/constants.ts#L31">src/constants.ts:31</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/b751744/src/constants.ts#L31">src/constants.ts:31</a></li>
 					</ul>
 				</aside>
 			</section>
@@ -3457,7 +3475,7 @@ client.loginWithPopup({
 				<div class="tsd-signature tsd-kind-icon">DEFAULT_<wbr>EXPIRY_<wbr>ADJUSTMENT_<wbr>SECONDS<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">0</span><span class="tsd-signature-symbol"> = 0</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/e84aecb/src/cache/cache-manager.ts#L11">src/cache/cache-manager.ts:11</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/b751744/src/cache/cache-manager.ts#L11">src/cache/cache-manager.ts:11</a></li>
 					</ul>
 				</aside>
 			</section>
@@ -3474,7 +3492,7 @@ client.loginWithPopup({
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/e84aecb/src/index.ts#L19">src/index.ts:19</a></li>
+								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/b751744/src/index.ts#L19">src/index.ts:19</a></li>
 							</ul>
 						</aside>
 						<h4 class="tsd-parameters-title">Parameters</h4>

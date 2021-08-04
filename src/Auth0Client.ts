@@ -115,6 +115,9 @@ const getTokenIssuer = (issuer: string, domainUrl: string) => {
   return `${domainUrl}/`;
 };
 
+/**
+ * @ignore
+ */
 const getDomain = (domainUrl: string) => {
   if (!/^https?:\/\//.test(domainUrl)) {
     return `https://${domainUrl}`;
