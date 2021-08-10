@@ -48,13 +48,13 @@ Integration tests can be run through [Cypress](https://www.cypress.io/) to perfo
 To run these, use:
 
 ```
-CYPRESS_INTEGRATION_PASSWORD=<password> npm run test:integration
+npm run test:integration
 ```
 
 To perform these tests interactively and watch the output, use:
 
 ```
-CYPRESS_INTEGRATION_PASSWORD=<password> npm run test:watch:integration
+npm run test:watch:integration
 ```
 
 ### Test coverage
