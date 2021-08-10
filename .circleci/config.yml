@@ -177,6 +177,8 @@ workflows:
       - browserstack:
           requires:
             - build
+          context:
+            - browserstack-env
       - test_gatsby:
           requires:
             - build
