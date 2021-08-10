@@ -43,7 +43,7 @@ npm run test:watch
 
 ### Integration tests
 
-Integration tests can be run through [Cypress](https://www.cypress.io/) to perform integration testing using the SDK and Auth0. You will need to supply the password for the user used in the integration tests using an environment variable.
+Integration tests can be run through [Cypress](https://www.cypress.io/) to perform integration testing using the SDK and Auth0.
 
 To run these, use:
 
