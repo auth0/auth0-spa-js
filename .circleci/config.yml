@@ -1,4 +1,7 @@
 version: 2.1
+orbs:
+  # @dev:d1b8cd7 - this release will dissappear in ~3 months
+  auth0-publisher: lbalmaceda/node-publisher@dev:d1b8cd7
 parameters:
   docker_image:
     type: string
@@ -191,3 +194,16 @@ workflows:
       - test_angular:
           requires:
             - build
+      - auth0-publisher/publish:
+          context:
+            - publish-npm
+          filters:
+            branches:
+              only:
+                - master
+          requires:
+            - browserstack
+            - test_gatsby
+            - test_react
+            - test_vue
+            - test_angular
