@@ -1,7 +1,7 @@
 version: 2.1
 orbs:
   # @dev:d1b8cd7 - this release will dissappear in ~3 months
-  auth0-publisher: lbalmaceda/node-publisher@dev:d1b8cd7
+  ship: lbalmaceda/node-publisher@dev:e838acf
 parameters:
   docker_image:
     type: string
@@ -194,7 +194,7 @@ workflows:
       - test_angular:
           requires:
             - build
-      - auth0-publisher/publish:
+      - ship/node-publish:
           context:
             - publish-npm
           filters:
