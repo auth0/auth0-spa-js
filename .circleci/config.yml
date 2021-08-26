@@ -1,7 +1,7 @@
 version: 2.1
 orbs:
   # @dev:d1b8cd7 - this release will dissappear in ~3 months
-  ship: lbalmaceda/node-publisher@dev:e838acf
+  ship: lbalmaceda/node-publisher@dev:18698a7
 parameters:
   docker_image:
     type: string
@@ -197,6 +197,7 @@ workflows:
       - ship/node-publish:
           context:
             - publish-npm
+            - publish-gh
           filters:
             branches:
               only:
