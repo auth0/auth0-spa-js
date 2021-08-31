@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link
+      href="https://unpkg.com/tailwindcss@^2/dist/tailwind.min.css"
+      rel="stylesheet"
+    />
+    <title>Document</title>
+  </head>
+  <body>
+    <div id="app" class="container mx-auto p-5">
+      <header class="mb-10">
+        <h1 class="text-4xl">Multiple Client Test</h1>
+        <p>
+          <a
+            href="http://localhost:3000/multiple_clients.html"
+            class="text-gray-400 underline"
+            >Reset URL</a
+          >
+        </p>
+      </header>
+
+      <div x-data="clientData">
+        <div class="mb-5" v-for="client in clients" :key="client.id">
+          <h2 v-text="client.name" class="text-2xl"></h2>
+          <p class="text-gray-400 mb-5" v-text="client.description"></p>
+          <button
+            type="submit"
+            class="p-2 rounded bg-blue-700 text-white"
+            @click="loginWith(client)"
+          >
+            Log in
+          </button>
+          <button
+            class="p-2 rounded bg-red-700 text-white"
+            @click="getTokenWith(client)"
+          >
+            Get Token
+          </button>
+          <button
+            class="p-2 rounded bg-gray-700 text-white"
+            @click="logoutOf(client)"
+          >
+            Log out
+          </button>
+          <div class="mt-5">
+            <div>
+              <p v-text="client.access_token"></p>
+            </div>
+            <template v-if="client.error !== null">
+              <p class="text-red-500" v-text="client.error"></p>
+            </template>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+    <script src="/auth0-spa-js.development.js"></script>
+    <script>
+      const commonOptions = {
+        redirect_uri: `${window.location.origin}/multiple_clients.html`,
+        cacheLocation: 'localstorage',
+        useFormData: true
+      };
+
+      new Vue({
+        el: '#app',
+        data() {
+          return {
+            clients: [
+              {
+                name: 'Client 1',
+                get description() {
+                  return `Using ${this.options.domain} and iframe with prompt=none`;
+                },
+                id: 1,
+                options: {
+                  ...commonOptions,
+                  domain: 'brucke.auth0.com',
+                  client_id: 'wLSIP47wM39wKdDmOj6Zb5eSEw3JVhVp'
+                },
+                id_token: '',
+                access_token: '',
+                error: null
+              },
+              {
+                name: 'Client 2',
+                get description() {
+                  return `Using ${this.options.domain} and refresh tokens`;
+                },
+                id: 2,
+                options: {
+                  ...commonOptions,
+                  domain: 'elkdanger.eu.auth0.com',
+                  client_id: 'TgqxTDJFG2G3H5TjqvIEEVL5i6IcZGye',
+                  useRefreshTokens: true
+                },
+                id_token: '',
+                access_token: '',
+                error: null
+              }
+            ]
+          };
+        },
+        async created() {
+          const authFn = async client => {
+            if (await client.auth0.isAuthenticated()) {
+              client.id_token = (await client.auth0.getIdTokenClaims()).__raw;
+              client.access_token = await client.auth0.getTokenSilently();
+            }
+          };
+
+          this.clients.map(async client => {
+            client.auth0 = new Auth0Client(client.options);
+          });
+
+          if (
+            window.location.search.includes('code=') &&
+            window.location.search.includes('state=')
+          ) {
+            const id = localStorage.getItem('login_id');
+
+            if (id) {
+              const client = this.clients.find(c => c.id === parseInt(id));
+
+              if (client) {
+                console.log('Handling callback');
+                await client.auth0.handleRedirectCallback();
+                history.pushState({}, null, '/multiple_clients.html');
+                await authFn(client);
+              }
+            }
+          }
+
+          this.clients.map(async client => {
+            client.auth0 = new Auth0Client(client.options);
+            await client.auth0.checkSession();
+            await authFn(client);
+          });
+        },
+        methods: {
+          loginWith(client) {
+            localStorage.setItem('login_id', client.id);
+            client.auth0.loginWithRedirect();
+          },
+          async getTokenWith(client) {
+            try {
+              client.access_token = await client.auth0.getTokenSilently({
+                ignoreCache: true
+              });
+              client.error = null;
+            } catch (e) {
+              client.error = e.error_description;
+            }
+          },
+          logoutOf(client) {
+            client.auth0.logout({
+              returnTo: `${window.location.origin}/multiple_clients.html`,
+              client_id: client.options.client_id
+            });
+          }
+        }
+      });
+    </script>
+  </body>
+</html>
