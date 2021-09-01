@@ -1,7 +1,6 @@
 version: 2.1
 orbs:
-  # @dev:18698a7 - this release will dissappear in ~3 months
-  ship: lbalmaceda/node-publisher@dev:18698a7
+  ship: auth0/ship@0.1.0
 parameters:
   docker_image:
     type: string
