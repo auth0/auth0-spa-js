@@ -83,6 +83,15 @@ describe('Auth0Client', () => {
       expect(esCookie.remove).toHaveBeenCalledWith('auth0.is.authenticated');
     });
 
+    it('removes the organization hint cookie from storage', async () => {
+      const auth0 = setup();
+      auth0.logout();
+
+      expect(esCookie.remove).toHaveBeenCalledWith(
+        `auth0.${TEST_CLIENT_ID}.organization_hint`
+      );
+    });
+
     it('calls `window.location.assign` with the correct url', async () => {
       const auth0 = setup();
 
@@ -132,6 +141,16 @@ describe('Auth0Client', () => {
       auth0.logout({ localOnly: true });
 
       expect(esCookie.remove).toHaveBeenCalledWith('auth0.is.authenticated');
+    });
+
+    it('removes the organization hint cookie from storage when `options.localOnly` is true', async () => {
+      const auth0 = setup();
+
+      auth0.logout({ localOnly: true });
+
+      expect(esCookie.remove).toHaveBeenCalledWith(
+        `auth0.${TEST_CLIENT_ID}.organization_hint`
+      );
     });
 
     it('skips `window.location.assign` when `options.localOnly` is true', async () => {

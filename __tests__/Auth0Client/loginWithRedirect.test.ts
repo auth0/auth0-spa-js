@@ -345,6 +345,24 @@ describe('Auth0Client', () => {
       );
     });
 
+    it('stores the organization ID in a hint cookie', async () => {
+      const auth0 = setup({ organization: 'test_org_123' });
+
+      await loginWithRedirect(auth0);
+
+      expect(<jest.Mock>esCookie.set).toHaveBeenCalledWith(
+        `auth0.${TEST_CLIENT_ID}.organization_hint`,
+        'test_org_123',
+        {}
+      );
+
+      expect(<jest.Mock>esCookie.set).toHaveBeenCalledWith(
+        `_legacy_auth0.${TEST_CLIENT_ID}.organization_hint`,
+        'test_org_123',
+        {}
+      );
+    });
+
     it('calls `tokenVerifier.verify` with the specific organization id', async () => {
       const auth0 = setup({ organization: 'test_org_123' });
 

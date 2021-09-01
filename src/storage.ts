@@ -27,14 +27,22 @@ export const CookieStorage = {
 
   save(key: string, value: any, options?: ClientStorageOptions): void {
     let cookieAttributes: Cookies.CookieAttributes = {};
+
     if ('https:' === window.location.protocol) {
       cookieAttributes = {
         secure: true,
         sameSite: 'none'
       };
     }
-    cookieAttributes.expires = options.daysUntilExpire;
-    Cookies.set(key, JSON.stringify(value), cookieAttributes);
+
+    if (options?.daysUntilExpire) {
+      cookieAttributes.expires = options?.daysUntilExpire;
+    }
+
+    const serialized =
+      typeof value === 'string' ? value : JSON.stringify(value);
+
+    Cookies.set(key, serialized, cookieAttributes);
   },
 
   remove(key: string) {
@@ -62,15 +70,20 @@ export const CookieStorageWithLegacySameSite = {
 
   save(key: string, value: any, options?: ClientStorageOptions): void {
     let cookieAttributes: Cookies.CookieAttributes = {};
+
     if ('https:' === window.location.protocol) {
       cookieAttributes = { secure: true };
     }
-    cookieAttributes.expires = options.daysUntilExpire;
-    Cookies.set(
-      `${LEGACY_PREFIX}${key}`,
-      JSON.stringify(value),
-      cookieAttributes
-    );
+
+    if (options?.daysUntilExpire) {
+      cookieAttributes.expires = options?.daysUntilExpire;
+    }
+
+    const serialized =
+      typeof value === 'string' ? value : JSON.stringify(value);
+
+    Cookies.set(`${LEGACY_PREFIX}${key}`, serialized, cookieAttributes);
+
     CookieStorage.save(key, value, options);
   },
 

@@ -83,6 +83,13 @@ const lock = new Lock();
  * @ignore
  */
 const GET_TOKEN_SILENTLY_LOCK_KEY = 'auth0.lock.getTokenSilently';
+const COOKIE_IS_AUTHENTICATED_HINT = 'auth0.is.authenticated';
+
+/**
+ * @ignore
+ */
+const buildOrganizationHintCookieName = (clientId: string) =>
+  `auth0.${clientId}.organization_hint`;
 
 /**
  * @ignore
@@ -457,7 +464,7 @@ export default class Auth0Client {
 
     await this.cacheManager.set(cacheEntry);
 
-    this.cookieStorage.save('auth0.is.authenticated', true, {
+    this.cookieStorage.save(COOKIE_IS_AUTHENTICATED_HINT, true, {
       daysUntilExpire: this.sessionCheckExpiryDays
     });
   }
@@ -613,9 +620,16 @@ export default class Auth0Client {
 
     await this.cacheManager.set(cacheEntry);
 
-    this.cookieStorage.save('auth0.is.authenticated', true, {
+    this.cookieStorage.save(COOKIE_IS_AUTHENTICATED_HINT, true, {
       daysUntilExpire: this.sessionCheckExpiryDays
     });
+
+    if (transaction.organizationId) {
+      this.cookieStorage.save(
+        buildOrganizationHintCookieName(this.options.client_id),
+        transaction.organizationId
+      );
+    }
 
     return {
       appState: transaction.appState
@@ -642,7 +656,7 @@ export default class Auth0Client {
    * @param options
    */
   public async checkSession(options?: GetTokenSilentlyOptions) {
-    if (!this.cookieStorage.get('auth0.is.authenticated')) {
+    if (!this.cookieStorage.get(COOKIE_IS_AUTHENTICATED_HINT)) {
       return;
     }
 
@@ -751,7 +765,7 @@ export default class Auth0Client {
           ...authResult
         });
 
-        this.cookieStorage.save('auth0.is.authenticated', true, {
+        this.cookieStorage.save(COOKIE_IS_AUTHENTICATED_HINT, true, {
           daysUntilExpire: this.sessionCheckExpiryDays
         });
 
@@ -870,7 +884,11 @@ export default class Auth0Client {
     }
 
     const postCacheClear = () => {
-      this.cookieStorage.remove('auth0.is.authenticated');
+      this.cookieStorage.remove(COOKIE_IS_AUTHENTICATED_HINT);
+
+      this.cookieStorage.remove(
+        buildOrganizationHintCookieName(this.options.client_id)
+      );
 
       if (localOnly) {
         return;
