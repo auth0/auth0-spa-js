@@ -173,6 +173,7 @@ export default class Auth0Client {
   private scope: string;
   private cookieStorage: ClientStorage;
   private sessionCheckExpiryDays: number;
+  private orgHintCookieName: string;
 
   cacheLocation: CacheLocation;
   private worker: Worker;
@@ -204,6 +205,10 @@ export default class Auth0Client {
       options.legacySameSiteCookie === false
         ? CookieStorage
         : CookieStorageWithLegacySameSite;
+
+    this.orgHintCookieName = buildOrganizationHintCookieName(
+      this.options.client_id
+    );
 
     this.sessionCheckExpiryDays =
       options.sessionCheckExpiryDays || DEFAULT_SESSION_CHECK_EXPIRY_DAYS;
@@ -468,10 +473,10 @@ export default class Auth0Client {
       daysUntilExpire: this.sessionCheckExpiryDays
     });
 
-    if (organizationId) {
+    if (decodedToken.claims.org_id) {
       this.cookieStorage.save(
-        buildOrganizationHintCookieName(this.options.client_id),
-        organizationId
+        this.orgHintCookieName,
+        decodedToken.claims.org_id
       );
     }
   }
@@ -631,11 +636,13 @@ export default class Auth0Client {
       daysUntilExpire: this.sessionCheckExpiryDays
     });
 
-    if (transaction.organizationId) {
+    if (decodedToken.claims.org_id) {
       this.cookieStorage.save(
-        buildOrganizationHintCookieName(this.options.client_id),
-        transaction.organizationId
+        this.orgHintCookieName,
+        decodedToken.claims.org_id
       );
+    } else {
+      this.cookieStorage.remove(this.orgHintCookieName);
     }
 
     return {
@@ -892,10 +899,7 @@ export default class Auth0Client {
 
     const postCacheClear = () => {
       this.cookieStorage.remove(COOKIE_IS_AUTHENTICATED_HINT);
-
-      this.cookieStorage.remove(
-        buildOrganizationHintCookieName(this.options.client_id)
-      );
+      this.cookieStorage.remove(this.orgHintCookieName);
 
       if (localOnly) {
         return;
@@ -977,6 +981,12 @@ export default class Auth0Client {
       );
 
       const decodedToken = this._verifyIdToken(tokenResult.id_token, nonceIn);
+
+      if (!decodedToken.claims.org_id) {
+        this.cookieStorage.remove(
+          buildOrganizationHintCookieName(this.options.client_id)
+        );
+      }
 
       return {
         ...tokenResult,

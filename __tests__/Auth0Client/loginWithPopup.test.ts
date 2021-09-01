@@ -597,7 +597,7 @@ describe('Auth0Client', () => {
     });
 
     it('saves organization hint cookie in storage', async () => {
-      const auth0 = setup({ organization: TEST_ORG_ID });
+      const auth0 = setup({}, { org_id: TEST_ORG_ID });
 
       await loginWithPopup(auth0);
 

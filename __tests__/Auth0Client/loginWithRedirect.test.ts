@@ -347,7 +347,7 @@ describe('Auth0Client', () => {
     });
 
     it('stores the organization ID in a hint cookie', async () => {
-      const auth0 = setup({ organization: TEST_ORG_ID });
+      const auth0 = setup({}, { org_id: TEST_ORG_ID });
 
       await loginWithRedirect(auth0);
 
@@ -361,6 +361,20 @@ describe('Auth0Client', () => {
         `_legacy_auth0.${TEST_CLIENT_ID}.organization_hint`,
         TEST_ORG_ID,
         {}
+      );
+    });
+
+    it('removes the org hint cookie if no org_id claim in the ID token', async () => {
+      const auth0 = setup({});
+
+      await loginWithRedirect(auth0);
+
+      expect(<jest.Mock>esCookie.remove).toHaveBeenCalledWith(
+        `auth0.${TEST_CLIENT_ID}.organization_hint`
+      );
+
+      expect(<jest.Mock>esCookie.remove).toHaveBeenCalledWith(
+        `_legacy_auth0.${TEST_CLIENT_ID}.organization_hint`
       );
     });
 

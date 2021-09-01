@@ -10,7 +10,11 @@ import * as api from '../../src/api';
 
 import { expectToHaveBeenCalledWithAuth0ClientParam } from '../helpers';
 
-import { GET_TOKEN_SILENTLY_LOCK_KEY, TEST_AUDIENCE } from '../constants';
+import {
+  GET_TOKEN_SILENTLY_LOCK_KEY,
+  TEST_AUDIENCE,
+  TEST_ORG_ID
+} from '../constants';
 
 // @ts-ignore
 import { acquireLockSpy } from 'browser-tabs-lock';
@@ -1376,6 +1380,31 @@ describe('Auth0Client', () => {
         }
       );
     });
+
+    // it('removes organization hint cookie if no org claim was returned in the ID token', async () => {
+    //   const auth0 = setup({ organization: TEST_CLIENT_ID });
+
+    //   jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
+    //     access_token: TEST_ACCESS_TOKEN,
+    //     state: TEST_STATE
+    //   });
+
+    //   await getTokenSilently(auth0);
+
+    //   expect(<jest.Mock>esCookie.set).toHaveBeenCalledWith(
+    //     `_legacy_auth0.${TEST_CLIENT_ID}.organization_hint`,
+    //     TEST_ORG_ID,
+    //     {
+    //     }
+    //   );
+
+    //   expect(<jest.Mock>esCookie.set).toHaveBeenCalledWith(
+    //     `_legacy_auth0.${TEST_CLIENT_ID}.organization_hint`,
+    //     TEST_ORG_ID,
+    //     {
+    //     }
+    //   );
+    // });
 
     it('opens iframe with correct urls and timeout from client options', async () => {
       const auth0 = setup({ authorizeTimeoutInSeconds: 1 });
