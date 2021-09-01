@@ -23,6 +23,7 @@ import {
   TEST_DOMAIN,
   TEST_ID_TOKEN,
   TEST_NONCE,
+  TEST_ORG_ID,
   TEST_REDIRECT_URI,
   TEST_REFRESH_TOKEN,
   TEST_SCOPES,
@@ -592,6 +593,24 @@ describe('Auth0Client', () => {
         {
           expires: 1
         }
+      );
+    });
+
+    it('saves organization hint cookie in storage', async () => {
+      const auth0 = setup({ organization: TEST_ORG_ID });
+
+      await loginWithPopup(auth0);
+
+      expect(<jest.Mock>esCookie.set).toHaveBeenCalledWith(
+        `_legacy_auth0.${TEST_CLIENT_ID}.organization_hint`,
+        TEST_ORG_ID,
+        {}
+      );
+
+      expect(<jest.Mock>esCookie.set).toHaveBeenCalledWith(
+        `auth0.${TEST_CLIENT_ID}.organization_hint`,
+        TEST_ORG_ID,
+        {}
       );
     });
 

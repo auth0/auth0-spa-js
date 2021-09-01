@@ -467,6 +467,13 @@ export default class Auth0Client {
     this.cookieStorage.save(COOKIE_IS_AUTHENTICATED_HINT, true, {
       daysUntilExpire: this.sessionCheckExpiryDays
     });
+
+    if (organizationId) {
+      this.cookieStorage.save(
+        buildOrganizationHintCookieName(this.options.client_id),
+        organizationId
+      );
+    }
   }
 
   /**
