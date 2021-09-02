@@ -3,7 +3,7 @@ import { ClientStorage } from './storage';
 const TRANSACTION_STORAGE_KEY = 'a0.spajs.txs';
 
 interface Transaction {
-  nonce: string;
+  // nonce: string;
   scope: string;
   audience: string;
   appState?: any;

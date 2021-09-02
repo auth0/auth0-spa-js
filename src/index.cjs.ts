@@ -3,7 +3,8 @@ import createAuth0Client, {
   GenericError,
   AuthenticationError,
   TimeoutError,
-  PopupTimeoutError
+  PopupTimeoutError,
+  MfaError
 } from './index';
 
 /**
@@ -14,6 +15,7 @@ const wrapper = createAuth0Client as any;
 wrapper.Auth0Client = Auth0Client;
 wrapper.createAuth0Client = createAuth0Client;
 wrapper.GenericError = GenericError;
+wrapper.MfaError = MfaError;
 wrapper.AuthenticationError = AuthenticationError;
 wrapper.TimeoutError = TimeoutError;
 wrapper.PopupTimeoutError = PopupTimeoutError;

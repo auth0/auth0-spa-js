@@ -27,7 +27,7 @@ import {
 
 import TransactionManager from './transaction-manager';
 import { verify as verifyIdToken } from './jwt';
-import { AuthenticationError, TimeoutError } from './errors';
+import { AuthenticationError, MfaError, TimeoutError } from './errors';
 
 import {
   ClientStorage,
@@ -249,7 +249,7 @@ export default class Auth0Client {
   private _getParams(
     authorizeOptions: BaseLoginOptions,
     state: string,
-    nonce: string,
+    // nonce: string,
     code_challenge: string,
     redirect_uri: string
   ): AuthorizeOptions {
@@ -276,7 +276,7 @@ export default class Auth0Client {
       response_type: 'code',
       response_mode: 'query',
       state,
-      nonce,
+      // nonce,
       redirect_uri: redirect_uri || this.options.redirect_uri,
       code_challenge,
       code_challenge_method: 'S256'
@@ -287,14 +287,14 @@ export default class Auth0Client {
   }
   private _verifyIdToken(
     id_token: string,
-    nonce?: string,
+    // nonce?: string,
     organizationId?: string
   ) {
     return verifyIdToken({
       iss: this.tokenIssuer,
       aud: this.options.client_id,
       id_token,
-      nonce,
+      // nonce,
       organizationId,
       leeway: this.options.leeway,
       max_age: this._parseNumber(this.options.max_age)
@@ -334,7 +334,7 @@ export default class Auth0Client {
     const params = this._getParams(
       authorizeOptions,
       stateIn,
-      nonceIn,
+      // nonceIn,
       code_challenge,
       redirect_uri
     );
@@ -343,7 +343,7 @@ export default class Auth0Client {
     const organizationId = options.organization || this.options.organization;
 
     this.transactionManager.create({
-      nonce: nonceIn,
+      // nonce: nonceIn,
       code_verifier,
       appState,
       scope: params.scope,
@@ -399,7 +399,7 @@ export default class Auth0Client {
     const params = this._getParams(
       authorizeOptions,
       stateIn,
-      nonceIn,
+      // nonceIn,
       code_challenge,
       this.options.redirect_uri || window.location.origin
     );
@@ -443,7 +443,7 @@ export default class Auth0Client {
 
     const decodedToken = this._verifyIdToken(
       authResult.id_token,
-      nonceIn,
+      // nonceIn,
       organizationId
     );
 
@@ -599,7 +599,7 @@ export default class Auth0Client {
 
     const decodedToken = this._verifyIdToken(
       authResult.id_token,
-      transaction.nonce,
+      // transaction.nonce,
       transaction.organizationId
     );
 
@@ -756,6 +756,11 @@ export default class Auth0Client {
         });
 
         return authResult.access_token;
+      } catch (e) {
+        if (e.error === 'mfa_required') {
+          throw new MfaError(e.error, e.error_description, e.mfa_token);
+        }
+        throw e;
       } finally {
         await lock.releaseLock(GET_TOKEN_SILENTLY_LOCK_KEY);
       }
@@ -901,7 +906,7 @@ export default class Auth0Client {
     const params = this._getParams(
       options,
       stateIn,
-      nonceIn,
+      // nonceIn,
       code_challenge,
       options.redirect_uri ||
         this.options.redirect_uri ||
@@ -1000,8 +1005,13 @@ export default class Auth0Client {
 
     let tokenResult: TokenEndpointResponse;
 
-    const { scope, audience, ignoreCache, timeoutInSeconds, ...customOptions } =
-      options;
+    const {
+      scope,
+      audience,
+      ignoreCache,
+      timeoutInSeconds,
+      ...customOptions
+    } = options;
 
     const timeout =
       typeof options.timeoutInSeconds === 'number'

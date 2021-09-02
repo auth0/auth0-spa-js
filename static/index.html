@@ -363,6 +363,7 @@
       var defaultOrganization = '';
 
       var GenericError = createAuth0Client.GenericError;
+      var MfaError = createAuth0Client.MfaError;
 
       Vue.filter('concat', function (value) {
         if (value && value.length > 35) {
@@ -670,6 +671,10 @@
 
                 if (e instanceof GenericError && e.error === 'login_required') {
                   _self.isAuthenticated = false;
+                }
+
+                if (e instanceof MfaError) {
+                  alert('Mfa error');
                 }
               });
           },

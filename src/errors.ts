@@ -37,6 +37,21 @@ export class AuthenticationError extends GenericError {
 }
 
 /**
+ * Thrown when getTokenSilently fails thanks to MFA and `mfa_required` error is returned.
+ */
+export class MfaError extends GenericError {
+  constructor(
+    error: string,
+    error_description: string,
+    public mfa_token?: string
+  ) {
+    super(error, error_description);
+    //https://github.com/Microsoft/TypeScript-wiki/blob/master/Breaking-Changes.md#extending-built-ins-like-error-array-and-map-may-no-longer-work
+    Object.setPrototypeOf(this, MfaError.prototype);
+  }
+}
+
+/**
  * Thrown when silent auth times out (usually due to a configuration issue) or
  * when network requests to the Auth server timeout.
  */

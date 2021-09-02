@@ -226,7 +226,7 @@ export interface AuthorizeOptions extends BaseLoginOptions {
   response_type: string;
   response_mode: string;
   redirect_uri: string;
-  nonce: string;
+  // nonce: string;
   state: string;
   scope: string;
   code_challenge: string;
