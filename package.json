@@ -28,7 +28,7 @@
     "serve:coverage": "serve coverage/lcov-report -n",
     "serve:stats": "serve bundle-stats -n",
     "print-bundle-size": "node ./scripts/print-bundle-size",
-    "prepack": "npm run build && npm run test && node ./scripts/prepack",
+    "prepack": "npm run build && node ./scripts/prepack",
     "release": "node ./scripts/release",
     "release:clean": "node ./scripts/cleanup",
     "publish:cdn": "ccu --trace"
