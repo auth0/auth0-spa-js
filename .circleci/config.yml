@@ -1,4 +1,6 @@
 version: 2.1
+orbs:
+  ship: auth0/ship@0.1.0
 parameters:
   docker_image:
     type: string
@@ -191,3 +193,17 @@ workflows:
       - test_angular:
           requires:
             - build
+      - ship/node-publish:
+          context:
+            - publish-npm
+            - publish-gh
+          filters:
+            branches:
+              only:
+                - master
+          requires:
+            - browserstack
+            - test_gatsby
+            - test_react
+            - test_vue
+            - test_angular
