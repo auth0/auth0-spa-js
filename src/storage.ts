@@ -19,9 +19,11 @@ export type ClientStorage = {
 export const CookieStorage = {
   get<T extends Object>(key: string) {
     const value = Cookies.get(key);
+
     if (typeof value === 'undefined') {
       return;
     }
+
     return <T>JSON.parse(value);
   },
 
@@ -39,10 +41,7 @@ export const CookieStorage = {
       cookieAttributes.expires = options?.daysUntilExpire;
     }
 
-    const serialized =
-      typeof value === 'string' ? value : JSON.stringify(value);
-
-    Cookies.set(key, serialized, cookieAttributes);
+    Cookies.set(key, JSON.stringify(value), cookieAttributes);
   },
 
   remove(key: string) {
@@ -61,11 +60,13 @@ const LEGACY_PREFIX = '_legacy_';
  */
 export const CookieStorageWithLegacySameSite = {
   get<T extends Object>(key: string) {
-    const value = CookieStorage.get(key);
+    const value = CookieStorage.get<T>(key);
+
     if (value) {
       return value;
     }
-    return CookieStorage.get(`${LEGACY_PREFIX}${key}`);
+
+    return CookieStorage.get<T>(`${LEGACY_PREFIX}${key}`);
   },
 
   save(key: string, value: any, options?: ClientStorageOptions): void {
@@ -79,11 +80,11 @@ export const CookieStorageWithLegacySameSite = {
       cookieAttributes.expires = options?.daysUntilExpire;
     }
 
-    const serialized =
-      typeof value === 'string' ? value : JSON.stringify(value);
-
-    Cookies.set(`${LEGACY_PREFIX}${key}`, serialized, cookieAttributes);
-
+    Cookies.set(
+      `${LEGACY_PREFIX}${key}`,
+      JSON.stringify(value),
+      cookieAttributes
+    );
     CookieStorage.save(key, value, options);
   },
 
@@ -101,10 +102,13 @@ export const SessionStorage = {
     if (typeof sessionStorage === 'undefined') {
       return;
     }
+
     const value = sessionStorage.getItem(key);
+
     if (typeof value === 'undefined') {
       return;
     }
+
     return <T>JSON.parse(value);
   },
 
