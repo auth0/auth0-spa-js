@@ -1381,30 +1381,20 @@ describe('Auth0Client', () => {
       );
     });
 
-    // it('removes organization hint cookie if no org claim was returned in the ID token', async () => {
-    //   const auth0 = setup({ organization: TEST_CLIENT_ID });
+    it('removes organization hint cookie if no org claim was returned in the ID token', async () => {
+      const auth0 = setup({});
 
-    //   jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
-    //     access_token: TEST_ACCESS_TOKEN,
-    //     state: TEST_STATE
-    //   });
+      jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
+        access_token: TEST_ACCESS_TOKEN,
+        state: TEST_STATE
+      });
 
-    //   await getTokenSilently(auth0);
+      await getTokenSilently(auth0);
 
-    //   expect(<jest.Mock>esCookie.set).toHaveBeenCalledWith(
-    //     `_legacy_auth0.${TEST_CLIENT_ID}.organization_hint`,
-    //     TEST_ORG_ID,
-    //     {
-    //     }
-    //   );
-
-    //   expect(<jest.Mock>esCookie.set).toHaveBeenCalledWith(
-    //     `_legacy_auth0.${TEST_CLIENT_ID}.organization_hint`,
-    //     TEST_ORG_ID,
-    //     {
-    //     }
-    //   );
-    // });
+      expect(esCookie.remove).toHaveBeenCalledWith(
+        `auth0.${TEST_CLIENT_ID}.organization_hint`
+      );
+    });
 
     it('opens iframe with correct urls and timeout from client options', async () => {
       const auth0 = setup({ authorizeTimeoutInSeconds: 1 });
