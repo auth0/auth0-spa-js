@@ -937,6 +937,12 @@ export default class Auth0Client {
         window.location.origin
     );
 
+    const orgIdHint = this.cookieStorage.get<string>(this.orgHintCookieName);
+
+    if (orgIdHint && !params.organization) {
+      params.organization = orgIdHint;
+    }
+
     const url = this._authorizeUrl({
       ...params,
       prompt: 'none',

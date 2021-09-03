@@ -12,8 +12,11 @@ import { checkSessionFn, fetchResponse, setupFn } from './helpers';
 
 import {
   TEST_ACCESS_TOKEN,
+  TEST_CLIENT_ID,
   TEST_CODE_CHALLENGE,
+  TEST_DOMAIN,
   TEST_ID_TOKEN,
+  TEST_ORG_ID,
   TEST_REFRESH_TOKEN,
   TEST_STATE
 } from '../constants';
@@ -94,7 +97,9 @@ describe('Auth0Client', () => {
         access_token: TEST_ACCESS_TOKEN,
         state: TEST_STATE
       });
+
       (<jest.Mock>esCookie.get).mockReturnValue(true);
+
       mockFetch.mockResolvedValueOnce(
         fetchResponse(true, {
           id_token: TEST_ID_TOKEN,
@@ -110,11 +115,15 @@ describe('Auth0Client', () => {
 
     it('checks the legacy samesite cookie', async () => {
       const auth0 = setup();
+
       (<jest.Mock>esCookie.get).mockReturnValueOnce(undefined);
+
       await checkSession(auth0);
+
       expect(<jest.Mock>esCookie.get).toHaveBeenCalledWith(
         'auth0.is.authenticated'
       );
+
       expect(<jest.Mock>esCookie.get).toHaveBeenCalledWith(
         '_legacy_auth0.is.authenticated'
       );
@@ -124,12 +133,36 @@ describe('Auth0Client', () => {
       const auth0 = setup({
         legacySameSiteCookie: false
       });
+
       await checkSession(auth0);
+
       expect(<jest.Mock>esCookie.get).toHaveBeenCalledWith(
         'auth0.is.authenticated'
       );
+
       expect(<jest.Mock>esCookie.get).not.toHaveBeenCalledWith(
         '_legacy_auth0.is.authenticated'
+      );
+    });
+
+    it('uses the organization hint cookie if available', async () => {
+      const auth0 = setup();
+
+      jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
+        access_token: TEST_ACCESS_TOKEN,
+        state: TEST_STATE
+      });
+
+      (<jest.Mock>esCookie.get)
+        .mockReturnValueOnce(JSON.stringify(true))
+        .mockReturnValueOnce(JSON.stringify(TEST_ORG_ID));
+
+      await checkSession(auth0);
+
+      expect(utils.runIframe).toHaveBeenCalledWith(
+        expect.stringContaining(TEST_ORG_ID),
+        `https://${TEST_DOMAIN}`,
+        undefined
       );
     });
   });

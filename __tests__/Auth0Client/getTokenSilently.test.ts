@@ -1423,6 +1423,77 @@ describe('Auth0Client', () => {
       );
     });
 
+    it('opens iframe with correct urls including organization from the options', async () => {
+      const auth0 = setup({
+        authorizeTimeoutInSeconds: 1,
+        organization: TEST_ORG_ID
+      });
+
+      jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
+        access_token: TEST_ACCESS_TOKEN,
+        state: TEST_STATE
+      });
+
+      await getTokenSilently(auth0);
+
+      expect(utils.runIframe).toHaveBeenCalledWith(
+        expect.stringContaining(TEST_ORG_ID),
+        `https://${TEST_DOMAIN}`,
+        1
+      );
+    });
+
+    it('opens iframe with correct urls including organization from the hint cookie', async () => {
+      const auth0 = setup({ authorizeTimeoutInSeconds: 1 });
+
+      jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
+        access_token: TEST_ACCESS_TOKEN,
+        state: TEST_STATE
+      });
+
+      (esCookie.get as jest.Mock).mockImplementationOnce(
+        key =>
+          key === `auth0.${TEST_CLIENT_ID}.organization_hint` &&
+          JSON.stringify(TEST_ORG_ID)
+      );
+
+      await getTokenSilently(auth0);
+
+      expect(utils.runIframe).toHaveBeenCalledWith(
+        expect.stringContaining(TEST_ORG_ID),
+        `https://${TEST_DOMAIN}`,
+        1
+      );
+    });
+
+    it('opens iframe with correct urls including organization, with options taking precedence over hint cookie', async () => {
+      const auth0 = setup({
+        authorizeTimeoutInSeconds: 1,
+        organization: 'another_test_org'
+      });
+
+      jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
+        access_token: TEST_ACCESS_TOKEN,
+        state: TEST_STATE
+      });
+
+      (esCookie.get as jest.Mock).mockImplementationOnce(
+        key =>
+          key === `auth0.${TEST_CLIENT_ID}.organization_hint` &&
+          JSON.stringify(TEST_ORG_ID)
+      );
+
+      await getTokenSilently(auth0);
+
+      expect(TEST_ORG_ID).not.toEqual('another_test_org');
+
+      expect(utils.runIframe).toHaveBeenCalledWith(
+        expect.stringContaining('another_test_org'),
+        `https://${TEST_DOMAIN}`,
+        1
+      );
+    });
+
     it('opens iframe with correct urls and custom timeout', async () => {
       const auth0 = setup();
 
