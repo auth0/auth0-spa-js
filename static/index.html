@@ -224,6 +224,17 @@
             class="form-control"
             id="organization"
           />
+          <div class="form-check mt-3">
+            <input
+              type="checkbox"
+              class="form-check-input"
+              id="org-login-check"
+              v-model="useOrgAtLogin"
+            />
+            <label for="org-login-check" class="form-check-label"
+              >Apply only at loginWithRedirect</label
+            >
+          </div>
         </div>
 
         <div class="btn-group mb-5">
@@ -350,6 +361,12 @@
               >
             </div>
           </div>
+
+          <div class="col-md-12">
+            <h3 class="mb-3">Client Options</h3>
+
+            <pre><code>{{ clientOptions }}</code></pre>
+          </div>
         </div>
       </form>
     </div>
@@ -410,6 +427,8 @@
             audience: data.audience || defaultAudience,
             organization: data.organization || defaultOrganization,
             useFormData: data.useFormData || false,
+            useOrgAtLogin: data.useOrgAtLogin || false,
+            clientOptions: '',
             audienceScopes: [
               {
                 audience: data.audience || defaultAudience,
@@ -487,13 +506,15 @@
               clientOptions.audience = _self.audience;
             }
 
-            if (_self.organization) {
+            if (_self.organization && !_self.useOrgAtLogin) {
               clientOptions.organization = _self.organization;
             }
 
             if (_self.useCustomStorage) {
               clientOptions.cache = sessionStorageCache;
             }
+
+            _self.clientOptions = JSON.stringify(clientOptions, null, 2);
 
             var _init = function (auth0) {
               _self.auth0 = auth0;
@@ -527,7 +548,8 @@
                 useCache: this.useCache,
                 audience: this.audience,
                 organization: this.organization,
-                useFormData: this.useFormData
+                useFormData: this.useFormData,
+                useOrgAtLogin: this.useOrgAtLogin
               })
             );
 
@@ -545,6 +567,7 @@
             this.useCookiesForTransactions = false;
             this.organization = defaultOrganization;
             this.useFormData = false;
+            this.useOrgAtLogin = false;
             this.saveForm();
           },
           showAuth0Info: function () {
@@ -587,6 +610,7 @@
               .then(function () {
                 return auth0.isAuthenticated().then(function (isAuthenticated) {
                   _self.isAuthenticated = isAuthenticated;
+                  _self.showAuth0Info();
                 });
               })
               .catch(function (e) {
@@ -620,7 +644,7 @@
             var _self = this;
             var options = { scope: _self.audienceScopes[0].scope };
 
-            if (_self.organization) {
+            if (_self.organization && _self.useOrgAtLogin) {
               options.organization = _self.organization;
             }
 
@@ -652,11 +676,11 @@
                 ignoreCache: !_self.useCache
               })
               .then(function (token) {
-                access_tokens.push(token);
                 _self.error = null;
 
                 auth0.isAuthenticated().then(function (isAuthenticated) {
                   _self.isAuthenticated = isAuthenticated;
+                  _self.showAuth0Info();
                 });
               })
               .catch(function (e) {
