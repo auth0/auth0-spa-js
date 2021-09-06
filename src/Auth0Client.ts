@@ -921,7 +921,7 @@ export default class Auth0Client {
       // When a browser is running in a Cross-Origin Isolated context, using iframes is not possible.
       // It doesn't throw an error but times out instead, so we should exit early and inform the user about the reason.
       // https://developer.mozilla.org/en-US/docs/Web/API/crossOriginIsolated
-      if ((window as any)['crossOriginIsolated']) {
+      if ((window as any).crossOriginIsolated) {
         throw new GenericError(
           'login_required',
           'The application is running in a Cross-Origin Isolated context, silently retrieving a token without refresh token is not possible.'
