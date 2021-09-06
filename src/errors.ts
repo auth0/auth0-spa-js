@@ -3,7 +3,7 @@
  */
 export class GenericError extends Error {
   constructor(public error: string, public error_description: string) {
-    super(error_description);
+    super(error_description) /* istanbul ignore next */;
 
     Object.setPrototypeOf(this, GenericError.prototype);
   }
@@ -30,7 +30,7 @@ export class AuthenticationError extends GenericError {
     public state: string,
     public appState: any = null
   ) {
-    super(error, error_description);
+    super(error, error_description) /* istanbul ignore next */;
     //https://github.com/Microsoft/TypeScript-wiki/blob/master/Breaking-Changes.md#extending-built-ins-like-error-array-and-map-may-no-longer-work
     Object.setPrototypeOf(this, AuthenticationError.prototype);
   }
@@ -42,7 +42,7 @@ export class AuthenticationError extends GenericError {
  */
 export class TimeoutError extends GenericError {
   constructor() {
-    super('timeout', 'Timeout');
+    super('timeout', 'Timeout') /* istanbul ignore next */;
     //https://github.com/Microsoft/TypeScript-wiki/blob/master/Breaking-Changes.md#extending-built-ins-like-error-array-and-map-may-no-longer-work
     Object.setPrototypeOf(this, TimeoutError.prototype);
   }
@@ -53,7 +53,7 @@ export class TimeoutError extends GenericError {
  */
 export class PopupTimeoutError extends TimeoutError {
   constructor(public popup: Window) {
-    super();
+    super() /* istanbul ignore next */;
     //https://github.com/Microsoft/TypeScript-wiki/blob/master/Breaking-Changes.md#extending-built-ins-like-error-array-and-map-may-no-longer-work
     Object.setPrototypeOf(this, PopupTimeoutError.prototype);
   }
@@ -61,7 +61,7 @@ export class PopupTimeoutError extends TimeoutError {
 
 export class PopupCancelledError extends GenericError {
   constructor(public popup: Window) {
-    super('cancelled', 'Popup closed');
+    super('cancelled', 'Popup closed') /* istanbul ignore next */;
     //https://github.com/Microsoft/TypeScript-wiki/blob/master/Breaking-Changes.md#extending-built-ins-like-error-array-and-map-may-no-longer-work
     Object.setPrototypeOf(this, PopupCancelledError.prototype);
   }
@@ -76,7 +76,7 @@ export class MfaRequiredError extends GenericError {
     error_description: string,
     public mfa_token: string
   ) {
-    super(error, error_description);
+    super(error, error_description) /* istanbul ignore next */;
     //https://github.com/Microsoft/TypeScript-wiki/blob/master/Breaking-Changes.md#extending-built-ins-like-error-array-and-map-may-no-longer-work
     Object.setPrototypeOf(this, MfaRequiredError.prototype);
   }
