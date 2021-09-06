@@ -297,6 +297,7 @@ export default class Auth0Client {
   private _authorizeUrl(authorizeOptions: AuthorizeOptions) {
     return this._url(`/authorize?${createQueryParams(authorizeOptions)}`);
   }
+
   private _verifyIdToken(
     id_token: string,
     nonce?: string,
@@ -312,11 +313,20 @@ export default class Auth0Client {
       max_age: this._parseNumber(this.options.max_age)
     });
   }
+
   private _parseNumber(value: any): number {
     if (typeof value !== 'string') {
       return value;
     }
     return parseInt(value, 10) || undefined;
+  }
+
+  private _processOrgIdHint(organizationId?: string) {
+    if (organizationId) {
+      this.cookieStorage.save(this.orgHintCookieName, organizationId);
+    } else {
+      this.cookieStorage.remove(this.orgHintCookieName);
+    }
   }
 
   /**
@@ -473,14 +483,7 @@ export default class Auth0Client {
       daysUntilExpire: this.sessionCheckExpiryDays
     });
 
-    if (decodedToken.claims.org_id) {
-      this.cookieStorage.save(
-        this.orgHintCookieName,
-        decodedToken.claims.org_id
-      );
-    } else {
-      this.cookieStorage.remove(this.orgHintCookieName);
-    }
+    this._processOrgIdHint(decodedToken.claims.org_id);
   }
 
   /**
@@ -638,14 +641,7 @@ export default class Auth0Client {
       daysUntilExpire: this.sessionCheckExpiryDays
     });
 
-    if (decodedToken.claims.org_id) {
-      this.cookieStorage.save(
-        this.orgHintCookieName,
-        decodedToken.claims.org_id
-      );
-    } else {
-      this.cookieStorage.remove(this.orgHintCookieName);
-    }
+    this._processOrgIdHint(decodedToken.claims.org_id);
 
     return {
       appState: transaction.appState
@@ -990,11 +986,7 @@ export default class Auth0Client {
 
       const decodedToken = this._verifyIdToken(tokenResult.id_token, nonceIn);
 
-      if (!decodedToken.claims.org_id) {
-        this.cookieStorage.remove(
-          buildOrganizationHintCookieName(this.options.client_id)
-        );
-      }
+      this._processOrgIdHint(decodedToken.claims.org_id);
 
       return {
         ...tokenResult,

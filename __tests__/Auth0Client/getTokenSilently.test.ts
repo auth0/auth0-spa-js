@@ -1381,6 +1381,29 @@ describe('Auth0Client', () => {
       );
     });
 
+    it('stores the org_id in a hint cookie if returned in the ID token claims', async () => {
+      const auth0 = setup({}, { org_id: TEST_ORG_ID });
+
+      jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
+        access_token: TEST_ACCESS_TOKEN,
+        state: TEST_STATE
+      });
+
+      await getTokenSilently(auth0);
+
+      expect(esCookie.set).toHaveBeenCalledWith(
+        `auth0.${TEST_CLIENT_ID}.organization_hint`,
+        JSON.stringify(TEST_ORG_ID),
+        {}
+      );
+
+      expect(esCookie.set).toHaveBeenCalledWith(
+        `_legacy_auth0.${TEST_CLIENT_ID}.organization_hint`,
+        JSON.stringify(TEST_ORG_ID),
+        {}
+      );
+    });
+
     it('removes organization hint cookie if no org claim was returned in the ID token', async () => {
       const auth0 = setup({});
 
