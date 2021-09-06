@@ -66,3 +66,18 @@ export class PopupCancelledError extends GenericError {
     Object.setPrototypeOf(this, PopupCancelledError.prototype);
   }
 }
+
+/**
+ * Error thrown when the token exchange results in a `mfa_required` error
+ */
+export class MfaRequiredError extends GenericError {
+  constructor(
+    error: string,
+    error_description: string,
+    public mfa_token: string
+  ) {
+    super(error, error_description);
+    //https://github.com/Microsoft/TypeScript-wiki/blob/master/Breaking-Changes.md#extending-built-ins-like-error-array-and-map-may-no-longer-work
+    Object.setPrototypeOf(this, MfaRequiredError.prototype);
+  }
+}
