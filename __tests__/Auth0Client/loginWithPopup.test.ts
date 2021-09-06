@@ -614,6 +614,20 @@ describe('Auth0Client', () => {
       );
     });
 
+    it('removes the organization hint cookie if no org_id claim was returned in the ID token', async () => {
+      const auth0 = setup();
+
+      await loginWithPopup(auth0);
+
+      expect(<jest.Mock>esCookie.remove).toHaveBeenCalledWith(
+        `_legacy_auth0.${TEST_CLIENT_ID}.organization_hint`
+      );
+
+      expect(<jest.Mock>esCookie.remove).toHaveBeenCalledWith(
+        `auth0.${TEST_CLIENT_ID}.organization_hint`
+      );
+    });
+
     it('saves `auth0.is.authenticated` key in storage for an extended period', async () => {
       const auth0 = setup({
         sessionCheckExpiryDays: 2

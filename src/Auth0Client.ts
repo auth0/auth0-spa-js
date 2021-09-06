@@ -478,6 +478,8 @@ export default class Auth0Client {
         this.orgHintCookieName,
         decodedToken.claims.org_id
       );
+    } else {
+      this.cookieStorage.remove(this.orgHintCookieName);
     }
   }
 
