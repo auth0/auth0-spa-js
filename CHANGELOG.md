@@ -1,5 +1,13 @@
 # Change Log
 
+## [v1.17.1](https://github.com/auth0/auth0-spa-js/tree/v1.17.1) (2021-09-03)
+
+[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v1.17.0...v1.17.1)
+
+**Fixed**
+
+- Correct cache interface [\#779](https://github.com/auth0/auth0-spa-js/pull/779) ([employee451](https://github.com/employee451))
+
 ## [v1.17.0](https://github.com/auth0/auth0-spa-js/tree/v1.17.0) (2021-08-03)
 
 [Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v1.16.1...v1.17.0)
