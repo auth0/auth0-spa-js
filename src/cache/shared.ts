@@ -85,7 +85,7 @@ export type MaybePromise<T> = Promise<T> | T;
 
 export interface ICache {
   set<T = Cacheable>(key: string, entry: T): MaybePromise<void>;
-  get<T = Cacheable>(key: string): MaybePromise<T>;
+  get<T = Cacheable>(key: string): MaybePromise<T | null>;
   remove(key: string): MaybePromise<void>;
   allKeys?(): MaybePromise<string[]>;
 }

@@ -336,7 +336,6 @@ describe('utils', () => {
        * then rolling back to real timers
        */
       setTimeout(() => {
-        jest.runOnlyPendingTimers();
         jest.advanceTimersByTime(seconds * 1000);
       }, 10);
 
@@ -361,7 +360,6 @@ describe('utils', () => {
        * then rolling back to real timers
        */
       setTimeout(() => {
-        jest.runOnlyPendingTimers();
         jest.advanceTimersByTime(DEFAULT_AUTHORIZE_TIMEOUT_IN_SECONDS * 1000);
       }, 10);
 
@@ -383,7 +381,6 @@ describe('utils', () => {
        * then rolling back to real timers
        */
       setTimeout(() => {
-        jest.runOnlyPendingTimers();
         jest.advanceTimersByTime(DEFAULT_AUTHORIZE_TIMEOUT_IN_SECONDS * 1000);
       }, 10);
 
