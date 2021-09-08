@@ -523,6 +523,16 @@
 
             _self.clientOptions = JSON.stringify(clientOptions, null, 2);
 
+            if (_self.organization) {
+              const claims = {
+                id_token: {
+                  org_id: { values: [_self.organization] }
+                }
+              };
+
+              clientOptions.claims = JSON.stringify(claims);
+            }
+
             var _init = function (auth0) {
               _self.auth0 = auth0;
               window.auth0 = auth0; // Cypress integration tests support
