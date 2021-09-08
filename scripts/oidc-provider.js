@@ -53,7 +53,6 @@ const config = {
     return {
       accountId: id,
       claims(use, scope, claims) {
-        console.log(claims);
         return {
           sub: id,
           ...(claims?.org_id ? { org_id: claims.org_id.values[0] } : null)
