@@ -1508,7 +1508,7 @@ describe('Auth0Client', () => {
       expect(auth0.logout).toHaveBeenCalledWith({ localOnly: true });
     });
 
-    fit('when not using Refresh Tokens and crossOriginIsolated is true, login_required is returned and the user is logged out', async () => {
+    it('when not using Refresh Tokens and crossOriginIsolated is true, login_required is returned and the user is logged out', async () => {
       const auth0 = setup();
 
       await loginWithRedirect(auth0);
