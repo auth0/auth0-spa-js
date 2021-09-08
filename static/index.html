@@ -223,6 +223,7 @@
             v-model="organization"
             class="form-control"
             id="organization"
+            data-cy="organizationId"
           />
           <div class="form-check mt-3">
             <input
@@ -230,6 +231,7 @@
               class="form-check-input"
               id="org-login-check"
               v-model="useOrgAtLogin"
+              data-cy="useOrgAtLogin"
             />
             <label for="org-login-check" class="form-check-label"
               >Apply only at loginWithRedirect</label
@@ -238,7 +240,12 @@
         </div>
 
         <div class="btn-group mb-5">
-          <button @click="saveForm" class="btn btn-primary" id="save-config">
+          <button
+            @click="saveForm"
+            class="btn btn-primary"
+            id="save-config"
+            data-cy="saveSettings"
+          >
             Save
           </button>
 
@@ -644,8 +651,18 @@
             var _self = this;
             var options = { scope: _self.audienceScopes[0].scope };
 
-            if (_self.organization && _self.useOrgAtLogin) {
-              options.organization = _self.organization;
+            if (_self.organization) {
+              if (_self.useOrgAtLogin) {
+                options.organization = _self.organization;
+              }
+
+              const claims = {
+                id_token: {
+                  org_id: { values: [_self.organization] }
+                }
+              };
+
+              options.claims = JSON.stringify(claims);
             }
 
             this.auth0.loginWithRedirect(options);
