@@ -665,14 +665,6 @@
               if (_self.useOrgAtLogin) {
                 options.organization = _self.organization;
               }
-
-              const claims = {
-                id_token: {
-                  org_id: { values: [_self.organization] }
-                }
-              };
-
-              options.claims = JSON.stringify(claims);
             }
 
             this.auth0.loginWithRedirect(options);
