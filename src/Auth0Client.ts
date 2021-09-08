@@ -340,7 +340,6 @@ export default class Auth0Client {
    *
    * @param options
    */
-
   public async buildAuthorizeUrl(
     options: RedirectLoginOptions = {}
   ): Promise<string> {

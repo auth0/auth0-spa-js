@@ -676,11 +676,11 @@
                 ignoreCache: !_self.useCache
               })
               .then(function (token) {
+                access_tokens.push(token);
                 _self.error = null;
 
                 auth0.isAuthenticated().then(function (isAuthenticated) {
                   _self.isAuthenticated = isAuthenticated;
-                  _self.showAuth0Info();
                 });
               })
               .catch(function (e) {
