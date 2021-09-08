@@ -29,8 +29,6 @@
     "serve:stats": "serve bundle-stats -n",
     "print-bundle-size": "node ./scripts/print-bundle-size",
     "prepack": "npm run build && node ./scripts/prepack",
-    "release": "node ./scripts/release",
-    "release:clean": "node ./scripts/cleanup",
     "publish:cdn": "ccu --trace"
   },
   "devDependencies": {
@@ -83,7 +81,7 @@
   "dependencies": {
     "abortcontroller-polyfill": "^1.7.3",
     "browser-tabs-lock": "^1.2.14",
-    "core-js": "^3.16.1",
+    "core-js": "^3.16.2",
     "es-cookie": "^1.3.2",
     "fast-text-encoding": "^1.0.3",
     "promise-polyfill": "^8.2.0",
