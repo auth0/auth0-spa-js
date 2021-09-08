@@ -38,7 +38,7 @@ export const CookieStorage = {
     }
 
     if (options?.daysUntilExpire) {
-      cookieAttributes.expires = options?.daysUntilExpire;
+      cookieAttributes.expires = options.daysUntilExpire;
     }
 
     Cookies.set(key, JSON.stringify(value), cookieAttributes);
@@ -77,7 +77,7 @@ export const CookieStorageWithLegacySameSite = {
     }
 
     if (options?.daysUntilExpire) {
-      cookieAttributes.expires = options?.daysUntilExpire;
+      cookieAttributes.expires = options.daysUntilExpire;
     }
 
     Cookies.set(
@@ -99,6 +99,7 @@ export const CookieStorageWithLegacySameSite = {
  */
 export const SessionStorage = {
   get<T extends Object>(key: string) {
+    /* istanbul ignore next */
     if (typeof sessionStorage === 'undefined') {
       return;
     }
