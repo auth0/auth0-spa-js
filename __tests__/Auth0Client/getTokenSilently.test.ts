@@ -1507,5 +1507,26 @@ describe('Auth0Client', () => {
       ).rejects.toThrow('login_required');
       expect(auth0.logout).toHaveBeenCalledWith({ localOnly: true });
     });
+
+    it('when not using Refresh Tokens and crossOriginIsolated is true, login_required is returned and the user is logged out', async () => {
+      const auth0 = setup();
+
+      await loginWithRedirect(auth0);
+
+      mockFetch.mockReset();
+
+      jest.spyOn(auth0, 'logout');
+      const originalWindow = { ...window };
+      const windowSpy = jest.spyOn(global as any, 'window', 'get');
+      windowSpy.mockImplementation(() => ({
+        ...originalWindow,
+        crossOriginIsolated: true
+      }));
+
+      await expect(
+        auth0.getTokenSilently({ ignoreCache: true })
+      ).rejects.toHaveProperty('error', 'login_required');
+      expect(auth0.logout).toHaveBeenCalledWith({ localOnly: true });
+    });
   });
 });
