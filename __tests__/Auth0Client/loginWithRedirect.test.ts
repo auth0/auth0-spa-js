@@ -290,7 +290,7 @@ describe('Auth0Client', () => {
       await auth0.loginWithRedirect();
 
       expect((sessionStorage.setItem as jest.Mock).mock.calls[0][0]).toBe(
-        'a0.spajs.txs'
+        `a0.spajs.txs.${TEST_CLIENT_ID}`
       );
     });
 
@@ -302,7 +302,7 @@ describe('Auth0Client', () => {
       // Don't necessarily need to check the contents of the cookie (the storage tests are doing that),
       // just that cookies were used when I set the correct option.
       expect((mockCookies.set as jest.Mock).mock.calls[1][0]).toEqual(
-        'a0.spajs.txs'
+        `a0.spajs.txs.${TEST_CLIENT_ID}`
       );
     });
 

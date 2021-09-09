@@ -218,7 +218,12 @@ export default class Auth0Client {
       : SessionStorage;
 
     this.scope = this.options.scope;
-    this.transactionManager = new TransactionManager(transactionStorage);
+
+    this.transactionManager = new TransactionManager(
+      transactionStorage,
+      this.options.client_id
+    );
+
     this.cacheManager = new CacheManager(cache, this.options.client_id);
     this.domainUrl = getDomain(this.options.domain);
     this.tokenIssuer = getTokenIssuer(this.options.issuer, this.domainUrl);

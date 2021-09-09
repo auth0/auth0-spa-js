@@ -1,6 +1,6 @@
 import { ClientStorage } from './storage';
 
-const TRANSACTION_STORAGE_KEY = 'a0.spajs.txs';
+const TRANSACTION_STORAGE_KEY_PREFIX = 'a0.spajs.txs';
 
 interface Transaction {
   nonce: string;
@@ -14,15 +14,17 @@ interface Transaction {
 
 export default class TransactionManager {
   private transaction: Transaction;
+  private storageKey: string;
 
-  constructor(private storage: ClientStorage) {
-    this.transaction = this.storage.get(TRANSACTION_STORAGE_KEY);
+  constructor(private storage: ClientStorage, private clientId: string) {
+    this.storageKey = `${TRANSACTION_STORAGE_KEY_PREFIX}.${clientId}`;
+    this.transaction = this.storage.get(this.storageKey);
   }
 
   public create(transaction: Transaction) {
     this.transaction = transaction;
 
-    this.storage.save(TRANSACTION_STORAGE_KEY, transaction, {
+    this.storage.save(this.storageKey, transaction, {
       daysUntilExpire: 1
     });
   }
@@ -33,6 +35,6 @@ export default class TransactionManager {
 
   public remove() {
     delete this.transaction;
-    this.storage.remove(TRANSACTION_STORAGE_KEY);
+    this.storage.remove(this.storageKey);
   }
 }
