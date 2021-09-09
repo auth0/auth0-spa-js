@@ -27,7 +27,7 @@ import {
 
 import TransactionManager from './transaction-manager';
 import { verify as verifyIdToken } from './jwt';
-import { AuthenticationError, TimeoutError } from './errors';
+import { AuthenticationError, GenericError, TimeoutError } from './errors';
 
 import {
   ClientStorage,
@@ -950,6 +950,16 @@ export default class Auth0Client {
       options.timeoutInSeconds || this.options.authorizeTimeoutInSeconds;
 
     try {
+      // When a browser is running in a Cross-Origin Isolated context, using iframes is not possible.
+      // It doesn't throw an error but times out instead, so we should exit early and inform the user about the reason.
+      // https://developer.mozilla.org/en-US/docs/Web/API/crossOriginIsolated
+      if ((window as any).crossOriginIsolated) {
+        throw new GenericError(
+          'login_required',
+          'The application is running in a Cross-Origin Isolated context, silently retrieving a token without refresh token is not possible.'
+        );
+      }
+
       const codeResult = await runIframe(url, this.domainUrl, timeout);
 
       if (stateIn !== codeResult.state) {

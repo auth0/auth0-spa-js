@@ -29,7 +29,8 @@ export {
   AuthenticationError,
   TimeoutError,
   PopupTimeoutError,
-  PopupCancelledError
+  PopupCancelledError,
+  MfaRequiredError
 } from './errors';
 
 export { ICache, LocalStorageCache, InMemoryCache, Cacheable } from './cache';

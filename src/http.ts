@@ -7,7 +7,7 @@ import {
 
 import { sendMessage } from './worker/worker.utils';
 import { FetchOptions } from './global';
-import { GenericError } from './errors';
+import { GenericError, MfaRequiredError } from './errors';
 
 export const createAbortController = () => new AbortController();
 
@@ -133,7 +133,7 @@ export async function getJSON<T>(
   }
 
   const {
-    json: { error, error_description, ...success },
+    json: { error, error_description, ...data },
     ok
   } = response;
 
@@ -141,8 +141,12 @@ export async function getJSON<T>(
     const errorMessage =
       error_description || `HTTP error. Unable to fetch ${url}`;
 
+    if (error === 'mfa_required') {
+      throw new MfaRequiredError(error, errorMessage, data.mfa_token);
+    }
+
     throw new GenericError(error || 'request_error', errorMessage);
   }
 
-  return success;
+  return data;
 }
