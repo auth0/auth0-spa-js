@@ -25,7 +25,8 @@
       <div x-data="clientData">
         <div class="mb-5" v-for="client in clients" :key="client.id">
           <h2 v-text="client.name" class="text-2xl"></h2>
-          <p class="text-gray-400 mb-5" v-text="client.description"></p>
+          <p class="text-gray-400" v-text="client.description"></p>
+          <p class="text-gray-400 mb-5" v-text="client.options.client_id"></p>
           <button
             type="submit"
             class="p-2 rounded bg-blue-700 text-white"
@@ -80,7 +81,7 @@
                 options: {
                   ...commonOptions,
                   domain: 'brucke.auth0.com',
-                  client_id: 'wLSIP47wM39wKdDmOj6Zb5eSEw3JVhVp'
+                  client_id: 'IRLdsf27vEPiV5NNQjlNK7fwgmRuwyJY'
                 },
                 id_token: '',
                 access_token: '',
@@ -94,9 +95,25 @@
                 id: 2,
                 options: {
                   ...commonOptions,
-                  domain: 'elkdanger.eu.auth0.com',
-                  client_id: 'TgqxTDJFG2G3H5TjqvIEEVL5i6IcZGye',
+                  domain: 'brucke.auth0.com',
+                  client_id: 'Q4TgHIYRcUBh2xe6l049ZR7X5JAeLzwI',
                   useRefreshTokens: true
+                },
+                id_token: '',
+                access_token: '',
+                error: null
+              },
+              {
+                name: 'Client 3',
+                get description() {
+                  return `Using ${this.options.domain} and cookies for transactions`;
+                },
+                id: 3,
+                options: {
+                  ...commonOptions,
+                  domain: 'brucke.auth0.com',
+                  client_id: 'Y7VQRCOOVeU7b0Y36cLA5OS4fUbIJfwV',
+                  useCookiesForTransactions: true
                 },
                 id_token: '',
                 access_token: '',
