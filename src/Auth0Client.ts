@@ -73,6 +73,7 @@ import {
 import TokenWorker from './worker/token.worker.ts';
 import { isIE11 } from './user-agent';
 import { singlePromise, retryPromise } from './promise-utils';
+import { CacheKeyManifest } from './cache/key-manifest';
 
 /**
  * @ignore
@@ -224,7 +225,13 @@ export default class Auth0Client {
       this.options.client_id
     );
 
-    this.cacheManager = new CacheManager(cache, this.options.client_id);
+    this.cacheManager = new CacheManager(
+      cache,
+      !cache.allKeys
+        ? new CacheKeyManifest(cache, this.options.client_id)
+        : null
+    );
+
     this.domainUrl = getDomain(this.options.domain);
     this.tokenIssuer = getTokenIssuer(this.options.issuer, this.domainUrl);
 
@@ -912,10 +919,15 @@ export default class Auth0Client {
       window.location.assign(url);
     };
 
+    let clientId;
+    if (options.client_id !== null) {
+      clientId = options.client_id || this.options.client_id;
+    }
+
     if (this.options.cache) {
-      return this.cacheManager.clear().then(() => postCacheClear());
+      return this.cacheManager.clear(clientId).then(() => postCacheClear());
     } else {
-      this.cacheManager.clearSync();
+      this.cacheManager.clearSync(clientId);
       postCacheClear();
     }
   }

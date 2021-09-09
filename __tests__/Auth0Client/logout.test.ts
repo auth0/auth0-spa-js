@@ -5,15 +5,11 @@ import { verify } from '../../src/jwt';
 import { MessageChannel } from 'worker_threads';
 import * as utils from '../../src/utils';
 import * as scope from '../../src/scope';
-
 import { expectToHaveBeenCalledWithAuth0ClientParam } from '../helpers';
-
 import { TEST_AUTH0_CLIENT_QUERY_STRING } from '../constants';
 
 // @ts-ignore
-
-import { loginWithPopupFn, loginWithRedirectFn, setupFn } from './helpers';
-
+import { loginWithRedirectFn, setupFn } from './helpers';
 import { TEST_CLIENT_ID, TEST_CODE_CHALLENGE, TEST_DOMAIN } from '../constants';
 import { InMemoryAsyncCacheNoKeys } from '../cache/shared';
 
@@ -126,6 +122,7 @@ describe('Auth0Client', () => {
 
     it('clears the cache', async () => {
       const auth0 = setup();
+
       jest
         .spyOn(auth0['cacheManager'], 'clearSync')
         .mockReturnValueOnce(undefined);

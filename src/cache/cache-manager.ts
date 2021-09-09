@@ -11,15 +11,7 @@ import {
 const DEFAULT_EXPIRY_ADJUSTMENT_SECONDS = 0;
 
 export class CacheManager {
-  private readonly keyManifest?: CacheKeyManifest;
-
-  constructor(private cache: ICache, clientId: string) {
-    // If the cache implementation doesn't provide an `allKeys` method,
-    // use a built-in key manifest.
-    if (!cache.allKeys) {
-      this.keyManifest = new CacheKeyManifest(this.cache, clientId);
-    }
-  }
+  constructor(private cache: ICache, private keyManifest?: CacheKeyManifest) {}
 
   async get(
     cacheKey: CacheKey,
@@ -77,15 +69,17 @@ export class CacheManager {
     await this.keyManifest?.add(cacheKey.toKey());
   }
 
-  async clear(): Promise<void> {
+  async clear(clientId?: string): Promise<void> {
     const keys = await this.getCacheKeys();
 
     /* istanbul ignore next */
     if (!keys) return;
 
-    keys.forEach(async key => {
-      await this.cache.remove(key);
-    });
+    keys
+      .filter(key => (clientId ? key.includes(clientId) : true))
+      .forEach(async key => {
+        await this.cache.remove(key);
+      });
 
     await this.keyManifest?.clear();
   }
@@ -93,15 +87,17 @@ export class CacheManager {
   /**
    * Note: only call this if you're sure one of our internal (synchronous) caches are being used.
    */
-  clearSync(): void {
+  clearSync(clientId?: string): void {
     const keys = this.cache.allKeys() as string[];
 
     /* istanbul ignore next */
     if (!keys) return;
 
-    keys.forEach(key => {
-      this.cache.remove(key);
-    });
+    keys
+      .filter(key => (clientId ? key.includes(clientId) : true))
+      .forEach(key => {
+        this.cache.remove(key);
+      });
   }
 
   private wrapCacheEntry(entry: CacheEntry): WrappedCacheEntry {
