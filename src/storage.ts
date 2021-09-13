@@ -19,21 +19,28 @@ export type ClientStorage = {
 export const CookieStorage = {
   get<T extends Object>(key: string) {
     const value = Cookies.get(key);
+
     if (typeof value === 'undefined') {
       return;
     }
+
     return <T>JSON.parse(value);
   },
 
   save(key: string, value: any, options?: ClientStorageOptions): void {
     let cookieAttributes: Cookies.CookieAttributes = {};
+
     if ('https:' === window.location.protocol) {
       cookieAttributes = {
         secure: true,
         sameSite: 'none'
       };
     }
-    cookieAttributes.expires = options.daysUntilExpire;
+
+    if (options?.daysUntilExpire) {
+      cookieAttributes.expires = options.daysUntilExpire;
+    }
+
     Cookies.set(key, JSON.stringify(value), cookieAttributes);
   },
 
@@ -53,19 +60,26 @@ const LEGACY_PREFIX = '_legacy_';
  */
 export const CookieStorageWithLegacySameSite = {
   get<T extends Object>(key: string) {
-    const value = CookieStorage.get(key);
+    const value = CookieStorage.get<T>(key);
+
     if (value) {
       return value;
     }
-    return CookieStorage.get(`${LEGACY_PREFIX}${key}`);
+
+    return CookieStorage.get<T>(`${LEGACY_PREFIX}${key}`);
   },
 
   save(key: string, value: any, options?: ClientStorageOptions): void {
     let cookieAttributes: Cookies.CookieAttributes = {};
+
     if ('https:' === window.location.protocol) {
       cookieAttributes = { secure: true };
     }
-    cookieAttributes.expires = options.daysUntilExpire;
+
+    if (options?.daysUntilExpire) {
+      cookieAttributes.expires = options.daysUntilExpire;
+    }
+
     Cookies.set(
       `${LEGACY_PREFIX}${key}`,
       JSON.stringify(value),
@@ -85,13 +99,17 @@ export const CookieStorageWithLegacySameSite = {
  */
 export const SessionStorage = {
   get<T extends Object>(key: string) {
+    /* istanbul ignore next */
     if (typeof sessionStorage === 'undefined') {
       return;
     }
+
     const value = sessionStorage.getItem(key);
+
     if (typeof value === 'undefined') {
       return;
     }
+
     return <T>JSON.parse(value);
   },
 

@@ -29,6 +29,7 @@ import {
   TEST_DOMAIN,
   TEST_ID_TOKEN,
   TEST_NONCE,
+  TEST_ORG_ID,
   TEST_REDIRECT_URI,
   TEST_SCOPES,
   TEST_STATE
@@ -342,6 +343,38 @@ describe('Auth0Client', () => {
         expect.objectContaining({
           organizationId: 'test_org_123'
         })
+      );
+    });
+
+    it('stores the organization ID in a hint cookie', async () => {
+      const auth0 = setup({}, { org_id: TEST_ORG_ID });
+
+      await loginWithRedirect(auth0);
+
+      expect(<jest.Mock>esCookie.set).toHaveBeenCalledWith(
+        `auth0.${TEST_CLIENT_ID}.organization_hint`,
+        JSON.stringify(TEST_ORG_ID),
+        {}
+      );
+
+      expect(<jest.Mock>esCookie.set).toHaveBeenCalledWith(
+        `_legacy_auth0.${TEST_CLIENT_ID}.organization_hint`,
+        JSON.stringify(TEST_ORG_ID),
+        {}
+      );
+    });
+
+    it('removes the org hint cookie if no org_id claim in the ID token', async () => {
+      const auth0 = setup({});
+
+      await loginWithRedirect(auth0);
+
+      expect(<jest.Mock>esCookie.remove).toHaveBeenCalledWith(
+        `auth0.${TEST_CLIENT_ID}.organization_hint`
+      );
+
+      expect(<jest.Mock>esCookie.remove).toHaveBeenCalledWith(
+        `_legacy_auth0.${TEST_CLIENT_ID}.organization_hint`
       );
     });
 

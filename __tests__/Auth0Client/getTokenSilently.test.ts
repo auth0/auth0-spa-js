@@ -10,7 +10,11 @@ import * as api from '../../src/api';
 
 import { expectToHaveBeenCalledWithAuth0ClientParam } from '../helpers';
 
-import { GET_TOKEN_SILENTLY_LOCK_KEY, TEST_AUDIENCE } from '../constants';
+import {
+  GET_TOKEN_SILENTLY_LOCK_KEY,
+  TEST_AUDIENCE,
+  TEST_ORG_ID
+} from '../constants';
 
 // @ts-ignore
 import { acquireLockSpy } from 'browser-tabs-lock';
@@ -1377,6 +1381,44 @@ describe('Auth0Client', () => {
       );
     });
 
+    it('stores the org_id in a hint cookie if returned in the ID token claims', async () => {
+      const auth0 = setup({}, { org_id: TEST_ORG_ID });
+
+      jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
+        access_token: TEST_ACCESS_TOKEN,
+        state: TEST_STATE
+      });
+
+      await getTokenSilently(auth0);
+
+      expect(esCookie.set).toHaveBeenCalledWith(
+        `auth0.${TEST_CLIENT_ID}.organization_hint`,
+        JSON.stringify(TEST_ORG_ID),
+        {}
+      );
+
+      expect(esCookie.set).toHaveBeenCalledWith(
+        `_legacy_auth0.${TEST_CLIENT_ID}.organization_hint`,
+        JSON.stringify(TEST_ORG_ID),
+        {}
+      );
+    });
+
+    it('removes organization hint cookie if no org claim was returned in the ID token', async () => {
+      const auth0 = setup({});
+
+      jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
+        access_token: TEST_ACCESS_TOKEN,
+        state: TEST_STATE
+      });
+
+      await getTokenSilently(auth0);
+
+      expect(esCookie.remove).toHaveBeenCalledWith(
+        `auth0.${TEST_CLIENT_ID}.organization_hint`
+      );
+    });
+
     it('opens iframe with correct urls and timeout from client options', async () => {
       const auth0 = setup({ authorizeTimeoutInSeconds: 1 });
 
@@ -1389,6 +1431,77 @@ describe('Auth0Client', () => {
 
       expect(utils.runIframe).toHaveBeenCalledWith(
         expect.any(String),
+        `https://${TEST_DOMAIN}`,
+        1
+      );
+    });
+
+    it('opens iframe with correct urls including organization from the options', async () => {
+      const auth0 = setup({
+        authorizeTimeoutInSeconds: 1,
+        organization: TEST_ORG_ID
+      });
+
+      jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
+        access_token: TEST_ACCESS_TOKEN,
+        state: TEST_STATE
+      });
+
+      await getTokenSilently(auth0);
+
+      expect(utils.runIframe).toHaveBeenCalledWith(
+        expect.stringContaining(TEST_ORG_ID),
+        `https://${TEST_DOMAIN}`,
+        1
+      );
+    });
+
+    it('opens iframe with correct urls including organization from the hint cookie', async () => {
+      const auth0 = setup({ authorizeTimeoutInSeconds: 1 });
+
+      jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
+        access_token: TEST_ACCESS_TOKEN,
+        state: TEST_STATE
+      });
+
+      (esCookie.get as jest.Mock).mockImplementationOnce(
+        key =>
+          key === `auth0.${TEST_CLIENT_ID}.organization_hint` &&
+          JSON.stringify(TEST_ORG_ID)
+      );
+
+      await getTokenSilently(auth0);
+
+      expect(utils.runIframe).toHaveBeenCalledWith(
+        expect.stringContaining(TEST_ORG_ID),
+        `https://${TEST_DOMAIN}`,
+        1
+      );
+    });
+
+    it('opens iframe with correct urls including organization, with options taking precedence over hint cookie', async () => {
+      const auth0 = setup({
+        authorizeTimeoutInSeconds: 1,
+        organization: 'another_test_org'
+      });
+
+      jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
+        access_token: TEST_ACCESS_TOKEN,
+        state: TEST_STATE
+      });
+
+      (esCookie.get as jest.Mock).mockImplementationOnce(
+        key =>
+          key === `auth0.${TEST_CLIENT_ID}.organization_hint` &&
+          JSON.stringify(TEST_ORG_ID)
+      );
+
+      await getTokenSilently(auth0);
+
+      expect(TEST_ORG_ID).not.toEqual('another_test_org');
+
+      expect(utils.runIframe).toHaveBeenCalledWith(
+        expect.stringContaining('another_test_org'),
         `https://${TEST_DOMAIN}`,
         1
       );

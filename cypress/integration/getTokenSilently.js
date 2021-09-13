@@ -62,12 +62,12 @@ describe('getTokenSilently', () => {
       it('can get the access token after refreshing the page', () => {
         whenReady();
 
-        cy.toggleSwitch('local-storage');
+        cy.setSwitch('local-storage', true);
         cy.login();
         cy.reload();
         cy.getTokenSilently();
-
         cy.getAccessTokens().should('have.length', 1);
+
         cy.window().then(win => {
           expect(
             win.localStorage.getItem(
@@ -96,9 +96,9 @@ describe('getTokenSilently', () => {
     it('retrieves an access token using a refresh token', () => {
       whenReady();
 
-      cy.toggleSwitch('local-storage');
-      cy.toggleSwitch('use-cache');
-      cy.toggleSwitch('refresh-tokens');
+      cy.setSwitch('local-storage', true);
+      cy.setSwitch('use-cache', false);
+      cy.setSwitch('refresh-tokens', true);
 
       cy.login();
 
@@ -123,9 +123,9 @@ describe('getTokenSilently', () => {
     it('retrieves an access token for another audience using a refresh token', () => {
       whenReady();
 
-      cy.toggleSwitch('local-storage');
-      cy.toggleSwitch('use-cache');
-      cy.toggleSwitch('refresh-tokens');
+      cy.setSwitch('local-storage', true);
+      cy.setSwitch('use-cache', false);
+      cy.setSwitch('refresh-tokens', true);
       cy.login();
 
       cy.intercept({

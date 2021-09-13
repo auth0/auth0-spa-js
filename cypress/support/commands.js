@@ -51,9 +51,21 @@ Cypress.Commands.add('logout', () => {
   });
 });
 
-Cypress.Commands.add('toggleSwitch', name =>
-  cy.get(`[data-cy=switch-${name}]`).click()
-);
+Cypress.Commands.add('setSwitch', (name, value) => {
+  // Can only use `check` or `uncheck` on an actual checkbox, but the switch
+  // value we're given is for the label. Get the `for` attribute to find the actual
+  // checkbox and return that instead.
+  const checkbox = () =>
+    cy
+      .get(`[data-cy=switch-${name}]`)
+      .then($label => cy.get(`#${$label.attr('for')}`));
+
+  // These are forced because of the way the checkboxes on the playground are rendered
+  // (they're covered by some UI to make them look pretty)
+  !!value === true
+    ? checkbox().check({ force: true })
+    : checkbox().uncheck({ force: true });
+});
 
 Cypress.Commands.add('setScope', scope =>
   cy.get(`[data-cy=scope]`).clear().type(scope)

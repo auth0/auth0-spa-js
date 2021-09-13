@@ -1,8 +1,8 @@
 import { Provider, interactionPolicy } from 'oidc-provider';
 
 const { base, Prompt, Check } = interactionPolicy;
-
 const policy = base();
+
 policy.add(
   new Prompt(
     { name: 'noop', requestable: false },
@@ -20,11 +20,14 @@ const config = {
   clients: [
     {
       client_id: 'testing',
-      redirect_uris: ['http://127.0.0.1:3000'],
+      redirect_uris: ['http://127.0.0.1:3000', 'http://localhost:3000'],
       token_endpoint_auth_method: 'none',
       grant_types: ['authorization_code', 'refresh_token']
     }
   ],
+  claims: {
+    org_id: null
+  },
   routes: {
     authorization: '/authorize', // lgtm [js/hardcoded-credentials]
     token: '/oauth/token',
@@ -37,11 +40,25 @@ const config = {
   features: {
     webMessageResponseMode: {
       enabled: true
+    },
+    claimsParameter: {
+      enabled: true
     }
   },
   rotateRefreshToken: true,
   interactions: {
     policy
+  },
+  findAccount(ctx, id) {
+    return {
+      accountId: id,
+      claims(use, scope, claims) {
+        return {
+          sub: id,
+          ...(claims?.org_id ? { org_id: claims.org_id.values[0] } : null)
+        };
+      }
+    };
   }
 };
 

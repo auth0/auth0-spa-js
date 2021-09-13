@@ -223,11 +223,29 @@
             v-model="organization"
             class="form-control"
             id="organization"
+            data-cy="organizationId"
           />
+          <div class="form-check mt-3">
+            <input
+              type="checkbox"
+              class="form-check-input"
+              id="org-login-check"
+              v-model="useOrgAtLogin"
+              data-cy="useOrgAtLogin"
+            />
+            <label for="org-login-check" class="form-check-label"
+              >Apply only at loginWithRedirect</label
+            >
+          </div>
         </div>
 
         <div class="btn-group mb-5">
-          <button @click="saveForm" class="btn btn-primary" id="save-config">
+          <button
+            @click="saveForm"
+            class="btn btn-primary"
+            id="save-config"
+            data-cy="saveSettings"
+          >
             Save
           </button>
 
@@ -350,6 +368,12 @@
               >
             </div>
           </div>
+
+          <div class="col-md-12">
+            <h3 class="mb-3">Client Options</h3>
+
+            <pre><code>{{ clientOptions }}</code></pre>
+          </div>
         </div>
       </form>
     </div>
@@ -410,6 +434,8 @@
             audience: data.audience || defaultAudience,
             organization: data.organization || defaultOrganization,
             useFormData: data.useFormData || false,
+            useOrgAtLogin: data.useOrgAtLogin || false,
+            clientOptions: '',
             audienceScopes: [
               {
                 audience: data.audience || defaultAudience,
@@ -487,12 +513,24 @@
               clientOptions.audience = _self.audience;
             }
 
-            if (_self.organization) {
+            if (_self.organization && !_self.useOrgAtLogin) {
               clientOptions.organization = _self.organization;
             }
 
             if (_self.useCustomStorage) {
               clientOptions.cache = sessionStorageCache;
+            }
+
+            _self.clientOptions = JSON.stringify(clientOptions, null, 2);
+
+            if (_self.organization) {
+              const claims = {
+                id_token: {
+                  org_id: { values: [_self.organization] }
+                }
+              };
+
+              clientOptions.claims = JSON.stringify(claims);
             }
 
             var _init = function (auth0) {
@@ -527,7 +565,8 @@
                 useCache: this.useCache,
                 audience: this.audience,
                 organization: this.organization,
-                useFormData: this.useFormData
+                useFormData: this.useFormData,
+                useOrgAtLogin: this.useOrgAtLogin
               })
             );
 
@@ -545,6 +584,7 @@
             this.useCookiesForTransactions = false;
             this.organization = defaultOrganization;
             this.useFormData = false;
+            this.useOrgAtLogin = false;
             this.saveForm();
           },
           showAuth0Info: function () {
@@ -587,6 +627,7 @@
               .then(function () {
                 return auth0.isAuthenticated().then(function (isAuthenticated) {
                   _self.isAuthenticated = isAuthenticated;
+                  _self.showAuth0Info();
                 });
               })
               .catch(function (e) {
@@ -621,7 +662,9 @@
             var options = { scope: _self.audienceScopes[0].scope };
 
             if (_self.organization) {
-              options.organization = _self.organization;
+              if (_self.useOrgAtLogin) {
+                options.organization = _self.organization;
+              }
             }
 
             this.auth0.loginWithRedirect(options);
