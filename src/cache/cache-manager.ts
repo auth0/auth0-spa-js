@@ -75,11 +75,12 @@ export class CacheManager {
     /* istanbul ignore next */
     if (!keys) return;
 
-    keys
+    await keys
       .filter(key => (clientId ? key.includes(clientId) : true))
-      .forEach(async key => {
+      .reduce(async (memo, key) => {
+        await memo;
         await this.cache.remove(key);
-      });
+      }, Promise.resolve());
 
     await this.keyManifest?.clear();
   }
