@@ -23,6 +23,33 @@ const config = {
       redirect_uris: ['http://127.0.0.1:3000', 'http://localhost:3000'],
       token_endpoint_auth_method: 'none',
       grant_types: ['authorization_code', 'refresh_token']
+    },
+    {
+      client_id: 'multi-client-1',
+      redirect_uris: [
+        'http://127.0.0.1:3000/multiple_clients.html',
+        'http://localhost:3000/multiple_clients.html'
+      ],
+      token_endpoint_auth_method: 'none',
+      grant_types: ['authorization_code', 'refresh_token']
+    },
+    {
+      client_id: 'multi-client-2',
+      redirect_uris: [
+        'http://127.0.0.1:3000/multiple_clients.html',
+        'http://localhost:3000/multiple_clients.html'
+      ],
+      token_endpoint_auth_method: 'none',
+      grant_types: ['authorization_code', 'refresh_token']
+    },
+    {
+      client_id: 'multi-client-3',
+      redirect_uris: [
+        'http://127.0.0.1:3000/multiple_clients.html',
+        'http://localhost:3000/multiple_clients.html'
+      ],
+      token_endpoint_auth_method: 'none',
+      grant_types: ['authorization_code', 'refresh_token']
     }
   ],
   claims: {

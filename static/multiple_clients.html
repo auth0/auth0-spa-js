@@ -12,7 +12,7 @@
   <body>
     <div id="app" class="container mx-auto p-5">
       <header class="mb-10">
-        <h1 class="text-4xl">Multiple Client Test</h1>
+        <h1 class="text-4xl mb-2">Multiple Client Test</h1>
         <p>
           <a
             href="http://localhost:3000/multiple_clients.html"
@@ -61,27 +61,31 @@
     <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
     <script src="/auth0-spa-js.development.js"></script>
     <script>
-      const commonOptions = {
-        redirect_uri: `${window.location.origin}/multiple_clients.html`,
-        cacheLocation: 'localstorage',
-        useFormData: true
-      };
-
       new Vue({
         el: '#app',
         data() {
+          const useAuth0 = false;
+
+          const commonOptions = {
+            redirect_uri: `${window.location.origin}/multiple_clients.html`,
+            cacheLocation: 'localstorage',
+            useFormData: true,
+            domain: useAuth0 ? 'brucke.auth0.com' : 'http://127.0.0.1:3000'
+          };
+
           return {
             clients: [
               {
                 name: 'Client 1',
                 get description() {
-                  return `Using ${this.options.domain} and iframe with prompt=none`;
+                  return `Using ${commonOptions.domain} and iframe with prompt=none`;
                 },
                 id: 1,
                 options: {
                   ...commonOptions,
-                  domain: 'brucke.auth0.com',
-                  client_id: 'IRLdsf27vEPiV5NNQjlNK7fwgmRuwyJY'
+                  client_id: useAuth0
+                    ? 'IRLdsf27vEPiV5NNQjlNK7fwgmRuwyJY'
+                    : 'multi-client-1'
                 },
                 id_token: '',
                 access_token: '',
@@ -95,8 +99,9 @@
                 id: 2,
                 options: {
                   ...commonOptions,
-                  domain: 'brucke.auth0.com',
-                  client_id: 'Q4TgHIYRcUBh2xe6l049ZR7X5JAeLzwI',
+                  client_id: useAuth0
+                    ? 'Q4TgHIYRcUBh2xe6l049ZR7X5JAeLzwI'
+                    : 'multi-client-2',
                   useRefreshTokens: true
                 },
                 id_token: '',
@@ -111,8 +116,9 @@
                 id: 3,
                 options: {
                   ...commonOptions,
-                  domain: 'brucke.auth0.com',
-                  client_id: 'Y7VQRCOOVeU7b0Y36cLA5OS4fUbIJfwV',
+                  client_id: useAuth0
+                    ? 'Y7VQRCOOVeU7b0Y36cLA5OS4fUbIJfwV'
+                    : 'multi-client-3',
                   useCookiesForTransactions: true
                 },
                 id_token: '',
@@ -130,7 +136,7 @@
             }
           };
 
-          this.clients.map(async client => {
+          this.clients.map(client => {
             client.auth0 = new Auth0Client(client.options);
           });
 
