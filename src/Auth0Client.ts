@@ -944,15 +944,10 @@ export default class Auth0Client {
       window.location.assign(url);
     };
 
-    let clientId;
-    if (options.client_id !== null) {
-      clientId = options.client_id || this.options.client_id;
-    }
-
     if (this.options.cache) {
-      return this.cacheManager.clear(clientId).then(() => postCacheClear());
+      return this.cacheManager.clear().then(() => postCacheClear());
     } else {
-      this.cacheManager.clearSync(clientId);
+      this.cacheManager.clearSync();
       postCacheClear();
     }
   }

@@ -168,6 +168,7 @@
               client.access_token = await client.auth0.getTokenSilently({
                 ignoreCache: true
               });
+
               client.error = null;
             } catch (e) {
               client.error = e.error_description;
