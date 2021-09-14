@@ -580,7 +580,7 @@ describe('Auth0Client', () => {
       await loginWithPopup(auth0);
 
       expect(<jest.Mock>esCookie.set).toHaveBeenCalledWith(
-        '_legacy_auth0.is.authenticated',
+        `_legacy_auth0.${TEST_CLIENT_ID}.is.authenticated`,
         'true',
         {
           expires: 1
@@ -588,7 +588,7 @@ describe('Auth0Client', () => {
       );
 
       expect(<jest.Mock>esCookie.set).toHaveBeenCalledWith(
-        'auth0.is.authenticated',
+        `auth0.${TEST_CLIENT_ID}.is.authenticated`,
         'true',
         {
           expires: 1
@@ -636,14 +636,14 @@ describe('Auth0Client', () => {
       await loginWithPopup(auth0);
 
       expect(<jest.Mock>esCookie.set).toHaveBeenCalledWith(
-        '_legacy_auth0.is.authenticated',
+        `_legacy_auth0.${TEST_CLIENT_ID}.is.authenticated`,
         'true',
         {
           expires: 2
         }
       );
       expect(<jest.Mock>esCookie.set).toHaveBeenCalledWith(
-        'auth0.is.authenticated',
+        `auth0.${TEST_CLIENT_ID}.is.authenticated`,
         'true',
         {
           expires: 2

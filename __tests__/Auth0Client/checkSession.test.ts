@@ -121,11 +121,11 @@ describe('Auth0Client', () => {
       await checkSession(auth0);
 
       expect(<jest.Mock>esCookie.get).toHaveBeenCalledWith(
-        'auth0.is.authenticated'
+        `auth0.${TEST_CLIENT_ID}.is.authenticated`
       );
 
       expect(<jest.Mock>esCookie.get).toHaveBeenCalledWith(
-        '_legacy_auth0.is.authenticated'
+        `_legacy_auth0.${TEST_CLIENT_ID}.is.authenticated`
       );
     });
 
@@ -137,12 +137,41 @@ describe('Auth0Client', () => {
       await checkSession(auth0);
 
       expect(<jest.Mock>esCookie.get).toHaveBeenCalledWith(
-        'auth0.is.authenticated'
+        `auth0.${TEST_CLIENT_ID}.is.authenticated`
       );
 
       expect(<jest.Mock>esCookie.get).not.toHaveBeenCalledWith(
-        '_legacy_auth0.is.authenticated'
+        `_legacy_auth0.${TEST_CLIENT_ID}.is.authenticated`
       );
+    });
+
+    it('migrates the old is.authenticated cookie to the new name', async () => {
+      const auth0 = setup();
+
+      (esCookie.get as jest.Mock).mockImplementation(name => {
+        switch (name) {
+          case 'auth0.is.authenticated':
+            return true;
+          case `auth0.${TEST_CLIENT_ID}.is.authenticated`:
+            return;
+        }
+      });
+
+      await checkSession(auth0);
+
+      expect(esCookie.get).toHaveBeenCalledWith(
+        `auth0.${TEST_CLIENT_ID}.is.authenticated`
+      );
+
+      expect(esCookie.get).toHaveBeenCalledWith(`auth0.is.authenticated`);
+
+      expect(esCookie.set).toHaveBeenCalledWith(
+        `auth0.${TEST_CLIENT_ID}.is.authenticated`,
+        'true',
+        { expires: 1 }
+      );
+
+      expect(esCookie.remove).toHaveBeenCalledWith('auth0.is.authenticated');
     });
 
     it('uses the organization hint cookie if available', async () => {

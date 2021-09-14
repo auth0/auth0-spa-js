@@ -72,11 +72,13 @@ describe('Auth0Client', () => {
   });
 
   describe('logout()', () => {
-    it('removes `auth0.is.authenticated` key from storage', async () => {
+    it('removes authenticated cookie from storage', async () => {
       const auth0 = setup();
       auth0.logout();
 
-      expect(esCookie.remove).toHaveBeenCalledWith('auth0.is.authenticated');
+      expect(esCookie.remove).toHaveBeenCalledWith(
+        `auth0.${TEST_CLIENT_ID}.is.authenticated`
+      );
     });
 
     it('removes the organization hint cookie from storage', async () => {
@@ -132,12 +134,14 @@ describe('Auth0Client', () => {
       expect(auth0['cacheManager']['clearSync']).toHaveBeenCalled();
     });
 
-    it('removes `auth0.is.authenticated` key from storage when `options.localOnly` is true', async () => {
+    it('removes authenticated cookie from storage when `options.localOnly` is true', async () => {
       const auth0 = setup();
 
       auth0.logout({ localOnly: true });
 
-      expect(esCookie.remove).toHaveBeenCalledWith('auth0.is.authenticated');
+      expect(esCookie.remove).toHaveBeenCalledWith(
+        `auth0.${TEST_CLIENT_ID}.is.authenticated`
+      );
     });
 
     it('removes the organization hint cookie from storage when `options.localOnly` is true', async () => {

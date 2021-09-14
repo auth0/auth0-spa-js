@@ -415,7 +415,7 @@ describe('Auth0Client', () => {
       await loginWithRedirect(auth0);
 
       expect(<jest.Mock>esCookie.set).toHaveBeenCalledWith(
-        '_legacy_auth0.is.authenticated',
+        `_legacy_auth0.${TEST_CLIENT_ID}.is.authenticated`,
         'true',
         {
           expires: 1
@@ -423,7 +423,7 @@ describe('Auth0Client', () => {
       );
 
       expect(<jest.Mock>esCookie.set).toHaveBeenCalledWith(
-        'auth0.is.authenticated',
+        `auth0.${TEST_CLIENT_ID}.is.authenticated`,
         'true',
         {
           expires: 1
@@ -431,7 +431,7 @@ describe('Auth0Client', () => {
       );
     });
 
-    it('saves `auth0.is.authenticated` key in storage for an extended period', async () => {
+    it('saves authenticated cookie key in storage for an extended period', async () => {
       const auth0 = setup({
         sessionCheckExpiryDays: 2
       });
@@ -439,14 +439,14 @@ describe('Auth0Client', () => {
       await loginWithRedirect(auth0);
 
       expect(<jest.Mock>esCookie.set).toHaveBeenCalledWith(
-        '_legacy_auth0.is.authenticated',
+        `_legacy_auth0.${TEST_CLIENT_ID}.is.authenticated`,
         'true',
         {
           expires: 2
         }
       );
       expect(<jest.Mock>esCookie.set).toHaveBeenCalledWith(
-        'auth0.is.authenticated',
+        `auth0.${TEST_CLIENT_ID}.is.authenticated`,
         'true',
         {
           expires: 2
