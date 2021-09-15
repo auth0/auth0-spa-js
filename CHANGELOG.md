@@ -1,5 +1,22 @@
 # Change Log
 
+## [v1.18.0](https://github.com/auth0/auth0-spa-js/tree/v1.18.0) (2021-09-15)
+
+[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v1.17.1...v1.18.0)
+
+**Added**
+
+- [SDK-2750] Expose mfa_token from the mfa_required error when getting new tokens [\#789](https://github.com/auth0/auth0-spa-js/pull/789) ([frederikprijck](https://github.com/frederikprijck))
+
+**Changed**
+
+- [SDK-2759] Re-scoping cookies and transactions to client ID [\#796](https://github.com/auth0/auth0-spa-js/pull/796) ([stevehobbsdev](https://github.com/stevehobbsdev))
+- [SDK-2320] Throw login_required error in SPA SDK if running in a cross-origin is… [\#790](https://github.com/auth0/auth0-spa-js/pull/790) ([frederikprijck](https://github.com/frederikprijck))
+
+**Fixed**
+
+- [SDK-2692] Remember organization ID for silent authentication [\#788](https://github.com/auth0/auth0-spa-js/pull/788) ([stevehobbsdev](https://github.com/stevehobbsdev))
+
 ## [v1.17.1](https://github.com/auth0/auth0-spa-js/tree/v1.17.1) (2021-09-03)
 
 [Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v1.17.0...v1.17.1)
