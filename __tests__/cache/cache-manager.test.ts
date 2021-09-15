@@ -370,5 +370,67 @@ cacheFactories.forEach(cacheFactory => {
         entry3
       );
     });
+
+    it('clears all keys from the cache (sync)', async () => {
+      const manager = new CacheManager(new LocalStorageCache());
+      const entry1 = { ...defaultData };
+      const entry2 = { ...defaultData, scope: 'scope-1' };
+      const entry3 = { ...defaultData, client_id: 'some-other-client' };
+
+      await manager.set(entry1);
+      await manager.set(entry2);
+      await manager.set(entry3);
+
+      expect(await manager.get(CacheKey.fromCacheEntry(entry1))).toStrictEqual(
+        entry1
+      );
+
+      expect(await manager.get(CacheKey.fromCacheEntry(entry2))).toStrictEqual(
+        entry2
+      );
+
+      expect(await manager.get(CacheKey.fromCacheEntry(entry3))).toStrictEqual(
+        entry3
+      );
+
+      manager.clearSync();
+
+      expect(await manager.get(CacheKey.fromCacheEntry(entry1))).toBeFalsy();
+      expect(await manager.get(CacheKey.fromCacheEntry(entry2))).toBeFalsy();
+      expect(await manager.get(CacheKey.fromCacheEntry(entry3))).toBeFalsy();
+    });
+
+    it('clears only the keys relating to a specific client ID from the cache (sync)', async () => {
+      const manager = new CacheManager(new LocalStorageCache());
+      const entry1 = { ...defaultData };
+      const entry2 = { ...defaultData, scope: 'scope-1' };
+      const entry3 = { ...defaultData, client_id: 'some-other-client' };
+
+      await manager.set(entry1);
+      await manager.set(entry2);
+      await manager.set(entry3);
+
+      expect(await manager.get(CacheKey.fromCacheEntry(entry1))).toStrictEqual(
+        entry1
+      );
+
+      expect(await manager.get(CacheKey.fromCacheEntry(entry2))).toStrictEqual(
+        entry2
+      );
+
+      expect(await manager.get(CacheKey.fromCacheEntry(entry3))).toStrictEqual(
+        entry3
+      );
+
+      manager.clearSync(TEST_CLIENT_ID);
+
+      expect(await manager.get(CacheKey.fromCacheEntry(entry1))).toBeFalsy();
+      expect(await manager.get(CacheKey.fromCacheEntry(entry2))).toBeFalsy();
+
+      // Should not be removed as it has a different client ID from the manager instance
+      expect(await manager.get(CacheKey.fromCacheEntry(entry3))).toStrictEqual(
+        entry3
+      );
+    });
   });
 });
