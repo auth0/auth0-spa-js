@@ -11,6 +11,10 @@
   </head>
   <body>
     <div id="app" class="container mx-auto p-5">
+      <div v-if="!loading" style="visibility: hidden">
+        <span id="loaded">loaded</span>
+      </div>
+
       <header class="mb-10">
         <h1 class="text-4xl mb-2">Multiple Client Test</h1>
         <p>
@@ -31,27 +35,37 @@
             type="submit"
             class="p-2 rounded bg-blue-700 text-white"
             @click="loginWith(client)"
+            :data-cy="`client-login-${client.id}`"
           >
             Log in
           </button>
           <button
             class="p-2 rounded bg-red-700 text-white"
+            :data-cy="`client-token-${client.id}`"
             @click="getTokenWith(client)"
           >
             Get Token
           </button>
           <button
             class="p-2 rounded bg-gray-700 text-white"
+            :data-cy="`client-logout-${client.id}`"
             @click="logoutOf(client)"
           >
             Log out
           </button>
           <div class="mt-5">
             <div>
-              <p v-text="client.access_token"></p>
+              <p
+                v-text="client.access_token"
+                :data-cy="`client-access-token-${client.id}`"
+              ></p>
             </div>
             <template v-if="client.error !== null">
-              <p class="text-red-500" v-text="client.error"></p>
+              <p
+                class="text-red-500"
+                v-text="client.error"
+                :data-cy="`client-error-${client.id}`"
+              ></p>
             </template>
           </div>
         </div>
@@ -70,10 +84,12 @@
             redirect_uri: `${window.location.origin}/multiple_clients.html`,
             cacheLocation: 'localstorage',
             useFormData: true,
-            domain: useAuth0 ? 'brucke.auth0.com' : 'http://127.0.0.1:3000'
+            domain: useAuth0 ? 'brucke.auth0.com' : window.location.origin,
+            tokenIssuer: window.location.origin
           };
 
           return {
+            loading: true,
             clients: [
               {
                 name: 'Client 1',
@@ -158,11 +174,14 @@
             }
           }
 
-          this.clients.map(async client => {
-            client.auth0 = new Auth0Client(client.options);
-            await client.auth0.checkSession();
-            await authFn(client);
-          });
+          await Promise.all(
+            this.clients.map(async client => {
+              await client.auth0.checkSession();
+              await authFn(client);
+            })
+          );
+
+          this.loading = false;
         },
         methods: {
           loginWith(client) {

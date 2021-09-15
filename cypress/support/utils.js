@@ -5,6 +5,9 @@ module.exports.shouldBe = (expected, actual) => expect(actual).to.eq(expected);
 module.exports.shouldInclude = (expected, actual) =>
   expect(actual).to.include(actual);
 
+// Gets an element using its `data-cy` attribute name
+module.exports.get = attrId => cy.get(`[data-cy=${attrId}]`);
+
 module.exports.shouldNotBe = (expected, actual) =>
   expect(actual).to.not.eq(expected);
 
