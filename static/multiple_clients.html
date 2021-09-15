@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link
+      href="https://unpkg.com/tailwindcss@^2/dist/tailwind.min.css"
+      rel="stylesheet"
+    />
+    <title>Document</title>
+  </head>
+  <body>
+    <div id="app" class="container mx-auto p-5">
+      <div v-if="!loading" style="visibility: hidden">
+        <span id="loaded">loaded</span>
+      </div>
+
+      <header class="mb-10">
+        <h1 class="text-4xl mb-2">Multiple Client Test</h1>
+        <p>
+          <a
+            href="http://localhost:3000/multiple_clients.html"
+            class="text-gray-400 underline"
+            >Reset URL</a
+          >
+        </p>
+      </header>
+
+      <div x-data="clientData">
+        <div class="mb-5" v-for="client in clients" :key="client.id">
+          <h2 v-text="client.name" class="text-2xl"></h2>
+          <p class="text-gray-400" v-text="client.description"></p>
+          <p class="text-gray-400 mb-5" v-text="client.options.client_id"></p>
+          <button
+            type="submit"
+            class="p-2 rounded bg-blue-700 text-white"
+            @click="loginWith(client)"
+            :data-cy="`client-login-${client.id}`"
+          >
+            Log in
+          </button>
+          <button
+            class="p-2 rounded bg-red-700 text-white"
+            :data-cy="`client-token-${client.id}`"
+            @click="getTokenWith(client)"
+          >
+            Get Token
+          </button>
+          <button
+            class="p-2 rounded bg-gray-700 text-white"
+            :data-cy="`client-logout-${client.id}`"
+            @click="logoutOf(client)"
+          >
+            Log out
+          </button>
+          <div class="mt-5">
+            <div>
+              <p
+                v-text="client.access_token"
+                :data-cy="`client-access-token-${client.id}`"
+              ></p>
+            </div>
+            <template v-if="client.error !== null">
+              <p
+                class="text-red-500"
+                v-text="client.error"
+                :data-cy="`client-error-${client.id}`"
+              ></p>
+            </template>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+    <script src="/auth0-spa-js.development.js"></script>
+    <script>
+      new Vue({
+        el: '#app',
+        data() {
+          const useAuth0 = false;
+
+          const commonOptions = {
+            redirect_uri: `${window.location.origin}/multiple_clients.html`,
+            cacheLocation: 'localstorage',
+            useFormData: true,
+            domain: useAuth0 ? 'brucke.auth0.com' : window.location.origin,
+            tokenIssuer: window.location.origin
+          };
+
+          return {
+            loading: true,
+            clients: [
+              {
+                name: 'Client 1',
+                get description() {
+                  return `Using ${commonOptions.domain} and iframe with prompt=none`;
+                },
+                id: 1,
+                options: {
+                  ...commonOptions,
+                  client_id: useAuth0
+                    ? 'IRLdsf27vEPiV5NNQjlNK7fwgmRuwyJY'
+                    : 'multi-client-1'
+                },
+                id_token: '',
+                access_token: '',
+                error: null
+              },
+              {
+                name: 'Client 2',
+                get description() {
+                  return `Using ${this.options.domain} and refresh tokens`;
+                },
+                id: 2,
+                options: {
+                  ...commonOptions,
+                  client_id: useAuth0
+                    ? 'Q4TgHIYRcUBh2xe6l049ZR7X5JAeLzwI'
+                    : 'multi-client-2',
+                  useRefreshTokens: true
+                },
+                id_token: '',
+                access_token: '',
+                error: null
+              },
+              {
+                name: 'Client 3',
+                get description() {
+                  return `Using ${this.options.domain} and cookies for transactions`;
+                },
+                id: 3,
+                options: {
+                  ...commonOptions,
+                  client_id: useAuth0
+                    ? 'Y7VQRCOOVeU7b0Y36cLA5OS4fUbIJfwV'
+                    : 'multi-client-3',
+                  useCookiesForTransactions: true
+                },
+                id_token: '',
+                access_token: '',
+                error: null
+              }
+            ]
+          };
+        },
+        async created() {
+          const authFn = async client => {
+            if (await client.auth0.isAuthenticated()) {
+              client.id_token = (await client.auth0.getIdTokenClaims()).__raw;
+              client.access_token = await client.auth0.getTokenSilently();
+            }
+          };
+
+          this.clients.map(client => {
+            client.auth0 = new Auth0Client(client.options);
+          });
+
+          if (
+            window.location.search.includes('code=') &&
+            window.location.search.includes('state=')
+          ) {
+            const id = localStorage.getItem('login_id');
+
+            if (id) {
+              const client = this.clients.find(c => c.id === parseInt(id));
+
+              if (client) {
+                console.log('Handling callback');
+                await client.auth0.handleRedirectCallback();
+                history.pushState({}, null, '/multiple_clients.html');
+                await authFn(client);
+              }
+            }
+          }
+
+          await Promise.all(
+            this.clients.map(async client => {
+              await client.auth0.checkSession();
+              await authFn(client);
+            })
+          );
+
+          this.loading = false;
+        },
+        methods: {
+          loginWith(client) {
+            localStorage.setItem('login_id', client.id);
+            client.auth0.loginWithRedirect();
+          },
+          async getTokenWith(client) {
+            try {
+              client.access_token = await client.auth0.getTokenSilently({
+                ignoreCache: true
+              });
+
+              client.error = null;
+            } catch (e) {
+              client.error = e.error_description;
+            }
+          },
+          logoutOf(client) {
+            client.auth0.logout({
+              returnTo: `${window.location.origin}/multiple_clients.html`,
+              client_id: client.options.client_id
+            });
+          }
+        }
+      });
+    </script>
+  </body>
+</html>

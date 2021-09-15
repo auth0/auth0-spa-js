@@ -12,7 +12,8 @@
       "args": ["${fileBasenameNoExtension}"],
       "console": "integratedTerminal",
       "internalConsoleOptions": "neverOpen",
-      "disableOptimisticBPs": true
+      "disableOptimisticBPs": true,
+      "skipFiles": ["<node_internals>/**"]
     },
     {
       "type": "node",
@@ -22,7 +23,8 @@
       "args": ["--runInBand"],
       "console": "integratedTerminal",
       "internalConsoleOptions": "neverOpen",
-      "disableOptimisticBPs": true
+      "disableOptimisticBPs": true,
+      "skipFiles": ["<node_internals>/**"]
     },
     {
       "type": "node",

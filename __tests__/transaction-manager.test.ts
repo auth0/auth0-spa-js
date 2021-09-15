@@ -1,8 +1,9 @@
 import TransactionManager from '../src/transaction-manager';
 import { SessionStorage } from '../src/storage';
+import { TEST_CLIENT_ID } from './constants';
 import { mocked } from 'ts-jest/utils';
 
-const TRANSACTION_KEY = 'a0.spajs.txs';
+const TRANSACTION_KEY_PREFIX = 'a0.spajs.txs';
 
 const transaction = {
   nonce: 'nonceIn',
@@ -15,6 +16,9 @@ const transaction = {
 
 const transactionJson = JSON.stringify(transaction);
 
+const transactionKey = (clientId = TEST_CLIENT_ID) =>
+  `${TRANSACTION_KEY_PREFIX}.${clientId}`;
+
 describe('transaction manager', () => {
   let tm: TransactionManager;
 
@@ -24,15 +28,14 @@ describe('transaction manager', () => {
 
   describe('constructor', () => {
     it('loads transactions from storage (per key)', () => {
-      tm = new TransactionManager(SessionStorage);
-
-      expect(sessionStorage.getItem).toHaveBeenCalledWith(TRANSACTION_KEY);
+      tm = new TransactionManager(SessionStorage, TEST_CLIENT_ID);
+      expect(sessionStorage.getItem).toHaveBeenCalledWith(transactionKey());
     });
   });
 
   describe('with empty transactions', () => {
     beforeEach(() => {
-      tm = new TransactionManager(SessionStorage);
+      tm = new TransactionManager(SessionStorage, TEST_CLIENT_ID);
     });
 
     it('`create` creates the transaction', () => {
@@ -45,7 +48,7 @@ describe('transaction manager', () => {
       tm.create(transaction);
 
       expect(sessionStorage.setItem).toHaveBeenCalledWith(
-        TRANSACTION_KEY,
+        transactionKey(),
         transactionJson
       );
     });
@@ -67,12 +70,14 @@ describe('transaction manager', () => {
 
     it('`remove` removes transaction from storage', () => {
       tm.create(transaction);
+
       expect(sessionStorage.setItem).toHaveBeenCalledWith(
-        TRANSACTION_KEY,
+        transactionKey(),
         transactionJson
       );
+
       tm.remove();
-      expect(sessionStorage.removeItem).toHaveBeenCalledWith(TRANSACTION_KEY);
+      expect(sessionStorage.removeItem).toHaveBeenCalledWith(transactionKey());
     });
   });
 });

@@ -73,6 +73,7 @@ import {
 import TokenWorker from './worker/token.worker.ts';
 import { isIE11 } from './user-agent';
 import { singlePromise, retryPromise } from './promise-utils';
+import { CacheKeyManifest } from './cache/key-manifest';
 
 /**
  * @ignore
@@ -83,13 +84,23 @@ const lock = new Lock();
  * @ignore
  */
 const GET_TOKEN_SILENTLY_LOCK_KEY = 'auth0.lock.getTokenSilently';
-const COOKIE_IS_AUTHENTICATED_HINT = 'auth0.is.authenticated';
 
 /**
  * @ignore
  */
 const buildOrganizationHintCookieName = (clientId: string) =>
   `auth0.${clientId}.organization_hint`;
+
+/**
+ * @ignore
+ */
+const OLD_IS_AUTHENTICATED_COOKIE_NAME = 'auth0.is.authenticated';
+
+/**
+ * @ignore
+ */
+const buildIsAuthenticatedCookieName = (clientId: string) =>
+  `auth0.${clientId}.is.authenticated`;
 
 /**
  * @ignore
@@ -174,6 +185,7 @@ export default class Auth0Client {
   private cookieStorage: ClientStorage;
   private sessionCheckExpiryDays: number;
   private orgHintCookieName: string;
+  private isAuthenticatedCookieName: string;
 
   cacheLocation: CacheLocation;
   private worker: Worker;
@@ -210,6 +222,10 @@ export default class Auth0Client {
       this.options.client_id
     );
 
+    this.isAuthenticatedCookieName = buildIsAuthenticatedCookieName(
+      this.options.client_id
+    );
+
     this.sessionCheckExpiryDays =
       options.sessionCheckExpiryDays || DEFAULT_SESSION_CHECK_EXPIRY_DAYS;
 
@@ -218,8 +234,19 @@ export default class Auth0Client {
       : SessionStorage;
 
     this.scope = this.options.scope;
-    this.transactionManager = new TransactionManager(transactionStorage);
-    this.cacheManager = new CacheManager(cache, this.options.client_id);
+
+    this.transactionManager = new TransactionManager(
+      transactionStorage,
+      this.options.client_id
+    );
+
+    this.cacheManager = new CacheManager(
+      cache,
+      !cache.allKeys
+        ? new CacheKeyManifest(cache, this.options.client_id)
+        : null
+    );
+
     this.domainUrl = getDomain(this.options.domain);
     this.tokenIssuer = getTokenIssuer(this.options.issuer, this.domainUrl);
 
@@ -478,7 +505,7 @@ export default class Auth0Client {
 
     await this.cacheManager.set(cacheEntry);
 
-    this.cookieStorage.save(COOKIE_IS_AUTHENTICATED_HINT, true, {
+    this.cookieStorage.save(this.isAuthenticatedCookieName, true, {
       daysUntilExpire: this.sessionCheckExpiryDays
     });
 
@@ -636,7 +663,7 @@ export default class Auth0Client {
 
     await this.cacheManager.set(cacheEntry);
 
-    this.cookieStorage.save(COOKIE_IS_AUTHENTICATED_HINT, true, {
+    this.cookieStorage.save(this.isAuthenticatedCookieName, true, {
       daysUntilExpire: this.sessionCheckExpiryDays
     });
 
@@ -656,7 +683,7 @@ export default class Auth0Client {
    * with `getTokenSilently` is that this doesn't return a token, but it will
    * pre-fill the token cache.
    *
-   * This method also heeds the `auth0.is.authenticated` cookie, as an optimization
+   * This method also heeds the `auth0.{clientId}.is.authenticated` cookie, as an optimization
    *  to prevent calling Auth0 unnecessarily. If the cookie is not present because
    * there was no previous login (or it has expired) then tokens will not be refreshed.
    *
@@ -667,8 +694,17 @@ export default class Auth0Client {
    * @param options
    */
   public async checkSession(options?: GetTokenSilentlyOptions) {
-    if (!this.cookieStorage.get(COOKIE_IS_AUTHENTICATED_HINT)) {
-      return;
+    if (!this.cookieStorage.get(this.isAuthenticatedCookieName)) {
+      if (!this.cookieStorage.get(OLD_IS_AUTHENTICATED_COOKIE_NAME)) {
+        return;
+      } else {
+        // Migrate the existing cookie to the new name scoped by client ID
+        this.cookieStorage.save(this.isAuthenticatedCookieName, true, {
+          daysUntilExpire: this.sessionCheckExpiryDays
+        });
+
+        this.cookieStorage.remove(OLD_IS_AUTHENTICATED_COOKIE_NAME);
+      }
     }
 
     try {
@@ -776,7 +812,7 @@ export default class Auth0Client {
           ...authResult
         });
 
-        this.cookieStorage.save(COOKIE_IS_AUTHENTICATED_HINT, true, {
+        this.cookieStorage.save(this.isAuthenticatedCookieName, true, {
           daysUntilExpire: this.sessionCheckExpiryDays
         });
 
@@ -895,8 +931,8 @@ export default class Auth0Client {
     }
 
     const postCacheClear = () => {
-      this.cookieStorage.remove(COOKIE_IS_AUTHENTICATED_HINT);
       this.cookieStorage.remove(this.orgHintCookieName);
+      this.cookieStorage.remove(this.isAuthenticatedCookieName);
 
       if (localOnly) {
         return;

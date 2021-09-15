@@ -9,7 +9,7 @@ export class CacheKeyManifest {
   private readonly manifestKey: string;
 
   constructor(private cache: ICache, private clientId: string) {
-    this.manifestKey = this.createManifestKeyFrom(clientId);
+    this.manifestKey = this.createManifestKeyFrom(this.clientId);
   }
 
   async add(key: string): Promise<void> {

@@ -5,15 +5,11 @@ import { verify } from '../../src/jwt';
 import { MessageChannel } from 'worker_threads';
 import * as utils from '../../src/utils';
 import * as scope from '../../src/scope';
-
 import { expectToHaveBeenCalledWithAuth0ClientParam } from '../helpers';
-
 import { TEST_AUTH0_CLIENT_QUERY_STRING } from '../constants';
 
 // @ts-ignore
-
-import { loginWithPopupFn, loginWithRedirectFn, setupFn } from './helpers';
-
+import { loginWithRedirectFn, setupFn } from './helpers';
 import { TEST_CLIENT_ID, TEST_CODE_CHALLENGE, TEST_DOMAIN } from '../constants';
 import { InMemoryAsyncCacheNoKeys } from '../cache/shared';
 
@@ -76,11 +72,13 @@ describe('Auth0Client', () => {
   });
 
   describe('logout()', () => {
-    it('removes `auth0.is.authenticated` key from storage', async () => {
+    it('removes authenticated cookie from storage', async () => {
       const auth0 = setup();
       auth0.logout();
 
-      expect(esCookie.remove).toHaveBeenCalledWith('auth0.is.authenticated');
+      expect(esCookie.remove).toHaveBeenCalledWith(
+        `auth0.${TEST_CLIENT_ID}.is.authenticated`
+      );
     });
 
     it('removes the organization hint cookie from storage', async () => {
@@ -126,6 +124,7 @@ describe('Auth0Client', () => {
 
     it('clears the cache', async () => {
       const auth0 = setup();
+
       jest
         .spyOn(auth0['cacheManager'], 'clearSync')
         .mockReturnValueOnce(undefined);
@@ -135,12 +134,14 @@ describe('Auth0Client', () => {
       expect(auth0['cacheManager']['clearSync']).toHaveBeenCalled();
     });
 
-    it('removes `auth0.is.authenticated` key from storage when `options.localOnly` is true', async () => {
+    it('removes authenticated cookie from storage when `options.localOnly` is true', async () => {
       const auth0 = setup();
 
       auth0.logout({ localOnly: true });
 
-      expect(esCookie.remove).toHaveBeenCalledWith('auth0.is.authenticated');
+      expect(esCookie.remove).toHaveBeenCalledWith(
+        `auth0.${TEST_CLIENT_ID}.is.authenticated`
+      );
     });
 
     it('removes the organization hint cookie from storage when `options.localOnly` is true', async () => {
