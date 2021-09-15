@@ -2762,6 +2762,9 @@ img {
 			<a href="localstoragecache.html" class="tsd-kind-icon">Local<wbr>Storage<wbr>Cache</a>
 		</li>
 		<li class=" tsd-kind-class">
+			<a href="mfarequirederror.html" class="tsd-kind-icon">Mfa<wbr>Required<wbr>Error</a>
+		</li>
+		<li class=" tsd-kind-class">
 			<a href="popupcancellederror.html" class="tsd-kind-icon">Popup<wbr>Cancelled<wbr>Error</a>
 		</li>
 		<li class=" tsd-kind-class">
@@ -2894,13 +2897,13 @@ img {
 				<a name="constructor" class="tsd-anchor"></a>
 				<h3>constructor</h3>
 				<ul class="tsd-signatures tsd-kind-constructor tsd-parent-kind-class">
-					<li class="tsd-signature tsd-kind-icon">new <wbr>Cache<wbr>Manager<span class="tsd-signature-symbol">(</span>cache<span class="tsd-signature-symbol">: </span><a href="../interfaces/icache.html" class="tsd-signature-type">ICache</a>, clientId<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="cachemanager.html" class="tsd-signature-type">CacheManager</a></li>
+					<li class="tsd-signature tsd-kind-icon">new <wbr>Cache<wbr>Manager<span class="tsd-signature-symbol">(</span>cache<span class="tsd-signature-symbol">: </span><a href="../interfaces/icache.html" class="tsd-signature-type">ICache</a>, keyManifest<span class="tsd-signature-symbol">?: </span><a href="cachekeymanifest.html" class="tsd-signature-type">CacheKeyManifest</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="cachemanager.html" class="tsd-signature-type">CacheManager</a></li>
 				</ul>
 				<ul class="tsd-descriptions">
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/02e7350/src/cache/cache-manager.ts#L14">src/cache/cache-manager.ts:14</a></li>
+								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/1de6427/src/cache/cache-manager.ts#L13">src/cache/cache-manager.ts:13</a></li>
 							</ul>
 						</aside>
 						<h4 class="tsd-parameters-title">Parameters</h4>
@@ -2909,7 +2912,7 @@ img {
 								<h5>cache: <a href="../interfaces/icache.html" class="tsd-signature-type">ICache</a></h5>
 							</li>
 							<li>
-								<h5>clientId: <span class="tsd-signature-type">string</span></h5>
+								<h5><span class="tsd-flag ts-flagOptional">Optional</span> keyManifest: <a href="cachekeymanifest.html" class="tsd-signature-type">CacheKeyManifest</a></h5>
 							</li>
 						</ul>
 						<h4 class="tsd-returns-title">Returns <a href="cachemanager.html" class="tsd-signature-type">CacheManager</a></h4>
@@ -2923,15 +2926,21 @@ img {
 				<a name="clear" class="tsd-anchor"></a>
 				<h3>clear</h3>
 				<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
-					<li class="tsd-signature tsd-kind-icon">clear<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">&gt;</span></li>
+					<li class="tsd-signature tsd-kind-icon">clear<span class="tsd-signature-symbol">(</span>clientId<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">&gt;</span></li>
 				</ul>
 				<ul class="tsd-descriptions">
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/02e7350/src/cache/cache-manager.ts#L80">src/cache/cache-manager.ts:80</a></li>
+								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/1de6427/src/cache/cache-manager.ts#L72">src/cache/cache-manager.ts:72</a></li>
 							</ul>
 						</aside>
+						<h4 class="tsd-parameters-title">Parameters</h4>
+						<ul class="tsd-parameters">
+							<li>
+								<h5><span class="tsd-flag ts-flagOptional">Optional</span> clientId: <span class="tsd-signature-type">string</span></h5>
+							</li>
+						</ul>
 						<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">&gt;</span></h4>
 					</li>
 				</ul>
@@ -2940,13 +2949,13 @@ img {
 				<a name="clearsync" class="tsd-anchor"></a>
 				<h3>clear<wbr>Sync</h3>
 				<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
-					<li class="tsd-signature tsd-kind-icon">clear<wbr>Sync<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
+					<li class="tsd-signature tsd-kind-icon">clear<wbr>Sync<span class="tsd-signature-symbol">(</span>clientId<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
 				</ul>
 				<ul class="tsd-descriptions">
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/02e7350/src/cache/cache-manager.ts#L96">src/cache/cache-manager.ts:96</a></li>
+								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/1de6427/src/cache/cache-manager.ts#L91">src/cache/cache-manager.ts:91</a></li>
 							</ul>
 						</aside>
 						<div class="tsd-comment tsd-typography">
@@ -2954,6 +2963,12 @@ img {
 								<p>Note: only call this if you&#39;re sure one of our internal (synchronous) caches are being used.</p>
 							</div>
 						</div>
+						<h4 class="tsd-parameters-title">Parameters</h4>
+						<ul class="tsd-parameters">
+							<li>
+								<h5><span class="tsd-flag ts-flagOptional">Optional</span> clientId: <span class="tsd-signature-type">string</span></h5>
+							</li>
+						</ul>
 						<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
 					</li>
 				</ul>
@@ -2968,7 +2983,7 @@ img {
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/02e7350/src/cache/cache-manager.ts#L24">src/cache/cache-manager.ts:24</a></li>
+								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/1de6427/src/cache/cache-manager.ts#L16">src/cache/cache-manager.ts:16</a></li>
 							</ul>
 						</aside>
 						<h4 class="tsd-parameters-title">Parameters</h4>
@@ -2994,7 +3009,7 @@ img {
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/02e7350/src/cache/cache-manager.ts#L67">src/cache/cache-manager.ts:67</a></li>
+								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/1de6427/src/cache/cache-manager.ts#L59">src/cache/cache-manager.ts:59</a></li>
 							</ul>
 						</aside>
 						<h4 class="tsd-parameters-title">Parameters</h4>
