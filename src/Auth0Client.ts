@@ -84,7 +84,6 @@ const lock = new Lock();
  * @ignore
  */
 const GET_TOKEN_SILENTLY_LOCK_KEY = 'auth0.lock.getTokenSilently';
-const COOKIE_IS_AUTHENTICATED_HINT = 'auth0.is.authenticated';
 
 /**
  * @ignore
