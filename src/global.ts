@@ -214,8 +214,9 @@ export interface Auth0ClientOptions extends BaseLoginOptions {
   useFormData?: boolean;
 
   /**
-   * Allows you to modify the current time used throughout the SDK.
-   * The value returned will be used as the current time when validating the token expirations.
+   * Modify the value used as the current time during the token validation.
+   *
+   * **Note**: Using this improperly can potentially compromise the token validation.
    */
   nowProvider?: () => Promise<number>;
 }
