@@ -276,6 +276,22 @@ describe('Auth0Client', () => {
       expect(mockFetch).toHaveBeenCalledTimes(1);
     });
 
+    it('refreshes the token when ignoreCache set to true', async () => {
+      const auth0 = setup();
+      await loginWithPopup(auth0, undefined, undefined, {
+        token: {
+          response: { expires_in: 70 }
+        }
+      });
+
+      mockFetch.mockReset();
+
+      const token = await getTokenWithPopup(auth0, { ignoreCache: true });
+
+      expect(token).toBe(TEST_ACCESS_TOKEN);
+      expect(mockFetch).toHaveBeenCalledTimes(1);
+    });
+
     it('uses the cache when expires_in > constant leeway & refresh tokens are used', async () => {
       const auth0 = setup({
         useRefreshTokens: true
