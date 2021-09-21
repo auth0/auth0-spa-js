@@ -234,8 +234,6 @@ cacheFactories.forEach(cacheFactory => {
     });
 
     it('reads from the cache when expires_in > date.now', async () => {
-      const now = Date.now();
-      const realDateNow = Date.now.bind(global.Date);
       const data = {
         ...defaultData,
         expires_in: 70
@@ -260,6 +258,7 @@ cacheFactories.forEach(cacheFactory => {
         ...defaultData,
         expires_in: 50
       };
+      const expiryAdjustmentSeconds = 60;
 
       const provider = jest.fn().mockResolvedValue(Date.now());
       const manager = new CacheManager(cache, keyManifest, provider);
@@ -271,10 +270,12 @@ cacheFactories.forEach(cacheFactory => {
       // Test that the cache state is normal before we expire the data
       expect(await manager.get(cacheKey)).toStrictEqual(data);
 
-      // Advance the time to just past the expiry..
-      provider.mockResolvedValue(now - 50 * 1000);
+      // Move back in time to ensure the token is valid
+      provider.mockResolvedValue(
+        now - (expiryAdjustmentSeconds - data.expires_in) * 1000
+      );
 
-      const result = await manager.get(cacheKey, 60);
+      const result = await manager.get(cacheKey, expiryAdjustmentSeconds);
 
       // And test that the cache has been emptied
       expect(result).toBeTruthy();
