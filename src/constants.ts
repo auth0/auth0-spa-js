@@ -76,3 +76,6 @@ export const DEFAULT_AUTH0_CLIENT = {
   name: 'auth0-spa-js',
   version: version
 };
+
+export const DEFAULT_NOW_PROVIDER = () =>
+  new Promise<number>(resolve => resolve(Date.now()));

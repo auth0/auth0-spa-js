@@ -45,7 +45,8 @@ import {
   RECOVERABLE_ERRORS,
   DEFAULT_SESSION_CHECK_EXPIRY_DAYS,
   DEFAULT_AUTH0_CLIENT,
-  INVALID_REFRESH_TOKEN_ERROR_MESSAGE
+  INVALID_REFRESH_TOKEN_ERROR_MESSAGE,
+  DEFAULT_NOW_PROVIDER
 } from './constants';
 
 import {
@@ -186,6 +187,7 @@ export default class Auth0Client {
   private sessionCheckExpiryDays: number;
   private orgHintCookieName: string;
   private isAuthenticatedCookieName: string;
+  private nowProvider: () => Promise<number>;
 
   cacheLocation: CacheLocation;
   private worker: Worker;
@@ -240,11 +242,14 @@ export default class Auth0Client {
       this.options.client_id
     );
 
+    this.nowProvider = this.options.nowProvider || DEFAULT_NOW_PROVIDER;
+
     this.cacheManager = new CacheManager(
       cache,
       !cache.allKeys
         ? new CacheKeyManifest(cache, this.options.client_id)
-        : null
+        : null,
+      this.nowProvider
     );
 
     this.domainUrl = getDomain(this.options.domain);
@@ -325,11 +330,13 @@ export default class Auth0Client {
     return this._url(`/authorize?${createQueryParams(authorizeOptions)}`);
   }
 
-  private _verifyIdToken(
+  private async _verifyIdToken(
     id_token: string,
     nonce?: string,
     organizationId?: string
   ) {
+    const now = await this.nowProvider();
+
     return verifyIdToken({
       iss: this.tokenIssuer,
       aud: this.options.client_id,
@@ -337,7 +344,8 @@ export default class Auth0Client {
       nonce,
       organizationId,
       leeway: this.options.leeway,
-      max_age: this._parseNumber(this.options.max_age)
+      max_age: this._parseNumber(this.options.max_age),
+      now
     });
   }
 
@@ -489,7 +497,7 @@ export default class Auth0Client {
 
     const organizationId = options.organization || this.options.organization;
 
-    const decodedToken = this._verifyIdToken(
+    const decodedToken = await this._verifyIdToken(
       authResult.id_token,
       nonceIn,
       organizationId
@@ -647,7 +655,7 @@ export default class Auth0Client {
 
     const authResult = await oauthToken(tokenOptions, this.worker);
 
-    const decodedToken = this._verifyIdToken(
+    const decodedToken = await this._verifyIdToken(
       authResult.id_token,
       transaction.nonce,
       transaction.organizationId
@@ -1029,7 +1037,10 @@ export default class Auth0Client {
         this.worker
       );
 
-      const decodedToken = this._verifyIdToken(tokenResult.id_token, nonceIn);
+      const decodedToken = await this._verifyIdToken(
+        tokenResult.id_token,
+        nonceIn
+      );
 
       this._processOrgIdHint(decodedToken.claims.org_id);
 
@@ -1122,7 +1133,7 @@ export default class Auth0Client {
       throw e;
     }
 
-    const decodedToken = this._verifyIdToken(tokenResult.id_token);
+    const decodedToken = await this._verifyIdToken(tokenResult.id_token);
 
     return {
       ...tokenResult,
