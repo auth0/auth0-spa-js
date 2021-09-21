@@ -837,11 +837,13 @@ export default class Auth0Client {
     config: PopupConfigOptions = {}
   ) {
     const { ignoreCache, ...getTokenOptions } = {
-      audience: this.options.audience,
       ignoreCache: false,
       ...options,
       scope: getUniqueScopes(this.defaultScope, this.scope, options.scope)
     };
+
+    getTokenOptions.audience =
+      getTokenOptions.audience || this.options.audience;
 
     if (!ignoreCache) {
       const accessToken = await this._getAccessTokenFromCache({
