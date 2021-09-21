@@ -305,8 +305,9 @@ describe('Auth0Client', () => {
 
       mockFetch.mockReset();
 
-      await getTokenWithPopup(auth0);
+      const token = await getTokenWithPopup(auth0);
 
+      expect(token).toBe(TEST_ACCESS_TOKEN);
       expect(mockFetch).not.toHaveBeenCalled();
     });
   });
