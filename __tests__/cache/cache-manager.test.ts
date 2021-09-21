@@ -178,7 +178,7 @@ cacheFactories.forEach(cacheFactory => {
         await manager.get(
           new CacheKey({
             client_id: TEST_CLIENT_ID,
-            audience: 'the_audience',
+            audience: TEST_AUDIENCE,
             scope: TEST_SCOPES
           }),
           60
@@ -233,6 +233,53 @@ cacheFactories.forEach(cacheFactory => {
       });
     });
 
+    it('reads from the cache when expires_in > date.now', async () => {
+      const now = Date.now();
+      const realDateNow = Date.now.bind(global.Date);
+      const data = {
+        ...defaultData,
+        expires_in: 70
+      };
+
+      await manager.set(data);
+
+      const cacheKey = CacheKey.fromCacheEntry(data);
+
+      // Test that the cache state is normal before we expire the data
+      expect(await manager.get(cacheKey)).toStrictEqual(data);
+
+      const result = await manager.get(cacheKey, 60);
+
+      // And test that the cache has been emptied
+      expect(result).toBeTruthy();
+    });
+
+    it('reads from the cache when expires_in > date.now using custom now provider', async () => {
+      const now = Date.now();
+      const data = {
+        ...defaultData,
+        expires_in: 50
+      };
+
+      const provider = jest.fn().mockResolvedValue(Date.now());
+      const manager = new CacheManager(cache, keyManifest, provider);
+
+      await manager.set(data);
+
+      const cacheKey = CacheKey.fromCacheEntry(data);
+
+      // Test that the cache state is normal before we expire the data
+      expect(await manager.get(cacheKey)).toStrictEqual(data);
+
+      // Advance the time to just past the expiry..
+      provider.mockResolvedValue(now - 50 * 1000);
+
+      const result = await manager.get(cacheKey, 60);
+
+      // And test that the cache has been emptied
+      expect(result).toBeTruthy();
+    });
+
     it('expires the cache on read when the date.now > expires_in', async () => {
       const now = Date.now();
       const realDateNow = Date.now.bind(global.Date);
@@ -277,6 +324,48 @@ cacheFactories.forEach(cacheFactory => {
       }
     });
 
+    it('expires the cache on read when the date.now > expires_in when using custom now provider', async () => {
+      const now = Date.now();
+      const cacheRemoveSpy = jest.spyOn(cache, 'remove');
+
+      const data = {
+        ...defaultData,
+        decodedToken: {
+          claims: {
+            __raw: TEST_ID_TOKEN,
+            name: 'Test',
+            exp: nowSeconds() + dayInSeconds * 2
+          },
+          user: { name: 'Test' }
+        }
+      };
+
+      const provider = jest.fn().mockResolvedValue(now);
+      const manager = new CacheManager(cache, keyManifest, provider);
+
+      await manager.set(data);
+
+      const cacheKey = CacheKey.fromCacheEntry(data);
+
+      // Test that the cache state is normal before we expire the data
+      expect(await manager.get(cacheKey)).toStrictEqual(data);
+
+      // Advance the time to just past the expiry..
+      provider.mockResolvedValue((now + dayInSeconds + 100) * 1000);
+
+      const result = await manager.get(cacheKey);
+
+      // And test that the cache has been emptied
+      expect(result).toBeFalsy();
+
+      // And that the data has been removed from the key manifest
+      if (keyManifest) {
+        expect(cacheRemoveSpy).toHaveBeenCalledWith(
+          `@@auth0spajs@@::${data.client_id}`
+        );
+      }
+    });
+
     it('expires the cache on read when the date.now > token.exp', async () => {
       const now = Date.now();
       const realDateNow = Date.now.bind(global.Date);
@@ -301,6 +390,41 @@ cacheFactories.forEach(cacheFactory => {
       const result = await manager.get(cacheKey);
 
       global.Date.now = realDateNow;
+
+      // And test that the cache has been emptied
+      expect(result).toBeFalsy();
+
+      // And that the data has been removed from the key manifest
+      if (keyManifest) {
+        expect(cacheRemoveSpy).toHaveBeenCalledWith(
+          `@@auth0spajs@@::${data.client_id}`
+        );
+      }
+    });
+
+    it('expires the cache on read when the date.now > token.exp when using custom now provider', async () => {
+      const now = Date.now();
+      const cacheRemoveSpy = jest.spyOn(cache, 'remove');
+
+      const data = {
+        ...defaultData,
+        expires_in: dayInSeconds * 120
+      };
+
+      const provider = jest.fn().mockResolvedValue(now);
+      const manager = new CacheManager(cache, keyManifest, provider);
+
+      await manager.set(data);
+
+      const cacheKey = CacheKey.fromCacheEntry(data);
+
+      // Test that the cache state is normal before we expire the data
+      expect(await manager.get(cacheKey)).toStrictEqual(data);
+
+      // Advance the time to just past the expiry..
+      provider.mockResolvedValue((now + dayInSeconds + 100) * 1000);
+
+      const result = await manager.get(cacheKey);
 
       // And test that the cache has been emptied
       expect(result).toBeFalsy();
