@@ -338,6 +338,8 @@ export interface GetTokenSilentlyOptions {
    */
   timeoutInSeconds?: number;
 
+  verboseResponse?: boolean;
+
   /**
    * If you need to send custom parameters to the Authorization Server,
    * make sure to use the original parameter name.
@@ -452,6 +454,17 @@ export interface TokenEndpointOptions {
 /**
  * @ignore
  */
+export type TokenEndpointResponse = {
+  id_token: string;
+  access_token: string;
+  refresh_token?: string;
+  expires_in: number;
+  scope?: string;
+};
+
+/**
+ * @ignore
+ */
 export interface OAuthTokenOptions extends TokenEndpointOptions {
   code_verifier: string;
   code: string;
@@ -558,3 +571,8 @@ export type FetchOptions = {
   body?: string;
   signal?: AbortSignal;
 };
+
+export type GetTokenSilentlyVerboseResponse = Omit<
+  Partial<TokenEndpointResponse>,
+  'refresh_token'
+>;

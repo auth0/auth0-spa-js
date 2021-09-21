@@ -92,6 +92,7 @@ describe('Auth0Client', () => {
 
     mockWindow.open = jest.fn();
     mockWindow.addEventListener = jest.fn();
+
     mockWindow.crypto = {
       subtle: {
         digest: () => 'foo'
@@ -100,6 +101,7 @@ describe('Auth0Client', () => {
         return '123';
       }
     };
+
     mockWindow.MessageChannel = MessageChannel;
     mockWindow.Worker = {};
     jest.spyOn(scope, 'getUniqueScopes');
@@ -268,6 +270,7 @@ describe('Auth0Client', () => {
 
     it('calls the token endpoint with the correct params when passing redirect uri and using refresh tokens', async () => {
       const redirect_uri = 'https://custom';
+
       const auth0 = setup({
         useRefreshTokens: true
       });
@@ -330,6 +333,7 @@ describe('Auth0Client', () => {
       });
 
       jest.spyOn(<any>api, 'oauthToken');
+
       jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
         access_token: TEST_ACCESS_TOKEN,
         refresh_token: TEST_REFRESH_TOKEN,
@@ -1605,11 +1609,10 @@ describe('Auth0Client', () => {
       const auth0 = setup();
 
       await loginWithRedirect(auth0);
-
       mockFetch.mockReset();
-
       jest.spyOn(auth0, 'logout');
-      jest.spyOn(utils, 'runIframe').mockRejectedValue(
+
+      const utilSpy = jest.spyOn(utils, 'runIframe').mockRejectedValue(
         GenericError.fromPayload({
           error: 'login_required',
           error_description: 'login_required'
@@ -1619,6 +1622,7 @@ describe('Auth0Client', () => {
       await expect(
         auth0.getTokenSilently({ ignoreCache: true })
       ).rejects.toThrow('login_required');
+
       expect(auth0.logout).toHaveBeenCalledWith({ localOnly: true });
     });
 
@@ -1626,12 +1630,12 @@ describe('Auth0Client', () => {
       const auth0 = setup();
 
       await loginWithRedirect(auth0);
-
       mockFetch.mockReset();
-
       jest.spyOn(auth0, 'logout');
+
       const originalWindow = { ...window };
       const windowSpy = jest.spyOn(global as any, 'window', 'get');
+
       windowSpy.mockImplementation(() => ({
         ...originalWindow,
         crossOriginIsolated: true
@@ -1640,7 +1644,40 @@ describe('Auth0Client', () => {
       await expect(
         auth0.getTokenSilently({ ignoreCache: true })
       ).rejects.toHaveProperty('error', 'login_required');
+
       expect(auth0.logout).toHaveBeenCalledWith({ localOnly: true });
+      windowSpy.mockRestore();
+    });
+
+    it('returns the full token response when returnMode = "verbose"', async () => {
+      const auth0 = setup();
+
+      await loginWithRedirect(auth0);
+
+      jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
+        state: TEST_STATE
+      });
+
+      mockFetch.mockResolvedValue(
+        fetchResponse(true, {
+          id_token: TEST_ID_TOKEN,
+          refresh_token: TEST_REFRESH_TOKEN,
+          access_token: TEST_ACCESS_TOKEN,
+          expires_in: 86400
+        })
+      );
+
+      const response = await auth0.getTokenSilently({
+        ignoreCache: true,
+        verboseResponse: true
+      });
+
+      // No refresh_token included here, or oauthTokenScope
+      expect(response).toStrictEqual({
+        id_token: TEST_ID_TOKEN,
+        access_token: TEST_ACCESS_TOKEN,
+        expires_in: 86400
+      });
     });
   });
 });

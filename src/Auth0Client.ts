@@ -13,7 +13,7 @@ import {
   openPopup
 } from './utils';
 
-import { oauthToken, TokenEndpointResponse } from './api';
+import { oauthToken } from './api';
 
 import { getUniqueScopes } from './scope';
 
@@ -66,7 +66,9 @@ import {
   CacheLocation,
   LogoutUrlOptions,
   User,
-  IdToken
+  IdToken,
+  GetTokenSilentlyVerboseResponse,
+  TokenEndpointResponse
 } from './global';
 
 // @ts-ignore
@@ -74,6 +76,16 @@ import TokenWorker from './worker/token.worker.ts';
 import { isIE11 } from './user-agent';
 import { singlePromise, retryPromise } from './promise-utils';
 import { CacheKeyManifest } from './cache/key-manifest';
+
+/**
+ * @ignore
+ */
+type GetTokenSilentlyResult = TokenEndpointResponse & {
+  decodedToken: ReturnType<typeof verifyIdToken>;
+  scope: string;
+  oauthTokenScope?: string;
+  audience: string;
+};
 
 /**
  * @ignore
@@ -716,6 +728,14 @@ export default class Auth0Client {
     }
   }
 
+  public async getTokenSilently(
+    options: GetTokenSilentlyOptions & { verboseResponse: true }
+  ): Promise<GetTokenSilentlyVerboseResponse>;
+
+  public async getTokenSilently(
+    options?: GetTokenSilentlyOptions
+  ): Promise<string>;
+
   /**
    * ```js
    * const token = await auth0.getTokenSilently(options);
@@ -742,7 +762,9 @@ export default class Auth0Client {
    *
    * @param options
    */
-  public async getTokenSilently(options: GetTokenSilentlyOptions = {}) {
+  public async getTokenSilently(
+    options: GetTokenSilentlyOptions = {}
+  ): Promise<string | GetTokenSilentlyVerboseResponse> {
     const { ignoreCache, ...getTokenOptions } = {
       audience: this.options.audience,
       ignoreCache: false,
@@ -760,11 +782,13 @@ export default class Auth0Client {
     );
   }
 
-  private async _getTokenSilently(options: GetTokenSilentlyOptions = {}) {
+  private async _getTokenSilently(
+    options: GetTokenSilentlyOptions = {}
+  ): Promise<string | GetTokenSilentlyVerboseResponse> {
     const { ignoreCache, ...getTokenOptions } = options;
 
-    const getAccessTokenFromCache = async () => {
-      const cache = await this.cacheManager.get(
+    const getCacheEntry = async () => {
+      const entry = await this.cacheManager.get(
         new CacheKey({
           scope: getTokenOptions.scope,
           audience: getTokenOptions.audience || 'default',
@@ -773,16 +797,21 @@ export default class Auth0Client {
         60 // get a new token if within 60 seconds of expiring
       );
 
-      return cache && cache.access_token;
+      return entry;
     };
 
     // Check the cache before acquiring the lock to avoid the latency of
     // `lock.acquireLock` when the cache is populated.
     if (!ignoreCache) {
-      const accessToken = await getAccessTokenFromCache();
+      const entry = await getCacheEntry();
 
-      if (accessToken) {
-        return accessToken;
+      if (entry && entry.access_token) {
+        if (options.verboseResponse) {
+          const { id_token, access_token, oauthTokenScope, expires_in } = entry;
+          return { id_token, access_token, scope: oauthTokenScope, expires_in };
+        }
+
+        return entry.access_token;
       }
     }
 
@@ -796,10 +825,14 @@ export default class Auth0Client {
         // Check the cache a second time, because it may have been populated
         // by a previous call while this call was waiting to acquire the lock.
         if (!ignoreCache) {
-          const accessToken = await getAccessTokenFromCache();
+          const entry = await getCacheEntry();
 
-          if (accessToken) {
-            return accessToken;
+          if (entry && entry.access_token) {
+            if (options.verboseResponse) {
+              return entry;
+            }
+
+            return entry.access_token;
           }
         }
 
@@ -815,6 +848,18 @@ export default class Auth0Client {
         this.cookieStorage.save(this.isAuthenticatedCookieName, true, {
           daysUntilExpire: this.sessionCheckExpiryDays
         });
+
+        if (options.verboseResponse) {
+          const { id_token, access_token, oauthTokenScope, expires_in } =
+            authResult;
+
+          return {
+            id_token,
+            access_token,
+            ...(oauthTokenScope ? { scope: oauthTokenScope } : null),
+            expires_in
+          };
+        }
 
         return authResult.access_token;
       } finally {
@@ -953,7 +998,7 @@ export default class Auth0Client {
 
   private async _getTokenFromIFrame(
     options: GetTokenSilentlyOptions
-  ): Promise<any> {
+  ): Promise<GetTokenSilentlyResult> {
     const stateIn = encode(createRandomString());
     const nonceIn = encode(createRandomString());
     const code_verifier = createRandomString();
@@ -1037,6 +1082,7 @@ export default class Auth0Client {
         ...tokenResult,
         decodedToken,
         scope: params.scope,
+        oauthTokenScope: tokenResult.scope,
         audience: params.audience || 'default'
       };
     } catch (e) {
@@ -1051,7 +1097,7 @@ export default class Auth0Client {
 
   private async _getTokenUsingRefreshToken(
     options: GetTokenSilentlyOptions
-  ): Promise<any> {
+  ): Promise<GetTokenSilentlyResult> {
     options.scope = getUniqueScopes(
       this.defaultScope,
       this.options.scope,
@@ -1128,6 +1174,7 @@ export default class Auth0Client {
       ...tokenResult,
       decodedToken,
       scope: options.scope,
+      oauthTokenScope: tokenResult.scope,
       audience: options.audience || 'default'
     };
   }
