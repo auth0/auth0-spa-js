@@ -10,11 +10,7 @@ import * as api from '../../src/api';
 
 import { expectToHaveBeenCalledWithAuth0ClientParam } from '../helpers';
 
-import {
-  GET_TOKEN_SILENTLY_LOCK_KEY,
-  TEST_AUDIENCE,
-  TEST_ORG_ID
-} from '../constants';
+import { GET_TOKEN_SILENTLY_LOCK_KEY, TEST_ORG_ID } from '../constants';
 
 // @ts-ignore
 import { acquireLockSpy } from 'browser-tabs-lock';
@@ -1677,6 +1673,104 @@ describe('Auth0Client', () => {
         id_token: TEST_ID_TOKEN,
         access_token: TEST_ACCESS_TOKEN,
         expires_in: 86400
+      });
+    });
+
+    it('returns the full token response with scopes when returnMode = "verbose"', async () => {
+      const auth0 = setup();
+
+      await loginWithRedirect(auth0);
+
+      jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
+        state: TEST_STATE
+      });
+
+      mockFetch.mockResolvedValue(
+        fetchResponse(true, {
+          id_token: TEST_ID_TOKEN,
+          refresh_token: TEST_REFRESH_TOKEN,
+          access_token: TEST_ACCESS_TOKEN,
+          expires_in: 86400,
+          scope: 'read:messages'
+        })
+      );
+
+      const response = await auth0.getTokenSilently({
+        ignoreCache: true,
+        verboseResponse: true
+      });
+
+      // No refresh_token included here, or oauthTokenScope
+      expect(response).toStrictEqual({
+        id_token: TEST_ID_TOKEN,
+        access_token: TEST_ACCESS_TOKEN,
+        expires_in: 86400,
+        scope: 'read:messages'
+      });
+    });
+
+    it('returns the full response when returnMode = "verbose" and using cache', async () => {
+      const auth0 = setup();
+
+      await loginWithRedirect(auth0);
+
+      const response = await auth0.getTokenSilently({
+        verboseResponse: true
+      });
+
+      // No refresh_token included here, or oauthTokenScope
+      expect(response).toStrictEqual({
+        id_token: TEST_ID_TOKEN,
+        access_token: TEST_ACCESS_TOKEN,
+        expires_in: 86400
+      });
+    });
+
+    it('returns the full response with scopes when returnMode = "verbose" and using cache', async () => {
+      const auth0 = setup({
+        scope: 'read:messages write:messages'
+      });
+
+      // Get the cache into the right state
+      await loginWithRedirect(auth0);
+
+      mockFetch.mockResolvedValue(
+        fetchResponse(true, {
+          id_token: TEST_ID_TOKEN,
+          refresh_token: TEST_REFRESH_TOKEN,
+          access_token: TEST_ACCESS_TOKEN,
+          expires_in: 86400,
+          scope: 'read:messages'
+        })
+      );
+
+      jest.spyOn(auth0['cacheManager'], 'set');
+
+      await auth0.getTokenSilently({
+        ignoreCache: true,
+        scope: 'read:messages'
+      });
+
+      expect(auth0['cacheManager'].set).toHaveBeenCalledWith(
+        expect.objectContaining({
+          scope: 'openid profile email read:messages write:messages',
+          oauthTokenScope: 'read:messages'
+        })
+      );
+
+      // Get a full response from the cache - should return
+      // oauthTokenScope in the scope property
+      const response = await auth0.getTokenSilently({
+        verboseResponse: true,
+        scope: 'read:messages'
+      });
+
+      // No refresh_token included here, or oauthTokenScope
+      expect(response).toStrictEqual({
+        id_token: TEST_ID_TOKEN,
+        access_token: TEST_ACCESS_TOKEN,
+        expires_in: 86400,
+        scope: 'read:messages'
       });
     });
   });

@@ -22,7 +22,8 @@ import {
   ICache,
   LocalStorageCache,
   CacheKey,
-  CacheManager
+  CacheManager,
+  CacheEntry
 } from './cache';
 
 import TransactionManager from './transaction-manager';
@@ -665,15 +666,14 @@ export default class Auth0Client {
       transaction.organizationId
     );
 
-    const cacheEntry = {
+    await this.cacheManager.set({
       ...authResult,
       decodedToken,
       audience: transaction.audience,
       scope: transaction.scope,
-      client_id: this.options.client_id
-    };
-
-    await this.cacheManager.set(cacheEntry);
+      client_id: this.options.client_id,
+      ...(authResult.scope ? { oauthTokenScope: authResult.scope } : null)
+    });
 
     this.cookieStorage.save(this.isAuthenticatedCookieName, true, {
       daysUntilExpire: this.sessionCheckExpiryDays
@@ -787,7 +787,7 @@ export default class Auth0Client {
   ): Promise<string | GetTokenSilentlyVerboseResponse> {
     const { ignoreCache, ...getTokenOptions } = options;
 
-    const getCacheEntry = async () => {
+    const tryGetCacheEntry = async () => {
       const entry = await this.cacheManager.get(
         new CacheKey({
           scope: getTokenOptions.scope,
@@ -797,22 +797,27 @@ export default class Auth0Client {
         60 // get a new token if within 60 seconds of expiring
       );
 
-      return entry;
+      if (entry && entry.access_token) {
+        if (options.verboseResponse) {
+          const { id_token, access_token, oauthTokenScope, expires_in } = entry;
+
+          return {
+            id_token,
+            access_token,
+            ...(oauthTokenScope ? { scope: oauthTokenScope } : null),
+            expires_in
+          };
+        }
+
+        return entry.access_token;
+      }
     };
 
     // Check the cache before acquiring the lock to avoid the latency of
     // `lock.acquireLock` when the cache is populated.
     if (!ignoreCache) {
-      const entry = await getCacheEntry();
-
-      if (entry && entry.access_token) {
-        if (options.verboseResponse) {
-          const { id_token, access_token, oauthTokenScope, expires_in } = entry;
-          return { id_token, access_token, scope: oauthTokenScope, expires_in };
-        }
-
-        return entry.access_token;
-      }
+      const entry = await tryGetCacheEntry();
+      if (entry) return entry;
     }
 
     if (
@@ -825,15 +830,8 @@ export default class Auth0Client {
         // Check the cache a second time, because it may have been populated
         // by a previous call while this call was waiting to acquire the lock.
         if (!ignoreCache) {
-          const entry = await getCacheEntry();
-
-          if (entry && entry.access_token) {
-            if (options.verboseResponse) {
-              return entry;
-            }
-
-            return entry.access_token;
-          }
+          const entry = await tryGetCacheEntry();
+          if (entry) return entry;
         }
 
         const authResult = this.options.useRefreshTokens
