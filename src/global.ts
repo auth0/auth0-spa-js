@@ -338,6 +338,12 @@ export interface GetTokenSilentlyOptions {
    */
   timeoutInSeconds?: number;
 
+  /**
+   * If true, the full response from the /oauth/token endpoint (or the cache, if the cache was used) is returned
+   * (minus `refresh_token` if one was issued). Otherwise, just the access token is returned.
+   *
+   * The default is `false`.
+   */
   verboseResponse?: boolean;
 
   /**

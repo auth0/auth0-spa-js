@@ -728,15 +728,27 @@ export default class Auth0Client {
     }
   }
 
+  /**
+   * Fetches a new access token and returns the response from the /oauth/token endpoint, omitting the refresh token.
+   *
+   * @param options
+   */
   public async getTokenSilently(
     options: GetTokenSilentlyOptions & { verboseResponse: true }
   ): Promise<GetTokenSilentlyVerboseResponse>;
 
+  /**
+   * Fetches a new access token and returns it.
+   *
+   * @param options
+   */
   public async getTokenSilently(
     options?: GetTokenSilentlyOptions
   ): Promise<string>;
 
   /**
+   * Fetches a new access token, and either returns just the access token (the default) or the response from the /oauth/token endpoint, depending on the `verboseResponse` option.
+   *
    * ```js
    * const token = await auth0.getTokenSilently(options);
    * ```
