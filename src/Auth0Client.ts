@@ -22,8 +22,7 @@ import {
   ICache,
   LocalStorageCache,
   CacheKey,
-  CacheManager,
-  CacheEntry
+  CacheManager
 } from './cache';
 
 import TransactionManager from './transaction-manager';
