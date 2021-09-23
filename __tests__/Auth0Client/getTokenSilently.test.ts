@@ -1608,13 +1608,6 @@ describe('Auth0Client', () => {
       mockFetch.mockReset();
       jest.spyOn(auth0, 'logout');
 
-      const utilSpy = jest.spyOn(utils, 'runIframe').mockRejectedValue(
-        GenericError.fromPayload({
-          error: 'login_required',
-          error_description: 'login_required'
-        })
-      );
-
       await expect(
         auth0.getTokenSilently({ ignoreCache: true })
       ).rejects.toThrow('login_required');
