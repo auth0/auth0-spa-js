@@ -670,8 +670,7 @@ export default class Auth0Client {
       decodedToken,
       audience: transaction.audience,
       scope: transaction.scope,
-      client_id: this.options.client_id,
-      ...(authResult.scope ? { oauthTokenScope: authResult.scope } : null)
+      client_id: this.options.client_id
     });
 
     this.cookieStorage.save(this.isAuthenticatedCookieName, true, {
