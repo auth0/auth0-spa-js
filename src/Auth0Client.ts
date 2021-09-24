@@ -763,23 +763,14 @@ export default class Auth0Client {
   private async _getTokenSilently(options: GetTokenSilentlyOptions = {}) {
     const { ignoreCache, ...getTokenOptions } = options;
 
-    const getAccessTokenFromCache = async () => {
-      const cache = await this.cacheManager.get(
-        new CacheKey({
-          scope: getTokenOptions.scope,
-          audience: getTokenOptions.audience || 'default',
-          client_id: this.options.client_id
-        }),
-        60 // get a new token if within 60 seconds of expiring
-      );
-
-      return cache && cache.access_token;
-    };
-
     // Check the cache before acquiring the lock to avoid the latency of
     // `lock.acquireLock` when the cache is populated.
     if (!ignoreCache) {
-      const accessToken = await getAccessTokenFromCache();
+      const accessToken = await this._getAccessTokenFromCache({
+        scope: getTokenOptions.scope,
+        audience: getTokenOptions.audience || 'default',
+        client_id: this.options.client_id
+      });
 
       if (accessToken) {
         return accessToken;
@@ -796,7 +787,11 @@ export default class Auth0Client {
         // Check the cache a second time, because it may have been populated
         // by a previous call while this call was waiting to acquire the lock.
         if (!ignoreCache) {
-          const accessToken = await getAccessTokenFromCache();
+          const accessToken = await this._getAccessTokenFromCache({
+            scope: getTokenOptions.scope,
+            audience: getTokenOptions.audience || 'default',
+            client_id: this.options.client_id
+          });
 
           if (accessToken) {
             return accessToken;
@@ -841,30 +836,39 @@ export default class Auth0Client {
     options: GetTokenWithPopupOptions = {},
     config: PopupConfigOptions = {}
   ) {
-    options.audience = options.audience || this.options.audience;
+    const { ignoreCache, ...getTokenOptions } = {
+      ignoreCache: false,
+      ...options,
+      scope: getUniqueScopes(this.defaultScope, this.scope, options.scope)
+    };
 
-    options.scope = getUniqueScopes(
-      this.defaultScope,
-      this.scope,
-      options.scope
-    );
+    getTokenOptions.audience =
+      getTokenOptions.audience || this.options.audience;
+
+    if (!ignoreCache) {
+      const accessToken = await this._getAccessTokenFromCache({
+        scope: getTokenOptions.scope,
+        audience: getTokenOptions.audience || 'default',
+        client_id: this.options.client_id
+      });
+
+      if (accessToken) {
+        return accessToken;
+      }
+    }
 
     config = {
       ...DEFAULT_POPUP_CONFIG_OPTIONS,
       ...config
     };
 
-    await this.loginWithPopup(options, config);
+    await this.loginWithPopup(getTokenOptions, config);
 
-    const cache = await this.cacheManager.get(
-      new CacheKey({
-        scope: options.scope,
-        audience: options.audience || 'default',
-        client_id: this.options.client_id
-      })
-    );
-
-    return cache.access_token;
+    return await this._getAccessTokenFromCache({
+      scope: getTokenOptions.scope,
+      audience: getTokenOptions.audience || 'default',
+      client_id: this.options.client_id
+    });
   }
 
   /**
@@ -1130,5 +1134,26 @@ export default class Auth0Client {
       scope: options.scope,
       audience: options.audience || 'default'
     };
+  }
+
+  private async _getAccessTokenFromCache({
+    scope,
+    audience,
+    client_id
+  }: {
+    scope: string;
+    audience: string;
+    client_id: string;
+  }) {
+    const cache = await this.cacheManager.get(
+      new CacheKey({
+        scope,
+        audience,
+        client_id
+      }),
+      60 // get a new token if within 60 seconds of expiring
+    );
+
+    return cache && cache.access_token;
   }
 }
