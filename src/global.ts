@@ -352,7 +352,13 @@ export interface GetTokenSilentlyOptions {
   [key: string]: any;
 }
 
-export interface GetTokenWithPopupOptions extends PopupLoginOptions {}
+export interface GetTokenWithPopupOptions extends PopupLoginOptions {
+  /**
+   * When `true`, ignores the cache and always sends a
+   * request to Auth0.
+   */
+  ignoreCache?: boolean;
+}
 
 export interface LogoutUrlOptions {
   /**
