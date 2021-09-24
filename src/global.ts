@@ -218,7 +218,7 @@ export interface Auth0ClientOptions extends BaseLoginOptions {
    *
    * **Note**: Using this improperly can potentially compromise the token validation.
    */
-  nowProvider?: () => Promise<number>;
+  nowProvider?: () => Promise<number> | number;
 }
 
 /**

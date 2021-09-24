@@ -77,5 +77,4 @@ export const DEFAULT_AUTH0_CLIENT = {
   version: version
 };
 
-export const DEFAULT_NOW_PROVIDER = () =>
-  new Promise<number>(resolve => resolve(Date.now()));
+export const DEFAULT_NOW_PROVIDER = () => Date.now();
