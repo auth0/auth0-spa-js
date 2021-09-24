@@ -187,7 +187,7 @@ export default class Auth0Client {
   private sessionCheckExpiryDays: number;
   private orgHintCookieName: string;
   private isAuthenticatedCookieName: string;
-  private nowProvider: () => Promise<number>;
+  private nowProvider: () => number | Promise<number>;
 
   cacheLocation: CacheLocation;
   private worker: Worker;

@@ -15,7 +15,7 @@ export class CacheManager {
   constructor(
     private cache: ICache,
     private keyManifest?: CacheKeyManifest,
-    private nowProvider?: () => Promise<number>
+    private nowProvider?: () => number | Promise<number>
   ) {
     this.nowProvider = this.nowProvider || DEFAULT_NOW_PROVIDER;
   }
