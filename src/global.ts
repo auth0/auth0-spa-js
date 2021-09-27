@@ -212,6 +212,13 @@ export interface Auth0ClientOptions extends BaseLoginOptions {
    * continue to work as intended.
    */
   useFormData?: boolean;
+
+  /**
+   * Modify the value used as the current time during the token validation.
+   *
+   * **Note**: Using this improperly can potentially compromise the token validation.
+   */
+  nowProvider?: () => Promise<number> | number;
 }
 
 /**
@@ -484,6 +491,7 @@ export interface JWTVerifyOptions {
   leeway?: number;
   max_age?: number;
   organizationId?: string;
+  now?: number;
 }
 
 /**

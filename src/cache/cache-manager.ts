@@ -1,3 +1,4 @@
+import { DEFAULT_NOW_PROVIDER } from '../constants';
 import { CacheKeyManifest } from './key-manifest';
 
 import {
@@ -11,7 +12,13 @@ import {
 const DEFAULT_EXPIRY_ADJUSTMENT_SECONDS = 0;
 
 export class CacheManager {
-  constructor(private cache: ICache, private keyManifest?: CacheKeyManifest) {}
+  constructor(
+    private cache: ICache,
+    private keyManifest?: CacheKeyManifest,
+    private nowProvider?: () => number | Promise<number>
+  ) {
+    this.nowProvider = this.nowProvider || DEFAULT_NOW_PROVIDER;
+  }
 
   async get(
     cacheKey: CacheKey,
@@ -35,7 +42,8 @@ export class CacheManager {
       return;
     }
 
-    const nowSeconds = Math.floor(Date.now() / 1000);
+    const now = await this.nowProvider();
+    const nowSeconds = Math.floor(now / 1000);
 
     if (wrappedEntry.expiresAt - expiryAdjustmentSeconds < nowSeconds) {
       if (wrappedEntry.body.refresh_token) {
@@ -63,7 +71,7 @@ export class CacheManager {
       audience: entry.audience
     });
 
-    const wrappedEntry = this.wrapCacheEntry(entry);
+    const wrappedEntry = await this.wrapCacheEntry(entry);
 
     await this.cache.set(cacheKey.toKey(), wrappedEntry);
     await this.keyManifest?.add(cacheKey.toKey());
@@ -101,8 +109,9 @@ export class CacheManager {
       });
   }
 
-  private wrapCacheEntry(entry: CacheEntry): WrappedCacheEntry {
-    const expiresInTime = Math.floor(Date.now() / 1000) + entry.expires_in;
+  private async wrapCacheEntry(entry: CacheEntry): Promise<WrappedCacheEntry> {
+    const now = await this.nowProvider();
+    const expiresInTime = Math.floor(now / 1000) + entry.expires_in;
 
     const expirySeconds = Math.min(
       expiresInTime,
