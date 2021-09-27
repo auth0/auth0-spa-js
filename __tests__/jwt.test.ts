@@ -229,6 +229,14 @@ describe('jwt', () => {
       `Expiration Time (exp) claim error in the ID token`
     );
   });
+  it('validates exp using custom now', async () => {
+    const id_token = await createJWT(DEFAULT_PAYLOAD, {
+      expiresIn: '-1h'
+    });
+    expect(() =>
+      verify({ ...verifyOptions, id_token, now: Date.now() - 3600 * 1000 })
+    ).not.toThrow();
+  });
   it('validates nbf', async () => {
     const id_token = await createJWT(DEFAULT_PAYLOAD, {
       notBefore: '1h'
@@ -334,6 +342,30 @@ describe('jwt', () => {
         now
       )}) is after last auth at ${authTimeDateCorrected}`
     );
+  });
+
+  it('validate auth_time + max_age is in the future using custom now', async () => {
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    const maxAge = 1;
+    const leeway = 60;
+    const authTime = Math.floor(yesterday.getTime() / 1000);
+
+    const id_token = await createJWT({
+      ...DEFAULT_PAYLOAD,
+      auth_time: authTime
+    });
+
+    expect(() =>
+      verify({
+        ...verifyOptions,
+        id_token,
+        max_age: maxAge,
+        leeway,
+        now: Math.floor(yesterday.getTime())
+      })
+    ).not.toThrow();
   });
 
   it('validate org_id is present when organizationId is provided', async () => {

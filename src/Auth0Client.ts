@@ -45,7 +45,8 @@ import {
   RECOVERABLE_ERRORS,
   DEFAULT_SESSION_CHECK_EXPIRY_DAYS,
   DEFAULT_AUTH0_CLIENT,
-  INVALID_REFRESH_TOKEN_ERROR_MESSAGE
+  INVALID_REFRESH_TOKEN_ERROR_MESSAGE,
+  DEFAULT_NOW_PROVIDER
 } from './constants';
 
 import {
@@ -198,6 +199,7 @@ export default class Auth0Client {
   private sessionCheckExpiryDays: number;
   private orgHintCookieName: string;
   private isAuthenticatedCookieName: string;
+  private nowProvider: () => number | Promise<number>;
 
   cacheLocation: CacheLocation;
   private worker: Worker;
@@ -252,11 +254,14 @@ export default class Auth0Client {
       this.options.client_id
     );
 
+    this.nowProvider = this.options.nowProvider || DEFAULT_NOW_PROVIDER;
+
     this.cacheManager = new CacheManager(
       cache,
       !cache.allKeys
         ? new CacheKeyManifest(cache, this.options.client_id)
-        : null
+        : null,
+      this.nowProvider
     );
 
     this.domainUrl = getDomain(this.options.domain);
@@ -337,11 +342,13 @@ export default class Auth0Client {
     return this._url(`/authorize?${createQueryParams(authorizeOptions)}`);
   }
 
-  private _verifyIdToken(
+  private async _verifyIdToken(
     id_token: string,
     nonce?: string,
     organizationId?: string
   ) {
+    const now = await this.nowProvider();
+
     return verifyIdToken({
       iss: this.tokenIssuer,
       aud: this.options.client_id,
@@ -349,7 +356,8 @@ export default class Auth0Client {
       nonce,
       organizationId,
       leeway: this.options.leeway,
-      max_age: this._parseNumber(this.options.max_age)
+      max_age: this._parseNumber(this.options.max_age),
+      now
     });
   }
 
@@ -501,7 +509,7 @@ export default class Auth0Client {
 
     const organizationId = options.organization || this.options.organization;
 
-    const decodedToken = this._verifyIdToken(
+    const decodedToken = await this._verifyIdToken(
       authResult.id_token,
       nonceIn,
       organizationId
@@ -659,7 +667,7 @@ export default class Auth0Client {
 
     const authResult = await oauthToken(tokenOptions, this.worker);
 
-    const decodedToken = this._verifyIdToken(
+    const decodedToken = await this._verifyIdToken(
       authResult.id_token,
       transaction.nonce,
       transaction.organizationId
@@ -797,37 +805,19 @@ export default class Auth0Client {
   ): Promise<string | GetTokenSilentlyVerboseResponse> {
     const { ignoreCache, ...getTokenOptions } = options;
 
-    const tryGetCacheEntry = async () => {
-      const entry = await this.cacheManager.get(
-        new CacheKey({
-          scope: getTokenOptions.scope,
-          audience: getTokenOptions.audience || 'default',
-          client_id: this.options.client_id
-        }),
-        60 // get a new token if within 60 seconds of expiring
-      );
-
-      if (entry && entry.access_token) {
-        if (options.detailedResponse) {
-          const { id_token, access_token, oauthTokenScope, expires_in } = entry;
-
-          return {
-            id_token,
-            access_token,
-            ...(oauthTokenScope ? { scope: oauthTokenScope } : null),
-            expires_in
-          };
-        }
-
-        return entry.access_token;
-      }
-    };
-
     // Check the cache before acquiring the lock to avoid the latency of
     // `lock.acquireLock` when the cache is populated.
     if (!ignoreCache) {
-      const entry = await tryGetCacheEntry();
-      if (entry) return entry;
+      const entry = await this._getEntryFromCache({
+        scope: getTokenOptions.scope,
+        audience: getTokenOptions.audience || 'default',
+        client_id: this.options.client_id,
+        getDetailedEntry: options.detailedResponse
+      });
+
+      if (entry) {
+        return entry;
+      }
     }
 
     if (
@@ -840,8 +830,16 @@ export default class Auth0Client {
         // Check the cache a second time, because it may have been populated
         // by a previous call while this call was waiting to acquire the lock.
         if (!ignoreCache) {
-          const entry = await tryGetCacheEntry();
-          if (entry) return entry;
+          const entry = await this._getEntryFromCache({
+            scope: getTokenOptions.scope,
+            audience: getTokenOptions.audience || 'default',
+            client_id: this.options.client_id,
+            getDetailedEntry: options.detailedResponse
+          });
+
+          if (entry) {
+            return entry;
+          }
         }
 
         const authResult = this.options.useRefreshTokens
@@ -898,30 +896,39 @@ export default class Auth0Client {
     options: GetTokenWithPopupOptions = {},
     config: PopupConfigOptions = {}
   ) {
-    options.audience = options.audience || this.options.audience;
+    const { ignoreCache, ...getTokenOptions } = {
+      ignoreCache: false,
+      ...options,
+      scope: getUniqueScopes(this.defaultScope, this.scope, options.scope)
+    };
 
-    options.scope = getUniqueScopes(
-      this.defaultScope,
-      this.scope,
-      options.scope
-    );
+    getTokenOptions.audience =
+      getTokenOptions.audience || this.options.audience;
+
+    if (!ignoreCache) {
+      const accessToken = await this._getEntryFromCache({
+        scope: getTokenOptions.scope,
+        audience: getTokenOptions.audience || 'default',
+        client_id: this.options.client_id
+      });
+
+      if (accessToken) {
+        return accessToken;
+      }
+    }
 
     config = {
       ...DEFAULT_POPUP_CONFIG_OPTIONS,
       ...config
     };
 
-    await this.loginWithPopup(options, config);
+    await this.loginWithPopup(getTokenOptions, config);
 
-    const cache = await this.cacheManager.get(
-      new CacheKey({
-        scope: options.scope,
-        audience: options.audience || 'default',
-        client_id: this.options.client_id
-      })
-    );
-
-    return cache.access_token;
+    return await this._getEntryFromCache({
+      scope: getTokenOptions.scope,
+      audience: getTokenOptions.audience || 'default',
+      client_id: this.options.client_id
+    });
   }
 
   /**
@@ -1086,7 +1093,10 @@ export default class Auth0Client {
         this.worker
       );
 
-      const decodedToken = this._verifyIdToken(tokenResult.id_token, nonceIn);
+      const decodedToken = await this._verifyIdToken(
+        tokenResult.id_token,
+        nonceIn
+      );
 
       this._processOrgIdHint(decodedToken.claims.org_id);
 
@@ -1185,7 +1195,7 @@ export default class Auth0Client {
       throw e;
     }
 
-    const decodedToken = this._verifyIdToken(tokenResult.id_token);
+    const decodedToken = await this._verifyIdToken(tokenResult.id_token);
 
     return {
       ...tokenResult,
@@ -1194,5 +1204,41 @@ export default class Auth0Client {
       oauthTokenScope: tokenResult.scope,
       audience: options.audience || 'default'
     };
+  }
+
+  private async _getEntryFromCache({
+    scope,
+    audience,
+    client_id,
+    getDetailedEntry = false
+  }: {
+    scope: string;
+    audience: string;
+    client_id: string;
+    getDetailedEntry?: boolean;
+  }) {
+    const entry = await this.cacheManager.get(
+      new CacheKey({
+        scope,
+        audience,
+        client_id
+      }),
+      60 // get a new token if within 60 seconds of expiring
+    );
+
+    if (entry && entry.access_token) {
+      if (getDetailedEntry) {
+        const { id_token, access_token, oauthTokenScope, expires_in } = entry;
+
+        return {
+          id_token,
+          access_token,
+          ...(oauthTokenScope ? { scope: oauthTokenScope } : null),
+          expires_in
+        };
+      }
+
+      return entry.access_token;
+    }
   }
 }

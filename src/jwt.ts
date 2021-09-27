@@ -159,7 +159,7 @@ export const verify = (options: JWTVerifyOptions) => {
   }
 
   const leeway = options.leeway || 60;
-  const now = new Date(Date.now());
+  const now = new Date(options.now || Date.now());
   const expDate = new Date(0);
   const nbfDate = new Date(0);
   const authTimeDate = new Date(0);

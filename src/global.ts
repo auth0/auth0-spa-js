@@ -212,6 +212,13 @@ export interface Auth0ClientOptions extends BaseLoginOptions {
    * continue to work as intended.
    */
   useFormData?: boolean;
+
+  /**
+   * Modify the value used as the current time during the token validation.
+   *
+   * **Note**: Using this improperly can potentially compromise the token validation.
+   */
+  nowProvider?: () => Promise<number> | number;
 }
 
 /**
@@ -353,7 +360,13 @@ export interface GetTokenSilentlyOptions {
   [key: string]: any;
 }
 
-export interface GetTokenWithPopupOptions extends PopupLoginOptions {}
+export interface GetTokenWithPopupOptions extends PopupLoginOptions {
+  /**
+   * When `true`, ignores the cache and always sends a
+   * request to Auth0.
+   */
+  ignoreCache?: boolean;
+}
 
 export interface LogoutUrlOptions {
   /**
@@ -497,6 +510,7 @@ export interface JWTVerifyOptions {
   leeway?: number;
   max_age?: number;
   organizationId?: string;
+  now?: number;
 }
 
 /**
