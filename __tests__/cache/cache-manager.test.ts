@@ -383,7 +383,7 @@ cacheFactories.forEach(cacheFactory => {
         }
       };
 
-      const provider = jest.fn().mockResolvedValue(now);
+      const provider = jest.fn().mockReturnValue(now);
       const manager = new CacheManager(cache, keyManifest, provider);
 
       await manager.set(data);
@@ -489,7 +489,7 @@ cacheFactories.forEach(cacheFactory => {
         expires_in: dayInSeconds * 120
       };
 
-      const provider = jest.fn().mockResolvedValue(now);
+      const provider = jest.fn().mockReturnValue(now);
       const manager = new CacheManager(cache, keyManifest, provider);
 
       await manager.set(data);
