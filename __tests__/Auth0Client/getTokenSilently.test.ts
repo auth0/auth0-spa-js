@@ -1638,7 +1638,7 @@ describe('Auth0Client', () => {
       windowSpy.mockRestore();
     });
 
-    it('returns the full token response when returnMode = "verbose"', async () => {
+    it('returns the full token response when "detailedResponse: true"', async () => {
       const auth0 = setup();
 
       await loginWithRedirect(auth0);
@@ -1658,7 +1658,7 @@ describe('Auth0Client', () => {
 
       const response = await auth0.getTokenSilently({
         ignoreCache: true,
-        verboseResponse: true
+        detailedResponse: true
       });
 
       // No refresh_token included here, or oauthTokenScope
@@ -1669,7 +1669,7 @@ describe('Auth0Client', () => {
       });
     });
 
-    it('returns the full token response with scopes when returnMode = "verbose"', async () => {
+    it('returns the full token response with scopes when "detailedResponse: true"', async () => {
       const auth0 = setup();
 
       await loginWithRedirect(auth0);
@@ -1686,7 +1686,7 @@ describe('Auth0Client', () => {
 
       const response = await auth0.getTokenSilently({
         ignoreCache: true,
-        verboseResponse: true
+        detailedResponse: true
       });
 
       // No refresh_token included here, or oauthTokenScope
@@ -1698,7 +1698,7 @@ describe('Auth0Client', () => {
       });
     });
 
-    it('returns the full response when returnMode = "verbose" and using cache', async () => {
+    it('returns the full response when "detailedReponse: true" and using cache', async () => {
       const auth0 = setup();
 
       await loginWithRedirect(auth0);
@@ -1710,7 +1710,7 @@ describe('Auth0Client', () => {
         });
 
       const response = await auth0.getTokenSilently({
-        verboseResponse: true
+        detailedResponse: true
       });
 
       // No refresh_token included here, or oauthTokenScope
@@ -1723,7 +1723,7 @@ describe('Auth0Client', () => {
       expect(runIframeSpy).not.toHaveBeenCalled();
     });
 
-    it('returns the full response with scopes when returnMode = "verbose" and using cache', async () => {
+    it('returns the full response with scopes when "detailedResponse: true" and using cache', async () => {
       const auth0 = setup({
         scope: 'read:messages write:messages'
       });
@@ -1768,7 +1768,7 @@ describe('Auth0Client', () => {
       // Get a full response from the cache - should return
       // oauthTokenScope in the scope property
       const response = await auth0.getTokenSilently({
-        verboseResponse: true,
+        detailedResponse: true,
         scope: 'read:messages'
       });
 

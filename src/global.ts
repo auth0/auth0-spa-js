@@ -344,7 +344,7 @@ export interface GetTokenSilentlyOptions {
    *
    * The default is `false`.
    */
-  verboseResponse?: boolean;
+  detailedResponse?: boolean;
 
   /**
    * If you need to send custom parameters to the Authorization Server,

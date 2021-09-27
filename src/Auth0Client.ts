@@ -732,7 +732,7 @@ export default class Auth0Client {
    * @param options
    */
   public async getTokenSilently(
-    options: GetTokenSilentlyOptions & { verboseResponse: true }
+    options: GetTokenSilentlyOptions & { detailedResponse: true }
   ): Promise<GetTokenSilentlyVerboseResponse>;
 
   /**
@@ -745,7 +745,7 @@ export default class Auth0Client {
   ): Promise<string>;
 
   /**
-   * Fetches a new access token, and either returns just the access token (the default) or the response from the /oauth/token endpoint, depending on the `verboseResponse` option.
+   * Fetches a new access token, and either returns just the access token (the default) or the response from the /oauth/token endpoint, depending on the `detailedResponse` option.
    *
    * ```js
    * const token = await auth0.getTokenSilently(options);
@@ -808,7 +808,7 @@ export default class Auth0Client {
       );
 
       if (entry && entry.access_token) {
-        if (options.verboseResponse) {
+        if (options.detailedResponse) {
           const { id_token, access_token, oauthTokenScope, expires_in } = entry;
 
           return {
@@ -857,9 +857,13 @@ export default class Auth0Client {
           daysUntilExpire: this.sessionCheckExpiryDays
         });
 
-        if (options.verboseResponse) {
-          const { id_token, access_token, oauthTokenScope, expires_in } =
-            authResult;
+        if (options.detailedResponse) {
+          const {
+            id_token,
+            access_token,
+            oauthTokenScope,
+            expires_in
+          } = authResult;
 
           return {
             id_token,
@@ -1134,8 +1138,13 @@ export default class Auth0Client {
 
     let tokenResult: TokenEndpointResponse;
 
-    const { scope, audience, ignoreCache, timeoutInSeconds, ...customOptions } =
-      options;
+    const {
+      scope,
+      audience,
+      ignoreCache,
+      timeoutInSeconds,
+      ...customOptions
+    } = options;
 
     const timeout =
       typeof options.timeoutInSeconds === 'number'
