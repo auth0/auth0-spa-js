@@ -10,11 +10,7 @@ import * as api from '../../src/api';
 
 import { expectToHaveBeenCalledWithAuth0ClientParam } from '../helpers';
 
-import {
-  GET_TOKEN_SILENTLY_LOCK_KEY,
-  TEST_AUDIENCE,
-  TEST_ORG_ID
-} from '../constants';
+import { GET_TOKEN_SILENTLY_LOCK_KEY, TEST_ORG_ID } from '../constants';
 
 // @ts-ignore
 import { acquireLockSpy } from 'browser-tabs-lock';
@@ -92,6 +88,7 @@ describe('Auth0Client', () => {
 
     mockWindow.open = jest.fn();
     mockWindow.addEventListener = jest.fn();
+
     mockWindow.crypto = {
       subtle: {
         digest: () => 'foo'
@@ -100,6 +97,7 @@ describe('Auth0Client', () => {
         return '123';
       }
     };
+
     mockWindow.MessageChannel = MessageChannel;
     mockWindow.Worker = {};
     jest.spyOn(scope, 'getUniqueScopes');
@@ -268,6 +266,7 @@ describe('Auth0Client', () => {
 
     it('calls the token endpoint with the correct params when passing redirect uri and using refresh tokens', async () => {
       const redirect_uri = 'https://custom';
+
       const auth0 = setup({
         useRefreshTokens: true
       });
@@ -330,6 +329,7 @@ describe('Auth0Client', () => {
       });
 
       jest.spyOn(<any>api, 'oauthToken');
+
       jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
         access_token: TEST_ACCESS_TOKEN,
         refresh_token: TEST_REFRESH_TOKEN,
@@ -1605,20 +1605,13 @@ describe('Auth0Client', () => {
       const auth0 = setup();
 
       await loginWithRedirect(auth0);
-
       mockFetch.mockReset();
-
       jest.spyOn(auth0, 'logout');
-      jest.spyOn(utils, 'runIframe').mockRejectedValue(
-        GenericError.fromPayload({
-          error: 'login_required',
-          error_description: 'login_required'
-        })
-      );
 
       await expect(
         auth0.getTokenSilently({ ignoreCache: true })
       ).rejects.toThrow('login_required');
+
       expect(auth0.logout).toHaveBeenCalledWith({ localOnly: true });
     });
 
@@ -1626,12 +1619,12 @@ describe('Auth0Client', () => {
       const auth0 = setup();
 
       await loginWithRedirect(auth0);
-
       mockFetch.mockReset();
-
       jest.spyOn(auth0, 'logout');
+
       const originalWindow = { ...window };
       const windowSpy = jest.spyOn(global as any, 'window', 'get');
+
       windowSpy.mockImplementation(() => ({
         ...originalWindow,
         crossOriginIsolated: true
@@ -1640,7 +1633,154 @@ describe('Auth0Client', () => {
       await expect(
         auth0.getTokenSilently({ ignoreCache: true })
       ).rejects.toHaveProperty('error', 'login_required');
+
       expect(auth0.logout).toHaveBeenCalledWith({ localOnly: true });
+      windowSpy.mockRestore();
+    });
+
+    it('returns the full token response when "detailedResponse: true"', async () => {
+      const auth0 = setup();
+
+      await loginWithRedirect(auth0);
+
+      jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
+        state: TEST_STATE
+      });
+
+      mockFetch.mockResolvedValue(
+        fetchResponse(true, {
+          id_token: TEST_ID_TOKEN,
+          refresh_token: TEST_REFRESH_TOKEN,
+          access_token: TEST_ACCESS_TOKEN,
+          expires_in: 86400
+        })
+      );
+
+      const response = await auth0.getTokenSilently({
+        ignoreCache: true,
+        detailedResponse: true
+      });
+
+      // No refresh_token included here, or oauthTokenScope
+      expect(response).toStrictEqual({
+        id_token: TEST_ID_TOKEN,
+        access_token: TEST_ACCESS_TOKEN,
+        expires_in: 86400
+      });
+    });
+
+    it('returns the full token response with scopes when "detailedResponse: true"', async () => {
+      const auth0 = setup();
+
+      await loginWithRedirect(auth0);
+
+      mockFetch.mockResolvedValue(
+        fetchResponse(true, {
+          id_token: TEST_ID_TOKEN,
+          refresh_token: TEST_REFRESH_TOKEN,
+          access_token: TEST_ACCESS_TOKEN,
+          expires_in: 86400,
+          scope: 'read:messages'
+        })
+      );
+
+      const response = await auth0.getTokenSilently({
+        ignoreCache: true,
+        detailedResponse: true
+      });
+
+      // No refresh_token included here, or oauthTokenScope
+      expect(response).toStrictEqual({
+        id_token: TEST_ID_TOKEN,
+        access_token: TEST_ACCESS_TOKEN,
+        expires_in: 86400,
+        scope: 'read:messages'
+      });
+    });
+
+    it('returns the full response when "detailedReponse: true" and using cache', async () => {
+      const auth0 = setup();
+
+      await loginWithRedirect(auth0);
+
+      const runIframeSpy = jest
+        .spyOn(<any>utils, 'runIframe')
+        .mockResolvedValue({
+          state: TEST_STATE
+        });
+
+      const response = await auth0.getTokenSilently({
+        detailedResponse: true
+      });
+
+      // No refresh_token included here, or oauthTokenScope
+      expect(response).toStrictEqual({
+        id_token: TEST_ID_TOKEN,
+        access_token: TEST_ACCESS_TOKEN,
+        expires_in: 86400
+      });
+
+      expect(runIframeSpy).not.toHaveBeenCalled();
+    });
+
+    it('returns the full response with scopes when "detailedResponse: true" and using cache', async () => {
+      const auth0 = setup({
+        scope: 'read:messages write:messages'
+      });
+
+      const runIframeSpy = jest
+        .spyOn(<any>utils, 'runIframe')
+        .mockResolvedValue({
+          state: TEST_STATE
+        });
+
+      // Get the cache into the right state
+      await loginWithRedirect(auth0);
+
+      mockFetch.mockResolvedValue(
+        fetchResponse(true, {
+          id_token: TEST_ID_TOKEN,
+          refresh_token: TEST_REFRESH_TOKEN,
+          access_token: TEST_ACCESS_TOKEN,
+          expires_in: 86400,
+          scope: 'read:messages'
+        })
+      );
+
+      jest.spyOn(auth0['cacheManager'], 'set');
+
+      await auth0.getTokenSilently({
+        ignoreCache: true,
+        scope: 'read:messages'
+      });
+
+      expect(auth0['cacheManager'].set).toHaveBeenCalledWith(
+        expect.objectContaining({
+          scope: 'openid profile email read:messages write:messages',
+          oauthTokenScope: 'read:messages'
+        })
+      );
+
+      // runIframe will have been called while setting up this test, we'll clear it here
+      // to verify that the _next_ call to getTokenSilently uses the cache
+      runIframeSpy.mockClear();
+
+      // Get a full response from the cache - should return
+      // oauthTokenScope in the scope property
+      const response = await auth0.getTokenSilently({
+        detailedResponse: true,
+        scope: 'read:messages'
+      });
+
+      // No refresh_token included here, or oauthTokenScope
+      expect(response).toStrictEqual({
+        id_token: TEST_ID_TOKEN,
+        access_token: TEST_ACCESS_TOKEN,
+        expires_in: 86400,
+        scope: 'read:messages'
+      });
+
+      expect(runIframeSpy).not.toHaveBeenCalled();
     });
   });
 });

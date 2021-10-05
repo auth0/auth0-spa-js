@@ -13,7 +13,7 @@ import {
   openPopup
 } from './utils';
 
-import { oauthToken, TokenEndpointResponse } from './api';
+import { oauthToken } from './api';
 
 import { getUniqueScopes } from './scope';
 
@@ -67,7 +67,9 @@ import {
   CacheLocation,
   LogoutUrlOptions,
   User,
-  IdToken
+  IdToken,
+  GetTokenSilentlyVerboseResponse,
+  TokenEndpointResponse
 } from './global';
 
 // @ts-ignore
@@ -75,6 +77,16 @@ import TokenWorker from './worker/token.worker.ts';
 import { isIE11 } from './user-agent';
 import { singlePromise, retryPromise } from './promise-utils';
 import { CacheKeyManifest } from './cache/key-manifest';
+
+/**
+ * @ignore
+ */
+type GetTokenSilentlyResult = TokenEndpointResponse & {
+  decodedToken: ReturnType<typeof verifyIdToken>;
+  scope: string;
+  oauthTokenScope?: string;
+  audience: string;
+};
 
 /**
  * @ignore
@@ -661,15 +673,13 @@ export default class Auth0Client {
       transaction.organizationId
     );
 
-    const cacheEntry = {
+    await this.cacheManager.set({
       ...authResult,
       decodedToken,
       audience: transaction.audience,
       scope: transaction.scope,
       client_id: this.options.client_id
-    };
-
-    await this.cacheManager.set(cacheEntry);
+    });
 
     this.cookieStorage.save(this.isAuthenticatedCookieName, true, {
       daysUntilExpire: this.sessionCheckExpiryDays
@@ -725,6 +735,26 @@ export default class Auth0Client {
   }
 
   /**
+   * Fetches a new access token and returns the response from the /oauth/token endpoint, omitting the refresh token.
+   *
+   * @param options
+   */
+  public async getTokenSilently(
+    options: GetTokenSilentlyOptions & { detailedResponse: true }
+  ): Promise<GetTokenSilentlyVerboseResponse>;
+
+  /**
+   * Fetches a new access token and returns it.
+   *
+   * @param options
+   */
+  public async getTokenSilently(
+    options?: GetTokenSilentlyOptions
+  ): Promise<string>;
+
+  /**
+   * Fetches a new access token, and either returns just the access token (the default) or the response from the /oauth/token endpoint, depending on the `detailedResponse` option.
+   *
    * ```js
    * const token = await auth0.getTokenSilently(options);
    * ```
@@ -750,7 +780,9 @@ export default class Auth0Client {
    *
    * @param options
    */
-  public async getTokenSilently(options: GetTokenSilentlyOptions = {}) {
+  public async getTokenSilently(
+    options: GetTokenSilentlyOptions = {}
+  ): Promise<string | GetTokenSilentlyVerboseResponse> {
     const { ignoreCache, ...getTokenOptions } = {
       audience: this.options.audience,
       ignoreCache: false,
@@ -768,20 +800,23 @@ export default class Auth0Client {
     );
   }
 
-  private async _getTokenSilently(options: GetTokenSilentlyOptions = {}) {
+  private async _getTokenSilently(
+    options: GetTokenSilentlyOptions = {}
+  ): Promise<string | GetTokenSilentlyVerboseResponse> {
     const { ignoreCache, ...getTokenOptions } = options;
 
     // Check the cache before acquiring the lock to avoid the latency of
     // `lock.acquireLock` when the cache is populated.
     if (!ignoreCache) {
-      const accessToken = await this._getAccessTokenFromCache({
+      const entry = await this._getEntryFromCache({
         scope: getTokenOptions.scope,
         audience: getTokenOptions.audience || 'default',
-        client_id: this.options.client_id
+        client_id: this.options.client_id,
+        getDetailedEntry: options.detailedResponse
       });
 
-      if (accessToken) {
-        return accessToken;
+      if (entry) {
+        return entry;
       }
     }
 
@@ -795,14 +830,15 @@ export default class Auth0Client {
         // Check the cache a second time, because it may have been populated
         // by a previous call while this call was waiting to acquire the lock.
         if (!ignoreCache) {
-          const accessToken = await this._getAccessTokenFromCache({
+          const entry = await this._getEntryFromCache({
             scope: getTokenOptions.scope,
             audience: getTokenOptions.audience || 'default',
-            client_id: this.options.client_id
+            client_id: this.options.client_id,
+            getDetailedEntry: options.detailedResponse
           });
 
-          if (accessToken) {
-            return accessToken;
+          if (entry) {
+            return entry;
           }
         }
 
@@ -818,6 +854,22 @@ export default class Auth0Client {
         this.cookieStorage.save(this.isAuthenticatedCookieName, true, {
           daysUntilExpire: this.sessionCheckExpiryDays
         });
+
+        if (options.detailedResponse) {
+          const {
+            id_token,
+            access_token,
+            oauthTokenScope,
+            expires_in
+          } = authResult;
+
+          return {
+            id_token,
+            access_token,
+            ...(oauthTokenScope ? { scope: oauthTokenScope } : null),
+            expires_in
+          };
+        }
 
         return authResult.access_token;
       } finally {
@@ -854,7 +906,7 @@ export default class Auth0Client {
       getTokenOptions.audience || this.options.audience;
 
     if (!ignoreCache) {
-      const accessToken = await this._getAccessTokenFromCache({
+      const accessToken = await this._getEntryFromCache({
         scope: getTokenOptions.scope,
         audience: getTokenOptions.audience || 'default',
         client_id: this.options.client_id
@@ -872,7 +924,7 @@ export default class Auth0Client {
 
     await this.loginWithPopup(getTokenOptions, config);
 
-    return await this._getAccessTokenFromCache({
+    return await this._getEntryFromCache({
       scope: getTokenOptions.scope,
       audience: getTokenOptions.audience || 'default',
       client_id: this.options.client_id
@@ -965,7 +1017,7 @@ export default class Auth0Client {
 
   private async _getTokenFromIFrame(
     options: GetTokenSilentlyOptions
-  ): Promise<any> {
+  ): Promise<GetTokenSilentlyResult> {
     const stateIn = encode(createRandomString());
     const nonceIn = encode(createRandomString());
     const code_verifier = createRandomString();
@@ -1052,6 +1104,7 @@ export default class Auth0Client {
         ...tokenResult,
         decodedToken,
         scope: params.scope,
+        oauthTokenScope: tokenResult.scope,
         audience: params.audience || 'default'
       };
     } catch (e) {
@@ -1066,7 +1119,7 @@ export default class Auth0Client {
 
   private async _getTokenUsingRefreshToken(
     options: GetTokenSilentlyOptions
-  ): Promise<any> {
+  ): Promise<GetTokenSilentlyResult> {
     options.scope = getUniqueScopes(
       this.defaultScope,
       this.options.scope,
@@ -1095,8 +1148,13 @@ export default class Auth0Client {
 
     let tokenResult: TokenEndpointResponse;
 
-    const { scope, audience, ignoreCache, timeoutInSeconds, ...customOptions } =
-      options;
+    const {
+      scope,
+      audience,
+      ignoreCache,
+      timeoutInSeconds,
+      ...customOptions
+    } = options;
 
     const timeout =
       typeof options.timeoutInSeconds === 'number'
@@ -1143,20 +1201,23 @@ export default class Auth0Client {
       ...tokenResult,
       decodedToken,
       scope: options.scope,
+      oauthTokenScope: tokenResult.scope,
       audience: options.audience || 'default'
     };
   }
 
-  private async _getAccessTokenFromCache({
+  private async _getEntryFromCache({
     scope,
     audience,
-    client_id
+    client_id,
+    getDetailedEntry = false
   }: {
     scope: string;
     audience: string;
     client_id: string;
+    getDetailedEntry?: boolean;
   }) {
-    const cache = await this.cacheManager.get(
+    const entry = await this.cacheManager.get(
       new CacheKey({
         scope,
         audience,
@@ -1165,6 +1226,19 @@ export default class Auth0Client {
       60 // get a new token if within 60 seconds of expiring
     );
 
-    return cache && cache.access_token;
+    if (entry && entry.access_token) {
+      if (getDetailedEntry) {
+        const { id_token, access_token, oauthTokenScope, expires_in } = entry;
+
+        return {
+          id_token,
+          access_token,
+          ...(oauthTokenScope ? { scope: oauthTokenScope } : null),
+          expires_in
+        };
+      }
+
+      return entry.access_token;
+    }
   }
 }
