@@ -3,8 +3,8 @@
  */
 export class GenericError extends Error {
   constructor(public error: string, public error_description: string) {
-    super(error_description) /* istanbul ignore next */;
-
+    super(error_description);
+    /* istanbul ignore next */
     Object.setPrototypeOf(this, GenericError.prototype);
   }
 
@@ -30,8 +30,9 @@ export class AuthenticationError extends GenericError {
     public state: string,
     public appState: any = null
   ) {
-    super(error, error_description) /* istanbul ignore next */;
+    super(error, error_description);
     //https://github.com/Microsoft/TypeScript-wiki/blob/master/Breaking-Changes.md#extending-built-ins-like-error-array-and-map-may-no-longer-work
+    /* istanbul ignore next */
     Object.setPrototypeOf(this, AuthenticationError.prototype);
   }
 }
@@ -42,8 +43,9 @@ export class AuthenticationError extends GenericError {
  */
 export class TimeoutError extends GenericError {
   constructor() {
-    super('timeout', 'Timeout') /* istanbul ignore next */;
+    super('timeout', 'Timeout');
     //https://github.com/Microsoft/TypeScript-wiki/blob/master/Breaking-Changes.md#extending-built-ins-like-error-array-and-map-may-no-longer-work
+    /* istanbul ignore next */
     Object.setPrototypeOf(this, TimeoutError.prototype);
   }
 }
@@ -61,8 +63,9 @@ export class PopupTimeoutError extends TimeoutError {
 
 export class PopupCancelledError extends GenericError {
   constructor(public popup: Window) {
-    super('cancelled', 'Popup closed') /* istanbul ignore next */;
+    super('cancelled', 'Popup closed');
     //https://github.com/Microsoft/TypeScript-wiki/blob/master/Breaking-Changes.md#extending-built-ins-like-error-array-and-map-may-no-longer-work
+    /* istanbul ignore next */
     Object.setPrototypeOf(this, PopupCancelledError.prototype);
   }
 }
@@ -76,8 +79,9 @@ export class MfaRequiredError extends GenericError {
     error_description: string,
     public mfa_token: string
   ) {
-    super(error, error_description) /* istanbul ignore next */;
+    super(error, error_description);
     //https://github.com/Microsoft/TypeScript-wiki/blob/master/Breaking-Changes.md#extending-built-ins-like-error-array-and-map-may-no-longer-work
+    /* istanbul ignore next */
     Object.setPrototypeOf(this, MfaRequiredError.prototype);
   }
 }
