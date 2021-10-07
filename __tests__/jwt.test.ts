@@ -123,19 +123,24 @@ describe('jwt', () => {
     });
   });
 
-  it('verifies correctly', async done => {
+  it('verifies correctly', async () => {
     const id_token = await createJWT();
+
     const { encoded, header, claims } = verify({
       ...verifyOptions,
       id_token
     });
+
     expect({ encoded, header, payload: claims }).toMatchObject(
       verifier.decode(id_token)
     );
-    verifier.verify(id_token, verifyOptions.nonce, (err, payload) => {
-      expect(err).toBe(null);
-      expect(claims).toMatchObject(payload);
-      done();
+
+    return new Promise<void>(res => {
+      verifier.verify(id_token, verifyOptions.nonce, (err, payload) => {
+        expect(err).toBe(null);
+        expect(claims).toMatchObject(payload);
+        res();
+      });
     });
   });
 

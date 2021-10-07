@@ -511,7 +511,7 @@ describe('utils', () => {
       const seconds = 10;
       jest.useFakeTimers();
       const promise = runIframe(url, origin, seconds);
-      jest.runTimersToTime(seconds * 1000);
+      jest.advanceTimersByTime(seconds * 1000);
       await expect(promise).rejects.toMatchObject(TIMEOUT_ERROR);
       expect(window.document.body.removeChild).toHaveBeenCalledWith(iframe);
     });
@@ -520,7 +520,7 @@ describe('utils', () => {
       const seconds = 10;
       jest.useFakeTimers();
       const promise = runIframe(url, origin, seconds);
-      jest.runTimersToTime(seconds * 1000);
+      jest.advanceTimersByTime(seconds * 1000);
       await expect(promise).rejects.toMatchObject(TIMEOUT_ERROR);
       expect(window.removeEventListener).toBeCalled();
     });
