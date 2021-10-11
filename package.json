@@ -3,7 +3,7 @@
   "name": "@auth0/auth0-spa-js",
   "description": "Auth0 SDK for Single Page Applications using Authorization Code Grant Flow with PKCE",
   "license": "MIT",
-  "version": "1.18.0",
+  "version": "1.19.0",
   "main": "dist/lib/auth0-spa-js.cjs.js",
   "types": "dist/typings/index.d.ts",
   "module": "dist/auth0-spa-js.production.esm.js",
@@ -74,7 +74,7 @@
     "tslib": "^2.3.1",
     "tslint": "^6.1.3",
     "tslint-config-security": "^1.16.0",
-    "typedoc": "^0.22.5",
+    "typedoc": "0.18.0",
     "typescript": "^4.4.3",
     "wait-on": "^6.0.0"
   },

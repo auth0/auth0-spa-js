@@ -1,5 +1,12 @@
 # Change Log
 
+## [v1.19.0](https://github.com/auth0/auth0-spa-js/tree/v1.19.0) (2021-10-11)
+[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v1.18.0...v1.19.0)
+
+**Added**
+- [SDK-2794] Return token response in getTokenSilently [\#803](https://github.com/auth0/auth0-spa-js/pull/803) ([stevehobbsdev](https://github.com/stevehobbsdev))
+- [SDK-2793] Ability to define a custom now provider [\#802](https://github.com/auth0/auth0-spa-js/pull/802) ([frederikprijck](https://github.com/frederikprijck))
+
 ## [v1.18.0](https://github.com/auth0/auth0-spa-js/tree/v1.18.0) (2021-09-15)
 
 [Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v1.17.1...v1.18.0)

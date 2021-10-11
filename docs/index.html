@@ -2814,6 +2814,9 @@ img {
 			<a href="globals.html#cacheable" class="tsd-kind-icon">Cacheable</a>
 		</li>
 		<li class=" tsd-kind-type-alias">
+			<a href="globals.html#gettokensilentlyverboseresponse" class="tsd-kind-icon">Get<wbr>Token<wbr>Silently<wbr>Verbose<wbr>Response</a>
+		</li>
+		<li class=" tsd-kind-type-alias">
 			<a href="globals.html#keymanifestentry" class="tsd-kind-icon">Key<wbr>Manifest<wbr>Entry</a>
 		</li>
 		<li class=" tsd-kind-type-alias tsd-has-type-parameter">
@@ -2836,6 +2839,9 @@ img {
 		</li>
 		<li class=" tsd-kind-variable">
 			<a href="globals.html#default_expiry_adjustment_seconds" class="tsd-kind-icon">DEFAULT_<wbr>EXPIRY_<wbr>ADJUSTMENT_<wbr>SECONDS</a>
+		</li>
+		<li class=" tsd-kind-function">
+			<a href="globals.html#default_now_provider" class="tsd-kind-icon">DEFAULT_<wbr>NOW_<wbr>PROVIDER</a>
 		</li>
 		<li class=" tsd-kind-function">
 			<a href="globals.html#createauth0client" class="tsd-kind-icon">create<wbr>Auth0<wbr>Client</a>
@@ -2880,7 +2886,7 @@ img {
 				<h2>Installation</h2>
 			</a>
 			<p>From the CDN:</p>
-			<pre><code class="language-html"><span class="hljs-tag">&lt;<span class="hljs-name">script</span> <span class="hljs-attr">src</span>=<span class="hljs-string">&quot;https://cdn.auth0.com/js/auth0-spa-js/1.18/auth0-spa-js.production.js&quot;</span>&gt;</span><span class="hljs-tag">&lt;/<span class="hljs-name">script</span>&gt;</span>
+			<pre><code class="language-html"><span class="hljs-tag">&lt;<span class="hljs-name">script</span> <span class="hljs-attr">src</span>=<span class="hljs-string">&quot;https://cdn.auth0.com/js/auth0-spa-js/1.19/auth0-spa-js.production.js&quot;</span>&gt;</span><span class="hljs-tag">&lt;/<span class="hljs-name">script</span>&gt;</span>
 </code></pre>
 			<p>Using <a href="https://npmjs.org">npm</a>:</p>
 			<pre><code class="language-sh">npm install @auth0/auth0-spa-js
@@ -2891,6 +2897,30 @@ img {
 			<a href="#getting-started" id="getting-started" style="color: inherit; text-decoration: none;">
 				<h2>Getting Started</h2>
 			</a>
+			<a href="#auth0-configuration" id="auth0-configuration" style="color: inherit; text-decoration: none;">
+				<h3>Auth0 Configuration</h3>
+			</a>
+			<p>Create a <strong>Single Page Application</strong> in the <a href="https://manage.auth0.com/#/applications">Auth0 Dashboard</a>.</p>
+			<blockquote>
+				<p><strong>If you&#39;re using an existing application</strong>, verify that you have configured the following settings in your Single Page Application:</p>
+				<ul>
+					<li>Click on the &quot;Settings&quot; tab of your application&#39;s page.</li>
+					<li>Ensure that &quot;Token Endpoint Authentication Method&quot; under &quot;Application Properties&quot; is set to &quot;None&quot;</li>
+					<li>Scroll down and click on the &quot;Show Advanced Settings&quot; link.</li>
+					<li>Under &quot;Advanced Settings&quot;, click on the &quot;OAuth&quot; tab.</li>
+					<li>Ensure that &quot;JsonWebToken Signature Algorithm&quot; is set to <code>RS256</code> and that &quot;OIDC Conformant&quot; is enabled.</li>
+				</ul>
+			</blockquote>
+			<p>Next, configure the following URLs for your application under the &quot;Application URIs&quot; section of the &quot;Settings&quot; page:</p>
+			<ul>
+				<li><strong>Allowed Callback URLs</strong>: <code>http://localhost:3000</code></li>
+				<li><strong>Allowed Logout URLs</strong>: <code>http://localhost:3000</code></li>
+				<li><strong>Allowed Web Origins</strong>: <code>http://localhost:3000</code></li>
+			</ul>
+			<blockquote>
+				<p>These URLs should reflect the origins that your application is running on. <strong>Allowed Callback URLs</strong> may also include a path, depending on where you&#39;re handling the callback (see below).</p>
+			</blockquote>
+			<p>Take note of the <strong>Client ID</strong> and <strong>Domain</strong> values under the &quot;Basic Information&quot; section. You&#39;ll need these values in the next step.</p>
 			<a href="#creating-the-client" id="creating-the-client" style="color: inherit; text-decoration: none;">
 				<h3>Creating the client</h3>
 			</a>
@@ -3261,6 +3291,7 @@ client.loginWithPopup({
 							<li class="tsd-kind-type-alias"><a href="globals.html#cachekeydata" class="tsd-kind-icon">Cache<wbr>Key<wbr>Data</a></li>
 							<li class="tsd-kind-type-alias"><a href="globals.html#cachelocation" class="tsd-kind-icon">Cache<wbr>Location</a></li>
 							<li class="tsd-kind-type-alias"><a href="globals.html#cacheable" class="tsd-kind-icon">Cacheable</a></li>
+							<li class="tsd-kind-type-alias"><a href="globals.html#gettokensilentlyverboseresponse" class="tsd-kind-icon">Get<wbr>Token<wbr>Silently<wbr>Verbose<wbr>Response</a></li>
 							<li class="tsd-kind-type-alias"><a href="globals.html#keymanifestentry" class="tsd-kind-icon">Key<wbr>Manifest<wbr>Entry</a></li>
 							<li class="tsd-kind-type-alias tsd-has-type-parameter"><a href="globals.html#maybepromise" class="tsd-kind-icon">Maybe<wbr>Promise</a></li>
 							<li class="tsd-kind-type-alias"><a href="globals.html#wrappedcacheentry" class="tsd-kind-icon">Wrapped<wbr>Cache<wbr>Entry</a></li>
@@ -3279,6 +3310,7 @@ client.loginWithPopup({
 					<section class="tsd-index-section ">
 						<h3>Functions</h3>
 						<ul class="tsd-index-list">
+							<li class="tsd-kind-function"><a href="globals.html#default_now_provider" class="tsd-kind-icon">DEFAULT_<wbr>NOW_<wbr>PROVIDER</a></li>
 							<li class="tsd-kind-function"><a href="globals.html#createauth0client" class="tsd-kind-icon">create<wbr>Auth0<wbr>Client</a></li>
 						</ul>
 					</section>
@@ -3290,10 +3322,10 @@ client.loginWithPopup({
 			<section class="tsd-panel tsd-member tsd-kind-type-alias">
 				<a name="cacheentry" class="tsd-anchor"></a>
 				<h3>Cache<wbr>Entry</h3>
-				<div class="tsd-signature tsd-kind-icon">Cache<wbr>Entry<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">{ </span>access_token<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span>audience<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span>client_id<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span>decodedToken<span class="tsd-signature-symbol">: </span><a href="interfaces/decodedtoken.html" class="tsd-signature-type">DecodedToken</a><span class="tsd-signature-symbol">; </span>expires_in<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">; </span>id_token<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span>refresh_token<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span>scope<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> }</span></div>
+				<div class="tsd-signature tsd-kind-icon">Cache<wbr>Entry<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">{ </span>access_token<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span>audience<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span>client_id<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span>decodedToken<span class="tsd-signature-symbol">: </span><a href="interfaces/decodedtoken.html" class="tsd-signature-type">DecodedToken</a><span class="tsd-signature-symbol">; </span>expires_in<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">; </span>id_token<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span>oauthTokenScope<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span>refresh_token<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span>scope<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> }</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/1de6427/src/cache/shared.ts#L62">src/cache/shared.ts:62</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/59017f3/src/cache/shared.ts#L62">src/cache/shared.ts:62</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-type-declaration">
@@ -3318,6 +3350,9 @@ client.loginWithPopup({
 							<h5>id_<wbr>token<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span></h5>
 						</li>
 						<li class="tsd-parameter">
+							<h5><span class="tsd-flag ts-flagOptional">Optional</span> oauth<wbr>Token<wbr>Scope<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">string</span></h5>
+						</li>
+						<li class="tsd-parameter">
 							<h5><span class="tsd-flag ts-flagOptional">Optional</span> refresh_<wbr>token<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">string</span></h5>
 						</li>
 						<li class="tsd-parameter">
@@ -3332,7 +3367,7 @@ client.loginWithPopup({
 				<div class="tsd-signature tsd-kind-icon">Cache<wbr>Key<wbr>Data<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">{ </span>audience<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span>client_id<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span>scope<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> }</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/1de6427/src/cache/shared.ts#L5">src/cache/shared.ts:5</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/59017f3/src/cache/shared.ts#L5">src/cache/shared.ts:5</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-type-declaration">
@@ -3356,7 +3391,7 @@ client.loginWithPopup({
 				<div class="tsd-signature tsd-kind-icon">Cache<wbr>Location<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">"memory"</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">"localstorage"</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/1de6427/src/global.ts#L220">src/global.ts:220</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/59017f3/src/global.ts#L227">src/global.ts:227</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-comment tsd-typography">
@@ -3371,7 +3406,17 @@ client.loginWithPopup({
 				<div class="tsd-signature tsd-kind-icon">Cacheable<span class="tsd-signature-symbol">:</span> <a href="globals.html#wrappedcacheentry" class="tsd-signature-type">WrappedCacheEntry</a><span class="tsd-signature-symbol"> | </span><a href="globals.html#keymanifestentry" class="tsd-signature-type">KeyManifestEntry</a></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/1de6427/src/cache/shared.ts#L82">src/cache/shared.ts:82</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/59017f3/src/cache/shared.ts#L83">src/cache/shared.ts:83</a></li>
+					</ul>
+				</aside>
+			</section>
+			<section class="tsd-panel tsd-member tsd-kind-type-alias">
+				<a name="gettokensilentlyverboseresponse" class="tsd-anchor"></a>
+				<h3>Get<wbr>Token<wbr>Silently<wbr>Verbose<wbr>Response</h3>
+				<div class="tsd-signature tsd-kind-icon">Get<wbr>Token<wbr>Silently<wbr>Verbose<wbr>Response<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Omit</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">Partial</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">TokenEndpointResponse</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">"refresh_token"</span><span class="tsd-signature-symbol">&gt;</span></div>
+				<aside class="tsd-sources">
+					<ul>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/59017f3/src/global.ts#L595">src/global.ts:595</a></li>
 					</ul>
 				</aside>
 			</section>
@@ -3381,7 +3426,7 @@ client.loginWithPopup({
 				<div class="tsd-signature tsd-kind-icon">Key<wbr>Manifest<wbr>Entry<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">{ </span>keys<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol"> }</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/1de6427/src/cache/shared.ts#L78">src/cache/shared.ts:78</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/59017f3/src/cache/shared.ts#L79">src/cache/shared.ts:79</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-type-declaration">
@@ -3399,7 +3444,7 @@ client.loginWithPopup({
 				<div class="tsd-signature tsd-kind-icon">Maybe<wbr>Promise&lt;T&gt;<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">T</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">T</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/1de6427/src/cache/shared.ts#L84">src/cache/shared.ts:84</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/59017f3/src/cache/shared.ts#L85">src/cache/shared.ts:85</a></li>
 					</ul>
 				</aside>
 				<h4 class="tsd-type-parameters-title">Type parameters</h4>
@@ -3415,7 +3460,7 @@ client.loginWithPopup({
 				<div class="tsd-signature tsd-kind-icon">Wrapped<wbr>Cache<wbr>Entry<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">{ </span>body<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Partial</span><span class="tsd-signature-symbol">&lt;</span><a href="globals.html#cacheentry" class="tsd-signature-type">CacheEntry</a><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">; </span>expiresAt<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> }</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/1de6427/src/cache/shared.ts#L73">src/cache/shared.ts:73</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/59017f3/src/cache/shared.ts#L74">src/cache/shared.ts:74</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-type-declaration">
@@ -3436,7 +3481,7 @@ client.loginWithPopup({
 				<div class="tsd-signature tsd-kind-icon">get<wbr>IdToken<wbr>Claims<wbr>Options<span class="tsd-signature-symbol">:</span> <a href="interfaces/getidtokenclaimsoptions.html" class="tsd-signature-type">GetIdTokenClaimsOptions</a></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/1de6427/src/global.ts#L307">src/global.ts:307</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/59017f3/src/global.ts#L314">src/global.ts:314</a></li>
 					</ul>
 				</aside>
 			</section>
@@ -3449,7 +3494,7 @@ client.loginWithPopup({
 				<div class="tsd-signature tsd-kind-icon">CACHE_<wbr>KEY_<wbr>PREFIX<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">"@@auth0spajs@@"</span><span class="tsd-signature-symbol"> = &quot;@@auth0spajs@@&quot;</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/1de6427/src/cache/shared.ts#L3">src/cache/shared.ts:3</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/59017f3/src/cache/shared.ts#L3">src/cache/shared.ts:3</a></li>
 					</ul>
 				</aside>
 			</section>
@@ -3459,7 +3504,7 @@ client.loginWithPopup({
 				<div class="tsd-signature tsd-kind-icon">CACHE_<wbr>LOCATION_<wbr>LOCAL_<wbr>STORAGE<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">"localstorage"</span><span class="tsd-signature-symbol"> = &quot;localstorage&quot;</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/1de6427/src/constants.ts#L32">src/constants.ts:32</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/59017f3/src/constants.ts#L32">src/constants.ts:32</a></li>
 					</ul>
 				</aside>
 			</section>
@@ -3469,7 +3514,7 @@ client.loginWithPopup({
 				<div class="tsd-signature tsd-kind-icon">CACHE_<wbr>LOCATION_<wbr>MEMORY<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">"memory"</span><span class="tsd-signature-symbol"> = &quot;memory&quot;</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/1de6427/src/constants.ts#L31">src/constants.ts:31</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/59017f3/src/constants.ts#L31">src/constants.ts:31</a></li>
 					</ul>
 				</aside>
 			</section>
@@ -3479,13 +3524,30 @@ client.loginWithPopup({
 				<div class="tsd-signature tsd-kind-icon">DEFAULT_<wbr>EXPIRY_<wbr>ADJUSTMENT_<wbr>SECONDS<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">0</span><span class="tsd-signature-symbol"> = 0</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/1de6427/src/cache/cache-manager.ts#L11">src/cache/cache-manager.ts:11</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/59017f3/src/cache/cache-manager.ts#L12">src/cache/cache-manager.ts:12</a></li>
 					</ul>
 				</aside>
 			</section>
 		</section>
 		<section class="tsd-panel-group tsd-member-group ">
 			<h2>Functions</h2>
+			<section class="tsd-panel tsd-member tsd-kind-function">
+				<a name="default_now_provider" class="tsd-anchor"></a>
+				<h3><span class="tsd-flag ts-flagConst">Const</span> DEFAULT_<wbr>NOW_<wbr>PROVIDER</h3>
+				<ul class="tsd-signatures tsd-kind-function">
+					<li class="tsd-signature tsd-kind-icon">DEFAULT_<wbr>NOW_<wbr>PROVIDER<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span></li>
+				</ul>
+				<ul class="tsd-descriptions">
+					<li class="tsd-description">
+						<aside class="tsd-sources">
+							<ul>
+								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/59017f3/src/constants.ts#L80">src/constants.ts:80</a></li>
+							</ul>
+						</aside>
+						<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">number</span></h4>
+					</li>
+				</ul>
+			</section>
 			<section class="tsd-panel tsd-member tsd-kind-function">
 				<a name="createauth0client" class="tsd-anchor"></a>
 				<h3>create<wbr>Auth0<wbr>Client</h3>
@@ -3496,7 +3558,7 @@ client.loginWithPopup({
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/1de6427/src/index.ts#L19">src/index.ts:19</a></li>
+								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/59017f3/src/index.ts#L19">src/index.ts:19</a></li>
 							</ul>
 						</aside>
 						<h4 class="tsd-parameters-title">Parameters</h4>
