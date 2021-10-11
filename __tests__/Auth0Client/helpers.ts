@@ -2,7 +2,6 @@ import {
   Auth0ClientOptions,
   AuthenticationResult,
   GetTokenSilentlyOptions,
-  GetTokenWithPopupOptions,
   IdToken,
   PopupConfigOptions,
   PopupLoginOptions,
@@ -360,73 +359,5 @@ export const getTokenSilentlyFn = (mockWindow, mockFetch) => {
     );
 
     return await auth0.getTokenSilently(options);
-  };
-};
-
-const processDefaultGetTokenWithPopupOptions = config => {
-  const defaultResponseOptions = {
-    success: true,
-    response: {}
-  };
-  const defaultAuthorizeResponseOptions = {
-    response: authorizationResponse
-  };
-
-  const token = {
-    ...defaultResponseOptions,
-    ...(config.token || {})
-  };
-
-  const authorize = {
-    ...defaultAuthorizeResponseOptions,
-    ...(config.authorize || {})
-  };
-
-  const delay = config.delay || 0;
-
-  return {
-    token,
-    authorize,
-    delay
-  };
-};
-
-export const getTokenWithPopupFn = (mockWindow, mockFetch) => {
-  return async (
-    auth0,
-    options: GetTokenWithPopupOptions = undefined,
-    testConfig: {
-      token?: {
-        success?: boolean;
-        response?: any;
-      };
-    } = {
-      token: {}
-    }
-  ) => {
-    const {
-      token,
-      authorize: { response },
-      delay
-    } = processDefaultGetTokenWithPopupOptions(testConfig);
-
-    setupMessageEventLister(mockWindow, response, delay);
-
-    mockFetch.mockResolvedValueOnce(
-      fetchResponse(
-        token.success,
-        Object.assign(
-          {
-            id_token: TEST_ID_TOKEN,
-            refresh_token: TEST_REFRESH_TOKEN,
-            access_token: TEST_ACCESS_TOKEN,
-            expires_in: 86400
-          },
-          token.response
-        )
-      )
-    );
-
-    return await auth0.getTokenWithPopup(options);
   };
 };

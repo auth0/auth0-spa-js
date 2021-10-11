@@ -10,8 +10,6 @@ import * as scope from '../../src/scope';
 import {
   assertPostFn,
   fetchResponse,
-  getTokenWithPopupFn,
-  loginWithPopupFn,
   setupFn,
   setupMessageEventLister
 } from './helpers';
@@ -40,8 +38,6 @@ const mockWindow = <any>global;
 const mockFetch = (mockWindow.fetch = <jest.Mock>unfetch);
 const mockVerify = <jest.Mock>verify;
 const assertPost = assertPostFn(mockFetch);
-const loginWithPopup = loginWithPopupFn(mockWindow, mockFetch);
-const getTokenWithPopup = getTokenWithPopupFn(mockWindow, mockFetch);
 
 jest
   .spyOn(utils, 'bufferToBase64UrlEncoded')
@@ -108,22 +104,6 @@ describe('Auth0Client', () => {
 
       return auth0;
     };
-
-    it('uses the cache when expires_in > constant leeway', async () => {
-      const auth0 = setup();
-      await loginWithPopup(auth0, undefined, undefined, {
-        token: {
-          response: { expires_in: 70 }
-        }
-      });
-
-      mockFetch.mockReset();
-
-      const token = await auth0.getTokenWithPopup();
-
-      expect(token).toBe(TEST_ACCESS_TOKEN);
-      expect(mockFetch).not.toHaveBeenCalled();
-    });
 
     it('calls `loginWithPopup` with the correct default options', async () => {
       const auth0 = await localSetup();
@@ -234,81 +214,6 @@ describe('Auth0Client', () => {
       await auth0.getTokenWithPopup({}, config);
 
       expect(config.popup.location.href).toMatch(/global-audience/);
-    });
-
-    it('refreshes the token when no cache available', async () => {
-      const auth0 = setup();
-      const token = await getTokenWithPopup(auth0);
-
-      expect(token).toBe(TEST_ACCESS_TOKEN);
-      expect(mockFetch).toHaveBeenCalled();
-    });
-
-    it('refreshes the token when cache available without access token', async () => {
-      const auth0 = setup();
-      await loginWithPopup(auth0, undefined, undefined, {
-        token: {
-          response: { expires_in: 70, access_token: null }
-        }
-      });
-
-      mockFetch.mockReset();
-
-      const token = await getTokenWithPopup(auth0);
-
-      expect(token).toBe(TEST_ACCESS_TOKEN);
-      expect(mockFetch).toHaveBeenCalled();
-    });
-
-    it('refreshes the token when expires_in < constant leeway', async () => {
-      const auth0 = setup();
-      await loginWithPopup(auth0, undefined, undefined, {
-        token: {
-          response: { expires_in: 50 }
-        }
-      });
-
-      mockFetch.mockReset();
-
-      const token = await getTokenWithPopup(auth0);
-
-      expect(token).toBe(TEST_ACCESS_TOKEN);
-      expect(mockFetch).toHaveBeenCalledTimes(1);
-    });
-
-    it('refreshes the token when ignoreCache set to true', async () => {
-      const auth0 = setup();
-      await loginWithPopup(auth0, undefined, undefined, {
-        token: {
-          response: { expires_in: 70 }
-        }
-      });
-
-      mockFetch.mockReset();
-
-      const token = await getTokenWithPopup(auth0, { ignoreCache: true });
-
-      expect(token).toBe(TEST_ACCESS_TOKEN);
-      expect(mockFetch).toHaveBeenCalledTimes(1);
-    });
-
-    it('uses the cache when expires_in > constant leeway & refresh tokens are used', async () => {
-      const auth0 = setup({
-        useRefreshTokens: true
-      });
-
-      await loginWithPopup(auth0, undefined, undefined, {
-        token: {
-          response: { expires_in: 70 }
-        }
-      });
-
-      mockFetch.mockReset();
-
-      const token = await getTokenWithPopup(auth0);
-
-      expect(token).toBe(TEST_ACCESS_TOKEN);
-      expect(mockFetch).not.toHaveBeenCalled();
     });
   });
 });

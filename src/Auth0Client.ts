@@ -896,39 +896,30 @@ export default class Auth0Client {
     options: GetTokenWithPopupOptions = {},
     config: PopupConfigOptions = {}
   ) {
-    const { ignoreCache, ...getTokenOptions } = {
-      ignoreCache: false,
-      ...options,
-      scope: getUniqueScopes(this.defaultScope, this.scope, options.scope)
-    };
+    options.audience = options.audience || this.options.audience;
 
-    getTokenOptions.audience =
-      getTokenOptions.audience || this.options.audience;
-
-    if (!ignoreCache) {
-      const accessToken = await this._getEntryFromCache({
-        scope: getTokenOptions.scope,
-        audience: getTokenOptions.audience || 'default',
-        client_id: this.options.client_id
-      });
-
-      if (accessToken) {
-        return accessToken;
-      }
-    }
+    options.scope = getUniqueScopes(
+      this.defaultScope,
+      this.scope,
+      options.scope
+    );
 
     config = {
       ...DEFAULT_POPUP_CONFIG_OPTIONS,
       ...config
     };
 
-    await this.loginWithPopup(getTokenOptions, config);
+    await this.loginWithPopup(options, config);
 
-    return await this._getEntryFromCache({
-      scope: getTokenOptions.scope,
-      audience: getTokenOptions.audience || 'default',
-      client_id: this.options.client_id
-    });
+    const cache = await this.cacheManager.get(
+      new CacheKey({
+        scope: options.scope,
+        audience: options.audience || 'default',
+        client_id: this.options.client_id
+      })
+    );
+
+    return cache.access_token;
   }
 
   /**
