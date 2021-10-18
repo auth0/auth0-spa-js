@@ -1,5 +1,15 @@
 # Change Log
 
+## [v1.19.2](https://github.com/auth0/auth0-spa-js/tree/v1.19.2) (2021-10-18)
+
+[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v1.19.1...v1.19.2)
+
+This release fixes an anomoly with a new type we exposed in [\#803](https://github.com/auth0/auth0-spa-js/pull/820), where it was incorrectly wrapped with `Partial`. We don't expect this change to introduce any issues, but if you are affected please [raise it on our issue tracker](https://github.com/auth0/auth0-spa-js/issues).
+
+**Fixed**
+
+- GetTokenSilentlyVerboseResponse no longer uses partial TokenEndpointResponse type [\#820](https://github.com/auth0/auth0-spa-js/pull/820) ([stevehobbsdev](https://github.com/stevehobbsdev))
+
 ## [v1.19.1](https://github.com/auth0/auth0-spa-js/tree/v1.19.1) (2021-10-14)
 
 [Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v1.19.0...v1.19.1)
