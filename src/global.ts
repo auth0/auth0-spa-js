@@ -593,6 +593,6 @@ export type FetchOptions = {
 };
 
 export type GetTokenSilentlyVerboseResponse = Omit<
-  Partial<TokenEndpointResponse>,
+  TokenEndpointResponse,
   'refresh_token'
 >;
