@@ -318,6 +318,7 @@ export default class Auth0Client {
       auth0Client,
       cacheLocation,
       advancedOptions,
+      detailedResponse,
       ...withoutClientOptions
     } = this.options;
 
@@ -1016,8 +1017,10 @@ export default class Auth0Client {
     const code_challengeBuffer = await sha256(code_verifier);
     const code_challenge = bufferToBase64UrlEncoded(code_challengeBuffer);
 
+    const { detailedResponse, ...withoutClientOptions } = options;
+
     const params = this._getParams(
-      options,
+      withoutClientOptions,
       stateIn,
       nonceIn,
       code_challenge,
@@ -1064,6 +1067,7 @@ export default class Auth0Client {
         redirect_uri,
         ignoreCache,
         timeoutInSeconds,
+        detailedResponse,
         ...customOptions
       } = options;
 
@@ -1145,6 +1149,7 @@ export default class Auth0Client {
       audience,
       ignoreCache,
       timeoutInSeconds,
+      detailedResponse,
       ...customOptions
     } = options;
 
