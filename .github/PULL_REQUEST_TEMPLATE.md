@@ -1,3 +1,5 @@
+<!-- By submitting a PR to this repository, you agree to the terms within the [Auth0 Code of Conduct](https://github.com/auth0/open-source-template/blob/master/CODE-OF-CONDUCT.md). Please see the [contributing guidelines](https://github.com/auth0/.github/blob/master/CONTRIBUTING.md) for how to create and submit a high-quality PR for this repo. -->
+
 ### Changes
 
 <!--
