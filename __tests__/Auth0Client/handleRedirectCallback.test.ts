@@ -205,12 +205,49 @@ describe('Auth0Client', () => {
 
     it('returns the transactions appState', async () => {
       const auth0 = setup();
+
       const appState = {
         key: 'property'
       };
+
       const result = await loginWithRedirect(auth0, { appState });
+
       expect(result).toBeDefined();
       expect(result.appState).toBe(appState);
+    });
+
+    it('does not store the scope from token endpoint if none was returned', async () => {
+      const auth0 = setup();
+      const cacheSetSpy = jest.spyOn(auth0['cacheManager'], 'set');
+
+      const appState = {
+        key: 'property'
+      };
+
+      await loginWithRedirect(auth0, { appState });
+
+      expect(
+        Object.keys(cacheSetSpy.mock.calls[0][0]).includes('oauthTokenScope')
+      ).toBeFalsy();
+    });
+
+    it('stores the scope returned from the token endpoint in the cache', async () => {
+      const auth0 = setup();
+      const cacheSetSpy = jest.spyOn(auth0['cacheManager'], 'set');
+
+      const appState = {
+        key: 'property'
+      };
+
+      await loginWithRedirect(
+        auth0,
+        { appState },
+        { token: { response: { scope: 'openid profile email' } } }
+      );
+
+      expect(cacheSetSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ oauthTokenScope: 'openid profile email' })
+      );
     });
   });
 
