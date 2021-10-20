@@ -678,6 +678,7 @@ export default class Auth0Client {
       decodedToken,
       audience: transaction.audience,
       scope: transaction.scope,
+      ...(authResult.scope ? { oauthTokenScope: authResult.scope } : null),
       client_id: this.options.client_id
     });
 
