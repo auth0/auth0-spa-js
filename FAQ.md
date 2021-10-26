@@ -43,41 +43,6 @@ The way around this error is to change the settings for your Auth0 application t
 
 The next time you try to authenticate, you should not receive this error.
 
-## Why do I get `Error: Invalid state` in Firefox when refreshing the page immediately after a login?
-
-This is caused by a [bug](https://bugzilla.mozilla.org/show_bug.cgi?id=1422334) in Firefox.
-
-When logging in with a redirect, you will be redirected back to your app with `code` and `state` values set as URL query parameters. These values are used by `handleRedirectCallback` to obtain an access token, and should be removed from the URL and browser history when the `code` has been successfully exchanged for a token (to reduce attack surface). This can be done with [history.replaceState](<https://developer.mozilla.org/en-US/docs/Web/API/History_API#The_replaceState()_method>).
-
-For example, in the [Auth0 React Samples](https://github.com/auth0-samples/auth0-react-samples), a function [onRedirectCallback](https://github.com/auth0-samples/auth0-react-samples/blob/master/01-Login/src/react-auth0-spa.js#L27) is called for this purpose. This function [calls](https://github.com/auth0-samples/auth0-react-samples/blob/master/01-Login/src/index.js#L10) `history.replaceState`. But due to the mentioned bug, Firefox will reload the last URL from cache when refreshing the page (i.e. the "last" URL before calling `history.replaceState`).
-
-This means that after logging in and being redirected to your app with `state` and `code` parameters in the URL, even though `history.replaceState` removed them from the URL and browser history, the bug just loads the full redirect URL from cache when you refresh the page. For example `http://localhost:3000?code=123&state=xyz`.
-
-In the sample app this triggers the [handleRedirectCallback](https://github.com/auth0-samples/auth0-react-samples/blob/master/01-Login/src/react-auth0-spa.js#L25) code again, but with "stale" `code` and `state` values. And this result in `Error: Invalid state`, because the `code` already has been exchanged for a token, making the `state` invalid at this point in time.
-
-We can fix this with a temporary workaround (suggested in the Firefox bug report) by adding `location.hash = location.hash;` **before** calling `history.replaceState`:
-
-```js
-const onRedirectCallback = appState => {
-  // Temporary Firefox workaround
-  window.location.hash = window.location.hash; // eslint-disable-line no-self-assign
-
-  window.history.replaceState(
-    {},
-    document.title,
-    appState && appState.targetUrl
-      ? appState.targetUrl
-      : window.location.pathname
-  );
-};
-```
-
-With this change, an immediate refresh after login works as expected.
-
-Note that even though the workaround doesn't cause any weird side effects in browers, you should ideally remove it after the bug has been fixed in Firefox.
-
-For more context see this [issue](https://github.com/auth0-samples/auth0-react-samples/issues/145).
-
 ## Why do I get `auth0_spa_js_1.default is not a function` when using Typescript?
 
 If you're hitting this issue, set `esModuleInterop: true` in your `tsconfig.json` file (inside `compilerOptions`).
