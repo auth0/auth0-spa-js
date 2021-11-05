@@ -5,7 +5,7 @@ import createAuth0Client, {
   TimeoutError,
   PopupTimeoutError,
   MfaRequiredError
-} from './index';
+} from './index.base';
 
 /**
  * @ignore

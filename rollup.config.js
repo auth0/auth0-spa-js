@@ -24,7 +24,7 @@ const visualizerOptions = {
   filename: 'bundle-stats/index.html'
 };
 
-const getPlugins = shouldMinify => {
+const getPlugins = opts => {
   return [
     webWorkerLoader({
       targetPlatform: 'browser',
@@ -44,11 +44,12 @@ const getPlugins = shouldMinify => {
         sourceMap: true,
         compilerOptions: {
           lib: ['dom', 'es6']
-        }
+        },
+        ...opts.tsConfig
       }
     }),
     replace({ 'process.env.NODE_ENV': `'${process.env.NODE_ENV}'` }),
-    shouldMinify && terser(),
+    opts.minify && terser(),
     sourcemaps()
   ];
 };
@@ -72,7 +73,7 @@ let bundles = [
       sourcemap: true
     },
     plugins: [
-      ...getPlugins(false),
+      ...getPlugins({ minify: false }),
       !isProduction &&
         dev({
           dirs: ['dist', 'static'],
@@ -101,7 +102,7 @@ if (isProduction) {
           format: 'umd'
         }
       ],
-      plugins: [...getPlugins(isProduction), ...getStatsPlugins()]
+      plugins: [...getPlugins({ minify: isProduction }), ...getStatsPlugins()]
     },
     {
       input: 'src/index.ts',
@@ -111,7 +112,7 @@ if (isProduction) {
           format: 'esm'
         }
       ],
-      plugins: getPlugins(isProduction)
+      plugins: getPlugins({ minify: isProduction })
     },
     {
       input: 'src/index.cjs.ts',
@@ -122,8 +123,25 @@ if (isProduction) {
           format: 'cjs'
         }
       ],
-      plugins: getPlugins(false),
+      plugins: getPlugins({ minify: false }),
       external: Object.keys(pkg.dependencies)
+    },
+    {
+      input: 'src/index.base.ts',
+      output: [
+        {
+          file: 'dist/auth0-spa-js.modern.esm.js',
+          format: 'esm'
+        }
+      ],
+      plugins: getPlugins({
+        minify: isProduction,
+        tsConfig: {
+          compilerOptions: {
+            target: 'es6'
+          }
+        }
+      })
     }
   );
 }
