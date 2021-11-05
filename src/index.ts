@@ -17,7 +17,7 @@ import './global';
 export * from './global';
 
 /**
- * Asyncronously creates the Auth0Client instance and calls `checkSession`.
+ * Asynchronously creates the Auth0Client instance and calls `checkSession`.
  *
  * **Note:** There are caveats to using this in a private browser tab, which may not silently authenticae
  * a user on page refresh. Please see [the checkSession docs](https://auth0.github.io/auth0-spa-js/classes/auth0client.html#checksession) for more info.
