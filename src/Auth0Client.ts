@@ -711,6 +711,12 @@ export default class Auth0Client {
    * `Auth0Client` constructor. You should not need this if you are using the
    * `createAuth0Client` factory.
    *
+   * **Note:** the cookie **may not** be present if running an app using a private tab, as some
+   * browsers clear JS cookie data and local storage when the tab or page is closed, or on page reload. This effectively
+   * means that `checkSession` could silently return without authenticating the user on page refresh when
+   * using a private tab, despite having previously logged in. As a workaround, use `getTokenSilently` instead
+   * and handle the possible `login_required` error [as shown in the readme](https://github.com/auth0/auth0-spa-js#creating-the-client).
+   *
    * @param options
    */
   public async checkSession(options?: GetTokenSilentlyOptions) {
@@ -858,12 +864,8 @@ export default class Auth0Client {
         });
 
         if (options.detailedResponse) {
-          const {
-            id_token,
-            access_token,
-            oauthTokenScope,
-            expires_in
-          } = authResult;
+          const { id_token, access_token, oauthTokenScope, expires_in } =
+            authResult;
 
           return {
             id_token,
