@@ -17,6 +17,22 @@ Please try these to see if you can get unblocked:
 - Use the New Login Experience, if possible
 - Supply the social connection with your own client ID and secret in the Auth0 dashboard
 
+### Using Multi-factor Authentication (MFA)
+
+By default, `auth0-spa-js` uses the `prompt=none` and `response_mode=web_message` flow for silent auth, which depends on the user's Auth0 session.
+
+If you have "Require Multi-factor Auth" set to "Always" in your [Auth0 Dashboard](https://manage.auth0.com/#/security/mfa), silent authentication from your SPA will fail unless:
+
+- The user is using a one-time code and selects "Remember me for 30 days"
+- `allowRememberBrowser` is [configured in a Rule](https://auth0.com/docs/login/mfa/customize-mfa-user-pages#change-authentication-request-frequency) and `provider` is set to `google-authenticator`
+
+If silent auth is being used and Auth0 needs interaction from the user to complete the MFA step, then authentication will fail with an `mfa_required` error and the user must log in interactively.
+
+To resolve this:
+
+- Use a Rule to [configure the MFA step](https://auth0.com/docs/login/mfa/customize-mfa-user-pages#change-authentication-request-frequency) to allow the user to remember the browser for up to 30 days
+- Use refresh tokens + local storage so that the auto-login on page refresh does not depend on the user's session. Please [read the docs on storage options](https://auth0.com/docs/libraries/auth0-single-page-app-sdk#change-storage-options) and [rotating refresh tokens](https://auth0.com/docs/libraries/auth0-single-page-app-sdk#use-rotating-refresh-tokens) as these change the security profile of your application.
+
 ## Why does the `Auth0Client` object take a long time to initialize?
 
 Sometimes the `createAuth0Client` asynchronous method can take over 30 seconds to complete. `createAuth0Client` may also return `undefined` and produce an error when you try to access it.
@@ -67,3 +83,5 @@ In most browsers, secure origins are origins that match at least one of the foll
 ```
 
 If you're running your application from a secure origin, it's possible that your browser doesn't support the Web Crypto API. For a compatibility table, please check https://caniuse.com/#feat=mdn-api_subtlecrypto
+
+## Why doesn't my SPA auto-login on page refresh when MFA is enabled?
