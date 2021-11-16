@@ -146,6 +146,7 @@ describe('Auth0Client', () => {
       const [[url]] = (<jest.Mock>utils.runIframe).mock.calls;
 
       assertUrlEquals(url, 'auth0_domain', '/authorize', {
+        scope: TEST_SCOPES,
         client_id: TEST_CLIENT_ID,
         response_type: 'code',
         response_mode: 'web_message',
@@ -174,9 +175,15 @@ describe('Auth0Client', () => {
 
       const [[url]] = (<jest.Mock>utils.runIframe).mock.calls;
 
-      assertUrlEquals(url, 'auth0_domain', '/authorize', {
-        redirect_uri
-      });
+      assertUrlEquals(
+        url,
+        'auth0_domain',
+        '/authorize',
+        {
+          redirect_uri
+        },
+        false
+      );
     });
 
     it('calls the token endpoint with the correct params', async () => {
@@ -385,9 +392,15 @@ describe('Auth0Client', () => {
       await getTokenSilently(auth0);
 
       const [[url]] = (<jest.Mock>utils.runIframe).mock.calls;
-      assertUrlEquals(url, 'auth0_domain', '/authorize', {
-        scope: 'openid email'
-      });
+      assertUrlEquals(
+        url,
+        'auth0_domain',
+        '/authorize',
+        {
+          scope: 'openid email'
+        },
+        false
+      );
     });
 
     it('refreshes the token using custom default scope when using refresh tokens', async () => {

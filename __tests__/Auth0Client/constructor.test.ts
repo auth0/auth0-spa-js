@@ -7,7 +7,7 @@ import * as scope from '../../src/scope';
 
 // @ts-ignore
 
-import { loginWithRedirectFn, setupFn } from './helpers';
+import { assertUrlEquals, loginWithRedirectFn, setupFn } from './helpers';
 
 import { TEST_CLIENT_ID, TEST_CODE_CHALLENGE, TEST_DOMAIN } from '../constants';
 import { ICache } from '../../src/cache';
@@ -32,15 +32,6 @@ jest
   .mockReturnValue(TEST_CODE_CHALLENGE);
 
 jest.spyOn(utils, 'runPopup');
-
-const assertUrlEquals = (actualUrl, host, path, queryParams) => {
-  const url = new URL(actualUrl);
-  expect(url.host).toEqual(host);
-  expect(url.pathname).toEqual(path);
-  for (let [key, value] of Object.entries(queryParams)) {
-    expect(url.searchParams.get(key)).toEqual(value);
-  }
-};
 
 const setup = setupFn(mockVerify);
 
