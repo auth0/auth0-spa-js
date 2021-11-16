@@ -149,10 +149,16 @@ describe('Auth0Client', () => {
       // prettier-ignore
       const url = (utils.runPopup as jest.Mock).mock.calls[0][0].popup.location.href;
 
-      assertUrlEquals(url, 'auth0_domain', '/authorize', {
-        state: TEST_STATE,
-        nonce: TEST_NONCE
-      });
+      assertUrlEquals(
+        url,
+        'auth0_domain',
+        '/authorize',
+        {
+          state: TEST_STATE,
+          nonce: TEST_NONCE
+        },
+        false
+      );
     });
 
     it('creates `code_challenge` by using `utils.sha256` with the result of `utils.createRandomString`', async () => {
@@ -163,10 +169,16 @@ describe('Auth0Client', () => {
       // prettier-ignore
       const url = (utils.runPopup as jest.Mock).mock.calls[0][0].popup.location.href;
 
-      assertUrlEquals(url, 'auth0_domain', '/authorize', {
-        code_challenge: TEST_CODE_CHALLENGE,
-        code_challenge_method: 'S256'
-      });
+      assertUrlEquals(
+        url,
+        'auth0_domain',
+        '/authorize',
+        {
+          code_challenge: TEST_CODE_CHALLENGE,
+          code_challenge_method: 'S256'
+        },
+        false
+      );
     });
 
     it('should log the user in with a popup and redirect using a default redirect URI', async () => {
@@ -235,9 +247,15 @@ describe('Auth0Client', () => {
       // prettier-ignore
       const url = (utils.runPopup as jest.Mock).mock.calls[0][0].popup.location.href;
 
-      assertUrlEquals(url, TEST_DOMAIN, '/authorize', {
-        scope: `${TEST_SCOPES} offline_access`
-      });
+      assertUrlEquals(
+        url,
+        TEST_DOMAIN,
+        '/authorize',
+        {
+          scope: `${TEST_SCOPES} offline_access`
+        },
+        false
+      );
     });
 
     it('should log the user and redirect when using different default redirect_uri', async () => {
@@ -250,9 +268,15 @@ describe('Auth0Client', () => {
       // prettier-ignore
       const url = (utils.runPopup as jest.Mock).mock.calls[0][0].popup.location.href;
 
-      assertUrlEquals(url, TEST_DOMAIN, '/authorize', {
-        redirect_uri
-      });
+      assertUrlEquals(
+        url,
+        TEST_DOMAIN,
+        '/authorize',
+        {
+          redirect_uri
+        },
+        false
+      );
     });
 
     it('should log the user in with a popup and get the token', async () => {
@@ -398,9 +422,15 @@ describe('Auth0Client', () => {
       // prettier-ignore
       const url = (utils.runPopup as jest.Mock).mock.calls[0][0].popup.location.href;
 
-      assertUrlEquals(url, TEST_DOMAIN, '/authorize', {
-        auth0Client: btoa(JSON.stringify(auth0Client))
-      });
+      assertUrlEquals(
+        url,
+        TEST_DOMAIN,
+        '/authorize',
+        {
+          auth0Client: btoa(JSON.stringify(auth0Client))
+        },
+        false
+      );
     });
 
     it('throws error if state from popup response is different from the provided state', async () => {

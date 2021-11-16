@@ -109,24 +109,17 @@ describe('Auth0Client', () => {
 
       const url = new URL(mockWindow.location.assign.mock.calls[0][0]);
 
-      assertUrlEquals(
-        url,
-        TEST_DOMAIN,
-        '/authorize',
-        {
-          auth0Client: expect.any(String),
-          client_id: TEST_CLIENT_ID,
-          redirect_uri: TEST_REDIRECT_URI,
-          scope: TEST_SCOPES,
-          response_type: 'code',
-          response_mode: 'query',
-          state: TEST_STATE,
-          nonce: TEST_NONCE,
-          code_challenge: TEST_CODE_CHALLENGE,
-          code_challenge_method: 'S256'
-        },
-        true // strict mode
-      );
+      assertUrlEquals(url, TEST_DOMAIN, '/authorize', {
+        client_id: TEST_CLIENT_ID,
+        redirect_uri: TEST_REDIRECT_URI,
+        scope: TEST_SCOPES,
+        response_type: 'code',
+        response_mode: 'query',
+        state: TEST_STATE,
+        nonce: TEST_NONCE,
+        code_challenge: TEST_CODE_CHALLENGE,
+        code_challenge_method: 'S256'
+      });
 
       assertPost(
         'https://auth0_domain/oauth/token',
@@ -159,9 +152,15 @@ describe('Auth0Client', () => {
 
       const url = new URL(mockWindow.location.assign.mock.calls[0][0]);
 
-      assertUrlEquals(url, TEST_DOMAIN, '/authorize', {
-        scope: 'openid email'
-      });
+      assertUrlEquals(
+        url,
+        TEST_DOMAIN,
+        '/authorize',
+        {
+          scope: 'openid email'
+        },
+        false
+      );
     });
 
     it('should log the user in using different default redirect_uri', async () => {
@@ -175,9 +174,15 @@ describe('Auth0Client', () => {
 
       const url = new URL(mockWindow.location.assign.mock.calls[0][0]);
 
-      assertUrlEquals(url, TEST_DOMAIN, '/authorize', {
-        redirect_uri
-      });
+      assertUrlEquals(
+        url,
+        TEST_DOMAIN,
+        '/authorize',
+        {
+          redirect_uri
+        },
+        false
+      );
     });
 
     it('should log the user in when overriding default redirect_uri', async () => {
@@ -193,9 +198,15 @@ describe('Auth0Client', () => {
 
       const url = new URL(mockWindow.location.assign.mock.calls[0][0]);
 
-      assertUrlEquals(url, TEST_DOMAIN, '/authorize', {
-        redirect_uri: 'https://my-redirect-uri/callback'
-      });
+      assertUrlEquals(
+        url,
+        TEST_DOMAIN,
+        '/authorize',
+        {
+          redirect_uri: 'https://my-redirect-uri/callback'
+        },
+        false
+      );
     });
 
     it('should log the user in by calling window.location.replace when redirectMethod=replace param is passed', async () => {
@@ -208,9 +219,15 @@ describe('Auth0Client', () => {
 
       const url = new URL(mockWindow.location.replace.mock.calls[0][0]);
 
-      assertUrlEquals(url, TEST_DOMAIN, '/authorize', {
-        audience: 'test_audience'
-      });
+      assertUrlEquals(
+        url,
+        TEST_DOMAIN,
+        '/authorize',
+        {
+          audience: 'test_audience'
+        },
+        false
+      );
     });
 
     it('should log the user in with custom params', async () => {
@@ -222,9 +239,15 @@ describe('Auth0Client', () => {
 
       const url = new URL(mockWindow.location.assign.mock.calls[0][0]);
 
-      assertUrlEquals(url, TEST_DOMAIN, '/authorize', {
-        audience: 'test_audience'
-      });
+      assertUrlEquals(
+        url,
+        TEST_DOMAIN,
+        '/authorize',
+        {
+          audience: 'test_audience'
+        },
+        false
+      );
     });
 
     it('should log the user in using offline_access when using refresh tokens', async () => {
@@ -236,9 +259,15 @@ describe('Auth0Client', () => {
 
       const url = new URL(mockWindow.location.assign.mock.calls[0][0]);
 
-      assertUrlEquals(url, TEST_DOMAIN, '/authorize', {
-        scope: `${TEST_SCOPES} offline_access`
-      });
+      assertUrlEquals(
+        url,
+        TEST_DOMAIN,
+        '/authorize',
+        {
+          scope: `${TEST_SCOPES} offline_access`
+        },
+        false
+      );
     });
 
     it('should log the user in and get the user', async () => {
@@ -482,24 +511,17 @@ describe('Auth0Client', () => {
 
       const url = new URL(mockWindow.location.assign.mock.calls[0][0]);
 
-      assertUrlEquals(
-        url,
-        TEST_DOMAIN,
-        '/authorize',
-        {
-          auth0Client: expect.any(String),
-          client_id: TEST_CLIENT_ID,
-          redirect_uri: TEST_REDIRECT_URI,
-          scope: 'openid profile email offline_access',
-          response_type: 'code',
-          response_mode: 'query',
-          state: TEST_STATE,
-          nonce: TEST_NONCE,
-          code_challenge: TEST_CODE_CHALLENGE,
-          code_challenge_method: 'S256'
-        },
-        true // strict mode
-      );
+      assertUrlEquals(url, TEST_DOMAIN, '/authorize', {
+        client_id: TEST_CLIENT_ID,
+        redirect_uri: TEST_REDIRECT_URI,
+        scope: 'openid profile email offline_access',
+        response_type: 'code',
+        response_mode: 'query',
+        state: TEST_STATE,
+        nonce: TEST_NONCE,
+        code_challenge: TEST_CODE_CHALLENGE,
+        code_challenge_method: 'S256'
+      });
     });
   });
 });

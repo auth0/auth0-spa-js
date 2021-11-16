@@ -65,12 +65,21 @@ const itorToObject = <K extends string | number | symbol, V>(
     return m;
   }, {} as Record<K, V>);
 
+/**
+ * Asserts that the supplied URL matches various criteria, including host, path, and query params.
+ * @param actualUrl The URL
+ * @param host The host
+ * @param path The URL path
+ * @param queryParams The query parameters to check
+ * @param strict If true, the query parameters must match the URL parameters exactly. Otherwise, a loose match is performed to check that
+ * the parameters passed in at least appear in the URL (but the URL can have extra ones). Default is true.
+ */
 export const assertUrlEquals = (
   actualUrl: URL | string,
   host: string,
   path: string,
   queryParams: Record<string, string>,
-  strict: boolean = false
+  strict: boolean = true
 ) => {
   const url = new URL(actualUrl);
   const searchParamsObj = itorToObject(url.searchParams.entries());
@@ -79,7 +88,10 @@ export const assertUrlEquals = (
   expect(url.pathname).toEqual(path);
 
   if (strict) {
-    expect(searchParamsObj).toStrictEqual(queryParams);
+    expect(searchParamsObj).toStrictEqual({
+      auth0Client: expect.any(String),
+      ...queryParams
+    });
   } else {
     expect(searchParamsObj).toMatchObject(queryParams);
   }
