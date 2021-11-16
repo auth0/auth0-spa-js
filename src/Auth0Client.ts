@@ -319,6 +319,7 @@ export default class Auth0Client {
       cacheLocation,
       advancedOptions,
       detailedResponse,
+      nowProvider,
       ...withoutClientOptions
     } = this.options;
 
