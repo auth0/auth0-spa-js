@@ -27,7 +27,7 @@ const authorizationResponse: AuthenticationResult = {
   state: TEST_STATE
 };
 
-export const assertPostFn = mockFetch => {
+export const assertPostFn = (mockFetch: jest.Mock) => {
   return (
     url: string,
     body: any,
@@ -51,12 +51,37 @@ export const assertPostFn = mockFetch => {
   };
 };
 
-export const assertUrlEquals = (actualUrl, host, path, queryParams) => {
+/**
+ * Extracts the keys and values from an IterableIterator and applies
+ * them to an object.
+ * @param itor The iterable
+ * @returns An object with the keys and values from the iterable
+ */
+const itorToObject = <K extends string | number | symbol, V>(
+  itor: IterableIterator<[K, V]>
+): Record<K, V> =>
+  [...itor].reduce((m, [key, value]) => {
+    m[key] = value;
+    return m;
+  }, {} as Record<K, V>);
+
+export const assertUrlEquals = (
+  actualUrl: URL | string,
+  host: string,
+  path: string,
+  queryParams: Record<string, string>,
+  strict: boolean = false
+) => {
   const url = new URL(actualUrl);
+  const searchParamsObj = itorToObject(url.searchParams.entries());
+
   expect(url.host).toEqual(host);
   expect(url.pathname).toEqual(path);
-  for (let [key, value] of Object.entries(queryParams)) {
-    expect(url.searchParams.get(key)).toEqual(value);
+
+  if (strict) {
+    expect(searchParamsObj).toStrictEqual(queryParams);
+  } else {
+    expect(searchParamsObj).toMatchObject(queryParams);
   }
 };
 
@@ -66,7 +91,7 @@ export const fetchResponse = (ok, json) =>
     json: () => Promise.resolve(json)
   });
 
-export const setupFn = mockVerify => {
+export const setupFn = (mockVerify: jest.Mock) => {
   return (config?: Partial<Auth0ClientOptions>, claims?: Partial<IdToken>) => {
     const auth0 = new Auth0Client(
       Object.assign(

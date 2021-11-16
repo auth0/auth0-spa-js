@@ -109,17 +109,24 @@ describe('Auth0Client', () => {
 
       const url = new URL(mockWindow.location.assign.mock.calls[0][0]);
 
-      assertUrlEquals(url, TEST_DOMAIN, '/authorize', {
-        client_id: TEST_CLIENT_ID,
-        redirect_uri: TEST_REDIRECT_URI,
-        scope: TEST_SCOPES,
-        response_type: 'code',
-        response_mode: 'query',
-        state: TEST_STATE,
-        nonce: TEST_NONCE,
-        code_challenge: TEST_CODE_CHALLENGE,
-        code_challenge_method: 'S256'
-      });
+      assertUrlEquals(
+        url,
+        TEST_DOMAIN,
+        '/authorize',
+        {
+          auth0Client: expect.any(String),
+          client_id: TEST_CLIENT_ID,
+          redirect_uri: TEST_REDIRECT_URI,
+          scope: TEST_SCOPES,
+          response_type: 'code',
+          response_mode: 'query',
+          state: TEST_STATE,
+          nonce: TEST_NONCE,
+          code_challenge: TEST_CODE_CHALLENGE,
+          code_challenge_method: 'S256'
+        },
+        true // strict mode
+      );
 
       assertPost(
         'https://auth0_domain/oauth/token',
@@ -451,6 +458,47 @@ describe('Auth0Client', () => {
         {
           expires: 2
         }
+      );
+    });
+
+    it('should not include client options on the URL', async () => {
+      // ** IMPORTANT **: if adding a new client option, ensure it is added to the destructure
+      // list in Auth0Client._getParams so that it is not sent to the IdP
+      const auth0 = setup({
+        useRefreshTokens: true,
+        advancedOptions: {
+          defaultScope: 'openid profile email offline_access'
+        },
+        useCookiesForTransactions: true,
+        authorizeTimeoutInSeconds: 10,
+        cacheLocation: 'localstorage',
+        legacySameSiteCookie: true,
+        nowProvider: () => Date.now(),
+        sessionCheckExpiryDays: 1,
+        useFormData: true
+      });
+
+      await loginWithRedirect(auth0);
+
+      const url = new URL(mockWindow.location.assign.mock.calls[0][0]);
+
+      assertUrlEquals(
+        url,
+        TEST_DOMAIN,
+        '/authorize',
+        {
+          auth0Client: expect.any(String),
+          client_id: TEST_CLIENT_ID,
+          redirect_uri: TEST_REDIRECT_URI,
+          scope: 'openid profile email offline_access',
+          response_type: 'code',
+          response_mode: 'query',
+          state: TEST_STATE,
+          nonce: TEST_NONCE,
+          code_challenge: TEST_CODE_CHALLENGE,
+          code_challenge_method: 'S256'
+        },
+        true // strict mode
       );
     });
   });

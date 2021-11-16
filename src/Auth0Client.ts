@@ -309,9 +309,10 @@ export default class Auth0Client {
     code_challenge: string,
     redirect_uri: string
   ): AuthorizeOptions {
+    // These options should be excluded from the authorize URL,
+    // as they're options for the client and not for the IdP.
+    // ** IMPORTANT ** If adding a new client option, include it in this destructure list.
     const {
-      domain,
-      leeway,
       useRefreshTokens,
       useCookiesForTransactions,
       useFormData,
@@ -320,11 +321,16 @@ export default class Auth0Client {
       advancedOptions,
       detailedResponse,
       nowProvider,
-      ...withoutClientOptions
+      authorizeTimeoutInSeconds,
+      legacySameSiteCookie,
+      sessionCheckExpiryDays,
+      domain,
+      leeway,
+      ...loginOptions
     } = this.options;
 
     return {
-      ...withoutClientOptions,
+      ...loginOptions,
       ...authorizeOptions,
       scope: getUniqueScopes(
         this.defaultScope,
@@ -340,6 +346,7 @@ export default class Auth0Client {
       code_challenge_method: 'S256'
     };
   }
+
   private _authorizeUrl(authorizeOptions: AuthorizeOptions) {
     return this._url(`/authorize?${createQueryParams(authorizeOptions)}`);
   }
