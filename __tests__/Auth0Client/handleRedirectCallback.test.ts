@@ -16,14 +16,17 @@ import {
 
 import {
   TEST_ACCESS_TOKEN,
+  TEST_AUDIENCE,
   TEST_CLIENT_ID,
   TEST_CODE,
   TEST_CODE_CHALLENGE,
   TEST_CODE_VERIFIER,
   TEST_ENCODED_STATE,
   TEST_ID_TOKEN,
+  TEST_NONCE,
   TEST_REDIRECT_URI,
-  TEST_REFRESH_TOKEN
+  TEST_REFRESH_TOKEN,
+  TEST_SCOPES
 } from '../constants';
 
 import { DEFAULT_AUTH0_CLIENT } from '../../src/constants';
@@ -138,9 +141,7 @@ describe('Auth0Client', () => {
       const auth0 = setup();
 
       jest.spyOn(auth0['transactionManager'], 'remove');
-
       await loginWithRedirect(auth0);
-
       expect(auth0['transactionManager'].remove).toHaveBeenCalledWith();
     });
 
@@ -194,11 +195,13 @@ describe('Auth0Client', () => {
     it('should throw an error if there is no transaction', async () => {
       const auth0 = setup();
       let error;
+
       try {
         await auth0.handleRedirectCallback('test?foo=bar');
       } catch (e) {
         error = e;
       }
+
       expect(error).toBeDefined();
       expect(error.message).toBe('Invalid state');
     });
@@ -248,6 +251,48 @@ describe('Auth0Client', () => {
       expect(cacheSetSpy).toHaveBeenCalledWith(
         expect.objectContaining({ oauthTokenScope: 'openid profile email' })
       );
+    });
+
+    it('should fail with an error if the state in the transaction does not match the request', async () => {
+      const auth0 = setup();
+
+      await expect(async () => {
+        await loginWithRedirect(
+          auth0,
+          {},
+          {
+            authorize: {
+              state: 'random-state',
+              code: 'TEST_CODE'
+            }
+          }
+        );
+      }).rejects.toEqual(new Error('Invalid state'));
+    });
+
+    it('should not validate the state if there is no state in the transaction', async () => {
+      const auth0 = setup();
+
+      mockFetch.mockResolvedValueOnce(
+        fetchResponse(true, {
+          id_token: TEST_ID_TOKEN,
+          refresh_token: TEST_REFRESH_TOKEN,
+          access_token: TEST_ACCESS_TOKEN,
+          expires_in: 86400
+        })
+      );
+
+      auth0['transactionManager'].create({
+        audience: TEST_AUDIENCE,
+        nonce: TEST_NONCE,
+        scope: TEST_SCOPES,
+        redirect_uri: TEST_REDIRECT_URI,
+        code_verifier: TEST_CODE_VERIFIER
+        // no state
+      });
+
+      // should not throw
+      await auth0.handleRedirectCallback();
     });
   });
 

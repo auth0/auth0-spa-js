@@ -426,6 +426,7 @@ export default class Auth0Client {
       scope: params.scope,
       audience: params.audience || 'default',
       redirect_uri: params.redirect_uri,
+      state: stateIn,
       ...(organizationId && { organizationId })
     });
 
@@ -641,8 +642,7 @@ export default class Auth0Client {
 
     const transaction = this.transactionManager.get();
 
-    // Transaction should have a `code_verifier` to do PKCE for CSRF protection
-    if (!transaction || !transaction.code_verifier) {
+    if (!transaction) {
       throw new Error('Invalid state');
     }
 
@@ -655,6 +655,14 @@ export default class Auth0Client {
         state,
         transaction.appState
       );
+    }
+
+    // Transaction should have a `code_verifier` to do PKCE for CSRF protection
+    if (
+      !transaction.code_verifier ||
+      (transaction.state && transaction.state !== state)
+    ) {
+      throw new Error('Invalid state');
     }
 
     const tokenOptions = {

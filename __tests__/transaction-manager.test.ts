@@ -1,6 +1,6 @@
 import TransactionManager from '../src/transaction-manager';
 import { SessionStorage } from '../src/storage';
-import { TEST_CLIENT_ID } from './constants';
+import { TEST_CLIENT_ID, TEST_STATE } from './constants';
 import { mocked } from 'ts-jest/utils';
 
 const TRANSACTION_KEY_PREFIX = 'a0.spajs.txs';
@@ -11,7 +11,8 @@ const transaction = {
   appState: 'appStateIn',
   scope: 'scopeIn',
   audience: ' audienceIn',
-  redirect_uri: 'http://localhost'
+  redirect_uri: 'http://localhost',
+  state: TEST_STATE
 };
 
 const transactionJson = JSON.stringify(transaction);

@@ -10,14 +10,15 @@ interface Transaction {
   code_verifier: string;
   redirect_uri: string;
   organizationId?: string;
+  state?: string;
 }
 
 export default class TransactionManager {
-  private transaction: Transaction;
+  private transaction: Transaction | undefined;
   private storageKey: string;
 
   constructor(private storage: ClientStorage, private clientId: string) {
-    this.storageKey = `${TRANSACTION_STORAGE_KEY_PREFIX}.${clientId}`;
+    this.storageKey = `${TRANSACTION_STORAGE_KEY_PREFIX}.${this.clientId}`;
     this.transaction = this.storage.get(this.storageKey);
   }
 
@@ -29,7 +30,7 @@ export default class TransactionManager {
     });
   }
 
-  public get(): Transaction {
+  public get(): Transaction | undefined {
     return this.transaction;
   }
 
