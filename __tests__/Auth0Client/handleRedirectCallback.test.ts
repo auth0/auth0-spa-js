@@ -412,17 +412,5 @@ describe('Auth0Client', () => {
         'There are no query params available for parsing.'
       );
     });
-
-    it('should throw an error if there is no transaction', async () => {
-      const auth0 = setup();
-      let error;
-      try {
-        await auth0.handleRedirectCallback('#test?foo=bar');
-      } catch (e) {
-        error = e;
-      }
-      expect(error).toBeDefined();
-      expect(error.message).toBe('Invalid state');
-    });
   });
 });
