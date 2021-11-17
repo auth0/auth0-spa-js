@@ -315,8 +315,7 @@ describe('Auth0Client', () => {
     const auth0 = setup();
     delete auth0['options']['redirect_uri'];
 
-    await auth0.loginWithRedirect();
-    await auth0.handleRedirectCallback();
+    await loginWithRedirect(auth0);
 
     expect(mockFetch.mock.calls[0][0]).toBe('https://auth0_domain/oauth/token');
 
@@ -344,8 +343,7 @@ describe('Auth0Client', () => {
       useFormData: true
     });
 
-    await auth0.loginWithRedirect();
-    await auth0.handleRedirectCallback();
+    await loginWithRedirect(auth0);
 
     assertPostFn(mockFetch)(
       'https://auth0_domain/oauth/token',
