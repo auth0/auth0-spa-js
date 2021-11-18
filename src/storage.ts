@@ -8,7 +8,7 @@ interface ClientStorageOptions {
  * Defines a type that handles storage to/from a storage location
  */
 export type ClientStorage = {
-  get<T extends Object>(key: string): T;
+  get<T extends Object>(key: string): T | undefined;
   save(key: string, value: any, options?: ClientStorageOptions): void;
   remove(key: string): void;
 };
