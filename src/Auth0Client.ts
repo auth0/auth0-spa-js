@@ -179,6 +179,7 @@ const getCustomInitialOptions = (
     useRefreshTokens,
     useCookiesForTransactions,
     useFormData,
+    headers,
     ...customParams
   } = options;
   return customParams;
@@ -512,7 +513,8 @@ export default class Auth0Client {
         grant_type: 'authorization_code',
         redirect_uri: params.redirect_uri,
         auth0Client: this.options.auth0Client,
-        useFormData: this.options.useFormData
+        useFormData: this.options.useFormData,
+        headers: this.options.headers
       } as OAuthTokenOptions,
       this.worker
     );
@@ -674,7 +676,8 @@ export default class Auth0Client {
       grant_type: 'authorization_code',
       code,
       auth0Client: this.options.auth0Client,
-      useFormData: this.options.useFormData
+      useFormData: this.options.useFormData,
+      headers: this.options.headers
     } as OAuthTokenOptions;
     // some old versions of the SDK might not have added redirect_uri to the
     // transaction, we dont want the key to be set to undefined.
@@ -1093,6 +1096,7 @@ export default class Auth0Client {
         {
           ...this.customOptions,
           ...customOptions,
+          headers: this.options.headers,
           scope,
           audience,
           baseUrl: this.domainUrl,
@@ -1181,6 +1185,7 @@ export default class Auth0Client {
         {
           ...this.customOptions,
           ...customOptions,
+          headers: this.options.headers,
           audience,
           scope,
           baseUrl: this.domainUrl,

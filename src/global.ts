@@ -219,6 +219,11 @@ export interface Auth0ClientOptions extends BaseLoginOptions {
    * **Note**: Using this improperly can potentially compromise the token validation.
    */
   nowProvider?: () => Promise<number> | number;
+
+  /**
+   * Custom headers to attach to the oauth/token request
+   */
+  headers?: Record<string, any>;
 }
 
 /**
@@ -467,6 +472,7 @@ export interface TokenEndpointOptions {
   timeout?: number;
   auth0Client: any;
   useFormData?: boolean;
+  headers?: Record<string, any>;
   [key: string]: any;
 }
 
