@@ -1043,8 +1043,8 @@ export default class Auth0Client {
       nonceIn,
       code_challenge,
       options.redirect_uri ||
-      this.options.redirect_uri ||
-      window.location.origin
+        this.options.redirect_uri ||
+        window.location.origin
     );
 
     const orgIdHint = this.cookieStorage.get<string>(this.orgHintCookieName);
