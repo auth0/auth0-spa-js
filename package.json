@@ -38,7 +38,7 @@
     "@types/jest": "^27.0.2",
     "@typescript-eslint/eslint-plugin-tslint": "^4.33.0",
     "@typescript-eslint/parser": "^4.33.0",
-    "browserstack-cypress-cli": "^1.11.0",
+    "browserstack-cypress-cli": "1.8.1",
     "cli-table": "^0.3.6",
     "codecov": "^3.8.3",
     "concurrently": "^6.4.0",

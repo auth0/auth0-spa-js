@@ -38,7 +38,7 @@ jobs:
       - run: npm ci
       - restore_cache:
           key: spa-dist-{{ .Revision }}
-      - run: npx concurrently --raw --kill-others "npm:dev" "wait-on http://127.0.0.1:3000/ && browserstack-cypress run --build-name $CIRCLE_BRANCH"
+      - run: npx concurrently --raw --kill-others --success first "npm:dev" "wait-on http://127.0.0.1:3000/ && browserstack-cypress run --build-name $CIRCLE_BRANCH"
   test_gatsby:
     docker:
       - image: << pipeline.parameters.docker_image >>
