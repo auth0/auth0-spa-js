@@ -615,7 +615,9 @@ export default class Auth0Client {
    *
    * @param options
    */
-  public async loginWithRedirect(options: RedirectLoginOptions = {}) {
+  public async loginWithRedirect<TAppState = any>(
+    options: RedirectLoginOptions<TAppState> = {}
+  ) {
     const { redirectMethod, ...urlOptions } = options;
     const url = await this.buildAuthorizeUrl(urlOptions);
     window.location[redirectMethod || 'assign'](url);
@@ -627,9 +629,9 @@ export default class Auth0Client {
    * responses from Auth0. If the response is successful, results
    * will be valid according to their expiration times.
    */
-  public async handleRedirectCallback(
+  public async handleRedirectCallback<TAppState = any>(
     url: string = window.location.href
-  ): Promise<RedirectLoginResult> {
+  ): Promise<RedirectLoginResult<TAppState>> {
     const queryStringFragments = url.split('?').slice(1);
 
     if (queryStringFragments.length === 0) {

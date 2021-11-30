@@ -240,7 +240,8 @@ export interface AuthorizeOptions extends BaseLoginOptions {
   code_challenge_method: string;
 }
 
-export interface RedirectLoginOptions extends BaseLoginOptions {
+export interface RedirectLoginOptions<TAppState = any>
+  extends BaseLoginOptions {
   /**
    * The URL where Auth0 will redirect your browser to with
    * the authentication result. It must be whitelisted in
@@ -251,7 +252,7 @@ export interface RedirectLoginOptions extends BaseLoginOptions {
   /**
    * Used to store state before doing the redirect
    */
-  appState?: any;
+  appState?: TAppState;
   /**
    * Used to add to the URL fragment before redirecting
    */
@@ -262,11 +263,11 @@ export interface RedirectLoginOptions extends BaseLoginOptions {
   redirectMethod?: 'replace' | 'assign';
 }
 
-export interface RedirectLoginResult {
+export interface RedirectLoginResult<TAppState = any> {
   /**
    * State stored when the redirect request was made
    */
-  appState?: any;
+  appState?: TAppState;
 }
 
 export interface PopupLoginOptions extends BaseLoginOptions {}
