@@ -589,7 +589,7 @@ export default class Auth0Client {
    */
   public async getIdTokenClaims(
     options: GetIdTokenClaimsOptions = {}
-  ): Promise<IdToken> {
+  ): Promise<IdToken | undefined> {
     const audience = options.audience || this.options.audience || 'default';
     const scope = getUniqueScopes(this.defaultScope, this.scope, options.scope);
 
