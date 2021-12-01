@@ -1,5 +1,20 @@
 # Change Log
 
+## [v1.19.3](https://github.com/auth0/auth0-spa-js/tree/v1.19.3) (2021-12-01)
+
+[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v1.19.2...v1.19.3)
+
+**Changed**
+
+- Make RedirectLoginOptions and RedirectLoginResult accept generic AppState [\#846](https://github.com/auth0/auth0-spa-js/pull/846) ([frederikprijck](https://github.com/frederikprijck))
+
+**Fixed**
+
+- Getidtokenclaims return type [\#844](https://github.com/auth0/auth0-spa-js/pull/844) ([jmac105](https://github.com/jmac105))
+- Add check for state in handleRedirectCallback [\#841](https://github.com/auth0/auth0-spa-js/pull/841) ([stevehobbsdev](https://github.com/stevehobbsdev))
+- Prevent nowProvider from being passed to authorize endpoint [\#840](https://github.com/auth0/auth0-spa-js/pull/840) ([stevehobbsdev](https://github.com/stevehobbsdev))
+- Fix cached scopes when using detailed response mode [\#824](https://github.com/auth0/auth0-spa-js/pull/824) ([stevehobbsdev](https://github.com/stevehobbsdev))
+
 ## [v1.19.2](https://github.com/auth0/auth0-spa-js/tree/v1.19.2) (2021-10-18)
 
 [Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v1.19.1...v1.19.2)
