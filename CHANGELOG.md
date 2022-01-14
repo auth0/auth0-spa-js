@@ -1,5 +1,16 @@
 # Change Log
 
+## [v1.19.4](https://github.com/auth0/auth0-spa-js/tree/v1.19.4) (2022-01-14)
+[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v1.19.3...v1.19.4)
+
+**Fixed**
+- Org ID hint cookie expiry now aligns with is.authenticated cookie [\#861](https://github.com/auth0/auth0-spa-js/pull/861) ([stevehobbsdev](https://github.com/stevehobbsdev))
+
+**Security**
+- Bump follow-redirects from 1.14.0 to 1.14.7 [\#860](https://github.com/auth0/auth0-spa-js/pull/860) ([dependabot[bot]](https://github.com/apps/dependabot))
+- [Snyk] Upgrade core-js from 3.19.2 to 3.20.0 [\#858](https://github.com/auth0/auth0-spa-js/pull/858) ([snyk-bot](https://github.com/snyk-bot))
+- [Snyk] Upgrade core-js from 3.19.1 to 3.19.2 [\#851](https://github.com/auth0/auth0-spa-js/pull/851) ([snyk-bot](https://github.com/snyk-bot))
+
 ## [v1.19.3](https://github.com/auth0/auth0-spa-js/tree/v1.19.3) (2021-12-01)
 
 [Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v1.19.2...v1.19.3)
