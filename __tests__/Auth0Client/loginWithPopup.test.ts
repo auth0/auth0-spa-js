@@ -634,13 +634,17 @@ describe('Auth0Client', () => {
       expect(<jest.Mock>esCookie.set).toHaveBeenCalledWith(
         `_legacy_auth0.${TEST_CLIENT_ID}.organization_hint`,
         JSON.stringify(TEST_ORG_ID),
-        {}
+        {
+          expires: 1
+        }
       );
 
       expect(<jest.Mock>esCookie.set).toHaveBeenCalledWith(
         `auth0.${TEST_CLIENT_ID}.organization_hint`,
         JSON.stringify(TEST_ORG_ID),
-        {}
+        {
+          expires: 1
+        }
       );
     });
 
