@@ -12,7 +12,16 @@ describe('CookieStorage', () => {
     cookieMock = mocked(esCookie);
   });
 
-  it('saves object', () => {
+  it('saves a cookie', () => {
+    const key = 'key';
+    const value = { some: 'value' };
+
+    CookieStorage.save(key, value);
+
+    expect(cookieMock.set).toHaveBeenCalledWith(key, JSON.stringify(value), {});
+  });
+
+  it('saves a cookie with options', () => {
     const key = 'key';
     const value = { some: 'value' };
     const options = { daysUntilExpire: 1 };
