@@ -124,6 +124,14 @@
 
                 <button
                   class="btn btn-outline-info"
+                  @click="getTokenTest"
+                  :data-cy="'get-token' + current.suffix"
+                >
+                  Get access token (test)
+                </button>
+
+                <button
+                  class="btn btn-outline-info"
                   @click="getTokenPopup(current.audience, current.scope, current.access_tokens)"
                 >
                   Get access token with a popup
@@ -728,6 +736,15 @@
               .catch(function (err) {
                 _self.error = err;
               });
+          },
+          async getTokenTest() {
+            console.log(
+              await this.auth0.getTokenSilently({
+                detailedResponse: true
+              })
+            );
+
+            console.log(await this.auth0.getTokenSilently());
           },
           logout: function () {
             this.auth0.logout({

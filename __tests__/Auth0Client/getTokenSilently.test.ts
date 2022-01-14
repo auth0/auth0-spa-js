@@ -1799,5 +1799,39 @@ describe('Auth0Client', () => {
 
       expect(runIframeSpy).not.toHaveBeenCalled();
     });
+
+    it('should get a detailed response then a string', async () => {
+      const auth0 = setup();
+
+      jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
+        state: TEST_STATE
+      });
+
+      // Get the cache into the right state
+      await loginWithRedirect(auth0);
+
+      mockFetch.mockResolvedValue(
+        fetchResponse(true, {
+          id_token: TEST_ID_TOKEN,
+          refresh_token: TEST_REFRESH_TOKEN,
+          access_token: TEST_ACCESS_TOKEN,
+          expires_in: 86400,
+          scope: 'read:messages'
+        })
+      );
+
+      const token = await auth0.getTokenSilently({
+        ignoreCache: true,
+        detailedResponse: true
+      });
+
+      expect(token).toMatchObject({
+        access_token: TEST_ACCESS_TOKEN
+      });
+
+      const token2 = await auth0.getTokenSilently();
+
+      expect(token2).toEqual(TEST_ACCESS_TOKEN);
+    });
   });
 });
