@@ -379,7 +379,9 @@ export default class Auth0Client {
 
   private _processOrgIdHint(organizationId?: string) {
     if (organizationId) {
-      this.cookieStorage.save(this.orgHintCookieName, organizationId);
+      this.cookieStorage.save(this.orgHintCookieName, organizationId, {
+        daysUntilExpire: this.sessionCheckExpiryDays
+      });
     } else {
       this.cookieStorage.remove(this.orgHintCookieName);
     }
