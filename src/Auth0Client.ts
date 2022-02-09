@@ -791,7 +791,7 @@ export default class Auth0Client {
    * remaining before expiration, return the token. Otherwise, attempt 
    * to obtain a new token. 
    *
-   * A new token will be obtained eby either opening an iframe or a 
+   * A new token will be obtained either by opening an iframe or a 
    * refresh token (if `useRefreshTokens` is `true`)
    
    * If iframes are used, opens an iframe with the `/authorize` URL 
