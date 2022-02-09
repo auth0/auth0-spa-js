@@ -787,11 +787,17 @@ export default class Auth0Client {
    * const token = await auth0.getTokenSilently(options);
    * ```
    *
-   * If there's a valid token stored, return it. Otherwise, opens an
-   * iframe with the `/authorize` URL using the parameters provided
-   * as arguments. Random and secure `state` and `nonce` parameters
-   * will be auto-generated. If the response is successful, results
-   * will be valid according to their expiration times.
+   * If there's a valid token stored and it has more than 60 seconds
+   * remaining before expiration, return the token. Otherwise, attempt 
+   * to obtain a new token. 
+   *
+   * A new token will be obtained eby either opening an iframe or a 
+   * refresh token.
+   
+   * If iframes are used, opens an iframe with the `/authorize` URL 
+   * using the parameters provided as arguments. Random and secure `state` 
+   * and `nonce` parameters will be auto-generated. If the response is successful, 
+   * results will be valid according to their expiration times.
    *
    * If refresh tokens are used, the token endpoint is called directly with the
    * 'refresh_token' grant. If no refresh token is available to make this call,
