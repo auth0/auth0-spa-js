@@ -792,7 +792,7 @@ export default class Auth0Client {
    * to obtain a new token. 
    *
    * A new token will be obtained eby either opening an iframe or a 
-   * refresh token.
+   * refresh token (if `useRefreshTokens` is `true`)
    
    * If iframes are used, opens an iframe with the `/authorize` URL 
    * using the parameters provided as arguments. Random and secure `state` 
