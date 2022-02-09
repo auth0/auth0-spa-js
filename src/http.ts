@@ -13,6 +13,7 @@ export const createAbortController = () => new AbortController();
 
 const dofetch = async (fetchUrl: string, fetchOptions: FetchOptions) => {
   const response = await fetch(fetchUrl, fetchOptions);
+
   return {
     ok: response.ok,
     json: await response.json()
@@ -32,6 +33,7 @@ const fetchWithoutWorker = async (
   // The promise will resolve with one of these two promises (the fetch or the timeout), whichever completes first.
   return Promise.race([
     dofetch(fetchUrl, fetchOptions),
+
     new Promise((_, reject) => {
       timeoutId = setTimeout(() => {
         controller.abort();

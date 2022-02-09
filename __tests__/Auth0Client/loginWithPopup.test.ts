@@ -5,6 +5,7 @@ import { verify } from '../../src/jwt';
 import { MessageChannel } from 'worker_threads';
 import * as utils from '../../src/utils';
 import * as scope from '../../src/scope';
+import * as http from '../../src/http';
 
 import {
   assertPostFn,
@@ -50,6 +51,7 @@ jest
   .mockReturnValue(TEST_CODE_CHALLENGE);
 
 jest.spyOn(utils, 'runPopup');
+jest.spyOn(http, 'switchFetch');
 
 const assertPost = assertPostFn(mockFetch);
 
@@ -159,6 +161,36 @@ describe('Auth0Client', () => {
         },
         false
       );
+    });
+
+    it('uses a custom timeout when making HTTP calls', async () => {
+      const auth0 = setup({ leeway: 10, httpTimeoutInSeconds: 60 });
+
+      await loginWithPopup(auth0, {
+        connection: 'test-connection',
+        audience: 'test'
+      });
+
+      expect(mockWindow.open).toHaveBeenCalled();
+
+      expect((http.switchFetch as jest.Mock).mock.calls[0][6]).toEqual(60000);
+
+      // prettier-ignore
+      const url = (utils.runPopup as jest.Mock).mock.calls[0][0].popup.location.href;
+
+      assertUrlEquals(url, TEST_DOMAIN, '/authorize', {
+        redirect_uri: TEST_REDIRECT_URI,
+        client_id: TEST_CLIENT_ID,
+        scope: TEST_SCOPES,
+        response_type: 'code',
+        response_mode: 'web_message',
+        state: TEST_STATE,
+        nonce: TEST_NONCE,
+        code_challenge: TEST_CODE_CHALLENGE,
+        code_challenge_method: 'S256',
+        connection: 'test-connection',
+        audience: 'test'
+      });
     });
 
     it('creates `code_challenge` by using `utils.sha256` with the result of `utils.createRandomString`', async () => {

@@ -46,7 +46,8 @@ import {
   DEFAULT_SESSION_CHECK_EXPIRY_DAYS,
   DEFAULT_AUTH0_CLIENT,
   INVALID_REFRESH_TOKEN_ERROR_MESSAGE,
-  DEFAULT_NOW_PROVIDER
+  DEFAULT_NOW_PROVIDER,
+  DEFAULT_FETCH_TIMEOUT_MS
 } from './constants';
 
 import {
@@ -188,18 +189,19 @@ const getCustomInitialOptions = (
  * Auth0 SDK for Single Page Applications using [Authorization Code Grant Flow with PKCE](https://auth0.com/docs/api-auth/tutorials/authorization-code-grant-pkce).
  */
 export default class Auth0Client {
-  private transactionManager: TransactionManager;
-  private cacheManager: CacheManager;
-  private customOptions: BaseLoginOptions;
-  private domainUrl: string;
-  private tokenIssuer: string;
-  private defaultScope: string;
-  private scope: string;
-  private cookieStorage: ClientStorage;
-  private sessionCheckExpiryDays: number;
-  private orgHintCookieName: string;
-  private isAuthenticatedCookieName: string;
-  private nowProvider: () => number | Promise<number>;
+  private readonly transactionManager: TransactionManager;
+  private readonly cacheManager: CacheManager;
+  private readonly customOptions: BaseLoginOptions;
+  private readonly domainUrl: string;
+  private readonly tokenIssuer: string;
+  private readonly defaultScope: string;
+  private readonly scope: string;
+  private readonly cookieStorage: ClientStorage;
+  private readonly sessionCheckExpiryDays: number;
+  private readonly orgHintCookieName: string;
+  private readonly isAuthenticatedCookieName: string;
+  private readonly nowProvider: () => number | Promise<number>;
+  private readonly httpTimeoutMs: number;
 
   cacheLocation: CacheLocation;
   private worker: Worker;
@@ -226,6 +228,10 @@ export default class Auth0Client {
 
       cache = cacheFactory(this.cacheLocation)();
     }
+
+    this.httpTimeoutMs = options.httpTimeoutInSeconds
+      ? options.httpTimeoutInSeconds * 1000
+      : DEFAULT_FETCH_TIMEOUT_MS;
 
     this.cookieStorage =
       options.legacySameSiteCookie === false
@@ -326,6 +332,7 @@ export default class Auth0Client {
       sessionCheckExpiryDays,
       domain,
       leeway,
+      httpTimeoutInSeconds,
       ...loginOptions
     } = this.options;
 
@@ -514,7 +521,8 @@ export default class Auth0Client {
         grant_type: 'authorization_code',
         redirect_uri: params.redirect_uri,
         auth0Client: this.options.auth0Client,
-        useFormData: this.options.useFormData
+        useFormData: this.options.useFormData,
+        timeout: this.httpTimeoutMs
       } as OAuthTokenOptions,
       this.worker
     );
@@ -678,7 +686,8 @@ export default class Auth0Client {
       grant_type: 'authorization_code',
       code,
       auth0Client: this.options.auth0Client,
-      useFormData: this.options.useFormData
+      useFormData: this.options.useFormData,
+      timeout: this.httpTimeoutMs
     } as OAuthTokenOptions;
     // some old versions of the SDK might not have added redirect_uri to the
     // transaction, we dont want the key to be set to undefined.
@@ -1112,7 +1121,8 @@ export default class Auth0Client {
           grant_type: 'authorization_code',
           redirect_uri: params.redirect_uri,
           auth0Client: this.options.auth0Client,
-          useFormData: this.options.useFormData
+          useFormData: this.options.useFormData,
+          timeout: this.httpTimeoutMs
         } as OAuthTokenOptions,
         this.worker
       );
@@ -1200,7 +1210,8 @@ export default class Auth0Client {
           redirect_uri,
           ...(timeout && { timeout }),
           auth0Client: this.options.auth0Client,
-          useFormData: this.options.useFormData
+          useFormData: this.options.useFormData,
+          timeout: this.httpTimeoutMs
         } as RefreshTokenOptions,
         this.worker
       );
