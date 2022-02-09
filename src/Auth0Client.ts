@@ -797,7 +797,7 @@ export default class Auth0Client {
    * If iframes are used, opens an iframe with the `/authorize` URL 
    * using the parameters provided as arguments. Random and secure `state` 
    * and `nonce` parameters will be auto-generated. If the response is successful, 
-   * results will be valid according to their expiration times.
+   * results will be validated according to their expiration times.
    *
    * If refresh tokens are used, the token endpoint is called directly with the
    * 'refresh_token' grant. If no refresh token is available to make this call,
