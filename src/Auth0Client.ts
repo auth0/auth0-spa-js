@@ -1078,9 +1078,6 @@ export default class Auth0Client {
       response_mode: 'web_message'
     });
 
-    const timeout =
-      options.timeoutInSeconds || this.options.authorizeTimeoutInSeconds;
-
     try {
       // When a browser is running in a Cross-Origin Isolated context, using iframes is not possible.
       // It doesn't throw an error but times out instead, so we should exit early and inform the user about the reason.
@@ -1092,7 +1089,10 @@ export default class Auth0Client {
         );
       }
 
-      const codeResult = await runIframe(url, this.domainUrl, timeout);
+      const authorizeTimeout =
+        options.timeoutInSeconds || this.options.authorizeTimeoutInSeconds;
+
+      const codeResult = await runIframe(url, this.domainUrl, authorizeTimeout);
 
       if (stateIn !== codeResult.state) {
         throw new Error('Invalid state');
