@@ -1122,7 +1122,7 @@ export default class Auth0Client {
           redirect_uri: params.redirect_uri,
           auth0Client: this.options.auth0Client,
           useFormData: this.options.useFormData,
-          timeout: this.httpTimeoutMs
+          timeout: customOptions.timeout || this.httpTimeoutMs
         } as OAuthTokenOptions,
         this.worker
       );
