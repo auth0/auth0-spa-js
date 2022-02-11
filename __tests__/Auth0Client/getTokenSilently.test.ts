@@ -7,6 +7,7 @@ import * as utils from '../../src/utils';
 import * as promiseUtils from '../../src/promise-utils';
 import * as scope from '../../src/scope';
 import * as api from '../../src/api';
+import * as http from '../../src/http';
 
 import { expectToHaveBeenCalledWithAuth0ClientParam } from '../helpers';
 
@@ -62,6 +63,7 @@ jest
   .mockReturnValue(TEST_CODE_CHALLENGE);
 
 jest.spyOn(utils, 'runPopup');
+jest.spyOn(http, 'switchFetch');
 
 const assertPost = assertPostFn(mockFetch);
 const setup = setupFn(mockVerify);
@@ -330,7 +332,7 @@ describe('Auth0Client', () => {
       );
     });
 
-    it('calls the token endpoint with the correct timeout when using refresh tokens', async () => {
+    it('calls the token endpoint with the correct authorize timeout when using refresh tokens', async () => {
       const auth0 = setup({
         useRefreshTokens: true
       });
@@ -354,6 +356,26 @@ describe('Auth0Client', () => {
         }),
         expect.anything()
       );
+    });
+
+    it('calls the token endpoint with a custom http timeout when using refresh tokens', async () => {
+      const auth0 = setup({
+        useRefreshTokens: true,
+        httpTimeoutInSeconds: 30
+      });
+
+      jest.spyOn(<any>api, 'oauthToken');
+
+      jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
+        access_token: TEST_ACCESS_TOKEN,
+        refresh_token: TEST_REFRESH_TOKEN,
+        state: TEST_STATE,
+        code: TEST_CODE
+      });
+
+      await getTokenSilently(auth0);
+
+      expect((http.switchFetch as jest.Mock).mock.calls[0][6]).toEqual(30000);
     });
 
     it('refreshes the token when no cache available', async () => {
@@ -1542,6 +1564,27 @@ describe('Auth0Client', () => {
         `https://${TEST_DOMAIN}`,
         1
       );
+    });
+
+    it('opens iframe with a custom http timeout', async () => {
+      const auth0 = setup({ httpTimeoutInSeconds: 20 });
+
+      jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
+        access_token: TEST_ACCESS_TOKEN,
+        state: TEST_STATE
+      });
+
+      await getTokenSilently(auth0, {
+        timeoutInSeconds: 1
+      });
+
+      expect(utils.runIframe).toHaveBeenCalledWith(
+        expect.any(String),
+        `https://${TEST_DOMAIN}`,
+        1
+      );
+
+      expect((http.switchFetch as jest.Mock).mock.calls[0][6]).toEqual(20000);
     });
 
     it('when using Refresh Tokens, falls back to iframe when refresh token is expired', async () => {

@@ -165,6 +165,11 @@ export interface Auth0ClientOptions extends BaseLoginOptions {
   authorizeTimeoutInSeconds?: number;
 
   /**
+   * Specify the timeout for HTTP calls using `fetch`. The default is 10 seconds.
+   */
+  httpTimeoutInSeconds?: number;
+
+  /**
    * Internal property to send information about the client to the authorization server.
    * @internal
    */

@@ -4,6 +4,7 @@ import { verify } from '../../src/jwt';
 import { MessageChannel } from 'worker_threads';
 import * as utils from '../../src/utils';
 import * as scope from '../../src/scope';
+import * as http from '../../src/http';
 
 // @ts-ignore
 
@@ -45,6 +46,7 @@ jest
   .mockReturnValue(TEST_CODE_CHALLENGE);
 
 jest.spyOn(utils, 'runPopup');
+jest.spyOn(http, 'switchFetch');
 
 const setup = setupFn(mockVerify);
 const loginWithRedirect = loginWithRedirectFn(mockWindow, mockFetch);
@@ -215,6 +217,20 @@ describe('Auth0Client', () => {
 
       const result = await loginWithRedirect(auth0, { appState });
 
+      expect(result).toBeDefined();
+      expect(result.appState).toBe(appState);
+    });
+
+    it('uses the custom http timeout value if specified', async () => {
+      const auth0 = setup({ httpTimeoutInSeconds: 40 });
+
+      const appState = {
+        key: 'property'
+      };
+
+      const result = await loginWithRedirect(auth0, { appState });
+
+      expect((http.switchFetch as jest.Mock).mock.calls[0][6]).toEqual(40000);
       expect(result).toBeDefined();
       expect(result.appState).toBe(appState);
     });
