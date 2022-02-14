@@ -2834,7 +2834,7 @@ img {
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/d21736f/src/Auth0Client.ts#L205">src/Auth0Client.ts:205</a></li>
+								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/5015987/src/Auth0Client.ts#L207">src/Auth0Client.ts:207</a></li>
 							</ul>
 						</aside>
 						<h4 class="tsd-parameters-title">Parameters</h4>
@@ -2856,7 +2856,7 @@ img {
 				<div class="tsd-signature tsd-kind-icon">cache<wbr>Location<span class="tsd-signature-symbol">:</span> <a href="../globals.html#cachelocation" class="tsd-signature-type">CacheLocation</a></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/d21736f/src/Auth0Client.ts#L204">src/Auth0Client.ts:204</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/5015987/src/Auth0Client.ts#L206">src/Auth0Client.ts:206</a></li>
 					</ul>
 				</aside>
 			</section>
@@ -2873,7 +2873,7 @@ img {
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/d21736f/src/Auth0Client.ts#L401">src/Auth0Client.ts:401</a></li>
+								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/5015987/src/Auth0Client.ts#L408">src/Auth0Client.ts:408</a></li>
 							</ul>
 						</aside>
 						<div class="tsd-comment tsd-typography">
@@ -2907,7 +2907,7 @@ img {
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/d21736f/src/Auth0Client.ts#L971">src/Auth0Client.ts:971</a></li>
+								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/5015987/src/Auth0Client.ts#L986">src/Auth0Client.ts:986</a></li>
 							</ul>
 						</aside>
 						<div class="tsd-comment tsd-typography">
@@ -2939,7 +2939,7 @@ img {
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/d21736f/src/Auth0Client.ts#L742">src/Auth0Client.ts:742</a></li>
+								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/5015987/src/Auth0Client.ts#L751">src/Auth0Client.ts:751</a></li>
 							</ul>
 						</aside>
 						<div class="tsd-comment tsd-typography">
@@ -2984,7 +2984,7 @@ img {
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/d21736f/src/Auth0Client.ts#L592">src/Auth0Client.ts:592</a></li>
+								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/5015987/src/Auth0Client.ts#L600">src/Auth0Client.ts:600</a></li>
 							</ul>
 						</aside>
 						<div class="tsd-comment tsd-typography">
@@ -3020,7 +3020,7 @@ img {
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/d21736f/src/Auth0Client.ts#L770">src/Auth0Client.ts:770</a></li>
+								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/5015987/src/Auth0Client.ts#L779">src/Auth0Client.ts:779</a></li>
 							</ul>
 						</aside>
 						<div class="tsd-comment tsd-typography">
@@ -3029,11 +3029,15 @@ img {
 							</div>
 							<pre><code class="language-js"><span class="hljs-keyword">const</span> token = <span class="hljs-keyword">await</span> auth0.getTokenSilently(options);
 </code></pre>
-							<p>If there&#39;s a valid token stored, return it. Otherwise, opens an
-								iframe with the <code>/authorize</code> URL using the parameters provided
-								as arguments. Random and secure <code>state</code> and <code>nonce</code> parameters
-								will be auto-generated. If the response is successful, results
-							will be valid according to their expiration times.</p>
+							<p>If there&#39;s a valid token stored and it has more than 60 seconds
+								remaining before expiration, return the token. Otherwise, attempt
+							to obtain a new token.</p>
+							<p>A new token will be obtained either by opening an iframe or a
+							refresh token (if <code>useRefreshTokens</code> is <code>true</code>)</p>
+							<p>If iframes are used, opens an iframe with the <code>/authorize</code> URL
+								using the parameters provided as arguments. Random and secure <code>state</code>
+								and <code>nonce</code> parameters will be auto-generated. If the response is successful,
+							results will be validated according to their expiration times.</p>
 							<p>If refresh tokens are used, the token endpoint is called directly with the
 								&#39;refresh_token&#39; grant. If no refresh token is available to make this call,
 							the SDK falls back to using an iframe to the &#39;/authorize&#39; URL.</p>
@@ -3059,7 +3063,7 @@ img {
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/d21736f/src/Auth0Client.ts#L779">src/Auth0Client.ts:779</a></li>
+								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/5015987/src/Auth0Client.ts#L788">src/Auth0Client.ts:788</a></li>
 							</ul>
 						</aside>
 						<div class="tsd-comment tsd-typography">
@@ -3068,11 +3072,15 @@ img {
 							</div>
 							<pre><code class="language-js"><span class="hljs-keyword">const</span> token = <span class="hljs-keyword">await</span> auth0.getTokenSilently(options);
 </code></pre>
-							<p>If there&#39;s a valid token stored, return it. Otherwise, opens an
-								iframe with the <code>/authorize</code> URL using the parameters provided
-								as arguments. Random and secure <code>state</code> and <code>nonce</code> parameters
-								will be auto-generated. If the response is successful, results
-							will be valid according to their expiration times.</p>
+							<p>If there&#39;s a valid token stored and it has more than 60 seconds
+								remaining before expiration, return the token. Otherwise, attempt
+							to obtain a new token.</p>
+							<p>A new token will be obtained either by opening an iframe or a
+							refresh token (if <code>useRefreshTokens</code> is <code>true</code>)</p>
+							<p>If iframes are used, opens an iframe with the <code>/authorize</code> URL
+								using the parameters provided as arguments. Random and secure <code>state</code>
+								and <code>nonce</code> parameters will be auto-generated. If the response is successful,
+							results will be validated according to their expiration times.</p>
 							<p>If refresh tokens are used, the token endpoint is called directly with the
 								&#39;refresh_token&#39; grant. If no refresh token is available to make this call,
 							the SDK falls back to using an iframe to the &#39;/authorize&#39; URL.</p>
@@ -3107,7 +3115,7 @@ img {
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/d21736f/src/Auth0Client.ts#L919">src/Auth0Client.ts:919</a></li>
+								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/5015987/src/Auth0Client.ts#L934">src/Auth0Client.ts:934</a></li>
 							</ul>
 						</aside>
 						<div class="tsd-comment tsd-typography">
@@ -3145,7 +3153,7 @@ img {
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/d21736f/src/Auth0Client.ts#L562">src/Auth0Client.ts:562</a></li>
+								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/5015987/src/Auth0Client.ts#L570">src/Auth0Client.ts:570</a></li>
 							</ul>
 						</aside>
 						<div class="tsd-comment tsd-typography">
@@ -3190,7 +3198,7 @@ img {
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/d21736f/src/Auth0Client.ts#L634">src/Auth0Client.ts:634</a></li>
+								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/5015987/src/Auth0Client.ts#L642">src/Auth0Client.ts:642</a></li>
 							</ul>
 						</aside>
 						<div class="tsd-comment tsd-typography">
@@ -3227,7 +3235,7 @@ img {
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/d21736f/src/Auth0Client.ts#L958">src/Auth0Client.ts:958</a></li>
+								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/5015987/src/Auth0Client.ts#L973">src/Auth0Client.ts:973</a></li>
 							</ul>
 						</aside>
 						<div class="tsd-comment tsd-typography">
@@ -3252,7 +3260,7 @@ img {
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/d21736f/src/Auth0Client.ts#L461">src/Auth0Client.ts:461</a></li>
+								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/5015987/src/Auth0Client.ts#L468">src/Auth0Client.ts:468</a></li>
 							</ul>
 						</aside>
 						<div class="tsd-comment tsd-typography">
@@ -3299,7 +3307,7 @@ img {
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/d21736f/src/Auth0Client.ts#L620">src/Auth0Client.ts:620</a></li>
+								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/5015987/src/Auth0Client.ts#L628">src/Auth0Client.ts:628</a></li>
 							</ul>
 						</aside>
 						<div class="tsd-comment tsd-typography">
@@ -3339,7 +3347,7 @@ img {
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/d21736f/src/Auth0Client.ts#L1003">src/Auth0Client.ts:1003</a></li>
+								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/5015987/src/Auth0Client.ts#L1018">src/Auth0Client.ts:1018</a></li>
 							</ul>
 						</aside>
 						<div class="tsd-comment tsd-typography">

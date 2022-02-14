@@ -1,5 +1,23 @@
 # Change Log
 
+## [v1.20.0](https://github.com/auth0/auth0-spa-js/tree/v1.20.0) (2022-02-14)
+[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v1.19.4...v1.20.0)
+
+**Added**
+- [SDK-3105] Add httpTimeoutInSeconds to control fetch timeout [\#875](https://github.com/auth0/auth0-spa-js/pull/875) ([stevehobbsdev](https://github.com/stevehobbsdev))
+
+**Changed**
+- clarify documentation comment for getTokenSilently [\#874](https://github.com/auth0/auth0-spa-js/pull/874) ([jdugan1024](https://github.com/jdugan1024))
+
+**Fixed**
+- Fix getTokenSilently reference in example code [\#868](https://github.com/auth0/auth0-spa-js/pull/868) ([mdlavin](https://github.com/mdlavin))
+
+**Security**
+- [Snyk] Upgrade core-js from 3.20.2 to 3.20.3 [\#873](https://github.com/auth0/auth0-spa-js/pull/873) ([snyk-bot](https://github.com/snyk-bot))
+- Bump node-fetch from 2.6.1 to 2.6.7 [\#870](https://github.com/auth0/auth0-spa-js/pull/870) ([dependabot[bot]](https://github.com/apps/dependabot))
+- [Snyk] Upgrade core-js from 3.20.1 to 3.20.2 [\#869](https://github.com/auth0/auth0-spa-js/pull/869) ([snyk-bot](https://github.com/snyk-bot))
+- [Snyk] Upgrade core-js from 3.20.0 to 3.20.1 [\#864](https://github.com/auth0/auth0-spa-js/pull/864) ([snyk-bot](https://github.com/snyk-bot))
+
 ## [v1.19.4](https://github.com/auth0/auth0-spa-js/tree/v1.19.4) (2022-01-14)
 [Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v1.19.3...v1.19.4)
 
