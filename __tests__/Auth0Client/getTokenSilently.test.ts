@@ -378,6 +378,35 @@ describe('Auth0Client', () => {
       expect((http.switchFetch as jest.Mock).mock.calls[0][6]).toEqual(30000);
     });
 
+      it('it correct handles params set as undefined', async () => {
+          const auth0 = setup({
+              useRefreshTokens: true,
+              audience: 'api',
+              scope: TEST_SCOPES
+          });
+
+          await loginWithRedirect(auth0);
+
+          mockFetch.mockReset();
+
+          // @ts-ignore
+          const _getTokenSilently = jest.spyOn(auth0, '_getTokenSilently').mockImplementation(async () => {});
+
+          await getTokenSilently(auth0, {
+              audience: undefined,
+              ignoreCache: undefined,
+              scope: undefined,
+          });
+
+          expect(_getTokenSilently).toHaveBeenCalledWith(
+              expect.objectContaining({
+                  audience: 'api',
+                  ignoreCache: false,
+                  scope: 'openid profile email offline_access',
+              })
+          );
+      });
+
     it('refreshes the token when no cache available', async () => {
       const auth0 = setup();
 

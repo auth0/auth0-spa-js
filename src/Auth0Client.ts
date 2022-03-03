@@ -797,15 +797,15 @@ export default class Auth0Client {
    * ```
    *
    * If there's a valid token stored and it has more than 60 seconds
-   * remaining before expiration, return the token. Otherwise, attempt 
-   * to obtain a new token. 
+   * remaining before expiration, return the token. Otherwise, attempt
+   * to obtain a new token.
    *
-   * A new token will be obtained either by opening an iframe or a 
+   * A new token will be obtained either by opening an iframe or a
    * refresh token (if `useRefreshTokens` is `true`)
-   
-   * If iframes are used, opens an iframe with the `/authorize` URL 
-   * using the parameters provided as arguments. Random and secure `state` 
-   * and `nonce` parameters will be auto-generated. If the response is successful, 
+
+   * If iframes are used, opens an iframe with the `/authorize` URL
+   * using the parameters provided as arguments. Random and secure `state`
+   * and `nonce` parameters will be auto-generated. If the response is successful,
    * results will be validated according to their expiration times.
    *
    * If refresh tokens are used, the token endpoint is called directly with the
@@ -826,6 +826,10 @@ export default class Auth0Client {
   public async getTokenSilently(
     options: GetTokenSilentlyOptions = {}
   ): Promise<string | GetTokenSilentlyVerboseResponse> {
+    // Strip any undefined values.
+    Object.keys(options).forEach(key => options[key] === undefined && delete options[key])
+
+    // Combine the configurations.
     const { ignoreCache, ...getTokenOptions } = {
       audience: this.options.audience,
       ignoreCache: false,
