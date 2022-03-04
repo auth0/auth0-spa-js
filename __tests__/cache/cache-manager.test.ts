@@ -133,6 +133,28 @@ cacheFactories.forEach(cacheFactory => {
       expect(await manager.get(key)).toStrictEqual(data);
     });
 
+    it('should not fetch from the cache if allKeys returns empty array of keys', async () => {
+      // Simulate a cache implementation that returns an empty array for 'allKeys'
+      // but also has a valid entry in there - this tries to test a custom cache implementation
+      // that doesn't return an expected value for `allKeys`, it should just behave
+      // as any other entry that returns not found.
+      const cache = new InMemoryCache().enclosedCache;
+      const getSpy = jest.spyOn(cache, 'get');
+      const manager = new CacheManager(cache);
+
+      jest.spyOn(cache, 'allKeys').mockReturnValue([]);
+      cache.set(defaultKey.toKey(), defaultData);
+
+      expect(
+        await manager.get(
+          new CacheKey({ client_id: 'test', audience: 'test', scope: 'test' })
+        )
+      ).not.toBeDefined();
+
+      // Make sure we don't try and get a cache value with a key of `undefined`
+      expect(getSpy).not.toHaveBeenCalledWith(undefined);
+    });
+
     if (keyManifest) {
       it('should update the key manifest when the key has only been added to the underlying cache', async () => {
         const manifestKey = `${CACHE_KEY_PREFIX}::${defaultData.client_id}`;
