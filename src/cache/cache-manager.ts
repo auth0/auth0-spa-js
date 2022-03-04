@@ -34,7 +34,10 @@ export class CacheManager {
       if (!keys) return;
 
       const matchedKey = this.matchExistingCacheKey(cacheKey, keys);
-      wrappedEntry = await this.cache.get<WrappedCacheEntry>(matchedKey);
+
+      if (matchedKey) {
+        wrappedEntry = await this.cache.get<WrappedCacheEntry>(matchedKey);
+      }
     }
 
     // If we still don't have an entry, exit.
