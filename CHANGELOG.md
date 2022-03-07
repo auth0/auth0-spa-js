@@ -1,5 +1,11 @@
 # Change Log
 
+## [v1.20.1](https://github.com/auth0/auth0-spa-js/tree/v1.20.1) (2022-03-04)
+[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v1.20.0...v1.20.1)
+
+**Fixed**
+- Prevent cache.get when key is undefined [\#882](https://github.com/auth0/auth0-spa-js/pull/882) ([stevehobbsdev](https://github.com/stevehobbsdev))
+
 ## [v1.20.0](https://github.com/auth0/auth0-spa-js/tree/v1.20.0) (2022-02-14)
 [Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v1.19.4...v1.20.0)
 
