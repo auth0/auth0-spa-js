@@ -546,7 +546,8 @@ export default class Auth0Client {
     await this.cacheManager.set(cacheEntry);
 
     this.cookieStorage.save(this.isAuthenticatedCookieName, true, {
-      daysUntilExpire: this.sessionCheckExpiryDays
+      daysUntilExpire: this.sessionCheckExpiryDays,
+      cookieDomain: this.options.cookieDomain
     });
 
     this._processOrgIdHint(decodedToken.claims.org_id);
@@ -713,7 +714,8 @@ export default class Auth0Client {
     });
 
     this.cookieStorage.save(this.isAuthenticatedCookieName, true, {
-      daysUntilExpire: this.sessionCheckExpiryDays
+      daysUntilExpire: this.sessionCheckExpiryDays,
+      cookieDomain: this.options.cookieDomain
     });
 
     this._processOrgIdHint(decodedToken.claims.org_id);
@@ -755,7 +757,8 @@ export default class Auth0Client {
       } else {
         // Migrate the existing cookie to the new name scoped by client ID
         this.cookieStorage.save(this.isAuthenticatedCookieName, true, {
-          daysUntilExpire: this.sessionCheckExpiryDays
+          daysUntilExpire: this.sessionCheckExpiryDays,
+          cookieDomain: this.options.cookieDomain
         });
 
         this.cookieStorage.remove(OLD_IS_AUTHENTICATED_COOKIE_NAME);
@@ -797,15 +800,15 @@ export default class Auth0Client {
    * ```
    *
    * If there's a valid token stored and it has more than 60 seconds
-   * remaining before expiration, return the token. Otherwise, attempt 
-   * to obtain a new token. 
+   * remaining before expiration, return the token. Otherwise, attempt
+   * to obtain a new token.
    *
-   * A new token will be obtained either by opening an iframe or a 
+   * A new token will be obtained either by opening an iframe or a
    * refresh token (if `useRefreshTokens` is `true`)
-   
-   * If iframes are used, opens an iframe with the `/authorize` URL 
-   * using the parameters provided as arguments. Random and secure `state` 
-   * and `nonce` parameters will be auto-generated. If the response is successful, 
+
+   * If iframes are used, opens an iframe with the `/authorize` URL
+   * using the parameters provided as arguments. Random and secure `state`
+   * and `nonce` parameters will be auto-generated. If the response is successful,
    * results will be validated according to their expiration times.
    *
    * If refresh tokens are used, the token endpoint is called directly with the
@@ -895,7 +898,8 @@ export default class Auth0Client {
         });
 
         this.cookieStorage.save(this.isAuthenticatedCookieName, true, {
-          daysUntilExpire: this.sessionCheckExpiryDays
+          daysUntilExpire: this.sessionCheckExpiryDays,
+          cookieDomain: this.options.cookieDomain
         });
 
         if (options.detailedResponse) {
