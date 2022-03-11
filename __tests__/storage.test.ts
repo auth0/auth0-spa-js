@@ -24,12 +24,13 @@ describe('CookieStorage', () => {
   it('saves a cookie with options', () => {
     const key = 'key';
     const value = { some: 'value' };
-    const options = { daysUntilExpire: 1 };
+    const options = { daysUntilExpire: 1, cookieDomain: '.example.com' };
 
     CookieStorage.save(key, value, options);
 
     expect(cookieMock.set).toHaveBeenCalledWith(key, JSON.stringify(value), {
-      expires: options.daysUntilExpire
+      expires: options.daysUntilExpire,
+      domain: options.cookieDomain
     });
   });
 
@@ -90,12 +91,13 @@ describe('CookieStorageWithLegacySameSite', () => {
   it('saves object', () => {
     const key = 'key';
     const value = { some: 'value' };
-    const options = { daysUntilExpire: 1 };
+    const options = { daysUntilExpire: 1, cookieDomain: '.example.com' };
 
     CookieStorageWithLegacySameSite.save(key, value, options);
 
     expect(cookieMock.set).toHaveBeenCalledWith(key, JSON.stringify(value), {
-      expires: options.daysUntilExpire
+      expires: options.daysUntilExpire,
+      domain: options.cookieDomain
     });
 
     expect(cookieMock.set).toHaveBeenCalledWith(
