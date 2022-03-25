@@ -2,6 +2,7 @@ import * as Cookies from 'es-cookie';
 
 interface ClientStorageOptions {
   daysUntilExpire: number;
+  cookieDomain?: string;
 }
 
 /**
@@ -39,6 +40,10 @@ export const CookieStorage = {
 
     if (options?.daysUntilExpire) {
       cookieAttributes.expires = options.daysUntilExpire;
+    }
+
+    if (options?.cookieDomain) {
+      cookieAttributes.domain = options.cookieDomain;
     }
 
     Cookies.set(key, JSON.stringify(value), cookieAttributes);
