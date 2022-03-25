@@ -210,8 +210,12 @@ export interface Auth0ClientOptions extends BaseLoginOptions {
   sessionCheckExpiryDays?: number;
 
   /**
-   * The domain the cookie is accessible from. Defaults to the current domain
-   * including the subdomain.
+   * The domain the cookie is accessible from. If not set, the cookie is scoped to
+   * the current domain, including the subdomain.
+   *
+   * Note: setting this incorrectly may cause silent authentication to stop working
+   * on page load.
+   *
    *
    * To keep a user logged in across multiple subdomains set this to your
    * top-level domain and prefixed with a `.` (eg: `.example.com`).
