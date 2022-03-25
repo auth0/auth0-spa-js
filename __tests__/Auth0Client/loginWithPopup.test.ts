@@ -389,6 +389,16 @@ describe('Auth0Client', () => {
       ).rejects.toThrowError('Timeout');
     });
 
+    it('throws an error if no popup could be opened', async () => {
+      const auth0 = setup();
+
+      // Use auth0.loginWithPopup directly here, which doesn't set up
+      // windowMock and returns null by default (as opposed to using the `loginWithPopup` helper)
+      await expect(auth0.loginWithPopup()).rejects.toThrowError(
+        /unable to open a popup/i
+      );
+    });
+
     it('uses a custom popup specified in the configuration and redirect', async () => {
       const auth0 = setup();
       const popup = {

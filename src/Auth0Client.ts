@@ -474,6 +474,12 @@ export default class Auth0Client {
 
     if (!config.popup) {
       config.popup = openPopup('');
+
+      if (!config.popup) {
+        throw new Error(
+          'Unable to open a popup for loginWithPopup - window.open returned `null`'
+        );
+      }
     }
 
     const { ...authorizeOptions } = options;
