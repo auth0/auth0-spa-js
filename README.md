@@ -31,7 +31,7 @@ Auth0 SDK for Single Page Applications using [Authorization Code Grant Flow with
 From the CDN:
 
 ```html
-<script src="https://cdn.auth0.com/js/auth0-spa-js/1.20/auth0-spa-js.production.js"></script>
+<script src="https://cdn.auth0.com/js/auth0-spa-js/1.21/auth0-spa-js.production.js"></script>
 ```
 
 Using [npm](https://npmjs.org):
