@@ -1,5 +1,15 @@
 # Change Log
 
+## [v1.21.1](https://github.com/auth0/auth0-spa-js/tree/v1.21.1) (2022-05-10)
+[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v1.21.0...v1.21.1)
+
+**Fixed**
+- Organization ID hint cookie now respects `cookieDomain` config setting [\#900](https://github.com/auth0/auth0-spa-js/pull/900) ([Dannnir](https://github.com/Dannnir))
+
+**Security**
+- [Snyk] Upgrade core-js from 3.21.1 to 3.22.0 [\#901](https://github.com/auth0/auth0-spa-js/pull/901) ([snyk-bot](https://github.com/snyk-bot))
+- [Snyk] Upgrade promise-polyfill from 8.2.1 to 8.2.3 [\#893](https://github.com/auth0/auth0-spa-js/pull/893) ([snyk-bot](https://github.com/snyk-bot))
+
 ## [v1.21.0](https://github.com/auth0/auth0-spa-js/tree/v1.21.0) (2022-04-01)
 [Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v1.20.1...v1.21.0)
 
