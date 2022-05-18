@@ -1,7 +1,6 @@
 import unfetch from 'unfetch';
 import { MISSING_REFRESH_TOKEN_ERROR_MESSAGE } from '../src/constants';
 import { assertPostFn } from './Auth0Client/helpers';
-import { TEST_CODE } from './constants';
 import * as utils from '../src/utils';
 
 jest.mock('unfetch');
@@ -168,7 +167,7 @@ describe('token worker', () => {
       }
     });
 
-    expect(response.json.error_description).toEqual(
+    expect(response.json.error_description).toContain(
       MISSING_REFRESH_TOKEN_ERROR_MESSAGE
     );
   });
@@ -288,7 +287,7 @@ describe('token worker', () => {
     expect(mockFetch.mock.calls.length).toBe(2);
 
     expect(result.json.error_description).toContain(
-      'The web worker is missing the refresh token'
+      MISSING_REFRESH_TOKEN_ERROR_MESSAGE
     );
   });
 });

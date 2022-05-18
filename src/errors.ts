@@ -91,3 +91,14 @@ export class MfaRequiredError extends GenericError {
     Object.setPrototypeOf(this, MfaRequiredError.prototype);
   }
 }
+
+export class MissingRefreshTokenError extends GenericError {
+  /* istanbul ignore next */
+  constructor(public audience: string, public scope: string) {
+    super(
+      'missing_refresh_token',
+      `Missing Refresh Token (audience: '${audience}', scope: '${scope}')`
+    );
+    Object.setPrototypeOf(this, MissingRefreshTokenError.prototype);
+  }
+}

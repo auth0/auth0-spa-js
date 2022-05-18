@@ -27,7 +27,12 @@ import {
 
 import TransactionManager from './transaction-manager';
 import { verify as verifyIdToken } from './jwt';
-import { AuthenticationError, GenericError, TimeoutError } from './errors';
+import {
+  AuthenticationError,
+  GenericError,
+  MissingRefreshTokenError,
+  TimeoutError
+} from './errors';
 
 import {
   ClientStorage,
@@ -202,6 +207,7 @@ export default class Auth0Client {
   private readonly isAuthenticatedCookieName: string;
   private readonly nowProvider: () => number | Promise<number>;
   private readonly httpTimeoutMs: number;
+  private useRefreshTokensFallback: boolean;
 
   cacheLocation: CacheLocation;
   private worker: Worker;
@@ -299,6 +305,11 @@ export default class Auth0Client {
     }
 
     this.customOptions = getCustomInitialOptions(options);
+
+    this.useRefreshTokensFallback =
+      this.options.useRefreshTokensFallback == null
+        ? true
+        : this.options.useRefreshTokens;
   }
 
   private _url(path: string) {
@@ -1183,7 +1194,14 @@ export default class Auth0Client {
     // and you don't have a refresh token in web worker memory
     // fallback to an iframe.
     if ((!cache || !cache.refresh_token) && !this.worker) {
-      return await this._getTokenFromIFrame(options);
+      if (this.useRefreshTokensFallback) {
+        return await this._getTokenFromIFrame(options);
+      }
+
+      throw new MissingRefreshTokenError(
+        options.audience || 'default',
+        options.scope
+      );
     }
 
     const redirect_uri =
@@ -1230,11 +1248,12 @@ export default class Auth0Client {
       if (
         // The web worker didn't have a refresh token in memory so
         // fallback to an iframe.
-        e.message === MISSING_REFRESH_TOKEN_ERROR_MESSAGE ||
-        // A refresh token was found, but is it no longer valid.
-        // Fallback to an iframe.
-        (e.message &&
-          e.message.indexOf(INVALID_REFRESH_TOKEN_ERROR_MESSAGE) > -1)
+        (e.message.indexOf(MISSING_REFRESH_TOKEN_ERROR_MESSAGE) > -1 ||
+          // A refresh token was found, but is it no longer valid.
+          // Fallback to an iframe.
+          (e.message &&
+            e.message.indexOf(INVALID_REFRESH_TOKEN_ERROR_MESSAGE) > -1)) &&
+        this.useRefreshTokensFallback
       ) {
         return await this._getTokenFromIFrame(options);
       }
