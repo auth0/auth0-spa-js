@@ -162,8 +162,8 @@ export interface Auth0ClientOptions extends BaseLoginOptions {
    * If true, fallback to the legacy technique of using a hidden iframe and the `authorization_code` grant with `prompt=none` when unable to use refresh tokens.
    * The default setting is `true`.
    *
-   * **Note**: There might be situatins where using the legacy iframe technique is not supported, and using it as a fallback might be undesired.
-   * In situations like this, set the value to `false`, catch any `missing_refresh_token` or `invalid_grant` errors and initiate an interactive login by calling `loginWithRedirect()`.
+   * **Note**: There might be situations where using the legacy iframe technique is not supported, and using it as a fallback might be undesired.
+   * In situations like this, set the value to `false`, catch any `missing_refresh_token` or `invalid_grant` errors when calling `getTokenSilently()`, and initiate an interactive login by calling `loginWithRedirect()`.
    *
    * E.g. Using the `file:` protocol in an Electron application does not support that legacy technique.
    */
