@@ -166,6 +166,15 @@ export interface Auth0ClientOptions extends BaseLoginOptions {
    * In situations like this, set the value to `false`, catch any `missing_refresh_token` or `invalid_grant` errors when calling `getTokenSilently()`, and initiate an interactive login by calling `loginWithRedirect()`.
    *
    * E.g. Using the `file:` protocol in an Electron application does not support that legacy technique.
+   *
+   *  let token: string;
+   *  try {
+   *    token = await auth0.getTokenSilently();
+   *  } catch (e) {
+   *  if (e.error === 'missing_refresh_token' || e.error === 'invalid_grant') {
+   *      auth0.loginWithRedirect();
+   *    }
+   *  }
    */
   useRefreshTokensFallback?: boolean;
 
