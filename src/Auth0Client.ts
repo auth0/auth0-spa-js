@@ -307,9 +307,7 @@ export default class Auth0Client {
     this.customOptions = getCustomInitialOptions(options);
 
     this.useRefreshTokensFallback =
-      this.options.useRefreshTokensFallback == null
-        ? true
-        : this.options.useRefreshTokensFallback;
+      this.options.useRefreshTokensFallback !== false;
   }
 
   private _url(path: string) {
