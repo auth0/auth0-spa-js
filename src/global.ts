@@ -159,7 +159,7 @@ export interface Auth0ClientOptions extends BaseLoginOptions {
   useRefreshTokens?: boolean;
 
   /**
-   * If true, fallback to the legacy technique of using a hidden iframe and the `authorization_code` grant with `prompt=none` when unable to use refresh tokens.
+   * If true, fallback to the technique of using a hidden iframe and the `authorization_code` grant with `prompt=none` when unable to use refresh tokens.
    * The default setting is `true`.
    *
    * **Note**: There might be situations where doing silent auth with a Web Message response from an iframe is not possible,
