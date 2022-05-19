@@ -207,7 +207,7 @@ export default class Auth0Client {
   private readonly isAuthenticatedCookieName: string;
   private readonly nowProvider: () => number | Promise<number>;
   private readonly httpTimeoutMs: number;
-  private useRefreshTokensFallback: boolean;
+  private readonly useRefreshTokensFallback: boolean;
 
   cacheLocation: CacheLocation;
   private worker: Worker;
