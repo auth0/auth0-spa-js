@@ -22,8 +22,8 @@ import {
   fetchResponse,
   getTokenSilentlyFn,
   loginWithRedirectFn,
-  setupFn
-} from './helpers';
+  setupFn, setupWithBasePathFn
+} from "./helpers"
 
 import {
   TEST_ACCESS_TOKEN,
@@ -67,6 +67,7 @@ jest.spyOn(http, 'switchFetch');
 
 const assertPost = assertPostFn(mockFetch);
 const setup = setupFn(mockVerify);
+const setupWithBasePath = setupWithBasePathFn(mockVerify);
 const loginWithRedirect = loginWithRedirectFn(mockWindow, mockFetch);
 const getTokenSilently = getTokenSilentlyFn(mockWindow, mockFetch);
 
@@ -148,6 +149,35 @@ describe('Auth0Client', () => {
       const [[url]] = (<jest.Mock>utils.runIframe).mock.calls;
 
       assertUrlEquals(url, 'auth0_domain', '/authorize', {
+        scope: TEST_SCOPES,
+        client_id: TEST_CLIENT_ID,
+        response_type: 'code',
+        response_mode: 'web_message',
+        prompt: 'none',
+        state: TEST_STATE,
+        nonce: TEST_NONCE,
+        redirect_uri: TEST_REDIRECT_URI,
+        code_challenge: TEST_CODE_CHALLENGE,
+        code_challenge_method: 'S256',
+        foo: 'bar'
+      });
+    });
+
+    it.only('calls the authorize endpoint with base path using the correct params', async () => {
+      const auth0 = setupWithBasePath();
+
+      jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
+        access_token: TEST_ACCESS_TOKEN,
+        state: TEST_STATE
+      });
+
+      await getTokenSilently(auth0, {
+        foo: 'bar'
+      });
+
+      const [[url]] = (<jest.Mock>utils.runIframe).mock.calls;
+
+      assertUrlEquals(url, 'auth0_domain', '/test-base-path/authorize', {
         scope: TEST_SCOPES,
         client_id: TEST_CLIENT_ID,
         response_type: 'code',

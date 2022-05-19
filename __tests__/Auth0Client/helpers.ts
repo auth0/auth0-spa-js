@@ -12,7 +12,7 @@ import * as utils from '../../src/utils';
 import Auth0Client from '../../src/Auth0Client';
 
 import {
-  TEST_ACCESS_TOKEN,
+  TEST_ACCESS_TOKEN, TEST_BASE_PATH,
   TEST_CLIENT_ID,
   TEST_CODE,
   TEST_DOMAIN,
@@ -20,7 +20,7 @@ import {
   TEST_REDIRECT_URI,
   TEST_REFRESH_TOKEN,
   TEST_STATE
-} from '../constants';
+} from "../constants"
 
 const authorizationResponse: AuthenticationResult = {
   code: 'my_code',
@@ -109,6 +109,36 @@ export const setupFn = (mockVerify: jest.Mock) => {
       Object.assign(
         {
           domain: TEST_DOMAIN,
+          client_id: TEST_CLIENT_ID,
+          redirect_uri: TEST_REDIRECT_URI
+        },
+        config
+      )
+    );
+
+    mockVerify.mockReturnValue({
+      claims: Object.assign(
+        {
+          exp: Date.now() / 1000 + 86400
+        },
+        claims
+      ),
+      user: {
+        sub: 'me'
+      }
+    });
+
+    return auth0;
+  };
+};
+
+export const setupWithBasePathFn = (mockVerify: jest.Mock) => {
+  return (config?: Partial<Auth0ClientOptions>, claims?: Partial<IdToken>) => {
+    const auth0 = new Auth0Client(
+      Object.assign(
+        {
+          domain: TEST_DOMAIN,
+          basePath: TEST_BASE_PATH,
           client_id: TEST_CLIENT_ID,
           redirect_uri: TEST_REDIRECT_URI
         },

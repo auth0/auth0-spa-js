@@ -115,6 +115,12 @@ export interface Auth0ClientOptions extends BaseLoginOptions {
    */
   domain: string;
   /**
+   * Your Auth API base path, if you auth endpoints are not mapped to the root of your domain,
+   *  for example `https://example.auth0.com/myauthapi/authorize` — domain: `https://example.auth0.com`,
+   *  basePath: `/myauthapi`, authorize endpoint: `/authorize`
+   */
+  basePath?: string;
+  /**
    * The issuer to be used for validation of JWTs, optionally defaults to the domain above
    */
   issuer?: string;

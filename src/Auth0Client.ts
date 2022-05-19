@@ -193,6 +193,7 @@ export default class Auth0Client {
   private readonly cacheManager: CacheManager;
   private readonly customOptions: BaseLoginOptions;
   private readonly domainUrl: string;
+  private readonly basePath: string | undefined;
   private readonly tokenIssuer: string;
   private readonly defaultScope: string;
   private readonly scope: string;
@@ -271,6 +272,8 @@ export default class Auth0Client {
     );
 
     this.domainUrl = getDomain(this.options.domain);
+    this.basePath = this.options.basePath;
+
     this.tokenIssuer = getTokenIssuer(this.options.issuer, this.domainUrl);
 
     this.defaultScope = getUniqueScopes(
@@ -305,7 +308,7 @@ export default class Auth0Client {
     const auth0Client = encodeURIComponent(
       btoa(JSON.stringify(this.options.auth0Client || DEFAULT_AUTH0_CLIENT))
     );
-    return `${this.domainUrl}${path}&auth0Client=${auth0Client}`;
+    return `${this.domainUrl}${this.basePath || ''}${path}&auth0Client=${auth0Client}`;
   }
 
   private _getParams(
@@ -333,6 +336,7 @@ export default class Auth0Client {
       domain,
       leeway,
       httpTimeoutInSeconds,
+      basePath,
       ...loginOptions
     } = this.options;
 
