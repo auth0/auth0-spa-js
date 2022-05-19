@@ -3,6 +3,8 @@
  * https://github.com/gotwarlost/istanbul/issues/690
  */
 
+import { valueOrEmptyString } from './utils';
+
 /**
  * Thrown when network requests to the Auth server fail.
  */
@@ -90,10 +92,6 @@ export class MfaRequiredError extends GenericError {
     //https://github.com/Microsoft/TypeScript-wiki/blob/master/Breaking-Changes.md#extending-built-ins-like-error-array-and-map-may-no-longer-work
     Object.setPrototypeOf(this, MfaRequiredError.prototype);
   }
-}
-
-function valueOrEmptyString(value: string, exclude: string[] = []) {
-  return value && !exclude.includes(value) ? value : '';
 }
 
 export class MissingRefreshTokenError extends GenericError {
