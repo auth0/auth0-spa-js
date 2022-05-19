@@ -92,12 +92,18 @@ export class MfaRequiredError extends GenericError {
   }
 }
 
+function valueOrEmptyString(value: string, exclude: string[] = []) {
+  return value && !exclude.includes(value) ? value : '';
+}
+
 export class MissingRefreshTokenError extends GenericError {
   /* istanbul ignore next */
   constructor(public audience: string, public scope: string) {
     super(
       'missing_refresh_token',
-      `Missing Refresh Token (audience: '${audience}', scope: '${scope}')`
+      `Missing Refresh Token (audience: '${valueOrEmptyString(audience, [
+        'default'
+      ])}', scope: '${valueOrEmptyString(scope)}')`
     );
     Object.setPrototypeOf(this, MissingRefreshTokenError.prototype);
   }

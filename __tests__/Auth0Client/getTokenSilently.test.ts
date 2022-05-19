@@ -927,7 +927,7 @@ describe('Auth0Client', () => {
       await expect(
         getTokenSilently(auth0, { ignoreCache: true })
       ).rejects.toThrow(
-        "Missing Refresh Token (audience: 'default', scope: 'openid profile email offline_access')"
+        "Missing Refresh Token (audience: '', scope: 'openid profile email offline_access')"
       );
 
       expect(utils.runIframe).not.toHaveBeenCalled();
@@ -1062,7 +1062,7 @@ describe('Auth0Client', () => {
       await expect(
         getTokenSilently(auth0, { ignoreCache: true })
       ).rejects.toThrow(
-        "Missing Refresh Token (audience: 'default', scope: 'openid profile email offline_access')"
+        "Missing Refresh Token (audience: '', scope: 'openid profile email offline_access')"
       );
 
       expect(utils.runIframe).not.toHaveBeenCalled();
