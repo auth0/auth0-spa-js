@@ -2748,6 +2748,9 @@ img {
 			<a href="classes/mfarequirederror.html" class="tsd-kind-icon">Mfa<wbr>Required<wbr>Error</a>
 		</li>
 		<li class=" tsd-kind-class">
+			<a href="classes/missingrefreshtokenerror.html" class="tsd-kind-icon">Missing<wbr>Refresh<wbr>Token<wbr>Error</a>
+		</li>
+		<li class=" tsd-kind-class">
 			<a href="classes/popupcancellederror.html" class="tsd-kind-icon">Popup<wbr>Cancelled<wbr>Error</a>
 		</li>
 		<li class=" tsd-kind-class">
@@ -2886,7 +2889,7 @@ img {
 				<h2>Installation</h2>
 			</a>
 			<p>From the CDN:</p>
-			<pre><code class="language-html"><span class="hljs-tag">&lt;<span class="hljs-name">script</span> <span class="hljs-attr">src</span>=<span class="hljs-string">&quot;https://cdn.auth0.com/js/auth0-spa-js/1.21/auth0-spa-js.production.js&quot;</span>&gt;</span><span class="hljs-tag">&lt;/<span class="hljs-name">script</span>&gt;</span>
+			<pre><code class="language-html"><span class="hljs-tag">&lt;<span class="hljs-name">script</span> <span class="hljs-attr">src</span>=<span class="hljs-string">&quot;https://cdn.auth0.com/js/auth0-spa-js/1.22/auth0-spa-js.production.js&quot;</span>&gt;</span><span class="hljs-tag">&lt;/<span class="hljs-name">script</span>&gt;</span>
 </code></pre>
 			<p>Using <a href="https://npmjs.org">npm</a>:</p>
 			<pre><code class="language-sh">npm install @auth0/auth0-spa-js
@@ -3259,6 +3262,7 @@ client.loginWithPopup({
 							<li class="tsd-kind-class"><a href="classes/inmemorycache.html" class="tsd-kind-icon">In<wbr>Memory<wbr>Cache</a></li>
 							<li class="tsd-kind-class"><a href="classes/localstoragecache.html" class="tsd-kind-icon">Local<wbr>Storage<wbr>Cache</a></li>
 							<li class="tsd-kind-class"><a href="classes/mfarequirederror.html" class="tsd-kind-icon">Mfa<wbr>Required<wbr>Error</a></li>
+							<li class="tsd-kind-class"><a href="classes/missingrefreshtokenerror.html" class="tsd-kind-icon">Missing<wbr>Refresh<wbr>Token<wbr>Error</a></li>
 							<li class="tsd-kind-class"><a href="classes/popupcancellederror.html" class="tsd-kind-icon">Popup<wbr>Cancelled<wbr>Error</a></li>
 							<li class="tsd-kind-class"><a href="classes/popuptimeouterror.html" class="tsd-kind-icon">Popup<wbr>Timeout<wbr>Error</a></li>
 							<li class="tsd-kind-class"><a href="classes/timeouterror.html" class="tsd-kind-icon">Timeout<wbr>Error</a></li>
@@ -3325,7 +3329,7 @@ client.loginWithPopup({
 				<div class="tsd-signature tsd-kind-icon">Cache<wbr>Entry<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">{ </span>access_token<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span>audience<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span>client_id<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span>decodedToken<span class="tsd-signature-symbol">: </span><a href="interfaces/decodedtoken.html" class="tsd-signature-type">DecodedToken</a><span class="tsd-signature-symbol">; </span>expires_in<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">; </span>id_token<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span>oauthTokenScope<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span>refresh_token<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span>scope<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> }</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/56ef0d8/src/cache/shared.ts#L62">src/cache/shared.ts:62</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/ab50548/src/cache/shared.ts#L62">src/cache/shared.ts:62</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-type-declaration">
@@ -3367,7 +3371,7 @@ client.loginWithPopup({
 				<div class="tsd-signature tsd-kind-icon">Cache<wbr>Key<wbr>Data<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">{ </span>audience<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span>client_id<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">; </span>scope<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> }</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/56ef0d8/src/cache/shared.ts#L5">src/cache/shared.ts:5</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/ab50548/src/cache/shared.ts#L5">src/cache/shared.ts:5</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-type-declaration">
@@ -3391,7 +3395,7 @@ client.loginWithPopup({
 				<div class="tsd-signature tsd-kind-icon">Cache<wbr>Location<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">"memory"</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">"localstorage"</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/56ef0d8/src/global.ts#L245">src/global.ts:245</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/ab50548/src/global.ts#L266">src/global.ts:266</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-comment tsd-typography">
@@ -3406,7 +3410,7 @@ client.loginWithPopup({
 				<div class="tsd-signature tsd-kind-icon">Cacheable<span class="tsd-signature-symbol">:</span> <a href="globals.html#wrappedcacheentry" class="tsd-signature-type">WrappedCacheEntry</a><span class="tsd-signature-symbol"> | </span><a href="globals.html#keymanifestentry" class="tsd-signature-type">KeyManifestEntry</a></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/56ef0d8/src/cache/shared.ts#L83">src/cache/shared.ts:83</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/ab50548/src/cache/shared.ts#L83">src/cache/shared.ts:83</a></li>
 					</ul>
 				</aside>
 			</section>
@@ -3416,7 +3420,7 @@ client.loginWithPopup({
 				<div class="tsd-signature tsd-kind-icon">Get<wbr>Token<wbr>Silently<wbr>Verbose<wbr>Response<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Omit</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">TokenEndpointResponse</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">"refresh_token"</span><span class="tsd-signature-symbol">&gt;</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/56ef0d8/src/global.ts#L614">src/global.ts:614</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/ab50548/src/global.ts#L635">src/global.ts:635</a></li>
 					</ul>
 				</aside>
 			</section>
@@ -3426,7 +3430,7 @@ client.loginWithPopup({
 				<div class="tsd-signature tsd-kind-icon">Key<wbr>Manifest<wbr>Entry<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">{ </span>keys<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol"> }</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/56ef0d8/src/cache/shared.ts#L79">src/cache/shared.ts:79</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/ab50548/src/cache/shared.ts#L79">src/cache/shared.ts:79</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-type-declaration">
@@ -3444,7 +3448,7 @@ client.loginWithPopup({
 				<div class="tsd-signature tsd-kind-icon">Maybe<wbr>Promise&lt;T&gt;<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">T</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">T</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/56ef0d8/src/cache/shared.ts#L85">src/cache/shared.ts:85</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/ab50548/src/cache/shared.ts#L85">src/cache/shared.ts:85</a></li>
 					</ul>
 				</aside>
 				<h4 class="tsd-type-parameters-title">Type parameters</h4>
@@ -3460,7 +3464,7 @@ client.loginWithPopup({
 				<div class="tsd-signature tsd-kind-icon">Wrapped<wbr>Cache<wbr>Entry<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">{ </span>body<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Partial</span><span class="tsd-signature-symbol">&lt;</span><a href="globals.html#cacheentry" class="tsd-signature-type">CacheEntry</a><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">; </span>expiresAt<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> }</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/56ef0d8/src/cache/shared.ts#L74">src/cache/shared.ts:74</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/ab50548/src/cache/shared.ts#L74">src/cache/shared.ts:74</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-type-declaration">
@@ -3481,7 +3485,7 @@ client.loginWithPopup({
 				<div class="tsd-signature tsd-kind-icon">get<wbr>IdToken<wbr>Claims<wbr>Options<span class="tsd-signature-symbol">:</span> <a href="interfaces/getidtokenclaimsoptions.html" class="tsd-signature-type">GetIdTokenClaimsOptions</a></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/56ef0d8/src/global.ts#L333">src/global.ts:333</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/ab50548/src/global.ts#L354">src/global.ts:354</a></li>
 					</ul>
 				</aside>
 			</section>
@@ -3494,7 +3498,7 @@ client.loginWithPopup({
 				<div class="tsd-signature tsd-kind-icon">CACHE_<wbr>KEY_<wbr>PREFIX<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">"@@auth0spajs@@"</span><span class="tsd-signature-symbol"> = &quot;@@auth0spajs@@&quot;</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/56ef0d8/src/cache/shared.ts#L3">src/cache/shared.ts:3</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/ab50548/src/cache/shared.ts#L3">src/cache/shared.ts:3</a></li>
 					</ul>
 				</aside>
 			</section>
@@ -3504,7 +3508,7 @@ client.loginWithPopup({
 				<div class="tsd-signature tsd-kind-icon">CACHE_<wbr>LOCATION_<wbr>LOCAL_<wbr>STORAGE<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">"localstorage"</span><span class="tsd-signature-symbol"> = &quot;localstorage&quot;</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/56ef0d8/src/constants.ts#L32">src/constants.ts:32</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/ab50548/src/constants.ts#L32">src/constants.ts:32</a></li>
 					</ul>
 				</aside>
 			</section>
@@ -3514,7 +3518,7 @@ client.loginWithPopup({
 				<div class="tsd-signature tsd-kind-icon">CACHE_<wbr>LOCATION_<wbr>MEMORY<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">"memory"</span><span class="tsd-signature-symbol"> = &quot;memory&quot;</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/56ef0d8/src/constants.ts#L31">src/constants.ts:31</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/ab50548/src/constants.ts#L31">src/constants.ts:31</a></li>
 					</ul>
 				</aside>
 			</section>
@@ -3524,7 +3528,7 @@ client.loginWithPopup({
 				<div class="tsd-signature tsd-kind-icon">DEFAULT_<wbr>EXPIRY_<wbr>ADJUSTMENT_<wbr>SECONDS<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">0</span><span class="tsd-signature-symbol"> = 0</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/56ef0d8/src/cache/cache-manager.ts#L12">src/cache/cache-manager.ts:12</a></li>
+						<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/ab50548/src/cache/cache-manager.ts#L12">src/cache/cache-manager.ts:12</a></li>
 					</ul>
 				</aside>
 			</section>
@@ -3541,7 +3545,7 @@ client.loginWithPopup({
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/56ef0d8/src/constants.ts#L80">src/constants.ts:80</a></li>
+								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/ab50548/src/constants.ts#L79">src/constants.ts:79</a></li>
 							</ul>
 						</aside>
 						<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">number</span></h4>
@@ -3558,7 +3562,7 @@ client.loginWithPopup({
 					<li class="tsd-description">
 						<aside class="tsd-sources">
 							<ul>
-								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/56ef0d8/src/index.ts#L28">src/index.ts:28</a></li>
+								<li>Defined in <a href="https://github.com/auth0/auth0-spa-js/blob/ab50548/src/index.ts#L28">src/index.ts:28</a></li>
 							</ul>
 						</aside>
 						<div class="tsd-comment tsd-typography">

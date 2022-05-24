@@ -1,55 +1,83 @@
 # Change Log
 
+## [v1.22.0](https://github.com/auth0/auth0-spa-js/tree/v1.22.0) (2022-05-24)
+
+[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v1.21.1...v1.22.0)
+
+**Added**
+
+- Silent auth fallback when using Refresh Tokens can now be disabled [\#907](https://github.com/auth0/auth0-spa-js/pull/907) ([frederikprijck](https://github.com/frederikprijck))
+
+**Security**
+
+- [Snyk] Upgrade core-js 3.22.4 [\#910](https://github.com/auth0/auth0-spa-js/pull/910) ([crew-security](https://github.com/crew-security))
+
 ## [v1.21.1](https://github.com/auth0/auth0-spa-js/tree/v1.21.1) (2022-05-10)
+
 [Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v1.21.0...v1.21.1)
 
 **Fixed**
+
 - Organization ID hint cookie now respects `cookieDomain` config setting [\#900](https://github.com/auth0/auth0-spa-js/pull/900) ([Dannnir](https://github.com/Dannnir))
 
 **Security**
+
 - [Snyk] Upgrade core-js from 3.21.1 to 3.22.0 [\#901](https://github.com/auth0/auth0-spa-js/pull/901) ([snyk-bot](https://github.com/snyk-bot))
 - [Snyk] Upgrade promise-polyfill from 8.2.1 to 8.2.3 [\#893](https://github.com/auth0/auth0-spa-js/pull/893) ([snyk-bot](https://github.com/snyk-bot))
 
 ## [v1.21.0](https://github.com/auth0/auth0-spa-js/tree/v1.21.0) (2022-04-01)
+
 [Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v1.20.1...v1.21.0)
 
 **Added**
+
 - FEAT override cookie domain option [\#885](https://github.com/auth0/auth0-spa-js/pull/885) ([Soviut](https://github.com/Soviut))
 
 **Fixed**
+
 - fix: handle NPE when no popup is available [\#888](https://github.com/auth0/auth0-spa-js/pull/888) ([stevehobbsdev](https://github.com/stevehobbsdev))
 
 ## [v1.20.1](https://github.com/auth0/auth0-spa-js/tree/v1.20.1) (2022-03-04)
+
 [Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v1.20.0...v1.20.1)
 
 **Fixed**
+
 - Prevent cache.get when key is undefined [\#882](https://github.com/auth0/auth0-spa-js/pull/882) ([stevehobbsdev](https://github.com/stevehobbsdev))
 
 ## [v1.20.0](https://github.com/auth0/auth0-spa-js/tree/v1.20.0) (2022-02-14)
+
 [Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v1.19.4...v1.20.0)
 
 **Added**
+
 - [SDK-3105] Add httpTimeoutInSeconds to control fetch timeout [\#875](https://github.com/auth0/auth0-spa-js/pull/875) ([stevehobbsdev](https://github.com/stevehobbsdev))
 
 **Changed**
+
 - clarify documentation comment for getTokenSilently [\#874](https://github.com/auth0/auth0-spa-js/pull/874) ([jdugan1024](https://github.com/jdugan1024))
 
 **Fixed**
+
 - Fix getTokenSilently reference in example code [\#868](https://github.com/auth0/auth0-spa-js/pull/868) ([mdlavin](https://github.com/mdlavin))
 
 **Security**
+
 - [Snyk] Upgrade core-js from 3.20.2 to 3.20.3 [\#873](https://github.com/auth0/auth0-spa-js/pull/873) ([snyk-bot](https://github.com/snyk-bot))
 - Bump node-fetch from 2.6.1 to 2.6.7 [\#870](https://github.com/auth0/auth0-spa-js/pull/870) ([dependabot[bot]](https://github.com/apps/dependabot))
 - [Snyk] Upgrade core-js from 3.20.1 to 3.20.2 [\#869](https://github.com/auth0/auth0-spa-js/pull/869) ([snyk-bot](https://github.com/snyk-bot))
 - [Snyk] Upgrade core-js from 3.20.0 to 3.20.1 [\#864](https://github.com/auth0/auth0-spa-js/pull/864) ([snyk-bot](https://github.com/snyk-bot))
 
 ## [v1.19.4](https://github.com/auth0/auth0-spa-js/tree/v1.19.4) (2022-01-14)
+
 [Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v1.19.3...v1.19.4)
 
 **Fixed**
+
 - Org ID hint cookie expiry now aligns with is.authenticated cookie [\#861](https://github.com/auth0/auth0-spa-js/pull/861) ([stevehobbsdev](https://github.com/stevehobbsdev))
 
 **Security**
+
 - Bump follow-redirects from 1.14.0 to 1.14.7 [\#860](https://github.com/auth0/auth0-spa-js/pull/860) ([dependabot[bot]](https://github.com/apps/dependabot))
 - [Snyk] Upgrade core-js from 3.19.2 to 3.20.0 [\#858](https://github.com/auth0/auth0-spa-js/pull/858) ([snyk-bot](https://github.com/snyk-bot))
 - [Snyk] Upgrade core-js from 3.19.1 to 3.19.2 [\#851](https://github.com/auth0/auth0-spa-js/pull/851) ([snyk-bot](https://github.com/snyk-bot))
