@@ -900,6 +900,39 @@ describe('Auth0Client', () => {
       expect(utils.runIframe).toHaveBeenCalled();
     });
 
+    it('does not fall back to iframe when missing refresh token errors from the worker and useRefreshTokensFallback set to false', async () => {
+      const auth0 = setup({
+        useRefreshTokens: true,
+        useRefreshTokensFallback: false
+      });
+      expect((<any>auth0).worker).toBeDefined();
+      await loginWithRedirect(auth0, undefined, {
+        token: {
+          response: { refresh_token: '' }
+        }
+      });
+      jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
+        access_token: TEST_ACCESS_TOKEN,
+        state: TEST_STATE
+      });
+      mockFetch.mockResolvedValueOnce(
+        fetchResponse(true, {
+          id_token: TEST_ID_TOKEN,
+          refresh_token: TEST_REFRESH_TOKEN,
+          access_token: TEST_ACCESS_TOKEN,
+          expires_in: 86400
+        })
+      );
+
+      await expect(
+        getTokenSilently(auth0, { ignoreCache: true })
+      ).rejects.toThrow(
+        "Missing Refresh Token (audience: '', scope: 'openid profile email offline_access')"
+      );
+
+      expect(utils.runIframe).not.toHaveBeenCalled();
+    });
+
     it('handles fetch errors without the worker', async () => {
       const auth0 = setup({
         useRefreshTokens: true,
@@ -999,6 +1032,40 @@ describe('Auth0Client', () => {
       const access_token = await auth0.getTokenSilently({ ignoreCache: true });
       expect(access_token).toEqual(TEST_ACCESS_TOKEN);
       expect(utils.runIframe).toHaveBeenCalled();
+    });
+
+    it('does not fall back to iframe when missing refresh token without the worker when useRefreshTokensFallback is set to false', async () => {
+      const auth0 = setup({
+        useRefreshTokens: true,
+        useRefreshTokensFallback: false,
+        cacheLocation: 'localstorage'
+      });
+      expect((<any>auth0).worker).toBeUndefined();
+      await loginWithRedirect(auth0, undefined, {
+        token: {
+          response: { refresh_token: '' }
+        }
+      });
+      jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
+        access_token: TEST_ACCESS_TOKEN,
+        state: TEST_STATE
+      });
+      mockFetch.mockResolvedValueOnce(
+        fetchResponse(true, {
+          id_token: TEST_ID_TOKEN,
+          refresh_token: TEST_REFRESH_TOKEN,
+          access_token: TEST_ACCESS_TOKEN,
+          expires_in: 86400
+        })
+      );
+
+      await expect(
+        getTokenSilently(auth0, { ignoreCache: true })
+      ).rejects.toThrow(
+        "Missing Refresh Token (audience: '', scope: 'openid profile email offline_access')"
+      );
+
+      expect(utils.runIframe).not.toHaveBeenCalled();
     });
 
     it('falls back to iframe when missing refresh token in ie11', async () => {

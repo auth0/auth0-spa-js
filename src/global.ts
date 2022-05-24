@@ -159,6 +159,27 @@ export interface Auth0ClientOptions extends BaseLoginOptions {
   useRefreshTokens?: boolean;
 
   /**
+   * If true, fallback to the technique of using a hidden iframe and the `authorization_code` grant with `prompt=none` when unable to use refresh tokens.
+   * The default setting is `true`.
+   *
+   * **Note**: There might be situations where doing silent auth with a Web Message response from an iframe is not possible,
+   * like when you're serving your application from the file system or a custom protocol (like in a Desktop or Native app).
+   * In situations like this you can disable the iframe fallback and handle the failed Refresh Grant and prompt the user to login interactively with `loginWithRedirect` or `loginWithPopup`."
+   *
+   * E.g. Using the `file:` protocol in an Electron application does not support that legacy technique.
+   *
+   *  let token: string;
+   *  try {
+   *    token = await auth0.getTokenSilently();
+   *  } catch (e) {
+   *  if (e.error === 'missing_refresh_token' || e.error === 'invalid_grant') {
+   *      auth0.loginWithRedirect();
+   *    }
+   *  }
+   */
+  useRefreshTokensFallback?: boolean;
+
+  /**
    * A maximum number of seconds to wait before declaring background calls to /authorize as failed for timeout
    * Defaults to 60s.
    */

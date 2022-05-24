@@ -1,4 +1,4 @@
-import { MISSING_REFRESH_TOKEN_ERROR_MESSAGE } from '../constants';
+import { MissingRefreshTokenError } from '../errors';
 import { WorkerRefreshTokenMessage } from './worker.types';
 
 let refreshTokens: Record<string, string> = {};
@@ -50,7 +50,7 @@ const messageHandler = async ({
       const refreshToken = getRefreshToken(audience, scope);
 
       if (!refreshToken) {
-        throw new Error(MISSING_REFRESH_TOKEN_ERROR_MESSAGE);
+        throw new MissingRefreshTokenError(audience, scope);
       }
 
       fetchOptions.body = useFormData

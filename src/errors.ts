@@ -3,6 +3,8 @@
  * https://github.com/gotwarlost/istanbul/issues/690
  */
 
+import { valueOrEmptyString } from './utils';
+
 /**
  * Thrown when network requests to the Auth server fail.
  */
@@ -89,5 +91,18 @@ export class MfaRequiredError extends GenericError {
     super(error, error_description);
     //https://github.com/Microsoft/TypeScript-wiki/blob/master/Breaking-Changes.md#extending-built-ins-like-error-array-and-map-may-no-longer-work
     Object.setPrototypeOf(this, MfaRequiredError.prototype);
+  }
+}
+
+export class MissingRefreshTokenError extends GenericError {
+  /* istanbul ignore next */
+  constructor(public audience: string, public scope: string) {
+    super(
+      'missing_refresh_token',
+      `Missing Refresh Token (audience: '${valueOrEmptyString(audience, [
+        'default'
+      ])}', scope: '${valueOrEmptyString(scope)}')`
+    );
+    Object.setPrototypeOf(this, MissingRefreshTokenError.prototype);
   }
 }

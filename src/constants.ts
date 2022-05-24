@@ -34,8 +34,7 @@ export const CACHE_LOCATION_LOCAL_STORAGE = 'localstorage';
 /**
  * @ignore
  */
-export const MISSING_REFRESH_TOKEN_ERROR_MESSAGE =
-  'The web worker is missing the refresh token';
+export const MISSING_REFRESH_TOKEN_ERROR_MESSAGE = 'Missing Refresh Token';
 
 /**
  * @ignore

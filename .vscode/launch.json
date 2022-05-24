@@ -33,6 +33,18 @@
       "program": "${workspaceFolder}/node_modules/.bin/rollup",
       "args": ["-m", "-c"],
       "console": "integratedTerminal"
+    },
+    {
+      "name": "Debug Jest Tests",
+      "type": "node",
+      "request": "launch",
+      "runtimeArgs": [
+        "--inspect-brk",
+        "${workspaceRoot}/node_modules/.bin/jest",
+      ],
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen",
+      "port": 9229
     }
   ]
 }
