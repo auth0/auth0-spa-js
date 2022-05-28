@@ -45,7 +45,7 @@ export interface BaseLoginOptions {
    *
    * This only affects the New Universal Login Experience.
    */
-  screen_hint?: string;
+  screen_hint?: 'signup';
 
   /**
    * The user's email address or other identifier. When your app knows
