@@ -194,7 +194,11 @@ export interface Auth0ClientOptions extends BaseLoginOptions {
    * Internal property to send information about the client to the authorization server.
    * @internal
    */
-  auth0Client?: { name: string; version: string };
+  auth0Client?: {
+    name: string;
+    version: string;
+    env?: { [key: string]: string };
+  };
 
   /**
    * Sets an additional cookie with no SameSite attribute to support legacy browsers
