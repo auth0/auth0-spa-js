@@ -1,5 +1,12 @@
 # Change Log
 
+## [v1.22.1](https://github.com/auth0/auth0-spa-js/tree/v1.22.1) (2022-06-14)
+[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v1.22.0...v1.22.1)
+
+**Changed**
+- Stronger typing for screen_hint property [\#912](https://github.com/auth0/auth0-spa-js/pull/912) ([iAmWillShepherd](https://github.com/iAmWillShepherd))
+- Add env to auth0Client userAgent [\#913](https://github.com/auth0/auth0-spa-js/pull/913) ([frederikprijck](https://github.com/frederikprijck))
+
 ## [v1.22.0](https://github.com/auth0/auth0-spa-js/tree/v1.22.0) (2022-05-24)
 
 [Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v1.21.1...v1.22.0)
