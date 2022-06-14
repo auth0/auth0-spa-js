@@ -151,7 +151,7 @@ jobs:
       - run: mv dist spa-js
       - run:
           name: Create App
-          command: npx -p @angular/cli ng new my-app --defaults=true --packageManager=yarn < /dev/null
+          command: npx -p @angular/cli ng new my-app --defaults=true --package-manager=yarn < /dev/null
       - run:
           name: Install SPA JS
           command: |
