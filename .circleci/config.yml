@@ -1,6 +1,7 @@
 version: 2.1
 orbs:
   ship: auth0/ship@0.1.0
+  codecov: codecov/codecov@3
 parameters:
   docker_image:
     type: string
@@ -26,9 +27,7 @@ jobs:
           key: spa-dist-{{ .Revision }}
           paths:
             - dist
-      - run:
-          name: Upload coverage
-          command: ./node_modules/.bin/codecov
+      - codecov/upload
   browserstack:
     docker:
       - image: << pipeline.parameters.docker_image >>
