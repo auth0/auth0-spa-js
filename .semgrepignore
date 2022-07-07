@@ -1,0 +1,9 @@
+__mocks__/
+__tests__/
+cypress/
+docs/
+static/
+CHANGELOG.md
+DEVELOPMENT.md
+FAQ.md
+README.md
