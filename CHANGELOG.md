@@ -1,5 +1,11 @@
 # Change Log
 
+## [v1.22.2](https://github.com/auth0/auth0-spa-js/tree/v1.22.2) (2022-07-19)
+[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v1.22.1...v1.22.2)
+
+**Changed**
+- Avoid sending unnecessary request parameters [\#920](https://github.com/auth0/auth0-spa-js/pull/920) ([frederikprijck](https://github.com/frederikprijck))
+
 ## [v1.22.1](https://github.com/auth0/auth0-spa-js/tree/v1.22.1) (2022-06-14)
 [Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v1.22.0...v1.22.1)
 
