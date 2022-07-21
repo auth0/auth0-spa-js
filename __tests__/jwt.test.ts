@@ -1,12 +1,7 @@
 import { decode, verify } from '../src/jwt';
 import IDTokenVerifier from 'idtoken-verifier';
 import jwt from 'jsonwebtoken';
-import pem from 'pem';
-interface Certificate {
-  serviceKey: string;
-  certificate: string;
-  publicKey: string;
-}
+import { generateKeyPairSync } from 'crypto';
 
 const verifyOptions = {
   iss: 'https://brucke.auth0.com/',
@@ -15,24 +10,15 @@ const verifyOptions = {
   client_id: 'the_client_id'
 };
 
-const createCertificate = (): Promise<Certificate> =>
-  new Promise((res, rej) => {
-    pem.createCertificate({ days: 1, selfSigned: true }, function (err, keys) {
-      if (err) {
-        return rej(err);
-      }
-      pem.getPublicKey(keys.certificate, function (e, p) {
-        if (e) {
-          return rej(e);
-        }
-        res({
-          serviceKey: keys.serviceKey,
-          certificate: keys.certificate,
-          publicKey: p.publicKey
-        });
-      });
-    });
+const createPrivateKey = () => {
+  const { privateKey } = generateKeyPairSync('rsa', {
+    modulusLength: 2048
   });
+  return privateKey.export({
+    format: 'pem',
+    type: 'pkcs8'
+  });
+};
 
 const DEFAULT_PAYLOAD = <any>{
   sub: 'id|123',
@@ -40,9 +26,9 @@ const DEFAULT_PAYLOAD = <any>{
   nonce: verifyOptions.nonce,
   azp: verifyOptions.aud
 };
-const createJWT = async (payload = DEFAULT_PAYLOAD, options = {}) => {
-  const cert = await createCertificate();
-  return jwt.sign(payload, cert.serviceKey, {
+const createJWT = (payload = DEFAULT_PAYLOAD, options = {}) => {
+  const key = createPrivateKey();
+  return jwt.sign(payload, key, {
     algorithm: 'RS256',
     audience: verifyOptions.aud,
     issuer: verifyOptions.iss,
