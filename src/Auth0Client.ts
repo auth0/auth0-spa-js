@@ -403,7 +403,7 @@ export default class Auth0Client {
         cookieDomain: this.options.cookieDomain
       });
     } else {
-      this.cookieStorage.remove(this.orgHintCookieName);
+      this.cookieStorage.remove(this.orgHintCookieName, { cookieDomain: this.options.cookieDomain });
     }
   }
 
@@ -1048,8 +1048,8 @@ export default class Auth0Client {
     }
 
     const postCacheClear = () => {
-      this.cookieStorage.remove(this.orgHintCookieName);
-      this.cookieStorage.remove(this.isAuthenticatedCookieName);
+      this.cookieStorage.remove(this.orgHintCookieName, { cookieDomain: this.options.cookieDomain });
+      this.cookieStorage.remove(this.isAuthenticatedCookieName, { cookieDomain: this.options.cookieDomain });
 
       if (localOnly) {
         return;
