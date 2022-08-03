@@ -5,7 +5,7 @@ orbs:
 parameters:
   docker_image:
     type: string
-    default: cypress/browsers:node14.17.0-chrome91-ff89
+    default: cypress/browsers:node16.14.0-chrome99-ff97
 jobs:
   build:
     docker:
