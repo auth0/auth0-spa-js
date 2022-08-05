@@ -549,7 +549,7 @@
               _init(new auth0.Auth0Client(clientOptions));
             } else {
               console.log('Initializing using the factory function');
-              createAuth0Client(clientOptions).then(_init);
+              auth0.createAuth0Client(clientOptions).then(_init);
             }
           },
           saveForm: function () {
