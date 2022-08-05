@@ -1,6 +1,6 @@
 import * as esCookie from 'es-cookie';
 import { MockedObject } from 'ts-jest/dist/utils/testing';
-import { mocked } from 'ts-jest/utils';
+import { mocked } from 'jest-mock';
 import { CookieStorage, CookieStorageWithLegacySameSite } from '../src/storage';
 
 jest.mock('es-cookie');
