@@ -1,7 +1,6 @@
 import TransactionManager from '../src/transaction-manager';
 import { SessionStorage } from '../src/storage';
 import { TEST_CLIENT_ID, TEST_STATE } from './constants';
-import { mocked } from 'ts-jest/utils';
 
 const TRANSACTION_KEY_PREFIX = 'a0.spajs.txs';
 
@@ -40,7 +39,7 @@ describe('transaction manager', () => {
     });
 
     it('`create` creates the transaction', () => {
-      mocked(sessionStorage.getItem).mockReturnValue(transactionJson);
+      jest.mocked(sessionStorage.getItem).mockReturnValue(transactionJson);
       tm.create(transaction);
       expect(tm.get()).toMatchObject(transaction);
     });

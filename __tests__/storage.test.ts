@@ -1,6 +1,4 @@
 import * as esCookie from 'es-cookie';
-import { MockedObject } from 'ts-jest/dist/utils/testing';
-import { mocked } from 'ts-jest/utils';
 import { CookieStorage, CookieStorageWithLegacySameSite } from '../src/storage';
 
 jest.mock('es-cookie');
@@ -9,7 +7,7 @@ describe('CookieStorage', () => {
   let cookieMock;
 
   beforeEach(() => {
-    cookieMock = mocked(esCookie);
+    cookieMock = jest.mocked(esCookie);
   });
 
   it('saves a cookie', () => {
@@ -85,7 +83,7 @@ describe('CookieStorageWithLegacySameSite', () => {
   let cookieMock;
 
   beforeEach(() => {
-    cookieMock = mocked(esCookie);
+    cookieMock = jest.mocked(esCookie);
   });
 
   it('saves object', () => {
