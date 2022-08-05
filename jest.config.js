@@ -3,6 +3,7 @@ module.exports = {
   testEnvironment: 'jsdom',
   moduleFileExtensions: ['ts', 'js'],
   testMatch: ['**/__tests__/**/*.test.ts'],
+  coverageProvider: 'v8',
   coveragePathIgnorePatterns: [
     '/node_modules/',
     './cypress',
