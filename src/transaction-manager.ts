@@ -13,7 +13,7 @@ interface Transaction {
   state?: string;
 }
 
-export default class TransactionManager {
+export class TransactionManager {
   private transaction: Transaction | undefined;
   private storageKey: string;
 

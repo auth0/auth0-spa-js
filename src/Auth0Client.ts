@@ -25,7 +25,7 @@ import {
   CacheManager
 } from './cache';
 
-import TransactionManager from './transaction-manager';
+import { TransactionManager } from './transaction-manager';
 import { verify as verifyIdToken } from './jwt';
 import {
   AuthenticationError,
@@ -196,7 +196,7 @@ const getCustomInitialOptions = (
 /**
  * Auth0 SDK for Single Page Applications using [Authorization Code Grant Flow with PKCE](https://auth0.com/docs/api-auth/tutorials/authorization-code-grant-pkce).
  */
-export default class Auth0Client {
+export class Auth0Client {
   private readonly transactionManager: TransactionManager;
   private readonly cacheManager: CacheManager;
   private readonly customOptions: BaseLoginOptions;

@@ -8,7 +8,7 @@ jest.mock('../src/transaction-manager');
 jest.mock('../src/utils');
 jest.mock('../src/api');
 
-import createAuth0Client, { Auth0Client } from '../src/index';
+import { createAuth0Client, Auth0Client } from '../src/index';
 
 import {
   TEST_ACCESS_TOKEN,
@@ -39,7 +39,6 @@ const setup = async (
   clientOptions: Partial<Auth0ClientOptions> = {},
   callConstructor = true
 ) => {
-  const getDefaultInstance = m => require(m).default.mock.instances[0];
   const tokenVerifier = require('../src/jwt').verify;
   const utils = require('../src/utils');
   const api = require('../src/api');
@@ -93,7 +92,8 @@ const setup = async (
       })
     : undefined;
 
-  const transactionManager = getDefaultInstance('../src/transaction-manager');
+  const transactionManager =
+    require('../src/transaction-manager').TransactionManager;
 
   return {
     auth0,

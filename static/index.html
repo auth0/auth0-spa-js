@@ -536,7 +536,7 @@
 
             var _init = function (auth0) {
               _self.auth0 = auth0;
-              window.auth0 = auth0; // Cypress integration tests support
+              window.auth0Instance = auth0; // Cypress integration tests support
               _self.loading = false;
 
               auth0.isAuthenticated().then(function (isAuthenticated) {
@@ -546,7 +546,7 @@
 
             if (_self.useConstructor) {
               console.log('Initializing using the constructor');
-              _init(new Auth0Client(clientOptions));
+              _init(new auth0.Auth0Client(clientOptions));
             } else {
               console.log('Initializing using the factory function');
               createAuth0Client(clientOptions).then(_init);
