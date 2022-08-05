@@ -539,7 +539,7 @@
               window.auth0Instance = auth0; // Cypress integration tests support
               _self.loading = false;
 
-              auth0.isAuthenticated().then(function (isAuthenticated) {
+              _self.auth0.isAuthenticated().then(function (isAuthenticated) {
                 _self.isAuthenticated = isAuthenticated;
               });
             };
@@ -626,10 +626,12 @@
             _self.auth0
               .checkSession()
               .then(function () {
-                return auth0.isAuthenticated().then(function (isAuthenticated) {
-                  _self.isAuthenticated = isAuthenticated;
-                  _self.showAuth0Info();
-                });
+                return _self.auth0
+                  .isAuthenticated()
+                  .then(function (isAuthenticated) {
+                    _self.isAuthenticated = isAuthenticated;
+                    _self.showAuth0Info();
+                  });
               })
               .catch(function (e) {
                 _self.error = e;
@@ -649,7 +651,7 @@
             _self.auth0
               .loginWithPopup(options)
               .then(function () {
-                auth0.isAuthenticated().then(function (isAuthenticated) {
+                _self.auth0.isAuthenticated().then(function (isAuthenticated) {
                   _self.isAuthenticated = isAuthenticated;
                   _self.showAuth0Info();
                 });
@@ -680,7 +682,7 @@
                 window.location.origin + '/'
               );
 
-              auth0.isAuthenticated().then(function (isAuthenticated) {
+              _self.auth0.isAuthenticated().then(function (isAuthenticated) {
                 _self.isAuthenticated = isAuthenticated;
                 _self.showAuth0Info();
               });
@@ -699,7 +701,7 @@
                 access_tokens.push(token);
                 _self.error = null;
 
-                auth0.isAuthenticated().then(function (isAuthenticated) {
+                _self.auth0.isAuthenticated().then(function (isAuthenticated) {
                   _self.isAuthenticated = isAuthenticated;
                 });
               })

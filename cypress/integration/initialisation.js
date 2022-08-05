@@ -7,12 +7,12 @@ describe('initialisation', function () {
   it('should expose a factory method and constructor', function () {
     whenReady().then(win => {
       assert.isFunction(
-        win.createAuth0Client,
-        'The createAuth0Client function should be declared on the window.'
+        win.auth0.createAuth0Client,
+        'The createAuth0Client function should be declared on window.auth0.'
       );
       assert.isFunction(
-        win.Auth0Client,
-        'The Auth0Client constructor should be declared on the window.'
+        win.auth0.Auth0Client,
+        'The Auth0Client constructor should be declared on window.auth0.'
       );
     });
   });

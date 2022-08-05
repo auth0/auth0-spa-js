@@ -153,7 +153,7 @@
           };
 
           this.clients.map(client => {
-            client.auth0 = new Auth0Client(client.options);
+            client.auth0 = new auth0.Auth0Client(client.options);
           });
 
           if (
