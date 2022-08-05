@@ -329,7 +329,7 @@ describe('jwt', () => {
     expect(() =>
       verify({ ...verifyOptions, id_token, max_age: maxAge, leeway })
     ).toThrow(
-      `Authentication Time (auth_time) claim in the ID token indicates that too much time has passed since the last end-user authentication. Currrent time (${new Date(
+      `Authentication Time (auth_time) claim in the ID token indicates that too much time has passed since the last end-user authentication. Current time (${new Date(
         now
       )}) is after last auth at ${authTimeDateCorrected}`
     );
