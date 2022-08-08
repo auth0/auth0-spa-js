@@ -693,7 +693,7 @@
               .getTokenSilently({
                 audience: audience,
                 scope: scope,
-                ignoreCache: !_self.useCache
+                cacheMode: _self.useCache ? 'on' : 'off'
               })
               .then(function (token) {
                 access_tokens.push(token);
