@@ -301,9 +301,15 @@ export interface RedirectLoginOptions<TAppState = any>
    */
   fragment?: string;
   /**
-   * Used to select the window.location method used to redirect
+   * Used to control the actual redirect and not rely on the SDK to do the actual redirect.
+   *
+   * const client = new Auth0Client({
+   *   async onRedirect(url) {
+   *     window.location.replace(url);
+   *   }
+   * });
    */
-  redirectMethod?: 'replace' | 'assign';
+  onRedirect?: (url: string) => Promise<void>;
 }
 
 export interface RedirectLoginResult<TAppState = any> {

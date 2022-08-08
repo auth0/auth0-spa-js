@@ -648,9 +648,14 @@ export default class Auth0Client {
   public async loginWithRedirect<TAppState = any>(
     options: RedirectLoginOptions<TAppState> = {}
   ) {
-    const { redirectMethod, ...urlOptions } = options;
+    const { onRedirect, ...urlOptions } = options;
     const url = await this.buildAuthorizeUrl(urlOptions);
-    window.location[redirectMethod || 'assign'](url);
+
+    if (onRedirect) {
+      await onRedirect(url);
+    } else {
+      window.location.assign(url);
+    }
   }
 
   /**

@@ -209,12 +209,12 @@ describe('Auth0Client', () => {
       );
     });
 
-    it('should log the user in by calling window.location.replace when redirectMethod=replace param is passed', async () => {
+    it('should log the user in by calling window.location.replace when specifying it as onRedirect', async () => {
       const auth0 = setup();
 
       await loginWithRedirect(auth0, {
         audience: 'test_audience',
-        redirectMethod: 'replace'
+        onRedirect: async url => window.location.replace(url)
       });
 
       const url = new URL(mockWindow.location.replace.mock.calls[0][0]);
