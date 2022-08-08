@@ -421,27 +421,27 @@ export default class Auth0Client {
   public async buildAuthorizeUrl(
     options: RedirectLoginOptions = {}
   ): Promise<string> {
-    const { url, fragment } = await this._prepareAuthorizeUrl(options);
+    const { url } = await this._prepareAuthorizeUrl(options);
 
-    return url + fragment;
+    return url;
   }
 
   private async _prepareAuthorizeUrl(
     options: RedirectLoginOptions = {}
   ): Promise<{
-    params: AuthorizeOptions;
-    nonceIn: string;
+    scope: string;
+    audience: string;
+    redirect_uri: string;
+    nonce: string;
     code_verifier: string;
     appState: any;
-    stateIn: string;
-    organizationId: string;
-    fragment: string;
+    state: string;
     url: string;
   }> {
     const { redirect_uri, appState, ...authorizeOptions } = options;
 
-    const stateIn = encode(createRandomString());
-    const nonceIn = encode(createRandomString());
+    const state = encode(createRandomString());
+    const nonce = encode(createRandomString());
     const code_verifier = createRandomString();
     const code_challengeBuffer = await sha256(code_verifier);
     const code_challenge = bufferToBase64UrlEncoded(code_challengeBuffer);
@@ -449,25 +449,23 @@ export default class Auth0Client {
 
     const params = this._getParams(
       authorizeOptions,
-      stateIn,
-      nonceIn,
+      state,
+      nonce,
       code_challenge,
       redirect_uri
     );
 
     const url = this._authorizeUrl(params);
 
-    const organizationId = options.organization || this.options.organization;
-
     return {
-      params,
-      nonceIn,
-      stateIn,
+      nonce,
       code_verifier,
       appState,
-      organizationId,
-      url,
-      fragment
+      scope: params.scope,
+      audience: params.audience || 'default',
+      redirect_uri: params.redirect_uri,
+      state,
+      url: url + fragment
     };
   }
 
@@ -666,32 +664,19 @@ export default class Auth0Client {
   ) {
     const { onRedirect, ...urlOptions } = options;
 
-    const {
-      params,
-      code_verifier,
-      appState,
-      stateIn,
-      nonceIn,
-      url,
-      fragment,
-      organizationId
-    } = await this._prepareAuthorizeUrl(urlOptions);
+    const organizationId = urlOptions.organization || this.options.organization;
+
+    const { url, ...transaction } = await this._prepareAuthorizeUrl(urlOptions);
 
     this.transactionManager.create({
-      nonce: nonceIn,
-      code_verifier,
-      appState,
-      scope: params.scope,
-      audience: params.audience || 'default',
-      redirect_uri: params.redirect_uri,
-      state: stateIn,
+      ...transaction,
       ...(organizationId && { organizationId })
     });
 
     if (onRedirect) {
-      await onRedirect(url + fragment);
+      await onRedirect(url);
     } else {
-      window.location.assign(url + fragment);
+      window.location.assign(url);
     }
   }
 

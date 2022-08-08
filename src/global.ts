@@ -301,7 +301,7 @@ export interface RedirectLoginOptions<TAppState = any>
    */
   fragment?: string;
   /**
-   * Used to control the actual redirect and not rely on the SDK to do the actual redirect.
+   * Used to control the redirect and not rely on the SDK to do the actual redirect.
    *
    * const client = new Auth0Client({
    *   async onRedirect(url) {
