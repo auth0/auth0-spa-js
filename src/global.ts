@@ -248,11 +248,10 @@ export interface Auth0ClientOptions extends BaseLoginOptions {
   cookieDomain?: string;
 
   /**
-   * When true, data to the token endpoint is transmitted as x-www-form-urlencoded data instead of JSON. The default is false, but will default to true in a
-   * future major version.
+   * If true, data to the token endpoint is transmitted as x-www-form-urlencoded data instead of JSON. The default setting is `true`.
    *
-   * **Note:** Setting this to `true` may affect you if you use Auth0 Rules and are sending custom, non-primative data. If you enable this, please verify that your Auth0 Rules
-   * continue to work as intended.
+   * **Note:** If you are using Auth0 rules and are sending custom, non-primitive data make sure to verify that your Auth0 Rules continue to work as expected. If they do not,
+   * then set this to `false`.
    */
   useFormData?: boolean;
 

@@ -306,6 +306,8 @@ export class Auth0Client {
     }
 
     this.customOptions = getCustomInitialOptions(options);
+
+    this.options.useFormData = this.options.useFormData !== false;
   }
 
   private _url(path: string) {

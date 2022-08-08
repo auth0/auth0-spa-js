@@ -328,7 +328,9 @@ describe('Auth0Client', () => {
       })
     );
 
-    const auth0 = setup();
+    const auth0 = setup({
+      useFormData: false
+    });
     delete auth0['options']['redirect_uri'];
 
     await loginWithRedirect(auth0);
@@ -355,9 +357,7 @@ describe('Auth0Client', () => {
       })
     );
 
-    const auth0 = setup({
-      useFormData: true
-    });
+    const auth0 = setup({});
 
     await loginWithRedirect(auth0);
 

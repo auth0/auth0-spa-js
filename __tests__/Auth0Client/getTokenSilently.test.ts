@@ -189,7 +189,9 @@ describe('Auth0Client', () => {
     });
 
     it('calls the token endpoint with the correct params', async () => {
-      const auth0 = setup();
+      const auth0 = setup({
+        useFormData: false
+      });
 
       jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
         access_token: TEST_ACCESS_TOKEN,
@@ -216,9 +218,7 @@ describe('Auth0Client', () => {
     });
 
     it('calls the token endpoint with the correct data format when using useFormData', async () => {
-      const auth0 = setup({
-        useFormData: true
-      });
+      const auth0 = setup();
 
       jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
         access_token: TEST_ACCESS_TOKEN,
@@ -248,7 +248,8 @@ describe('Auth0Client', () => {
 
     it('calls the token endpoint with the correct params when using refresh tokens', async () => {
       const auth0 = setup({
-        useRefreshTokens: true
+        useRefreshTokens: true,
+        useFormData: false
       });
 
       await loginWithRedirect(auth0);
@@ -277,7 +278,8 @@ describe('Auth0Client', () => {
       const redirect_uri = 'https://custom';
 
       const auth0 = setup({
-        useRefreshTokens: true
+        useRefreshTokens: true,
+        useFormData: false
       });
 
       await loginWithRedirect(auth0);
@@ -306,7 +308,8 @@ describe('Auth0Client', () => {
     it('calls the token endpoint with the correct params when not providing any redirect uri and using refresh tokens', async () => {
       const auth0 = setup({
         useRefreshTokens: true,
-        redirect_uri: null
+        redirect_uri: null,
+        useFormData: false
       });
 
       await loginWithRedirect(auth0);
@@ -475,7 +478,9 @@ describe('Auth0Client', () => {
         },
         {
           'Auth0-Client': btoa(JSON.stringify(auth0Client))
-        }
+        },
+        undefined,
+        false
       );
     });
 
@@ -591,7 +596,8 @@ describe('Auth0Client', () => {
 
     it('refreshes the token from a web worker', async () => {
       const auth0 = setup({
-        useRefreshTokens: true
+        useRefreshTokens: true,
+        useFormData: false
       });
 
       expect((<any>auth0).worker).toBeDefined();
@@ -620,7 +626,8 @@ describe('Auth0Client', () => {
     it('refreshes the token without the worker', async () => {
       const auth0 = setup({
         useRefreshTokens: true,
-        cacheLocation: 'localstorage'
+        cacheLocation: 'localstorage',
+        useFormData: false
       });
 
       expect((<any>auth0).worker).toBeUndefined();
@@ -674,7 +681,8 @@ describe('Auth0Client', () => {
 
       const auth0 = setup({
         useRefreshTokens: true,
-        cacheLocation: 'memory'
+        cacheLocation: 'memory',
+        useFormData: false
       });
 
       expect((<any>auth0).worker).toBeUndefined();
@@ -1317,7 +1325,8 @@ describe('Auth0Client', () => {
     it('sends custom options through to the token endpoint when using an iframe', async () => {
       const auth0 = setup({
         custom_param: 'foo',
-        another_custom_param: 'bar'
+        another_custom_param: 'bar',
+        useFormData: false
       });
 
       await loginWithRedirect(auth0);
@@ -1361,7 +1370,8 @@ describe('Auth0Client', () => {
       const auth0 = setup({
         useRefreshTokens: true,
         custom_param: 'foo',
-        another_custom_param: 'bar'
+        another_custom_param: 'bar',
+        useFormData: false
       });
 
       await loginWithRedirect(auth0, undefined, {

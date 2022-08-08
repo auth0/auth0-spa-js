@@ -103,7 +103,9 @@ describe('Auth0Client', () => {
 
   describe('loginWithRedirect', () => {
     it('should log the user in and get the token', async () => {
-      const auth0 = setup();
+      const auth0 = setup({
+        useFormData: false
+      });
 
       await loginWithRedirect(auth0);
 
@@ -507,8 +509,7 @@ describe('Auth0Client', () => {
         cacheLocation: 'localstorage',
         legacySameSiteCookie: true,
         nowProvider: () => Date.now(),
-        sessionCheckExpiryDays: 1,
-        useFormData: true
+        sessionCheckExpiryDays: 1
       });
 
       await loginWithRedirect(auth0);
