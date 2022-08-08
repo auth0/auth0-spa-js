@@ -421,6 +421,23 @@ export default class Auth0Client {
   public async buildAuthorizeUrl(
     options: RedirectLoginOptions = {}
   ): Promise<string> {
+    const { url, fragment } = await this._prepareAuthorizeUrl(options);
+
+    return url + fragment;
+  }
+
+  private async _prepareAuthorizeUrl(
+    options: RedirectLoginOptions = {}
+  ): Promise<{
+    params: AuthorizeOptions;
+    nonceIn: string;
+    code_verifier: string;
+    appState: any;
+    stateIn: string;
+    organizationId: string;
+    fragment: string;
+    url: string;
+  }> {
     const { redirect_uri, appState, ...authorizeOptions } = options;
 
     const stateIn = encode(createRandomString());
@@ -439,20 +456,19 @@ export default class Auth0Client {
     );
 
     const url = this._authorizeUrl(params);
+
     const organizationId = options.organization || this.options.organization;
 
-    this.transactionManager.create({
-      nonce: nonceIn,
+    return {
+      params,
+      nonceIn,
+      stateIn,
       code_verifier,
       appState,
-      scope: params.scope,
-      audience: params.audience || 'default',
-      redirect_uri: params.redirect_uri,
-      state: stateIn,
-      ...(organizationId && { organizationId })
-    });
-
-    return url + fragment;
+      organizationId,
+      url,
+      fragment
+    };
   }
 
   /**
@@ -649,12 +665,33 @@ export default class Auth0Client {
     options: RedirectLoginOptions<TAppState> = {}
   ) {
     const { onRedirect, ...urlOptions } = options;
-    const url = await this.buildAuthorizeUrl(urlOptions);
+
+    const {
+      params,
+      code_verifier,
+      appState,
+      stateIn,
+      nonceIn,
+      url,
+      fragment,
+      organizationId
+    } = await this._prepareAuthorizeUrl(urlOptions);
+
+    this.transactionManager.create({
+      nonce: nonceIn,
+      code_verifier,
+      appState,
+      scope: params.scope,
+      audience: params.audience || 'default',
+      redirect_uri: params.redirect_uri,
+      state: stateIn,
+      ...(organizationId && { organizationId })
+    });
 
     if (onRedirect) {
-      await onRedirect(url);
+      await onRedirect(url + fragment);
     } else {
-      window.location.assign(url);
+      window.location.assign(url + fragment);
     }
   }
 
