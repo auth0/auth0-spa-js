@@ -209,6 +209,7 @@ export class Auth0Client {
   private readonly isAuthenticatedCookieName: string;
   private readonly nowProvider: () => number | Promise<number>;
   private readonly httpTimeoutMs: number;
+  private readonly useFormData: boolean;
 
   cacheLocation: CacheLocation;
   private worker: Worker;
@@ -307,7 +308,7 @@ export class Auth0Client {
 
     this.customOptions = getCustomInitialOptions(options);
 
-    this.options.useFormData = this.options.useFormData !== false;
+    this.useFormData = this.options.useFormData !== false;
   }
 
   private _url(path: string) {
@@ -551,7 +552,7 @@ export class Auth0Client {
         grant_type: 'authorization_code',
         redirect_uri: params.redirect_uri,
         auth0Client: this.options.auth0Client,
-        useFormData: this.options.useFormData,
+        useFormData: this.useFormData,
         timeout: this.httpTimeoutMs
       } as OAuthTokenOptions,
       this.worker
@@ -730,7 +731,7 @@ export class Auth0Client {
       grant_type: 'authorization_code',
       code,
       auth0Client: this.options.auth0Client,
-      useFormData: this.options.useFormData,
+      useFormData: this.useFormData,
       timeout: this.httpTimeoutMs
     } as OAuthTokenOptions;
     // some old versions of the SDK might not have added redirect_uri to the
@@ -1170,7 +1171,7 @@ export class Auth0Client {
           grant_type: 'authorization_code',
           redirect_uri: params.redirect_uri,
           auth0Client: this.options.auth0Client,
-          useFormData: this.options.useFormData,
+          useFormData: this.useFormData,
           timeout: customOptions.timeout || this.httpTimeoutMs
         } as OAuthTokenOptions,
         this.worker
@@ -1267,7 +1268,7 @@ export class Auth0Client {
           redirect_uri,
           ...(timeout && { timeout }),
           auth0Client: this.options.auth0Client,
-          useFormData: this.options.useFormData,
+          useFormData: this.useFormData,
           timeout: this.httpTimeoutMs
         } as RefreshTokenOptions,
         this.worker
