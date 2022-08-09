@@ -47,7 +47,6 @@ import {
   DEFAULT_AUTHORIZE_TIMEOUT_IN_SECONDS,
   MISSING_REFRESH_TOKEN_ERROR_MESSAGE,
   DEFAULT_SCOPE,
-  RECOVERABLE_ERRORS,
   DEFAULT_SESSION_CHECK_EXPIRY_DAYS,
   DEFAULT_AUTH0_CLIENT,
   INVALID_REFRESH_TOKEN_ERROR_MESSAGE,
@@ -786,11 +785,7 @@ export class Auth0Client {
 
     try {
       await this.getTokenSilently(options);
-    } catch (error) {
-      if (!RECOVERABLE_ERRORS.includes(error.error)) {
-        throw error;
-      }
-    }
+    } catch (_) {}
   }
 
   /**
