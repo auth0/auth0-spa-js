@@ -885,7 +885,7 @@ export default class Auth0Client {
       }
     }
 
-    if (cacheMode === 'only') {
+    if (cacheMode === 'cache-only') {
       return;
     }
 

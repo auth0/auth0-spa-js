@@ -364,7 +364,7 @@ export interface GetTokenSilentlyOptions {
    * When `only`, only reads from the cache and never sends a request to Auth0.
    * Defaults to `on`, where it both reads from the cache and sends a request to Auth0 as needed.
    */
-  cacheMode?: 'on' | 'off' | 'only';
+  cacheMode?: 'on' | 'off' | 'cache-only';
 
   /**
    * There's no actual redirect when getting a token silently,
@@ -412,7 +412,7 @@ export interface GetTokenWithPopupOptions extends PopupLoginOptions {
    * When `only`, only reads from the cache and never sends a request to Auth0.
    * Defaults to `on`, where it both reads from the cache and sends a request to Auth0 as needed.
    */
-  cacheMode?: 'on' | 'off' | 'only';
+  cacheMode?: 'on' | 'off' | 'cache-only';
 }
 
 export interface LogoutUrlOptions {
