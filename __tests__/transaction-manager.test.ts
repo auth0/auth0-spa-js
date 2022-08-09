@@ -1,4 +1,4 @@
-import TransactionManager from '../src/transaction-manager';
+import { TransactionManager } from '../src/transaction-manager';
 import { SessionStorage } from '../src/storage';
 import { TEST_CLIENT_ID, TEST_STATE } from './constants';
 

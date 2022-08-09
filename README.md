@@ -75,7 +75,7 @@ Take note of the **Client ID** and **Domain** values under the "Basic Informatio
 Create an `Auth0Client` instance before rendering or initializing your application. You should only have one instance of the client.
 
 ```js
-import createAuth0Client from '@auth0/auth0-spa-js';
+import { createAuth0Client } from '@auth0/auth0-spa-js';
 
 //with async/await
 const auth0 = await createAuth0Client({
@@ -200,7 +200,7 @@ document.getElementById('call-api').addEventListener('click', () => {
 ```
 
 ```js
-import createAuth0Client from '@auth0/auth0-spa-js';
+import { createAuth0Client } from '@auth0/auth0-spa-js';
 
 document.getElementById('logout').addEventListener('click', () => {
   auth0.logout();
