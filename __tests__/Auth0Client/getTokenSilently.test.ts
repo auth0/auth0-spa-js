@@ -539,7 +539,7 @@ describe('Auth0Client', () => {
       expect(mockFetch).not.toHaveBeenCalled();
     });
 
-    it('does not refresh the token when cacheMode is only', async () => {
+    it('does not refresh the token when cacheMode is cache-only', async () => {
       const auth0 = setup();
       await loginWithRedirect(auth0, undefined, {
         token: {
@@ -549,13 +549,13 @@ describe('Auth0Client', () => {
 
       mockFetch.mockReset();
 
-      const token = await getTokenSilently(auth0, { cacheMode: 'only' });
+      const token = await getTokenSilently(auth0, { cacheMode: 'cache-only' });
 
       expect(token).toBe(TEST_ACCESS_TOKEN);
       expect(mockFetch).not.toHaveBeenCalled();
     });
 
-    it('does not refresh the token when cacheMode is only and nothing in cache', async () => {
+    it('does not refresh the token when cacheMode is cache-only and nothing in cache', async () => {
       const auth0 = setup();
       await loginWithRedirect(auth0, undefined, {
         token: {
@@ -565,7 +565,7 @@ describe('Auth0Client', () => {
 
       mockFetch.mockReset();
 
-      const token = await getTokenSilently(auth0, { cacheMode: 'only' });
+      const token = await getTokenSilently(auth0, { cacheMode: 'cache-only' });
 
       expect(token).toBeUndefined();
       expect(mockFetch).not.toHaveBeenCalled();
