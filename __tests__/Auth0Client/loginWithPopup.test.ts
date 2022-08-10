@@ -336,7 +336,7 @@ describe('Auth0Client', () => {
     });
 
     it('should log the user in with a popup and get the token with form data', async () => {
-      const auth0 = setup({});
+      const auth0 = setup();
 
       await loginWithPopup(auth0);
       expect(mockWindow.open).toHaveBeenCalled();

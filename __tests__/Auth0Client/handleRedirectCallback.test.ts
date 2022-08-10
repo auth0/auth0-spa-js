@@ -312,7 +312,7 @@ describe('Auth0Client', () => {
     });
   });
 
-  it('calls oauth/token without redirect uri if not set in transaction', async () => {
+  it('calls oauth/token without redirect uri if not set in transaction when not using useFormData', async () => {
     window.history.pushState(
       {},
       'Test',
@@ -341,6 +341,45 @@ describe('Auth0Client', () => {
     expect(fetchBody.redirect_uri).toBeUndefined();
   });
 
+  it('calls oauth/token without redirect uri if not set in transaction', async () => {
+    window.history.pushState(
+      {},
+      'Test',
+      `#/callback/?code=${TEST_CODE}&state=${TEST_ENCODED_STATE}`
+    );
+
+    mockFetch.mockResolvedValueOnce(
+      fetchResponse(true, {
+        id_token: TEST_ID_TOKEN,
+        refresh_token: TEST_REFRESH_TOKEN,
+        access_token: TEST_ACCESS_TOKEN,
+        expires_in: 86400
+      })
+    );
+
+    const auth0 = setup();
+    delete auth0['options']['redirect_uri'];
+
+    await loginWithRedirect(auth0);
+
+    assertPostFn(mockFetch)(
+      'https://auth0_domain/oauth/token',
+      {
+        redirect_uri: undefined,
+        client_id: TEST_CLIENT_ID,
+        code_verifier: TEST_CODE_VERIFIER,
+        grant_type: 'authorization_code',
+        code: TEST_CODE
+      },
+      {
+        'Auth0-Client': btoa(JSON.stringify(DEFAULT_AUTH0_CLIENT)),
+        'Content-Type': 'application/x-www-form-urlencoded'
+      },
+      0,
+      false
+    );
+  });
+
   it('calls oauth/token and uses form data if specified in the options', async () => {
     window.history.pushState(
       {},
@@ -357,7 +396,7 @@ describe('Auth0Client', () => {
       })
     );
 
-    const auth0 = setup({});
+    const auth0 = setup();
 
     await loginWithRedirect(auth0);
 
