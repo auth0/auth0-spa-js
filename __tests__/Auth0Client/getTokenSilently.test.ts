@@ -873,9 +873,10 @@ describe('Auth0Client', () => {
       });
     });
 
-    it('falls back to iframe when missing refresh token errors from the worker', async () => {
+    it('falls back to iframe when missing refresh token errors from the worker and useRefreshTokensFallback is set to true', async () => {
       const auth0 = setup({
-        useRefreshTokens: true
+        useRefreshTokens: true,
+        useRefreshTokensFallback: true
       });
       expect((<any>auth0).worker).toBeDefined();
       await loginWithRedirect(auth0, undefined, {
@@ -900,10 +901,9 @@ describe('Auth0Client', () => {
       expect(utils.runIframe).toHaveBeenCalled();
     });
 
-    it('does not fall back to iframe when missing refresh token errors from the worker and useRefreshTokensFallback set to false', async () => {
+    it('does not fall back to iframe when missing refresh token errors from the worker and useRefreshTokensFallback not provided', async () => {
       const auth0 = setup({
-        useRefreshTokens: true,
-        useRefreshTokensFallback: false
+        useRefreshTokens: true
       });
       expect((<any>auth0).worker).toBeDefined();
       await loginWithRedirect(auth0, undefined, {
@@ -1006,10 +1006,11 @@ describe('Auth0Client', () => {
       });
     });
 
-    it('falls back to iframe when missing refresh token without the worker', async () => {
+    it('falls back to iframe when missing refresh token without the worker and useRefreshTokensFallback is set to true', async () => {
       const auth0 = setup({
         useRefreshTokens: true,
-        cacheLocation: 'localstorage'
+        cacheLocation: 'localstorage',
+        useRefreshTokensFallback: true
       });
       expect((<any>auth0).worker).toBeUndefined();
       await loginWithRedirect(auth0, undefined, {
@@ -1034,10 +1035,9 @@ describe('Auth0Client', () => {
       expect(utils.runIframe).toHaveBeenCalled();
     });
 
-    it('does not fall back to iframe when missing refresh token without the worker when useRefreshTokensFallback is set to false', async () => {
+    it('does not fall back to iframe when missing refresh token without the worker when useRefreshTokensFallback is not provided', async () => {
       const auth0 = setup({
         useRefreshTokens: true,
-        useRefreshTokensFallback: false,
         cacheLocation: 'localstorage'
       });
       expect((<any>auth0).worker).toBeUndefined();
@@ -1068,7 +1068,7 @@ describe('Auth0Client', () => {
       expect(utils.runIframe).not.toHaveBeenCalled();
     });
 
-    it('falls back to iframe when missing refresh token in ie11', async () => {
+    it('falls back to iframe when missing refresh token in ie11 and useRefreshTokensFallback is set to true', async () => {
       const originalUserAgent = window.navigator.userAgent;
       Object.defineProperty(window.navigator, 'userAgent', {
         value:
@@ -1076,7 +1076,8 @@ describe('Auth0Client', () => {
         configurable: true
       });
       const auth0 = setup({
-        useRefreshTokens: true
+        useRefreshTokens: true,
+        useRefreshTokensFallback: true
       });
       expect((<any>auth0).worker).toBeUndefined();
       await loginWithRedirect(auth0, undefined, {
@@ -1654,9 +1655,10 @@ describe('Auth0Client', () => {
       expect((http.switchFetch as jest.Mock).mock.calls[0][6]).toEqual(20000);
     });
 
-    it('when using Refresh Tokens, falls back to iframe when refresh token is expired', async () => {
+    it('when using Refresh Tokens, falls back to iframe when refresh token is expired and useRefreshTokensFallback is set to true', async () => {
       const auth0 = setup({
-        useRefreshTokens: true
+        useRefreshTokens: true,
+        useRefreshTokensFallback: true
       });
 
       await loginWithRedirect(auth0);
@@ -1698,7 +1700,8 @@ describe('Auth0Client', () => {
 
     it('when using Refresh Tokens and fallback fails, ensure the user is logged out', async () => {
       const auth0 = setup({
-        useRefreshTokens: true
+        useRefreshTokens: true,
+        useRefreshTokensFallback: true
       });
 
       await loginWithRedirect(auth0);
