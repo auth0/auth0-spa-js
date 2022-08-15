@@ -209,12 +209,19 @@ export class Auth0Client {
   private readonly isAuthenticatedCookieName: string;
   private readonly nowProvider: () => number | Promise<number>;
   private readonly httpTimeoutMs: number;
-  private readonly useFormData: boolean;
+  private readonly options: Auth0ClientOptions;
 
   cacheLocation: CacheLocation;
   private worker: Worker;
 
-  constructor(private options: Auth0ClientOptions) {
+  private readonly defaultOptions: Partial<Auth0ClientOptions> = {
+    useRefreshTokensFallback: false,
+    useFormData: true
+  }
+
+  constructor(options: Auth0ClientOptions) {
+    this.options = {...this.defaultOptions, ...options };
+
     typeof window !== 'undefined' && validateCrypto();
 
     if (options.cache && options.cacheLocation) {
@@ -307,8 +314,6 @@ export class Auth0Client {
     }
 
     this.customOptions = getCustomInitialOptions(options);
-
-    this.useFormData = this.options.useFormData !== false;
   }
 
   private _url(path: string) {
@@ -343,6 +348,7 @@ export class Auth0Client {
       domain,
       leeway,
       httpTimeoutInSeconds,
+      useRefreshTokensFallback,
       ...loginOptions
     } = this.options;
 
@@ -552,7 +558,7 @@ export class Auth0Client {
         grant_type: 'authorization_code',
         redirect_uri: params.redirect_uri,
         auth0Client: this.options.auth0Client,
-        useFormData: this.useFormData,
+        useFormData: this.options.useFormData,
         timeout: this.httpTimeoutMs
       } as OAuthTokenOptions,
       this.worker
@@ -731,7 +737,7 @@ export class Auth0Client {
       grant_type: 'authorization_code',
       code,
       auth0Client: this.options.auth0Client,
-      useFormData: this.useFormData,
+      useFormData: this.options.useFormData,
       timeout: this.httpTimeoutMs
     } as OAuthTokenOptions;
     // some old versions of the SDK might not have added redirect_uri to the
@@ -1171,7 +1177,7 @@ export class Auth0Client {
           grant_type: 'authorization_code',
           redirect_uri: params.redirect_uri,
           auth0Client: this.options.auth0Client,
-          useFormData: this.useFormData,
+          useFormData: this.options.useFormData,
           timeout: customOptions.timeout || this.httpTimeoutMs
         } as OAuthTokenOptions,
         this.worker
@@ -1268,7 +1274,7 @@ export class Auth0Client {
           redirect_uri,
           ...(timeout && { timeout }),
           auth0Client: this.options.auth0Client,
-          useFormData: this.useFormData,
+          useFormData: this.options.useFormData,
           timeout: this.httpTimeoutMs
         } as RefreshTokenOptions,
         this.worker
