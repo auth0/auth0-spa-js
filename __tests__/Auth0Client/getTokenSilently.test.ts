@@ -1747,7 +1747,7 @@ describe('Auth0Client', () => {
 
       expect(auth0['cacheManager']['set']).toHaveBeenCalledWith(
         expect.objectContaining({
-          client_id: TEST_CLIENT_ID,
+          clientId: TEST_CLIENT_ID,
           access_token: TEST_ACCESS_TOKEN,
           expires_in: 86400,
           audience: 'default',

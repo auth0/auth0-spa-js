@@ -80,14 +80,14 @@ import { createAuth0Client } from '@auth0/auth0-spa-js';
 //with async/await
 const auth0 = await createAuth0Client({
   domain: '<AUTH0_DOMAIN>',
-  client_id: '<AUTH0_CLIENT_ID>',
+  clientId: '<AUTH0_CLIENT_ID>',
   redirect_uri: '<MY_CALLBACK_URL>'
 });
 
 //with promises
 createAuth0Client({
   domain: '<AUTH0_DOMAIN>',
-  client_id: '<AUTH0_CLIENT_ID>',
+  clientId: '<AUTH0_CLIENT_ID>',
   redirect_uri: '<MY_CALLBACK_URL>'
 }).then(auth0 => {
   //...
@@ -98,7 +98,7 @@ import { Auth0Client } from '@auth0/auth0-spa-js';
 
 const auth0 = new Auth0Client({
   domain: '<AUTH0_DOMAIN>',
-  client_id: '<AUTH0_CLIENT_ID>',
+  clientId: '<AUTH0_CLIENT_ID>',
   redirect_uri: '<MY_CALLBACK_URL>'
 });
 
@@ -224,7 +224,7 @@ To use the in-memory mode, no additional options need are required as this is th
 ```js
 await createAuth0Client({
   domain: '<AUTH0_DOMAIN>',
-  client_id: '<AUTH0_CLIENT_ID>',
+  clientId: '<AUTH0_CLIENT_ID>',
   redirect_uri: '<MY_CALLBACK_URL>',
   cacheLocation: 'localstorage' // valid values are: 'memory' or 'localstorage'
 });
@@ -271,7 +271,7 @@ const sessionStorageCache = {
 
 await createAuth0Client({
   domain: '<AUTH0_DOMAIN>',
-  client_id: '<AUTH0_CLIENT_ID>',
+  clientId: '<AUTH0_CLIENT_ID>',
   redirect_uri: '<MY_CALLBACK_URL>',
   cache: sessionStorageCache
 });
@@ -290,7 +290,7 @@ To enable the use of refresh tokens, set the `useRefreshTokens` option to `true`
 ```js
 await createAuth0Client({
   domain: '<AUTH0_DOMAIN>',
-  client_id: '<AUTH0_CLIENT_ID>',
+  clientId: '<AUTH0_CLIENT_ID>',
   redirect_uri: '<MY_CALLBACK_URL>',
   useRefreshTokens: true
 });
@@ -319,7 +319,7 @@ Log in to an organization by specifying the `organization` parameter when settin
 ```js
 createAuth0Client({
   domain: '<AUTH0_DOMAIN>',
-  client_id: '<AUTH0_CLIENT_ID>',
+  clientId: '<AUTH0_CLIENT_ID>',
   redirect_uri: '<MY_CALLBACK_URL>',
   organization: '<MY_ORG_ID>'
 });
@@ -364,7 +364,7 @@ Advanced options can be set by specifying the `advancedOptions` property when co
 ```js
 createAuth0Client({
   domain: '<AUTH0_DOMAIN>',
-  client_id: '<AUTH0_CLIENT_ID>',
+  clientId: '<AUTH0_CLIENT_ID>',
   advancedOptions: {
     defaultScope: 'email' // change the scopes that are applied to every authz request. **Note**: `openid` is always specified regardless of this setting
   }

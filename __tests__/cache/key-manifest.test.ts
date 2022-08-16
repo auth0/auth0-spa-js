@@ -18,7 +18,7 @@ describe('CacheKeyManifest', () => {
 
   it('should create a new item in the manifest if one does not exist', async () => {
     const key = new CacheKey({
-      client_id: TEST_CLIENT_ID,
+      clientId: TEST_CLIENT_ID,
       audience: TEST_AUDIENCE,
       scope: TEST_SCOPES
     });
@@ -33,7 +33,7 @@ describe('CacheKeyManifest', () => {
 
   it('should add another key to the same list if an entry already exists in the manifest', async () => {
     const key = new CacheKey({
-      client_id: TEST_CLIENT_ID,
+      clientId: TEST_CLIENT_ID,
       audience: TEST_AUDIENCE,
       scope: TEST_SCOPES
     });
@@ -41,7 +41,7 @@ describe('CacheKeyManifest', () => {
     await manifest.add(key.toKey());
 
     const key2 = new CacheKey({
-      client_id: TEST_CLIENT_ID,
+      clientId: TEST_CLIENT_ID,
       audience: 'http://another-audience',
       scope: TEST_SCOPES
     });
@@ -56,7 +56,7 @@ describe('CacheKeyManifest', () => {
 
   it('should not add the same key twice', async () => {
     const key = new CacheKey({
-      client_id: TEST_CLIENT_ID,
+      clientId: TEST_CLIENT_ID,
       audience: TEST_AUDIENCE,
       scope: TEST_SCOPES
     });
@@ -64,7 +64,7 @@ describe('CacheKeyManifest', () => {
     await manifest.add(key.toKey());
 
     const key2 = new CacheKey({
-      client_id: TEST_CLIENT_ID,
+      clientId: TEST_CLIENT_ID,
       audience: 'http://another-audience',
       scope: TEST_SCOPES
     });
@@ -81,7 +81,7 @@ describe('CacheKeyManifest', () => {
 
   it('can remove an entry', async () => {
     const key = new CacheKey({
-      client_id: TEST_CLIENT_ID,
+      clientId: TEST_CLIENT_ID,
       audience: TEST_AUDIENCE,
       scope: TEST_SCOPES
     });
@@ -93,7 +93,7 @@ describe('CacheKeyManifest', () => {
 
   it('does nothing if trying to remove an item that does not exist', async () => {
     const key = new CacheKey({
-      client_id: TEST_CLIENT_ID,
+      clientId: TEST_CLIENT_ID,
       audience: TEST_AUDIENCE,
       scope: TEST_SCOPES
     });
@@ -103,13 +103,13 @@ describe('CacheKeyManifest', () => {
 
   it('can remove a key from an entry and leave others intact', async () => {
     const key = new CacheKey({
-      client_id: TEST_CLIENT_ID,
+      clientId: TEST_CLIENT_ID,
       audience: TEST_AUDIENCE,
       scope: TEST_SCOPES
     });
 
     const key2 = new CacheKey({
-      client_id: TEST_CLIENT_ID,
+      clientId: TEST_CLIENT_ID,
       audience: 'http://another-audience',
       scope: TEST_SCOPES
     });
@@ -122,13 +122,13 @@ describe('CacheKeyManifest', () => {
 
   it('does not remove the whole entry if the key was not found', async () => {
     const key = new CacheKey({
-      client_id: TEST_CLIENT_ID,
+      clientId: TEST_CLIENT_ID,
       audience: TEST_AUDIENCE,
       scope: TEST_SCOPES
     });
 
     const randomKey = new CacheKey({
-      client_id: key.client_id,
+      clientId: key.clientId,
       audience: 'http://some-other-audience',
       scope: key.scope
     });

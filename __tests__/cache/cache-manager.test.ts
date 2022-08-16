@@ -25,13 +25,13 @@ import {
 import { InMemoryAsyncCacheNoKeys } from './shared';
 
 const defaultKey = new CacheKey({
-  client_id: TEST_CLIENT_ID,
+  clientId: TEST_CLIENT_ID,
   audience: TEST_AUDIENCE,
   scope: TEST_SCOPES
 });
 
 const defaultData: CacheEntry = {
-  client_id: TEST_CLIENT_ID,
+  clientId: TEST_CLIENT_ID,
   audience: TEST_AUDIENCE,
   scope: TEST_SCOPES,
   id_token: TEST_ID_TOKEN,
@@ -108,7 +108,7 @@ cacheFactories.forEach(cacheFactory => {
       await manager.set(data);
 
       const key = new CacheKey({
-        client_id: TEST_CLIENT_ID,
+        clientId: TEST_CLIENT_ID,
         audience: TEST_AUDIENCE,
         scope: 'read:messages'
       });
@@ -125,7 +125,7 @@ cacheFactories.forEach(cacheFactory => {
       await manager.set(data);
 
       const key = new CacheKey({
-        client_id: TEST_CLIENT_ID,
+        clientId: TEST_CLIENT_ID,
         audience: TEST_AUDIENCE,
         scope: 'read:messages write:messages'
       });
@@ -147,7 +147,7 @@ cacheFactories.forEach(cacheFactory => {
 
       expect(
         await manager.get(
-          new CacheKey({ client_id: 'test', audience: 'test', scope: 'test' })
+          new CacheKey({ clientId: 'test', audience: 'test', scope: 'test' })
         )
       ).not.toBeDefined();
 
@@ -157,7 +157,7 @@ cacheFactories.forEach(cacheFactory => {
 
     if (keyManifest) {
       it('should update the key manifest when the key has only been added to the underlying cache', async () => {
-        const manifestKey = `${CACHE_KEY_PREFIX}::${defaultData.client_id}`;
+        const manifestKey = `${CACHE_KEY_PREFIX}::${defaultData.clientId}`;
 
         await manager.set(defaultData);
 
@@ -180,7 +180,7 @@ cacheFactories.forEach(cacheFactory => {
       await manager.set(data);
 
       const key = new CacheKey({
-        client_id: TEST_CLIENT_ID,
+        clientId: TEST_CLIENT_ID,
         audience: TEST_AUDIENCE,
         scope: 'read:messages read:actions'
       });
@@ -199,7 +199,7 @@ cacheFactories.forEach(cacheFactory => {
       expect(
         await manager.get(
           new CacheKey({
-            client_id: TEST_CLIENT_ID,
+            clientId: TEST_CLIENT_ID,
             audience: TEST_AUDIENCE,
             scope: TEST_SCOPES
           }),
@@ -342,7 +342,7 @@ cacheFactories.forEach(cacheFactory => {
       // And that the data has been removed from the key manifest
       if (keyManifest) {
         expect(cacheRemoveSpy).toHaveBeenCalledWith(
-          `@@auth0spajs@@::${data.client_id}`
+          `@@auth0spajs@@::${data.clientId}`
         );
       }
     });
@@ -384,7 +384,7 @@ cacheFactories.forEach(cacheFactory => {
       // And that the data has been removed from the key manifest
       if (keyManifest) {
         expect(cacheRemoveSpy).toHaveBeenCalledWith(
-          `@@auth0spajs@@::${data.client_id}`
+          `@@auth0spajs@@::${data.clientId}`
         );
       }
     });
@@ -426,7 +426,7 @@ cacheFactories.forEach(cacheFactory => {
       // And that the data has been removed from the key manifest
       if (keyManifest) {
         expect(cacheRemoveSpy).toHaveBeenCalledWith(
-          `@@auth0spajs@@::${data.client_id}`
+          `@@auth0spajs@@::${data.clientId}`
         );
       }
     });
@@ -462,7 +462,7 @@ cacheFactories.forEach(cacheFactory => {
       // And that the data has been removed from the key manifest
       if (keyManifest) {
         expect(cacheRemoveSpy).toHaveBeenCalledWith(
-          `@@auth0spajs@@::${data.client_id}`
+          `@@auth0spajs@@::${data.clientId}`
         );
       }
     });
@@ -497,7 +497,7 @@ cacheFactories.forEach(cacheFactory => {
       // And that the data has been removed from the key manifest
       if (keyManifest) {
         expect(cacheRemoveSpy).toHaveBeenCalledWith(
-          `@@auth0spajs@@::${data.client_id}`
+          `@@auth0spajs@@::${data.clientId}`
         );
       }
     });
@@ -532,7 +532,7 @@ cacheFactories.forEach(cacheFactory => {
       // And that the data has been removed from the key manifest
       if (keyManifest) {
         expect(cacheRemoveSpy).toHaveBeenCalledWith(
-          `@@auth0spajs@@::${data.client_id}`
+          `@@auth0spajs@@::${data.clientId}`
         );
       }
     });
@@ -540,7 +540,7 @@ cacheFactories.forEach(cacheFactory => {
     it('clears all keys from the cache', async () => {
       const entry1 = { ...defaultData };
       const entry2 = { ...defaultData, scope: 'scope-1' };
-      const entry3 = { ...defaultData, client_id: 'some-other-client' };
+      const entry3 = { ...defaultData, clientId: 'some-other-client' };
 
       await manager.set(entry1);
       await manager.set(entry2);
@@ -567,7 +567,7 @@ cacheFactories.forEach(cacheFactory => {
     it('clears only the keys relating to a specific client ID from the cache', async () => {
       const entry1 = { ...defaultData };
       const entry2 = { ...defaultData, scope: 'scope-1' };
-      const entry3 = { ...defaultData, client_id: 'some-other-client' };
+      const entry3 = { ...defaultData, clientId: 'some-other-client' };
 
       await manager.set(entry1);
       await manager.set(entry2);
@@ -599,7 +599,7 @@ cacheFactories.forEach(cacheFactory => {
       const manager = new CacheManager(new LocalStorageCache());
       const entry1 = { ...defaultData };
       const entry2 = { ...defaultData, scope: 'scope-1' };
-      const entry3 = { ...defaultData, client_id: 'some-other-client' };
+      const entry3 = { ...defaultData, clientId: 'some-other-client' };
 
       await manager.set(entry1);
       await manager.set(entry2);
@@ -628,7 +628,7 @@ cacheFactories.forEach(cacheFactory => {
       const manager = new CacheManager(new LocalStorageCache());
       const entry1 = { ...defaultData };
       const entry2 = { ...defaultData, scope: 'scope-1' };
-      const entry3 = { ...defaultData, client_id: 'some-other-client' };
+      const entry3 = { ...defaultData, clientId: 'some-other-client' };
 
       await manager.set(entry1);
       await manager.set(entry2);

@@ -7,7 +7,7 @@ const verifyOptions = {
   iss: 'https://brucke.auth0.com/',
   aud: 'k5u3o2fiAA8XweXEEX604KCwCjzjtMU6',
   nonce: 'omcw.ptjx3~.8VBm3OuMziLdn5PB0uXG',
-  client_id: 'the_client_id'
+  clientId: 'the_client_id'
 };
 
 const createPrivateKey = () => {

@@ -121,7 +121,7 @@ export interface Auth0ClientOptions extends BaseLoginOptions {
   /**
    * The Client ID found on your Application settings page
    */
-  client_id: string;
+  clientId: string;
   /**
    * The default URL where Auth0 will redirect your browser to with
    * the authentication result. It must be whitelisted in
@@ -424,10 +424,10 @@ export interface LogoutUrlOptions {
   /**
    * The URL where Auth0 will redirect your browser to after the logout.
    *
-   * **Note**: If the `client_id` parameter is included, the
+   * **Note**: If the `clientId` parameter is included, the
    * `returnTo` URL that is provided must be listed in the
    * Application's "Allowed Logout URLs" in the Auth0 dashboard.
-   * However, if the `client_id` parameter is not included, the
+   * However, if the `clientId` parameter is not included, the
    * `returnTo` URL must be listed in the "Allowed Logout URLs" at
    * the account level in the Auth0 dashboard.
    *
@@ -436,15 +436,15 @@ export interface LogoutUrlOptions {
   returnTo?: string;
 
   /**
-   * The `client_id` of your application.
+   * The `clientId` of your application.
    *
-   * If this property is not set, then the `client_id` that was used during initialization of the SDK is sent to the logout endpoint.
+   * If this property is not set, then the `clientId` that was used during initialization of the SDK is sent to the logout endpoint.
    *
    * If this property is set to `null`, then no client ID value is sent to the logout endpoint.
    *
    * [Read more about how redirecting after logout works](https://auth0.com/docs/logout/guides/redirect-users-after-logout)
    */
-  client_id?: string;
+   clientId?: string;
 
   /**
    * When supported by the upstream identity provider,
@@ -459,10 +459,10 @@ export interface LogoutOptions {
   /**
    * The URL where Auth0 will redirect your browser to after the logout.
    *
-   * **Note**: If the `client_id` parameter is included, the
+   * **Note**: If the `clientId` parameter is included, the
    * `returnTo` URL that is provided must be listed in the
    * Application's "Allowed Logout URLs" in the Auth0 dashboard.
-   * However, if the `client_id` parameter is not included, the
+   * However, if the `clientId` parameter is not included, the
    * `returnTo` URL must be listed in the "Allowed Logout URLs" at
    * the account level in the Auth0 dashboard.
    *
@@ -471,15 +471,15 @@ export interface LogoutOptions {
   returnTo?: string;
 
   /**
-   * The `client_id` of your application.
+   * The `clientId` of your application.
    *
-   * If this property is not set, then the `client_id` that was used during initialization of the SDK is sent to the logout endpoint.
+   * If this property is not set, then the `clientId` that was used during initialization of the SDK is sent to the logout endpoint.
    *
    * If this property is set to `null`, then no client ID value is sent to the logout endpoint.
    *
    * [Read more about how redirecting after logout works](https://auth0.com/docs/logout/guides/redirect-users-after-logout)
    */
-  client_id?: string;
+   clientId?: string;
 
   /**
    * When supported by the upstream identity provider,

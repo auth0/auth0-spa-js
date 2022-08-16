@@ -169,7 +169,7 @@ const getCustomInitialOptions = (
     authorizeTimeoutInSeconds,
     cacheLocation,
     cache,
-    client_id,
+    clientId,
     domain,
     issuer,
     leeway,
@@ -248,11 +248,11 @@ export class Auth0Client {
         : CookieStorageWithLegacySameSite;
 
     this.orgHintCookieName = buildOrganizationHintCookieName(
-      this.options.client_id
+      this.options.clientId
     );
 
     this.isAuthenticatedCookieName = buildIsAuthenticatedCookieName(
-      this.options.client_id
+      this.options.clientId
     );
 
     this.sessionCheckExpiryDays =
@@ -266,7 +266,7 @@ export class Auth0Client {
 
     this.transactionManager = new TransactionManager(
       transactionStorage,
-      this.options.client_id
+      this.options.clientId
     );
 
     this.nowProvider = this.options.nowProvider || DEFAULT_NOW_PROVIDER;
@@ -274,7 +274,7 @@ export class Auth0Client {
     this.cacheManager = new CacheManager(
       cache,
       !cache.allKeys
-        ? new CacheKeyManifest(cache, this.options.client_id)
+        ? new CacheKeyManifest(cache, this.options.clientId)
         : null,
       this.nowProvider
     );
@@ -376,7 +376,7 @@ export class Auth0Client {
 
     return verifyIdToken({
       iss: this.tokenIssuer,
-      aud: this.options.client_id,
+      aud: this.options.clientId,
       id_token,
       nonce,
       organizationId,
@@ -545,7 +545,7 @@ export class Auth0Client {
         audience: params.audience,
         scope: params.scope,
         baseUrl: this.domainUrl,
-        client_id: this.options.client_id,
+        client_id: this.options.clientId,
         code_verifier,
         code: codeResult.code,
         grant_type: 'authorization_code',
@@ -570,7 +570,7 @@ export class Auth0Client {
       decodedToken,
       scope: params.scope,
       audience: params.audience || 'default',
-      client_id: this.options.client_id
+      clientId: this.options.clientId
     };
 
     await this.cacheManager.set(cacheEntry);
@@ -606,7 +606,7 @@ export class Auth0Client {
 
     const cache = await this.cacheManager.get(
       new CacheKey({
-        client_id: this.options.client_id,
+        clientId: this.options.clientId,
         audience,
         scope
       })
@@ -636,7 +636,7 @@ export class Auth0Client {
 
     const cache = await this.cacheManager.get(
       new CacheKey({
-        client_id: this.options.client_id,
+        clientId: this.options.clientId,
         audience,
         scope
       })
@@ -725,7 +725,7 @@ export class Auth0Client {
       audience: transaction.audience,
       scope: transaction.scope,
       baseUrl: this.domainUrl,
-      client_id: this.options.client_id,
+      client_id: this.options.clientId,
       code_verifier: transaction.code_verifier,
       grant_type: 'authorization_code',
       code,
@@ -753,7 +753,7 @@ export class Auth0Client {
       audience: transaction.audience,
       scope: transaction.scope,
       ...(authResult.scope ? { oauthTokenScope: authResult.scope } : null),
-      client_id: this.options.client_id
+      clientId: this.options.clientId
     });
 
     this.cookieStorage.save(this.isAuthenticatedCookieName, true, {
@@ -883,7 +883,7 @@ export class Auth0Client {
           cacheMode,
           ...getTokenOptions
         }),
-      `${this.options.client_id}::${getTokenOptions.audience}::${getTokenOptions.scope}`
+      `${this.options.clientId}::${getTokenOptions.audience}::${getTokenOptions.scope}`
     );
   }
 
@@ -898,7 +898,7 @@ export class Auth0Client {
       const entry = await this._getEntryFromCache({
         scope: getTokenOptions.scope,
         audience: getTokenOptions.audience || 'default',
-        client_id: this.options.client_id,
+        clientId: this.options.clientId,
         getDetailedEntry: options.detailedResponse
       });
 
@@ -924,7 +924,7 @@ export class Auth0Client {
           const entry = await this._getEntryFromCache({
             scope: getTokenOptions.scope,
             audience: getTokenOptions.audience || 'default',
-            client_id: this.options.client_id,
+            clientId: this.options.clientId,
             getDetailedEntry: options.detailedResponse
           });
 
@@ -938,7 +938,7 @@ export class Auth0Client {
           : await this._getTokenFromIFrame(getTokenOptions);
 
         await this.cacheManager.set({
-          client_id: this.options.client_id,
+          clientId: this.options.clientId,
           ...authResult
         });
 
@@ -1003,7 +1003,7 @@ export class Auth0Client {
       new CacheKey({
         scope: options.scope,
         audience: options.audience || 'default',
-        client_id: this.options.client_id
+        clientId: this.options.clientId
       })
     );
 
@@ -1033,10 +1033,10 @@ export class Auth0Client {
    * @param options
    */
   public buildLogoutUrl(options: LogoutUrlOptions = {}): string {
-    if (options.client_id !== null) {
-      options.client_id = options.client_id || this.options.client_id;
+    if (options.clientId !== null) {
+      options.clientId = options.clientId || this.options.clientId;
     } else {
-      delete options.client_id;
+      delete options.clientId;
     }
 
     const { federated, ...logoutOptions } = options;
@@ -1164,7 +1164,7 @@ export class Auth0Client {
           scope,
           audience,
           baseUrl: this.domainUrl,
-          client_id: this.options.client_id,
+          client_id: this.options.clientId,
           code_verifier,
           code: codeResult.code,
           grant_type: 'authorization_code',
@@ -1213,7 +1213,7 @@ export class Auth0Client {
       new CacheKey({
         scope: options.scope,
         audience: options.audience || 'default',
-        client_id: this.options.client_id
+        clientId: this.options.clientId
       })
     );
 
@@ -1261,7 +1261,7 @@ export class Auth0Client {
           audience,
           scope,
           baseUrl: this.domainUrl,
-          client_id: this.options.client_id,
+          client_id: this.options.clientId,
           grant_type: 'refresh_token',
           refresh_token: cache && cache.refresh_token,
           redirect_uri,
@@ -1303,19 +1303,19 @@ export class Auth0Client {
   private async _getEntryFromCache({
     scope,
     audience,
-    client_id,
+    clientId,
     getDetailedEntry = false
   }: {
     scope: string;
     audience: string;
-    client_id: string;
+    clientId: string;
     getDetailedEntry?: boolean;
   }) {
     const entry = await this.cacheManager.get(
       new CacheKey({
         scope,
         audience,
-        client_id
+        clientId
       }),
       60 // get a new token if within 60 seconds of expiring
     );

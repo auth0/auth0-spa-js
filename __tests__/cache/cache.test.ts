@@ -27,7 +27,7 @@ const cacheFactories = [
 ];
 
 const defaultEntry: CacheEntry = {
-  client_id: TEST_CLIENT_ID,
+  clientId: TEST_CLIENT_ID,
   audience: TEST_AUDIENCE,
   scope: TEST_SCOPES,
   id_token: TEST_ID_TOKEN,
@@ -89,7 +89,7 @@ cacheFactories.forEach(cacheFactory => {
       };
 
       const cacheKey = new CacheKey({
-        client_id: TEST_CLIENT_ID,
+        clientId: TEST_CLIENT_ID,
         audience: TEST_AUDIENCE,
         scope: 'the_scope'
       });
@@ -113,7 +113,7 @@ cacheFactories.forEach(cacheFactory => {
       };
 
       const cacheKey = new CacheKey({
-        client_id: TEST_CLIENT_ID,
+        clientId: TEST_CLIENT_ID,
         audience: TEST_AUDIENCE,
         scope: 'the_scope3 the_scope'
       });
@@ -124,7 +124,7 @@ cacheFactories.forEach(cacheFactory => {
 
     it('returns undefined when not all scopes match', async () => {
       const data = {
-        client_id: TEST_CLIENT_ID,
+        clientId: TEST_CLIENT_ID,
         audience: TEST_AUDIENCE,
         scope: 'the_scope the_scope2 the_scope3',
         id_token: TEST_ID_TOKEN,
@@ -149,7 +149,7 @@ cacheFactories.forEach(cacheFactory => {
       expect(
         await cache.get(
           new CacheKey({
-            client_id: TEST_CLIENT_ID,
+            clientId: TEST_CLIENT_ID,
             audience: TEST_AUDIENCE,
             scope: 'the_scope4 the_scope'
           }).toKey()
