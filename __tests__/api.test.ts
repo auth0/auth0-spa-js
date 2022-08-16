@@ -1,5 +1,3 @@
-import fetch from 'unfetch';
-
 import {
   DEFAULT_AUTH0_CLIENT,
   DEFAULT_SILENT_TOKEN_RETRY_COUNT
@@ -15,7 +13,6 @@ import { TEST_REDIRECT_URI } from './constants';
 (<any>global).MessageChannel = MessageChannel;
 
 jest.mock('../src/worker/token.worker');
-jest.mock('unfetch');
 
 const mockFetch = <jest.Mock>fetch;
 (<any>global).MessageChannel = MessageChannel;
