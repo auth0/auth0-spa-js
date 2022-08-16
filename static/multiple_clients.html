@@ -191,7 +191,7 @@
           async getTokenWith(client) {
             try {
               client.access_token = await client.auth0.getTokenSilently({
-                ignoreCache: true
+                cacheMode: 'off'
               });
 
               client.error = null;

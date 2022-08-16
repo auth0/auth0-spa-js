@@ -359,10 +359,12 @@ export type getIdTokenClaimsOptions = GetIdTokenClaimsOptions;
 
 export interface GetTokenSilentlyOptions {
   /**
-   * When `true`, ignores the cache and always sends a
+   * When `off`, ignores the cache and always sends a
    * request to Auth0.
+   * When `cache-only`, only reads from the cache and never sends a request to Auth0.
+   * Defaults to `on`, where it both reads from the cache and sends a request to Auth0 as needed.
    */
-  ignoreCache?: boolean;
+  cacheMode?: 'on' | 'off' | 'cache-only';
 
   /**
    * There's no actual redirect when getting a token silently,
@@ -406,10 +408,11 @@ export interface GetTokenSilentlyOptions {
 
 export interface GetTokenWithPopupOptions extends PopupLoginOptions {
   /**
-   * When `true`, ignores the cache and always sends a
-   * request to Auth0.
+   * When `off`, ignores the cache and always sends a request to Auth0.
+   * When `cache-only`, only reads from the cache and never sends a request to Auth0.
+   * Defaults to `on`, where it both reads from the cache and sends a request to Auth0 as needed.
    */
-  ignoreCache?: boolean;
+  cacheMode?: 'on' | 'off' | 'cache-only';
 }
 
 export interface LogoutUrlOptions {
