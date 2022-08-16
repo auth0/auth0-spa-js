@@ -209,7 +209,6 @@ export class Auth0Client {
   private readonly isAuthenticatedCookieName: string;
   private readonly nowProvider: () => number | Promise<number>;
   private readonly httpTimeoutMs: number;
-  private readonly useRefreshTokensFallback: boolean;
 
   cacheLocation: CacheLocation;
   private worker: Worker;
@@ -307,9 +306,6 @@ export class Auth0Client {
     }
 
     this.customOptions = getCustomInitialOptions(options);
-
-    this.useRefreshTokensFallback =
-      this.options.useRefreshTokensFallback !== false;
   }
 
   private _url(path: string) {
@@ -845,7 +841,7 @@ export class Auth0Client {
    * to obtain a new token.
    *
    * A new token will be obtained either by opening an iframe or a
-   * refresh token (if `useRefreshTokens` is `true`)
+   * refresh token (if `useRefreshTokens` is `true`).
 
    * If iframes are used, opens an iframe with the `/authorize` URL
    * using the parameters provided as arguments. Random and secure `state`
@@ -854,7 +850,9 @@ export class Auth0Client {
    *
    * If refresh tokens are used, the token endpoint is called directly with the
    * 'refresh_token' grant. If no refresh token is available to make this call,
-   * the SDK falls back to using an iframe to the '/authorize' URL.
+   * the SDK will only fall back to using an iframe to the '/authorize' URL if 
+   * the `useRefreshTokensFallback` setting has been set to `true`. By default this
+   * setting is `false`.
    *
    * This method may use a web worker to perform the token call if the in-memory
    * cache is used.
@@ -1219,9 +1217,10 @@ export class Auth0Client {
 
     // If you don't have a refresh token in memory
     // and you don't have a refresh token in web worker memory
-    // fallback to an iframe.
+    // and useRefreshTokensFallback was explicitly enabled
+    // fallback to an iframe
     if ((!cache || !cache.refresh_token) && !this.worker) {
-      if (this.useRefreshTokensFallback) {
+      if (this.options.useRefreshTokensFallback) {
         return await this._getTokenFromIFrame(options);
       }
 
@@ -1276,11 +1275,11 @@ export class Auth0Client {
         // The web worker didn't have a refresh token in memory so
         // fallback to an iframe.
         (e.message.indexOf(MISSING_REFRESH_TOKEN_ERROR_MESSAGE) > -1 ||
-          // A refresh token was found, but is it no longer valid.
-          // Fallback to an iframe.
+          // A refresh token was found, but is it no longer valid 
+          // and useRefreshTokensFallback is explicitly enabled. Fallback to an iframe.
           (e.message &&
             e.message.indexOf(INVALID_REFRESH_TOKEN_ERROR_MESSAGE) > -1)) &&
-        this.useRefreshTokensFallback
+        this.options.useRefreshTokensFallback
       ) {
         return await this._getTokenFromIFrame(options);
       }
