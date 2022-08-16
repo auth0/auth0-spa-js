@@ -945,12 +945,6 @@ describe('Auth0Client', () => {
     describe('Worker browser support', () => {
       [
         {
-          name: 'IE11',
-          userAgent:
-            'Mozilla/5.0 (Windows NT 6.1; WOW64; Trident/7.0; AS; rv:11.0) like Gecko',
-          supported: false
-        },
-        {
           name: 'Chrome',
           userAgent:
             'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.169 Safari/537.36',
@@ -1328,43 +1322,6 @@ describe('Auth0Client', () => {
       expect(utils.runIframe).not.toHaveBeenCalled();
     });
 
-    it('falls back to iframe when missing refresh token in ie11 and useRefreshTokensFallback is set to true', async () => {
-      const originalUserAgent = window.navigator.userAgent;
-      Object.defineProperty(window.navigator, 'userAgent', {
-        value:
-          'Mozilla/5.0 (Windows NT 6.1; WOW64; Trident/7.0; AS; rv:11.0) like Gecko',
-        configurable: true
-      });
-      const auth0 = setup({
-        useRefreshTokens: true,
-        useRefreshTokensFallback: true
-      });
-      expect((<any>auth0).worker).toBeUndefined();
-      await loginWithRedirect(auth0, undefined, {
-        token: {
-          response: { refresh_token: '' }
-        }
-      });
-      jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
-        access_token: TEST_ACCESS_TOKEN,
-        state: TEST_STATE
-      });
-      mockFetch.mockResolvedValueOnce(
-        fetchResponse(true, {
-          id_token: TEST_ID_TOKEN,
-          refresh_token: TEST_REFRESH_TOKEN,
-          access_token: TEST_ACCESS_TOKEN,
-          expires_in: 86400
-        })
-      );
-      const access_token = await auth0.getTokenSilently({ cacheMode: 'off' });
-      expect(access_token).toEqual(TEST_ACCESS_TOKEN);
-      expect(utils.runIframe).toHaveBeenCalled();
-      Object.defineProperty(window.navigator, 'userAgent', {
-        value: originalUserAgent
-      });
-    });
-
     it('uses the cache for subsequent requests that occur before the response', async () => {
       let singlePromiseSpy = jest
         .spyOn(promiseUtils, 'singlePromise')
@@ -1572,7 +1529,7 @@ describe('Auth0Client', () => {
 
       expect(
         (<any>utils.runIframe).mock.calls[0][0].includes(
-          'custom_param=hello%20world&another_custom_param=bar'
+          'custom_param=hello+world&another_custom_param=bar'
         )
       ).toBe(true);
 
@@ -1615,7 +1572,7 @@ describe('Auth0Client', () => {
 
       expect(
         (<any>utils.runIframe).mock.calls[0][0].includes(
-          'custom_param=hello%20world&another_custom_param=bar'
+          'custom_param=hello+world&another_custom_param=bar'
         )
       ).toBe(true);
 
@@ -1625,7 +1582,7 @@ describe('Auth0Client', () => {
           redirect_uri: TEST_REDIRECT_URI,
           client_id: TEST_CLIENT_ID,
           grant_type: 'authorization_code',
-          custom_param: 'hello world',
+          custom_param: 'hello+world',
           another_custom_param: 'bar',
           code_verifier: TEST_CODE_VERIFIER
         },
