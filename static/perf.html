@@ -83,7 +83,7 @@
         await client.loginWithPopup();
 
         await runTokenTest(
-          () => client.getTokenSilently({ ignoreCache: true }),
+          () => client.getTokenSilently({ cacheMode: 'off' }),
           'getTokenSilently (iframe)',
           5
         );
@@ -100,7 +100,7 @@
         await client.loginWithPopup();
 
         await runTokenTest(
-          () => client.getTokenSilently({ ignoreCache: true }),
+          () => client.getTokenSilently({ cacheMode: 'off' }),
           'getTokenSilently (refresh token)',
           5
         );

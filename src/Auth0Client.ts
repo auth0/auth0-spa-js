@@ -841,9 +841,9 @@ export class Auth0Client {
   public async getTokenSilently(
     options: GetTokenSilentlyOptions = {}
   ): Promise<string | GetTokenSilentlyVerboseResponse> {
-    const { ignoreCache, ...getTokenOptions } = {
+    const { cacheMode, ...getTokenOptions }: GetTokenSilentlyOptions = {
       audience: this.options.audience,
-      ignoreCache: false,
+      cacheMode: 'on',
       ...options,
       scope: getUniqueScopes(this.defaultScope, this.scope, options.scope)
     };
@@ -851,7 +851,7 @@ export class Auth0Client {
     return singlePromise(
       () =>
         this._getTokenSilently({
-          ignoreCache,
+          cacheMode,
           ...getTokenOptions
         }),
       `${this.options.client_id}::${getTokenOptions.audience}::${getTokenOptions.scope}`
@@ -861,11 +861,11 @@ export class Auth0Client {
   private async _getTokenSilently(
     options: GetTokenSilentlyOptions = {}
   ): Promise<string | GetTokenSilentlyVerboseResponse> {
-    const { ignoreCache, ...getTokenOptions } = options;
+    const { cacheMode, ...getTokenOptions } = options;
 
     // Check the cache before acquiring the lock to avoid the latency of
     // `lock.acquireLock` when the cache is populated.
-    if (!ignoreCache) {
+    if (cacheMode !== 'off') {
       const entry = await this._getEntryFromCache({
         scope: getTokenOptions.scope,
         audience: getTokenOptions.audience || 'default',
@@ -878,6 +878,10 @@ export class Auth0Client {
       }
     }
 
+    if (cacheMode === 'cache-only') {
+      return;
+    }
+
     if (
       await retryPromise(
         () => lock.acquireLock(GET_TOKEN_SILENTLY_LOCK_KEY, 5000),
@@ -887,7 +891,7 @@ export class Auth0Client {
       try {
         // Check the cache a second time, because it may have been populated
         // by a previous call while this call was waiting to acquire the lock.
-        if (!ignoreCache) {
+        if (cacheMode !== 'off') {
           const entry = await this._getEntryFromCache({
             scope: getTokenOptions.scope,
             audience: getTokenOptions.audience || 'default',
@@ -1118,7 +1122,7 @@ export class Auth0Client {
         scope,
         audience,
         redirect_uri,
-        ignoreCache,
+        cacheMode,
         timeoutInSeconds,
         detailedResponse,
         ...customOptions
@@ -1209,7 +1213,7 @@ export class Auth0Client {
     const {
       scope,
       audience,
-      ignoreCache,
+      cacheMode,
       timeoutInSeconds,
       detailedResponse,
       ...customOptions
