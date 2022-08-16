@@ -420,10 +420,27 @@ export class Auth0Client {
   public async buildAuthorizeUrl(
     options: RedirectLoginOptions = {}
   ): Promise<string> {
+    const { url } = await this._prepareAuthorizeUrl(options);
+
+    return url;
+  }
+
+  private async _prepareAuthorizeUrl(
+    options: RedirectLoginOptions = {}
+  ): Promise<{
+    scope: string;
+    audience: string;
+    redirect_uri: string;
+    nonce: string;
+    code_verifier: string;
+    appState: any;
+    state: string;
+    url: string;
+  }> {
     const { redirect_uri, appState, ...authorizeOptions } = options;
 
-    const stateIn = encode(createRandomString());
-    const nonceIn = encode(createRandomString());
+    const state = encode(createRandomString());
+    const nonce = encode(createRandomString());
     const code_verifier = createRandomString();
     const code_challengeBuffer = await sha256(code_verifier);
     const code_challenge = bufferToBase64UrlEncoded(code_challengeBuffer);
@@ -431,27 +448,24 @@ export class Auth0Client {
 
     const params = this._getParams(
       authorizeOptions,
-      stateIn,
-      nonceIn,
+      state,
+      nonce,
       code_challenge,
       redirect_uri
     );
 
     const url = this._authorizeUrl(params);
-    const organizationId = options.organization || this.options.organization;
 
-    this.transactionManager.create({
-      nonce: nonceIn,
+    return {
+      nonce,
       code_verifier,
       appState,
       scope: params.scope,
       audience: params.audience || 'default',
       redirect_uri: params.redirect_uri,
-      state: stateIn,
-      ...(organizationId && { organizationId })
-    });
-
-    return url + fragment;
+      state,
+      url: url + fragment
+    };
   }
 
   /**
@@ -647,9 +661,22 @@ export class Auth0Client {
   public async loginWithRedirect<TAppState = any>(
     options: RedirectLoginOptions<TAppState> = {}
   ) {
-    const { redirectMethod, ...urlOptions } = options;
-    const url = await this.buildAuthorizeUrl(urlOptions);
-    window.location[redirectMethod || 'assign'](url);
+    const { onRedirect, ...urlOptions } = options;
+
+    const organizationId = urlOptions.organization || this.options.organization;
+
+    const { url, ...transaction } = await this._prepareAuthorizeUrl(urlOptions);
+
+    this.transactionManager.create({
+      ...transaction,
+      ...(organizationId && { organizationId })
+    });
+
+    if (onRedirect) {
+      await onRedirect(url);
+    } else {
+      window.location.assign(url);
+    }
   }
 
   /**

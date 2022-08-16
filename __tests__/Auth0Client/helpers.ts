@@ -188,9 +188,9 @@ export const loginWithRedirectFn = (mockWindow, mockFetch) => {
     } = processDefaultLoginWithRedirectOptions(testConfig);
     await auth0.loginWithRedirect(options);
 
-    const redirectMethod = options?.redirectMethod || 'assign';
-
-    expect(mockWindow.location[redirectMethod]).toHaveBeenCalled();
+    if (!options?.onRedirect) {
+      expect(mockWindow.location.assign).toHaveBeenCalled();
+    }
 
     if (error && errorDescription) {
       window.history.pushState(
