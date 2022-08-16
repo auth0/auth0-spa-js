@@ -188,7 +188,9 @@ describe('Auth0Client', () => {
     });
 
     it('calls the token endpoint with the correct params', async () => {
-      const auth0 = setup();
+      const auth0 = setup({
+        useFormData: false
+      });
 
       jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
         access_token: TEST_ACCESS_TOKEN,
@@ -215,9 +217,7 @@ describe('Auth0Client', () => {
     });
 
     it('calls the token endpoint with the correct data format when using useFormData', async () => {
-      const auth0 = setup({
-        useFormData: true
-      });
+      const auth0 = setup();
 
       jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
         access_token: TEST_ACCESS_TOKEN,
@@ -245,6 +245,34 @@ describe('Auth0Client', () => {
       );
     });
 
+    it('calls the token endpoint with the correct params when using refresh tokens and not using useFormData', async () => {
+      const auth0 = setup({
+        useRefreshTokens: true,
+        useFormData: false
+      });
+
+      await loginWithRedirect(auth0);
+
+      mockFetch.mockReset();
+
+      await getTokenSilently(auth0, {
+        cacheMode: 'off'
+      });
+
+      assertPost(
+        'https://auth0_domain/oauth/token',
+        {
+          redirect_uri: TEST_REDIRECT_URI,
+          client_id: TEST_CLIENT_ID,
+          grant_type: 'refresh_token',
+          refresh_token: TEST_REFRESH_TOKEN
+        },
+        {
+          'Auth0-Client': btoa(JSON.stringify(DEFAULT_AUTH0_CLIENT))
+        }
+      );
+    });
+
     it('calls the token endpoint with the correct params when using refresh tokens', async () => {
       const auth0 = setup({
         useRefreshTokens: true
@@ -262,6 +290,39 @@ describe('Auth0Client', () => {
         'https://auth0_domain/oauth/token',
         {
           redirect_uri: TEST_REDIRECT_URI,
+          client_id: TEST_CLIENT_ID,
+          grant_type: 'refresh_token',
+          refresh_token: TEST_REFRESH_TOKEN
+        },
+        {
+          'Auth0-Client': btoa(JSON.stringify(DEFAULT_AUTH0_CLIENT))
+        },
+        undefined,
+        false
+      );
+    });
+
+    it('calls the token endpoint with the correct params when passing redirect uri, using refresh tokens and not using useFormData', async () => {
+      const redirect_uri = 'https://custom';
+
+      const auth0 = setup({
+        useRefreshTokens: true,
+        useFormData: false
+      });
+
+      await loginWithRedirect(auth0);
+
+      mockFetch.mockReset();
+
+      await getTokenSilently(auth0, {
+        redirect_uri,
+        cacheMode: 'off'
+      });
+
+      assertPost(
+        'https://auth0_domain/oauth/token',
+        {
+          redirect_uri,
           client_id: TEST_CLIENT_ID,
           grant_type: 'refresh_token',
           refresh_token: TEST_REFRESH_TOKEN
@@ -298,6 +359,38 @@ describe('Auth0Client', () => {
         },
         {
           'Auth0-Client': btoa(JSON.stringify(DEFAULT_AUTH0_CLIENT))
+        },
+        undefined,
+        false
+      );
+    });
+
+    it('calls the token endpoint with the correct params when not providing any redirect uri, using refresh tokens and not using useFormData', async () => {
+      const auth0 = setup({
+        useRefreshTokens: true,
+        redirect_uri: null,
+        useFormData: false
+      });
+
+      await loginWithRedirect(auth0);
+
+      mockFetch.mockReset();
+
+      await getTokenSilently(auth0, {
+        redirect_uri: null,
+        cacheMode: 'off'
+      });
+
+      assertPost(
+        'https://auth0_domain/oauth/token',
+        {
+          redirect_uri: 'http://localhost',
+          client_id: TEST_CLIENT_ID,
+          grant_type: 'refresh_token',
+          refresh_token: TEST_REFRESH_TOKEN
+        },
+        {
+          'Auth0-Client': btoa(JSON.stringify(DEFAULT_AUTH0_CLIENT))
         }
       );
     });
@@ -327,7 +420,9 @@ describe('Auth0Client', () => {
         },
         {
           'Auth0-Client': btoa(JSON.stringify(DEFAULT_AUTH0_CLIENT))
-        }
+        },
+        undefined,
+        false
       );
     });
 
@@ -474,7 +569,9 @@ describe('Auth0Client', () => {
         },
         {
           'Auth0-Client': btoa(JSON.stringify(auth0Client))
-        }
+        },
+        undefined,
+        false
       );
     });
 
@@ -588,9 +685,10 @@ describe('Auth0Client', () => {
       expect(mockFetch).toHaveBeenCalledTimes(1);
     });
 
-    it('refreshes the token from a web worker', async () => {
+    it('refreshes the token from a web worker when not using useFormData', async () => {
       const auth0 = setup({
-        useRefreshTokens: true
+        useRefreshTokens: true,
+        useFormData: false
       });
 
       expect((<any>auth0).worker).toBeDefined();
@@ -616,10 +714,40 @@ describe('Auth0Client', () => {
       expect(access_token).toEqual(TEST_ACCESS_TOKEN);
     });
 
-    it('refreshes the token without the worker', async () => {
+    it('refreshes the token from a web worker', async () => {
+      const auth0 = setup({
+        useRefreshTokens: true
+      });
+
+      expect((<any>auth0).worker).toBeDefined();
+
+      await loginWithRedirect(auth0);
+
+      const access_token = await getTokenSilently(auth0, { cacheMode: 'off' });
+
+      assertPost(
+        'https://auth0_domain/oauth/token',
+        {
+          client_id: TEST_CLIENT_ID,
+          grant_type: 'refresh_token',
+          redirect_uri: TEST_REDIRECT_URI,
+          refresh_token: TEST_REFRESH_TOKEN
+        },
+        {
+          'Auth0-Client': btoa(JSON.stringify(DEFAULT_AUTH0_CLIENT))
+        },
+        1,
+        false
+      );
+
+      expect(access_token).toEqual(TEST_ACCESS_TOKEN);
+    });
+
+    it('refreshes the token without the worker when not using useFormData', async () => {
       const auth0 = setup({
         useRefreshTokens: true,
-        cacheLocation: 'localstorage'
+        cacheLocation: 'localstorage',
+        useFormData: false
       });
 
       expect((<any>auth0).worker).toBeUndefined();
@@ -668,12 +796,68 @@ describe('Auth0Client', () => {
       expect(access_token).toEqual(TEST_ACCESS_TOKEN);
     });
 
-    it('refreshes the token without the worker, when window.Worker is undefined', async () => {
+    it('refreshes the token without the worker', async () => {
+      const auth0 = setup({
+        useRefreshTokens: true,
+        cacheLocation: 'localstorage'
+      });
+
+      expect((<any>auth0).worker).toBeUndefined();
+
+      await loginWithRedirect(auth0);
+
+      assertPost(
+        'https://auth0_domain/oauth/token',
+        {
+          redirect_uri: TEST_REDIRECT_URI,
+          client_id: TEST_CLIENT_ID,
+          code_verifier: TEST_CODE_VERIFIER,
+          grant_type: 'authorization_code',
+          code: TEST_CODE
+        },
+        {
+          'Auth0-Client': btoa(JSON.stringify(DEFAULT_AUTH0_CLIENT))
+        },
+        undefined,
+        false
+      );
+
+      mockFetch.mockResolvedValueOnce(
+        fetchResponse(true, {
+          id_token: TEST_ID_TOKEN,
+          refresh_token: TEST_REFRESH_TOKEN,
+          access_token: TEST_ACCESS_TOKEN,
+          expires_in: 86400
+        })
+      );
+
+      const access_token = await auth0.getTokenSilently({ cacheMode: 'off' });
+
+      assertPost(
+        'https://auth0_domain/oauth/token',
+        {
+          client_id: TEST_CLIENT_ID,
+          grant_type: 'refresh_token',
+          redirect_uri: TEST_REDIRECT_URI,
+          refresh_token: TEST_REFRESH_TOKEN
+        },
+        {
+          'Auth0-Client': btoa(JSON.stringify(DEFAULT_AUTH0_CLIENT))
+        },
+        1,
+        false
+      );
+
+      expect(access_token).toEqual(TEST_ACCESS_TOKEN);
+    });
+
+    it('refreshes the token without the worker, when window.Worker is undefined when not using useFormData', async () => {
       mockWindow.Worker = undefined;
 
       const auth0 = setup({
         useRefreshTokens: true,
-        cacheLocation: 'memory'
+        cacheLocation: 'memory',
+        useFormData: false
       });
 
       expect((<any>auth0).worker).toBeUndefined();
@@ -708,6 +892,54 @@ describe('Auth0Client', () => {
           'Auth0-Client': btoa(JSON.stringify(DEFAULT_AUTH0_CLIENT))
         },
         1
+      );
+
+      expect(access_token).toEqual(TEST_ACCESS_TOKEN);
+    });
+
+    it('refreshes the token without the worker, when window.Worker is undefined', async () => {
+      mockWindow.Worker = undefined;
+
+      const auth0 = setup({
+        useRefreshTokens: true,
+        cacheLocation: 'memory'
+      });
+
+      expect((<any>auth0).worker).toBeUndefined();
+
+      await loginWithRedirect(auth0);
+
+      assertPost(
+        'https://auth0_domain/oauth/token',
+        {
+          redirect_uri: TEST_REDIRECT_URI,
+          client_id: TEST_CLIENT_ID,
+          code_verifier: TEST_CODE_VERIFIER,
+          grant_type: 'authorization_code',
+          code: TEST_CODE
+        },
+        {
+          'Auth0-Client': btoa(JSON.stringify(DEFAULT_AUTH0_CLIENT))
+        },
+        undefined,
+        false
+      );
+
+      const access_token = await getTokenSilently(auth0, { cacheMode: 'off' });
+
+      assertPost(
+        'https://auth0_domain/oauth/token',
+        {
+          client_id: TEST_CLIENT_ID,
+          grant_type: 'refresh_token',
+          redirect_uri: TEST_REDIRECT_URI,
+          refresh_token: TEST_REFRESH_TOKEN
+        },
+        {
+          'Auth0-Client': btoa(JSON.stringify(DEFAULT_AUTH0_CLIENT))
+        },
+        1,
+        false
       );
 
       expect(access_token).toEqual(TEST_ACCESS_TOKEN);
@@ -904,9 +1136,10 @@ describe('Auth0Client', () => {
       });
     });
 
-    it('falls back to iframe when missing refresh token errors from the worker', async () => {
+    it('falls back to iframe when missing refresh token errors from the worker and useRefreshTokensFallback is set to true', async () => {
       const auth0 = setup({
-        useRefreshTokens: true
+        useRefreshTokens: true,
+        useRefreshTokensFallback: true
       });
       expect((<any>auth0).worker).toBeDefined();
       await loginWithRedirect(auth0, undefined, {
@@ -931,10 +1164,9 @@ describe('Auth0Client', () => {
       expect(utils.runIframe).toHaveBeenCalled();
     });
 
-    it('does not fall back to iframe when missing refresh token errors from the worker and useRefreshTokensFallback set to false', async () => {
+    it('does not fall back to iframe when missing refresh token errors from the worker and useRefreshTokensFallback not provided', async () => {
       const auth0 = setup({
-        useRefreshTokens: true,
-        useRefreshTokensFallback: false
+        useRefreshTokens: true
       });
       expect((<any>auth0).worker).toBeDefined();
       await loginWithRedirect(auth0, undefined, {
@@ -1037,10 +1269,11 @@ describe('Auth0Client', () => {
       });
     });
 
-    it('falls back to iframe when missing refresh token without the worker', async () => {
+    it('falls back to iframe when missing refresh token without the worker and useRefreshTokensFallback is set to true', async () => {
       const auth0 = setup({
         useRefreshTokens: true,
-        cacheLocation: 'localstorage'
+        cacheLocation: 'localstorage',
+        useRefreshTokensFallback: true
       });
       expect((<any>auth0).worker).toBeUndefined();
       await loginWithRedirect(auth0, undefined, {
@@ -1065,10 +1298,9 @@ describe('Auth0Client', () => {
       expect(utils.runIframe).toHaveBeenCalled();
     });
 
-    it('does not fall back to iframe when missing refresh token without the worker when useRefreshTokensFallback is set to false', async () => {
+    it('does not fall back to iframe when missing refresh token without the worker when useRefreshTokensFallback is not provided', async () => {
       const auth0 = setup({
         useRefreshTokens: true,
-        useRefreshTokensFallback: false,
         cacheLocation: 'localstorage'
       });
       expect((<any>auth0).worker).toBeUndefined();
@@ -1099,7 +1331,7 @@ describe('Auth0Client', () => {
       expect(utils.runIframe).not.toHaveBeenCalled();
     });
 
-    it('falls back to iframe when missing refresh token in ie11', async () => {
+    it('falls back to iframe when missing refresh token in ie11 and useRefreshTokensFallback is set to true', async () => {
       const originalUserAgent = window.navigator.userAgent;
       Object.defineProperty(window.navigator, 'userAgent', {
         value:
@@ -1107,7 +1339,8 @@ describe('Auth0Client', () => {
         configurable: true
       });
       const auth0 = setup({
-        useRefreshTokens: true
+        useRefreshTokens: true,
+        useRefreshTokensFallback: true
       });
       expect((<any>auth0).worker).toBeUndefined();
       await loginWithRedirect(auth0, undefined, {
@@ -1312,10 +1545,11 @@ describe('Auth0Client', () => {
       expect(releaseLockSpy).toHaveBeenCalled();
     });
 
-    it('sends custom options through to the token endpoint when using an iframe', async () => {
+    it('sends custom options through to the token endpoint when using an iframe when not using useFormData', async () => {
       const auth0 = setup({
         custom_param: 'foo',
-        another_custom_param: 'bar'
+        another_custom_param: 'bar',
+        useFormData: false
       });
 
       await loginWithRedirect(auth0);
@@ -1355,11 +1589,63 @@ describe('Auth0Client', () => {
       });
     });
 
-    it('sends custom options through to the token endpoint when using refresh tokens', async () => {
+    it('sends custom options through to the token endpoint when using an iframe', async () => {
+      const auth0 = setup({
+        custom_param: 'foo',
+        another_custom_param: 'bar'
+      });
+
+      await loginWithRedirect(auth0);
+
+      jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
+        access_token: TEST_ACCESS_TOKEN,
+        state: TEST_STATE
+      });
+
+      mockFetch.mockResolvedValue(
+        fetchResponse(true, {
+          id_token: TEST_ID_TOKEN,
+          refresh_token: TEST_REFRESH_TOKEN,
+          access_token: TEST_ACCESS_TOKEN,
+          expires_in: 86400
+        })
+      );
+
+      await auth0.getTokenSilently({
+        cacheMode: 'off',
+        custom_param: 'hello world'
+      });
+
+      expect(
+        (<any>utils.runIframe).mock.calls[0][0].includes(
+          'custom_param=hello%20world&another_custom_param=bar'
+        )
+      ).toBe(true);
+
+      assertPost(
+        'https://auth0_domain/oauth/token',
+        {
+          redirect_uri: TEST_REDIRECT_URI,
+          client_id: TEST_CLIENT_ID,
+          grant_type: 'authorization_code',
+          custom_param: 'hello world',
+          another_custom_param: 'bar',
+          code_verifier: TEST_CODE_VERIFIER
+        },
+        {
+          'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        1,
+        false
+      );
+    });
+
+    it('sends custom options through to the token endpoint when using refresh tokens when not using useFormData', async () => {
       const auth0 = setup({
         useRefreshTokens: true,
         custom_param: 'foo',
-        another_custom_param: 'bar'
+        another_custom_param: 'bar',
+        useFormData: false
       });
 
       await loginWithRedirect(auth0, undefined, {
@@ -1397,6 +1683,61 @@ describe('Auth0Client', () => {
         custom_param: 'hello world',
         another_custom_param: 'bar'
       });
+
+      expect(access_token).toEqual(TEST_ACCESS_TOKEN);
+    });
+
+    it('sends custom options through to the token endpoint when using refresh tokens', async () => {
+
+      const auth0 = setup({
+        useRefreshTokens: true,
+        custom_param: 'foo',
+        another_custom_param: 'bar'
+      });
+
+      await loginWithRedirect(auth0, undefined, {
+        token: {
+          response: { refresh_token: 'a_refresh_token' }
+        }
+      });
+
+      jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
+        access_token: TEST_ACCESS_TOKEN,
+        state: TEST_STATE
+      });
+
+      mockFetch.mockResolvedValue(
+        fetchResponse(true, {
+          id_token: TEST_ID_TOKEN,
+          refresh_token: TEST_REFRESH_TOKEN,
+          access_token: TEST_ACCESS_TOKEN,
+          expires_in: 86400
+        })
+      );
+
+      expect(utils.runIframe).not.toHaveBeenCalled();
+
+      const access_token = await auth0.getTokenSilently({
+        cacheMode: 'off',
+        custom_param: 'helloworld'
+      });
+
+      assertPost(
+        'https://auth0_domain/oauth/token',
+        {
+          redirect_uri: TEST_REDIRECT_URI,
+          client_id: TEST_CLIENT_ID,
+          grant_type: 'refresh_token',
+          refresh_token: 'a_refresh_token',
+          custom_param: 'helloworld',
+          another_custom_param: 'bar'
+        },
+        {
+          'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        1,
+        false
+      );
 
       expect(access_token).toEqual(TEST_ACCESS_TOKEN);
     });
@@ -1685,9 +2026,10 @@ describe('Auth0Client', () => {
       expect((http.switchFetch as jest.Mock).mock.calls[0][6]).toEqual(20000);
     });
 
-    it('when using Refresh Tokens, falls back to iframe when refresh token is expired', async () => {
+    it('when using Refresh Tokens, falls back to iframe when refresh token is expired and useRefreshTokensFallback is set to true', async () => {
       const auth0 = setup({
-        useRefreshTokens: true
+        useRefreshTokens: true,
+        useRefreshTokensFallback: true
       });
 
       await loginWithRedirect(auth0);
@@ -1729,7 +2071,8 @@ describe('Auth0Client', () => {
 
     it('when using Refresh Tokens and fallback fails, ensure the user is logged out', async () => {
       const auth0 = setup({
-        useRefreshTokens: true
+        useRefreshTokens: true,
+        useRefreshTokensFallback: true
       });
 
       await loginWithRedirect(auth0);

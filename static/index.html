@@ -307,6 +307,21 @@
                 >Use token cache when fetching new tokens</label
               >
             </div>
+
+            <div class="custom-control custom-switch mb-5">
+              <input
+                type="checkbox"
+                class="custom-control-input"
+                id="refresh-token-fallback-switch"
+                v-model="useRefreshTokensFallback"
+              />
+              <label
+                for="refresh-token-fallback-switch"
+                class="custom-control-label"
+                data-cy="switch-refresh-token-fallback"
+                >Use iframe as a fallback for refresh tokens</label
+              >
+            </div>
           </div>
           <div class="col-md-6">
             <div class="custom-control custom-switch mb-5">
@@ -436,6 +451,7 @@
             organization: data.organization || defaultOrganization,
             useFormData: data.useFormData || false,
             useOrgAtLogin: data.useOrgAtLogin || false,
+            useRefreshTokensFallback: data.useRefreshTokensFallback || false,
             clientOptions: '',
             audienceScopes: [
               {
@@ -486,6 +502,10 @@
           useFormData: function () {
             this.initializeClient();
             this.saveForm();
+          },
+          useRefreshTokensFallback: function () {
+            this.initializeClient();
+            this.saveForm();
           }
         },
         computed: {
@@ -507,7 +527,8 @@
               useRefreshTokens: _self.useRefreshTokens,
               useCookiesForTransactions: _self.useCookiesForTransactions,
               redirect_uri: window.location.origin,
-              useFormData: _self.useFormData
+              useFormData: _self.useFormData,
+              useRefreshTokensFallback: _self.useRefreshTokensFallback
             };
 
             if (_self.audience) {
@@ -567,7 +588,8 @@
                 audience: this.audience,
                 organization: this.organization,
                 useFormData: this.useFormData,
-                useOrgAtLogin: this.useOrgAtLogin
+                useOrgAtLogin: this.useOrgAtLogin,
+                useRefreshTokensFallback: this.useRefreshTokensFallback
               })
             );
 
@@ -584,8 +606,9 @@
             this.useConstructor = false;
             this.useCookiesForTransactions = false;
             this.organization = defaultOrganization;
-            this.useFormData = false;
+            this.useFormData = true;
             this.useOrgAtLogin = false;
+            this.useRefreshTokensFallback = false
             this.saveForm();
           },
           showAuth0Info: function () {
@@ -609,7 +632,7 @@
             this.clientId = defaultClientId;
             this.audience = defaultAudience;
             this.organization = defaultOrganization;
-            this.useFormData = false;
+            this.useFormData = true;
             this.saveForm();
           },
           useNodeOidcProvider() {

@@ -311,7 +311,9 @@ describe('Auth0Client', () => {
     });
 
     it('should log the user in with a popup and get the token', async () => {
-      const auth0 = setup();
+      const auth0 = setup({
+        useFormData: false
+      });
 
       await loginWithPopup(auth0);
       expect(mockWindow.open).toHaveBeenCalled();
@@ -333,9 +335,7 @@ describe('Auth0Client', () => {
     });
 
     it('should log the user in with a popup and get the token with form data', async () => {
-      const auth0 = setup({
-        useFormData: true
-      });
+      const auth0 = setup();
 
       await loginWithPopup(auth0);
       expect(mockWindow.open).toHaveBeenCalled();
@@ -428,7 +428,9 @@ describe('Auth0Client', () => {
     });
 
     it('uses a custom popup specified in the configuration and get a token', async () => {
-      const auth0 = setup();
+      const auth0 = setup({
+        useFormData: false
+      });
       const popup = {
         location: { href: '' },
         close: jest.fn()
