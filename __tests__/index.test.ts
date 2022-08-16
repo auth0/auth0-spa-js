@@ -8,7 +8,7 @@ jest.mock('../src/transaction-manager');
 jest.mock('../src/utils');
 jest.mock('../src/api');
 
-import createAuth0Client, { Auth0Client } from '../src/index';
+import { createAuth0Client, Auth0Client } from '../src/index';
 
 import {
   TEST_ACCESS_TOKEN,
@@ -39,7 +39,6 @@ const setup = async (
   clientOptions: Partial<Auth0ClientOptions> = {},
   callConstructor = true
 ) => {
-  const getDefaultInstance = m => require(m).default.mock.instances[0];
   const tokenVerifier = require('../src/jwt').verify;
   const utils = require('../src/utils');
   const api = require('../src/api');
@@ -93,7 +92,8 @@ const setup = async (
       })
     : undefined;
 
-  const transactionManager = getDefaultInstance('../src/transaction-manager');
+  const transactionManager =
+    require('../src/transaction-manager').TransactionManager;
 
   return {
     auth0,
@@ -194,14 +194,15 @@ describe('Auth0', () => {
       expect(utils.runIframe).toHaveBeenCalled();
     });
 
-    it('should absorb other recoverable errors', async () => {
+    it('should absorb errors', async () => {
       const { utils, cookieStorage } = await setup();
       cookieStorage.get.mockReturnValue(true);
       const recoverableErrors = [
         'consent_required',
         'interaction_required',
         'account_selection_required',
-        'access_denied'
+        'access_denied',
+        'some_other_error'
       ];
       for (let error of recoverableErrors) {
         utils.runIframe.mockClear();
@@ -213,31 +214,6 @@ describe('Auth0', () => {
         expect(auth0).toBeInstanceOf(Auth0Client);
         expect(utils.runIframe).toHaveBeenCalledTimes(1);
       }
-    });
-
-    it('should throw for other errors that are not recoverable', async () => {
-      const { utils, cookieStorage } = await setup();
-
-      utils.runIframe.mockImplementation(() => {
-        throw {
-          error: 'some_other_error',
-          error_message: 'This is a different error to login_required'
-        };
-      });
-
-      cookieStorage.get.mockReturnValue(true);
-
-      await expect(Promise.reject(new Error('foo'))).rejects.toThrow(Error);
-
-      await expect(
-        createAuth0Client({
-          domain: TEST_DOMAIN,
-          client_id: TEST_CLIENT_ID
-        })
-      ).rejects.toStrictEqual({
-        error: 'some_other_error',
-        error_message: 'This is a different error to login_required'
-      });
     });
   });
 

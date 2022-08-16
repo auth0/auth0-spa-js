@@ -256,7 +256,7 @@ describe('Auth0Client', () => {
       mockFetch.mockReset();
 
       await getTokenSilently(auth0, {
-        ignoreCache: true
+        cacheMode: 'off'
       });
 
       assertPost(
@@ -286,7 +286,7 @@ describe('Auth0Client', () => {
 
       await getTokenSilently(auth0, {
         redirect_uri,
-        ignoreCache: true
+        cacheMode: 'off'
       });
 
       assertPost(
@@ -315,7 +315,7 @@ describe('Auth0Client', () => {
 
       await getTokenSilently(auth0, {
         redirect_uri: null,
-        ignoreCache: true
+        cacheMode: 'off'
       });
 
       assertPost(
@@ -539,6 +539,38 @@ describe('Auth0Client', () => {
       expect(mockFetch).not.toHaveBeenCalled();
     });
 
+    it('does not refresh the token when cacheMode is cache-only', async () => {
+      const auth0 = setup();
+      await loginWithRedirect(auth0, undefined, {
+        token: {
+          response: { expires_in: 70, access_token: TEST_ACCESS_TOKEN }
+        }
+      });
+
+      mockFetch.mockReset();
+
+      const token = await getTokenSilently(auth0, { cacheMode: 'cache-only' });
+
+      expect(token).toBe(TEST_ACCESS_TOKEN);
+      expect(mockFetch).not.toHaveBeenCalled();
+    });
+
+    it('does not refresh the token when cacheMode is cache-only and nothing in cache', async () => {
+      const auth0 = setup();
+      await loginWithRedirect(auth0, undefined, {
+        token: {
+          response: { expires_in: 70, access_token: null }
+        }
+      });
+
+      mockFetch.mockReset();
+
+      const token = await getTokenSilently(auth0, { cacheMode: 'cache-only' });
+
+      expect(token).toBeUndefined();
+      expect(mockFetch).not.toHaveBeenCalled();
+    });
+
     it('refreshes the token when expires_in < constant leeway & refresh tokens are used', async () => {
       const auth0 = setup({
         useRefreshTokens: true
@@ -566,7 +598,7 @@ describe('Auth0Client', () => {
 
       await loginWithRedirect(auth0);
 
-      const access_token = await getTokenSilently(auth0, { ignoreCache: true });
+      const access_token = await getTokenSilently(auth0, { cacheMode: 'off' });
 
       assertPost(
         'https://auth0_domain/oauth/token',
@@ -618,7 +650,7 @@ describe('Auth0Client', () => {
         })
       );
 
-      const access_token = await auth0.getTokenSilently({ ignoreCache: true });
+      const access_token = await auth0.getTokenSilently({ cacheMode: 'off' });
 
       assertPost(
         'https://auth0_domain/oauth/token',
@@ -663,7 +695,7 @@ describe('Auth0Client', () => {
         }
       );
 
-      const access_token = await getTokenSilently(auth0, { ignoreCache: true });
+      const access_token = await getTokenSilently(auth0, { cacheMode: 'off' });
 
       assertPost(
         'https://auth0_domain/oauth/token',
@@ -800,7 +832,7 @@ describe('Auth0Client', () => {
       mockFetch.mockImplementation(() => Promise.reject(new Error('my_error')));
 
       await expect(
-        auth0.getTokenSilently({ ignoreCache: true })
+        auth0.getTokenSilently({ cacheMode: 'off' })
       ).rejects.toThrow('my_error');
 
       expect(mockFetch).toBeCalledTimes(3);
@@ -824,7 +856,7 @@ describe('Auth0Client', () => {
       );
 
       await expect(
-        auth0.getTokenSilently({ ignoreCache: true })
+        auth0.getTokenSilently({ cacheMode: 'off' })
       ).rejects.toThrow('my_error_description');
 
       expect(mockFetch).toBeCalledTimes(1);
@@ -861,7 +893,7 @@ describe('Auth0Client', () => {
       jest.spyOn(AbortController.prototype, 'abort');
 
       await expect(
-        auth0.getTokenSilently({ ignoreCache: true })
+        auth0.getTokenSilently({ cacheMode: 'off' })
       ).rejects.toThrow(`Timeout when executing 'fetch'`);
 
       // Called thrice for the refresh token grant in token worker
@@ -895,7 +927,7 @@ describe('Auth0Client', () => {
           expires_in: 86400
         })
       );
-      const access_token = await auth0.getTokenSilently({ ignoreCache: true });
+      const access_token = await auth0.getTokenSilently({ cacheMode: 'off' });
       expect(access_token).toEqual(TEST_ACCESS_TOKEN);
       expect(utils.runIframe).toHaveBeenCalled();
     });
@@ -925,7 +957,7 @@ describe('Auth0Client', () => {
       );
 
       await expect(
-        getTokenSilently(auth0, { ignoreCache: true })
+        getTokenSilently(auth0, { cacheMode: 'off' })
       ).rejects.toThrow(
         "Missing Refresh Token (audience: '', scope: 'openid profile email offline_access')"
       );
@@ -943,7 +975,7 @@ describe('Auth0Client', () => {
       mockFetch.mockReset();
       mockFetch.mockImplementation(() => Promise.reject(new Error('my_error')));
       await expect(
-        auth0.getTokenSilently({ ignoreCache: true })
+        auth0.getTokenSilently({ cacheMode: 'off' })
       ).rejects.toThrow('my_error');
       expect(mockFetch).toBeCalledTimes(3);
     });
@@ -963,7 +995,7 @@ describe('Auth0Client', () => {
         })
       );
       await expect(
-        auth0.getTokenSilently({ ignoreCache: true })
+        auth0.getTokenSilently({ cacheMode: 'off' })
       ).rejects.toThrow('my_error_description');
       expect(mockFetch).toBeCalledTimes(1);
     });
@@ -996,7 +1028,7 @@ describe('Auth0Client', () => {
       );
       jest.spyOn(AbortController.prototype, 'abort');
       await expect(
-        auth0.getTokenSilently({ ignoreCache: true })
+        auth0.getTokenSilently({ cacheMode: 'off' })
       ).rejects.toThrow(`Timeout when executing 'fetch'`);
       // Called thrice for the refresh token grant in http.switchFetch
       expect(AbortController.prototype.abort).toBeCalledTimes(3);
@@ -1029,7 +1061,7 @@ describe('Auth0Client', () => {
           expires_in: 86400
         })
       );
-      const access_token = await auth0.getTokenSilently({ ignoreCache: true });
+      const access_token = await auth0.getTokenSilently({ cacheMode: 'off' });
       expect(access_token).toEqual(TEST_ACCESS_TOKEN);
       expect(utils.runIframe).toHaveBeenCalled();
     });
@@ -1060,7 +1092,7 @@ describe('Auth0Client', () => {
       );
 
       await expect(
-        getTokenSilently(auth0, { ignoreCache: true })
+        getTokenSilently(auth0, { cacheMode: 'off' })
       ).rejects.toThrow(
         "Missing Refresh Token (audience: '', scope: 'openid profile email offline_access')"
       );
@@ -1096,7 +1128,7 @@ describe('Auth0Client', () => {
           expires_in: 86400
         })
       );
-      const access_token = await auth0.getTokenSilently({ ignoreCache: true });
+      const access_token = await auth0.getTokenSilently({ cacheMode: 'off' });
       expect(access_token).toEqual(TEST_ACCESS_TOKEN);
       expect(utils.runIframe).toHaveBeenCalled();
       Object.defineProperty(window.navigator, 'userAgent', {
@@ -1304,7 +1336,7 @@ describe('Auth0Client', () => {
       );
 
       await auth0.getTokenSilently({
-        ignoreCache: true,
+        cacheMode: 'off',
         custom_param: 'hello world'
       });
 
@@ -1354,7 +1386,7 @@ describe('Auth0Client', () => {
       expect(utils.runIframe).not.toHaveBeenCalled();
 
       const access_token = await auth0.getTokenSilently({
-        ignoreCache: true,
+        cacheMode: 'off',
         custom_param: 'hello world'
       });
 
@@ -1691,7 +1723,7 @@ describe('Auth0Client', () => {
         state: TEST_STATE
       });
 
-      await auth0.getTokenSilently({ ignoreCache: true });
+      await auth0.getTokenSilently({ cacheMode: 'off' });
 
       expect(utils['runIframe']).toHaveBeenCalled();
     });
@@ -1723,7 +1755,7 @@ describe('Auth0Client', () => {
       );
 
       await expect(
-        auth0.getTokenSilently({ ignoreCache: true })
+        auth0.getTokenSilently({ cacheMode: 'off' })
       ).rejects.toThrow('login_required');
       expect(auth0.logout).toHaveBeenCalledWith({ localOnly: true });
     });
@@ -1736,7 +1768,7 @@ describe('Auth0Client', () => {
       jest.spyOn(auth0, 'logout');
 
       await expect(
-        auth0.getTokenSilently({ ignoreCache: true })
+        auth0.getTokenSilently({ cacheMode: 'off' })
       ).rejects.toThrow('login_required');
 
       expect(auth0.logout).toHaveBeenCalledWith({ localOnly: true });
@@ -1758,7 +1790,7 @@ describe('Auth0Client', () => {
       }));
 
       await expect(
-        auth0.getTokenSilently({ ignoreCache: true })
+        auth0.getTokenSilently({ cacheMode: 'off' })
       ).rejects.toHaveProperty('error', 'login_required');
 
       expect(auth0.logout).toHaveBeenCalledWith({ localOnly: true });
@@ -1784,7 +1816,7 @@ describe('Auth0Client', () => {
       );
 
       const response = await auth0.getTokenSilently({
-        ignoreCache: true,
+        cacheMode: 'off',
         detailedResponse: true
       });
 
@@ -1812,7 +1844,7 @@ describe('Auth0Client', () => {
       );
 
       const response = await auth0.getTokenSilently({
-        ignoreCache: true,
+        cacheMode: 'off',
         detailedResponse: true
       });
 
@@ -1877,7 +1909,7 @@ describe('Auth0Client', () => {
       jest.spyOn(auth0['cacheManager'], 'set');
 
       await auth0.getTokenSilently({
-        ignoreCache: true,
+        cacheMode: 'off',
         scope: 'read:messages'
       });
 

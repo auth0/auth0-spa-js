@@ -153,7 +153,7 @@
           };
 
           this.clients.map(client => {
-            client.auth0 = new Auth0Client(client.options);
+            client.auth0 = new auth0.Auth0Client(client.options);
           });
 
           if (
@@ -191,7 +191,7 @@
           async getTokenWith(client) {
             try {
               client.access_token = await client.auth0.getTokenSilently({
-                ignoreCache: true
+                cacheMode: 'off'
               });
 
               client.error = null;

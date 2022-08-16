@@ -47,7 +47,7 @@
     "gzip-size": "^6.0.0",
     "husky": "^7.0.4",
     "idtoken-verifier": "^2.2.2",
-    "jest": "^27.3.1",
+    "jest": "^27.5.1",
     "jest-junit": "^13.0.0",
     "jest-localstorage-mock": "^2.4.18",
     "jsonwebtoken": "^8.5.1",

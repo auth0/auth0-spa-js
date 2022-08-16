@@ -9,7 +9,7 @@ import {
 } from '../../src';
 
 import * as utils from '../../src/utils';
-import Auth0Client from '../../src/Auth0Client';
+import { Auth0Client } from '../../src/Auth0Client';
 
 import {
   TEST_ACCESS_TOKEN,

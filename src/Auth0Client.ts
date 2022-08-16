@@ -25,7 +25,7 @@ import {
   CacheManager
 } from './cache';
 
-import TransactionManager from './transaction-manager';
+import { TransactionManager } from './transaction-manager';
 import { verify as verifyIdToken } from './jwt';
 import {
   AuthenticationError,
@@ -47,7 +47,6 @@ import {
   DEFAULT_AUTHORIZE_TIMEOUT_IN_SECONDS,
   MISSING_REFRESH_TOKEN_ERROR_MESSAGE,
   DEFAULT_SCOPE,
-  RECOVERABLE_ERRORS,
   DEFAULT_SESSION_CHECK_EXPIRY_DAYS,
   DEFAULT_AUTH0_CLIENT,
   INVALID_REFRESH_TOKEN_ERROR_MESSAGE,
@@ -196,7 +195,7 @@ const getCustomInitialOptions = (
 /**
  * Auth0 SDK for Single Page Applications using [Authorization Code Grant Flow with PKCE](https://auth0.com/docs/api-auth/tutorials/authorization-code-grant-pkce).
  */
-export default class Auth0Client {
+export class Auth0Client {
   private readonly transactionManager: TransactionManager;
   private readonly cacheManager: CacheManager;
   private readonly customOptions: BaseLoginOptions;
@@ -813,11 +812,7 @@ export default class Auth0Client {
 
     try {
       await this.getTokenSilently(options);
-    } catch (error) {
-      if (!RECOVERABLE_ERRORS.includes(error.error)) {
-        throw error;
-      }
-    }
+    } catch (_) {}
   }
 
   /**
@@ -875,9 +870,9 @@ export default class Auth0Client {
   public async getTokenSilently(
     options: GetTokenSilentlyOptions = {}
   ): Promise<string | GetTokenSilentlyVerboseResponse> {
-    const { ignoreCache, ...getTokenOptions } = {
+    const { cacheMode, ...getTokenOptions }: GetTokenSilentlyOptions = {
       audience: this.options.audience,
-      ignoreCache: false,
+      cacheMode: 'on',
       ...options,
       scope: getUniqueScopes(this.defaultScope, this.scope, options.scope)
     };
@@ -885,7 +880,7 @@ export default class Auth0Client {
     return singlePromise(
       () =>
         this._getTokenSilently({
-          ignoreCache,
+          cacheMode,
           ...getTokenOptions
         }),
       `${this.options.client_id}::${getTokenOptions.audience}::${getTokenOptions.scope}`
@@ -895,11 +890,11 @@ export default class Auth0Client {
   private async _getTokenSilently(
     options: GetTokenSilentlyOptions = {}
   ): Promise<string | GetTokenSilentlyVerboseResponse> {
-    const { ignoreCache, ...getTokenOptions } = options;
+    const { cacheMode, ...getTokenOptions } = options;
 
     // Check the cache before acquiring the lock to avoid the latency of
     // `lock.acquireLock` when the cache is populated.
-    if (!ignoreCache) {
+    if (cacheMode !== 'off') {
       const entry = await this._getEntryFromCache({
         scope: getTokenOptions.scope,
         audience: getTokenOptions.audience || 'default',
@@ -912,6 +907,10 @@ export default class Auth0Client {
       }
     }
 
+    if (cacheMode === 'cache-only') {
+      return;
+    }
+
     if (
       await retryPromise(
         () => lock.acquireLock(GET_TOKEN_SILENTLY_LOCK_KEY, 5000),
@@ -921,7 +920,7 @@ export default class Auth0Client {
       try {
         // Check the cache a second time, because it may have been populated
         // by a previous call while this call was waiting to acquire the lock.
-        if (!ignoreCache) {
+        if (cacheMode !== 'off') {
           const entry = await this._getEntryFromCache({
             scope: getTokenOptions.scope,
             audience: getTokenOptions.audience || 'default',
@@ -1152,7 +1151,7 @@ export default class Auth0Client {
         scope,
         audience,
         redirect_uri,
-        ignoreCache,
+        cacheMode,
         timeoutInSeconds,
         detailedResponse,
         ...customOptions
@@ -1242,7 +1241,7 @@ export default class Auth0Client {
     const {
       scope,
       audience,
-      ignoreCache,
+      cacheMode,
       timeoutInSeconds,
       detailedResponse,
       ...customOptions
