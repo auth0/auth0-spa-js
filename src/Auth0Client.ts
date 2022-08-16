@@ -217,10 +217,10 @@ export class Auth0Client {
   private readonly defaultOptions: Partial<Auth0ClientOptions> = {
     useRefreshTokensFallback: false,
     useFormData: true
-  }
+  };
 
   constructor(options: Auth0ClientOptions) {
-    this.options = {...this.defaultOptions, ...options };
+    this.options = { ...this.defaultOptions, ...options };
 
     typeof window !== 'undefined' && validateCrypto();
 
