@@ -284,7 +284,7 @@ describe('Auth0Client', () => {
       mockFetch.mockReset();
 
       await getTokenSilently(auth0, {
-        ignoreCache: true
+        cacheMode: 'off'
       });
 
       assertPost(
@@ -347,7 +347,7 @@ describe('Auth0Client', () => {
 
       await getTokenSilently(auth0, {
         redirect_uri,
-        ignoreCache: true
+        cacheMode: 'off'
       });
 
       assertPost(
@@ -408,7 +408,7 @@ describe('Auth0Client', () => {
 
       await getTokenSilently(auth0, {
         redirect_uri: null,
-        ignoreCache: true
+        cacheMode: 'off'
       });
 
       assertPost(
@@ -724,7 +724,7 @@ describe('Auth0Client', () => {
 
       await loginWithRedirect(auth0);
 
-      const access_token = await getTokenSilently(auth0, { ignoreCache: true });
+      const access_token = await getTokenSilently(auth0, { cacheMode: 'off' });
 
       assertPost(
         'https://auth0_domain/oauth/token',
@@ -832,7 +832,7 @@ describe('Auth0Client', () => {
         })
       );
 
-      const access_token = await auth0.getTokenSilently({ ignoreCache: true });
+      const access_token = await auth0.getTokenSilently({ cacheMode: 'off' });
 
       assertPost(
         'https://auth0_domain/oauth/token',
@@ -926,7 +926,7 @@ describe('Auth0Client', () => {
         false
       );
 
-      const access_token = await getTokenSilently(auth0, { ignoreCache: true });
+      const access_token = await getTokenSilently(auth0, { cacheMode: 'off' });
 
       assertPost(
         'https://auth0_domain/oauth/token',
@@ -1613,7 +1613,7 @@ describe('Auth0Client', () => {
       );
 
       await auth0.getTokenSilently({
-        ignoreCache: true,
+        cacheMode: 'off',
         custom_param: 'hello world'
       });
 
@@ -1719,7 +1719,7 @@ describe('Auth0Client', () => {
       expect(utils.runIframe).not.toHaveBeenCalled();
 
       const access_token = await auth0.getTokenSilently({
-        ignoreCache: true,
+        cacheMode: 'off',
         custom_param: 'helloworld'
       });
 
