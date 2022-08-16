@@ -1342,7 +1342,7 @@ describe('Auth0Client', () => {
 
       expect(
         (<any>utils.runIframe).mock.calls[0][0].includes(
-          'custom_param=hello%20world&another_custom_param=bar'
+          'custom_param=hello+world&another_custom_param=bar'
         )
       ).toBe(true);
 

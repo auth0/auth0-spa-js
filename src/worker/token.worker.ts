@@ -1,4 +1,5 @@
 import { MissingRefreshTokenError } from '../errors';
+import { createQueryParams } from '../utils';
 import { WorkerRefreshTokenMessage } from './worker.types';
 
 let refreshTokens: Record<string, string> = {};
@@ -54,10 +55,10 @@ const messageHandler = async ({
       }
 
       fetchOptions.body = useFormData
-        ? new URLSearchParams({
+        ? createQueryParams({
             ...body,
             refresh_token: refreshToken
-          }).toString()
+          })
         : JSON.stringify({
             ...body,
             refresh_token: refreshToken

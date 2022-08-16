@@ -131,9 +131,7 @@ describe('Auth0Client', () => {
         TEST_ACCESS_TOKEN
       );
 
-      expect(config.popup.location.href).toMatch(
-        /openid%20email%20read%3Aemail/
-      );
+      expect(config.popup.location.href).toMatch(/openid\+email\+read%3Aemail/);
     });
 
     it('passes custom login options', async () => {
