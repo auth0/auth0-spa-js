@@ -15,7 +15,7 @@ module.exports = {
   ],
   coverageReporters: ['lcov', 'text', 'text-summary'],
   preset: 'ts-jest',
-  setupFiles: ['jest-localstorage-mock'],
+  setupFiles: ['jest-localstorage-mock', './jest.setup.js'],
   globals: {
     'ts-jest': {
       tsconfig: './tsconfig.test.json'
