@@ -1533,7 +1533,7 @@ describe('Auth0Client', () => {
 
       expect(
         (<any>utils.runIframe).mock.calls[0][0].includes(
-          'custom_param=hello%20world&another_custom_param=bar'
+          'custom_param=hello+world&another_custom_param=bar'
         )
       ).toBe(true);
 
@@ -1576,7 +1576,7 @@ describe('Auth0Client', () => {
 
       expect(
         (<any>utils.runIframe).mock.calls[0][0].includes(
-          'custom_param=hello%20world&another_custom_param=bar'
+          'custom_param=hello+world&another_custom_param=bar'
         )
       ).toBe(true);
 
@@ -1586,7 +1586,7 @@ describe('Auth0Client', () => {
           redirect_uri: TEST_REDIRECT_URI,
           client_id: TEST_CLIENT_ID,
           grant_type: 'authorization_code',
-          custom_param: 'hello world',
+          custom_param: 'hello+world',
           another_custom_param: 'bar',
           code_verifier: TEST_CODE_VERIFIER
         },

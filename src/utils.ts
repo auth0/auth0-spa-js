@@ -158,11 +158,14 @@ export const createRandomString = () => {
 export const encode = (value: string) => btoa(value);
 export const decode = (value: string) => atob(value);
 
-export const createQueryParams = (params: any) => {
+const stripUndefined = (params: any) => {
   return Object.keys(params)
     .filter(k => typeof params[k] !== 'undefined')
-    .map(k => encodeURIComponent(k) + '=' + encodeURIComponent(params[k]))
-    .join('&');
+    .reduce((acc, key) => ({ ...acc, [key]: params[key] }), {});
+};
+
+export const createQueryParams = (params: any) => {
+  return new URLSearchParams(stripUndefined(params)).toString();
 };
 
 export const sha256 = async (s: string) => {
