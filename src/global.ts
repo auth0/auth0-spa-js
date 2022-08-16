@@ -361,7 +361,7 @@ export interface GetTokenSilentlyOptions {
   /**
    * When `off`, ignores the cache and always sends a
    * request to Auth0.
-   * When `only`, only reads from the cache and never sends a request to Auth0.
+   * When `cache-only`, only reads from the cache and never sends a request to Auth0.
    * Defaults to `on`, where it both reads from the cache and sends a request to Auth0 as needed.
    */
   cacheMode?: 'on' | 'off' | 'cache-only';
@@ -409,7 +409,7 @@ export interface GetTokenSilentlyOptions {
 export interface GetTokenWithPopupOptions extends PopupLoginOptions {
   /**
    * When `off`, ignores the cache and always sends a request to Auth0.
-   * When `only`, only reads from the cache and never sends a request to Auth0.
+   * When `cache-only`, only reads from the cache and never sends a request to Auth0.
    * Defaults to `on`, where it both reads from the cache and sends a request to Auth0 as needed.
    */
   cacheMode?: 'on' | 'off' | 'cache-only';
