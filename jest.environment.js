@@ -1,7 +1,12 @@
 const JSDOMEnvironment = require('jest-environment-jsdom');
 const util = require('util');
 
-class CustomEnvironment extends JSDOMEnvironment {
+/**
+ * Custom Jest Environment based on JSDOMEnvironment to support TextEncoder and TextDecoder.
+ *
+ * ref: https://github.com/jsdom/jsdom/issues/2524
+ */
+class CustomJSDOMEnvironment extends JSDOMEnvironment {
   constructor(config, context) {
     super(config, context);
   }
@@ -13,4 +18,4 @@ class CustomEnvironment extends JSDOMEnvironment {
   }
 }
 
-module.exports = CustomEnvironment;
+module.exports = CustomJSDOMEnvironment;
