@@ -159,12 +159,12 @@ export interface Auth0ClientOptions extends BaseLoginOptions {
   useRefreshTokens?: boolean;
 
   /**
-   * If true, fallback to the technique of using a hidden iframe and the `authorization_code` grant with `prompt=none` when unable to use refresh tokens.
-   * The default setting is `true`.
+   * If true, fallback to the technique of using a hidden iframe and the `authorization_code` grant with `prompt=none` when unable to use refresh tokens. If false, the iframe fallback is not used and
+   * errors relating to a failed `refresh_token` grant should be handled appropriately. The default setting is `false`.
    *
    * **Note**: There might be situations where doing silent auth with a Web Message response from an iframe is not possible,
    * like when you're serving your application from the file system or a custom protocol (like in a Desktop or Native app).
-   * In situations like this you can disable the iframe fallback and handle the failed Refresh Grant and prompt the user to login interactively with `loginWithRedirect` or `loginWithPopup`."
+   * In situations like this you can disable the iframe fallback and handle the failed `refresh_token` grant and prompt the user to login interactively with `loginWithRedirect` or `loginWithPopup`."
    *
    * E.g. Using the `file:` protocol in an Electron application does not support that legacy technique.
    *
@@ -248,11 +248,10 @@ export interface Auth0ClientOptions extends BaseLoginOptions {
   cookieDomain?: string;
 
   /**
-   * When true, data to the token endpoint is transmitted as x-www-form-urlencoded data instead of JSON. The default is false, but will default to true in a
-   * future major version.
+   * If true, data to the token endpoint is transmitted as x-www-form-urlencoded data, if false it will be transmitted as JSON. The default setting is `true`.
    *
-   * **Note:** Setting this to `true` may affect you if you use Auth0 Rules and are sending custom, non-primative data. If you enable this, please verify that your Auth0 Rules
-   * continue to work as intended.
+   * **Note:** Setting this to `false` may affect you if you use Auth0 Rules and are sending custom, non-primitive data. If you disable this,
+   * please verify that your Auth0 Rules continue to work as intended.
    */
   useFormData?: boolean;
 

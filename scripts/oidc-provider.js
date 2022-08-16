@@ -96,7 +96,7 @@ export function createApp(opts) {
   provider.use(async (ctx, next) => {
     await next();
 
-    if (ctx.oidc.route === 'end_session_success') {
+    if (ctx.oidc?.route === 'end_session_success') {
       ctx.redirect('http://127.0.0.1:3000');
     }
   });

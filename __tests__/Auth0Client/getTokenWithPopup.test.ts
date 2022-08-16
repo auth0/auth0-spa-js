@@ -157,10 +157,8 @@ describe('Auth0Client', () => {
       expect(config.popup.location.href).toMatch(/screen_hint/);
     });
 
-    it('should use form data if useFormData is true', async () => {
-      const auth0 = await localSetup({
-        useFormData: true
-      });
+    it('should use form data by default', async () => {
+      const auth0 = await localSetup({});
 
       const loginOptions = {
         audience: 'other-audience',

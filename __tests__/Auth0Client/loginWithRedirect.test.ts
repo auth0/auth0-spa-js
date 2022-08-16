@@ -102,6 +102,47 @@ describe('Auth0Client', () => {
   });
 
   describe('loginWithRedirect', () => {
+    it('should log the user in and get the token when not using useFormData', async () => {
+      const auth0 = setup({
+        useFormData: false
+      });
+
+      await loginWithRedirect(auth0);
+
+      const url = new URL(mockWindow.location.assign.mock.calls[0][0]);
+
+      assertUrlEquals(url, TEST_DOMAIN, '/authorize', {
+        client_id: TEST_CLIENT_ID,
+        redirect_uri: TEST_REDIRECT_URI,
+        scope: TEST_SCOPES,
+        response_type: 'code',
+        response_mode: 'query',
+        state: TEST_STATE,
+        nonce: TEST_NONCE,
+        code_challenge: TEST_CODE_CHALLENGE,
+        code_challenge_method: 'S256'
+      });
+
+      assertPost(
+        'https://auth0_domain/oauth/token',
+        {
+          redirect_uri: TEST_REDIRECT_URI,
+          client_id: TEST_CLIENT_ID,
+          code_verifier: TEST_CODE_VERIFIER,
+          grant_type: 'authorization_code',
+          code: TEST_CODE
+        },
+        {
+          'Auth0-Client': btoa(
+            JSON.stringify({
+              name: 'auth0-spa-js',
+              version: version
+            })
+          )
+        }
+      );
+    });
+
     it('should log the user in and get the token', async () => {
       const auth0 = setup();
 
@@ -137,7 +178,9 @@ describe('Auth0Client', () => {
               version: version
             })
           )
-        }
+        },
+        undefined,
+        false
       );
     });
 
@@ -507,8 +550,7 @@ describe('Auth0Client', () => {
         cacheLocation: 'localstorage',
         legacySameSiteCookie: true,
         nowProvider: () => Date.now(),
-        sessionCheckExpiryDays: 1,
-        useFormData: true
+        sessionCheckExpiryDays: 1
       });
 
       await loginWithRedirect(auth0);
