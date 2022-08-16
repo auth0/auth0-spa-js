@@ -1,5 +1,3 @@
-import 'fast-text-encoding';
-
 import {
   parseQueryResult,
   createQueryParams,

@@ -1,4 +1,3 @@
-import 'fast-text-encoding';
 import * as esCookie from 'es-cookie';
 import unfetch from 'unfetch';
 import { verify } from '../../src/jwt';
@@ -669,7 +668,10 @@ describe('Auth0Client', () => {
     });
 
     it('saves organization hint cookie in storage', async () => {
-      const auth0 = setup({ cookieDomain: TEST_DOMAIN }, { org_id: TEST_ORG_ID });
+      const auth0 = setup(
+        { cookieDomain: TEST_DOMAIN },
+        { org_id: TEST_ORG_ID }
+      );
 
       await loginWithPopup(auth0);
 

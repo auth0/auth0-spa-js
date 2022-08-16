@@ -1,4 +1,3 @@
-import 'fast-text-encoding';
 import * as esCookie from 'es-cookie';
 import unfetch from 'unfetch';
 import { verify } from '../../src/jwt';

@@ -1,4 +1,3 @@
-import 'fast-text-encoding';
 import unfetch from 'unfetch';
 import { verify } from '../../src/jwt';
 import { MessageChannel } from 'worker_threads';

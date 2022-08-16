@@ -1,6 +1,6 @@
 module.exports = {
   rootDir: './',
-  testEnvironment: 'jsdom',
+  testEnvironment: './jest.environment',
   moduleFileExtensions: ['ts', 'js'],
   testMatch: ['**/__tests__/**/*.test.ts'],
   coveragePathIgnorePatterns: [
