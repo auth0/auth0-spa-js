@@ -79,7 +79,6 @@ import {
 
 // @ts-ignore
 import TokenWorker from './worker/token.worker.ts';
-import { isIE11 } from './user-agent';
 import { singlePromise, retryPromise } from './promise-utils';
 import { CacheKeyManifest } from './cache/key-manifest';
 
@@ -134,11 +133,6 @@ const cacheLocationBuilders: Record<string, () => ICache> = {
 const cacheFactory = (location: string) => {
   return cacheLocationBuilders[location];
 };
-
-/**
- * @ignore
- */
-const supportWebWorker = () => !isIE11();
 
 /**
  * @ignore
@@ -302,13 +296,12 @@ export class Auth0Client {
       this.scope = getUniqueScopes(this.scope, 'offline_access');
     }
 
-    // Don't use web workers unless using refresh tokens in memory and not IE11
+    // Don't use web workers unless using refresh tokens in memory
     if (
       typeof window !== 'undefined' &&
       window.Worker &&
       this.options.useRefreshTokens &&
-      this.cacheLocation === CACHE_LOCATION_MEMORY &&
-      supportWebWorker()
+      this.cacheLocation === CACHE_LOCATION_MEMORY
     ) {
       this.worker = new TokenWorker();
     }
