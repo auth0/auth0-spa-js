@@ -54,7 +54,7 @@ export class CacheKey {
   }
 }
 
-interface DecodedToken {
+export interface DecodedToken {
   claims: IdToken;
   user: User;
 }
