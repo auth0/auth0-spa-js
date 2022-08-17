@@ -526,17 +526,19 @@
               cacheLocation: _self.useLocalStorage ? 'localstorage' : 'memory',
               useRefreshTokens: _self.useRefreshTokens,
               useCookiesForTransactions: _self.useCookiesForTransactions,
-              redirect_uri: window.location.origin,
               useFormData: _self.useFormData,
-              useRefreshTokensFallback: _self.useRefreshTokensFallback
+              useRefreshTokensFallback: _self.useRefreshTokensFallback,
+              authorizationParams: {
+                redirect_uri: window.location.origin,
+              }
             };
 
             if (_self.audience) {
-              clientOptions.audience = _self.audience;
+              clientOptions.authorizationParams.audience = _self.audience;
             }
 
             if (_self.organization && !_self.useOrgAtLogin) {
-              clientOptions.organization = _self.organization;
+              clientOptions.authorizationParams.organization = _self.organization;
             }
 
             if (_self.useCustomStorage) {
@@ -577,6 +579,10 @@
             localStorage.setItem(
               'spa-playground-data',
               JSON.stringify({
+                authorizationParams: {
+                  audience: this.audience,
+                  organization: this.organization,
+                },
                 domain: this.domain,
                 clientId: this.clientId,
                 useLocalStorage: this.useLocalStorage,
@@ -585,8 +591,6 @@
                 useConstructor: this.useConstructor,
                 useCookiesForTransactions: this.useCookiesForTransactions,
                 useCache: this.useCache,
-                audience: this.audience,
-                organization: this.organization,
                 useFormData: this.useFormData,
                 useOrgAtLogin: this.useOrgAtLogin,
                 useRefreshTokensFallback: this.useRefreshTokensFallback
@@ -664,11 +668,13 @@
             var _self = this;
 
             var options = {
-              redirect_uri: window.location.origin + '/callback.html'
+              authorizationParams: {
+                redirect_uri: window.location.origin + '/callback.html'
+              }
             };
 
             if (_self.organization) {
-              options.organization = _self.organization;
+              options.authorizationParams.organization = _self.organization;
             }
 
             _self.auth0
@@ -685,11 +691,15 @@
           },
           loginRedirect: function () {
             var _self = this;
-            var options = { scope: _self.audienceScopes[0].scope };
+            var options = {
+              authorizationParams: {
+                scope: _self.audienceScopes[0].scope 
+              }
+            };
 
             if (_self.organization) {
               if (_self.useOrgAtLogin) {
-                options.organization = _self.organization;
+                options.authorizationParams.organization = _self.organization;
               }
             }
 
@@ -716,8 +726,10 @@
 
             _self.auth0
               .getTokenSilently({
-                audience: audience,
-                scope: scope,
+                authorizationParams: {
+                  audience: audience,
+                  scope: scope,
+                },
                 cacheMode: _self.useCache ? 'on' : 'off'
               })
               .then(function (token) {
@@ -746,7 +758,12 @@
             var _self = this;
 
             _self.auth0
-              .getTokenWithPopup({ audience: audience, scope: scope })
+              .getTokenWithPopup({
+                authorizationParams: {
+                  audience: audience,
+                  scope: scope
+                }
+              })
               .then(function (token) {
                 access_tokens.push(token);
               })
@@ -756,13 +773,17 @@
           },
           logout: function () {
             this.auth0.logout({
-              returnTo: window.location.origin
+              logoutParams: {
+                returnTo: window.location.origin
+              }
             });
           },
           logoutNoClient: function () {
             this.auth0.logout({
               clientId: null,
-              returnTo: window.location.origin
+              logoutParams: {
+                returnTo: window.location.origin
+              }
             });
           },
           loginHandleInvitationUrl: function () {
@@ -776,8 +797,10 @@
 
                 if (orgMatches) {
                   this.auth0.loginWithRedirect({
-                    organization: orgMatches[1],
-                    invitation: inviteMatches[1]
+                    authorizationParams: {
+                      organization: orgMatches[1],
+                      invitation: inviteMatches[1]
+                    }
                   });
                 }
               }
