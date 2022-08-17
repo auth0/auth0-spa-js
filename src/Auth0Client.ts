@@ -570,7 +570,7 @@ export class Auth0Client {
       decodedToken,
       scope: params.scope,
       audience: params.audience || 'default',
-      clientId: this.options.clientId
+      client_id: this.options.clientId
     };
 
     await this.cacheManager.set(cacheEntry);
@@ -753,7 +753,7 @@ export class Auth0Client {
       audience: transaction.audience,
       scope: transaction.scope,
       ...(authResult.scope ? { oauthTokenScope: authResult.scope } : null),
-      clientId: this.options.clientId
+      client_id: this.options.clientId
     });
 
     this.cookieStorage.save(this.isAuthenticatedCookieName, true, {
@@ -938,7 +938,7 @@ export class Auth0Client {
           : await this._getTokenFromIFrame(getTokenOptions);
 
         await this.cacheManager.set({
-          clientId: this.options.clientId,
+          client_id: this.options.clientId,
           ...authResult
         });
 

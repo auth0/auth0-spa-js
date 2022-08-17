@@ -69,7 +69,7 @@ export class CacheManager {
 
   async set(entry: CacheEntry): Promise<void> {
     const cacheKey = new CacheKey({
-      clientId: entry.clientId,
+      clientId: entry.client_id,
       scope: entry.scope,
       audience: entry.audience
     });

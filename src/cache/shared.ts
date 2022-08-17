@@ -44,7 +44,7 @@ export class CacheKey {
    * @returns An instance of `CacheKey`
    */
   static fromCacheEntry(entry: CacheEntry): CacheKey {
-    const { scope, audience, clientId } = entry;
+    const { scope, audience, client_id: clientId } = entry;
 
     return new CacheKey({
       scope,
@@ -66,7 +66,7 @@ export type CacheEntry = {
   decodedToken: DecodedToken;
   audience: string;
   scope: string;
-  clientId: string;
+  client_id: string;
   refresh_token?: string;
   oauthTokenScope?: string;
 };

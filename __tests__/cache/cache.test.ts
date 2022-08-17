@@ -27,7 +27,7 @@ const cacheFactories = [
 ];
 
 const defaultEntry: CacheEntry = {
-  clientId: TEST_CLIENT_ID,
+  client_id: TEST_CLIENT_ID,
   audience: TEST_AUDIENCE,
   scope: TEST_SCOPES,
   id_token: TEST_ID_TOKEN,
@@ -124,7 +124,7 @@ cacheFactories.forEach(cacheFactory => {
 
     it('returns undefined when not all scopes match', async () => {
       const data = {
-        clientId: TEST_CLIENT_ID,
+        client_id: TEST_CLIENT_ID,
         audience: TEST_AUDIENCE,
         scope: 'the_scope the_scope2 the_scope3',
         id_token: TEST_ID_TOKEN,
