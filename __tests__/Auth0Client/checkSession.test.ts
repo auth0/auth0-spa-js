@@ -171,7 +171,7 @@ describe('Auth0Client', () => {
         { expires: 1 }
       );
 
-      expect(esCookie.remove).toHaveBeenCalledWith('auth0.is.authenticated');
+      expect(esCookie.remove).toHaveBeenCalledWith('auth0.is.authenticated', {});
     });
 
     it('uses the organization hint cookie if available', async () => {
