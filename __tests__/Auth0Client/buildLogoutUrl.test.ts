@@ -101,8 +101,10 @@ describe('Auth0Client', () => {
       const auth0 = setup();
 
       const url = auth0.buildLogoutUrl({
-        returnTo: 'https://return.to',
-        clientId: null
+        clientId: null,
+        logoutParams: { 
+          returnTo: 'https://return.to'
+        },
       });
 
       assertUrlEquals(url, TEST_DOMAIN, '/v2/logout', {
@@ -113,7 +115,12 @@ describe('Auth0Client', () => {
     it('creates correct query params when `options.federated` is true', async () => {
       const auth0 = setup();
 
-      const url = auth0.buildLogoutUrl({ federated: true, clientId: null });
+      const url = auth0.buildLogoutUrl({
+        logoutParams: { 
+          federated: true
+        },
+        clientId: null
+      });
 
       assertUrlEquals(url, TEST_DOMAIN, '/v2/logout', {
         federated: ''

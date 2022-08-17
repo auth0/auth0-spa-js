@@ -332,7 +332,7 @@ describe('Auth0Client', () => {
     const auth0 = setup({
       useFormData: false
     });
-    delete auth0['options']['redirect_uri'];
+    delete auth0['options']['authorizationParams']?.['redirect_uri'];
 
     await loginWithRedirect(auth0);
 
@@ -359,7 +359,7 @@ describe('Auth0Client', () => {
     );
 
     const auth0 = setup();
-    delete auth0['options']['redirect_uri'];
+    delete auth0['options']['authorizationParams']?.['redirect_uri'];
 
     await loginWithRedirect(auth0);
 

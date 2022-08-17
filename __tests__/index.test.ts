@@ -280,8 +280,10 @@ describe('Auth0', () => {
         const { cookieStorage } = await setup(null, false);
 
         const options = {
-          audience: 'the-audience',
-          scope: 'the-scope',
+          authorizationParams: {
+            audience: 'the-audience',
+            scope: 'the-scope',
+          },
           useRefreshTokens: true
         };
 

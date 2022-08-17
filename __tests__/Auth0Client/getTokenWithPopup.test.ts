@@ -116,7 +116,9 @@ describe('Auth0Client', () => {
         advancedOptions: {
           defaultScope: 'email'
         },
-        scope: 'read:email'
+        authorizationParams: {
+          scope: 'read:email'
+        }
       });
 
       const config = {
@@ -139,8 +141,10 @@ describe('Auth0Client', () => {
       const auth0 = await localSetup();
 
       const loginOptions = {
-        audience: 'other-audience',
-        screen_hint: 'signup'
+        authorizationParams: {
+          audience: 'other-audience',
+          screen_hint: 'signup'
+        }
       };
 
       const config = {
@@ -162,8 +166,10 @@ describe('Auth0Client', () => {
       const auth0 = await localSetup({});
 
       const loginOptions = {
-        audience: 'other-audience',
-        screen_hint: 'signup'
+        authorizationParams: {
+          audience: 'other-audience',
+          screen_hint: 'signup'
+        }
       };
 
       const config = {
@@ -196,7 +202,9 @@ describe('Auth0Client', () => {
 
     it('can use the global audience', async () => {
       const auth0 = await localSetup({
-        audience: 'global-audience'
+        authorizationParams: {
+         audience: 'global-audience'
+        }
       });
 
       const config = {

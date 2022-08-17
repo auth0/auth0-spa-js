@@ -211,7 +211,9 @@ describe('Auth0Client', () => {
       const redirect_uri = 'https://custom-redirect-uri/callback';
 
       const auth0 = setup({
-        redirect_uri
+        authorizationParams: { 
+          redirect_uri
+        }
       });
 
       await loginWithRedirect(auth0);
@@ -233,11 +235,15 @@ describe('Auth0Client', () => {
       const redirect_uri = 'https://custom-redirect-uri/callback';
 
       const auth0 = setup({
-        redirect_uri
+        authorizationParams: { 
+          redirect_uri
+        }
       });
 
       await loginWithRedirect(auth0, {
-        redirect_uri: 'https://my-redirect-uri/callback'
+        authorizationParams: { 
+         redirect_uri: 'https://my-redirect-uri/callback'
+        }
       });
 
       const url = new URL(mockWindow.location.assign.mock.calls[0][0]);
@@ -257,7 +263,9 @@ describe('Auth0Client', () => {
       const auth0 = setup();
 
       await loginWithRedirect(auth0, {
-        audience: 'test_audience',
+        authorizationParams: { 
+          audience: 'test_audience',
+        },
         onRedirect: async url => window.location.replace(url)
       });
 
@@ -278,7 +286,9 @@ describe('Auth0Client', () => {
       const auth0 = setup();
 
       await loginWithRedirect(auth0, {
-        audience: 'test_audience'
+        authorizationParams: { 
+          audience: 'test_audience'
+        }
       });
 
       const url = new URL(mockWindow.location.assign.mock.calls[0][0]);
@@ -315,7 +325,7 @@ describe('Auth0Client', () => {
     });
 
     it('should log the user in and get the user', async () => {
-      const auth0 = setup({ scope: 'foo' });
+      const auth0 = setup({ authorizationParams: { scope: 'foo' } });
       await loginWithRedirect(auth0);
 
       const expectedUser = { sub: 'me' };
@@ -331,13 +341,15 @@ describe('Auth0Client', () => {
 
     it('should log the user in and get the user with custom scope', async () => {
       const auth0 = setup({
-        scope: 'scope1',
+        authorizationParams: { 
+          scope: 'scope1',
+        },
         advancedOptions: {
           defaultScope: 'scope2'
         }
       });
 
-      await loginWithRedirect(auth0, { scope: 'scope3' });
+      await loginWithRedirect(auth0, { authorizationParams: {  scope: 'scope3' } });
 
       const expectedUser = { sub: 'me' };
 
@@ -415,7 +427,7 @@ describe('Auth0Client', () => {
     });
 
     it('calls `tokenVerifier.verify` with the global organization id', async () => {
-      const auth0 = setup({ organization: 'test_org_123' });
+      const auth0 = setup({ authorizationParams: { organization: 'test_org_123' } });
 
       await loginWithRedirect(auth0);
 
@@ -463,10 +475,9 @@ describe('Auth0Client', () => {
     });
 
     it('calls `tokenVerifier.verify` with the specific organization id', async () => {
-      const auth0 = setup({ organization: 'test_org_123' });
+      const auth0 = setup({ authorizationParams: {  organization: 'test_org_123' } });
 
-      await loginWithRedirect(auth0, { organization: 'test_org_456' });
-
+      await loginWithRedirect(auth0, { authorizationParams: {  organization: 'test_org_456' } });
       expect(tokenVerifier).toHaveBeenCalledWith(
         expect.objectContaining({
           organizationId: 'test_org_456'

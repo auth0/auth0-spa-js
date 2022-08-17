@@ -80,7 +80,9 @@ describe('Auth0Client', () => {
     it('automatically adds the offline_access scope during construction', () => {
       const auth0 = setup({
         useRefreshTokens: true,
-        scope: 'test-scope'
+        authorizationParams: {
+          scope: 'test-scope'
+        }
       });
 
       expect((<any>auth0).scope).toBe('test-scope offline_access');
@@ -200,7 +202,9 @@ describe('Auth0Client', () => {
       const auth0 = setup();
 
       const url = auth0.buildLogoutUrl({
-        returnTo: 'https://return.to',
+        logoutParams: { 
+          returnTo: 'https://return.to'
+        },
         clientId: null
       });
 
@@ -212,7 +216,12 @@ describe('Auth0Client', () => {
     it('creates correct query params when `options.federated` is true', async () => {
       const auth0 = setup();
 
-      const url = auth0.buildLogoutUrl({ federated: true, clientId: null });
+      const url = auth0.buildLogoutUrl({
+        logoutParams: { 
+         federated: true
+        },
+        clientId: null
+      });
 
       assertUrlEquals(url, TEST_DOMAIN, '/v2/logout', {
         federated: ''
