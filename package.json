@@ -41,7 +41,7 @@
     "browserstack-cypress-cli": "^1.18.0",
     "cli-table": "^0.3.6",
     "concurrently": "^7.3.0",
-    "cypress": "7.2.0",
+    "cypress": "^10.6.0",
     "es-check": "^7.0.0",
     "eslint": "^8.22.0",
     "gzip-size": "^7.0.0",
