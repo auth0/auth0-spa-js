@@ -28,6 +28,7 @@ import {
 
 import { Auth0ClientOptions } from '../../src';
 import { DEFAULT_AUTH0_CLIENT } from '../../src/constants';
+import { expect } from '@jest/globals';
 
 jest.mock('unfetch');
 jest.mock('es-cookie');

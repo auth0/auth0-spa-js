@@ -7,6 +7,7 @@ import * as utils from '../../src/utils';
 import * as scope from '../../src/scope';
 import { expectToHaveBeenCalledWithAuth0ClientParam } from '../helpers';
 import { TEST_AUTH0_CLIENT_QUERY_STRING } from '../constants';
+import { expect } from '@jest/globals';
 
 // @ts-ignore
 import { loginWithRedirectFn, setupFn } from './helpers';
