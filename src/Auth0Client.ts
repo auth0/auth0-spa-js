@@ -232,7 +232,7 @@ export class Auth0Client {
       ? this.cookieStorage
       : SessionStorage;
 
-    this.scope = this.options.authorizationParams.scope;
+    this.scope = this.options.authorizationParams?.scope;
 
     this.transactionManager = new TransactionManager(
       transactionStorage,
@@ -305,7 +305,7 @@ export class Auth0Client {
       state,
       nonce,
       redirect_uri:
-        redirect_uri || this.options.authorizationParams.redirect_uri,
+        redirect_uri || this.options.authorizationParams?.redirect_uri,
       code_challenge,
       code_challenge_method: 'S256'
     };
@@ -329,7 +329,7 @@ export class Auth0Client {
       nonce,
       organizationId,
       leeway: this.options.leeway,
-      max_age: this._parseNumber(this.options.authorizationParams.max_age),
+      max_age: this._parseNumber(this.options.authorizationParams?.max_age),
       now
     });
   }
@@ -464,7 +464,7 @@ export class Auth0Client {
       nonceIn,
       code_challenge,
       options.authorizationParams?.redirect_uri ||
-        this.options.authorizationParams.redirect_uri ||
+        this.options.authorizationParams?.redirect_uri ||
         window.location.origin
     );
 
@@ -506,7 +506,7 @@ export class Auth0Client {
 
     const organizationId =
       options.authorizationParams?.organization ||
-      this.options.authorizationParams.organization;
+      this.options.authorizationParams?.organization;
 
     const decodedToken = await this._verifyIdToken(
       authResult.id_token,
@@ -552,7 +552,7 @@ export class Auth0Client {
   ): Promise<TUser | undefined> {
     const audience =
       options.audience ||
-      this.options.authorizationParams.audience ||
+      this.options.authorizationParams?.audience ||
       'default';
     const scope = getUniqueScopes(this.defaultScope, this.scope, options.scope);
 
@@ -585,7 +585,7 @@ export class Auth0Client {
   ): Promise<IdToken | undefined> {
     const audience =
       options.audience ||
-      this.options.authorizationParams.audience ||
+      this.options.authorizationParams?.audience ||
       'default';
     const scope = getUniqueScopes(this.defaultScope, this.scope, options.scope);
 
@@ -618,7 +618,7 @@ export class Auth0Client {
 
     const organizationId =
       urlOptions.authorizationParams?.organization ||
-      this.options.authorizationParams.organization;
+      this.options.authorizationParams?.organization;
 
     const { url, ...transaction } = await this._prepareAuthorizeUrl(urlOptions);
 
@@ -843,7 +843,7 @@ export class Auth0Client {
 
     return singlePromise(
       () => this._getTokenSilently(options),
-      `${this.options.clientId}::${options.authorizationParams.audience}::${options.authorizationParams.scope}`
+      `${this.options.clientId}::${options.authorizationParams?.audience}::${options.authorizationParams?.scope}`
     );
   }
 
@@ -856,8 +856,8 @@ export class Auth0Client {
     // `lock.acquireLock` when the cache is populated.
     if (cacheMode !== 'off') {
       const entry = await this._getEntryFromCache({
-        scope: getTokenOptions.authorizationParams.scope,
-        audience: getTokenOptions.authorizationParams.audience || 'default',
+        scope: getTokenOptions.authorizationParams?.scope,
+        audience: getTokenOptions.authorizationParams?.audience || 'default',
         clientId: this.options.clientId,
         getDetailedEntry: options.detailedResponse
       });
@@ -882,8 +882,8 @@ export class Auth0Client {
         // by a previous call while this call was waiting to acquire the lock.
         if (cacheMode !== 'off') {
           const entry = await this._getEntryFromCache({
-            scope: getTokenOptions.authorizationParams.scope,
-            audience: getTokenOptions.authorizationParams.audience || 'default',
+            scope: getTokenOptions.authorizationParams?.scope,
+            audience: getTokenOptions.authorizationParams?.audience || 'default',
             clientId: this.options.clientId,
             getDetailedEntry: options.detailedResponse
           });
@@ -966,8 +966,8 @@ export class Auth0Client {
 
     const cache = await this.cacheManager.get(
       new CacheKey({
-        scope: options.authorizationParams.scope,
-        audience: options.authorizationParams.audience || 'default',
+        scope: options.authorizationParams?.scope,
+        audience: options.authorizationParams?.audience || 'default',
         clientId: this.options.clientId
       })
     );
@@ -1078,8 +1078,8 @@ export class Auth0Client {
       stateIn,
       nonceIn,
       code_challenge,
-      options.authorizationParams.redirect_uri ||
-        this.options.authorizationParams.redirect_uri ||
+      options.authorizationParams?.redirect_uri ||
+        this.options.authorizationParams?.redirect_uri ||
         window.location.origin
     );
 
@@ -1126,7 +1126,7 @@ export class Auth0Client {
           redirect_uri: params.redirect_uri,
           auth0Client: this.options.auth0Client,
           useFormData: this.options.useFormData,
-          timeout: options.authorizationParams.timeout || this.httpTimeoutMs
+          timeout: options.authorizationParams?.timeout || this.httpTimeoutMs
         } as OAuthTokenOptions,
         this.worker
       );
@@ -1158,16 +1158,18 @@ export class Auth0Client {
   private async _getTokenUsingRefreshToken(
     options: GetTokenSilentlyOptions
   ): Promise<GetTokenSilentlyResult> {
+    options.authorizationParams = options.authorizationParams || {};
+
     options.authorizationParams.scope = getUniqueScopes(
       this.defaultScope,
-      this.options.authorizationParams.scope,
-      options.authorizationParams.scope
+      this.options.authorizationParams?.scope,
+      options.authorizationParams?.scope
     );
 
     const cache = await this.cacheManager.get(
       new CacheKey({
-        scope: options.authorizationParams.scope,
-        audience: options.authorizationParams.audience || 'default',
+        scope: options.authorizationParams?.scope,
+        audience: options.authorizationParams?.audience || 'default',
         clientId: this.options.clientId
       })
     );
@@ -1182,14 +1184,14 @@ export class Auth0Client {
       }
 
       throw new MissingRefreshTokenError(
-        options.authorizationParams.audience || 'default',
-        options.authorizationParams.scope
+        options.authorizationParams?.audience || 'default',
+        options.authorizationParams?.scope
       );
     }
 
     const redirect_uri =
-      options.authorizationParams.redirect_uri ||
-      this.options.authorizationParams.redirect_uri ||
+      options.authorizationParams?.redirect_uri ||
+      this.options.authorizationParams?.redirect_uri ||
       window.location.origin;
 
     let tokenResult: TokenEndpointResponse;
@@ -1237,9 +1239,9 @@ export class Auth0Client {
     return {
       ...tokenResult,
       decodedToken,
-      scope: options.authorizationParams.scope,
+      scope: options.authorizationParams?.scope,
       oauthTokenScope: tokenResult.scope,
-      audience: options.authorizationParams.audience || 'default'
+      audience: options.authorizationParams?.audience || 'default'
     };
   }
 
