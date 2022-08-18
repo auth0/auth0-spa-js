@@ -765,5 +765,32 @@ describe('Auth0Client', () => {
         'HTTP error. Unable to fetch https://auth0_domain/oauth/token'
       );
     });
+
+    it('should log the user and redirect when using different redirect_uri on loginWithPopup', async () => {
+      const redirect_uri = 'https://custom-redirect-uri/callback';
+      const auth0 = setup({
+        authorizationParams: {
+          redirect_uri: 'https://redirect-uri-on-ctor/callback'
+        }
+      });
+      await loginWithPopup(auth0, {
+        authorizationParams: {
+          redirect_uri
+        }
+      });
+
+      // prettier-ignore
+      const url = (utils.runPopup as jest.Mock).mock.calls[0][0].popup.location.href;
+
+      assertUrlEquals(
+        url,
+        TEST_DOMAIN,
+        '/authorize',
+        {
+          redirect_uri
+        },
+        false
+      );
+    });
   });
 });

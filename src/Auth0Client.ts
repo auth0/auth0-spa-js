@@ -463,7 +463,9 @@ export class Auth0Client {
       stateIn,
       nonceIn,
       code_challenge,
-      this.options.authorizationParams.redirect_uri || window.location.origin
+      options.authorizationParams?.redirect_uri ||
+        this.options.authorizationParams.redirect_uri ||
+        window.location.origin
     );
 
     const url = this._authorizeUrl({
@@ -953,7 +955,7 @@ export class Auth0Client {
           options.authorizationParams?.scope
         )
       }
-    }
+    };
 
     config = {
       ...DEFAULT_POPUP_CONFIG_OPTIONS,
