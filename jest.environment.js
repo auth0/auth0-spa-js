@@ -1,4 +1,4 @@
-const JSDOMEnvironment = require('jest-environment-jsdom');
+const JSDOMEnvironment = require('jest-environment-jsdom').default;
 const util = require('util');
 
 /**
