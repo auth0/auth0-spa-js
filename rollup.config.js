@@ -47,7 +47,10 @@ const getPlugins = shouldMinify => {
         }
       }
     }),
-    replace({ 'process.env.NODE_ENV': `'${process.env.NODE_ENV}'` }),
+    replace({
+      'process.env.NODE_ENV': `'${process.env.NODE_ENV}'`,
+      preventAssignment: false
+    }),
     shouldMinify
       ? terser()
       : terser({
