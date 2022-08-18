@@ -157,37 +157,11 @@ const getDomain = (domainUrl: string) => {
 };
 
 /**
- * @ignore
- */
-const getCustomInitialOptions = (
-  options: AuthorizationParams
-): AuthorizationParams => {
-  const {
-    audience,
-    max_age,
-    redirect_uri,
-    scope,
-    screen_hint,
-    display,
-    prompt,
-    ui_locales,
-    id_token_hint,
-    login_hint,
-    connection,
-    organization,
-    invitation,
-    ...customParams
-  } = options;
-  return customParams;
-};
-
-/**
  * Auth0 SDK for Single Page Applications using [Authorization Code Grant Flow with PKCE](https://auth0.com/docs/api-auth/tutorials/authorization-code-grant-pkce).
  */
 export class Auth0Client {
   private readonly transactionManager: TransactionManager;
   private readonly cacheManager: CacheManager;
-  private readonly customOptions: AuthorizationParams;
   private readonly domainUrl: string;
   private readonly tokenIssuer: string;
   private readonly defaultScope: string;
@@ -301,10 +275,6 @@ export class Auth0Client {
     ) {
       this.worker = new TokenWorker();
     }
-
-    this.customOptions = getCustomInitialOptions(
-      this.options.authorizationParams
-    );
   }
 
   private _url(path: string) {
@@ -859,7 +829,7 @@ export class Auth0Client {
       cacheMode: 'on',
       ...options,
       authorizationParams: {
-        audience: this.options.authorizationParams.audience,
+        ...this.options.authorizationParams,
         ...options.authorizationParams,
         scope: getUniqueScopes(
           this.defaultScope,
@@ -1144,7 +1114,6 @@ export class Auth0Client {
 
       const tokenResult = await oauthToken(
         {
-          ...this.customOptions,
           ...options.authorizationParams,
           baseUrl: this.domainUrl,
           client_id: this.options.clientId,
@@ -1230,7 +1199,6 @@ export class Auth0Client {
     try {
       tokenResult = await oauthToken(
         {
-          ...this.customOptions,
           ...options.authorizationParams,
           baseUrl: this.domainUrl,
           client_id: this.options.clientId,
