@@ -942,17 +942,18 @@ export class Auth0Client {
     options: GetTokenWithPopupOptions = {},
     config: PopupConfigOptions = {}
   ) {
-    if (!options.authorizationParams) {
-      options.authorizationParams = {
-        audience: this.options.authorizationParams.audience
-      };
+    options = {
+      ...options,
+      authorizationParams: {
+        ...this.options.authorizationParams,
+        ...options.authorizationParams,
+        scope: getUniqueScopes(
+          this.defaultScope,
+          this.scope,
+          options.authorizationParams?.scope
+        )
+      }
     }
-
-    options.authorizationParams.scope = getUniqueScopes(
-      this.defaultScope,
-      this.scope,
-      options.authorizationParams.scope
-    );
 
     config = {
       ...DEFAULT_POPUP_CONFIG_OPTIONS,
