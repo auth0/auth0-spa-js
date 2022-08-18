@@ -359,11 +359,6 @@ export interface GetIdTokenClaimsOptions {
   audience?: string;
 }
 
-/*
- * TODO: Remove this on the next major
- */
-export type getIdTokenClaimsOptions = GetIdTokenClaimsOptions;
-
 export interface GetTokenSilentlyOptions {
   /**
    * When `off`, ignores the cache and always sends a
