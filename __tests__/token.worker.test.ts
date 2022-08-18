@@ -2,6 +2,7 @@ import unfetch from 'unfetch';
 import { MISSING_REFRESH_TOKEN_ERROR_MESSAGE } from '../src/constants';
 import { assertPostFn } from './Auth0Client/helpers';
 import * as utils from '../src/utils';
+import { expect } from '@jest/globals';
 
 jest.mock('unfetch');
 

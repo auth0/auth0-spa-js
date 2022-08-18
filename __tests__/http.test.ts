@@ -1,6 +1,7 @@
 import fetch from 'unfetch';
 import { MfaRequiredError } from '../src/errors';
 import { switchFetch, getJSON } from '../src/http';
+import { expect } from '@jest/globals';
 
 jest.mock('../src/worker/token.worker');
 jest.mock('unfetch');

@@ -21,6 +21,7 @@ import {
   TEST_REFRESH_TOKEN,
   TEST_STATE
 } from '../constants';
+import { expect } from '@jest/globals';
 
 const authorizationResponse: AuthenticationResult = {
   code: 'my_code',

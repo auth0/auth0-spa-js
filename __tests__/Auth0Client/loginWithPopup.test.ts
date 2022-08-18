@@ -6,6 +6,7 @@ import { MessageChannel } from 'worker_threads';
 import * as utils from '../../src/utils';
 import * as scope from '../../src/scope';
 import * as http from '../../src/http';
+import { expect } from '@jest/globals';
 
 import {
   assertPostFn,
@@ -671,7 +672,10 @@ describe('Auth0Client', () => {
     });
 
     it('saves organization hint cookie in storage', async () => {
-      const auth0 = setup({ cookieDomain: TEST_DOMAIN }, { org_id: TEST_ORG_ID });
+      const auth0 = setup(
+        { cookieDomain: TEST_DOMAIN },
+        { org_id: TEST_ORG_ID }
+      );
 
       await loginWithPopup(auth0);
 

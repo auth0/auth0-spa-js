@@ -2,6 +2,7 @@
  * @jest-environment node
  */
 import { Auth0Client } from '../src/Auth0Client';
+import { expect } from '@jest/globals';
 
 describe('In a Node SSR environment', () => {
   it('can be constructed', () => {

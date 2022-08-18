@@ -16,6 +16,7 @@ import {
   TEST_AUDIENCE
 } from '../constants';
 import { InMemoryAsyncCacheNoKeys } from './shared';
+import { expect } from '@jest/globals';
 
 const cacheFactories = [
   { new: () => new LocalStorageCache(), name: 'LocalStorage Cache' },

@@ -2,6 +2,7 @@ import { decode, verify } from '../src/jwt';
 import IDTokenVerifier from 'idtoken-verifier';
 import jwt from 'jsonwebtoken';
 import { generateKeyPairSync } from 'crypto';
+import { expect } from '@jest/globals';
 
 const verifyOptions = {
   iss: 'https://brucke.auth0.com/',
@@ -124,7 +125,7 @@ describe('jwt', () => {
     return new Promise<void>(res => {
       verifier.verify(id_token, verifyOptions.nonce, (err, payload) => {
         expect(err).toBe(null);
-        expect(claims).toMatchObject(payload);
+        expect(claims).toMatchObject(payload as Record<string, string>);
         res();
       });
     });

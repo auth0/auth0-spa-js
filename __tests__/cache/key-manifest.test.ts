@@ -1,6 +1,7 @@
 import { CacheKey, ICache, InMemoryCache } from '../../src/cache';
 import { CacheKeyManifest } from '../../src/cache/key-manifest';
 import { TEST_AUDIENCE, TEST_CLIENT_ID, TEST_SCOPES } from '../constants';
+import { expect } from '@jest/globals';
 
 describe('CacheKeyManifest', () => {
   let manifest: CacheKeyManifest;
