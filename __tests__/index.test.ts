@@ -1,5 +1,6 @@
-import { CacheLocation, Auth0ClientOptions } from '../src/global';
+import { Auth0ClientOptions } from '../src/global';
 import * as scope from '../src/scope';
+import { expect } from '@jest/globals';
 
 // @ts-ignore
 

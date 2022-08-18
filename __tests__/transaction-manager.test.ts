@@ -1,6 +1,7 @@
 import { TransactionManager } from '../src/transaction-manager';
 import { SessionStorage } from '../src/storage';
 import { TEST_CLIENT_ID, TEST_STATE } from './constants';
+import { expect } from '@jest/globals';
 
 const TRANSACTION_KEY_PREFIX = 'a0.spajs.txs';
 

@@ -97,7 +97,7 @@ export interface BaseLoginOptions {
   [key: string]: any;
 }
 
-interface AdvancedOptions {
+export interface AdvancedOptions {
   /**
    * The default scope to be included with all requests.
    * If not provided, 'openid profile email' is used. This can be set to `null` in order to effectively remove the default scopes.
@@ -168,14 +168,15 @@ export interface Auth0ClientOptions extends BaseLoginOptions {
    *
    * E.g. Using the `file:` protocol in an Electron application does not support that legacy technique.
    *
-   *  let token: string;
-   *  try {
-   *    token = await auth0.getTokenSilently();
-   *  } catch (e) {
-   *  if (e.error === 'missing_refresh_token' || e.error === 'invalid_grant') {
-   *      auth0.loginWithRedirect();
-   *    }
-   *  }
+   * @example
+   * let token: string;
+   * try {
+   *   token = await auth0.getTokenSilently();
+   * } catch (e) {
+   *   if (e.error === 'missing_refresh_token' || e.error === 'invalid_grant') {
+   *     auth0.loginWithRedirect();
+   *   }
+   * }
    */
   useRefreshTokensFallback?: boolean;
 
@@ -302,6 +303,7 @@ export interface RedirectLoginOptions<TAppState = any>
   /**
    * Used to control the redirect and not rely on the SDK to do the actual redirect.
    *
+   * @example
    * const client = new Auth0Client({
    *   async onRedirect(url) {
    *     window.location.replace(url);
@@ -517,9 +519,6 @@ export interface TokenEndpointOptions {
   [key: string]: any;
 }
 
-/**
- * @ignore
- */
 export type TokenEndpointResponse = {
   id_token: string;
   access_token: string;
@@ -560,9 +559,6 @@ export interface JWTVerifyOptions {
   now?: number;
 }
 
-/**
- * @ignore
- */
 export interface IdToken {
   __raw: string;
   name?: string;

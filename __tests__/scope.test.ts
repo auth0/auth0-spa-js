@@ -1,4 +1,5 @@
 import { getUniqueScopes } from '../src/scope';
+import { expect } from '@jest/globals';
 
 describe('getUniqueScopes', () => {
   it('removes duplicates', () => {

@@ -24,6 +24,8 @@ import {
 } from '../constants';
 import { InMemoryAsyncCacheNoKeys } from './shared';
 
+import { expect } from '@jest/globals';
+
 const defaultKey = new CacheKey({
   client_id: TEST_CLIENT_ID,
   audience: TEST_AUDIENCE,

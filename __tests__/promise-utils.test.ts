@@ -2,6 +2,7 @@
  * @jest-environment node
  */
 import { retryPromise, singlePromise } from '../src/promise-utils';
+import { expect } from '@jest/globals';
 
 describe('Promise Utils', () => {
   describe('singlePromise', () => {
