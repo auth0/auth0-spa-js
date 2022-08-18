@@ -97,7 +97,7 @@ export interface BaseLoginOptions {
   [key: string]: any;
 }
 
-interface AdvancedOptions {
+export interface AdvancedOptions {
   /**
    * The default scope to be included with all requests.
    * If not provided, 'openid profile email' is used. This can be set to `null` in order to effectively remove the default scopes.
@@ -121,7 +121,7 @@ export interface Auth0ClientOptions extends BaseLoginOptions {
   /**
    * The Client ID found on your Application settings page
    */
-  client_id: string;
+  clientId: string;
   /**
    * The default URL where Auth0 will redirect your browser to with
    * the authentication result. It must be whitelisted in
@@ -168,14 +168,15 @@ export interface Auth0ClientOptions extends BaseLoginOptions {
    *
    * E.g. Using the `file:` protocol in an Electron application does not support that legacy technique.
    *
-   *  let token: string;
-   *  try {
-   *    token = await auth0.getTokenSilently();
-   *  } catch (e) {
-   *  if (e.error === 'missing_refresh_token' || e.error === 'invalid_grant') {
-   *      auth0.loginWithRedirect();
-   *    }
-   *  }
+   * @example
+   * let token: string;
+   * try {
+   *   token = await auth0.getTokenSilently();
+   * } catch (e) {
+   *   if (e.error === 'missing_refresh_token' || e.error === 'invalid_grant') {
+   *     auth0.loginWithRedirect();
+   *   }
+   * }
    */
   useRefreshTokensFallback?: boolean;
 
@@ -302,6 +303,7 @@ export interface RedirectLoginOptions<TAppState = any>
   /**
    * Used to control the redirect and not rely on the SDK to do the actual redirect.
    *
+   * @example
    * const client = new Auth0Client({
    *   async onRedirect(url) {
    *     window.location.replace(url);
@@ -419,10 +421,10 @@ export interface LogoutUrlOptions {
   /**
    * The URL where Auth0 will redirect your browser to after the logout.
    *
-   * **Note**: If the `client_id` parameter is included, the
+   * **Note**: If the `clientId` parameter is included, the
    * `returnTo` URL that is provided must be listed in the
    * Application's "Allowed Logout URLs" in the Auth0 dashboard.
-   * However, if the `client_id` parameter is not included, the
+   * However, if the `clientId` parameter is not included, the
    * `returnTo` URL must be listed in the "Allowed Logout URLs" at
    * the account level in the Auth0 dashboard.
    *
@@ -431,15 +433,15 @@ export interface LogoutUrlOptions {
   returnTo?: string;
 
   /**
-   * The `client_id` of your application.
+   * The `clientId` of your application.
    *
-   * If this property is not set, then the `client_id` that was used during initialization of the SDK is sent to the logout endpoint.
+   * If this property is not set, then the `clientId` that was used during initialization of the SDK is sent to the logout endpoint.
    *
    * If this property is set to `null`, then no client ID value is sent to the logout endpoint.
    *
    * [Read more about how redirecting after logout works](https://auth0.com/docs/logout/guides/redirect-users-after-logout)
    */
-  client_id?: string;
+   clientId?: string;
 
   /**
    * When supported by the upstream identity provider,
@@ -454,10 +456,10 @@ export interface LogoutOptions {
   /**
    * The URL where Auth0 will redirect your browser to after the logout.
    *
-   * **Note**: If the `client_id` parameter is included, the
+   * **Note**: If the `clientId` parameter is included, the
    * `returnTo` URL that is provided must be listed in the
    * Application's "Allowed Logout URLs" in the Auth0 dashboard.
-   * However, if the `client_id` parameter is not included, the
+   * However, if the `clientId` parameter is not included, the
    * `returnTo` URL must be listed in the "Allowed Logout URLs" at
    * the account level in the Auth0 dashboard.
    *
@@ -466,15 +468,15 @@ export interface LogoutOptions {
   returnTo?: string;
 
   /**
-   * The `client_id` of your application.
+   * The `clientId` of your application.
    *
-   * If this property is not set, then the `client_id` that was used during initialization of the SDK is sent to the logout endpoint.
+   * If this property is not set, then the `clientId` that was used during initialization of the SDK is sent to the logout endpoint.
    *
    * If this property is set to `null`, then no client ID value is sent to the logout endpoint.
    *
    * [Read more about how redirecting after logout works](https://auth0.com/docs/logout/guides/redirect-users-after-logout)
    */
-  client_id?: string;
+   clientId?: string;
 
   /**
    * When supported by the upstream identity provider,
@@ -517,9 +519,6 @@ export interface TokenEndpointOptions {
   [key: string]: any;
 }
 
-/**
- * @ignore
- */
 export type TokenEndpointResponse = {
   id_token: string;
   access_token: string;
@@ -560,9 +559,6 @@ export interface JWTVerifyOptions {
   now?: number;
 }
 
-/**
- * @ignore
- */
 export interface IdToken {
   __raw: string;
   name?: string;

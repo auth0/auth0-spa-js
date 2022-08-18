@@ -2,6 +2,7 @@ import { verify } from '../../src/jwt';
 import { MessageChannel } from 'worker_threads';
 import * as utils from '../../src/utils';
 import * as scope from '../../src/scope';
+import { expect } from '@jest/globals';
 
 // @ts-ignore
 
@@ -79,14 +80,14 @@ describe('Auth0Client', () => {
     it('creates correct query params with `options.client_id` is null', async () => {
       const auth0 = setup();
 
-      const url = new URL(auth0.buildLogoutUrl({ client_id: null }));
+      const url = new URL(auth0.buildLogoutUrl({ clientId: null }));
       expect(url.searchParams.get('client_id')).toBeNull();
     });
 
     it('creates correct query params with `options.client_id` defined', async () => {
       const auth0 = setup();
 
-      const url = auth0.buildLogoutUrl({ client_id: 'another-client-id' });
+      const url = auth0.buildLogoutUrl({ clientId: 'another-client-id' });
 
       assertUrlEquals(url, TEST_DOMAIN, '/v2/logout', {
         client_id: 'another-client-id'
@@ -98,7 +99,7 @@ describe('Auth0Client', () => {
 
       const url = auth0.buildLogoutUrl({
         returnTo: 'https://return.to',
-        client_id: null
+        clientId: null
       });
 
       assertUrlEquals(url, TEST_DOMAIN, '/v2/logout', {
@@ -109,7 +110,7 @@ describe('Auth0Client', () => {
     it('creates correct query params when `options.federated` is true', async () => {
       const auth0 = setup();
 
-      const url = auth0.buildLogoutUrl({ federated: true, client_id: null });
+      const url = auth0.buildLogoutUrl({ federated: true, clientId: null });
 
       assertUrlEquals(url, TEST_DOMAIN, '/v2/logout', {
         federated: ''

@@ -197,11 +197,11 @@
         </div>
 
         <div class="form-group">
-          <label for="client_id">Client ID</label>
+          <label for="clientId">Client ID</label>
           <input
             type="text"
             class="form-control"
-            id="client_id"
+            id="clientId"
             v-model="clientId"
             data-cy="client-id"
           />
@@ -522,7 +522,7 @@
 
             var clientOptions = {
               domain: _self.domain,
-              client_id: _self.clientId,
+              clientId: _self.clientId,
               cacheLocation: _self.useLocalStorage ? 'localstorage' : 'memory',
               useRefreshTokens: _self.useRefreshTokens,
               useCookiesForTransactions: _self.useCookiesForTransactions,
@@ -761,7 +761,7 @@
           },
           logoutNoClient: function () {
             this.auth0.logout({
-              client_id: null,
+              clientId: null,
               returnTo: window.location.origin
             });
           },

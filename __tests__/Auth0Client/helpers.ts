@@ -21,6 +21,7 @@ import {
   TEST_REFRESH_TOKEN,
   TEST_STATE
 } from '../constants';
+import { expect } from '@jest/globals';
 
 const authorizationResponse: AuthenticationResult = {
   code: 'my_code',
@@ -109,7 +110,7 @@ export const setupFn = (mockVerify: jest.Mock) => {
       Object.assign(
         {
           domain: TEST_DOMAIN,
-          client_id: TEST_CLIENT_ID,
+          clientId: TEST_CLIENT_ID,
           redirect_uri: TEST_REDIRECT_URI
         },
         config

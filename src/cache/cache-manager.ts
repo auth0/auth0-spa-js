@@ -69,7 +69,7 @@ export class CacheManager {
 
   async set(entry: CacheEntry): Promise<void> {
     const cacheKey = new CacheKey({
-      client_id: entry.client_id,
+      clientId: entry.client_id,
       scope: entry.scope,
       audience: entry.audience
     });
@@ -135,10 +135,10 @@ export class CacheManager {
 
   /**
    * Finds the corresponding key in the cache based on the provided cache key.
-   * The keys inside the cache are in the format {prefix}::{client_id}::{audience}::{scope}.
+   * The keys inside the cache are in the format {prefix}::{clientId}::{audience}::{scope}.
    * The first key in the cache that satisfies the following conditions is returned
    *  - `prefix` is strict equal to Auth0's internally configured `keyPrefix`
-   *  - `client_id` is strict equal to the `cacheKey.client_id`
+   *  - `clientId` is strict equal to the `cacheKey.clientId`
    *  - `audience` is strict equal to the `cacheKey.audience`
    *  - `scope` contains at least all the `cacheKey.scope` values
    *  *
@@ -160,7 +160,7 @@ export class CacheManager {
 
       return (
         cacheKey.prefix === CACHE_KEY_PREFIX &&
-        cacheKey.client_id === keyToMatch.client_id &&
+        cacheKey.clientId === keyToMatch.clientId &&
         cacheKey.audience === keyToMatch.audience &&
         hasAllScopes
       );

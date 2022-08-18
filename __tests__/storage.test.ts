@@ -1,5 +1,6 @@
 import * as esCookie from 'es-cookie';
 import { CookieStorage, CookieStorageWithLegacySameSite } from '../src/storage';
+import { expect } from '@jest/globals';
 
 jest.mock('es-cookie');
 

@@ -10,6 +10,7 @@ import { oauthToken } from '../src/api';
 import Worker from '../src/worker/token.worker';
 import { MessageChannel } from 'worker_threads';
 import { TEST_REDIRECT_URI } from './constants';
+import { expect } from '@jest/globals';
 (<any>global).MessageChannel = MessageChannel;
 
 jest.mock('../src/worker/token.worker');

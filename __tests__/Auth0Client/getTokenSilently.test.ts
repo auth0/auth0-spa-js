@@ -6,6 +6,7 @@ import * as promiseUtils from '../../src/promise-utils';
 import * as scope from '../../src/scope';
 import * as api from '../../src/api';
 import * as http from '../../src/http';
+import { expect } from '@jest/globals';
 
 import { expectToHaveBeenCalledWithAuth0ClientParam } from '../helpers';
 

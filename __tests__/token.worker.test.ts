@@ -1,6 +1,7 @@
 import { MISSING_REFRESH_TOKEN_ERROR_MESSAGE } from '../src/constants';
 import { assertPostFn } from './Auth0Client/helpers';
 import * as utils from '../src/utils';
+import { expect } from '@jest/globals';
 
 const mockFetch = <jest.Mock>window.fetch;
 

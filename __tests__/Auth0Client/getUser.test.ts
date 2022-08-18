@@ -2,6 +2,8 @@ import { verify } from '../../src/jwt';
 import { MessageChannel } from 'worker_threads';
 import * as utils from '../../src/utils';
 import * as scope from '../../src/scope';
+import { expect } from '@jest/globals';
+
 // @ts-ignore
 
 import { setupFn } from './helpers';

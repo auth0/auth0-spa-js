@@ -14,6 +14,7 @@ import {
 } from '../src/utils';
 
 import { DEFAULT_AUTHORIZE_TIMEOUT_IN_SECONDS } from '../src/constants';
+import { expect } from '@jest/globals';
 
 (<any>global).TextEncoder = TextEncoder;
 
@@ -141,7 +142,7 @@ describe('utils', () => {
         subtle: {
           digest: jest.fn((alg, encoded) => {
             expect(alg).toMatchObject({ name: 'SHA-256' });
-            expect(Array.from(encoded)).toMatchObject([116, 101, 115, 116]);
+            expect(Array.from(encoded)).toEqual([116, 101, 115, 116]);
             return new Promise(res => res(true));
           })
         }
@@ -366,7 +367,7 @@ describe('utils', () => {
       expect(message.source.close).toHaveBeenCalled();
       expect(window.document.body.appendChild).toHaveBeenCalledWith(iframe);
       expect(window.document.body.removeChild).toHaveBeenCalledWith(iframe);
-      expect(iframe.setAttribute.mock.calls).toMatchObject([
+      expect(iframe.setAttribute.mock.calls).toEqual([
         ['width', '0'],
         ['height', '0'],
         ['src', url]
