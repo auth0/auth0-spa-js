@@ -27,7 +27,7 @@ import { InMemoryAsyncCacheNoKeys } from './shared';
 import { expect } from '@jest/globals';
 
 const defaultKey = new CacheKey({
-  client_id: TEST_CLIENT_ID,
+  clientId: TEST_CLIENT_ID,
   audience: TEST_AUDIENCE,
   scope: TEST_SCOPES
 });
@@ -110,7 +110,7 @@ cacheFactories.forEach(cacheFactory => {
       await manager.set(data);
 
       const key = new CacheKey({
-        client_id: TEST_CLIENT_ID,
+        clientId: TEST_CLIENT_ID,
         audience: TEST_AUDIENCE,
         scope: 'read:messages'
       });
@@ -127,7 +127,7 @@ cacheFactories.forEach(cacheFactory => {
       await manager.set(data);
 
       const key = new CacheKey({
-        client_id: TEST_CLIENT_ID,
+        clientId: TEST_CLIENT_ID,
         audience: TEST_AUDIENCE,
         scope: 'read:messages write:messages'
       });
@@ -149,7 +149,7 @@ cacheFactories.forEach(cacheFactory => {
 
       expect(
         await manager.get(
-          new CacheKey({ client_id: 'test', audience: 'test', scope: 'test' })
+          new CacheKey({ clientId: 'test', audience: 'test', scope: 'test' })
         )
       ).not.toBeDefined();
 
@@ -182,7 +182,7 @@ cacheFactories.forEach(cacheFactory => {
       await manager.set(data);
 
       const key = new CacheKey({
-        client_id: TEST_CLIENT_ID,
+        clientId: TEST_CLIENT_ID,
         audience: TEST_AUDIENCE,
         scope: 'read:messages read:actions'
       });
@@ -201,7 +201,7 @@ cacheFactories.forEach(cacheFactory => {
       expect(
         await manager.get(
           new CacheKey({
-            client_id: TEST_CLIENT_ID,
+            clientId: TEST_CLIENT_ID,
             audience: TEST_AUDIENCE,
             scope: TEST_SCOPES
           }),

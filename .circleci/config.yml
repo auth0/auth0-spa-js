@@ -65,7 +65,7 @@ jobs:
               import { Auth0Client } from '@auth0/auth0-spa-js';
               new Auth0Client({
                 domain: 'DOMAIN',
-                client_id: 'CLIENT_ID'
+                clientId: 'CLIENT_ID'
               });
       - run:
           name: Build App
@@ -98,7 +98,7 @@ jobs:
               import { Auth0Client } from '@auth0/auth0-spa-js';
               new Auth0Client({
                 domain: 'DOMAIN',
-                client_id: 'CLIENT_ID'
+                clientId: 'CLIENT_ID'
               });
       - run:
           name: Build App
@@ -132,7 +132,7 @@ jobs:
               import { Auth0Client } from '@auth0/auth0-spa-js';
               new Auth0Client({
                 domain: 'DOMAIN',
-                client_id: 'CLIENT_ID'
+                clientId: 'CLIENT_ID'
               });
       - run:
           name: Build App
@@ -165,7 +165,7 @@ jobs:
               import { Auth0Client } from '@auth0/auth0-spa-js';
               new Auth0Client({
                 domain: 'DOMAIN',
-                client_id: 'CLIENT_ID'
+                clientId: 'CLIENT_ID'
               });
       - run:
           name: Build App

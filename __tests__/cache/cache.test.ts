@@ -90,7 +90,7 @@ cacheFactories.forEach(cacheFactory => {
       };
 
       const cacheKey = new CacheKey({
-        client_id: TEST_CLIENT_ID,
+        clientId: TEST_CLIENT_ID,
         audience: TEST_AUDIENCE,
         scope: 'the_scope'
       });
@@ -114,7 +114,7 @@ cacheFactories.forEach(cacheFactory => {
       };
 
       const cacheKey = new CacheKey({
-        client_id: TEST_CLIENT_ID,
+        clientId: TEST_CLIENT_ID,
         audience: TEST_AUDIENCE,
         scope: 'the_scope3 the_scope'
       });
@@ -150,7 +150,7 @@ cacheFactories.forEach(cacheFactory => {
       expect(
         await cache.get(
           new CacheKey({
-            client_id: TEST_CLIENT_ID,
+            clientId: TEST_CLIENT_ID,
             audience: TEST_AUDIENCE,
             scope: 'the_scope4 the_scope'
           }).toKey()

@@ -5,16 +5,16 @@ export const CACHE_KEY_PREFIX = '@@auth0spajs@@';
 export type CacheKeyData = {
   audience: string;
   scope: string;
-  client_id: string;
+  clientId: string;
 };
 
 export class CacheKey {
-  public client_id: string;
+  public clientId: string;
   public scope: string;
   public audience: string;
 
   constructor(data: CacheKeyData, public prefix: string = CACHE_KEY_PREFIX) {
-    this.client_id = data.client_id;
+    this.clientId = data.clientId;
     this.scope = data.scope;
     this.audience = data.audience;
   }
@@ -24,7 +24,7 @@ export class CacheKey {
    * @returns A string representation of the key
    */
   toKey(): string {
-    return `${this.prefix}::${this.client_id}::${this.audience}::${this.scope}`;
+    return `${this.prefix}::${this.clientId}::${this.audience}::${this.scope}`;
   }
 
   /**
@@ -33,9 +33,9 @@ export class CacheKey {
    * @returns An instance of `CacheKey`
    */
   static fromKey(key: string): CacheKey {
-    const [prefix, client_id, audience, scope] = key.split('::');
+    const [prefix, clientId, audience, scope] = key.split('::');
 
-    return new CacheKey({ client_id, scope, audience }, prefix);
+    return new CacheKey({ clientId, scope, audience }, prefix);
   }
 
   /**
@@ -44,12 +44,12 @@ export class CacheKey {
    * @returns An instance of `CacheKey`
    */
   static fromCacheEntry(entry: CacheEntry): CacheKey {
-    const { scope, audience, client_id } = entry;
+    const { scope, audience, client_id: clientId } = entry;
 
     return new CacheKey({
       scope,
       audience,
-      client_id
+      clientId
     });
   }
 }

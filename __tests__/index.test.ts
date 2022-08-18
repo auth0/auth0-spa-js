@@ -88,7 +88,7 @@ const setup = async (
   const auth0 = callConstructor
     ? await createAuth0Client({
         domain: TEST_DOMAIN,
-        client_id: TEST_CLIENT_ID,
+        clientId: TEST_CLIENT_ID,
         ...clientOptions
       })
     : undefined;
@@ -152,7 +152,7 @@ describe('Auth0', () => {
     it('should create an Auth0 client', async () => {
       const auth0 = await createAuth0Client({
         domain: TEST_DOMAIN,
-        client_id: TEST_CLIENT_ID
+        clientId: TEST_CLIENT_ID
       });
 
       expect(auth0).toBeInstanceOf(Auth0Client);
@@ -168,7 +168,7 @@ describe('Auth0', () => {
       await expect(
         createAuth0Client({
           domain: TEST_DOMAIN,
-          client_id: TEST_CLIENT_ID,
+          clientId: TEST_CLIENT_ID,
           cacheLocation: 'dummy'
         } as any)
       ).rejects.toThrow(new Error('Invalid cache location "dummy"'));
@@ -188,7 +188,7 @@ describe('Auth0', () => {
 
       const auth0 = await createAuth0Client({
         domain: TEST_DOMAIN,
-        client_id: TEST_CLIENT_ID
+        clientId: TEST_CLIENT_ID
       });
 
       expect(auth0).toBeInstanceOf(Auth0Client);
@@ -210,7 +210,7 @@ describe('Auth0', () => {
         utils.runIframe.mockRejectedValue({ error });
         const auth0 = await createAuth0Client({
           domain: TEST_DOMAIN,
-          client_id: TEST_CLIENT_ID
+          clientId: TEST_CLIENT_ID
         });
         expect(auth0).toBeInstanceOf(Auth0Client);
         expect(utils.runIframe).toHaveBeenCalledTimes(1);
@@ -227,7 +227,7 @@ describe('Auth0', () => {
 
       const auth0 = await createAuth0Client({
         domain: TEST_DOMAIN,
-        client_id: TEST_CLIENT_ID
+        clientId: TEST_CLIENT_ID
       });
 
       expect(cookieStorage.get).toHaveBeenCalledWith(
@@ -246,7 +246,7 @@ describe('Auth0', () => {
 
       const auth0 = await createAuth0Client({
         domain: TEST_DOMAIN,
-        client_id: TEST_CLIENT_ID
+        clientId: TEST_CLIENT_ID
       });
 
       expect(auth0.getTokenSilently).toHaveBeenCalledWith(undefined);
@@ -267,7 +267,7 @@ describe('Auth0', () => {
 
         const auth0 = await createAuth0Client({
           domain: TEST_DOMAIN,
-          client_id: TEST_CLIENT_ID,
+          clientId: TEST_CLIENT_ID,
           ...options
         });
 
@@ -291,7 +291,7 @@ describe('Auth0', () => {
 
         const auth0 = await createAuth0Client({
           domain: TEST_DOMAIN,
-          client_id: TEST_CLIENT_ID,
+          clientId: TEST_CLIENT_ID,
           ...options
         });
 
