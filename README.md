@@ -81,14 +81,18 @@ import { createAuth0Client } from '@auth0/auth0-spa-js';
 const auth0 = await createAuth0Client({
   domain: '<AUTH0_DOMAIN>',
   clientId: '<AUTH0_CLIENT_ID>',
-  redirect_uri: '<MY_CALLBACK_URL>'
+  authorizationParams: {
+    redirect_uri: '<MY_CALLBACK_URL>'
+  }
 });
 
 //with promises
 createAuth0Client({
   domain: '<AUTH0_DOMAIN>',
   clientId: '<AUTH0_CLIENT_ID>',
-  redirect_uri: '<MY_CALLBACK_URL>'
+  authorizationParams: {
+    redirect_uri: '<MY_CALLBACK_URL>'
+  }
 }).then(auth0 => {
   //...
 });
@@ -99,7 +103,9 @@ import { Auth0Client } from '@auth0/auth0-spa-js';
 const auth0 = new Auth0Client({
   domain: '<AUTH0_DOMAIN>',
   clientId: '<AUTH0_CLIENT_ID>',
-  redirect_uri: '<MY_CALLBACK_URL>'
+  authorizationParams: {
+    redirect_uri: '<MY_CALLBACK_URL>'
+  }
 });
 
 //if you do this, you'll need to check the session yourself
@@ -224,9 +230,11 @@ To use the in-memory mode, no additional options need are required as this is th
 ```js
 await createAuth0Client({
   domain: '<AUTH0_DOMAIN>',
-  clientId: '<AUTH0_CLIENT_ID>',
-  redirect_uri: '<MY_CALLBACK_URL>',
-  cacheLocation: 'localstorage' // valid values are: 'memory' or 'localstorage'
+  clientId: '<AUTH0_CLIENT_ID>',,
+  cacheLocation: 'localstorage' // valid values are: 'memory' or 'localstorage',
+  authorizationParams: {
+    redirect_uri: '<MY_CALLBACK_URL>'
+  }
 });
 ```
 
@@ -272,8 +280,10 @@ const sessionStorageCache = {
 await createAuth0Client({
   domain: '<AUTH0_DOMAIN>',
   clientId: '<AUTH0_CLIENT_ID>',
-  redirect_uri: '<MY_CALLBACK_URL>',
-  cache: sessionStorageCache
+  cache: sessionStorageCache,
+  authorizationParams: {
+    redirect_uri: '<MY_CALLBACK_URL>'
+  }
 });
 ```
 
@@ -291,8 +301,10 @@ To enable the use of refresh tokens, set the `useRefreshTokens` option to `true`
 await createAuth0Client({
   domain: '<AUTH0_DOMAIN>',
   clientId: '<AUTH0_CLIENT_ID>',
-  redirect_uri: '<MY_CALLBACK_URL>',
-  useRefreshTokens: true
+  useRefreshTokens: true,
+  authorizationParams: {
+    redirect_uri: '<MY_CALLBACK_URL>'
+  }
 });
 ```
 
@@ -320,8 +332,10 @@ Log in to an organization by specifying the `organization` parameter when settin
 createAuth0Client({
   domain: '<AUTH0_DOMAIN>',
   clientId: '<AUTH0_CLIENT_ID>',
-  redirect_uri: '<MY_CALLBACK_URL>',
-  organization: '<MY_ORG_ID>'
+  authorizationParams: {
+    organization: '<MY_ORG_ID>',
+    redirect_uri: '<MY_CALLBACK_URL>'
+  }
 });
 ```
 
@@ -330,12 +344,16 @@ You can also specify the organization when logging in:
 ```js
 // Using a redirect
 client.loginWithRedirect({
-  organization: '<MY_ORG_ID>'
+  authorizationParams: {
+    organization: '<MY_ORG_ID>'
+  }
 });
 
 // Using a popup window
 client.loginWithPopup({
-  organization: '<MY_ORG_ID>'
+  authorizationParams: {
+    organization: '<MY_ORG_ID>'
+  }
 });
 ```
 
@@ -351,8 +369,10 @@ const invitation = params.get('invitation');
 
 if (organization && invitation) {
   client.loginWithRedirect({
-    organization,
-    invitation
+    authorizationParams: {
+      invitation,
+      organization
+    }
   });
 }
 ```

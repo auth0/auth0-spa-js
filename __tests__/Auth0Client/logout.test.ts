@@ -101,7 +101,7 @@ describe('Auth0Client', () => {
     it('calls `window.location.assign` with the correct url when `options.federated` is true', async () => {
       const auth0 = setup();
 
-      auth0.logout({ federated: true });
+      auth0.logout({ logoutParams: { federated: true } });
 
       expect(window.location.assign).toHaveBeenCalledWith(
         `https://${TEST_DOMAIN}/v2/logout?client_id=${TEST_CLIENT_ID}${TEST_AUTH0_CLIENT_QUERY_STRING}&federated`
@@ -170,7 +170,8 @@ describe('Auth0Client', () => {
     it('throws when both `options.localOnly` and `options.federated` are true', async () => {
       const auth0 = setup();
 
-      const fn = () => auth0.logout({ localOnly: true, federated: true });
+      const fn = () =>
+        auth0.logout({ localOnly: true, logoutParams: { federated: true } });
       expect(fn).toThrow();
     });
 

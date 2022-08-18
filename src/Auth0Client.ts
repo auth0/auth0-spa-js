@@ -56,7 +56,7 @@ import {
 
 import {
   Auth0ClientOptions,
-  BaseLoginOptions,
+  AuthorizationParams,
   AuthorizeOptions,
   RedirectLoginOptions,
   PopupLoginOptions,
@@ -157,42 +157,11 @@ const getDomain = (domainUrl: string) => {
 };
 
 /**
- * @ignore
- */
-const getCustomInitialOptions = (
-  options: Auth0ClientOptions
-): BaseLoginOptions => {
-  const {
-    advancedOptions,
-    audience,
-    auth0Client,
-    authorizeTimeoutInSeconds,
-    cacheLocation,
-    cache,
-    clientId,
-    domain,
-    issuer,
-    leeway,
-    max_age,
-    nowProvider,
-    redirect_uri,
-    scope,
-    useRefreshTokens,
-    useRefreshTokensFallback,
-    useCookiesForTransactions,
-    useFormData,
-    ...customParams
-  } = options;
-  return customParams;
-};
-
-/**
  * Auth0 SDK for Single Page Applications using [Authorization Code Grant Flow with PKCE](https://auth0.com/docs/api-auth/tutorials/authorization-code-grant-pkce).
  */
 export class Auth0Client {
   private readonly transactionManager: TransactionManager;
   private readonly cacheManager: CacheManager;
-  private readonly customOptions: BaseLoginOptions;
   private readonly domainUrl: string;
   private readonly tokenIssuer: string;
   private readonly defaultScope: string;
@@ -209,6 +178,7 @@ export class Auth0Client {
   private worker: Worker;
 
   private readonly defaultOptions: Partial<Auth0ClientOptions> = {
+    authorizationParams: {},
     useRefreshTokensFallback: false,
     useFormData: true
   };
@@ -262,7 +232,7 @@ export class Auth0Client {
       ? this.cookieStorage
       : SessionStorage;
 
-    this.scope = this.options.scope;
+    this.scope = this.options.authorizationParams?.scope;
 
     this.transactionManager = new TransactionManager(
       transactionStorage,
@@ -284,7 +254,7 @@ export class Auth0Client {
 
     this.defaultScope = getUniqueScopes(
       'openid',
-      this.options?.advancedOptions?.defaultScope !== undefined
+      this.options.advancedOptions?.defaultScope !== undefined
         ? this.options.advancedOptions.defaultScope
         : DEFAULT_SCOPE
     );
@@ -305,8 +275,6 @@ export class Auth0Client {
     ) {
       this.worker = new TokenWorker();
     }
-
-    this.customOptions = getCustomInitialOptions(options);
   }
 
   private _url(path: string) {
@@ -317,47 +285,27 @@ export class Auth0Client {
   }
 
   private _getParams(
-    authorizeOptions: BaseLoginOptions,
+    authorizeOptions: AuthorizationParams,
     state: string,
     nonce: string,
     code_challenge: string,
     redirect_uri: string
   ): AuthorizeOptions {
-    // These options should be excluded from the authorize URL,
-    // as they're options for the client and not for the IdP.
-    // ** IMPORTANT ** If adding a new client option, include it in this destructure list.
-    const {
-      useRefreshTokens,
-      useCookiesForTransactions,
-      useFormData,
-      auth0Client,
-      cacheLocation,
-      advancedOptions,
-      detailedResponse,
-      nowProvider,
-      authorizeTimeoutInSeconds,
-      legacySameSiteCookie,
-      sessionCheckExpiryDays,
-      domain,
-      leeway,
-      httpTimeoutInSeconds,
-      useRefreshTokensFallback,
-      ...loginOptions
-    } = this.options;
-
     return {
-      ...loginOptions,
+      client_id: this.options.clientId,
+      ...this.options.authorizationParams,
       ...authorizeOptions,
       scope: getUniqueScopes(
         this.defaultScope,
         this.scope,
-        authorizeOptions.scope
+        authorizeOptions?.scope
       ),
       response_type: 'code',
       response_mode: 'query',
       state,
       nonce,
-      redirect_uri: redirect_uri || this.options.redirect_uri,
+      redirect_uri:
+        redirect_uri || this.options.authorizationParams?.redirect_uri,
       code_challenge,
       code_challenge_method: 'S256'
     };
@@ -381,7 +329,7 @@ export class Auth0Client {
       nonce,
       organizationId,
       leeway: this.options.leeway,
-      max_age: this._parseNumber(this.options.max_age),
+      max_age: this._parseNumber(this.options.authorizationParams?.max_age),
       now
     });
   }
@@ -423,9 +371,7 @@ export class Auth0Client {
     return url;
   }
 
-  private async _prepareAuthorizeUrl(
-    options: RedirectLoginOptions = {}
-  ): Promise<{
+  private async _prepareAuthorizeUrl(options: RedirectLoginOptions): Promise<{
     scope: string;
     audience: string;
     redirect_uri: string;
@@ -435,7 +381,7 @@ export class Auth0Client {
     state: string;
     url: string;
   }> {
-    const { redirect_uri, appState, ...authorizeOptions } = options;
+    const { appState, authorizationParams } = options;
 
     const state = encode(createRandomString());
     const nonce = encode(createRandomString());
@@ -445,11 +391,11 @@ export class Auth0Client {
     const fragment = options.fragment ? `#${options.fragment}` : '';
 
     const params = this._getParams(
-      authorizeOptions,
+      authorizationParams,
       state,
       nonce,
       code_challenge,
-      redirect_uri
+      authorizationParams?.redirect_uri
     );
 
     const url = this._authorizeUrl(params);
@@ -506,7 +452,6 @@ export class Auth0Client {
       }
     }
 
-    const { ...authorizeOptions } = options;
     const stateIn = encode(createRandomString());
     const nonceIn = encode(createRandomString());
     const code_verifier = createRandomString();
@@ -514,11 +459,13 @@ export class Auth0Client {
     const code_challenge = bufferToBase64UrlEncoded(code_challengeBuffer);
 
     const params = this._getParams(
-      authorizeOptions,
+      options.authorizationParams,
       stateIn,
       nonceIn,
       code_challenge,
-      this.options.redirect_uri || window.location.origin
+      options.authorizationParams?.redirect_uri ||
+        this.options.authorizationParams?.redirect_uri ||
+        window.location.origin
     );
 
     const url = this._authorizeUrl({
@@ -557,7 +504,9 @@ export class Auth0Client {
       this.worker
     );
 
-    const organizationId = options.organization || this.options.organization;
+    const organizationId =
+      options.authorizationParams?.organization ||
+      this.options.authorizationParams?.organization;
 
     const decodedToken = await this._verifyIdToken(
       authResult.id_token,
@@ -601,7 +550,10 @@ export class Auth0Client {
   public async getUser<TUser extends User>(
     options: GetUserOptions = {}
   ): Promise<TUser | undefined> {
-    const audience = options.audience || this.options.audience || 'default';
+    const audience =
+      options.audience ||
+      this.options.authorizationParams?.audience ||
+      'default';
     const scope = getUniqueScopes(this.defaultScope, this.scope, options.scope);
 
     const cache = await this.cacheManager.get(
@@ -631,7 +583,10 @@ export class Auth0Client {
   public async getIdTokenClaims(
     options: GetIdTokenClaimsOptions = {}
   ): Promise<IdToken | undefined> {
-    const audience = options.audience || this.options.audience || 'default';
+    const audience =
+      options.audience ||
+      this.options.authorizationParams?.audience ||
+      'default';
     const scope = getUniqueScopes(this.defaultScope, this.scope, options.scope);
 
     const cache = await this.cacheManager.get(
@@ -661,7 +616,9 @@ export class Auth0Client {
   ) {
     const { onRedirect, ...urlOptions } = options;
 
-    const organizationId = urlOptions.organization || this.options.organization;
+    const organizationId =
+      urlOptions.authorizationParams?.organization ||
+      this.options.authorizationParams?.organization;
 
     const { url, ...transaction } = await this._prepareAuthorizeUrl(urlOptions);
 
@@ -870,25 +827,28 @@ export class Auth0Client {
   public async getTokenSilently(
     options: GetTokenSilentlyOptions = {}
   ): Promise<string | GetTokenSilentlyVerboseResponse> {
-    const { cacheMode, ...getTokenOptions }: GetTokenSilentlyOptions = {
-      audience: this.options.audience,
+    options = {
       cacheMode: 'on',
       ...options,
-      scope: getUniqueScopes(this.defaultScope, this.scope, options.scope)
+      authorizationParams: {
+        ...this.options.authorizationParams,
+        ...options.authorizationParams,
+        scope: getUniqueScopes(
+          this.defaultScope,
+          this.scope,
+          options.authorizationParams?.scope
+        )
+      }
     };
 
     return singlePromise(
-      () =>
-        this._getTokenSilently({
-          cacheMode,
-          ...getTokenOptions
-        }),
-      `${this.options.clientId}::${getTokenOptions.audience}::${getTokenOptions.scope}`
+      () => this._getTokenSilently(options),
+      `${this.options.clientId}::${options.authorizationParams?.audience}::${options.authorizationParams?.scope}`
     );
   }
 
   private async _getTokenSilently(
-    options: GetTokenSilentlyOptions = {}
+    options: GetTokenSilentlyOptions
   ): Promise<string | GetTokenSilentlyVerboseResponse> {
     const { cacheMode, ...getTokenOptions } = options;
 
@@ -896,8 +856,8 @@ export class Auth0Client {
     // `lock.acquireLock` when the cache is populated.
     if (cacheMode !== 'off') {
       const entry = await this._getEntryFromCache({
-        scope: getTokenOptions.scope,
-        audience: getTokenOptions.audience || 'default',
+        scope: getTokenOptions.authorizationParams?.scope,
+        audience: getTokenOptions.authorizationParams?.audience || 'default',
         clientId: this.options.clientId,
         getDetailedEntry: options.detailedResponse
       });
@@ -922,8 +882,8 @@ export class Auth0Client {
         // by a previous call while this call was waiting to acquire the lock.
         if (cacheMode !== 'off') {
           const entry = await this._getEntryFromCache({
-            scope: getTokenOptions.scope,
-            audience: getTokenOptions.audience || 'default',
+            scope: getTokenOptions.authorizationParams?.scope,
+            audience: getTokenOptions.authorizationParams?.audience || 'default',
             clientId: this.options.clientId,
             getDetailedEntry: options.detailedResponse
           });
@@ -984,13 +944,18 @@ export class Auth0Client {
     options: GetTokenWithPopupOptions = {},
     config: PopupConfigOptions = {}
   ) {
-    options.audience = options.audience || this.options.audience;
-
-    options.scope = getUniqueScopes(
-      this.defaultScope,
-      this.scope,
-      options.scope
-    );
+    options = {
+      ...options,
+      authorizationParams: {
+        ...this.options.authorizationParams,
+        ...options.authorizationParams,
+        scope: getUniqueScopes(
+          this.defaultScope,
+          this.scope,
+          options.authorizationParams?.scope
+        )
+      }
+    };
 
     config = {
       ...DEFAULT_POPUP_CONFIG_OPTIONS,
@@ -1001,8 +966,8 @@ export class Auth0Client {
 
     const cache = await this.cacheManager.get(
       new CacheKey({
-        scope: options.scope,
-        audience: options.audience || 'default',
+        scope: options.authorizationParams?.scope,
+        audience: options.authorizationParams?.audience || 'default',
         clientId: this.options.clientId
       })
     );
@@ -1039,9 +1004,14 @@ export class Auth0Client {
       delete options.clientId;
     }
 
-    const { federated, ...logoutOptions } = options;
+    const { federated, ...logoutOptions } = options.logoutParams || {};
     const federatedQuery = federated ? `&federated` : '';
-    const url = this._url(`/v2/logout?${createQueryParams(logoutOptions)}`);
+    const url = this._url(
+      `/v2/logout?${createQueryParams({
+        clientId: options.clientId,
+        ...logoutOptions
+      })}`
+    );
 
     return url + federatedQuery;
   }
@@ -1067,7 +1037,7 @@ export class Auth0Client {
   public logout(options: LogoutOptions = {}): Promise<void> | void {
     const { localOnly, ...logoutOptions } = options;
 
-    if (localOnly && logoutOptions.federated) {
+    if (localOnly && logoutOptions.logoutParams?.federated) {
       throw new Error(
         'It is invalid to set both the `federated` and `localOnly` options to `true`'
       );
@@ -1103,15 +1073,13 @@ export class Auth0Client {
     const code_challengeBuffer = await sha256(code_verifier);
     const code_challenge = bufferToBase64UrlEncoded(code_challengeBuffer);
 
-    const { detailedResponse, ...withoutClientOptions } = options;
-
     const params = this._getParams(
-      withoutClientOptions,
+      options.authorizationParams,
       stateIn,
       nonceIn,
       code_challenge,
-      options.redirect_uri ||
-        this.options.redirect_uri ||
+      options.authorizationParams?.redirect_uri ||
+        this.options.authorizationParams?.redirect_uri ||
         window.location.origin
     );
 
@@ -1147,22 +1115,9 @@ export class Auth0Client {
         throw new Error('Invalid state');
       }
 
-      const {
-        scope,
-        audience,
-        redirect_uri,
-        cacheMode,
-        timeoutInSeconds,
-        detailedResponse,
-        ...customOptions
-      } = options;
-
       const tokenResult = await oauthToken(
         {
-          ...this.customOptions,
-          ...customOptions,
-          scope,
-          audience,
+          ...options.authorizationParams,
           baseUrl: this.domainUrl,
           client_id: this.options.clientId,
           code_verifier,
@@ -1171,7 +1126,7 @@ export class Auth0Client {
           redirect_uri: params.redirect_uri,
           auth0Client: this.options.auth0Client,
           useFormData: this.options.useFormData,
-          timeout: customOptions.timeout || this.httpTimeoutMs
+          timeout: options.authorizationParams?.timeout || this.httpTimeoutMs
         } as OAuthTokenOptions,
         this.worker
       );
@@ -1203,16 +1158,18 @@ export class Auth0Client {
   private async _getTokenUsingRefreshToken(
     options: GetTokenSilentlyOptions
   ): Promise<GetTokenSilentlyResult> {
-    options.scope = getUniqueScopes(
+    options.authorizationParams = options.authorizationParams || {};
+
+    options.authorizationParams.scope = getUniqueScopes(
       this.defaultScope,
-      this.options.scope,
-      options.scope
+      this.options.authorizationParams?.scope,
+      options.authorizationParams?.scope
     );
 
     const cache = await this.cacheManager.get(
       new CacheKey({
-        scope: options.scope,
-        audience: options.audience || 'default',
+        scope: options.authorizationParams?.scope,
+        audience: options.authorizationParams?.audience || 'default',
         clientId: this.options.clientId
       })
     );
@@ -1227,26 +1184,17 @@ export class Auth0Client {
       }
 
       throw new MissingRefreshTokenError(
-        options.audience || 'default',
-        options.scope
+        options.authorizationParams?.audience || 'default',
+        options.authorizationParams?.scope
       );
     }
 
     const redirect_uri =
-      options.redirect_uri ||
-      this.options.redirect_uri ||
+      options.authorizationParams?.redirect_uri ||
+      this.options.authorizationParams?.redirect_uri ||
       window.location.origin;
 
     let tokenResult: TokenEndpointResponse;
-
-    const {
-      scope,
-      audience,
-      cacheMode,
-      timeoutInSeconds,
-      detailedResponse,
-      ...customOptions
-    } = options;
 
     const timeout =
       typeof options.timeoutInSeconds === 'number'
@@ -1256,10 +1204,7 @@ export class Auth0Client {
     try {
       tokenResult = await oauthToken(
         {
-          ...this.customOptions,
-          ...customOptions,
-          audience,
-          scope,
+          ...options.authorizationParams,
           baseUrl: this.domainUrl,
           client_id: this.options.clientId,
           grant_type: 'refresh_token',
@@ -1277,7 +1222,7 @@ export class Auth0Client {
         // The web worker didn't have a refresh token in memory so
         // fallback to an iframe.
         (e.message.indexOf(MISSING_REFRESH_TOKEN_ERROR_MESSAGE) > -1 ||
-          // A refresh token was found, but is it no longer valid 
+          // A refresh token was found, but is it no longer valid
           // and useRefreshTokensFallback is explicitly enabled. Fallback to an iframe.
           (e.message &&
             e.message.indexOf(INVALID_REFRESH_TOKEN_ERROR_MESSAGE) > -1)) &&
@@ -1294,9 +1239,9 @@ export class Auth0Client {
     return {
       ...tokenResult,
       decodedToken,
-      scope: options.scope,
+      scope: options.authorizationParams?.scope,
       oauthTokenScope: tokenResult.scope,
-      audience: options.audience || 'default'
+      audience: options.authorizationParams?.audience || 'default'
     };
   }
 

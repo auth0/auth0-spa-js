@@ -99,7 +99,7 @@ describe('Auth0Client', () => {
 
   describe('loginWithPopup', () => {
     it('should log the user in and get the user and claims', async () => {
-      const auth0 = setup({ scope: 'foo' });
+      const auth0 = setup({ authorizationParams: { scope: 'foo' } });
 
       mockWindow.open.mockReturnValue({ hello: 'world' });
 
@@ -127,12 +127,14 @@ describe('Auth0Client', () => {
 
     it('should log the user in with custom scope', async () => {
       const auth0 = setup({
-        scope: 'scope1',
+        authorizationParams: {
+          scope: 'scope1'
+        },
         advancedOptions: {
           defaultScope: 'scope2'
         }
       });
-      await loginWithPopup(auth0, { scope: 'scope3' });
+      await loginWithPopup(auth0, { authorizationParams: { scope: 'scope3' } });
 
       const expectedUser = { sub: 'me' };
 
@@ -165,8 +167,10 @@ describe('Auth0Client', () => {
       const auth0 = setup({ leeway: 10, httpTimeoutInSeconds: 60 });
 
       await loginWithPopup(auth0, {
-        connection: 'test-connection',
-        audience: 'test'
+        authorizationParams: {
+          connection: 'test-connection',
+          audience: 'test'
+        }
       });
 
       expect(mockWindow.open).toHaveBeenCalled();
@@ -212,11 +216,16 @@ describe('Auth0Client', () => {
     });
 
     it('should log the user in with a popup and redirect using a default redirect URI', async () => {
-      const auth0 = setup({ leeway: 10, redirect_uri: null });
+      const auth0 = setup({
+        leeway: 10,
+        authorizationParams: { redirect_uri: undefined }
+      });
 
       await loginWithPopup(auth0, {
-        connection: 'test-connection',
-        audience: 'test'
+        authorizationParams: {
+          connection: 'test-connection',
+          audience: 'test'
+        }
       });
 
       expect(mockWindow.open).toHaveBeenCalled();
@@ -243,8 +252,10 @@ describe('Auth0Client', () => {
       const auth0 = setup({ leeway: 10 });
 
       await loginWithPopup(auth0, {
-        connection: 'test-connection',
-        audience: 'test'
+        authorizationParams: {
+          connection: 'test-connection',
+          audience: 'test'
+        }
       });
 
       expect(mockWindow.open).toHaveBeenCalled();
@@ -291,7 +302,9 @@ describe('Auth0Client', () => {
     it('should log the user and redirect when using different default redirect_uri', async () => {
       const redirect_uri = 'https://custom-redirect-uri/callback';
       const auth0 = setup({
-        redirect_uri
+        authorizationParams: {
+          redirect_uri
+        }
       });
       await loginWithPopup(auth0);
 
@@ -406,7 +419,12 @@ describe('Auth0Client', () => {
 
       await loginWithPopup(
         auth0,
-        { connection: 'test-connection', audience: 'test' },
+        {
+          authorizationParams: {
+            connection: 'test-connection',
+            audience: 'test'
+          }
+        },
         { popup }
       );
 
@@ -515,7 +533,7 @@ describe('Auth0Client', () => {
     });
 
     it('calls `tokenVerifier.verify` with undefined `max_age` when value set in constructor is an empty string', async () => {
-      const auth0 = setup({ max_age: '' });
+      const auth0 = setup({ authorizationParams: { max_age: '' } });
 
       await loginWithPopup(auth0);
 
@@ -527,7 +545,7 @@ describe('Auth0Client', () => {
     });
 
     it('calls `tokenVerifier.verify` with the parsed `max_age` string from constructor', async () => {
-      const auth0 = setup({ max_age: '10' });
+      const auth0 = setup({ authorizationParams: { max_age: '10' } });
 
       await loginWithPopup(auth0);
 
@@ -539,7 +557,7 @@ describe('Auth0Client', () => {
     });
 
     it('calls `tokenVerifier.verify` with the parsed `max_age` number from constructor', async () => {
-      const auth0 = setup({ max_age: 10 });
+      const auth0 = setup({ authorizationParams: { max_age: 10 } });
 
       await loginWithPopup(auth0);
 
@@ -551,7 +569,9 @@ describe('Auth0Client', () => {
     });
 
     it('calls `tokenVerifier.verify` with the organization id', async () => {
-      const auth0 = setup({ organization: 'test_org_123' });
+      const auth0 = setup({
+        authorizationParams: { organization: 'test_org_123' }
+      });
 
       await loginWithPopup(auth0);
 
@@ -564,7 +584,9 @@ describe('Auth0Client', () => {
 
     it('calls `tokenVerifier.verify` with the organization id given in the login method', async () => {
       const auth0 = setup();
-      await loginWithPopup(auth0, { organization: 'test_org_123' });
+      await loginWithPopup(auth0, {
+        authorizationParams: { organization: 'test_org_123' }
+      });
 
       expect(tokenVerifier).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -738,6 +760,33 @@ describe('Auth0Client', () => {
         loginWithPopup(auth0, {}, {}, { token: { success: false } })
       ).rejects.toThrowError(
         'HTTP error. Unable to fetch https://auth0_domain/oauth/token'
+      );
+    });
+
+    it('should log the user and redirect when using different redirect_uri on loginWithPopup', async () => {
+      const redirect_uri = 'https://custom-redirect-uri/callback';
+      const auth0 = setup({
+        authorizationParams: {
+          redirect_uri: 'https://redirect-uri-on-ctor/callback'
+        }
+      });
+      await loginWithPopup(auth0, {
+        authorizationParams: {
+          redirect_uri
+        }
+      });
+
+      // prettier-ignore
+      const url = (utils.runPopup as jest.Mock).mock.calls[0][0].popup.location.href;
+
+      assertUrlEquals(
+        url,
+        TEST_DOMAIN,
+        '/authorize',
+        {
+          redirect_uri
+        },
+        false
       );
     });
   });
