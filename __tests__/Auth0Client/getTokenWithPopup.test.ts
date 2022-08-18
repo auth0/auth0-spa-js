@@ -203,7 +203,7 @@ describe('Auth0Client', () => {
     it('can use the global audience', async () => {
       const auth0 = await localSetup({
         authorizationParams: {
-         audience: 'global-audience'
+          audience: 'global-audience'
         }
       });
 

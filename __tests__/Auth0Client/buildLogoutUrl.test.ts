@@ -102,9 +102,9 @@ describe('Auth0Client', () => {
 
       const url = auth0.buildLogoutUrl({
         clientId: null,
-        logoutParams: { 
+        logoutParams: {
           returnTo: 'https://return.to'
-        },
+        }
       });
 
       assertUrlEquals(url, TEST_DOMAIN, '/v2/logout', {
@@ -116,7 +116,7 @@ describe('Auth0Client', () => {
       const auth0 = setup();
 
       const url = auth0.buildLogoutUrl({
-        logoutParams: { 
+        logoutParams: {
           federated: true
         },
         clientId: null

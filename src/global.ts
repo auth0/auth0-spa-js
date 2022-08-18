@@ -107,7 +107,7 @@ export interface AuthorizationParams {
 }
 
 interface BaseLoginOptions {
- /**
+  /**
    * URL parameters that will be sent back to the Authorization Server. This can be known parameters
    * defined by Auth0 or custom parameters that you define.
    */
@@ -292,7 +292,8 @@ export interface AuthorizeOptions extends AuthorizationParams {
   code_challenge_method: string;
 }
 
-export interface RedirectLoginOptions<TAppState = any> extends BaseLoginOptions {
+export interface RedirectLoginOptions<TAppState = any>
+  extends BaseLoginOptions {
   /**
    * Used to store state before doing the redirect
    */
@@ -398,7 +399,7 @@ export interface GetTokenSilentlyOptions {
      * make sure to use the original parameter name.
      */
     [key: string]: any;
-  }
+  };
 
   /** A maximum number of seconds to wait before declaring the background /authorize call as failed for timeout
    * Defaults to 60s.
@@ -433,7 +434,7 @@ export interface LogoutUrlOptions {
    *
    * [Read more about how redirecting after logout works](https://auth0.com/docs/logout/guides/redirect-users-after-logout)
    */
-   clientId?: string;
+  clientId?: string;
   /**
    * Parameters to pass to the logout endpoint. This can be known parameters defined by Auth0 or custom parameters
    * you wish to provide.
@@ -464,7 +465,7 @@ export interface LogoutUrlOptions {
      * If you need to send custom parameters to the logout endpoint, make sure to use the original parameter name.
      */
     [key: string]: any;
-  }
+  };
 }
 
 export interface LogoutOptions extends LogoutUrlOptions {

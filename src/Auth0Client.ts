@@ -302,7 +302,9 @@ export class Auth0Client {
       this.worker = new TokenWorker();
     }
 
-    this.customOptions = getCustomInitialOptions(this.options.authorizationParams);
+    this.customOptions = getCustomInitialOptions(
+      this.options.authorizationParams
+    );
   }
 
   private _url(path: string) {
@@ -332,7 +334,8 @@ export class Auth0Client {
       response_mode: 'query',
       state,
       nonce,
-      redirect_uri: redirect_uri || this.options.authorizationParams.redirect_uri,
+      redirect_uri:
+        redirect_uri || this.options.authorizationParams.redirect_uri,
       code_challenge,
       code_challenge_method: 'S256'
     };
@@ -398,9 +401,7 @@ export class Auth0Client {
     return url;
   }
 
-  private async _prepareAuthorizeUrl(
-    options: RedirectLoginOptions
-  ): Promise<{
+  private async _prepareAuthorizeUrl(options: RedirectLoginOptions): Promise<{
     scope: string;
     audience: string;
     redirect_uri: string;
@@ -531,7 +532,9 @@ export class Auth0Client {
       this.worker
     );
 
-    const organizationId = options.authorizationParams?.organization || this.options.authorizationParams.organization;
+    const organizationId =
+      options.authorizationParams?.organization ||
+      this.options.authorizationParams.organization;
 
     const decodedToken = await this._verifyIdToken(
       authResult.id_token,
@@ -575,7 +578,10 @@ export class Auth0Client {
   public async getUser<TUser extends User>(
     options: GetUserOptions = {}
   ): Promise<TUser | undefined> {
-    const audience = options.audience || this.options.authorizationParams.audience || 'default';
+    const audience =
+      options.audience ||
+      this.options.authorizationParams.audience ||
+      'default';
     const scope = getUniqueScopes(this.defaultScope, this.scope, options.scope);
 
     const cache = await this.cacheManager.get(
@@ -605,7 +611,10 @@ export class Auth0Client {
   public async getIdTokenClaims(
     options: GetIdTokenClaimsOptions = {}
   ): Promise<IdToken | undefined> {
-    const audience = options.audience || this.options.authorizationParams.audience || 'default';
+    const audience =
+      options.audience ||
+      this.options.authorizationParams.audience ||
+      'default';
     const scope = getUniqueScopes(this.defaultScope, this.scope, options.scope);
 
     const cache = await this.cacheManager.get(
@@ -635,7 +644,9 @@ export class Auth0Client {
   ) {
     const { onRedirect, ...urlOptions } = options;
 
-    const organizationId = urlOptions.authorizationParams?.organization || this.options.authorizationParams.organization;
+    const organizationId =
+      urlOptions.authorizationParams?.organization ||
+      this.options.authorizationParams.organization;
 
     const { url, ...transaction } = await this._prepareAuthorizeUrl(urlOptions);
 
@@ -850,13 +861,16 @@ export class Auth0Client {
       authorizationParams: {
         audience: this.options.authorizationParams.audience,
         ...options.authorizationParams,
-        scope: getUniqueScopes(this.defaultScope, this.scope, options.authorizationParams?.scope),
+        scope: getUniqueScopes(
+          this.defaultScope,
+          this.scope,
+          options.authorizationParams?.scope
+        )
       }
     };
 
     return singlePromise(
-      () =>
-        this._getTokenSilently(options),
+      () => this._getTokenSilently(options),
       `${this.options.clientId}::${options.authorizationParams.audience}::${options.authorizationParams.scope}`
     );
   }
@@ -1019,7 +1033,12 @@ export class Auth0Client {
 
     const { federated, ...logoutOptions } = options.logoutParams || {};
     const federatedQuery = federated ? `&federated` : '';
-    const url = this._url(`/v2/logout?${createQueryParams({ clientId: options.clientId, ...logoutOptions})}`);
+    const url = this._url(
+      `/v2/logout?${createQueryParams({
+        clientId: options.clientId,
+        ...logoutOptions
+      })}`
+    );
 
     return url + federatedQuery;
   }
@@ -1202,7 +1221,7 @@ export class Auth0Client {
       window.location.origin;
 
     let tokenResult: TokenEndpointResponse;
-    
+
     const timeout =
       typeof options.timeoutInSeconds === 'number'
         ? options.timeoutInSeconds * 1000
@@ -1230,7 +1249,7 @@ export class Auth0Client {
         // The web worker didn't have a refresh token in memory so
         // fallback to an iframe.
         (e.message.indexOf(MISSING_REFRESH_TOKEN_ERROR_MESSAGE) > -1 ||
-          // A refresh token was found, but is it no longer valid 
+          // A refresh token was found, but is it no longer valid
           // and useRefreshTokensFallback is explicitly enabled. Fallback to an iframe.
           (e.message &&
             e.message.indexOf(INVALID_REFRESH_TOKEN_ERROR_MESSAGE) > -1)) &&

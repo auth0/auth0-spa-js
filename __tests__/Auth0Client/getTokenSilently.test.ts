@@ -322,7 +322,7 @@ describe('Auth0Client', () => {
 
       await getTokenSilently(auth0, {
         authorizationParams: {
-         redirect_uri,
+          redirect_uri
         },
         cacheMode: 'off'
       });
@@ -354,7 +354,7 @@ describe('Auth0Client', () => {
 
       await getTokenSilently(auth0, {
         authorizationParams: {
-          redirect_uri,
+          redirect_uri
         },
         cacheMode: 'off'
       });
@@ -423,7 +423,7 @@ describe('Auth0Client', () => {
 
       await getTokenSilently(auth0, {
         authorizationParams: {
-          redirect_uri: null,
+          redirect_uri: null
         },
         cacheMode: 'off'
       });
@@ -1428,12 +1428,16 @@ describe('Auth0Client', () => {
           expires_in: 86400
         })
       );
-      let access_token = await auth0.getTokenSilently({ authorizationParams: { audience: 'foo' } });
+      let access_token = await auth0.getTokenSilently({
+        authorizationParams: { audience: 'foo' }
+      });
       expect(access_token).toEqual(TEST_ACCESS_TOKEN);
       expect(acquireLockSpy).toHaveBeenCalled();
       acquireLockSpy.mockClear();
       // This request will hit the cache, so should not acquire the lock
-      access_token = await auth0.getTokenSilently({ authorizationParams: { audience: 'foo' } });
+      access_token = await auth0.getTokenSilently({
+        authorizationParams: { audience: 'foo' }
+      });
       expect(access_token).toEqual(TEST_ACCESS_TOKEN);
       expect(acquireLockSpy).not.toHaveBeenCalled();
     });
@@ -1552,7 +1556,7 @@ describe('Auth0Client', () => {
       await auth0.getTokenSilently({
         cacheMode: 'off',
         authorizationParams: {
-         custom_param: 'hello world'
+          custom_param: 'hello world'
         }
       });
 
@@ -1631,7 +1635,7 @@ describe('Auth0Client', () => {
       const auth0 = setup({
         authorizationParams: {
           custom_param: 'foo',
-          another_custom_param: 'bar',
+          another_custom_param: 'bar'
         },
         useRefreshTokens: true,
         useFormData: false
@@ -1662,7 +1666,7 @@ describe('Auth0Client', () => {
       const access_token = await auth0.getTokenSilently({
         cacheMode: 'off',
         authorizationParams: {
-         custom_param: 'hello world'
+          custom_param: 'hello world'
         }
       });
 

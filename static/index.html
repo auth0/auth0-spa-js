@@ -529,7 +529,7 @@
               useFormData: _self.useFormData,
               useRefreshTokensFallback: _self.useRefreshTokensFallback,
               authorizationParams: {
-                redirect_uri: window.location.origin,
+                redirect_uri: window.location.origin
               }
             };
 
@@ -538,7 +538,8 @@
             }
 
             if (_self.organization && !_self.useOrgAtLogin) {
-              clientOptions.authorizationParams.organization = _self.organization;
+              clientOptions.authorizationParams.organization =
+                _self.organization;
             }
 
             if (_self.useCustomStorage) {
@@ -581,7 +582,7 @@
               JSON.stringify({
                 authorizationParams: {
                   audience: this.audience,
-                  organization: this.organization,
+                  organization: this.organization
                 },
                 domain: this.domain,
                 clientId: this.clientId,
@@ -612,7 +613,7 @@
             this.organization = defaultOrganization;
             this.useFormData = true;
             this.useOrgAtLogin = false;
-            this.useRefreshTokensFallback = false
+            this.useRefreshTokensFallback = false;
             this.saveForm();
           },
           showAuth0Info: function () {
@@ -693,7 +694,7 @@
             var _self = this;
             var options = {
               authorizationParams: {
-                scope: _self.audienceScopes[0].scope 
+                scope: _self.audienceScopes[0].scope
               }
             };
 
@@ -728,7 +729,7 @@
               .getTokenSilently({
                 authorizationParams: {
                   audience: audience,
-                  scope: scope,
+                  scope: scope
                 },
                 cacheMode: _self.useCache ? 'on' : 'off'
               })

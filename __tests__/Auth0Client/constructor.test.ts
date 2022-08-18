@@ -202,7 +202,7 @@ describe('Auth0Client', () => {
       const auth0 = setup();
 
       const url = auth0.buildLogoutUrl({
-        logoutParams: { 
+        logoutParams: {
           returnTo: 'https://return.to'
         },
         clientId: null
@@ -217,8 +217,8 @@ describe('Auth0Client', () => {
       const auth0 = setup();
 
       const url = auth0.buildLogoutUrl({
-        logoutParams: { 
-         federated: true
+        logoutParams: {
+          federated: true
         },
         clientId: null
       });

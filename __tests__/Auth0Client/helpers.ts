@@ -107,12 +107,12 @@ export const fetchResponse = (ok, json) =>
 export const setupFn = (mockVerify: jest.Mock) => {
   return (config?: Partial<Auth0ClientOptions>, claims?: Partial<IdToken>) => {
     const options: Auth0ClientOptions = {
-        domain: TEST_DOMAIN,
-        clientId: TEST_CLIENT_ID,
-        authorizationParams: {
-          redirect_uri: TEST_REDIRECT_URI,
-        }
-    }
+      domain: TEST_DOMAIN,
+      clientId: TEST_CLIENT_ID,
+      authorizationParams: {
+        redirect_uri: TEST_REDIRECT_URI
+      }
+    };
 
     Object.assign(options.authorizationParams, config?.authorizationParams);
 
