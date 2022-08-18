@@ -1,5 +1,3 @@
-import fetch from 'unfetch';
-
 import {
   DEFAULT_FETCH_TIMEOUT_MS,
   DEFAULT_SILENT_TOKEN_RETRY_COUNT
@@ -128,9 +126,6 @@ export async function getJSON<T>(
   }
 
   if (fetchError) {
-    // unfetch uses XMLHttpRequest under the hood which throws
-    // ProgressEvents on error, which don't have message properties
-    fetchError.message = fetchError.message || 'Failed to fetch';
     throw fetchError;
   }
 

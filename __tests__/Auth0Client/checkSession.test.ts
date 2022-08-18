@@ -1,6 +1,4 @@
-import 'fast-text-encoding';
 import * as esCookie from 'es-cookie';
-import unfetch from 'unfetch';
 import { verify } from '../../src/jwt';
 import { MessageChannel } from 'worker_threads';
 import * as utils from '../../src/utils';
@@ -22,13 +20,12 @@ import {
   TEST_STATE
 } from '../constants';
 
-jest.mock('unfetch');
 jest.mock('es-cookie');
 jest.mock('../../src/jwt');
 jest.mock('../../src/worker/token.worker');
 
 const mockWindow = <any>global;
-const mockFetch = (mockWindow.fetch = <jest.Mock>unfetch);
+const mockFetch = <jest.Mock>mockWindow.fetch;
 const mockVerify = <jest.Mock>verify;
 
 jest
@@ -38,7 +35,7 @@ jest
 jest.spyOn(utils, 'runPopup');
 
 const setup = setupFn(mockVerify);
-const checkSession = checkSessionFn(mockFetch);
+const checkSession = checkSessionFn(window.fetch);
 
 describe('Auth0Client', () => {
   const oldWindowLocation = window.location;
