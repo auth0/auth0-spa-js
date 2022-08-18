@@ -1,4 +1,3 @@
-import 'fast-text-encoding';
 import { verify } from '../../src/jwt';
 
 // @ts-ignore
