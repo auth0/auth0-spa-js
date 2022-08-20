@@ -79,7 +79,7 @@
   "dependencies": {
     "abortcontroller-polyfill": "^1.7.3",
     "browser-tabs-lock": "^1.2.15",
-    "core-js": "^3.24.0",
+    "core-js": "^3.24.1",
     "es-cookie": "^1.3.2",
     "fast-text-encoding": "^1.0.4",
     "promise-polyfill": "^8.2.3",
