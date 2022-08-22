@@ -22,7 +22,9 @@ import {
   ICache,
   LocalStorageCache,
   CacheKey,
-  CacheManager
+  CacheManager,
+  CacheEntry,
+  DecodedToken
 } from './cache';
 
 import { TransactionManager } from './transaction-manager';
@@ -61,8 +63,6 @@ import {
   RedirectLoginOptions,
   PopupLoginOptions,
   PopupConfigOptions,
-  GetUserOptions,
-  GetIdTokenClaimsOptions,
   RedirectLoginResult,
   GetTokenSilentlyOptions,
   GetTokenWithPopupOptions,
@@ -573,7 +573,7 @@ export class Auth0Client {
       client_id: this.options.clientId
     };
 
-    await this.cacheManager.set(cacheEntry);
+    await this._saveEntryInCache(cacheEntry);
 
     this.cookieStorage.save(this.isAuthenticatedCookieName, true, {
       daysUntilExpire: this.sessionCheckExpiryDays,
@@ -591,18 +591,12 @@ export class Auth0Client {
    * Returns the user information if available (decoded
    * from the `id_token`).
    *
-   * If you provide an audience or scope, they should match an existing Access Token
-   * (the SDK stores a corresponding ID Token with every Access Token, and uses the
-   * scope and audience to look up the ID Token)
-   *
    * @typeparam TUser The type to return, has to extend {@link User}.
    * @param options
    */
-  public async getUser<TUser extends User>(
-    options: GetUserOptions = {}
-  ): Promise<TUser | undefined> {
-    const audience = options.audience || this.options.audience || 'default';
-    const scope = getUniqueScopes(this.defaultScope, this.scope, options.scope);
+  public async getUser<TUser extends User>(): Promise<TUser | undefined> {
+    const audience = this.options.audience || 'default';
+    const scope = getUniqueScopes(this.defaultScope, this.scope);
 
     const cache = await this.cacheManager.get(
       new CacheKey({
@@ -622,17 +616,11 @@ export class Auth0Client {
    *
    * Returns all claims from the id_token if available.
    *
-   * If you provide an audience or scope, they should match an existing Access Token
-   * (the SDK stores a corresponding ID Token with every Access Token, and uses the
-   * scope and audience to look up the ID Token)
-   *
    * @param options
    */
-  public async getIdTokenClaims(
-    options: GetIdTokenClaimsOptions = {}
-  ): Promise<IdToken | undefined> {
-    const audience = options.audience || this.options.audience || 'default';
-    const scope = getUniqueScopes(this.defaultScope, this.scope, options.scope);
+  public async getIdTokenClaims(): Promise<IdToken | undefined> {
+    const audience = this.options.audience || 'default';
+    const scope = getUniqueScopes(this.defaultScope, this.scope);
 
     const cache = await this.cacheManager.get(
       new CacheKey({
@@ -747,7 +735,7 @@ export class Auth0Client {
       transaction.organizationId
     );
 
-    await this.cacheManager.set({
+    await this._saveEntryInCache({
       ...authResult,
       decodedToken,
       audience: transaction.audience,
@@ -937,7 +925,7 @@ export class Auth0Client {
           ? await this._getTokenUsingRefreshToken(getTokenOptions)
           : await this._getTokenFromIFrame(getTokenOptions);
 
-        await this.cacheManager.set({
+        await this._saveEntryInCache({
           client_id: this.options.clientId,
           ...authResult
         });
@@ -1277,7 +1265,7 @@ export class Auth0Client {
         // The web worker didn't have a refresh token in memory so
         // fallback to an iframe.
         (e.message.indexOf(MISSING_REFRESH_TOKEN_ERROR_MESSAGE) > -1 ||
-          // A refresh token was found, but is it no longer valid 
+          // A refresh token was found, but is it no longer valid
           // and useRefreshTokensFallback is explicitly enabled. Fallback to an iframe.
           (e.message &&
             e.message.indexOf(INVALID_REFRESH_TOKEN_ERROR_MESSAGE) > -1)) &&
@@ -1298,6 +1286,39 @@ export class Auth0Client {
       oauthTokenScope: tokenResult.scope,
       audience: options.audience || 'default'
     };
+  }
+
+  private async _saveEntryInCache(entry: CacheEntry) {
+    const { id_token, decodedToken, ...entryWithoutIdToken } = entry;
+
+    await this.cacheManager.set(entryWithoutIdToken as CacheEntry);
+    await this._updateIdTokenInCache(entry);
+  }
+
+  private async _updateIdTokenInCache(entry: CacheEntry) {
+    // Get the global audience and scope
+    // These will be used as the only entry that will hold the id token.
+    const audience = this.options.audience || 'default';
+    const scope = getUniqueScopes(this.defaultScope, this.scope);
+
+    // Get the entry in the cache using the global audience and scope.
+    //
+    // Note: Asking for these scopes does not guarentee that the returned entry
+    // is for these scopes exclusively, as it can also contain additional scopes.
+    const idTokenEntry = (await this.cacheManager.get(
+      new CacheKey({
+        clientId: this.options.clientId,
+        audience,
+        scope
+      })
+    )) as CacheEntry;
+
+    // Update both the id_token and decodedToken
+    await this.cacheManager.set({
+      ...idTokenEntry,
+      id_token: entry.id_token,
+      decodedToken: entry.decodedToken
+    });
   }
 
   private async _getEntryFromCache({

@@ -116,14 +116,9 @@ export class CacheManager {
     const now = await this.nowProvider();
     const expiresInTime = Math.floor(now / 1000) + entry.expires_in;
 
-    const expirySeconds = Math.min(
-      expiresInTime,
-      entry.decodedToken.claims.exp
-    );
-
     return {
       body: entry,
-      expiresAt: expirySeconds
+      expiresAt: expiresInTime
     };
   }
 

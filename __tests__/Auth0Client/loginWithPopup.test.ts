@@ -111,21 +111,7 @@ describe('Auth0Client', () => {
       const expectedUser = { sub: 'me' };
 
       expect(await auth0.getUser()).toEqual(expectedUser);
-      expect(await auth0.getUser({})).toEqual(expectedUser);
-      expect(await auth0.getUser({ audience: 'default' })).toEqual(
-        expectedUser
-      );
-      expect(await auth0.getUser({ scope: 'foo' })).toEqual(expectedUser);
-      expect(await auth0.getUser({ audience: 'invalid' })).toBeUndefined();
       expect(await auth0.getIdTokenClaims()).toBeTruthy();
-      expect(await auth0.getIdTokenClaims({})).toBeTruthy();
-      expect(
-        await auth0.getIdTokenClaims({ audience: 'default' })
-      ).toBeTruthy();
-      expect(await auth0.getIdTokenClaims({ scope: 'foo' })).toBeTruthy();
-      expect(
-        await auth0.getIdTokenClaims({ audience: 'invalid' })
-      ).toBeUndefined();
     });
 
     it('should log the user in with custom scope', async () => {
@@ -139,9 +125,7 @@ describe('Auth0Client', () => {
 
       const expectedUser = { sub: 'me' };
 
-      expect(await auth0.getUser({ scope: 'scope1 scope2 scope3' })).toEqual(
-        expectedUser
-      );
+      expect(await auth0.getUser()).toEqual(expectedUser);
     });
 
     it('encodes state with random string', async () => {

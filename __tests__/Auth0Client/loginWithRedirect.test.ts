@@ -321,29 +321,6 @@ describe('Auth0Client', () => {
       const expectedUser = { sub: 'me' };
 
       expect(await auth0.getUser()).toEqual(expectedUser);
-      expect(await auth0.getUser({})).toEqual(expectedUser);
-      expect(await auth0.getUser({ audience: 'default' })).toEqual(
-        expectedUser
-      );
-      expect(await auth0.getUser({ scope: 'foo' })).toEqual(expectedUser);
-      expect(await auth0.getUser({ audience: 'invalid' })).toBeUndefined();
-    });
-
-    it('should log the user in and get the user with custom scope', async () => {
-      const auth0 = setup({
-        scope: 'scope1',
-        advancedOptions: {
-          defaultScope: 'scope2'
-        }
-      });
-
-      await loginWithRedirect(auth0, { scope: 'scope3' });
-
-      const expectedUser = { sub: 'me' };
-
-      expect(await auth0.getUser({ scope: 'scope1 scope2 scope3' })).toEqual(
-        expectedUser
-      );
     });
 
     it('should log the user in with custom auth0Client', async () => {

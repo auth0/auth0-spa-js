@@ -337,28 +337,6 @@ export interface PopupConfigOptions {
   popup?: any;
 }
 
-export interface GetUserOptions {
-  /**
-   * The scope that was used in the authentication request
-   */
-  scope?: string;
-  /**
-   * The audience that was used in the authentication request
-   */
-  audience?: string;
-}
-
-export interface GetIdTokenClaimsOptions {
-  /**
-   * The scope that was used in the authentication request
-   */
-  scope?: string;
-  /**
-   * The audience that was used in the authentication request
-   */
-  audience?: string;
-}
-
 export interface GetTokenSilentlyOptions {
   /**
    * When `off`, ignores the cache and always sends a
@@ -441,7 +419,7 @@ export interface LogoutUrlOptions {
    *
    * [Read more about how redirecting after logout works](https://auth0.com/docs/logout/guides/redirect-users-after-logout)
    */
-   clientId?: string;
+  clientId?: string;
 
   /**
    * When supported by the upstream identity provider,
@@ -476,7 +454,7 @@ export interface LogoutOptions {
    *
    * [Read more about how redirecting after logout works](https://auth0.com/docs/logout/guides/redirect-users-after-logout)
    */
-   clientId?: string;
+  clientId?: string;
 
   /**
    * When supported by the upstream identity provider,
