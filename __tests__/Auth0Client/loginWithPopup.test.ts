@@ -573,13 +573,12 @@ describe('Auth0Client', () => {
           access_token: TEST_ACCESS_TOKEN,
           expires_in: 86400,
           audience: 'default',
-          id_token: TEST_ID_TOKEN,
           scope: TEST_SCOPES
         })
       );
     });
 
-    it('saves decoded token into cache', async () => {
+    it('saves user information into the cache', async () => {
       const auth0 = setup();
 
       const mockDecodedToken = {
@@ -588,12 +587,14 @@ describe('Auth0Client', () => {
       };
       tokenVerifier.mockReturnValue(mockDecodedToken);
 
-      jest.spyOn(auth0['cacheManager'], 'set');
+      jest.spyOn(auth0['cacheManager'], 'set2');
 
       await loginWithPopup(auth0);
 
-      expect(auth0['cacheManager']['set']).toHaveBeenCalledWith(
+      expect(auth0['cacheManager']['set2']).toHaveBeenCalledWith(
+        expect.anything(),
         expect.objectContaining({
+          id_token: TEST_ID_TOKEN,
           decodedToken: mockDecodedToken
         })
       );

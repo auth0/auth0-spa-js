@@ -160,7 +160,7 @@ describe('Auth0Client', () => {
 
       auth0.logout({ localOnly: true });
 
-      expect(window.location.assign).not.toHaveBeenCalledWith();
+      expect(window.location.assign).not.toHaveBeenCalled();
     });
 
     it('calls `window.location.assign` when `options.localOnly` is false', async () => {
@@ -188,9 +188,7 @@ describe('Auth0Client', () => {
     });
 
     it('can access isAuthenticated immediately after local logout when using a custom async cache', async () => {
-      const auth0 = setup({
-        cache: new InMemoryAsyncCacheNoKeys()
-      });
+      const auth0 = setup();
 
       await loginWithRedirect(auth0);
       expect(await auth0.isAuthenticated()).toBe(true);
