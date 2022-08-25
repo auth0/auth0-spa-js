@@ -6,7 +6,8 @@ import {
   ICache,
   CacheKey,
   CACHE_KEY_PREFIX,
-  WrappedCacheEntry
+  WrappedCacheEntry,
+  Cacheable
 } from './shared';
 
 const DEFAULT_EXPIRY_ADJUSTMENT_SECONDS = 0;
@@ -18,6 +19,10 @@ export class CacheManager {
     private nowProvider?: () => number | Promise<number>
   ) {
     this.nowProvider = this.nowProvider || DEFAULT_NOW_PROVIDER;
+  }
+
+  async get2<TEntry extends Cacheable>(cacheKey: CacheKey): Promise<TEntry> {
+    return this.cache.get<TEntry>(cacheKey.toKey());
   }
 
   async get(
@@ -78,6 +83,10 @@ export class CacheManager {
 
     await this.cache.set(cacheKey.toKey(), wrappedEntry);
     await this.keyManifest?.add(cacheKey.toKey());
+  }
+
+  async set2<TEntry>(cacheKey: CacheKey, entry: TEntry): Promise<void> {
+    await this.cache.set(cacheKey.toKey(), entry);
   }
 
   async clear(clientId?: string): Promise<void> {
@@ -144,7 +153,7 @@ export class CacheManager {
     return allKeys.filter(key => {
       const cacheKey = CacheKey.fromKey(key);
       const scopeSet = new Set(cacheKey.scope && cacheKey.scope.split(' '));
-      const scopesToMatch = keyToMatch.scope.split(' ');
+      const scopesToMatch = keyToMatch.scope?.split(' ') || [];
 
       const hasAllScopes =
         cacheKey.scope &&
