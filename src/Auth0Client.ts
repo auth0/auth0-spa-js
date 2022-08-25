@@ -595,18 +595,32 @@ export class Auth0Client {
    * @param options
    */
   public async getUser<TUser extends User>(): Promise<TUser | undefined> {
-    const audience = this.options.audience || 'default';
-    const scope = getUniqueScopes(this.defaultScope, this.scope);
-
-    const cache = await this.cacheManager.get(
-      new CacheKey({
-        clientId: this.options.clientId,
-        audience,
-        scope
-      })
-    );
+    let cache = await this.getUserCacheEntry();
 
     return cache && cache.decodedToken && (cache.decodedToken.user as TUser);
+  }
+
+  private async getUserCacheEntry() {
+    let cache = (await this.cacheManager.get2(
+      new CacheKey({
+        clientId: this.options.clientId
+      })
+    )) as any;
+
+    if (!cache) {
+      const audience = this.options.audience || 'default';
+      const scope = getUniqueScopes(this.defaultScope, this.scope);
+
+      cache = await this.cacheManager.get(
+        new CacheKey({
+          clientId: this.options.clientId,
+          audience,
+          scope
+        })
+      );
+    }
+
+    return cache;
   }
 
   /**
@@ -619,16 +633,7 @@ export class Auth0Client {
    * @param options
    */
   public async getIdTokenClaims(): Promise<IdToken | undefined> {
-    const audience = this.options.audience || 'default';
-    const scope = getUniqueScopes(this.defaultScope, this.scope);
-
-    const cache = await this.cacheManager.get(
-      new CacheKey({
-        clientId: this.options.clientId,
-        audience,
-        scope
-      })
-    );
+    const cache = await this.getUserCacheEntry();
 
     return cache && cache.decodedToken && cache.decodedToken.claims;
   }
@@ -1291,31 +1296,18 @@ export class Auth0Client {
   private async _saveEntryInCache(entry: CacheEntry) {
     const { id_token, decodedToken, ...entryWithoutIdToken } = entry;
 
-    await this.cacheManager.set(entryWithoutIdToken as CacheEntry);
     await this._updateIdTokenInCache(entry);
+    await this.cacheManager.set(entryWithoutIdToken as CacheEntry);
   }
 
   private async _updateIdTokenInCache(entry: CacheEntry) {
-    // Get the global audience and scope
-    // These will be used as the only entry that will hold the id token.
-    const audience = this.options.audience || 'default';
-    const scope = getUniqueScopes(this.defaultScope, this.scope);
+    const cacheKey = new CacheKey({
+      clientId: this.options.clientId
+    });
 
-    // Get the entry in the cache using the global audience and scope.
-    //
-    // Note: Asking for these scopes does not guarentee that the returned entry
-    // is for these scopes exclusively, as it can also contain additional scopes.
-    const idTokenEntry = (await this.cacheManager.get(
-      new CacheKey({
-        clientId: this.options.clientId,
-        audience,
-        scope
-      })
-    )) as CacheEntry;
-
-    // Update both the id_token and decodedToken
-    await this.cacheManager.set({
-      ...idTokenEntry,
+    // Add or update both the id_token and decodedToken
+    await this.cacheManager.set2(cacheKey, {
+      client_id: this.options.clientId,
       id_token: entry.id_token,
       decodedToken: entry.decodedToken
     });
@@ -1343,10 +1335,10 @@ export class Auth0Client {
 
     if (entry && entry.access_token) {
       if (getDetailedEntry) {
-        const { id_token, access_token, oauthTokenScope, expires_in } = entry;
-
+        const { access_token, oauthTokenScope, expires_in } = entry;
+        const userCache = await this.getUserCacheEntry();
         return {
-          id_token,
+          id_token: userCache?.id_token,
           access_token,
           ...(oauthTokenScope ? { scope: oauthTokenScope } : null),
           expires_in
