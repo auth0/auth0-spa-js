@@ -3,15 +3,15 @@ import { IdToken, User } from '../global';
 export const CACHE_KEY_PREFIX = '@@auth0spajs@@';
 
 export type CacheKeyData = {
-  audience: string;
-  scope: string;
+  audience?: string;
+  scope?: string;
   clientId: string;
 };
 
 export class CacheKey {
   public clientId: string;
-  public scope: string;
-  public audience: string;
+  public scope?: string;
+  public audience?: string;
 
   constructor(data: CacheKeyData, public prefix: string = CACHE_KEY_PREFIX) {
     this.clientId = data.clientId;
@@ -24,7 +24,9 @@ export class CacheKey {
    * @returns A string representation of the key
    */
   toKey(): string {
-    return `${this.prefix}::${this.clientId}::${this.audience}::${this.scope}`;
+    return [this.prefix, this.clientId, this.audience, this.scope]
+      .filter(Boolean)
+      .join('::');
   }
 
   /**
