@@ -23,8 +23,7 @@ import {
   LocalStorageCache,
   CacheKey,
   CacheManager,
-  CacheEntry,
-  DecodedToken
+  CacheEntry
 } from './cache';
 
 import { TransactionManager } from './transaction-manager';
