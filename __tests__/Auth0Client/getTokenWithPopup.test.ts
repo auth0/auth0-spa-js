@@ -1,5 +1,3 @@
-import 'fast-text-encoding';
-import unfetch from 'unfetch';
 import { verify } from '../../src/jwt';
 import { MessageChannel } from 'worker_threads';
 import * as utils from '../../src/utils';
@@ -30,13 +28,12 @@ import { Auth0ClientOptions } from '../../src';
 import { DEFAULT_AUTH0_CLIENT } from '../../src/constants';
 import { expect } from '@jest/globals';
 
-jest.mock('unfetch');
 jest.mock('es-cookie');
 jest.mock('../../src/jwt');
 jest.mock('../../src/worker/token.worker');
 
 const mockWindow = <any>global;
-const mockFetch = (mockWindow.fetch = <jest.Mock>unfetch);
+const mockFetch = <jest.Mock>mockWindow.fetch;
 const mockVerify = <jest.Mock>verify;
 const assertPost = assertPostFn(mockFetch);
 
@@ -116,7 +113,9 @@ describe('Auth0Client', () => {
         advancedOptions: {
           defaultScope: 'email'
         },
-        scope: 'read:email'
+        authorizationParams: {
+          scope: 'read:email'
+        }
       });
 
       const config = {
@@ -139,8 +138,10 @@ describe('Auth0Client', () => {
       const auth0 = await localSetup();
 
       const loginOptions = {
-        audience: 'other-audience',
-        screen_hint: 'signup'
+        authorizationParams: {
+          audience: 'other-audience',
+          screen_hint: 'signup'
+        }
       };
 
       const config = {
@@ -162,8 +163,10 @@ describe('Auth0Client', () => {
       const auth0 = await localSetup({});
 
       const loginOptions = {
-        audience: 'other-audience',
-        screen_hint: 'signup'
+        authorizationParams: {
+          audience: 'other-audience',
+          screen_hint: 'signup'
+        }
       };
 
       const config = {
@@ -196,7 +199,9 @@ describe('Auth0Client', () => {
 
     it('can use the global audience', async () => {
       const auth0 = await localSetup({
-        audience: 'global-audience'
+        authorizationParams: {
+          audience: 'global-audience'
+        }
       });
 
       const config = {

@@ -1,5 +1,3 @@
-import 'fast-text-encoding';
-import unfetch from 'unfetch';
 import { verify } from '../../src/jwt';
 import { MessageChannel } from 'worker_threads';
 import * as utils from '../../src/utils';
@@ -12,13 +10,12 @@ import { assertUrlEquals, setupFn } from './helpers';
 
 import { TEST_CLIENT_ID, TEST_CODE_CHALLENGE, TEST_DOMAIN } from '../constants';
 
-jest.mock('unfetch');
 jest.mock('es-cookie');
 jest.mock('../../src/jwt');
 jest.mock('../../src/worker/token.worker');
 
 const mockWindow = <any>global;
-const mockFetch = (mockWindow.fetch = <jest.Mock>unfetch);
+const mockFetch = <jest.Mock>mockWindow.fetch;
 const mockVerify = <jest.Mock>verify;
 
 jest
@@ -101,8 +98,10 @@ describe('Auth0Client', () => {
       const auth0 = setup();
 
       const url = auth0.buildLogoutUrl({
-        returnTo: 'https://return.to',
-        clientId: null
+        clientId: null,
+        logoutParams: {
+          returnTo: 'https://return.to'
+        }
       });
 
       assertUrlEquals(url, TEST_DOMAIN, '/v2/logout', {
@@ -113,7 +112,12 @@ describe('Auth0Client', () => {
     it('creates correct query params when `options.federated` is true', async () => {
       const auth0 = setup();
 
-      const url = auth0.buildLogoutUrl({ federated: true, clientId: null });
+      const url = auth0.buildLogoutUrl({
+        logoutParams: {
+          federated: true
+        },
+        clientId: null
+      });
 
       assertUrlEquals(url, TEST_DOMAIN, '/v2/logout', {
         federated: ''

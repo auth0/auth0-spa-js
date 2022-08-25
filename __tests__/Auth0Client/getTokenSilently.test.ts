@@ -1,6 +1,4 @@
-import 'fast-text-encoding';
 import * as esCookie from 'es-cookie';
-import unfetch from 'unfetch';
 import { verify } from '../../src/jwt';
 import { MessageChannel } from 'worker_threads';
 import * as utils from '../../src/utils';
@@ -47,15 +45,13 @@ import {
   INVALID_REFRESH_TOKEN_ERROR_MESSAGE
 } from '../../src/constants';
 import { GenericError } from '../../src/errors';
-import { CacheKey } from '../../src/cache';
 
-jest.mock('unfetch');
 jest.mock('es-cookie');
 jest.mock('../../src/jwt');
 jest.mock('../../src/worker/token.worker');
 
 const mockWindow = <any>global;
-const mockFetch = (mockWindow.fetch = <jest.Mock>unfetch);
+const mockFetch = <jest.Mock>mockWindow.fetch;
 const mockVerify = <jest.Mock>verify;
 const tokenVerifier = require('../../src/jwt').verify;
 
@@ -143,7 +139,9 @@ describe('Auth0Client', () => {
       });
 
       await getTokenSilently(auth0, {
-        foo: 'bar'
+        authorizationParams: {
+          foo: 'bar'
+        }
       });
 
       const [[url]] = (<jest.Mock>utils.runIframe).mock.calls;
@@ -166,7 +164,9 @@ describe('Auth0Client', () => {
     it('calls the authorize endpoint using the correct params when using a default redirect_uri', async () => {
       const redirect_uri = 'https://custom-redirect-uri/callback';
       const auth0 = setup({
-        redirect_uri
+        authorizationParams: {
+          redirect_uri
+        }
       });
 
       jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
@@ -317,7 +317,9 @@ describe('Auth0Client', () => {
       mockFetch.mockReset();
 
       await getTokenSilently(auth0, {
-        redirect_uri,
+        authorizationParams: {
+          redirect_uri
+        },
         cacheMode: 'off'
       });
 
@@ -347,7 +349,9 @@ describe('Auth0Client', () => {
       mockFetch.mockReset();
 
       await getTokenSilently(auth0, {
-        redirect_uri,
+        authorizationParams: {
+          redirect_uri
+        },
         cacheMode: 'off'
       });
 
@@ -370,8 +374,10 @@ describe('Auth0Client', () => {
     it('calls the token endpoint with the correct params when not providing any redirect uri, using refresh tokens and not using useFormData', async () => {
       const auth0 = setup({
         useRefreshTokens: true,
-        redirect_uri: null,
-        useFormData: false
+        useFormData: false,
+        authorizationParams: {
+          redirect_uri: null
+        }
       });
 
       await loginWithRedirect(auth0);
@@ -379,7 +385,9 @@ describe('Auth0Client', () => {
       mockFetch.mockReset();
 
       await getTokenSilently(auth0, {
-        redirect_uri: null,
+        authorizationParams: {
+          redirect_uri: null
+        },
         cacheMode: 'off'
       });
 
@@ -400,7 +408,9 @@ describe('Auth0Client', () => {
     it('calls the token endpoint with the correct params when not providing any redirect uri and using refresh tokens', async () => {
       const auth0 = setup({
         useRefreshTokens: true,
-        redirect_uri: null
+        authorizationParams: {
+          redirect_uri: null
+        }
       });
 
       await loginWithRedirect(auth0);
@@ -408,7 +418,9 @@ describe('Auth0Client', () => {
       mockFetch.mockReset();
 
       await getTokenSilently(auth0, {
-        redirect_uri: null,
+        authorizationParams: {
+          redirect_uri: null
+        },
         cacheMode: 'off'
       });
 
@@ -1379,15 +1391,19 @@ describe('Auth0Client', () => {
         })
       );
       let access_token = await auth0.getTokenSilently({
-        audience: 'foo',
-        scope: 'bar'
+        authorizationParams: {
+          audience: 'foo',
+          scope: 'bar'
+        }
       });
       expect(access_token).toEqual(TEST_ACCESS_TOKEN);
       expect(utils.runIframe).toHaveBeenCalledTimes(1);
       (<jest.Mock>utils.runIframe).mockClear();
       access_token = await auth0.getTokenSilently({
-        audience: 'foo',
-        scope: 'bar'
+        authorizationParams: {
+          audience: 'foo',
+          scope: 'bar'
+        }
       });
       expect(access_token).toEqual(TEST_ACCESS_TOKEN);
       expect(utils.runIframe).not.toHaveBeenCalled();
@@ -1408,12 +1424,16 @@ describe('Auth0Client', () => {
           expires_in: 86400
         })
       );
-      let access_token = await auth0.getTokenSilently({ audience: 'foo' });
+      let access_token = await auth0.getTokenSilently({
+        authorizationParams: { audience: 'foo' }
+      });
       expect(access_token).toEqual(TEST_ACCESS_TOKEN);
       expect(acquireLockSpy).toHaveBeenCalled();
       acquireLockSpy.mockClear();
       // This request will hit the cache, so should not acquire the lock
-      access_token = await auth0.getTokenSilently({ audience: 'foo' });
+      access_token = await auth0.getTokenSilently({
+        authorizationParams: { audience: 'foo' }
+      });
       expect(access_token).toEqual(TEST_ACCESS_TOKEN);
       expect(acquireLockSpy).not.toHaveBeenCalled();
     });
@@ -1506,8 +1526,10 @@ describe('Auth0Client', () => {
 
     it('sends custom options through to the token endpoint when using an iframe when not using useFormData', async () => {
       const auth0 = setup({
-        custom_param: 'foo',
-        another_custom_param: 'bar',
+        authorizationParams: {
+          custom_param: 'foo',
+          another_custom_param: 'bar'
+        },
         useFormData: false
       });
 
@@ -1529,7 +1551,9 @@ describe('Auth0Client', () => {
 
       await auth0.getTokenSilently({
         cacheMode: 'off',
-        custom_param: 'hello world'
+        authorizationParams: {
+          custom_param: 'hello world'
+        }
       });
 
       expect(
@@ -1550,8 +1574,10 @@ describe('Auth0Client', () => {
 
     it('sends custom options through to the token endpoint when using an iframe', async () => {
       const auth0 = setup({
-        custom_param: 'foo',
-        another_custom_param: 'bar'
+        authorizationParams: {
+          custom_param: 'foo',
+          another_custom_param: 'bar'
+        }
       });
 
       await loginWithRedirect(auth0);
@@ -1572,7 +1598,9 @@ describe('Auth0Client', () => {
 
       await auth0.getTokenSilently({
         cacheMode: 'off',
-        custom_param: 'hello world'
+        authorizationParams: {
+          custom_param: 'hello world'
+        }
       });
 
       expect(
@@ -1601,9 +1629,11 @@ describe('Auth0Client', () => {
 
     it('sends custom options through to the token endpoint when using refresh tokens when not using useFormData', async () => {
       const auth0 = setup({
+        authorizationParams: {
+          custom_param: 'foo',
+          another_custom_param: 'bar'
+        },
         useRefreshTokens: true,
-        custom_param: 'foo',
-        another_custom_param: 'bar',
         useFormData: false
       });
 
@@ -1631,7 +1661,9 @@ describe('Auth0Client', () => {
 
       const access_token = await auth0.getTokenSilently({
         cacheMode: 'off',
-        custom_param: 'hello world'
+        authorizationParams: {
+          custom_param: 'hello world'
+        }
       });
 
       expect(JSON.parse(mockFetch.mock.calls[1][1].body)).toEqual({
@@ -1649,8 +1681,10 @@ describe('Auth0Client', () => {
     it('sends custom options through to the token endpoint when using refresh tokens', async () => {
       const auth0 = setup({
         useRefreshTokens: true,
-        custom_param: 'foo',
-        another_custom_param: 'bar'
+        authorizationParams: {
+          custom_param: 'foo',
+          another_custom_param: 'bar'
+        }
       });
 
       await loginWithRedirect(auth0, undefined, {
@@ -1677,7 +1711,9 @@ describe('Auth0Client', () => {
 
       const access_token = await auth0.getTokenSilently({
         cacheMode: 'off',
-        custom_param: 'helloworld'
+        authorizationParams: {
+          custom_param: 'helloworld'
+        }
       });
 
       assertPost(
@@ -1901,7 +1937,9 @@ describe('Auth0Client', () => {
     it('opens iframe with correct urls including organization from the options', async () => {
       const auth0 = setup({
         authorizeTimeoutInSeconds: 1,
-        organization: TEST_ORG_ID
+        authorizationParams: {
+          organization: TEST_ORG_ID
+        }
       });
 
       jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
@@ -1944,7 +1982,9 @@ describe('Auth0Client', () => {
     it('opens iframe with correct urls including organization, with options taking precedence over hint cookie', async () => {
       const auth0 = setup({
         authorizeTimeoutInSeconds: 1,
-        organization: 'another_test_org'
+        authorizationParams: {
+          organization: 'another_test_org'
+        }
       });
 
       jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
@@ -2209,7 +2249,9 @@ describe('Auth0Client', () => {
 
     it('returns the full response with scopes when "detailedResponse: true" and using cache', async () => {
       const auth0 = setup({
-        scope: 'read:messages write:messages'
+        authorizationParams: {
+          scope: 'read:messages write:messages'
+        }
       });
 
       const runIframeSpy = jest
@@ -2235,7 +2277,9 @@ describe('Auth0Client', () => {
 
       await auth0.getTokenSilently({
         cacheMode: 'off',
-        scope: 'read:messages'
+        authorizationParams: {
+          scope: 'read:messages'
+        }
       });
 
       expect(auth0['cacheManager'].set).toHaveBeenCalledWith(
@@ -2253,7 +2297,9 @@ describe('Auth0Client', () => {
       // oauthTokenScope in the scope property
       const response = await auth0.getTokenSilently({
         detailedResponse: true,
-        scope: 'read:messages'
+        authorizationParams: {
+          scope: 'read:messages'
+        }
       });
 
       // No refresh_token included here, or oauthTokenScope

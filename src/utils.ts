@@ -165,7 +165,9 @@ const stripUndefined = (params: any) => {
 };
 
 export const createQueryParams = ({ clientId: client_id, ...params }: any) => {
-  return new URLSearchParams(stripUndefined({ client_id, ...params })).toString();
+  return new URLSearchParams(
+    stripUndefined({ client_id, ...params })
+  ).toString();
 };
 
 export const sha256 = async (s: string) => {

@@ -1,5 +1,3 @@
-import fetch from 'unfetch';
-
 import {
   DEFAULT_AUTH0_CLIENT,
   DEFAULT_SILENT_TOKEN_RETRY_COUNT
@@ -16,7 +14,6 @@ import { expect } from '@jest/globals';
 (<any>global).MessageChannel = MessageChannel;
 
 jest.mock('../src/worker/token.worker');
-jest.mock('unfetch');
 
 const mockFetch = <jest.Mock>fetch;
 (<any>global).MessageChannel = MessageChannel;
@@ -258,7 +255,7 @@ describe('oauthToken', () => {
   });
 
   it('throws a fetch error when the network is down', async () => {
-    mockFetch.mockReturnValue(Promise.reject(new ProgressEvent('error')));
+    mockFetch.mockReturnValue(Promise.reject(new Error('Failed to fetch')));
 
     await expect(
       oauthToken({

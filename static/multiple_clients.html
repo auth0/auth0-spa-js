@@ -81,7 +81,9 @@
           const useAuth0 = false;
 
           const commonOptions = {
-            redirect_uri: `${window.location.origin}/multiple_clients.html`,
+            authorizationParams: {
+              redirect_uri: `${window.location.origin}/multiple_clients.html`
+            },
             cacheLocation: 'localstorage',
             useFormData: true,
             domain: useAuth0 ? 'brucke.auth0.com' : window.location.origin,

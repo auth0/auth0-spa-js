@@ -1,5 +1,3 @@
-import 'fast-text-encoding';
-import unfetch from 'unfetch';
 import { verify } from '../../src/jwt';
 import { MessageChannel } from 'worker_threads';
 import * as utils from '../../src/utils';
@@ -13,13 +11,12 @@ import { assertUrlEquals, loginWithRedirectFn, setupFn } from './helpers';
 import { TEST_CLIENT_ID, TEST_CODE_CHALLENGE, TEST_DOMAIN } from '../constants';
 import { ICache } from '../../src/cache';
 
-jest.mock('unfetch');
 jest.mock('es-cookie');
 jest.mock('../../src/jwt');
 jest.mock('../../src/worker/token.worker');
 
 const mockWindow = <any>global;
-const mockFetch = (mockWindow.fetch = <jest.Mock>unfetch);
+const mockFetch = <jest.Mock>mockWindow.fetch;
 const mockVerify = <jest.Mock>verify;
 
 const mockCache: ICache = {
@@ -80,7 +77,9 @@ describe('Auth0Client', () => {
     it('automatically adds the offline_access scope during construction', () => {
       const auth0 = setup({
         useRefreshTokens: true,
-        scope: 'test-scope'
+        authorizationParams: {
+          scope: 'test-scope'
+        }
       });
 
       expect((<any>auth0).scope).toBe('test-scope offline_access');
@@ -200,7 +199,9 @@ describe('Auth0Client', () => {
       const auth0 = setup();
 
       const url = auth0.buildLogoutUrl({
-        returnTo: 'https://return.to',
+        logoutParams: {
+          returnTo: 'https://return.to'
+        },
         clientId: null
       });
 
@@ -212,7 +213,12 @@ describe('Auth0Client', () => {
     it('creates correct query params when `options.federated` is true', async () => {
       const auth0 = setup();
 
-      const url = auth0.buildLogoutUrl({ federated: true, clientId: null });
+      const url = auth0.buildLogoutUrl({
+        logoutParams: {
+          federated: true
+        },
+        clientId: null
+      });
 
       assertUrlEquals(url, TEST_DOMAIN, '/v2/logout', {
         federated: ''

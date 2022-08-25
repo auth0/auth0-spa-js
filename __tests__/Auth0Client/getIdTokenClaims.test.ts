@@ -1,5 +1,3 @@
-import 'fast-text-encoding';
-import unfetch from 'unfetch';
 import { verify } from '../../src/jwt';
 import { MessageChannel } from 'worker_threads';
 import * as utils from '../../src/utils';
@@ -12,13 +10,12 @@ import { loginWithPopupFn, loginWithRedirectFn, setupFn } from './helpers';
 
 import { TEST_CODE_CHALLENGE } from '../constants';
 
-jest.mock('unfetch');
 jest.mock('es-cookie');
 jest.mock('../../src/jwt');
 jest.mock('../../src/worker/token.worker');
 
 const mockWindow = <any>global;
-const mockFetch = (mockWindow.fetch = <jest.Mock>unfetch);
+const mockFetch = <jest.Mock>mockWindow.fetch;
 const mockVerify = <jest.Mock>verify;
 
 jest
@@ -105,17 +102,49 @@ describe('Auth0Client', () => {
       }) => {
         describe(`when ${name}`, () => {
           it('returns the ID token claims', async () => {
-            const auth0 = setup({ scope: 'foo' });
+            const auth0 = setup({ authorizationParams: { scope: 'foo' } });
             await login(auth0);
 
             expect(await auth0.getIdTokenClaims()).toHaveProperty('exp');
             expect(await auth0.getIdTokenClaims()).not.toHaveProperty('me');
           });
 
+          it('returns the ID token claims with custom scope', async () => {
+            const auth0 = setup({
+              authorizationParams: {
+                scope: 'scope1'
+              },
+              advancedOptions: {
+                defaultScope: 'scope2'
+              }
+            });
+            await login(auth0, { authorizationParams: { scope: 'scope3' } });
+
+            expect(await auth0.getIdTokenClaims()).toHaveProperty('exp');
+          });
+
           describe('when using refresh tokens', () => {
-            it('returns the ID token claims when using refresh tokens', async () => {
-              const auth0 = setup({ scope: 'foo', useRefreshTokens: true });
+            it('returns the ID token claims with offline_access', async () => {
+              const auth0 = setup({
+                authorizationParams: { scope: 'foo' },
+                useRefreshTokens: true
+              });
               await login(auth0);
+
+              expect(await auth0.getIdTokenClaims()).toHaveProperty('exp');
+            });
+
+            it('returns the ID token claims with custom scope and offline_access', async () => {
+              const auth0 = setup({
+                authorizationParams: {
+                  scope: 'scope1'
+                },
+                advancedOptions: {
+                  defaultScope: 'scope2'
+                },
+                useRefreshTokens: true
+              });
+              await login(auth0, { authorizationParams: { scope: 'scope3' } });
 
               expect(await auth0.getIdTokenClaims()).toHaveProperty('exp');
             });

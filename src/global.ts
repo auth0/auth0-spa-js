@@ -3,7 +3,7 @@ import { ICache } from './cache';
 /**
  * @ignore
  */
-export interface BaseLoginOptions {
+export interface AuthorizationParams {
   /**
    * - `'page'`: displays the UI with a full page view
    * - `'popup'`: displays the UI with a popup window
@@ -21,7 +21,7 @@ export interface BaseLoginOptions {
   prompt?: 'none' | 'login' | 'consent' | 'select_account';
 
   /**
-   * Maximum allowable elasped time (in seconds) since authentication.
+   * Maximum allowable elapsed time (in seconds) since authentication.
    * If the last time the user authenticated is greater than this value,
    * the user must be reauthenticated.
    */
@@ -91,10 +91,27 @@ export interface BaseLoginOptions {
   invitation?: string;
 
   /**
+   * The default URL where Auth0 will redirect your browser to with
+   * the authentication result. It must be whitelisted in
+   * the "Allowed Callback URLs" field in your Auth0 Application's
+   * settings. If not provided here, it should be provided in the other
+   * methods that provide authentication.
+   */
+  redirect_uri?: string;
+
+  /**
    * If you need to send custom parameters to the Authorization Server,
    * make sure to use the original parameter name.
    */
   [key: string]: any;
+}
+
+interface BaseLoginOptions {
+  /**
+   * URL parameters that will be sent back to the Authorization Server. This can be known parameters
+   * defined by Auth0 or custom parameters that you define.
+   */
+  authorizationParams?: AuthorizationParams;
 }
 
 export interface AdvancedOptions {
@@ -122,14 +139,6 @@ export interface Auth0ClientOptions extends BaseLoginOptions {
    * The Client ID found on your Application settings page
    */
   clientId: string;
-  /**
-   * The default URL where Auth0 will redirect your browser to with
-   * the authentication result. It must be whitelisted in
-   * the "Allowed Callback URLs" field in your Auth0 Application's
-   * settings. If not provided here, it should be provided in the other
-   * methods that provide authentication.
-   */
-  redirect_uri?: string;
   /**
    * The value in seconds used to account for clock skew in JWT expirations.
    * Typically, this value is no more than a minute or two at maximum.
@@ -272,7 +281,7 @@ export type CacheLocation = 'memory' | 'localstorage';
 /**
  * @ignore
  */
-export interface AuthorizeOptions extends BaseLoginOptions {
+export interface AuthorizeOptions extends AuthorizationParams {
   response_type: string;
   response_mode: string;
   redirect_uri: string;
@@ -285,13 +294,6 @@ export interface AuthorizeOptions extends BaseLoginOptions {
 
 export interface RedirectLoginOptions<TAppState = any>
   extends BaseLoginOptions {
-  /**
-   * The URL where Auth0 will redirect your browser to with
-   * the authentication result. It must be whitelisted in
-   * the "Allowed Callback URLs" field in your Auth0 Application's
-   * settings.
-   */
-  redirect_uri?: string;
   /**
    * Used to store state before doing the redirect
    */
@@ -347,24 +349,35 @@ export interface GetTokenSilentlyOptions {
   cacheMode?: 'on' | 'off' | 'cache-only';
 
   /**
-   * There's no actual redirect when getting a token silently,
-   * but, according to the spec, a `redirect_uri` param is required.
-   * Auth0 uses this parameter to validate that the current `origin`
-   * matches the `redirect_uri` `origin` when sending the response.
-   * It must be whitelisted in the "Allowed Web Origins" in your
-   * Auth0 Application's settings.
+   * Parameters that will be sent back to Auth0 as part of a request.
    */
-  redirect_uri?: string;
+  authorizationParams?: {
+    /**
+     * There's no actual redirect when getting a token silently,
+     * but, according to the spec, a `redirect_uri` param is required.
+     * Auth0 uses this parameter to validate that the current `origin`
+     * matches the `redirect_uri` `origin` when sending the response.
+     * It must be whitelisted in the "Allowed Web Origins" in your
+     * Auth0 Application's settings.
+     */
+    redirect_uri?: string;
 
-  /**
-   * The scope that was used in the authentication request
-   */
-  scope?: string;
+    /**
+     * The scope that was used in the authentication request
+     */
+    scope?: string;
 
-  /**
-   * The audience that was used in the authentication request
-   */
-  audience?: string;
+    /**
+     * The audience that was used in the authentication request
+     */
+    audience?: string;
+
+    /**
+     * If you need to send custom parameters to the Authorization Server,
+     * make sure to use the original parameter name.
+     */
+    [key: string]: any;
+  };
 
   /** A maximum number of seconds to wait before declaring the background /authorize call as failed for timeout
    * Defaults to 60s.
@@ -378,12 +391,6 @@ export interface GetTokenSilentlyOptions {
    * The default is `false`.
    */
   detailedResponse?: boolean;
-
-  /**
-   * If you need to send custom parameters to the Authorization Server,
-   * make sure to use the original parameter name.
-   */
-  [key: string]: any;
 }
 
 export interface GetTokenWithPopupOptions extends PopupLoginOptions {
@@ -397,20 +404,6 @@ export interface GetTokenWithPopupOptions extends PopupLoginOptions {
 
 export interface LogoutUrlOptions {
   /**
-   * The URL where Auth0 will redirect your browser to after the logout.
-   *
-   * **Note**: If the `clientId` parameter is included, the
-   * `returnTo` URL that is provided must be listed in the
-   * Application's "Allowed Logout URLs" in the Auth0 dashboard.
-   * However, if the `clientId` parameter is not included, the
-   * `returnTo` URL must be listed in the "Allowed Logout URLs" at
-   * the account level in the Auth0 dashboard.
-   *
-   * [Read more about how redirecting after logout works](https://auth0.com/docs/logout/guides/redirect-users-after-logout)
-   */
-  returnTo?: string;
-
-  /**
    * The `clientId` of your application.
    *
    * If this property is not set, then the `clientId` that was used during initialization of the SDK is sent to the logout endpoint.
@@ -422,49 +415,39 @@ export interface LogoutUrlOptions {
   clientId?: string;
 
   /**
-   * When supported by the upstream identity provider,
-   * forces the user to logout of their identity provider
-   * and from Auth0.
-   * [Read more about how federated logout works at Auth0](https://auth0.com/docs/logout/guides/logout-idps)
+   * Parameters to pass to the logout endpoint. This can be known parameters defined by Auth0 or custom parameters
+   * you wish to provide.
    */
-  federated?: boolean;
+  logoutParams?: {
+    /**
+     * When supported by the upstream identity provider,
+     * forces the user to logout of their identity provider
+     * and from Auth0.
+     * [Read more about how federated logout works at Auth0](https://auth0.com/docs/logout/guides/logout-idps)
+     */
+    federated?: boolean;
+    /**
+     * The URL where Auth0 will redirect your browser to after the logout.
+     *
+     * **Note**: If the `client_id` parameter is included, the
+     * `returnTo` URL that is provided must be listed in the
+     * Application's "Allowed Logout URLs" in the Auth0 dashboard.
+     * However, if the `client_id` parameter is not included, the
+     * `returnTo` URL must be listed in the "Allowed Logout URLs" at
+     * the account level in the Auth0 dashboard.
+     *
+     * [Read more about how redirecting after logout works](https://auth0.com/docs/logout/guides/redirect-users-after-logout)
+     */
+    returnTo?: string;
+
+    /**
+     * If you need to send custom parameters to the logout endpoint, make sure to use the original parameter name.
+     */
+    [key: string]: any;
+  };
 }
 
-export interface LogoutOptions {
-  /**
-   * The URL where Auth0 will redirect your browser to after the logout.
-   *
-   * **Note**: If the `clientId` parameter is included, the
-   * `returnTo` URL that is provided must be listed in the
-   * Application's "Allowed Logout URLs" in the Auth0 dashboard.
-   * However, if the `clientId` parameter is not included, the
-   * `returnTo` URL must be listed in the "Allowed Logout URLs" at
-   * the account level in the Auth0 dashboard.
-   *
-   * [Read more about how redirecting after logout works](https://auth0.com/docs/logout/guides/redirect-users-after-logout)
-   */
-  returnTo?: string;
-
-  /**
-   * The `clientId` of your application.
-   *
-   * If this property is not set, then the `clientId` that was used during initialization of the SDK is sent to the logout endpoint.
-   *
-   * If this property is set to `null`, then no client ID value is sent to the logout endpoint.
-   *
-   * [Read more about how redirecting after logout works](https://auth0.com/docs/logout/guides/redirect-users-after-logout)
-   */
-  clientId?: string;
-
-  /**
-   * When supported by the upstream identity provider,
-   * forces the user to logout of their identity provider
-   * and from Auth0.
-   * This option cannot be specified along with the `localOnly` option.
-   * [Read more about how federated logout works at Auth0](https://auth0.com/docs/logout/guides/logout-idps)
-   */
-  federated?: boolean;
-
+export interface LogoutOptions extends LogoutUrlOptions {
   /**
    * When `true`, this skips the request to the logout endpoint on the authorization server,
    * effectively performing a "local" logout of the application. No redirect should take place,

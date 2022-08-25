@@ -1,6 +1,4 @@
-import 'fast-text-encoding';
 import * as esCookie from 'es-cookie';
-import unfetch from 'unfetch';
 import { verify } from '../../src/jwt';
 import { MessageChannel } from 'worker_threads';
 import * as utils from '../../src/utils';
@@ -14,13 +12,12 @@ import { loginWithRedirectFn, setupFn } from './helpers';
 import { TEST_CLIENT_ID, TEST_CODE_CHALLENGE, TEST_DOMAIN } from '../constants';
 import { InMemoryAsyncCacheNoKeys } from '../cache/shared';
 
-jest.mock('unfetch');
 jest.mock('es-cookie');
 jest.mock('../../src/jwt');
 jest.mock('../../src/worker/token.worker');
 
 const mockWindow = <any>global;
-const mockFetch = (mockWindow.fetch = <jest.Mock>unfetch);
+const mockFetch = <jest.Mock>mockWindow.fetch;
 const mockVerify = <jest.Mock>verify;
 const loginWithRedirect = loginWithRedirectFn(mockWindow, mockFetch);
 
@@ -104,7 +101,7 @@ describe('Auth0Client', () => {
     it('calls `window.location.assign` with the correct url when `options.federated` is true', async () => {
       const auth0 = setup();
 
-      auth0.logout({ federated: true });
+      auth0.logout({ logoutParams: { federated: true } });
 
       expect(window.location.assign).toHaveBeenCalledWith(
         `https://${TEST_DOMAIN}/v2/logout?client_id=${TEST_CLIENT_ID}${TEST_AUTH0_CLIENT_QUERY_STRING}&federated`
@@ -173,7 +170,8 @@ describe('Auth0Client', () => {
     it('throws when both `options.localOnly` and `options.federated` are true', async () => {
       const auth0 = setup();
 
-      const fn = () => auth0.logout({ localOnly: true, federated: true });
+      const fn = () =>
+        auth0.logout({ localOnly: true, logoutParams: { federated: true } });
       expect(fn).toThrow();
     });
 
