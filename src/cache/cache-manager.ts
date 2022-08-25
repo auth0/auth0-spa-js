@@ -87,6 +87,7 @@ export class CacheManager {
 
   async set2<TEntry>(cacheKey: CacheKey, entry: TEntry): Promise<void> {
     await this.cache.set(cacheKey.toKey(), entry);
+    await this.keyManifest?.add(cacheKey.toKey());
   }
 
   async clear(clientId?: string): Promise<void> {

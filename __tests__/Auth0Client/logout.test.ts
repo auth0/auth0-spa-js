@@ -186,7 +186,9 @@ describe('Auth0Client', () => {
     });
 
     it('can access isAuthenticated immediately after local logout when using a custom async cache', async () => {
-      const auth0 = setup();
+      const auth0 = setup({
+        cache: new InMemoryAsyncCacheNoKeys()
+      });
 
       await loginWithRedirect(auth0);
       expect(await auth0.isAuthenticated()).toBe(true);

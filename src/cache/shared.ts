@@ -24,7 +24,14 @@ export class CacheKey {
    * @returns A string representation of the key
    */
   toKey(): string {
-    return [this.prefix, this.clientId, this.audience, this.scope]
+    return [
+      this.prefix,
+      this.clientId,
+      this.audience,
+      this.scope,
+      // temp fix to not conflict with the keyManifest key
+      !this.audience && !this.scope ? 'user' : ''
+    ]
       .filter(Boolean)
       .join('::');
   }
