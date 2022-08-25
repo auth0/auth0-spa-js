@@ -540,7 +540,6 @@ export class Auth0Client {
    * from the `id_token`).
    *
    * @typeparam TUser The type to return, has to extend {@link User}.
-   * @param options
    */
   public async getUser<TUser extends User>(): Promise<TUser | undefined> {
     let cache = await this.getUserCacheEntry();
@@ -577,8 +576,6 @@ export class Auth0Client {
    * ```
    *
    * Returns all claims from the id_token if available.
-   *
-   * @param options
    */
   public async getIdTokenClaims(): Promise<IdToken | undefined> {
     const cache = await this.getUserCacheEntry();
