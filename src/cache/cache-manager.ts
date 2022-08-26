@@ -1,4 +1,5 @@
 import { DEFAULT_NOW_PROVIDER } from '../constants';
+import { IdToken, User } from '../global';
 import { CacheKeyManifest } from './key-manifest';
 
 import {
@@ -7,7 +8,8 @@ import {
   CacheKey,
   CACHE_KEY_PREFIX,
   WrappedCacheEntry,
-  Cacheable
+  Cacheable,
+  DecodedToken
 } from './shared';
 
 const DEFAULT_EXPIRY_ADJUSTMENT_SECONDS = 0;
@@ -21,8 +23,46 @@ export class CacheManager {
     this.nowProvider = this.nowProvider || DEFAULT_NOW_PROVIDER;
   }
 
-  async get2<TEntry extends Cacheable>(cacheKey: CacheKey): Promise<TEntry> {
-    return this.cache.get<TEntry>(cacheKey.toKey());
+  async setIdToken(
+    cacheKey: CacheKey,
+    idToken: string,
+    decodedToken: DecodedToken
+  ): Promise<void> {
+    console.log('setting', { idToken, decodedToken });
+    await this.cache.set(cacheKey.toKey(), {
+      id_token: idToken,
+      decodedToken
+    });
+    await this.keyManifest?.add(cacheKey.toKey());
+  }
+
+  async getIdToken(
+    cacheKey: CacheKey
+  ): Promise<{ id_token: string; decodedToken: DecodedToken }> {
+    let entry = await this.cache.get<{
+      id_token: string;
+      decodedToken: DecodedToken;
+    }>(new CacheKey({ clientId: cacheKey.clientId }).toKey());
+
+    if (!entry && cacheKey.scope && cacheKey.audience) {
+      const audience = cacheKey.audience;
+      const scope = cacheKey.scope;
+
+      const entryByScope = await this.get(
+        new CacheKey({
+          clientId: cacheKey.clientId,
+          audience,
+          scope
+        })
+      );
+
+      return {
+        id_token: entryByScope?.id_token,
+        decodedToken: entryByScope?.decodedToken
+      };
+    }
+
+    return { id_token: entry?.id_token, decodedToken: entry?.decodedToken };
   }
 
   async get(
@@ -82,11 +122,6 @@ export class CacheManager {
     const wrappedEntry = await this.wrapCacheEntry(entry);
 
     await this.cache.set(cacheKey.toKey(), wrappedEntry);
-    await this.keyManifest?.add(cacheKey.toKey());
-  }
-
-  async set2<TEntry>(cacheKey: CacheKey, entry: TEntry): Promise<void> {
-    await this.cache.set(cacheKey.toKey(), entry);
     await this.keyManifest?.add(cacheKey.toKey());
   }
 

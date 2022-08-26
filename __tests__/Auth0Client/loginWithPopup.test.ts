@@ -606,16 +606,14 @@ describe('Auth0Client', () => {
       };
       tokenVerifier.mockReturnValue(mockDecodedToken);
 
-      jest.spyOn(auth0['cacheManager'], 'set2');
+      jest.spyOn(auth0['cacheManager'], 'setIdToken');
 
       await loginWithPopup(auth0);
 
-      expect(auth0['cacheManager']['set2']).toHaveBeenCalledWith(
-        expect.anything(),
-        expect.objectContaining({
-          id_token: TEST_ID_TOKEN,
-          decodedToken: mockDecodedToken
-        })
+      expect(auth0['cacheManager']['setIdToken']).toHaveBeenCalledWith(
+        expect.objectContaining({ clientId: TEST_CLIENT_ID }),
+        TEST_ID_TOKEN,
+        mockDecodedToken
       );
     });
 
