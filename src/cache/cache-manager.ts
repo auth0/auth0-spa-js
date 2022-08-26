@@ -28,7 +28,6 @@ export class CacheManager {
     idToken: string,
     decodedToken: DecodedToken
   ): Promise<void> {
-    console.log('setting', { idToken, decodedToken });
     await this.cache.set(cacheKey.toKey(), {
       id_token: idToken,
       decodedToken
