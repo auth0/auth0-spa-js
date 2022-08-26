@@ -1,5 +1,4 @@
 import { DEFAULT_NOW_PROVIDER } from '../constants';
-import { IdToken, User } from '../global';
 import { CacheKeyManifest } from './key-manifest';
 
 import {
@@ -8,7 +7,6 @@ import {
   CacheKey,
   CACHE_KEY_PREFIX,
   WrappedCacheEntry,
-  Cacheable,
   DecodedToken
 } from './shared';
 
