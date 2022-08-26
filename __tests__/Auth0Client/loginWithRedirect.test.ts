@@ -514,9 +514,7 @@ describe('Auth0Client', () => {
       await loginWithRedirect(auth0);
 
       expect(auth0['cacheManager']['setIdToken']).toHaveBeenCalledWith(
-        expect.objectContaining({
-          clientId: TEST_CLIENT_ID
-        }),
+        TEST_CLIENT_ID,
         TEST_ID_TOKEN,
         mockDecodedToken
       );

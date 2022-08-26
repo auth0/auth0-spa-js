@@ -544,7 +544,7 @@ export class Auth0Client {
   public async getUser<TUser extends User>(): Promise<TUser | undefined> {
     const cache = await this._getIdTokenFromCache();
 
-    return cache && (cache?.decodedToken?.user as TUser);
+    return cache?.decodedToken?.user as TUser;
   }
 
   /**
@@ -557,7 +557,7 @@ export class Auth0Client {
   public async getIdTokenClaims(): Promise<IdToken | undefined> {
     const cache = await this._getIdTokenFromCache();
 
-    return cache && cache?.decodedToken?.claims;
+    return cache?.decodedToken?.claims;
   }
 
   /**
@@ -1209,21 +1209,12 @@ export class Auth0Client {
   private async _saveEntryInCache(entry: CacheEntry) {
     const { id_token, decodedToken, ...entryWithoutIdToken } = entry;
 
-    await this._updateIdTokenInCache(entry);
-    await this.cacheManager.set(entryWithoutIdToken as CacheEntry);
-  }
-
-  private async _updateIdTokenInCache(entry: CacheEntry) {
-    const cacheKey = new CacheKey({
-      clientId: this.options.clientId
-    });
-
-    // Add or update both the id_token and decodedToken
     await this.cacheManager.setIdToken(
-      cacheKey,
+      this.options.clientId,
       entry.id_token,
       entry.decodedToken
     );
+    await this.cacheManager.set(entryWithoutIdToken);
   }
 
   private async _getIdTokenFromCache() {

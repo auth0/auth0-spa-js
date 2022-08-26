@@ -69,10 +69,10 @@ export interface DecodedToken {
 }
 
 export type CacheEntry = {
-  id_token: string;
+  id_token?: string;
   access_token: string;
   expires_in: number;
-  decodedToken: DecodedToken;
+  decodedToken?: DecodedToken;
   audience: string;
   scope: string;
   client_id: string;

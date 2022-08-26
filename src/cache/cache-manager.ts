@@ -22,10 +22,11 @@ export class CacheManager {
   }
 
   async setIdToken(
-    cacheKey: CacheKey,
+    clientId: string,
     idToken: string,
     decodedToken: DecodedToken
   ): Promise<void> {
+    const cacheKey = new CacheKey({ clientId });
     await this.cache.set(cacheKey.toKey(), {
       id_token: idToken,
       decodedToken
@@ -44,7 +45,6 @@ export class CacheManager {
     if (!entry && cacheKey.scope && cacheKey.audience) {
       const audience = cacheKey.audience;
       const scope = cacheKey.scope;
-
       const entryByScope = await this.get(
         new CacheKey({
           clientId: cacheKey.clientId,
@@ -59,7 +59,7 @@ export class CacheManager {
       };
     }
 
-    return { id_token: entry?.id_token, decodedToken: entry?.decodedToken };
+    return { id_token: entry.id_token, decodedToken: entry.decodedToken };
   }
 
   async get(
