@@ -297,7 +297,9 @@ describe('Auth0', () => {
           ...options
         });
 
-        expect((<any>auth0).scope).toBe('the-scope offline_access');
+        expect((<any>auth0).scope).toBe(
+          'openid profile email the-scope offline_access'
+        );
 
         expect(auth0.getTokenSilently).toHaveBeenCalledWith(undefined);
       });
