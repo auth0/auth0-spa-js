@@ -377,17 +377,15 @@ if (organization && invitation) {
 }
 ```
 
-### Advanced options
+### Overriding Default Scopes
 
-Advanced options can be set by specifying the `advancedOptions` property when configuring `Auth0Client`. Learn about the complete set of advanced options in the [API documentation](https://auth0.github.io/auth0-spa-js/interfaces/advancedoptions.html)
+To override the default scopes that are set, specify the `defaultScope` property on the `Auth0Client`. By default this is set to `profile email`. `openid` will always be set by the SDK regardless of this setting.
 
 ```js
 createAuth0Client({
   domain: '<AUTH0_DOMAIN>',
   clientId: '<AUTH0_CLIENT_ID>',
-  advancedOptions: {
-    defaultScope: 'email' // change the scopes that are applied to every authz request. **Note**: `openid` is always specified regardless of this setting
-  }
+  defaultScope: 'email' // change the scopes that are applied to every authz request. **Note**: `openid` is always specified regardless of this setting
 });
 ```
 

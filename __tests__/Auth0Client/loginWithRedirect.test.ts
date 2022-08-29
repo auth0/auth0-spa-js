@@ -184,9 +184,7 @@ describe('Auth0Client', () => {
 
     it('should log the user in using different default scope', async () => {
       const auth0 = setup({
-        advancedOptions: {
-          defaultScope: 'email'
-        }
+        defaultScope: 'email'
       });
 
       await loginWithRedirect(auth0);
@@ -341,9 +339,7 @@ describe('Auth0Client', () => {
         authorizationParams: {
           scope: 'scope1'
         },
-        advancedOptions: {
-          defaultScope: 'scope2'
-        }
+        defaultScope: 'scope2'
       });
 
       await loginWithRedirect(auth0, {
@@ -559,9 +555,7 @@ describe('Auth0Client', () => {
       // list in Auth0Client._getParams so that it is not sent to the IdP
       const auth0 = setup({
         useRefreshTokens: true,
-        advancedOptions: {
-          defaultScope: 'openid profile email offline_access'
-        },
+        defaultScope: 'openid profile email offline_access',
         useCookiesForTransactions: true,
         authorizeTimeoutInSeconds: 10,
         cacheLocation: 'localstorage',

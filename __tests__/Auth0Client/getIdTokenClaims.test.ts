@@ -124,9 +124,7 @@ describe('Auth0Client', () => {
               authorizationParams: {
                 scope: 'scope1'
               },
-              advancedOptions: {
-                defaultScope: 'scope2'
-              }
+              defaultScope: 'scope2'
             });
             await login(auth0, { authorizationParams: { scope: 'scope3' } });
 
@@ -153,9 +151,7 @@ describe('Auth0Client', () => {
                 authorizationParams: {
                   scope: 'scope1'
                 },
-                advancedOptions: {
-                  defaultScope: 'scope2'
-                },
+                defaultScope: 'scope2',
                 useRefreshTokens: true
               });
               await login(auth0, { authorizationParams: { scope: 'scope3' } });

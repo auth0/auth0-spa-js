@@ -178,6 +178,7 @@ export class Auth0Client {
 
   private readonly defaultOptions: Partial<Auth0ClientOptions> = {
     authorizationParams: {},
+    defaultScope: DEFAULT_SCOPE,
     useRefreshTokensFallback: false,
     useFormData: true
   };
@@ -233,9 +234,7 @@ export class Auth0Client {
 
     this.scope = getUniqueScopes(
       'openid',
-      this.options.advancedOptions?.defaultScope !== undefined
-        ? this.options.advancedOptions.defaultScope
-        : DEFAULT_SCOPE,
+      this.options.defaultScope,
       this.options.authorizationParams?.scope
     );
 

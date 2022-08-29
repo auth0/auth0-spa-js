@@ -110,9 +110,7 @@ describe('Auth0Client', () => {
 
     it('respects customized scopes', async () => {
       const auth0 = await localSetup({
-        advancedOptions: {
-          defaultScope: 'email'
-        },
+        defaultScope: 'email',
         authorizationParams: {
           scope: 'read:email'
         }

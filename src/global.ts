@@ -114,16 +114,6 @@ interface BaseLoginOptions {
   authorizationParams?: AuthorizationParams;
 }
 
-export interface AdvancedOptions {
-  /**
-   * The default scope to be included with all requests.
-   * If not provided, 'openid profile email' is used. This can be set to `null` in order to effectively remove the default scopes.
-   *
-   * Note: The `openid` scope is **always applied** regardless of this setting.
-   */
-  defaultScope?: string;
-}
-
 export interface Auth0ClientOptions extends BaseLoginOptions {
   /**
    * Your Auth0 account domain such as `'example.auth0.com'`,
@@ -234,11 +224,6 @@ export interface Auth0ClientOptions extends BaseLoginOptions {
   useCookiesForTransactions?: boolean;
 
   /**
-   * Changes to recommended defaults, like defaultScope
-   */
-  advancedOptions?: AdvancedOptions;
-
-  /**
    * Number of days until the cookie `auth0.is.authenticated` will expire
    * Defaults to 1.
    */
@@ -271,6 +256,14 @@ export interface Auth0ClientOptions extends BaseLoginOptions {
    * **Note**: Using this improperly can potentially compromise the token validation.
    */
   nowProvider?: () => Promise<number> | number;
+
+  /**
+   * The default scope to be included with all requests.
+   * If not provided, 'openid profile email' is used. This can be set to `null` in order to effectively remove the default scopes.
+   *
+   * Note: The `openid` scope is **always applied** regardless of this setting.
+   */
+  defaultScope?: string;
 }
 
 /**

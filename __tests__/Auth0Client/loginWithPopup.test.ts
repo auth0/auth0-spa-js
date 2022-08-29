@@ -130,9 +130,7 @@ describe('Auth0Client', () => {
         authorizationParams: {
           scope: 'scope1'
         },
-        advancedOptions: {
-          defaultScope: 'scope2'
-        }
+        defaultScope: 'scope2'
       });
       await loginWithPopup(auth0, { authorizationParams: { scope: 'scope3' } });
 

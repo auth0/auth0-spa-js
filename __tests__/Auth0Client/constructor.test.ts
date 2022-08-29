@@ -89,9 +89,7 @@ describe('Auth0Client', () => {
 
     it('ensures the openid scope is defined when customizing default scopes', () => {
       const auth0 = setup({
-        advancedOptions: {
-          defaultScope: 'test-scope'
-        }
+        defaultScope: 'test-scope'
       });
 
       expect((<any>auth0).scope).toBe('openid test-scope');
@@ -99,9 +97,7 @@ describe('Auth0Client', () => {
 
     it('allows an empty custom default scope', () => {
       const auth0 = setup({
-        advancedOptions: {
-          defaultScope: null
-        }
+        defaultScope: null
       });
 
       expect((<any>auth0).scope).toBe('openid');

@@ -503,9 +503,7 @@ describe('Auth0Client', () => {
 
     it('refreshes the token using custom default scope', async () => {
       const auth0 = setup({
-        advancedOptions: {
-          defaultScope: 'email'
-        }
+        defaultScope: 'email'
       });
 
       await loginWithRedirect(auth0, undefined, {
@@ -536,9 +534,7 @@ describe('Auth0Client', () => {
     it('refreshes the token using custom default scope when using refresh tokens', async () => {
       const auth0 = setup({
         useRefreshTokens: true,
-        advancedOptions: {
-          defaultScope: 'email'
-        }
+        defaultScope: 'email'
       });
 
       await loginWithRedirect(auth0, undefined, {
@@ -2294,9 +2290,7 @@ describe('Auth0Client', () => {
         authorizationParams: {
           scope: 'read:messages'
         },
-        advancedOptions: {
-          defaultScope: 'email'
-        }
+        defaultScope: 'email'
       });
 
       await loginWithRedirect(auth0, undefined, {
