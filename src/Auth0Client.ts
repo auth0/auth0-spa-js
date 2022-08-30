@@ -1145,12 +1145,13 @@ export class Auth0Client {
   private async _getTokenUsingRefreshToken(
     options: GetTokenSilentlyOptions
   ): Promise<GetTokenSilentlyResult> {
-    options.authorizationParams = options.authorizationParams || {};
-
-    options.authorizationParams.scope = getUniqueScopes(
-      this.options.authorizationParams?.scope,
-      options.authorizationParams?.scope
-    );
+    options = {
+      ...options,
+      authorizationParams: {
+        ...options.authorizationParams,
+        scope: getUniqueScopes(this.scope, options.authorizationParams?.scope)
+      }
+    };
 
     const cache = await this.cacheManager.get(
       new CacheKey({
