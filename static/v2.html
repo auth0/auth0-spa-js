@@ -119,10 +119,13 @@
       var clientOptions = {
         domain: defaultDomain,
         clientId: defaultClientId,
-        audience: defaultAudience,
+        authorizationParams: {
+          audience: defaultAudience,
+          redirect_uri: window.location.origin + '/v2.html'
+        },
         cacheLocation: 'localstorage',
         useRefreshTokens: true,
-        redirect_uri: window.location.origin + '/v2.html'
+        useRefreshTokensFallback: true
       };
 
       var app = new Vue({
@@ -171,8 +174,10 @@
 
           getToken: async function () {
             await this.auth0.getTokenSilently({
-              foo: this.foo,
-              ...(this.getTokenScope ? { scope: this.getTokenScope } : {}),
+              authorizationParams: {
+                foo: this.foo,
+                ...(this.getTokenScope ? { scope: this.getTokenScope } : {})
+              },
               cacheMode: 'off'
             });
             this.isAuthenticated = await this.auth0.isAuthenticated();
