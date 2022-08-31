@@ -164,7 +164,6 @@ export class Auth0Client {
   private readonly cacheManager: CacheManager;
   private readonly domainUrl: string;
   private readonly tokenIssuer: string;
-  private readonly defaultScope: string;
   private readonly scope: string;
   private readonly cookieStorage: ClientStorage;
   private readonly sessionCheckExpiryDays: number;
@@ -232,7 +231,13 @@ export class Auth0Client {
       ? this.cookieStorage
       : SessionStorage;
 
-    this.scope = this.options.authorizationParams?.scope;
+    this.scope = getUniqueScopes(
+      'openid',
+      this.options.advancedOptions?.defaultScope !== undefined
+        ? this.options.advancedOptions.defaultScope
+        : DEFAULT_SCOPE,
+      this.options.authorizationParams?.scope
+    );
 
     this.transactionManager = new TransactionManager(
       transactionStorage,
@@ -251,13 +256,6 @@ export class Auth0Client {
 
     this.domainUrl = getDomain(this.options.domain);
     this.tokenIssuer = getTokenIssuer(this.options.issuer, this.domainUrl);
-
-    this.defaultScope = getUniqueScopes(
-      'openid',
-      this.options.advancedOptions?.defaultScope !== undefined
-        ? this.options.advancedOptions.defaultScope
-        : DEFAULT_SCOPE
-    );
 
     // If using refresh tokens, automatically specify the `offline_access` scope.
     // Note we cannot add this to 'defaultScope' above as the scopes are used in the
@@ -295,11 +293,7 @@ export class Auth0Client {
       client_id: this.options.clientId,
       ...this.options.authorizationParams,
       ...authorizeOptions,
-      scope: getUniqueScopes(
-        this.defaultScope,
-        this.scope,
-        authorizeOptions?.scope
-      ),
+      scope: getUniqueScopes(this.scope, authorizeOptions?.scope),
       response_type: 'code',
       response_mode: 'query',
       state,
@@ -554,7 +548,7 @@ export class Auth0Client {
       options.audience ||
       this.options.authorizationParams?.audience ||
       'default';
-    const scope = getUniqueScopes(this.defaultScope, this.scope, options.scope);
+    const scope = getUniqueScopes(this.scope, options.scope);
 
     const cache = await this.cacheManager.get(
       new CacheKey({
@@ -587,7 +581,7 @@ export class Auth0Client {
       options.audience ||
       this.options.authorizationParams?.audience ||
       'default';
-    const scope = getUniqueScopes(this.defaultScope, this.scope, options.scope);
+    const scope = getUniqueScopes(this.scope, options.scope);
 
     const cache = await this.cacheManager.get(
       new CacheKey({
@@ -833,11 +827,7 @@ export class Auth0Client {
       authorizationParams: {
         ...this.options.authorizationParams,
         ...options.authorizationParams,
-        scope: getUniqueScopes(
-          this.defaultScope,
-          this.scope,
-          options.authorizationParams?.scope
-        )
+        scope: getUniqueScopes(this.scope, options.authorizationParams?.scope)
       }
     };
 
@@ -883,7 +873,8 @@ export class Auth0Client {
         if (cacheMode !== 'off') {
           const entry = await this._getEntryFromCache({
             scope: getTokenOptions.authorizationParams?.scope,
-            audience: getTokenOptions.authorizationParams?.audience || 'default',
+            audience:
+              getTokenOptions.authorizationParams?.audience || 'default',
             clientId: this.options.clientId,
             getDetailedEntry: options.detailedResponse
           });
@@ -949,11 +940,7 @@ export class Auth0Client {
       authorizationParams: {
         ...this.options.authorizationParams,
         ...options.authorizationParams,
-        scope: getUniqueScopes(
-          this.defaultScope,
-          this.scope,
-          options.authorizationParams?.scope
-        )
+        scope: getUniqueScopes(this.scope, options.authorizationParams?.scope)
       }
     };
 
@@ -1158,13 +1145,13 @@ export class Auth0Client {
   private async _getTokenUsingRefreshToken(
     options: GetTokenSilentlyOptions
   ): Promise<GetTokenSilentlyResult> {
-    options.authorizationParams = options.authorizationParams || {};
-
-    options.authorizationParams.scope = getUniqueScopes(
-      this.defaultScope,
-      this.options.authorizationParams?.scope,
-      options.authorizationParams?.scope
-    );
+    options = {
+      ...options,
+      authorizationParams: {
+        ...options.authorizationParams,
+        scope: getUniqueScopes(this.scope, options.authorizationParams?.scope)
+      }
+    };
 
     const cache = await this.cacheManager.get(
       new CacheKey({

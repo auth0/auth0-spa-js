@@ -2287,5 +2287,68 @@ describe('Auth0Client', () => {
 
       expect(runIframeSpy).not.toHaveBeenCalled();
     });
+
+    it('should set the correct scopes when using refresh tokens', async () => {
+      const auth0 = setup({
+        useRefreshTokens: true,
+        authorizationParams: {
+          scope: 'read:messages'
+        },
+        advancedOptions: {
+          defaultScope: 'email'
+        }
+      });
+
+      await loginWithRedirect(auth0, undefined, {
+        token: {
+          response: { refresh_token: 'a_refresh_token' }
+        }
+      });
+
+      jest.spyOn(auth0['cacheManager'], 'set');
+
+      jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
+        access_token: TEST_ACCESS_TOKEN,
+        state: TEST_STATE
+      });
+
+      mockFetch.mockResolvedValue(
+        fetchResponse(true, {
+          id_token: TEST_ID_TOKEN,
+          refresh_token: TEST_REFRESH_TOKEN,
+          access_token: TEST_ACCESS_TOKEN,
+          expires_in: 86400
+        })
+      );
+
+      expect(utils.runIframe).not.toHaveBeenCalled();
+
+      const access_token = await auth0.getTokenSilently({
+        cacheMode: 'off'
+      });
+
+      assertPost(
+        'https://auth0_domain/oauth/token',
+        {
+          redirect_uri: TEST_REDIRECT_URI,
+          client_id: TEST_CLIENT_ID,
+          grant_type: 'refresh_token',
+          refresh_token: 'a_refresh_token'
+        },
+        {
+          'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        1,
+        false
+      );
+
+      expect(access_token).toEqual(TEST_ACCESS_TOKEN);
+
+      expect(auth0['cacheManager'].set).toHaveBeenCalledWith(
+        expect.objectContaining({
+          scope: 'openid email read:messages offline_access'
+        })
+      );
+    });
   });
 });

@@ -82,7 +82,9 @@ describe('Auth0Client', () => {
         }
       });
 
-      expect((<any>auth0).scope).toBe('test-scope offline_access');
+      expect((<any>auth0).scope).toBe(
+        'openid profile email test-scope offline_access'
+      );
     });
 
     it('ensures the openid scope is defined when customizing default scopes', () => {
@@ -92,7 +94,7 @@ describe('Auth0Client', () => {
         }
       });
 
-      expect((<any>auth0).defaultScope).toBe('openid test-scope');
+      expect((<any>auth0).scope).toBe('openid test-scope');
     });
 
     it('allows an empty custom default scope', () => {
@@ -102,7 +104,7 @@ describe('Auth0Client', () => {
         }
       });
 
-      expect((<any>auth0).defaultScope).toBe('openid');
+      expect((<any>auth0).scope).toBe('openid');
     });
 
     it('should create issuer from domain', () => {
