@@ -1205,13 +1205,12 @@ export class Auth0Client {
 
   private async _getIdTokenFromCache() {
     const audience = this.options.authorizationParams?.audience || 'default';
-    const scope = getUniqueScopes(this.scope);
 
     const cache = await this.cacheManager.getIdToken(
       new CacheKey({
         clientId: this.options.clientId,
         audience,
-        scope
+        scope: this.scope
       })
     );
 

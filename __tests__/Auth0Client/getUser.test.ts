@@ -148,5 +148,3 @@ describe('Auth0Client', () => {
     });
   });
 });
-
-export class MockCache {}
