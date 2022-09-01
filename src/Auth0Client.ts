@@ -177,13 +177,23 @@ export class Auth0Client {
   private worker: Worker;
 
   private readonly defaultOptions: Partial<Auth0ClientOptions> = {
-    authorizationParams: {},
+    authorizationParams: {
+      scope: DEFAULT_SCOPE
+    },
     useRefreshTokensFallback: false,
     useFormData: true
   };
 
   constructor(options: Auth0ClientOptions) {
-    this.options = { ...this.defaultOptions, ...options };
+    
+    this.options = { 
+      ...this.defaultOptions,
+      ...options,
+      authorizationParams: {
+        ...this.defaultOptions.authorizationParams,
+        ...options.authorizationParams
+      }
+    };
 
     typeof window !== 'undefined' && validateCrypto();
 
@@ -231,12 +241,16 @@ export class Auth0Client {
       ? this.cookieStorage
       : SessionStorage;
 
+    // Construct the scopes based on the following:
+    // 1. Always include `openid`
+    // 2. Include the scopes provided in `authorizationParams. This defaults to `profile email`
+    // 3. Add `offline_access` if `useRefreshTokens` is enabled
     this.scope = getUniqueScopes(
       'openid',
-      this.options.advancedOptions?.defaultScope !== undefined
-        ? this.options.advancedOptions.defaultScope
-        : DEFAULT_SCOPE,
-      this.options.authorizationParams?.scope
+      this.options.authorizationParams?.scope,
+      this.options.useRefreshTokens ?
+        'offline_access' :
+        undefined
     );
 
     this.transactionManager = new TransactionManager(
@@ -256,13 +270,6 @@ export class Auth0Client {
 
     this.domainUrl = getDomain(this.options.domain);
     this.tokenIssuer = getTokenIssuer(this.options.issuer, this.domainUrl);
-
-    // If using refresh tokens, automatically specify the `offline_access` scope.
-    // Note we cannot add this to 'defaultScope' above as the scopes are used in the
-    // cache keys - changing the order could invalidate the keys
-    if (this.options.useRefreshTokens) {
-      this.scope = getUniqueScopes(this.scope, 'offline_access');
-    }
 
     // Don't use web workers unless using refresh tokens in memory
     if (

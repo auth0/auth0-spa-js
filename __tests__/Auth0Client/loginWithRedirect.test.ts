@@ -184,8 +184,8 @@ describe('Auth0Client', () => {
 
     it('should log the user in using different default scope', async () => {
       const auth0 = setup({
-        advancedOptions: {
-          defaultScope: 'email'
+        authorizationParams: {
+          scope: 'email'
         }
       });
 
@@ -339,10 +339,7 @@ describe('Auth0Client', () => {
     it('should log the user in and get the user with custom scope', async () => {
       const auth0 = setup({
         authorizationParams: {
-          scope: 'scope1'
-        },
-        advancedOptions: {
-          defaultScope: 'scope2'
+          scope: 'scope2 scope1'
         }
       });
 
@@ -559,8 +556,8 @@ describe('Auth0Client', () => {
       // list in Auth0Client._getParams so that it is not sent to the IdP
       const auth0 = setup({
         useRefreshTokens: true,
-        advancedOptions: {
-          defaultScope: 'openid profile email offline_access'
+        authorizationParams: {
+          scope: 'openid profile email offline_access'
         },
         useCookiesForTransactions: true,
         authorizeTimeoutInSeconds: 10,

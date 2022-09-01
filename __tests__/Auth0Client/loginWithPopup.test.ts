@@ -128,10 +128,7 @@ describe('Auth0Client', () => {
     it('should log the user in with custom scope', async () => {
       const auth0 = setup({
         authorizationParams: {
-          scope: 'scope1'
-        },
-        advancedOptions: {
-          defaultScope: 'scope2'
+          scope: 'scope2 scope1'
         }
       });
       await loginWithPopup(auth0, { authorizationParams: { scope: 'scope3' } });

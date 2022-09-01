@@ -282,7 +282,7 @@ describe('Auth0', () => {
         const options = {
           authorizationParams: {
             audience: 'the-audience',
-            scope: 'the-scope'
+            scope: 'profile email the-scope'
           },
           useRefreshTokens: true
         };
