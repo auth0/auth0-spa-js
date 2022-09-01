@@ -85,7 +85,9 @@ describe('Auth0Client', () => {
       const auth0 = setup({ cache });
       await auth0.getUser();
 
-      expect(cache.get).toBeCalledWith('@@auth0spajs@@::auth0_client_id::user');
+      expect(cache.get).toBeCalledWith(
+        '@@auth0spajs@@::auth0_client_id::@@user@@'
+      );
     });
 
     it('fallback to searching the user stored with the access token', async () => {
@@ -109,7 +111,9 @@ describe('Auth0Client', () => {
       const auth0 = setup({ cache });
       const user = await auth0.getUser();
 
-      expect(cache.get).toBeCalledWith('@@auth0spajs@@::auth0_client_id::user');
+      expect(cache.get).toBeCalledWith(
+        '@@auth0spajs@@::auth0_client_id::@@user@@'
+      );
       expect(cache.get).toBeCalledWith(
         '@@auth0spajs@@::auth0_client_id::default::openid profile email'
       );
@@ -126,7 +130,7 @@ describe('Auth0Client', () => {
       };
 
       getMock.mockImplementation((key: string) => {
-        if (key === '@@auth0spajs@@::auth0_client_id::user') {
+        if (key === '@@auth0spajs@@::auth0_client_id::@@user@@') {
           return { decodedToken: { user: { sub: '123' } } };
         }
       });
@@ -134,7 +138,9 @@ describe('Auth0Client', () => {
       const auth0 = setup({ cache });
       const user = await auth0.getUser();
 
-      expect(cache.get).toBeCalledWith('@@auth0spajs@@::auth0_client_id::user');
+      expect(cache.get).toBeCalledWith(
+        '@@auth0spajs@@::auth0_client_id::@@user@@'
+      );
       expect(cache.get).not.toBeCalledWith(
         '@@auth0spajs@@::auth0_client_id::default::openid profile email'
       );

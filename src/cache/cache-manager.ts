@@ -7,7 +7,8 @@ import {
   CacheKey,
   CACHE_KEY_PREFIX,
   WrappedCacheEntry,
-  DecodedToken
+  DecodedToken,
+  CACHE_KEY_ID_TOKEN_SUFFIX
 } from './shared';
 
 const DEFAULT_EXPIRY_ADJUSTMENT_SECONDS = 0;
@@ -176,8 +177,11 @@ export class CacheManager {
    * @returns The constructed cache key, as a string, to store the id token
    */
   private getIdTokenCacheKey(clientId: string) {
-    const idTokenSuffix = 'user';
-    return new CacheKey({ clientId }, CACHE_KEY_PREFIX, idTokenSuffix).toKey();
+    return new CacheKey(
+      { clientId },
+      CACHE_KEY_PREFIX,
+      CACHE_KEY_ID_TOKEN_SUFFIX
+    ).toKey();
   }
 
   /**
