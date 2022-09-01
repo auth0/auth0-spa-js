@@ -11,7 +11,6 @@ Cypress.Commands.add('useV1', ({ clientScope, foo }) => {
 });
 
 Cypress.Commands.add('loginV1', ({ loginScope, clientScope }) => {
-  // login
   // set login scope
   loginScope && cy.get('[data-cy=login-scope]').clear().type(loginScope);
   cy.get('[data-cy=login]').click();
@@ -47,9 +46,6 @@ describe('migration', function () {
 
     cy.get('[data-cy=profile]').should('exist');
     cy.get('[data-cy=profile]').should('not.contain', 'bar123');
-
-    cy.get('[data-cy=get-token]').click();
-    //cy.get('[data-cy=profile]').should('contain', 'bar123');
   });
 
   it('Should migrate with setting scopes when constructing Auth0Client', function () {
@@ -62,9 +58,6 @@ describe('migration', function () {
 
     cy.get('[data-cy=profile]').should('exist');
     cy.get('[data-cy=profile]').should('not.contain', 'bar123');
-
-    cy.get('[data-cy=get-token]').click();
-    //cy.get('[data-cy=profile]').should('contain', 'bar123');
   });
 
   it('Should migrate with setting scopes when logging in', function () {
@@ -77,9 +70,6 @@ describe('migration', function () {
 
     cy.get('[data-cy=profile]').should('exist');
     cy.get('[data-cy=profile]').should('not.contain', 'bar123');
-
-    cy.get('[data-cy=get-token]').click();
-    //cy.get('[data-cy=profile]').should('contain', 'bar123');
   });
 
   it('Should migrate when setting scopes when constructing Auth0Client and logging in', function () {
@@ -92,9 +82,6 @@ describe('migration', function () {
 
     cy.get('[data-cy=profile]').should('exist');
     cy.get('[data-cy=profile]').should('not.contain', 'bar123');
-
-    cy.get('[data-cy=get-token]').click();
-    //cy.get('[data-cy=profile]').should('contain', 'bar123');
   });
 
   it('Should migrate without setting any scopes using custom claim', function () {
