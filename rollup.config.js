@@ -126,8 +126,7 @@ if (isProduction) {
           format: 'cjs'
         }
       ],
-      plugins: getPlugins(false),
-      external: Object.keys(pkg.dependencies)
+      plugins: getPlugins(false)
     }
   );
 }
