@@ -13,7 +13,11 @@ export class CacheKey {
   public scope?: string;
   public audience?: string;
 
-  constructor(data: CacheKeyData, public prefix: string = CACHE_KEY_PREFIX) {
+  constructor(
+    data: CacheKeyData,
+    public prefix: string = CACHE_KEY_PREFIX,
+    public suffix: string = null
+  ) {
     this.clientId = data.clientId;
     this.scope = data.scope;
     this.audience = data.audience;
@@ -24,14 +28,7 @@ export class CacheKey {
    * @returns A string representation of the key
    */
   toKey(): string {
-    return [
-      this.prefix,
-      this.clientId,
-      this.audience,
-      this.scope,
-      // temp fix to not conflict with the keyManifest key
-      !this.audience && !this.scope ? 'user' : ''
-    ]
+    return [this.prefix, this.clientId, this.audience, this.scope, this.suffix]
       .filter(Boolean)
       .join('::');
   }

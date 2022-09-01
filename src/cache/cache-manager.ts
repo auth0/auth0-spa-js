@@ -26,12 +26,12 @@ export class CacheManager {
     idToken: string,
     decodedToken: DecodedToken
   ): Promise<void> {
-    const cacheKey = new CacheKey({ clientId });
-    await this.cache.set(cacheKey.toKey(), {
+    const cacheKey = this.getIdTokenCacheKey(clientId);
+    await this.cache.set(cacheKey, {
       id_token: idToken,
       decodedToken
     });
-    await this.keyManifest?.add(cacheKey.toKey());
+    await this.keyManifest?.add(cacheKey);
   }
 
   async getIdToken(
@@ -40,7 +40,7 @@ export class CacheManager {
     let entry = await this.cache.get<{
       id_token: string;
       decodedToken: DecodedToken;
-    }>(new CacheKey({ clientId: cacheKey.clientId }).toKey());
+    }>(this.getIdTokenCacheKey(cacheKey.clientId));
 
     if (!entry && cacheKey.scope && cacheKey.audience) {
       const audience = cacheKey.audience;
@@ -168,6 +168,16 @@ export class CacheManager {
     return this.keyManifest
       ? (await this.keyManifest.get())?.keys
       : await this.cache.allKeys();
+  }
+
+  /**
+   * Returns the cache key to be used to store the id token
+   * @param clientId The client id used to link to the id token
+   * @returns The constructed cache key, as a string, to store the id token
+   */
+  private getIdTokenCacheKey(clientId: string) {
+    const idTokenSuffix = 'user';
+    return new CacheKey({ clientId }, CACHE_KEY_PREFIX, idTokenSuffix).toKey();
   }
 
   /**
