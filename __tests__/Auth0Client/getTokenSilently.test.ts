@@ -90,6 +90,7 @@ describe('Auth0Client', () => {
 
     mockWindow.open = jest.fn();
     mockWindow.addEventListener = jest.fn();
+    mockWindow.removeEventListener = jest.fn();
 
     mockWindow.crypto = {
       subtle: {
@@ -1522,7 +1523,8 @@ describe('Auth0Client', () => {
       await getTokenSilently(auth0);
 
       expect(esCookie.remove).toHaveBeenCalledWith(
-        `auth0.${TEST_CLIENT_ID}.organization_hint`, {}
+        `auth0.${TEST_CLIENT_ID}.organization_hint`,
+        {}
       );
     });
 
