@@ -894,7 +894,7 @@ export default class Auth0Client {
       )
     ) {
       try {
-        window.addEventListener('pagehide', this.releaseLockOnPageHide);
+        window.addEventListener('pagehide', this._releaseLockOnPageHide);
 
         // Check the cache a second time, because it may have been populated
         // by a previous call while this call was waiting to acquire the lock.
@@ -940,7 +940,7 @@ export default class Auth0Client {
         return authResult.access_token;
       } finally {
         await lock.releaseLock(GET_TOKEN_SILENTLY_LOCK_KEY);
-        window.removeEventListener('pagehide', this.releaseLockOnPageHide);
+        window.removeEventListener('pagehide', this._releaseLockOnPageHide);
       }
     } else {
       throw new TimeoutError();
@@ -1324,9 +1324,9 @@ export default class Auth0Client {
    * Get's called on the `pagehide` event.
    * https://developer.mozilla.org/en-US/docs/Web/API/Window/pagehide_event
    */
-  private releaseLockOnPageHide = async () => {
+  private _releaseLockOnPageHide = async () => {
     await lock.releaseLock(GET_TOKEN_SILENTLY_LOCK_KEY);
 
-    window.removeEventListener('pagehide', this.releaseLockOnPageHide);
+    window.removeEventListener('pagehide', this._releaseLockOnPageHide);
   };
 }
