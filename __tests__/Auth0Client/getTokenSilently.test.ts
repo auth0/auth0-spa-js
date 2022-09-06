@@ -1213,6 +1213,48 @@ describe('Auth0Client', () => {
       expect(releaseLockSpy).toHaveBeenCalledWith(GET_TOKEN_SILENTLY_LOCK_KEY);
     });
 
+    it('should add and remove a pagehide handler', async () => {
+      const auth0 = setup();
+
+      jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
+        access_token: TEST_ACCESS_TOKEN,
+        state: TEST_STATE
+      });
+
+      await getTokenSilently(auth0);
+
+      expect(mockWindow.addEventListener).toHaveBeenCalledWith(
+        'pagehide',
+        expect.anything()
+      );
+      expect(mockWindow.removeEventListener).toHaveBeenCalledWith(
+        'pagehide',
+        expect.anything()
+      );
+    });
+
+    it('should release the lock when pagehide handler triggered', async () => {
+      const auth0 = setup();
+
+      jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
+        access_token: TEST_ACCESS_TOKEN,
+        state: TEST_STATE
+      });
+
+      mockWindow.addEventListener.mockImplementation((event, handler) => {
+        if (event === 'pagehide') {
+          handler();
+          expect(releaseLockSpy).toHaveBeenCalledWith(
+            GET_TOKEN_SILENTLY_LOCK_KEY
+          );
+        }
+      });
+
+      expect.assertions(1);
+
+      await getTokenSilently(auth0);
+    });
+
     it('should retry acquiring a lock', async () => {
       const auth0 = setup();
 
