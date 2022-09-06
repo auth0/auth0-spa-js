@@ -503,8 +503,8 @@ describe('Auth0Client', () => {
 
     it('refreshes the token using custom default scope', async () => {
       const auth0 = setup({
-        advancedOptions: {
-          defaultScope: 'email'
+        authorizationParams: {
+          scope: 'email'
         }
       });
 
@@ -536,8 +536,8 @@ describe('Auth0Client', () => {
     it('refreshes the token using custom default scope when using refresh tokens', async () => {
       const auth0 = setup({
         useRefreshTokens: true,
-        advancedOptions: {
-          defaultScope: 'email'
+        authorizationParams: {
+          scope: 'email'
         }
       });
 
@@ -2248,7 +2248,7 @@ describe('Auth0Client', () => {
     it('returns the full response with scopes when "detailedResponse: true" and using cache', async () => {
       const auth0 = setup({
         authorizationParams: {
-          scope: 'read:messages write:messages'
+          scope: 'profile email read:messages write:messages'
         }
       });
 
@@ -2315,10 +2315,7 @@ describe('Auth0Client', () => {
       const auth0 = setup({
         useRefreshTokens: true,
         authorizationParams: {
-          scope: 'read:messages'
-        },
-        advancedOptions: {
-          defaultScope: 'email'
+          scope: 'email read:messages'
         }
       });
 

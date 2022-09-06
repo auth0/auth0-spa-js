@@ -78,7 +78,7 @@ describe('Auth0Client', () => {
       const auth0 = setup({
         useRefreshTokens: true,
         authorizationParams: {
-          scope: 'test-scope'
+          scope: 'profile email test-scope'
         }
       });
 
@@ -89,8 +89,8 @@ describe('Auth0Client', () => {
 
     it('ensures the openid scope is defined when customizing default scopes', () => {
       const auth0 = setup({
-        advancedOptions: {
-          defaultScope: 'test-scope'
+        authorizationParams: {
+          scope: 'test-scope'
         }
       });
 
@@ -99,8 +99,8 @@ describe('Auth0Client', () => {
 
     it('allows an empty custom default scope', () => {
       const auth0 = setup({
-        advancedOptions: {
-          defaultScope: null
+        authorizationParams: {
+          scope: null
         }
       });
 

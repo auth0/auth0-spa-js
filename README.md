@@ -377,20 +377,6 @@ if (organization && invitation) {
 }
 ```
 
-### Advanced options
-
-Advanced options can be set by specifying the `advancedOptions` property when configuring `Auth0Client`. Learn about the complete set of advanced options in the [API documentation](https://auth0.github.io/auth0-spa-js/interfaces/advancedoptions.html)
-
-```js
-createAuth0Client({
-  domain: '<AUTH0_DOMAIN>',
-  clientId: '<AUTH0_CLIENT_ID>',
-  advancedOptions: {
-    defaultScope: 'email' // change the scopes that are applied to every authz request. **Note**: `openid` is always specified regardless of this setting
-  }
-});
-```
-
 ## Contributing
 
 We appreciate feedback and contribution to this repo! Before you get started, please see the following:

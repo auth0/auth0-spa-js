@@ -59,9 +59,12 @@ export interface AuthorizationParams {
   acr_values?: string;
 
   /**
-   * The default scope to be used on authentication requests.
-   * The defaultScope defined in the Auth0Client is included
-   * along with this scope
+   * The default scope to be used on authentication requests. 
+   * 
+   * This defaults to `profile email` if not set. If you are setting extra scopes and require
+   * `profile` and `email` to be included then you must include them in the provided scope.
+   * 
+   * Note: The `openid` scope is **always applied** regardless of this setting.
    */
   scope?: string;
 
@@ -112,16 +115,6 @@ interface BaseLoginOptions {
    * defined by Auth0 or custom parameters that you define.
    */
   authorizationParams?: AuthorizationParams;
-}
-
-export interface AdvancedOptions {
-  /**
-   * The default scope to be included with all requests.
-   * If not provided, 'openid profile email' is used. This can be set to `null` in order to effectively remove the default scopes.
-   *
-   * Note: The `openid` scope is **always applied** regardless of this setting.
-   */
-  defaultScope?: string;
 }
 
 export interface Auth0ClientOptions extends BaseLoginOptions {
@@ -232,11 +225,6 @@ export interface Auth0ClientOptions extends BaseLoginOptions {
    * may end up spanning across multiple tabs (e.g. magic links) or you cannot otherwise rely on session storage being available.
    */
   useCookiesForTransactions?: boolean;
-
-  /**
-   * Changes to recommended defaults, like defaultScope
-   */
-  advancedOptions?: AdvancedOptions;
 
   /**
    * Number of days until the cookie `auth0.is.authenticated` will expire

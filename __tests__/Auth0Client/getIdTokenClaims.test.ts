@@ -112,10 +112,7 @@ describe('Auth0Client', () => {
           it('returns the ID token claims with custom scope', async () => {
             const auth0 = setup({
               authorizationParams: {
-                scope: 'scope1'
-              },
-              advancedOptions: {
-                defaultScope: 'scope2'
+                scope: 'scope1 scope2'
               }
             });
             await login(auth0, { authorizationParams: { scope: 'scope3' } });
@@ -137,10 +134,7 @@ describe('Auth0Client', () => {
             it('returns the ID token claims with custom scope and offline_access', async () => {
               const auth0 = setup({
                 authorizationParams: {
-                  scope: 'scope1'
-                },
-                advancedOptions: {
-                  defaultScope: 'scope2'
+                  scope: 'scope1 scope2'
                 },
                 useRefreshTokens: true
               });
