@@ -157,7 +157,7 @@ describe('Auth0Client', () => {
 
       auth0.logout({ localOnly: true });
 
-      expect(window.location.assign).not.toHaveBeenCalledWith();
+      expect(window.location.assign).not.toHaveBeenCalled();
     });
 
     it('calls `window.location.assign` when `options.localOnly` is false', async () => {

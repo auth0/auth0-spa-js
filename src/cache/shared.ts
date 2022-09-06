@@ -1,19 +1,24 @@
 import { IdToken, User } from '../global';
 
 export const CACHE_KEY_PREFIX = '@@auth0spajs@@';
+export const CACHE_KEY_ID_TOKEN_SUFFIX = '@@user@@';
 
 export type CacheKeyData = {
-  audience: string;
-  scope: string;
+  audience?: string;
+  scope?: string;
   clientId: string;
 };
 
 export class CacheKey {
   public clientId: string;
-  public scope: string;
-  public audience: string;
+  public scope?: string;
+  public audience?: string;
 
-  constructor(data: CacheKeyData, public prefix: string = CACHE_KEY_PREFIX) {
+  constructor(
+    data: CacheKeyData,
+    public prefix: string = CACHE_KEY_PREFIX,
+    public suffix: string = null
+  ) {
     this.clientId = data.clientId;
     this.scope = data.scope;
     this.audience = data.audience;
@@ -24,7 +29,9 @@ export class CacheKey {
    * @returns A string representation of the key
    */
   toKey(): string {
-    return `${this.prefix}::${this.clientId}::${this.audience}::${this.scope}`;
+    return [this.prefix, this.clientId, this.audience, this.scope, this.suffix]
+      .filter(Boolean)
+      .join('::');
   }
 
   /**
@@ -60,10 +67,10 @@ export interface DecodedToken {
 }
 
 export type CacheEntry = {
-  id_token: string;
+  id_token?: string;
   access_token: string;
   expires_in: number;
-  decodedToken: DecodedToken;
+  decodedToken?: DecodedToken;
   audience: string;
   scope: string;
   client_id: string;

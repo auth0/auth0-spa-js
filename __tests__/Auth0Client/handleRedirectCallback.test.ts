@@ -142,7 +142,7 @@ describe('Auth0Client', () => {
 
       jest.spyOn(auth0['transactionManager'], 'remove');
       await loginWithRedirect(auth0);
-      expect(auth0['transactionManager'].remove).toHaveBeenCalledWith();
+      expect(auth0['transactionManager'].remove).toHaveBeenCalled();
     });
 
     it('should clear the transaction data when the /authorize call redirects with an error param', async () => {
@@ -165,7 +165,7 @@ describe('Auth0Client', () => {
       }
 
       expect(error).toBeDefined();
-      expect(auth0['transactionManager'].remove).toHaveBeenCalledWith();
+      expect(auth0['transactionManager'].remove).toHaveBeenCalled();
     });
 
     it('should throw an error if the /authorize call redirects with no params', async () => {
@@ -458,7 +458,7 @@ describe('Auth0Client', () => {
         }
       );
 
-      expect(auth0['transactionManager'].remove).toHaveBeenCalledWith();
+      expect(auth0['transactionManager'].remove).toHaveBeenCalled();
     });
 
     it('should clear the transaction data when the /authorize call redirects with an error param', async () => {
@@ -482,7 +482,7 @@ describe('Auth0Client', () => {
       }
 
       expect(error).toBeDefined();
-      expect(auth0['transactionManager'].remove).toHaveBeenCalledWith();
+      expect(auth0['transactionManager'].remove).toHaveBeenCalled();
     });
 
     it('should throw an error if the /authorize call redirects with no params', async () => {

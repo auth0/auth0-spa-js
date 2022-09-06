@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Auth0</title>
+    <meta charset="utf-8" />
+    <link
+      rel="stylesheet"
+      href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
+      integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh"
+      crossorigin="anonymous"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.2/css/all.min.css"
+      integrity="sha512-1sCRPdkRXhBV2PBLUdRb4tMg1w2YPf37qatUFeS7zlBy7jJI8Lf4VHwWfZZfpXtYSLy85pkm9GaYVYMfw5BC1A=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    />
+  </head>
+
+  <body>
+    <div id="app" class="container">
+      <div v-if="!loading" style="visibility: hidden">
+        <span id="loaded">loaded</span>
+      </div>
+
+      <h1 class="mb-5">Auth0 SPA JS v1 Migration Playground</h1>
+
+      <div class="card mb-3">
+        <div class="card-header">Client Options</div>
+        <div class="card-body">
+          <div class="form-group">
+            <label for="clientScope">Scope</label>
+            <input
+              type="text"
+              class="form-control"
+              id="clientScope"
+              aria-describedby="clientScopeHelp"
+              v-model="clientScope"
+              data-cy="client-scope"
+            />
+            <small id="clientScopeHelp" class="form-text text-muted"
+              >Scopes used to create the Auth0Client instance</small
+            >
+          </div>
+
+          <div class="form-group">
+            <label for="foo">Foo</label>
+            <input
+              type="text"
+              class="form-control"
+              id="foo"
+              aria-describedby="fooHelp"
+              v-model="foo"
+              data-cy="foo"
+            />
+            <small id="fooHelp" class="form-text text-muted"
+              >Value used to send as the custom `Foo` parameter to Auth0</small
+            >
+          </div>
+
+          <button
+            class="btn btn-primary"
+            @click="createClient()"
+            data-cy="create-client"
+            :disabled="auth0"
+          >
+            Create
+          </button>
+        </div>
+      </div>
+
+      <div v-if="auth0" class="card mb-3">
+        <div class="card-header">Login Options</div>
+        <div class="card-body">
+          <div class="form-group">
+            <label for="loginScope">Scope</label>
+            <input
+              type="text"
+              class="form-control"
+              id="loginScope"
+              aria-describedby="loginScopeHelp"
+              v-model="loginScope"
+              data-cy="login-scope"
+            />
+            <small id="loginScopeHelp" class="form-text text-muted"
+              >Scopes used when calling `loginWith*`</small
+            >
+          </div>
+
+          <button class="btn btn-primary" @click="login()" data-cy="login">
+            Login
+          </button>
+          <button
+            class="btn btn-secondary"
+            @click="handleRedirectCallback()"
+            data-cy="handle-redirect-callback"
+          >
+            Handle Redirect Callback
+          </button>
+          <button class="btn btn-danger" @click="logout()" data-cy="logout">
+            Logout
+          </button>
+        </div>
+      </div>
+
+      <div class="card mb-3" v-if="user">
+        <div class="card-header">Profile</div>
+        <div class="card-body">
+          <pre>
+            <code data-cy="profile">
+{{ JSON.stringify(user, null, 2) }} 
+            </code>
+          </pre>
+        </div>
+      </div>
+    </div>
+
+    <script src="/auth0-spa-js.development_old.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+    <script type="text/javascript">
+      var defaultDomain = 'frdrkprck.eu.auth0.com';
+      var defaultClientId = '0VZQ7RsjOj5CTpkA8dz9XEK1BYNPGpW3';
+      var defaultAudience = 'Test';
+      var clientOptions = {
+        domain: defaultDomain,
+        clientId: defaultClientId,
+        audience: defaultAudience,
+        cacheLocation: 'localstorage',
+        useRefreshTokens: true,
+        redirect_uri: window.location.origin + '/v1.html'
+      };
+
+      var app = new Vue({
+        el: '#app',
+        data: function () {
+          return {
+            auth0: null,
+            loading: true,
+            isAuthenticated: false,
+            user: null,
+            scenarioStatus: null,
+            error: null,
+            foo: '',
+            clientScope: '',
+            loginScope: ''
+          };
+        },
+        methods: {
+          createClient: async function () {
+            const client = new auth0.Auth0Client({
+              ...clientOptions,
+              ...(this.clientScope ? { scope: this.clientScope } : {}),
+              ...(this.foo ? { foo: this.foo } : {})
+            });
+            this.auth0 = client;
+            this.loading = false;
+
+            this.isAuthenticated = await this.auth0.isAuthenticated();
+            this.user = await this.auth0.getUser();
+          },
+          handleRedirectCallback: async function () {
+            await this.auth0.handleRedirectCallback();
+            window.history.replaceState(
+              {},
+              document.title,
+              window.location.pathname
+            );
+
+            this.isAuthenticated = await this.auth0.isAuthenticated();
+            this.user = await this.auth0.getUser();
+          },
+
+          createLoginOptions: function () {
+            const base = this.foo ? { foo: this.foo } : {};
+            return this.loginScope ? { ...base, scope: loginScope } : base;
+          },
+
+          login: async function () {
+            await this.auth0.loginWithRedirect();
+            await this.auth0.loginWithRedirect(this.createLoginOptions());
+          },
+
+          logout: async function () {
+            await this.auth0.logout({ localOnly: true });
+            this.isAuthenticated = await this.auth0.isAuthenticated();
+            this.user = await this.auth0.getUser();
+          }
+        }
+      });
+    </script>
+  </body>
+</html>

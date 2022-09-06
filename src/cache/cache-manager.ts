@@ -6,7 +6,9 @@ import {
   ICache,
   CacheKey,
   CACHE_KEY_PREFIX,
-  WrappedCacheEntry
+  WrappedCacheEntry,
+  DecodedToken,
+  CACHE_KEY_ID_TOKEN_SUFFIX
 } from './shared';
 
 const DEFAULT_EXPIRY_ADJUSTMENT_SECONDS = 0;
@@ -18,6 +20,39 @@ export class CacheManager {
     private nowProvider?: () => number | Promise<number>
   ) {
     this.nowProvider = this.nowProvider || DEFAULT_NOW_PROVIDER;
+  }
+
+  async setIdToken(
+    clientId: string,
+    idToken: string,
+    decodedToken: DecodedToken
+  ): Promise<void> {
+    const cacheKey = this.getIdTokenCacheKey(clientId);
+    await this.cache.set(cacheKey, {
+      id_token: idToken,
+      decodedToken
+    });
+    await this.keyManifest?.add(cacheKey);
+  }
+
+  async getIdToken(
+    cacheKey: CacheKey
+  ): Promise<{ id_token: string; decodedToken: DecodedToken }> {
+    let entry = await this.cache.get<{
+      id_token: string;
+      decodedToken: DecodedToken;
+    }>(this.getIdTokenCacheKey(cacheKey.clientId));
+
+    if (!entry && cacheKey.scope && cacheKey.audience) {
+      const entryByScope = await this.get(cacheKey);
+
+      return {
+        id_token: entryByScope?.id_token,
+        decodedToken: entryByScope?.decodedToken
+      };
+    }
+
+    return { id_token: entry.id_token, decodedToken: entry.decodedToken };
   }
 
   async get(
@@ -116,14 +151,9 @@ export class CacheManager {
     const now = await this.nowProvider();
     const expiresInTime = Math.floor(now / 1000) + entry.expires_in;
 
-    const expirySeconds = Math.min(
-      expiresInTime,
-      entry.decodedToken.claims.exp
-    );
-
     return {
       body: entry,
-      expiresAt: expirySeconds
+      expiresAt: expiresInTime
     };
   }
 
@@ -131,6 +161,19 @@ export class CacheManager {
     return this.keyManifest
       ? (await this.keyManifest.get())?.keys
       : await this.cache.allKeys();
+  }
+
+  /**
+   * Returns the cache key to be used to store the id token
+   * @param clientId The client id used to link to the id token
+   * @returns The constructed cache key, as a string, to store the id token
+   */
+  private getIdTokenCacheKey(clientId: string) {
+    return new CacheKey(
+      { clientId },
+      CACHE_KEY_PREFIX,
+      CACHE_KEY_ID_TOKEN_SUFFIX
+    ).toKey();
   }
 
   /**
@@ -149,7 +192,7 @@ export class CacheManager {
     return allKeys.filter(key => {
       const cacheKey = CacheKey.fromKey(key);
       const scopeSet = new Set(cacheKey.scope && cacheKey.scope.split(' '));
-      const scopesToMatch = keyToMatch.scope.split(' ');
+      const scopesToMatch = keyToMatch.scope?.split(' ') || [];
 
       const hasAllScopes =
         cacheKey.scope &&
