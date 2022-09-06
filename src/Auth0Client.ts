@@ -211,7 +211,6 @@ export default class Auth0Client {
   private readonly nowProvider: () => number | Promise<number>;
   private readonly httpTimeoutMs: number;
   private readonly useRefreshTokensFallback: boolean;
-  private acquiredLock: boolean;
 
   cacheLocation: CacheLocation;
   private worker: Worker;
