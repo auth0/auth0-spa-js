@@ -250,7 +250,7 @@ export class Auth0Client {
       this.options.authorizationParams?.scope,
       this.options.useRefreshTokens ?
         'offline_access' :
-        undefined
+        ''
     );
 
     this.transactionManager = new TransactionManager(
