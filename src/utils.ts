@@ -252,11 +252,15 @@ export function valueOrEmptyString(value: string, exclude: string[] = []) {
   return value && !exclude.includes(value) ? value : '';
 }
 
-function getRandomInt(min: number, max: number) {
-  return Math.floor(Math.random() * (max - min) + min);
+function getRandomInt(min: number, max: number, increment: number = 5) {
+  min = Math.ceil(min);
+  max = Math.floor(max);
+
+  const amountOfItems = Math.floor((max - min) / increment);
+  return Math.floor(Math.random() * amountOfItems) * increment + min;
 }
 
-export function randomDelay(min: number = 1, max: number = 10) {
-  const delayMs = getRandomInt(min, max) * 10;
+export function randomDelay(min: number = 10, max: number = 100) {
+  const delayMs = getRandomInt(min, max);
   return new Promise(resolve => setTimeout(resolve, delayMs));
 }
