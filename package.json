@@ -42,10 +42,12 @@
     "@typescript-eslint/parser": "^5.33.1",
     "babel-jest": "^28.1.3",
     "browserstack-cypress-cli": "1.8.1",
+    "browser-tabs-lock": "^1.2.15",
     "cli-table": "^0.3.6",
     "concurrently": "^7.3.0",
     "cypress": "7.2.0",
     "es-check": "^7.0.0",
+    "es-cookie": "^1.3.2",
     "eslint": "^8.22.0",
     "gzip-size": "^7.0.0",
     "husky": "^7.0.4",
@@ -81,10 +83,6 @@
     "typedoc": "^0.23.10",
     "typescript": "^4.7.4",
     "wait-on": "^6.0.0"
-  },
-  "dependencies": {
-    "browser-tabs-lock": "^1.2.15",
-    "es-cookie": "^1.3.2"
   },
   "files": [
     "src",
