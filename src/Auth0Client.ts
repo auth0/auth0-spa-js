@@ -10,7 +10,8 @@ import {
   sha256,
   bufferToBase64UrlEncoded,
   validateCrypto,
-  openPopup
+  openPopup,
+  randomDelay
 } from './utils';
 
 import { oauthToken } from './api';
@@ -211,6 +212,7 @@ export default class Auth0Client {
   private readonly nowProvider: () => number | Promise<number>;
   private readonly httpTimeoutMs: number;
   private readonly useRefreshTokensFallback: boolean;
+  private acquiredLock: boolean;
 
   cacheLocation: CacheLocation;
   private worker: Worker;
@@ -311,6 +313,8 @@ export default class Auth0Client {
 
     this.useRefreshTokensFallback =
       this.options.useRefreshTokensFallback !== false;
+
+    this._releaseLockOnPageHide();
   }
 
   private _url(path: string) {
@@ -403,7 +407,9 @@ export default class Auth0Client {
         cookieDomain: this.options.cookieDomain
       });
     } else {
-      this.cookieStorage.remove(this.orgHintCookieName, { cookieDomain: this.options.cookieDomain });
+      this.cookieStorage.remove(this.orgHintCookieName, {
+        cookieDomain: this.options.cookieDomain
+      });
     }
   }
 
@@ -886,11 +892,12 @@ export default class Auth0Client {
     }
 
     if (
-      await retryPromise(
-        () => lock.acquireLock(GET_TOKEN_SILENTLY_LOCK_KEY, 5000),
-        10
-      )
+      await retryPromise(async () => {
+        await randomDelay();
+        return lock.acquireLock(GET_TOKEN_SILENTLY_LOCK_KEY, 5000);
+      }, 10)
     ) {
+      this.acquiredLock = true;
       try {
         // Check the cache a second time, because it may have been populated
         // by a previous call while this call was waiting to acquire the lock.
@@ -936,6 +943,7 @@ export default class Auth0Client {
         return authResult.access_token;
       } finally {
         await lock.releaseLock(GET_TOKEN_SILENTLY_LOCK_KEY);
+        this.acquiredLock = false;
       }
     } else {
       throw new TimeoutError();
@@ -1048,8 +1056,12 @@ export default class Auth0Client {
     }
 
     const postCacheClear = () => {
-      this.cookieStorage.remove(this.orgHintCookieName, { cookieDomain: this.options.cookieDomain });
-      this.cookieStorage.remove(this.isAuthenticatedCookieName, { cookieDomain: this.options.cookieDomain });
+      this.cookieStorage.remove(this.orgHintCookieName, {
+        cookieDomain: this.options.cookieDomain
+      });
+      this.cookieStorage.remove(this.isAuthenticatedCookieName, {
+        cookieDomain: this.options.cookieDomain
+      });
 
       if (localOnly) {
         return;
@@ -1307,5 +1319,24 @@ export default class Auth0Client {
 
       return entry.access_token;
     }
+  }
+
+  /**
+   * Listen to the pagehide event and release any lock aquired by the current instance.
+   *
+   * The pagehide event is sent to a Window when the browser hides the current page in the process of presenting a different page from the session's history,
+   * or when the user refreshes the current page.
+   * https://developer.mozilla.org/en-US/docs/Web/API/Window/pagehide_event
+   */
+  private _releaseLockOnPageHide() {
+    const handler = () => {
+      if (this.acquiredLock) {
+        lock.releaseLock(GET_TOKEN_SILENTLY_LOCK_KEY);
+      }
+
+      window.removeEventListener('pagehide', handler);
+    };
+
+    window.addEventListener('pagehide', handler);
   }
 }

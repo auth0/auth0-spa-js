@@ -251,3 +251,12 @@ export const validateCrypto = () => {
 export function valueOrEmptyString(value: string, exclude: string[] = []) {
   return value && !exclude.includes(value) ? value : '';
 }
+
+function getRandomInt(min: number, max: number) {
+  return Math.floor(Math.random() * (max - min) + min);
+}
+
+export function randomDelay(min: number = 1, max: number = 10) {
+  const delayMs = getRandomInt(min, max) * 10;
+  return new Promise(resolve => setTimeout(resolve, delayMs));
+}
