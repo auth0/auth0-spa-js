@@ -108,21 +108,7 @@ describe('Auth0Client', () => {
       const expectedUser = { sub: 'me' };
 
       expect(await auth0.getUser()).toEqual(expectedUser);
-      expect(await auth0.getUser({})).toEqual(expectedUser);
-      expect(await auth0.getUser({ audience: 'default' })).toEqual(
-        expectedUser
-      );
-      expect(await auth0.getUser({ scope: 'foo' })).toEqual(expectedUser);
-      expect(await auth0.getUser({ audience: 'invalid' })).toBeUndefined();
       expect(await auth0.getIdTokenClaims()).toBeTruthy();
-      expect(await auth0.getIdTokenClaims({})).toBeTruthy();
-      expect(
-        await auth0.getIdTokenClaims({ audience: 'default' })
-      ).toBeTruthy();
-      expect(await auth0.getIdTokenClaims({ scope: 'foo' })).toBeTruthy();
-      expect(
-        await auth0.getIdTokenClaims({ audience: 'invalid' })
-      ).toBeUndefined();
     });
 
     it('should log the user in with custom scope', async () => {
@@ -135,9 +121,7 @@ describe('Auth0Client', () => {
 
       const expectedUser = { sub: 'me' };
 
-      expect(await auth0.getUser({ scope: 'scope1 scope2 scope3' })).toEqual(
-        expectedUser
-      );
+      expect(await auth0.getUser()).toEqual(expectedUser);
     });
 
     it('encodes state with random string', async () => {
@@ -605,13 +589,12 @@ describe('Auth0Client', () => {
           access_token: TEST_ACCESS_TOKEN,
           expires_in: 86400,
           audience: 'default',
-          id_token: TEST_ID_TOKEN,
           scope: TEST_SCOPES
         })
       );
     });
 
-    it('saves decoded token into cache', async () => {
+    it('saves user information into the cache', async () => {
       const auth0 = setup();
 
       const mockDecodedToken = {
@@ -620,14 +603,14 @@ describe('Auth0Client', () => {
       };
       tokenVerifier.mockReturnValue(mockDecodedToken);
 
-      jest.spyOn(auth0['cacheManager'], 'set');
+      jest.spyOn(auth0['cacheManager'], 'setIdToken');
 
       await loginWithPopup(auth0);
 
-      expect(auth0['cacheManager']['set']).toHaveBeenCalledWith(
-        expect.objectContaining({
-          decodedToken: mockDecodedToken
-        })
+      expect(auth0['cacheManager']['setIdToken']).toHaveBeenCalledWith(
+        TEST_CLIENT_ID,
+        TEST_ID_TOKEN,
+        mockDecodedToken
       );
     });
 

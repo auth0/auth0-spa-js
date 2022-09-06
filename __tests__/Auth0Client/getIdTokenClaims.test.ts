@@ -107,16 +107,6 @@ describe('Auth0Client', () => {
 
             expect(await auth0.getIdTokenClaims()).toHaveProperty('exp');
             expect(await auth0.getIdTokenClaims()).not.toHaveProperty('me');
-            expect(await auth0.getIdTokenClaims({})).toHaveProperty('exp');
-            expect(
-              await auth0.getIdTokenClaims({ audience: 'default' })
-            ).toHaveProperty('exp');
-            expect(
-              await auth0.getIdTokenClaims({ scope: 'foo' })
-            ).toHaveProperty('exp');
-            expect(
-              await auth0.getIdTokenClaims({ audience: 'invalid' })
-            ).toBeUndefined();
           });
 
           it('returns the ID token claims with custom scope', async () => {
@@ -127,9 +117,7 @@ describe('Auth0Client', () => {
             });
             await login(auth0, { authorizationParams: { scope: 'scope3' } });
 
-            expect(
-              await auth0.getIdTokenClaims({ scope: 'scope1 scope2 scope3' })
-            ).toHaveProperty('exp');
+            expect(await auth0.getIdTokenClaims()).toHaveProperty('exp');
           });
 
           describe('when using refresh tokens', () => {
@@ -140,9 +128,7 @@ describe('Auth0Client', () => {
               });
               await login(auth0);
 
-              expect(
-                await auth0.getIdTokenClaims({ scope: 'foo offline_access' })
-              ).toHaveProperty('exp');
+              expect(await auth0.getIdTokenClaims()).toHaveProperty('exp');
             });
 
             it('returns the ID token claims with custom scope and offline_access', async () => {
@@ -154,11 +140,7 @@ describe('Auth0Client', () => {
               });
               await login(auth0, { authorizationParams: { scope: 'scope3' } });
 
-              expect(
-                await auth0.getIdTokenClaims({
-                  scope: 'scope1 scope2 scope3 offline_access'
-                })
-              ).toHaveProperty('exp');
+              expect(await auth0.getIdTokenClaims()).toHaveProperty('exp');
             });
           });
         });

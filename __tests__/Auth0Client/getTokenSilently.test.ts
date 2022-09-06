@@ -1788,9 +1788,32 @@ describe('Auth0Client', () => {
           access_token: TEST_ACCESS_TOKEN,
           expires_in: 86400,
           audience: 'default',
-          id_token: TEST_ID_TOKEN,
           scope: TEST_SCOPES
         })
+      );
+    });
+
+    it('saves user information in the cache', async () => {
+      const auth0 = setup();
+      const mockDecodedToken = {
+        claims: { sub: 'sub', aud: 'aus' },
+        user: { sub: 'sub' }
+      };
+      tokenVerifier.mockReturnValue(mockDecodedToken);
+
+      jest.spyOn(auth0['cacheManager'], 'setIdToken');
+
+      jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
+        access_token: TEST_ACCESS_TOKEN,
+        state: TEST_STATE
+      });
+
+      await getTokenSilently(auth0);
+
+      expect(auth0['cacheManager']['setIdToken']).toHaveBeenCalledWith(
+        TEST_CLIENT_ID,
+        TEST_ID_TOKEN,
+        mockDecodedToken
       );
     });
 
