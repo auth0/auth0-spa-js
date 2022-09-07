@@ -23,7 +23,9 @@ import {
   LocalStorageCache,
   CacheKey,
   CacheManager,
-  CacheEntry
+  CacheEntry,
+  IdTokenEntry,
+  USER_CACHE_KEY
 } from './cache';
 
 import { TransactionManager } from './transaction-manager';
@@ -171,8 +173,10 @@ export class Auth0Client {
   private readonly nowProvider: () => number | Promise<number>;
   private readonly httpTimeoutMs: number;
   private readonly options: Auth0ClientOptions;
+  private readonly userCache: ICache = new InMemoryCache().enclosedCache;
 
   cacheLocation: CacheLocation;
+
   private worker: Worker;
 
   private readonly defaultOptions: Partial<Auth0ClientOptions> = {
@@ -184,8 +188,7 @@ export class Auth0Client {
   };
 
   constructor(options: Auth0ClientOptions) {
-    
-    this.options = { 
+    this.options = {
       ...this.defaultOptions,
       ...options,
       authorizationParams: {
@@ -247,9 +250,7 @@ export class Auth0Client {
     this.scope = getUniqueScopes(
       'openid',
       this.options.authorizationParams?.scope,
-      this.options.useRefreshTokens ?
-        'offline_access' :
-        ''
+      this.options.useRefreshTokens ? 'offline_access' : ''
     );
 
     this.transactionManager = new TransactionManager(
@@ -1000,6 +1001,7 @@ export class Auth0Client {
     const postCacheClear = () => {
       this.cookieStorage.remove(this.orgHintCookieName);
       this.cookieStorage.remove(this.isAuthenticatedCookieName);
+      this.userCache.remove(USER_CACHE_KEY);
 
       if (localOnly) {
         return;
@@ -1202,6 +1204,11 @@ export class Auth0Client {
   private async _saveEntryInCache(entry: CacheEntry) {
     const { id_token, decodedToken, ...entryWithoutIdToken } = entry;
 
+    this.userCache.set(USER_CACHE_KEY, {
+      id_token,
+      decodedToken
+    });
+
     await this.cacheManager.setIdToken(
       this.options.clientId,
       entry.id_token,
@@ -1220,6 +1227,18 @@ export class Auth0Client {
         scope: this.scope
       })
     );
+
+    const currentCache = this.userCache.get<IdTokenEntry>(
+      USER_CACHE_KEY
+    ) as IdTokenEntry;
+
+    // If the id_token in the cache matches the value we previously cached in memory return the in-memory
+    // value so that object comparison will work
+    if (cache.id_token === currentCache?.id_token) {
+      return currentCache;
+    } else {
+      this.userCache.set(USER_CACHE_KEY, cache);
+    }
 
     return cache;
   }

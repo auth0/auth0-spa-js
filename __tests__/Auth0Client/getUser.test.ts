@@ -104,7 +104,9 @@ describe('Auth0Client', () => {
           key ===
           '@@auth0spajs@@::auth0_client_id::default::openid profile email'
         ) {
-          return { body: { decodedToken: { user: { sub: '123' } } } };
+          return {
+            body: { id_token: 'abc', decodedToken: { user: { sub: '123' } } }
+          };
         }
       });
 
@@ -131,7 +133,7 @@ describe('Auth0Client', () => {
 
       getMock.mockImplementation((key: string) => {
         if (key === '@@auth0spajs@@::auth0_client_id::@@user@@') {
-          return { decodedToken: { user: { sub: '123' } } };
+          return { id_token: 'abc', decodedToken: { user: { sub: '123' } } };
         }
       });
 
@@ -145,6 +147,40 @@ describe('Auth0Client', () => {
         '@@auth0spajs@@::auth0_client_id::default::openid profile email'
       );
       expect(user?.sub).toBe('123');
+    });
+
+    it('should return from the in memory cache if no changes', async () => {
+      const getMock = jest.fn();
+      const cache: ICache = {
+        get: getMock,
+        set: jest.fn(),
+        remove: jest.fn(),
+        allKeys: jest.fn()
+      };
+
+      getMock.mockImplementation((key: string) => {
+        if (key === '@@auth0spajs@@::auth0_client_id::@@user@@') {
+          return { id_token: 'abcd', decodedToken: { user: { sub: '123' } } };
+        }
+      });
+
+      const auth0 = setup({ cache });
+      const user = await auth0.getUser();
+      const secondUser = await auth0.getUser();
+
+      expect(user).toBe(secondUser);
+
+      getMock.mockImplementation((key: string) => {
+        if (key === '@@auth0spajs@@::auth0_client_id::@@user@@') {
+          return {
+            id_token: 'abcdefg',
+            decodedToken: { user: { sub: '123' } }
+          };
+        }
+      });
+
+      const thirdUser = await auth0.getUser();
+      expect(thirdUser).not.toBe(user);
     });
   });
 });
