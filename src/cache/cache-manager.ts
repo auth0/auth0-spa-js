@@ -36,7 +36,7 @@ export class CacheManager {
     await this.keyManifest?.add(cacheKey);
   }
 
-  async getIdToken(cacheKey: CacheKey): Promise<IdTokenEntry|undefined> {
+  async getIdToken(cacheKey: CacheKey): Promise<IdTokenEntry | undefined> {
     const entry = await this.cache.get<IdTokenEntry>(
       this.getIdTokenCacheKey(cacheKey.clientId)
     );

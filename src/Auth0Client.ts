@@ -25,7 +25,7 @@ import {
   CacheManager,
   CacheEntry,
   IdTokenEntry,
-  USER_CACHE_KEY
+  CACHE_KEY_ID_TOKEN_SUFFIX
 } from './cache';
 
 import { TransactionManager } from './transaction-manager';
@@ -1001,7 +1001,7 @@ export class Auth0Client {
     const postCacheClear = () => {
       this.cookieStorage.remove(this.orgHintCookieName);
       this.cookieStorage.remove(this.isAuthenticatedCookieName);
-      this.userCache.remove(USER_CACHE_KEY);
+      this.userCache.remove(CACHE_KEY_ID_TOKEN_SUFFIX);
 
       if (localOnly) {
         return;
@@ -1204,7 +1204,7 @@ export class Auth0Client {
   private async _saveEntryInCache(entry: CacheEntry) {
     const { id_token, decodedToken, ...entryWithoutIdToken } = entry;
 
-    this.userCache.set(USER_CACHE_KEY, {
+    this.userCache.set(CACHE_KEY_ID_TOKEN_SUFFIX, {
       id_token,
       decodedToken
     });
@@ -1229,17 +1229,16 @@ export class Auth0Client {
     );
 
     const currentCache = this.userCache.get<IdTokenEntry>(
-      USER_CACHE_KEY
+      CACHE_KEY_ID_TOKEN_SUFFIX
     ) as IdTokenEntry;
 
     // If the id_token in the cache matches the value we previously cached in memory return the in-memory
     // value so that object comparison will work
-    if (cache.id_token === currentCache?.id_token) {
+    if (cache && cache.id_token === currentCache?.id_token) {
       return currentCache;
-    } else {
-      this.userCache.set(USER_CACHE_KEY, cache);
     }
 
+    this.userCache.set(CACHE_KEY_ID_TOKEN_SUFFIX, cache);
     return cache;
   }
 
