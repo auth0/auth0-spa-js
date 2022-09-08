@@ -403,7 +403,9 @@ export default class Auth0Client {
         cookieDomain: this.options.cookieDomain
       });
     } else {
-      this.cookieStorage.remove(this.orgHintCookieName, { cookieDomain: this.options.cookieDomain });
+      this.cookieStorage.remove(this.orgHintCookieName, {
+        cookieDomain: this.options.cookieDomain
+      });
     }
   }
 
@@ -892,6 +894,8 @@ export default class Auth0Client {
       )
     ) {
       try {
+        window.addEventListener('pagehide', this._releaseLockOnPageHide);
+
         // Check the cache a second time, because it may have been populated
         // by a previous call while this call was waiting to acquire the lock.
         if (!ignoreCache) {
@@ -936,6 +940,7 @@ export default class Auth0Client {
         return authResult.access_token;
       } finally {
         await lock.releaseLock(GET_TOKEN_SILENTLY_LOCK_KEY);
+        window.removeEventListener('pagehide', this._releaseLockOnPageHide);
       }
     } else {
       throw new TimeoutError();
@@ -1048,8 +1053,12 @@ export default class Auth0Client {
     }
 
     const postCacheClear = () => {
-      this.cookieStorage.remove(this.orgHintCookieName, { cookieDomain: this.options.cookieDomain });
-      this.cookieStorage.remove(this.isAuthenticatedCookieName, { cookieDomain: this.options.cookieDomain });
+      this.cookieStorage.remove(this.orgHintCookieName, {
+        cookieDomain: this.options.cookieDomain
+      });
+      this.cookieStorage.remove(this.isAuthenticatedCookieName, {
+        cookieDomain: this.options.cookieDomain
+      });
 
       if (localOnly) {
         return;
@@ -1308,4 +1317,16 @@ export default class Auth0Client {
       return entry.access_token;
     }
   }
+
+  /**
+   * Releases any lock acquired by the current page that's not released yet
+   *
+   * Get's called on the `pagehide` event.
+   * https://developer.mozilla.org/en-US/docs/Web/API/Window/pagehide_event
+   */
+  private _releaseLockOnPageHide = async () => {
+    await lock.releaseLock(GET_TOKEN_SILENTLY_LOCK_KEY);
+
+    window.removeEventListener('pagehide', this._releaseLockOnPageHide);
+  };
 }
