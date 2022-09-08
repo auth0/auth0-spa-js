@@ -1,5 +1,13 @@
 # Change Log
 
+## [v1.22.4](https://github.com/auth0/auth0-spa-js/tree/v1.22.4) (2022-09-08)
+
+[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v1.22.3...v1.22.4)
+
+**Fixed**
+
+- Release lock on pagehide [\#974](https://github.com/auth0/auth0-spa-js/pull/974) ([frederikprijck](https://github.com/frederikprijck))
+
 ## [v1.22.3](https://github.com/auth0/auth0-spa-js/tree/v1.22.3) (2022-08-25)
 
 [Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v1.22.2...v1.22.3)
