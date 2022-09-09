@@ -66,6 +66,11 @@ export interface DecodedToken {
   user: User;
 }
 
+export interface IdTokenEntry {
+  id_token: string;
+  decodedToken: DecodedToken;
+}
+
 export type CacheEntry = {
   id_token?: string;
   access_token: string;

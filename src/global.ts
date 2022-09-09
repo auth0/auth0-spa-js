@@ -59,11 +59,11 @@ export interface AuthorizationParams {
   acr_values?: string;
 
   /**
-   * The default scope to be used on authentication requests. 
-   * 
+   * The default scope to be used on authentication requests.
+   *
    * This defaults to `profile email` if not set. If you are setting extra scopes and require
    * `profile` and `email` to be included then you must include them in the provided scope.
-   * 
+   *
    * Note: The `openid` scope is **always applied** regardless of this setting.
    */
   scope?: string;

@@ -8,7 +8,8 @@ import {
   CACHE_KEY_PREFIX,
   WrappedCacheEntry,
   DecodedToken,
-  CACHE_KEY_ID_TOKEN_SUFFIX
+  CACHE_KEY_ID_TOKEN_SUFFIX,
+  IdTokenEntry
 } from './shared';
 
 const DEFAULT_EXPIRY_ADJUSTMENT_SECONDS = 0;
@@ -35,20 +36,21 @@ export class CacheManager {
     await this.keyManifest?.add(cacheKey);
   }
 
-  async getIdToken(
-    cacheKey: CacheKey
-  ): Promise<{ id_token: string; decodedToken: DecodedToken }> {
-    let entry = await this.cache.get<{
-      id_token: string;
-      decodedToken: DecodedToken;
-    }>(this.getIdTokenCacheKey(cacheKey.clientId));
+  async getIdToken(cacheKey: CacheKey): Promise<IdTokenEntry | undefined> {
+    const entry = await this.cache.get<IdTokenEntry>(
+      this.getIdTokenCacheKey(cacheKey.clientId)
+    );
 
     if (!entry && cacheKey.scope && cacheKey.audience) {
       const entryByScope = await this.get(cacheKey);
 
+      if (!entryByScope) {
+        return;
+      }
+
       return {
-        id_token: entryByScope?.id_token,
-        decodedToken: entryByScope?.decodedToken
+        id_token: entryByScope.id_token,
+        decodedToken: entryByScope.decodedToken
       };
     }
 
