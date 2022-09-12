@@ -75,8 +75,7 @@ import {
   User,
   IdToken,
   GetTokenSilentlyVerboseResponse,
-  TokenEndpointResponse,
-  BuildAuthorizeUrlOptions
+  TokenEndpointResponse
 } from './global';
 
 // @ts-ignore
@@ -354,28 +353,7 @@ export class Auth0Client {
     }
   }
 
-  /**
-   * ```js
-   * await auth0.buildAuthorizeUrl(options);
-   * ```
-   *
-   * Builds an `/authorize` URL for loginWithRedirect using the parameters
-   * provided as arguments. Random and secure `state` and `nonce`
-   * parameters will be auto-generated.
-   *
-   * @param options
-   */
-  public async buildAuthorizeUrl(
-    options: BuildAuthorizeUrlOptions = {}
-  ): Promise<string> {
-    const { url } = await this._prepareAuthorizeUrl(options);
-
-    return url;
-  }
-
-  private async _prepareAuthorizeUrl(
-    options: BuildAuthorizeUrlOptions
-  ): Promise<{
+  private async _prepareAuthorizeUrl(options: RedirectLoginOptions): Promise<{
     scope: string;
     audience: string;
     redirect_uri: string;
