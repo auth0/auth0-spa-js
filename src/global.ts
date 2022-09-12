@@ -303,6 +303,13 @@ export interface RedirectLoginOptions<TAppState = any>
   onRedirect?: (url: string) => Promise<void>;
 }
 
+export interface BuildAuthorizeUrlOptions extends BaseLoginOptions {
+  /**
+   * Used to add to the URL fragment before redirecting
+   */
+  fragment?: string;
+}
+
 export interface RedirectLoginResult<TAppState = any> {
   /**
    * State stored when the redirect request was made

@@ -75,7 +75,8 @@ import {
   User,
   IdToken,
   GetTokenSilentlyVerboseResponse,
-  TokenEndpointResponse
+  TokenEndpointResponse,
+  BuildAuthorizeUrlOptions
 } from './global';
 
 // @ts-ignore
@@ -365,24 +366,25 @@ export class Auth0Client {
    * @param options
    */
   public async buildAuthorizeUrl(
-    options: RedirectLoginOptions = {}
+    options: BuildAuthorizeUrlOptions = {}
   ): Promise<string> {
     const { url } = await this._prepareAuthorizeUrl(options);
 
     return url;
   }
 
-  private async _prepareAuthorizeUrl(options: RedirectLoginOptions): Promise<{
+  private async _prepareAuthorizeUrl(
+    options: BuildAuthorizeUrlOptions
+  ): Promise<{
     scope: string;
     audience: string;
     redirect_uri: string;
     nonce: string;
     code_verifier: string;
-    appState: any;
     state: string;
     url: string;
   }> {
-    const { appState, authorizationParams } = options;
+    const { authorizationParams } = options;
 
     const state = encode(createRandomString());
     const nonce = encode(createRandomString());
@@ -404,7 +406,6 @@ export class Auth0Client {
     return {
       nonce,
       code_verifier,
-      appState,
       scope: params.scope,
       audience: params.audience || 'default',
       redirect_uri: params.redirect_uri,
@@ -576,7 +577,7 @@ export class Auth0Client {
   public async loginWithRedirect<TAppState = any>(
     options: RedirectLoginOptions<TAppState> = {}
   ) {
-    const { onRedirect, ...urlOptions } = options;
+    const { onRedirect, appState, ...urlOptions } = options;
 
     const organizationId =
       urlOptions.authorizationParams?.organization ||
@@ -586,6 +587,7 @@ export class Auth0Client {
 
     this.transactionManager.create({
       ...transaction,
+      appState,
       ...(organizationId && { organizationId })
     });
 
