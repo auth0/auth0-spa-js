@@ -2,7 +2,8 @@ import { AuthenticationResult, PopupConfigOptions } from './global';
 
 import {
   DEFAULT_AUTHORIZE_TIMEOUT_IN_SECONDS,
-  CLEANUP_IFRAME_TIMEOUT_IN_SECONDS
+  CLEANUP_IFRAME_TIMEOUT_IN_SECONDS,
+  DEFAULT_AUTH0_CLIENT
 } from './constants';
 
 import {
@@ -216,4 +217,33 @@ export const validateCrypto = () => {
       auth0-spa-js must run on a secure origin. See https://github.com/auth0/auth0-spa-js/blob/master/FAQ.md#why-do-i-get-auth0-spa-js-must-run-on-a-secure-origin for more information.
     `);
   }
+};
+
+/**
+ * @ignore
+ */
+export const getDomain = (domainUrl: string) => {
+  if (!/^https?:\/\//.test(domainUrl)) {
+    return `https://${domainUrl}`;
+  }
+
+  return domainUrl;
+};
+
+/**
+ * @ignore
+ */
+export const getTokenIssuer = (issuer: string, domainUrl: string) => {
+  if (issuer) {
+    return issuer.startsWith('https://') ? issuer : `https://${issuer}/`;
+  }
+
+  return `${domainUrl}/`;
+};
+
+export const parseNumber = (value: any): number => {
+  if (typeof value !== 'string') {
+    return value;
+  }
+  return parseInt(value, 10) || undefined;
 };
