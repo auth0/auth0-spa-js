@@ -846,6 +846,7 @@ export class Auth0Client {
     };
 
     const orgIdHint = this.cookieStorage.get<string>(this.orgHintCookieName);
+
     if (orgIdHint && !params.organization) {
       params.organization = orgIdHint;
     }
