@@ -75,7 +75,8 @@ import {
   User,
   IdToken,
   GetTokenSilentlyVerboseResponse,
-  TokenEndpointResponse
+  TokenEndpointResponse,
+  TokenEndpointOptions
 } from './global';
 
 // @ts-ignore
@@ -614,7 +615,7 @@ export class Auth0Client {
    *
    * If refresh tokens are used, the token endpoint is called directly with the
    * 'refresh_token' grant. If no refresh token is available to make this call,
-   * the SDK will only fall back to using an iframe to the '/authorize' URL if 
+   * the SDK will only fall back to using an iframe to the '/authorize' URL if
    * the `useRefreshTokensFallback` setting has been set to `true`. By default this
    * setting is `false`.
    *
@@ -810,7 +811,7 @@ export class Auth0Client {
    * ```
    *
    * Clears the application session and performs a redirect to `/v2/logout`, using
-   * the parameters provided as arguments, to clear the Auth0 session. 
+   * the parameters provided as arguments, to clear the Auth0 session.
    *
    * If the `federated` option is specified it also clears the Identity Provider session.
    * [Read more about how Logout works at Auth0](https://auth0.com/docs/logout).
@@ -821,7 +822,7 @@ export class Auth0Client {
     const { onRedirect, ...logoutOptions } = options;
 
     await this.cacheManager.clear();
-    
+
     this.cookieStorage.remove(this.orgHintCookieName);
     this.cookieStorage.remove(this.isAuthenticatedCookieName);
     this.userCache.remove(CACHE_KEY_ID_TOKEN_SUFFIX);
@@ -845,7 +846,6 @@ export class Auth0Client {
     };
 
     const orgIdHint = this.cookieStorage.get<string>(this.orgHintCookieName);
-
     if (orgIdHint && !params.organization) {
       params.organization = orgIdHint;
     }
