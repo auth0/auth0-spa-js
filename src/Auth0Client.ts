@@ -318,6 +318,51 @@ export class Auth0Client {
     };
   }
 
+  private async _prepareAuthorizeUrl(
+    authorizationParams: AuthorizationParams,
+    authorizeOptions: Partial<AuthorizeOptions> = undefined,
+    fallbackRedirectUri: string = undefined
+  ): Promise<{
+    scope: string;
+    audience: string;
+    redirect_uri: string;
+    nonce: string;
+    code_verifier: string;
+    state: string;
+    url: string;
+  }> {
+    const state = encode(createRandomString());
+    const nonce = encode(createRandomString());
+    const code_verifier = createRandomString();
+    const code_challengeBuffer = await sha256(code_verifier);
+    const code_challenge = bufferToBase64UrlEncoded(code_challengeBuffer);
+
+    const params = getAuthorizeParams(
+      this.options,
+      this.scope,
+      authorizationParams,
+      state,
+      nonce,
+      code_challenge,
+      authorizationParams?.redirect_uri ||
+        this.options.authorizationParams?.redirect_uri ||
+        fallbackRedirectUri,
+      authorizeOptions?.response_mode
+    );
+
+    const url = this._authorizeUrl(params);
+
+    return {
+      nonce,
+      code_verifier,
+      scope: params.scope,
+      audience: params.audience || 'default',
+      redirect_uri: params.redirect_uri,
+      state,
+      url
+    };
+  }
+
   /**
    * ```js
    * try {
