@@ -70,15 +70,12 @@ import {
   GetTokenSilentlyOptions,
   GetTokenWithPopupOptions,
   LogoutOptions,
-  RefreshTokenOptions,
-  OAuthTokenOptions,
   CacheLocation,
   LogoutUrlOptions,
   User,
   IdToken,
   GetTokenSilentlyVerboseResponse,
-  TokenEndpointResponse,
-  TokenEndpointOptions
+  TokenEndpointResponse
 } from './global';
 
 // @ts-ignore
