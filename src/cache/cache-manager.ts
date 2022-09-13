@@ -133,22 +133,6 @@ export class CacheManager {
     await this.keyManifest?.clear();
   }
 
-  /**
-   * Note: only call this if you're sure one of our internal (synchronous) caches are being used.
-   */
-  clearSync(clientId?: string): void {
-    const keys = this.cache.allKeys() as string[];
-
-    /* istanbul ignore next */
-    if (!keys) return;
-
-    keys
-      .filter(key => (clientId ? key.includes(clientId) : true))
-      .forEach(key => {
-        this.cache.remove(key);
-      });
-  }
-
   private async wrapCacheEntry(entry: CacheEntry): Promise<WrappedCacheEntry> {
     const now = await this.nowProvider();
     const expiresInTime = Math.floor(now / 1000) + entry.expires_in;

@@ -2120,7 +2120,7 @@ describe('Auth0Client', () => {
       await expect(
         auth0.getTokenSilently({ cacheMode: 'off' })
       ).rejects.toThrow('login_required');
-      expect(auth0.logout).toHaveBeenCalledWith({ localOnly: true });
+      expect(auth0.logout).toHaveBeenCalled();
     });
 
     it('when not using Refresh Tokens and login_required is returned, ensure the user is logged out', async () => {
@@ -2134,7 +2134,7 @@ describe('Auth0Client', () => {
         auth0.getTokenSilently({ cacheMode: 'off' })
       ).rejects.toThrow('login_required');
 
-      expect(auth0.logout).toHaveBeenCalledWith({ localOnly: true });
+      expect(auth0.logout).toHaveBeenCalled();
     });
 
     it('when not using Refresh Tokens and crossOriginIsolated is true, login_required is returned and the user is logged out', async () => {
@@ -2156,7 +2156,7 @@ describe('Auth0Client', () => {
         auth0.getTokenSilently({ cacheMode: 'off' })
       ).rejects.toHaveProperty('error', 'login_required');
 
-      expect(auth0.logout).toHaveBeenCalledWith({ localOnly: true });
+      expect(auth0.logout).toHaveBeenCalled();
       windowSpy.mockRestore();
     });
 
