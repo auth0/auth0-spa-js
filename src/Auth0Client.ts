@@ -275,27 +275,6 @@ export class Auth0Client {
     }
   }
 
-  /**
-   * ```js
-   * await auth0.buildAuthorizeUrl(options);
-   * ```
-   *
-   * Builds an `/authorize` URL for loginWithRedirect using the parameters
-   * provided as arguments. Random and secure `state` and `nonce`
-   * parameters will be auto-generated.
-   *
-   * @param options
-   */
-  public async buildAuthorizeUrl(
-    options: RedirectLoginOptions = {}
-  ): Promise<string> {
-    const { url } = await this._prepareAuthorizeUrl(
-      options.authorizationParams
-    );
-
-    return options.fragment ? `${url}#${options.fragment}` : url;
-  }
-
   private async _prepareAuthorizeUrl(
     authorizationParams: AuthorizationParams,
     authorizeOptions?: Partial<AuthorizeOptions>,
@@ -464,7 +443,7 @@ export class Auth0Client {
   public async loginWithRedirect<TAppState = any>(
     options: RedirectLoginOptions<TAppState> = {}
   ) {
-    const { onRedirect, fragment, ...urlOptions } = options;
+    const { onRedirect, fragment, appState, ...urlOptions } = options;
 
     const organizationId =
       urlOptions.authorizationParams?.organization ||
@@ -476,7 +455,7 @@ export class Auth0Client {
 
     this.transactionManager.create({
       ...transaction,
-      appState: options.appState,
+      appState,
       ...(organizationId && { organizationId })
     });
 
