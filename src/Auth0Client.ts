@@ -75,8 +75,7 @@ import {
   User,
   IdToken,
   GetTokenSilentlyVerboseResponse,
-  TokenEndpointResponse,
-  TokenEndpointOptions
+  TokenEndpointResponse
 } from './global';
 
 // @ts-ignore
