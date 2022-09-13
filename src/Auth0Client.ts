@@ -974,21 +974,26 @@ export class Auth0Client {
       this.options.authorizationParams?.redirect_uri ||
       window.location.origin;
 
-    let tokenResult: any;
-
     const timeout =
       typeof options.timeoutInSeconds === 'number'
         ? options.timeoutInSeconds * 1000
         : null;
 
     try {
-      tokenResult = await this._requestToken({
+      const tokenResult = await this._requestToken({
         ...options.authorizationParams,
         grant_type: 'refresh_token',
         refresh_token: cache && cache.refresh_token,
         redirect_uri,
         ...(timeout && { timeout })
       });
+
+      return {
+        ...tokenResult,
+        scope: options.authorizationParams.scope,
+        oauthTokenScope: tokenResult.scope,
+        audience: options.authorizationParams?.audience || 'default'
+      };
     } catch (e) {
       if (
         // The web worker didn't have a refresh token in memory so
@@ -1005,13 +1010,6 @@ export class Auth0Client {
 
       throw e;
     }
-
-    return {
-      ...tokenResult,
-      scope: options.authorizationParams.scope,
-      oauthTokenScope: tokenResult.scope,
-      audience: options.authorizationParams?.audience || 'default'
-    };
   }
 
   private async _saveEntryInCache(entry: CacheEntry) {
