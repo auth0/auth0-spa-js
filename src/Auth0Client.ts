@@ -320,8 +320,8 @@ export class Auth0Client {
 
   private async _prepareAuthorizeUrl(
     authorizationParams: AuthorizationParams,
-    authorizeOptions: Partial<AuthorizeOptions> = undefined,
-    fallbackRedirectUri: string = undefined
+    authorizeOptions?: Partial<AuthorizeOptions>,
+    fallbackRedirectUri?: string
   ): Promise<{
     scope: string;
     audience: string;
