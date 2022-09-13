@@ -298,8 +298,8 @@ export class Auth0Client {
 
   private async _prepareAuthorizeUrl(
     authorizationParams: AuthorizationParams,
-    authorizeOptions: Partial<AuthorizeOptions> = undefined,
-    fallbackRedirectUri: string = undefined
+    authorizeOptions?: Partial<AuthorizeOptions>,
+    fallbackRedirectUri?: string
   ): Promise<{
     scope: string;
     audience: string;
@@ -1114,24 +1114,10 @@ export class Auth0Client {
   }
 
   private async _requestToken(
-    options: {
-      audience?: string;
-      scope?: string;
-      timeout?: number;
-      redirect_uri?: string;
-    } & (
-      | {
-          code: string;
-          grant_type: 'authorization_code';
-          code_verifier: string;
-        }
-      | {
-          grant_type: 'refresh_token';
-          refresh_token: string;
-        }
-    ),
-    { nonceIn, organizationId }: any = {}
+    options: PKCERequestTokenOptions | RefreshTokenRequestTokenOptions,
+    additionalParameters?: RequestTokenAdditionalParameters
   ) {
+    const { nonceIn, organizationId } = additionalParameters || {};
     const authResult = await oauthToken(
       {
         baseUrl: this.domainUrl,
@@ -1168,4 +1154,27 @@ export class Auth0Client {
 
     return { ...authResult, decodedToken };
   }
+}
+
+interface BaseRequestTokenOptions {
+  audience?: string;
+  scope?: string;
+  timeout?: number;
+  redirect_uri?: string;
+}
+
+interface PKCERequestTokenOptions extends BaseRequestTokenOptions {
+  code: string;
+  grant_type: 'authorization_code';
+  code_verifier: string;
+}
+
+interface RefreshTokenRequestTokenOptions extends BaseRequestTokenOptions {
+  grant_type: 'refresh_token';
+  refresh_token: string;
+}
+
+interface RequestTokenAdditionalParameters {
+  nonceIn?: string;
+  organizationId?: string;
 }
