@@ -2,8 +2,7 @@ import { AuthenticationResult, PopupConfigOptions } from './global';
 
 import {
   DEFAULT_AUTHORIZE_TIMEOUT_IN_SECONDS,
-  CLEANUP_IFRAME_TIMEOUT_IN_SECONDS,
-  DEFAULT_AUTH0_CLIENT
+  CLEANUP_IFRAME_TIMEOUT_IN_SECONDS
 } from './constants';
 
 import {
