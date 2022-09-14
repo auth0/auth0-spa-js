@@ -437,12 +437,16 @@ export interface LogoutUrlOptions {
 
 export interface LogoutOptions extends LogoutUrlOptions {
   /**
-   * When `true`, this skips the request to the logout endpoint on the authorization server,
-   * effectively performing a "local" logout of the application. No redirect should take place,
-   * you should update local logged in state.
-   * This option cannot be specified along with the `federated` option.
+   * Used to control the redirect and not rely on the SDK to do the actual redirect.
+   *
+   * @example
+   * await auth0.logout({
+   *   async onRedirect(url) {
+   *     window.location.replace(url);
+   *   }
+   * });
    */
-  localOnly?: boolean;
+  onRedirect?: (url: string) => Promise<void>;
 }
 
 /**

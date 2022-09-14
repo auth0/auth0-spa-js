@@ -2117,10 +2117,13 @@ describe('Auth0Client', () => {
         })
       );
 
+      // Reset the location.assign mock so that the previous usage doesn't cause our test to fail
+      (window.location.assign as jest.Mock).mockReset();
       await expect(
         auth0.getTokenSilently({ cacheMode: 'off' })
       ).rejects.toThrow('login_required');
-      expect(auth0.logout).toHaveBeenCalledWith({ localOnly: true });
+      expect(auth0.logout).toHaveBeenCalled();
+      expect(window.location.assign).not.toHaveBeenCalled();
     });
 
     it('when not using Refresh Tokens and login_required is returned, ensure the user is logged out', async () => {
@@ -2130,11 +2133,14 @@ describe('Auth0Client', () => {
       mockFetch.mockReset();
       jest.spyOn(auth0, 'logout');
 
+      // Reset the location.assign mock so that the previous usage doesn't cause our test to fail
+      (window.location.assign as jest.Mock).mockReset();
       await expect(
         auth0.getTokenSilently({ cacheMode: 'off' })
       ).rejects.toThrow('login_required');
 
-      expect(auth0.logout).toHaveBeenCalledWith({ localOnly: true });
+      expect(auth0.logout).toHaveBeenCalled();
+      expect(window.location.assign).not.toHaveBeenCalled();
     });
 
     it('when not using Refresh Tokens and crossOriginIsolated is true, login_required is returned and the user is logged out', async () => {
@@ -2152,11 +2158,14 @@ describe('Auth0Client', () => {
         crossOriginIsolated: true
       }));
 
+      // Reset the location.assign mock so that the previous usage doesn't cause our test to fail
+      (window.location.assign as jest.Mock).mockReset();
       await expect(
         auth0.getTokenSilently({ cacheMode: 'off' })
       ).rejects.toHaveProperty('error', 'login_required');
 
-      expect(auth0.logout).toHaveBeenCalledWith({ localOnly: true });
+      expect(auth0.logout).toHaveBeenCalled();
+      expect(window.location.assign).not.toHaveBeenCalled();
       windowSpy.mockRestore();
     });
 

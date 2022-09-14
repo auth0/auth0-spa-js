@@ -72,7 +72,7 @@ describe('Auth0Client', () => {
   describe('logout()', () => {
     it('removes authenticated cookie from storage', async () => {
       const auth0 = setup();
-      auth0.logout();
+      await auth0.logout();
 
       expect(esCookie.remove).toHaveBeenCalledWith(
         `auth0.${TEST_CLIENT_ID}.is.authenticated`
@@ -81,7 +81,7 @@ describe('Auth0Client', () => {
 
     it('removes the organization hint cookie from storage', async () => {
       const auth0 = setup();
-      auth0.logout();
+      await auth0.logout();
 
       expect(esCookie.remove).toHaveBeenCalledWith(
         `auth0.${TEST_CLIENT_ID}.organization_hint`
@@ -91,7 +91,7 @@ describe('Auth0Client', () => {
     it('calls `window.location.assign` with the correct url', async () => {
       const auth0 = setup();
 
-      auth0.logout();
+      await auth0.logout();
 
       expect(window.location.assign).toHaveBeenCalledWith(
         `https://${TEST_DOMAIN}/v2/logout?client_id=${TEST_CLIENT_ID}${TEST_AUTH0_CLIENT_QUERY_STRING}`
@@ -101,7 +101,7 @@ describe('Auth0Client', () => {
     it('calls `window.location.assign` with the correct url when `options.federated` is true', async () => {
       const auth0 = setup();
 
-      auth0.logout({ logoutParams: { federated: true } });
+      await auth0.logout({ logoutParams: { federated: true } });
 
       expect(window.location.assign).toHaveBeenCalledWith(
         `https://${TEST_DOMAIN}/v2/logout?client_id=${TEST_CLIENT_ID}${TEST_AUTH0_CLIENT_QUERY_STRING}&federated`
@@ -112,7 +112,7 @@ describe('Auth0Client', () => {
       const auth0Client = { name: '__test_client_name__', version: '9.9.9' };
       const auth0 = setup({ auth0Client });
 
-      auth0.logout();
+      await auth0.logout();
 
       expectToHaveBeenCalledWithAuth0ClientParam(
         window.location.assign,
@@ -124,55 +124,50 @@ describe('Auth0Client', () => {
       const auth0 = setup();
 
       jest
-        .spyOn(auth0['cacheManager'], 'clearSync')
-        .mockReturnValueOnce(undefined);
+        .spyOn(auth0['cacheManager'], 'clear')
+        .mockReturnValueOnce(Promise.resolve());
 
-      auth0.logout();
+      await auth0.logout();
 
-      expect(auth0['cacheManager']['clearSync']).toHaveBeenCalled();
+      expect(auth0['cacheManager']['clear']).toHaveBeenCalled();
     });
 
-    it('removes authenticated cookie from storage when `options.localOnly` is true', async () => {
+    it('removes authenticated cookie from storage when `options.onRedirect` is set', async () => {
       const auth0 = setup();
 
-      auth0.logout({ localOnly: true });
+      await auth0.logout({ onRedirect: async () => {} });
 
       expect(esCookie.remove).toHaveBeenCalledWith(
         `auth0.${TEST_CLIENT_ID}.is.authenticated`
       );
     });
 
-    it('removes the organization hint cookie from storage when `options.localOnly` is true', async () => {
+    it('removes the organization hint cookie from storage when `options.onRedirect` is set', async () => {
       const auth0 = setup();
 
-      auth0.logout({ localOnly: true });
+      await auth0.logout({ onRedirect: async () => {} });
 
       expect(esCookie.remove).toHaveBeenCalledWith(
         `auth0.${TEST_CLIENT_ID}.organization_hint`
       );
     });
 
-    it('skips `window.location.assign` when `options.localOnly` is true', async () => {
+    it('skips `window.location.assign` when `options.onRedirect` is provided', async () => {
       const auth0 = setup();
-
-      auth0.logout({ localOnly: true });
+      const onRedirect = jest.fn();
+      await auth0.logout({ onRedirect });
 
       expect(window.location.assign).not.toHaveBeenCalled();
+      expect(onRedirect).toHaveBeenCalledWith(
+        'https://auth0_domain/v2/logout?client_id=auth0_client_id&auth0Client=eyJuYW1lIjoiYXV0aDAtc3BhLWpzIiwidmVyc2lvbiI6IjEuMjIuMiJ9'
+      );
     });
 
-    it('calls `window.location.assign` when `options.localOnly` is false', async () => {
+    it('calls `window.location.assign` when `options.onRedirect` is not provided', async () => {
       const auth0 = setup();
 
-      auth0.logout({ localOnly: false });
+      await auth0.logout();
       expect(window.location.assign).toHaveBeenCalled();
-    });
-
-    it('throws when both `options.localOnly` and `options.federated` are true', async () => {
-      const auth0 = setup();
-
-      const fn = () =>
-        auth0.logout({ localOnly: true, logoutParams: { federated: true } });
-      expect(fn).toThrow();
     });
 
     it('can access isAuthenticated immediately after local logout', async () => {
@@ -180,7 +175,7 @@ describe('Auth0Client', () => {
 
       await loginWithRedirect(auth0);
       expect(await auth0.isAuthenticated()).toBe(true);
-      auth0.logout({ localOnly: true });
+      await auth0.logout({ onRedirect: async () => {} });
 
       expect(await auth0.isAuthenticated()).toBe(false);
     });
@@ -192,9 +187,39 @@ describe('Auth0Client', () => {
 
       await loginWithRedirect(auth0);
       expect(await auth0.isAuthenticated()).toBe(true);
-      await auth0.logout({ localOnly: true });
+      await auth0.logout({ onRedirect: async () => {} });
 
       expect(await auth0.isAuthenticated()).toBe(false);
+    });
+
+    it('can access isAuthenticated immediately after local logout when using a custom async cache', async () => {
+      const auth0 = setup({
+        cache: new InMemoryAsyncCacheNoKeys()
+      });
+
+      await loginWithRedirect(auth0);
+      expect(await auth0.isAuthenticated()).toBe(true);
+      await auth0.logout({ onRedirect: async () => {} });
+
+      expect(await auth0.isAuthenticated()).toBe(false);
+    });
+
+    it('correctly handles a null clientId value', async () => {
+      const auth0 = setup();
+      await auth0.logout({ clientId: null });
+
+      expect(window.location.assign).toHaveBeenCalledWith(
+        'https://auth0_domain/v2/logout?&auth0Client=eyJuYW1lIjoiYXV0aDAtc3BhLWpzIiwidmVyc2lvbiI6IjEuMjIuMiJ9'
+      );
+    });
+
+    it('correctly handles a different clientId value', async () => {
+      const auth0 = setup();
+      await auth0.logout({ clientId: 'my-client-id' });
+
+      expect(window.location.assign).toHaveBeenCalledWith(
+        'https://auth0_domain/v2/logout?client_id=my-client-id&auth0Client=eyJuYW1lIjoiYXV0aDAtc3BhLWpzIiwidmVyc2lvbiI6IjEuMjIuMiJ9'
+      );
     });
   });
 });
