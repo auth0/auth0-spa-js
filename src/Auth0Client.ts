@@ -785,7 +785,7 @@ export class Auth0Client {
    * Builds a URL to the logout endpoint using the parameters provided as arguments.
    * @param options
    */
-  public buildLogoutUrl(options: LogoutUrlOptions = {}): string {
+  private _buildLogoutUrl(options: LogoutUrlOptions = {}): string {
     if (options.clientId !== null) {
       options.clientId = options.clientId || this.options.clientId;
     } else {
@@ -806,50 +806,32 @@ export class Auth0Client {
 
   /**
    * ```js
-   * auth0.logout();
+   * await auth0.logout(options);
    * ```
    *
    * Clears the application session and performs a redirect to `/v2/logout`, using
-   * the parameters provided as arguments, to clear the Auth0 session.
-   *
-   * **Note:** If you are using a custom cache, and specifying `localOnly: true`, and you want to perform actions or read state from the SDK immediately after logout, you should `await` the result of calling `logout`.
+   * the parameters provided as arguments, to clear the Auth0 session. 
    *
    * If the `federated` option is specified it also clears the Identity Provider session.
-   * If the `localOnly` option is specified, it only clears the application session.
-   * It is invalid to set both the `federated` and `localOnly` options to `true`,
-   * and an error will be thrown if you do.
    * [Read more about how Logout works at Auth0](https://auth0.com/docs/logout).
    *
    * @param options
    */
-  public logout(options: LogoutOptions = {}): Promise<void> | void {
-    const { localOnly, ...logoutOptions } = options;
+  public async logout(options: LogoutOptions = {}): Promise<void> {
+    const { onRedirect, ...logoutOptions } = options;
 
-    if (localOnly && logoutOptions.logoutParams?.federated) {
-      throw new Error(
-        'It is invalid to set both the `federated` and `localOnly` options to `true`'
-      );
-    }
+    await this.cacheManager.clear();
+    
+    this.cookieStorage.remove(this.orgHintCookieName);
+    this.cookieStorage.remove(this.isAuthenticatedCookieName);
+    this.userCache.remove(CACHE_KEY_ID_TOKEN_SUFFIX);
 
-    const postCacheClear = () => {
-      this.cookieStorage.remove(this.orgHintCookieName);
-      this.cookieStorage.remove(this.isAuthenticatedCookieName);
-      this.userCache.remove(CACHE_KEY_ID_TOKEN_SUFFIX);
+    const url = this._buildLogoutUrl(logoutOptions);
 
-      if (localOnly) {
-        return;
-      }
-
-      const url = this.buildLogoutUrl(logoutOptions);
-
-      window.location.assign(url);
-    };
-
-    if (this.options.cache) {
-      return this.cacheManager.clear().then(() => postCacheClear());
+    if (onRedirect) {
+      await onRedirect(url);
     } else {
-      this.cacheManager.clearSync();
-      postCacheClear();
+      window.location.assign(url);
     }
   }
 
@@ -925,7 +907,7 @@ export class Auth0Client {
     } catch (e) {
       if (e.error === 'login_required') {
         this.logout({
-          localOnly: true
+          onRedirect: async () => {}
         });
       }
       throw e;
