@@ -72,7 +72,7 @@ await client.loginWithRedirect({
 });
 ```
 
-With v2 of our SDK, we have improved the API by separating properties to configure the SDK from properties that are only used to send to Auth0. The SDK configuration properties will stay on the root, while any property that should be send to Auth0 is expected to be set on `authorizationParams`.
+With v2 of our SDK, we have improved the API by separating properties to configure the SDK from properties that are only used to send to Auth0. The SDK configuration properties will stay on the root, while any property that should be sent to Auth0 is expected to be set on `authorizationParams`.
 
 ```ts
 const client = new Auth0Client({
@@ -148,7 +148,7 @@ The above snippet aligns more with the intent, using our SDK to login but relyin
 
 ### `buildLogoutUrl` has been removed
 
-In v1, we introduced `buildLogoutUrl` for application’s that are unable to use `window.location.assign` when logging out from Auth0, a typical example is for people using v1 of our SDK with Ionic:
+In v1, we introduced `buildLogoutUrl` for applications that are unable to use `window.location.assign` when logging out from Auth0, a typical example is for people using v1 of our SDK with Ionic:
 
 ```ts
 // Ask auth0-spa-js to build the logout URL
@@ -223,7 +223,7 @@ With v2, we have flipped the default value for `useFormData` to **true**, meanin
 
 ### No more iframe fallback by default when using refresh tokens
 
-When using refresh tokens in v1, we fallback to using iframes whenever a refresh token exchange would fail. This has caused problems before in environments that do not support iframes, and we have specifically introduced `useRefreshTokensFallback` to be able to opt-out of falling back to iframes in the case a refresh_grant fails.
+When using refresh tokens in v1, we fall back to using iframes whenever a refresh token exchange would fail. This has caused problems before in environments that do not support iframes, and we have specifically introduced `useRefreshTokensFallback` to be able to opt-out of falling back to iframes in the case a refresh_grant fails.
 
 With v2, we have flipped the default value for `useRefreshTokensFallback` to false, meaning, by default, we will not be falling back to using iframes when `useRefreshTokens` is set to true and exchanging the refresh token fails.
 
@@ -274,7 +274,7 @@ const client = new Auth0Client({
 
 #### defaultScope
 
-With v1 of our SDK, users can set both `scope` and `defaultScope` when constructing `Auth0Client`. As this has proven to be confusing, with v2 we have decided to drop `defaultScope` all-together. Any code that used to rely on `defaultScope`: will need to move those scopes into `scope` instead:
+With v1 of our SDK, users can set both `scope` and `defaultScope` when constructing `Auth0Client`. As this has proven to be confusing, with v2 we have decided to drop `defaultScope` altogether. Any code that used to rely on `defaultScope`: will need to move those scopes into `scope` instead:
 
 ```ts
 const client = new Auth0Client({
@@ -330,7 +330,7 @@ const client = new Auth0Client();
 const errorTypes = [GenericError, ...]
 ```
 
-The above syntax is, for the most part, also available in v1, so this is not something entirely new. The thing that’s changed is the fact that `createAuth0Client` is now also a named export, without any additional method’s attached to it.
+The above syntax is, for the most part, also available in v1, so this is not something entirely new. The thing that’s changed is the fact that `createAuth0Client` is now also a named export, without any additional methods attached to it.
 
 ### Changes on how to create an instance when relying on globally available API’s (e.g. using CDN)
 
