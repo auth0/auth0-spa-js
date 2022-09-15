@@ -4,7 +4,25 @@ With the v2 release of Auth0-SPA-JS, we have improved both performance and devel
 
 **Please review this guide thoroughly to understand the changes required to migrate your application to v2.**
 
-[TOC]
+- [Polyfills and supported browsers](#polyfills-and-supported-browsers)
+- [Public API changes](#polyfills-and-supported-browsers)
+  - [client_id has been renamed to clientId](#client_id-has-been-renamed-to-clientid)
+  - [Introduction of authorizationParams](#introduction-of-authorizationparams)
+  - [Introduction of logoutParams](#introduction-of-logoutparameters)
+  - [buildAuthorizeUrl has been removed](#buildauthorizeurl-has-been-removed)
+  - [buildLogoutUrl has been removed](#buildlogouturl-has-been-removed)
+  - [redirectMode has been removed from loginWithRedirect](#redirectmode-has-been-removed-from-loginwithredirect)
+  - [ignoreCache on getTokenSilentlyhas been replaced by cacheMode](#ignorecache-on-gettokensilentlyhas-been-replaced-by-cachemode)
+  - [application/x-www-form-urlencoded is used by default instead of application/json](#applicationx-www-form-urlencoded-is-used-by-default-instead-of-applicationjson)
+  - [No more iframe fallback by default when using refresh tokens](#no-more-iframe-fallback-by-default-when-using-refresh-tokens)
+  - [getUser and getIdTokenClaims](#getuser-and-getidtokenclaims)
+  - [Changes to default scopes (profile and email)](#changes-to-default-scopes-profile-and-email)
+    - [defaultScope](#defaultscope)
+- [checkSession no longer throws exceptions](#checksession-no-longer-throws-exceptions)
+- [getIdTokenClaimsOptions type has been removed](#getidtokenclaimsoptions-type-has-been-removed)
+- [Module output](#module-output)
+  - [No more default export](#no-more-default-export)
+  - [Changes on how to create an instance when relying on globally available API’s (e.g. using CDN)](#changes-on-how-to-create-an-instance-when-relying-on-globally-available-apis-eg-using-cdn)
 
 ## Polyfills and supported browsers
 
@@ -32,7 +50,7 @@ const client = new Auth0Client({ clientId: '' });
 
 This change needs to occur with every method on `Auth0Client` that takes a client id.
 
-### Introduction of `authorizationParameters`
+### Introduction of `authorizationParams`
 
 Another breaking change that will affect pretty much everyone is the introduction of `authorizationParams`, a more structured approach to provide (additional) parameters to Auth0.
 
