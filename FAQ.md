@@ -59,12 +59,6 @@ The way around this error is to change the settings for your Auth0 application t
 
 The next time you try to authenticate, you should not receive this error.
 
-## Why do I get `auth0_spa_js_1.default is not a function` when using Typescript?
-
-If you're hitting this issue, set `esModuleInterop: true` in your `tsconfig.json` file (inside `compilerOptions`).
-
-Due to how the type system works in Typescript, if one of your dependencies uses `allowSyntheticDefaultImports: true`, then all the consumers of that dependency must use `allowSyntheticDefaultImports: true` as well. This, of course, is not ideal and might break your app if you depend on this setting being `false`. The Typescript team added the `esModuleInterop` flag that helps in this scenario.
-
 ## Why do I get `auth0-spa-js must run on a secure origin`?
 
 Internally, the SDK uses [Web Cryptography API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Crypto_API) to create [SHA-256 digest](https://developer.mozilla.org/en-US/docs/Web/API/SubtleCrypto/digest).
