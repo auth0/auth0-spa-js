@@ -570,7 +570,7 @@
 
             if (_self.useConstructor) {
               console.log('Initializing using the constructor');
-              _init(new auth0.Auth0Client(clientOptions));
+              _init(new auth0.Auth0Client({ ...clientOptions, useDPoP: true }));
             } else {
               console.log('Initializing using the factory function');
               auth0.createAuth0Client(clientOptions).then(_init);

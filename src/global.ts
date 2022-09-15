@@ -183,6 +183,11 @@ export interface Auth0ClientOptions extends BaseLoginOptions {
   useRefreshTokensFallback?: boolean;
 
   /**
+   * Set to `true` to use DPoP (Demonstrating Proof-of-Possession). default `false`
+   */
+  useDPoP?: boolean;
+
+  /**
    * A maximum number of seconds to wait before declaring background calls to /authorize as failed for timeout
    * Defaults to 60s.
    */
@@ -469,6 +474,7 @@ export interface TokenEndpointOptions {
   timeout?: number;
   auth0Client: any;
   useFormData?: boolean;
+  DPoP?: string;
   [key: string]: any;
 }
 

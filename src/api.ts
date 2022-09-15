@@ -11,6 +11,7 @@ export async function oauthToken(
     scope,
     auth0Client,
     useFormData,
+    DPoP,
     ...options
   }: TokenEndpointOptions,
   worker?: Worker
@@ -33,7 +34,8 @@ export async function oauthToken(
           : 'application/json',
         'Auth0-Client': btoa(
           JSON.stringify(auth0Client || DEFAULT_AUTH0_CLIENT)
-        )
+        ),
+        ...(DPoP && { DPoP })
       }
     },
     worker,

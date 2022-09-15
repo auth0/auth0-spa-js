@@ -1,4 +1,5 @@
 import Lock from 'browser-tabs-lock';
+import DPoP, { generateKeyPair } from 'dpop';
 
 import {
   createQueryParams,
@@ -123,6 +124,8 @@ export class Auth0Client {
   private readonly httpTimeoutMs: number;
   private readonly options: Auth0ClientOptions;
   private readonly userCache: ICache = new InMemoryCache().enclosedCache;
+  private useDPoP?: boolean;
+  private keyPair?: CryptoKeyPair;
 
   cacheLocation: CacheLocation;
 
@@ -220,6 +223,8 @@ export class Auth0Client {
     this.domainUrl = getDomain(this.options.domain);
     this.tokenIssuer = getTokenIssuer(this.options.issuer, this.domainUrl);
 
+    this.useDPoP = this.options.useDPoP;
+
     // Don't use web workers unless using refresh tokens in memory
     if (
       typeof window !== 'undefined' &&
@@ -229,6 +234,10 @@ export class Auth0Client {
     ) {
       this.worker = new TokenWorker();
     }
+  }
+
+  private async _generateKeyPair() {
+    this.keyPair = await generateKeyPair('RS256');
   }
 
   private _url(path: string) {
@@ -982,7 +991,7 @@ export class Auth0Client {
     // and you don't have a refresh token in web worker memory
     // and useRefreshTokensFallback was explicitly enabled
     // fallback to an iframe
-    if ((!cache || !cache.refresh_token) && !this.worker) {
+    if (((!cache || !cache.refresh_token) && !this.worker) || (this.useDPoP && !this.keyPair)) {
       if (this.options.useRefreshTokensFallback) {
         return await this._getTokenFromIFrame(options);
       }
@@ -1119,6 +1128,22 @@ export class Auth0Client {
     additionalParameters?: RequestTokenAdditionalParameters
   ) {
     const { nonceIn, organizationId } = additionalParameters || {};
+
+    let dPoP: string;
+    if (this.useDPoP) {
+      if (options.grant_type === 'authorization_code') {
+        await this._generateKeyPair();
+      }
+      if (this.keyPair) {
+        dPoP = await DPoP(this.keyPair, 'POST', `${this.domainUrl}/oauth/token`)
+      } else {
+        // Better to not persist keys (see https://datatracker.ietf.org/doc/html/draft-ietf-oauth-dpop#:~:text=If%20the%20private%20key%20is%20non%2Dextractable%0A%20%20%20(as%20is%20possible%20with%20%5BW3C.WebCryptoAPI%5D)%2C%20DPoP%20renders%20exfiltrated%0A%20%20%20tokens%20alone%20unusable.)
+        // Need to rely on silent login when doing refresh grant after a page refresh (useRefreshTokensFallback=true)
+        throw new Error('No keyPair to do DPoP. You need to set useRefreshTokensFallback=true to fallback to silent auth, generate a keyPair and login again.')
+      }
+    }
+
+
     const authResult = await oauthToken(
       {
         baseUrl: this.domainUrl,
@@ -1126,6 +1151,7 @@ export class Auth0Client {
         auth0Client: this.options.auth0Client,
         useFormData: this.options.useFormData,
         timeout: this.httpTimeoutMs,
+        DPoP: dPoP,
         ...options
       },
       this.worker
