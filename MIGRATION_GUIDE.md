@@ -18,8 +18,8 @@ With the v2 release of Auth0-SPA-JS, we have improved both performance and devel
   - [getUser and getIdTokenClaims](#getuser-and-getidtokenclaims)
   - [Changes to default scopes (profile and email)](#changes-to-default-scopes-profile-and-email)
     - [defaultScope](#defaultscope)
-- [checkSession no longer throws exceptions](#checksession-no-longer-throws-exceptions)
-- [getIdTokenClaimsOptions type has been removed](#getidtokenclaimsoptions-type-has-been-removed)
+  - [checkSession no longer throws exceptions](#checksession-no-longer-throws-exceptions)
+  - [getIdTokenClaimsOptions type has been removed](#getidtokenclaimsoptions-type-has-been-removed)
 - [Module output](#module-output)
   - [No more default export](#no-more-default-export)
   - [Changes on how to create an instance when relying on globally available API’s (e.g. using CDN)](#changes-on-how-to-create-an-instance-when-relying-on-globally-available-apis-eg-using-cdn)
@@ -305,9 +305,9 @@ With v2, calling `checkSession` will not throw any exceptions, while still showi
 
 In v1, `getIdTokenClaimsOptions` is an alias for `GetIdTokenClaimsOptions` which was added to avoid introducing a breaking change when the type was renamed. With v2, we have removed `getIdTokenClaimsOptions` and only allow using `GetIdTokenClaimsOptions`.
 
-### Module output
+## Module output
 
-#### No more default export
+### No more default export
 
 Previously our SDK exported a default function that’s both our `createAuth0Client` factory, as well as contained additional functions such as `Auth0Client`, as well as our different types of errors.
 
@@ -332,7 +332,7 @@ const errorTypes = [GenericError, ...]
 
 The above syntax is, for the most part, also available in v1, so this is not something entirely new. The thing that’s changed is the fact that `createAuth0Client` is now also a named export, without any additional method’s attached to it.
 
-#### Changes on how to create an instance when relying on globally available API’s (e.g. using CDN)
+### Changes on how to create an instance when relying on globally available API’s (e.g. using CDN)
 
 On top of that, we also used to have a globally available createAuth0Client and Auth0Client, which is typically used for applications that do not use a module loader and/or bundler.
 
