@@ -193,6 +193,7 @@ workflows:
           requires:
             - build
       - ship/node-publish:
+          publish-command: npm publish --tag first-availability
           context:
             - publish-npm
             - publish-gh
