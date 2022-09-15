@@ -217,3 +217,32 @@ export const validateCrypto = () => {
     `);
   }
 };
+
+/**
+ * @ignore
+ */
+export const getDomain = (domainUrl: string) => {
+  if (!/^https?:\/\//.test(domainUrl)) {
+    return `https://${domainUrl}`;
+  }
+
+  return domainUrl;
+};
+
+/**
+ * @ignore
+ */
+export const getTokenIssuer = (issuer: string, domainUrl: string) => {
+  if (issuer) {
+    return issuer.startsWith('https://') ? issuer : `https://${issuer}/`;
+  }
+
+  return `${domainUrl}/`;
+};
+
+export const parseNumber = (value: any): number => {
+  if (typeof value !== 'string') {
+    return value;
+  }
+  return parseInt(value, 10) || undefined;
+};
