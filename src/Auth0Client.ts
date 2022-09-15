@@ -76,7 +76,8 @@ import {
   User,
   IdToken,
   GetTokenSilentlyVerboseResponse,
-  TokenEndpointResponse
+  TokenEndpointResponse,
+  FetchOptions
 } from './global';
 
 // @ts-ignore
@@ -1078,6 +1079,18 @@ export class Auth0Client {
     }
   }
 
+  public async authorizedDPoPRequest(url: string, options: FetchOptions = {}) {
+    const accessToken = await this.getTokenSilently();
+    if (!this.keyPair) {
+      throw new Error('You need to login with DPoP');
+    }
+    const opts = options || {};
+    const method = options.method || 'GET';
+    const dPoP = await DPoP(this.keyPair, url, method, undefined, accessToken);
+    opts.headers = { ...options.headers, DPoP: dPoP, Authorization: `DPoP ${accessToken}` };
+    return fetch(url, opts);
+  }
+
   private async _requestToken(
     options: PKCERequestTokenOptions | RefreshTokenRequestTokenOptions,
     additionalParameters?: RequestTokenAdditionalParameters
@@ -1090,7 +1103,7 @@ export class Auth0Client {
         await this._generateKeyPair();
       }
       if (this.keyPair) {
-        dPoP = await DPoP(this.keyPair, 'POST', `${this.domainUrl}/oauth/token`)
+        dPoP = await DPoP(this.keyPair,`${this.domainUrl}/oauth/token`, 'POST')
       } else {
         // Better to not persist keys (see https://datatracker.ietf.org/doc/html/draft-ietf-oauth-dpop#:~:text=If%20the%20private%20key%20is%20non%2Dextractable%0A%20%20%20(as%20is%20possible%20with%20%5BW3C.WebCryptoAPI%5D)%2C%20DPoP%20renders%20exfiltrated%0A%20%20%20tokens%20alone%20unusable.)
         // Need to rely on silent login when doing refresh grant after a page refresh (useRefreshTokensFallback=true)
