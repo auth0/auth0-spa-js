@@ -39,13 +39,13 @@ From the CDN:
 Using [npm](https://npmjs.org):
 
 ```sh
-npm install @auth0/auth0-spa-js@first-availability
+npm install @auth0/auth0-spa-js@fa
 ```
 
 Using [yarn](https://yarnpkg.com):
 
 ```sh
-yarn add @auth0/auth0-spa-js@first-availability
+yarn add @auth0/auth0-spa-js@fa
 ```
 
 ## Getting Started
