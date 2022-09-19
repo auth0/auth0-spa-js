@@ -1,6 +1,6 @@
 version: 2.1
 orbs:
-  ship: auth0/ship@0.1.0
+  ship: auth0/ship@0.6.1
   codecov: codecov/codecov@3
 parameters:
   docker_image:
@@ -193,6 +193,7 @@ workflows:
           requires:
             - build
       - ship/node-publish:
+          publish-command: npm publish --tag fa
           context:
             - publish-npm
             - publish-gh
