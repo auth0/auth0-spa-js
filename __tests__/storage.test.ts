@@ -87,6 +87,21 @@ describe('CookieStorageWithLegacySameSite', () => {
     cookieMock = jest.mocked(esCookie);
   });
 
+  it('saves a cookie', () => {
+    const key = 'key';
+    const value = { some: 'value' };
+
+    CookieStorageWithLegacySameSite.save(key, value);
+
+    expect(cookieMock.set).toHaveBeenCalledWith(key, JSON.stringify(value), {});
+
+    expect(cookieMock.set).toHaveBeenCalledWith(
+      `_legacy_${key}`,
+      JSON.stringify(value),
+      {}
+    );
+  });
+
   it('saves object', () => {
     const key = 'key';
     const value = { some: 'value' };
