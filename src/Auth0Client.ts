@@ -121,7 +121,7 @@ export class Auth0Client {
   private readonly isAuthenticatedCookieName: string;
   private readonly nowProvider: () => number | Promise<number>;
   private readonly httpTimeoutMs: number;
-  private readonly options: Auth0ClientOptions;
+  private readonly options: Auth0ClientOptions & { authorizationParams: AuthorizationParams };
   private readonly userCache: ICache = new InMemoryCache().enclosedCache;
 
   cacheLocation: CacheLocation;
@@ -198,7 +198,7 @@ export class Auth0Client {
     // 3. Add `offline_access` if `useRefreshTokens` is enabled
     this.scope = getUniqueScopes(
       'openid',
-      this.options.authorizationParams?.scope,
+      this.options.authorizationParams.scope,
       this.options.useRefreshTokens ? 'offline_access' : ''
     );
 
@@ -256,7 +256,7 @@ export class Auth0Client {
       nonce,
       organizationId,
       leeway: this.options.leeway,
-      max_age: parseNumber(this.options.authorizationParams?.max_age),
+      max_age: parseNumber(this.options.authorizationParams.max_age),
       now
     });
   }
@@ -299,7 +299,7 @@ export class Auth0Client {
       nonce,
       code_challenge,
       authorizationParams?.redirect_uri ||
-        this.options.authorizationParams?.redirect_uri ||
+        this.options.authorizationParams.redirect_uri ||
         fallbackRedirectUri,
       authorizeOptions?.response_mode
     );
@@ -379,7 +379,7 @@ export class Auth0Client {
 
     const organizationId =
       options.authorizationParams?.organization ||
-      this.options.authorizationParams?.organization;
+      this.options.authorizationParams.organization;
 
     await this._requestToken(
       {
@@ -444,7 +444,7 @@ export class Auth0Client {
 
     const organizationId =
       urlOptions.authorizationParams?.organization ||
-      this.options.authorizationParams?.organization;
+      this.options.authorizationParams.organization;
 
     const { url, ...transaction } = await this._prepareAuthorizeUrl(
       urlOptions.authorizationParams
@@ -950,7 +950,7 @@ export class Auth0Client {
 
     const redirect_uri =
       options.authorizationParams?.redirect_uri ||
-      this.options.authorizationParams?.redirect_uri ||
+      this.options.authorizationParams.redirect_uri ||
       window.location.origin;
 
     const timeout =
@@ -1009,7 +1009,7 @@ export class Auth0Client {
   }
 
   private async _getIdTokenFromCache() {
-    const audience = this.options.authorizationParams?.audience || 'default';
+    const audience = this.options.authorizationParams.audience || 'default';
 
     const cache = await this.cacheManager.getIdToken(
       new CacheKey({
