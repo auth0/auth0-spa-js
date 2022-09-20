@@ -212,7 +212,7 @@ const token = await client.getTokenSilently({ cacheMode: 'off' });
 
 ### `application/x-www-form-urlencoded` is used by default instead of `application/json`
 
-Auth0’s token endpoint supports both `application/x-www-form-urlencoded` and `application/json` content types.
+Auth0’s token endpoint supports both `application/x-www-form-urlencoded` and `application/json` content types. However, using `application/x-www-form-urlencoded` provides a small performance benefit.
 
 In v1 of the SDK, the default was to send request to /oauth/token using json, allowing to opt-in to use x-www-form-urlencoded by setting the `useFormData` flag to _true_.
 
@@ -272,9 +272,9 @@ const client = new Auth0Client({
 });
 ```
 
-#### defaultScope
+#### advancedOptions and defaultScope are removed
 
-With v1 of our SDK, users can set both `scope` and `defaultScope` when constructing `Auth0Client`. As this has proven to be confusing, with v2 we have decided to drop `defaultScope` altogether. Any code that used to rely on `defaultScope`: will need to move those scopes into `scope` instead:
+With v1 of our SDK, users can set both `scope: '...'` and `advancedOptions: { defaultScope: '...' }` when constructing `Auth0Client`. As this has proven to be confusing, with v2 we have decided to drop `defaultScope` altogether. As this was its own property, we have also removed `advancedOptions`. Any code that used to rely on `defaultScope` will need to move those scopes into `scope` instead:
 
 ```ts
 const client = new Auth0Client({
