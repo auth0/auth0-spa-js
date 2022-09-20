@@ -213,6 +213,10 @@ describe('Auth0Client', () => {
       expect(window.location.assign).toHaveBeenCalledWith(
         expect.stringContaining('https://auth0_domain/v2/logout')
       );
+
+      expect(window.location.assign).toHaveBeenCalledWith(
+        expect.not.stringContaining('client_id')
+      );
     });
 
     it('correctly handles a different clientId value', async () => {
