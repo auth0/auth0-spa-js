@@ -26,13 +26,13 @@ With the v2 release of Auth0-SPA-JS, we have improved both performance and devel
 
 ## Polyfills and supported browsers
 
-As [Microsoft has dropped support for IE11](https://blogs.windows.com/windowsexperience/2022/06/15/internet-explorer-11-has-retired-and-is-officially-out-of-support-what-you-need-to-know) themselves, as of v2 our SDK <u>no longer supports IE11</u>. Because of that, we have dropped including any polyfill in our bundle, as all of these polyfills were for IE11. On top of that, our bundle output is now set to ES2017, which should work fine on all major browsers.
+As [Microsoft has dropped support for IE11](https://blogs.windows.com/windowsexperience/2022/06/15/internet-explorer-11-has-retired-and-is-officially-out-of-support-what-you-need-to-know), we are no longer including any polyfills in our bundle, as all of these polyfills were for IE11. Therefore <u>we no longer support IE11 from v2 of this SDK</u>. In addition, our bundle output is now set to ES2017, which should work fine on all major browsers.
 
 Because of this, we have <u>dropped 60% in bundle size</u>, ensuring your users have a better experience when integrating Auth0 using our SPA-JS SDK.
 
 ## Public API changes
 
-With the release of this new major version, a couple of changes were made that affect the public API of the Auth0-SPA-JS SDK. Most of these should be noticed by TypeScript, however, it’s advised to take the time to go through this list thoroughly.
+With the release of this new major version, a couple of changes were made that affect the public API of the Auth0-SPA-JS SDK. Most of these should be noticed by TypeScript. However, it’s advised to take the time to go through this list thoroughly.
 
 ### `client_id` has been renamed to `clientId`
 
@@ -52,7 +52,7 @@ This change needs to occur with every method on `Auth0Client` that takes a clien
 
 ### Introduction of `authorizationParams`
 
-Another breaking change that will affect pretty much everyone is the introduction of `authorizationParams`, a more structured approach to provide (additional) parameters to Auth0.
+Another breaking change that will affect pretty much everyone is the introduction of `authorizationParams`, a more structured approach to providing parameters - including custom parameters - to Auth0.
 
 In v1, objects passed to our methods are always a mix of properties used for configuring the SDK and properties with the sole purpose to pass through to Auth0.
 
@@ -72,7 +72,7 @@ await client.loginWithRedirect({
 });
 ```
 
-With v2 of our SDK, we have improved the API by separating properties to configure the SDK from properties that are only used to send to Auth0. The SDK configuration properties will stay on the root, while any property that should be sent to Auth0 is expected to be set on `authorizationParams`.
+With v2 of our SDK, we have improved the API by separating those properties used to configure the SDK, from properties that are sent to Auth0. The SDK configuration properties will stay on the root, while any property that should be sent to Auth0 should be set on `authorizationParams`.
 
 ```ts
 const client = new Auth0Client({
@@ -190,7 +190,7 @@ await client.loginWithRedirect({
 });
 ```
 
-### `ignoreCache` on `getTokenSilentlyhas` been replaced by `cacheMode`
+### `ignoreCache` on `getTokenSilently` has been replaced by `cacheMode`
 
 In v1, users can bypass the cache when calling getTokenSilently by passing ignoreCache: true.
 
@@ -225,13 +225,13 @@ With v2, we have flipped the default value for `useFormData` to **true**, meanin
 
 When using refresh tokens in v1, we fall back to using iframes whenever a refresh token exchange would fail. This has caused problems before in environments that do not support iframes, and we have specifically introduced `useRefreshTokensFallback` to be able to opt-out of falling back to iframes in the case a refresh_grant fails.
 
-With v2, we have flipped the default value for `useRefreshTokensFallback` to false, meaning, by default, we will not be falling back to using iframes when `useRefreshTokens` is set to true and exchanging the refresh token fails.
+With v2, we have flipped the default value for `useRefreshTokensFallback` to false we do not fall back to using iframes by default when `useRefreshTokens` is `true`, and the refresh token exchange fails.
 
-If you would want to restore the original behaviour, and still fallback to iframes when the refresh_grant fails, you can set `useRefreshTokensFallback` to true.
+If you want to restore the original behaviour, and still fall back to iframes when the refresh token exchange fails, you can set `useRefreshTokensFallback` to true.
 
 ### `getUser` and `getIdTokenClaims`
 
-With v1 of our SDK, both `getUser` and `getIdTokenClaims` support providing an (optional) audience and scope to retrieve the user information.
+With v1 of our SDK, both `getUser` and `getIdTokenClaims` supported optional audience and scope parameters when retrieving the user profile.
 
 ```ts
 const user = await getUser();
@@ -264,7 +264,7 @@ const client = new Auth0Client({
 });
 ```
 
-Needs to be updated to explicitly include profile email to achieve the same in v2:
+Needs to be updated to explicitly include the `profile email` scopes to achieve the same in v2:
 
 ```ts
 const client = new Auth0Client({
@@ -334,7 +334,7 @@ The above syntax is, for the most part, also available in v1, so this is not som
 
 ### Changes on how to create an instance when relying on globally available API’s (e.g. using CDN)
 
-On top of that, we also used to have a globally available createAuth0Client and Auth0Client, which is typically used for applications that do not use a module loader and/or bundler.
+On top of that, we also used to have a globally available `createAuth0Client` and `Auth0Client`, which is typically used for applications that do not use a module loader and/or bundler.
 
 As of v2, these applications will need to update their code to ensure they access `createAuth0Client` and `Auth0Client` from the globally available `auth0` property instead of directly on the window object.
 
