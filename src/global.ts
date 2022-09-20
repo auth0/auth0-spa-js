@@ -1,8 +1,5 @@
 import { ICache } from './cache';
 
-/**
- * @ignore
- */
 export interface AuthorizationParams {
   /**
    * - `'page'`: displays the UI with a full page view
