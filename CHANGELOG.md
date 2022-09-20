@@ -21,7 +21,7 @@ Auth0-SPA-JS v2 includes many significant changes compared to v1:
 - Remove `advancedOptions.defaultScope` and replace with `scope` [#972](https://github.com/auth0/auth0-spa-js/pull/972) ([ewanharris](https://github.com/ewanharris))
 - Cache and return id token from memory [#975](https://github.com/auth0/auth0-spa-js/pull/975) ([ewanharris](https://github.com/ewanharris))
 - Remove `buildAuthorizeUrl` [#980](https://github.com/auth0/auth0-spa-js/pull/980) ([frederikprijck](https://github.com/frederikprijck))
-- Make `buildLogoutUrl` internal [#980](https://github.com/auth0/auth0-spa-js/pull/980) ([ewanharris](https://github.com/ewanharris))
+- Make `buildLogoutUrl` internal [#982](https://github.com/auth0/auth0-spa-js/pull/982) ([ewanharris](https://github.com/ewanharris))
 - Fix spelling mistakes in id token validation messages [#940](https://github.com/auth0/auth0-spa-js/pull/940) ([frederikprijck](https://github.com/frederikprijck))
 
 As with any major version bump, v2 of Auth0-SPA-JS contains a set of breaking changes. **Please review [the migration guide](./MIGRATION_GUIDE.md) thoroughly to understand the changes required to migrate your application to v2.**
