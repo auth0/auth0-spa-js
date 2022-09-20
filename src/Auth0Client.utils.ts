@@ -66,7 +66,7 @@ export const getAuthorizeParams = (
     state,
     nonce,
     redirect_uri:
-      redirect_uri || clientOptions.authorizationParams?.redirect_uri,
+      redirect_uri || clientOptions.authorizationParams.redirect_uri,
     code_challenge,
     code_challenge_method: 'S256'
   };

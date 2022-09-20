@@ -121,7 +121,7 @@ export class Auth0Client {
   private readonly isAuthenticatedCookieName: string;
   private readonly nowProvider: () => number | Promise<number>;
   private readonly httpTimeoutMs: number;
-  private readonly options: Auth0ClientOptions;
+  private readonly options: Auth0ClientOptions & { authorizationParams: AuthorizationParams };
   private readonly userCache: ICache = new InMemoryCache().enclosedCache;
 
   cacheLocation: CacheLocation;
@@ -198,7 +198,7 @@ export class Auth0Client {
     // 3. Add `offline_access` if `useRefreshTokens` is enabled
     this.scope = getUniqueScopes(
       'openid',
-      this.options.authorizationParams?.scope,
+      this.options.authorizationParams.scope,
       this.options.useRefreshTokens ? 'offline_access' : ''
     );
 
@@ -256,7 +256,7 @@ export class Auth0Client {
       nonce,
       organizationId,
       leeway: this.options.leeway,
-      max_age: parseNumber(this.options.authorizationParams?.max_age),
+      max_age: parseNumber(this.options.authorizationParams.max_age),
       now
     });
   }
@@ -299,7 +299,7 @@ export class Auth0Client {
       nonce,
       code_challenge,
       authorizationParams?.redirect_uri ||
-        this.options.authorizationParams?.redirect_uri ||
+        this.options.authorizationParams.redirect_uri ||
         fallbackRedirectUri,
       authorizeOptions?.response_mode
     );
@@ -379,7 +379,7 @@ export class Auth0Client {
 
     const organizationId =
       options.authorizationParams?.organization ||
-      this.options.authorizationParams?.organization;
+      this.options.authorizationParams.organization;
 
     await this._requestToken(
       {
@@ -444,7 +444,7 @@ export class Auth0Client {
 
     const organizationId =
       urlOptions.authorizationParams?.organization ||
-      this.options.authorizationParams?.organization;
+      this.options.authorizationParams.organization;
 
     const { url, ...transaction } = await this._prepareAuthorizeUrl(
       urlOptions.authorizationParams
@@ -644,7 +644,7 @@ export class Auth0Client {
 
     return singlePromise(
       () => this._getTokenSilently(options),
-      `${this.options.clientId}::${options.authorizationParams?.audience}::${options.authorizationParams?.scope}`
+      `${this.options.clientId}::${options.authorizationParams.audience}::${options.authorizationParams.scope}`
     );
   }
 
@@ -657,8 +657,8 @@ export class Auth0Client {
     // `lock.acquireLock` when the cache is populated.
     if (cacheMode !== 'off') {
       const entry = await this._getEntryFromCache({
-        scope: getTokenOptions.authorizationParams?.scope,
-        audience: getTokenOptions.authorizationParams?.audience || 'default',
+        scope: getTokenOptions.authorizationParams.scope,
+        audience: getTokenOptions.authorizationParams.audience || 'default',
         clientId: this.options.clientId,
         getDetailedEntry: options.detailedResponse
       });
@@ -683,9 +683,9 @@ export class Auth0Client {
         // by a previous call while this call was waiting to acquire the lock.
         if (cacheMode !== 'off') {
           const entry = await this._getEntryFromCache({
-            scope: getTokenOptions.authorizationParams?.scope,
+            scope: getTokenOptions.authorizationParams.scope,
             audience:
-              getTokenOptions.authorizationParams?.audience || 'default',
+              getTokenOptions.authorizationParams.audience || 'default',
             clientId: this.options.clientId,
             getDetailedEntry: options.detailedResponse
           });
@@ -754,8 +754,8 @@ export class Auth0Client {
 
     const cache = await this.cacheManager.get(
       new CacheKey({
-        scope: options.authorizationParams?.scope,
-        audience: options.authorizationParams?.audience || 'default',
+        scope: options.authorizationParams.scope,
+        audience: options.authorizationParams.audience || 'default',
         clientId: this.options.clientId
       })
     );
@@ -785,7 +785,7 @@ export class Auth0Client {
    * Builds a URL to the logout endpoint using the parameters provided as arguments.
    * @param options
    */
-  private _buildLogoutUrl(options: LogoutUrlOptions = {}): string {
+  private _buildLogoutUrl(options: LogoutUrlOptions): string {
     if (options.clientId !== null) {
       options.clientId = options.clientId || this.options.clientId;
     } else {
@@ -840,7 +840,6 @@ export class Auth0Client {
   ): Promise<GetTokenSilentlyResult> {
     const params: AuthorizationParams = {
       ...options.authorizationParams,
-
       prompt: 'none'
     };
 
@@ -891,7 +890,7 @@ export class Auth0Client {
           code: codeResult.code,
           grant_type: 'authorization_code',
           redirect_uri,
-          timeout: options.authorizationParams?.timeout || this.httpTimeoutMs
+          timeout: options.authorizationParams.timeout || this.httpTimeoutMs
         },
         {
           nonceIn
@@ -921,14 +920,14 @@ export class Auth0Client {
       ...options,
       authorizationParams: {
         ...options.authorizationParams,
-        scope: getUniqueScopes(this.scope, options.authorizationParams?.scope)
+        scope: getUniqueScopes(this.scope, options.authorizationParams.scope)
       }
     };
 
     const cache = await this.cacheManager.get(
       new CacheKey({
-        scope: options.authorizationParams?.scope,
-        audience: options.authorizationParams?.audience || 'default',
+        scope: options.authorizationParams.scope,
+        audience: options.authorizationParams.audience || 'default',
         clientId: this.options.clientId
       })
     );
@@ -943,14 +942,14 @@ export class Auth0Client {
       }
 
       throw new MissingRefreshTokenError(
-        options.authorizationParams?.audience || 'default',
-        options.authorizationParams?.scope
+        options.authorizationParams.audience || 'default',
+        options.authorizationParams.scope
       );
     }
 
     const redirect_uri =
-      options.authorizationParams?.redirect_uri ||
-      this.options.authorizationParams?.redirect_uri ||
+      options.authorizationParams.redirect_uri ||
+      this.options.authorizationParams.redirect_uri ||
       window.location.origin;
 
     const timeout =
@@ -971,7 +970,7 @@ export class Auth0Client {
         ...tokenResult,
         scope: options.authorizationParams.scope,
         oauthTokenScope: tokenResult.scope,
-        audience: options.authorizationParams?.audience || 'default'
+        audience: options.authorizationParams.audience || 'default'
       };
     } catch (e) {
       if (
@@ -1009,7 +1008,7 @@ export class Auth0Client {
   }
 
   private async _getIdTokenFromCache() {
-    const audience = this.options.authorizationParams?.audience || 'default';
+    const audience = this.options.authorizationParams.audience || 'default';
 
     const cache = await this.cacheManager.getIdToken(
       new CacheKey({
