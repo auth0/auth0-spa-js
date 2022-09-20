@@ -1,15 +1,45 @@
 # Change Log
 
+## [v2.0.0-beta.0](https://github.com/auth0/auth0-spa-js/tree/v2.0.0-beta.0) (2022-10-01)
+
+[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/master...v2.0.0-beta.0)
+
+Auth0-SPA-JS v2 includes many significant changes compared to v1:
+
+- Refactor module output and avoid default export [#942](https://github.com/auth0/auth0-spa-js/pull/942) ([frederikprijck](https://github.com/frederikprijck))
+- Do not throw from `checkSession` [#943](https://github.com/auth0/auth0-spa-js/pull/943) ([frederikprijck](https://github.com/frederikprijck))
+- Rework `ignoreCache` to `cacheMode` and introduce `cache-only` [#950](https://github.com/auth0/auth0-spa-js/pull/950) ([ewanharris](https://github.com/ewanharris))
+- Do not fallback to refreshing tokens via iframe method by default [#946](https://github.com/auth0/auth0-spa-js/pull/946) ([ewanharris](https://github.com/ewanharris))
+- Use form-encoded data by default [#945](https://github.com/auth0/auth0-spa-js/pull/945) ([frederikprijck](https://github.com/frederikprijck))
+- Remove `getIdTokenClaimsOptions` type [#960](https://github.com/auth0/auth0-spa-js/pull/960) ([ewanharris](https://github.com/ewanharris))
+- Rename `client_id` to `clientId` [#956](https://github.com/auth0/auth0-spa-js/pull/956) ([ewanharris](https://github.com/ewanharris))
+- Remove polyfills from bundles [#951](https://github.com/auth0/auth0-spa-js/pull/951) ([frederikprijck](https://github.com/frederikprijck))
+- Update output target to **ES2017** [#953](https://github.com/auth0/auth0-spa-js/pull/953) ([frederikprijck](https://github.com/frederikprijck))
+- Introduce `authorizationParams` to hold properties sent to Auth0 [#959](https://github.com/auth0/auth0-spa-js/pull/959) ([ewanharris](https://github.com/ewanharris))
+- Do not build Common JS module with externals [#971](https://github.com/auth0/auth0-spa-js/pull/971) ([frederikprijck](https://github.com/frederikprijck))
+- De-dupe Id token; getUser and getIdTokenClaims no longer take any arguments [#967](https://github.com/auth0/auth0-spa-js/pull/967) ([frederikprijck](https://github.com/frederikprijck))
+- Remove `advancedOptions.defaultScope` and replace with `scope` [#972](https://github.com/auth0/auth0-spa-js/pull/972) ([ewanharris](https://github.com/ewanharris))
+- Cache and return id token from memory [#972](https://github.com/auth0/auth0-spa-js/pull/972) ([ewanharris](https://github.com/ewanharris))
+- Remove `buildAuthorizeUrl` [#980](https://github.com/auth0/auth0-spa-js/pull/980) ([frederikprijck](https://github.com/frederikprijck))
+- Make `buildLogoutUrl` internal [#980](https://github.com/auth0/auth0-spa-js/pull/980) ([ewanharris](https://github.com/ewanharris))
+- Fix spelling mistakes in id token validation messages [#940](https://github.com/auth0/auth0-spa-js/pull/940) ([frederikprijck](https://github.com/frederikprijck))
+
+As with any major version bump, v2 of Auth0-SPA-JS contains a set of breaking changes. **Please review [the migration guide](./MIGRATION_GUIDE.md) thoroughly to understand the changes required to migrate your application to v2.**
+
 ## [v1.22.2](https://github.com/auth0/auth0-spa-js/tree/v1.22.2) (2022-07-19)
+
 [Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v1.22.1...v1.22.2)
 
 **Changed**
+
 - Avoid sending unnecessary request parameters [\#920](https://github.com/auth0/auth0-spa-js/pull/920) ([frederikprijck](https://github.com/frederikprijck))
 
 ## [v1.22.1](https://github.com/auth0/auth0-spa-js/tree/v1.22.1) (2022-06-14)
+
 [Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v1.22.0...v1.22.1)
 
 **Changed**
+
 - Stronger typing for screen_hint property [\#912](https://github.com/auth0/auth0-spa-js/pull/912) ([iAmWillShepherd](https://github.com/iAmWillShepherd))
 - Add env to auth0Client userAgent [\#913](https://github.com/auth0/auth0-spa-js/pull/913) ([frederikprijck](https://github.com/frederikprijck))
 
