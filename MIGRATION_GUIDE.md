@@ -28,6 +28,20 @@ With the v2 release of Auth0-SPA-JS, we have improved both performance and devel
 
 As [Microsoft has dropped support for IE11](https://blogs.windows.com/windowsexperience/2022/06/15/internet-explorer-11-has-retired-and-is-officially-out-of-support-what-you-need-to-know), we are no longer including any polyfills in our bundle, as all of these polyfills were for IE11. Therefore <u>we no longer support IE11 from v2 of this SDK</u>. In addition, our bundle output is now set to ES2017, which should work fine on all major browsers.
 
+The following is the list of polyfills that got removed. If you would need any of these, you will need to include these in your application.
+
+- [AbortController](https://www.npmjs.com/package/abortcontroller-polyfill): Used to polyfill [AbortController on IE11, Opera Mini, and some mobile-specific browsers](https://caniuse.com/?search=abortcontroller).
+- [Promise](https://www.npmjs.com/package/promise-polyfill): Used to polyfill [Promise on IE11 and Opera Mini](https://caniuse.com/promises)
+- [Core-js](https://www.npmjs.com/package/core-js): Used to polyfill a couple of things, also mostly on IE11, Opera Mini, and some mobile-specific browsers:
+  - [string/startsWith](https://caniuse.com/?search=startsWith)
+  - [string/includes](https://caniuse.com/es6-string-includes)
+  - [set](https://caniuse.com/mdn-javascript_builtins_set)
+  - [symbol](https://caniuse.com/mdn-javascript_builtins_symbol)
+  - [array/from](https://caniuse.com/mdn-javascript_builtins_array_from)
+  - [array/includes](https://caniuse.com/array-includes)
+- [fast-text-encoding](https://www.npmjs.com/package/fast-text-encoding): Used to polyfill TextEncoder and TextDecoder on IE11 and Opera Mini.
+- [unfetch](https://www.npmjs.com/package/unfetch): Used to [ponyfill fetch on IE11](https://caniuse.com/?search=fetch).
+
 Because of this, we have <u>dropped 60% in bundle size</u>, ensuring your users have a better experience when integrating Auth0 using our SPA-JS SDK.
 
 ## Public API changes
