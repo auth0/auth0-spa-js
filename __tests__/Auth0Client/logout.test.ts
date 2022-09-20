@@ -159,7 +159,9 @@ describe('Auth0Client', () => {
 
       expect(window.location.assign).not.toHaveBeenCalled();
       expect(onRedirect).toHaveBeenCalledWith(
-        'https://auth0_domain/v2/logout?client_id=auth0_client_id&auth0Client=eyJuYW1lIjoiYXV0aDAtc3BhLWpzIiwidmVyc2lvbiI6IjEuMjIuMiJ9'
+        expect.stringContaining(
+          'https://auth0_domain/v2/logout?client_id=auth0_client_id'
+        )
       );
     });
 
@@ -209,7 +211,7 @@ describe('Auth0Client', () => {
       await auth0.logout({ clientId: null });
 
       expect(window.location.assign).toHaveBeenCalledWith(
-        'https://auth0_domain/v2/logout?&auth0Client=eyJuYW1lIjoiYXV0aDAtc3BhLWpzIiwidmVyc2lvbiI6IjEuMjIuMiJ9'
+        expect.stringContaining('https://auth0_domain/v2/logout')
       );
     });
 
@@ -218,7 +220,9 @@ describe('Auth0Client', () => {
       await auth0.logout({ clientId: 'my-client-id' });
 
       expect(window.location.assign).toHaveBeenCalledWith(
-        'https://auth0_domain/v2/logout?client_id=my-client-id&auth0Client=eyJuYW1lIjoiYXV0aDAtc3BhLWpzIiwidmVyc2lvbiI6IjEuMjIuMiJ9'
+        expect.stringContaining(
+          'https://auth0_domain/v2/logout?client_id=my-client-id'
+        )
       );
     });
   });
