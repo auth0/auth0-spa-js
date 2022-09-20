@@ -19,7 +19,7 @@ Auth0-SPA-JS v2 includes many significant changes compared to v1:
 - Do not build Common JS module with externals [#971](https://github.com/auth0/auth0-spa-js/pull/971) ([frederikprijck](https://github.com/frederikprijck))
 - De-dupe Id token; getUser and getIdTokenClaims no longer take any arguments [#967](https://github.com/auth0/auth0-spa-js/pull/967) ([frederikprijck](https://github.com/frederikprijck))
 - Remove `advancedOptions.defaultScope` and replace with `scope` [#972](https://github.com/auth0/auth0-spa-js/pull/972) ([ewanharris](https://github.com/ewanharris))
-- Cache and return id token from memory [#972](https://github.com/auth0/auth0-spa-js/pull/972) ([ewanharris](https://github.com/ewanharris))
+- Cache and return id token from memory [#975](https://github.com/auth0/auth0-spa-js/pull/975) ([ewanharris](https://github.com/ewanharris))
 - Remove `buildAuthorizeUrl` [#980](https://github.com/auth0/auth0-spa-js/pull/980) ([frederikprijck](https://github.com/frederikprijck))
 - Make `buildLogoutUrl` internal [#980](https://github.com/auth0/auth0-spa-js/pull/980) ([ewanharris](https://github.com/ewanharris))
 - Fix spelling mistakes in id token validation messages [#940](https://github.com/auth0/auth0-spa-js/pull/940) ([frederikprijck](https://github.com/frederikprijck))
