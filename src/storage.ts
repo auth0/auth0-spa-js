@@ -117,7 +117,7 @@ export const CookieStorageWithLegacySameSite = {
  */
 export const SessionStorage = {
   get<T extends Object>(key: string) {
-    /* istanbul ignore next */
+    /* c8 ignore next 3 */
     if (typeof sessionStorage === 'undefined') {
       return;
     }

@@ -146,7 +146,7 @@ export const verify = (options: JWTVerifyOptions) => {
     );
   }
 
-  /* istanbul ignore next */
+  /* c8 ignore next 5 */
   if (!isNumber(decoded.claims.exp)) {
     throw new Error(
       'Expiration Time (exp) claim must be a number present in the ID token'

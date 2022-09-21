@@ -123,9 +123,9 @@ const messageHandler = async ({
 };
 
 // Don't run `addEventListener` in our tests (this is replaced in rollup)
-/* istanbul ignore else  */
 if (process.env.NODE_ENV === 'test') {
   module.exports = { messageHandler };
+/* c8 ignore next 4  */
 } else {
   // @ts-ignore
   addEventListener('message', messageHandler);

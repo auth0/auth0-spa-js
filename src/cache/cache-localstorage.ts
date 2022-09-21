@@ -13,8 +13,8 @@ export class LocalStorageCache implements ICache {
     try {
       const payload = JSON.parse(json) as T;
       return payload;
+      /* c8 ignore next 3 */
     } catch (e) {
-      /* istanbul ignore next */
       return;
     }
   }
