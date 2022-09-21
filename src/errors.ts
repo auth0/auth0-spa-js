@@ -59,7 +59,6 @@ export class PopupTimeoutError extends TimeoutError {
 }
 
 export class PopupCancelledError extends GenericError {
-  /* c8 ignore next */
   constructor(public popup: Window) {
     super('cancelled', 'Popup closed');
     //https://github.com/Microsoft/TypeScript-wiki/blob/master/Breaking-Changes.md#extending-built-ins-like-error-array-and-map-may-no-longer-work
