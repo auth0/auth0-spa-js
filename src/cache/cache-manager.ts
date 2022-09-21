@@ -120,7 +120,7 @@ export class CacheManager {
   async clear(clientId?: string): Promise<void> {
     const keys = await this.getCacheKeys();
 
-    /* istanbul ignore next */
+    /* c8 ignore next */
     if (!keys) return;
 
     await keys
