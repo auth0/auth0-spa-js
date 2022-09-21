@@ -81,7 +81,7 @@ describe('Auth0Client', () => {
 
     it('removes authenticated cookie from storage when cookieDomain is set', async () => {
       const auth0 = setup({ cookieDomain: TEST_DOMAIN });
-      auth0.logout();
+      await auth0.logout();
 
       expect(esCookie.remove).toHaveBeenCalledWith(
           `auth0.${TEST_CLIENT_ID}.is.authenticated`, { domain: TEST_DOMAIN }
