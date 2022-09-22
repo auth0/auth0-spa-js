@@ -201,6 +201,7 @@ workflows:
             branches:
               only:
                 - master
+                - first-availability
           requires:
             - browserstack
             - test_gatsby
