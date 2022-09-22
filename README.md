@@ -1,10 +1,10 @@
-# @auth0/auth0-spa-js (First Availability)
+# @auth0/auth0-spa-js (Beta)
 
 Auth0 SDK for Single Page Applications using [Authorization Code Grant Flow with PKCE](https://auth0.com/docs/api-auth/tutorials/authorization-code-grant-pkce).
 
-> :warning: Please be aware that v2 is currently in [**First Availability**](https://auth0.com/docs/troubleshoot/product-lifecycle/product-release-stages). Whilst we encourage you to test the update within your applications, we do no recommend using this version in production yet. Please follow the [migration guide](./MIGRATION_GUIDE.md) when updating your application.
+> :warning: Please be aware that v2 is currently in [**Beta**](https://auth0.com/docs/troubleshoot/product-lifecycle/product-release-stages). Whilst we encourage you to test the update within your applications, we do no recommend using this version in production yet. Please follow the [migration guide](./MIGRATION_GUIDE.md) when updating your application.
 
-![Stage: First Availability Release](https://img.shields.io/badge/stage-fa-yellow)
+![Stage: Beta Release](https://img.shields.io/badge/stage-fa-yellow)
 [![CircleCI](https://circleci.com/gh/auth0/auth0-spa-js.svg?style=svg)](https://circleci.com/gh/auth0/auth0-spa-js)
 ![Release](https://img.shields.io/github/v/release/auth0/auth0-spa-js)
 [![Codecov](https://img.shields.io/codecov/c/github/auth0/auth0-spa-js)](https://codecov.io/gh/auth0/auth0-spa-js)
