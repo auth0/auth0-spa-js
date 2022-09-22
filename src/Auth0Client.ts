@@ -268,7 +268,9 @@ export class Auth0Client {
         cookieDomain: this.options.cookieDomain
       });
     } else {
-      this.cookieStorage.remove(this.orgHintCookieName);
+      this.cookieStorage.remove(this.orgHintCookieName, {
+        cookieDomain: this.options.cookieDomain
+      });
     }
   }
 
@@ -679,6 +681,8 @@ export class Auth0Client {
       )
     ) {
       try {
+        window.addEventListener('pagehide', this._releaseLockOnPageHide);
+
         // Check the cache a second time, because it may have been populated
         // by a previous call while this call was waiting to acquire the lock.
         if (cacheMode !== 'off') {
@@ -714,6 +718,7 @@ export class Auth0Client {
         return authResult.access_token;
       } finally {
         await lock.releaseLock(GET_TOKEN_SILENTLY_LOCK_KEY);
+        window.removeEventListener('pagehide', this._releaseLockOnPageHide);
       }
     } else {
       throw new TimeoutError();
@@ -822,8 +827,12 @@ export class Auth0Client {
 
     await this.cacheManager.clear();
     
-    this.cookieStorage.remove(this.orgHintCookieName);
-    this.cookieStorage.remove(this.isAuthenticatedCookieName);
+    this.cookieStorage.remove(this.orgHintCookieName, {
+        cookieDomain: this.options.cookieDomain
+      });
+    this.cookieStorage.remove(this.isAuthenticatedCookieName, {
+        cookieDomain: this.options.cookieDomain
+      });
     this.userCache.remove(CACHE_KEY_ID_TOKEN_SUFFIX);
 
     const url = this._buildLogoutUrl(logoutOptions);
@@ -1067,6 +1076,18 @@ export class Auth0Client {
       return entry.access_token;
     }
   }
+
+  /**
+   * Releases any lock acquired by the current page that's not released yet
+   *
+   * Get's called on the `pagehide` event.
+   * https://developer.mozilla.org/en-US/docs/Web/API/Window/pagehide_event
+   */
+  private _releaseLockOnPageHide = async () => {
+    await lock.releaseLock(GET_TOKEN_SILENTLY_LOCK_KEY);
+
+    window.removeEventListener('pagehide', this._releaseLockOnPageHide);
+  };
 
   private async _requestToken(
     options: PKCERequestTokenOptions | RefreshTokenRequestTokenOptions,

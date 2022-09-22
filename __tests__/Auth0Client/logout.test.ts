@@ -75,7 +75,18 @@ describe('Auth0Client', () => {
       await auth0.logout();
 
       expect(esCookie.remove).toHaveBeenCalledWith(
-        `auth0.${TEST_CLIENT_ID}.is.authenticated`
+        `auth0.${TEST_CLIENT_ID}.is.authenticated`,
+        {}
+      );
+    });
+
+    it('removes authenticated cookie from storage when cookieDomain is set', async () => {
+      const auth0 = setup({ cookieDomain: TEST_DOMAIN });
+      await auth0.logout();
+
+      expect(esCookie.remove).toHaveBeenCalledWith(
+        `auth0.${TEST_CLIENT_ID}.is.authenticated`,
+        { domain: TEST_DOMAIN }
       );
     });
 
@@ -84,7 +95,8 @@ describe('Auth0Client', () => {
       await auth0.logout();
 
       expect(esCookie.remove).toHaveBeenCalledWith(
-        `auth0.${TEST_CLIENT_ID}.organization_hint`
+        `auth0.${TEST_CLIENT_ID}.organization_hint`,
+        {}
       );
     });
 
@@ -138,7 +150,8 @@ describe('Auth0Client', () => {
       await auth0.logout({ onRedirect: async () => {} });
 
       expect(esCookie.remove).toHaveBeenCalledWith(
-        `auth0.${TEST_CLIENT_ID}.is.authenticated`
+        `auth0.${TEST_CLIENT_ID}.is.authenticated`,
+        {}
       );
     });
 
@@ -148,7 +161,8 @@ describe('Auth0Client', () => {
       await auth0.logout({ onRedirect: async () => {} });
 
       expect(esCookie.remove).toHaveBeenCalledWith(
-        `auth0.${TEST_CLIENT_ID}.organization_hint`
+        `auth0.${TEST_CLIENT_ID}.organization_hint`,
+        {}
       );
     });
 

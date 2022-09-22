@@ -26,6 +26,26 @@ Auth0-SPA-JS v2 includes many significant changes compared to v1:
 
 As with any major version bump, v2 of Auth0-SPA-JS contains a set of breaking changes. **Please review [the migration guide](./MIGRATION_GUIDE.md) thoroughly to understand the changes required to migrate your application to v2.**
 
+## [v1.22.4](https://github.com/auth0/auth0-spa-js/tree/v1.22.4) (2022-09-08)
+
+[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v1.22.3...v1.22.4)
+
+**Fixed**
+
+- Release lock on pagehide [\#974](https://github.com/auth0/auth0-spa-js/pull/974) ([frederikprijck](https://github.com/frederikprijck))
+
+## [v1.22.3](https://github.com/auth0/auth0-spa-js/tree/v1.22.3) (2022-08-25)
+
+[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v1.22.2...v1.22.3)
+
+**Changed**
+
+- feat(ClientStorage#remove):added support of cookieDomain [\#935](https://github.com/auth0/auth0-spa-js/pull/935) ([Dannnir](https://github.com/Dannnir))
+
+**Fixed**
+
+- Pin es-cookie to patch versions only [\#965](https://github.com/auth0/auth0-spa-js/pull/965) ([frederikprijck](https://github.com/frederikprijck))
+
 ## [v1.22.2](https://github.com/auth0/auth0-spa-js/tree/v1.22.2) (2022-07-19)
 
 [Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v1.22.1...v1.22.2)
