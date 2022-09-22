@@ -76,7 +76,17 @@ describe('CookieStorage', () => {
     const Cookie = cookieMock;
     const key = 'key';
     CookieStorage.remove(key);
-    expect(Cookie.remove).toHaveBeenCalledWith(key);
+    expect(Cookie.remove).toHaveBeenCalledWith(key, {});
+  });
+
+  it('removes object with cookieDomain', () => {
+    const Cookie = cookieMock;
+    const key = 'key';
+    const options = { cookieDomain: '.example.com' };
+
+    CookieStorage.remove(key, options);
+
+    expect(Cookie.remove).toHaveBeenCalledWith(key, { domain: '.example.com' });
   });
 });
 
@@ -195,7 +205,7 @@ describe('CookieStorageWithLegacySameSite', () => {
     const key = 'key';
 
     CookieStorageWithLegacySameSite.remove(key);
-    expect(Cookie.remove).toHaveBeenCalledWith(key);
-    expect(Cookie.remove).toHaveBeenCalledWith(`_legacy_${key}`);
+    expect(Cookie.remove).toHaveBeenCalledWith(key, {});
+    expect(Cookie.remove).toHaveBeenCalledWith(`_legacy_${key}`, {});
   });
 });
