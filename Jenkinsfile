@@ -44,7 +44,7 @@ pipeline {
     stage('Publish to CDN') {
       when { 
         anyOf { 
-          branch 'first-availability'
+          branch 'beta'
           branch 'master'
         } 
       }
