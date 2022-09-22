@@ -1,8 +1,8 @@
 # Change Log
 
-## [v2.0.0-fa.0](https://github.com/auth0/auth0-spa-js/tree/v2.0.0-fa.0) (2022-10-01)
+## [v2.0.0-beta.0](https://github.com/auth0/auth0-spa-js/tree/v2.0.0-beta.0) (2022-10-01)
 
-[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/master...v2.0.0-fa.0)
+[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/master...v2.0.0-beta.0)
 
 Auth0-SPA-JS v2 includes many significant changes compared to v1:
 
