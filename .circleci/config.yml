@@ -193,7 +193,7 @@ workflows:
           requires:
             - build
       - ship/node-publish:
-          publish-command: npm publish --tag fa
+          publish-command: npm publish --tag beta
           context:
             - publish-npm
             - publish-gh
@@ -201,7 +201,7 @@ workflows:
             branches:
               only:
                 - master
-                - first-availability
+                - beta
           requires:
             - browserstack
             - test_gatsby
