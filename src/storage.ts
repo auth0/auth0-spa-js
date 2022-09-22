@@ -1,7 +1,7 @@
 import * as Cookies from 'es-cookie';
 
 interface ClientStorageOptions {
-  daysUntilExpire: number;
+  daysUntilExpire?: number;
   cookieDomain?: string;
 }
 
@@ -11,7 +11,7 @@ interface ClientStorageOptions {
 export type ClientStorage = {
   get<T extends Object>(key: string): T | undefined;
   save(key: string, value: any, options?: ClientStorageOptions): void;
-  remove(key: string): void;
+  remove(key: string, options?: ClientStorageOptions): void;
 };
 
 /**
@@ -49,8 +49,14 @@ export const CookieStorage = {
     Cookies.set(key, JSON.stringify(value), cookieAttributes);
   },
 
-  remove(key: string) {
-    Cookies.remove(key);
+  remove(key: string, options?: ClientStorageOptions) {
+    let cookieAttributes: Cookies.CookieAttributes = {};
+
+    if (options?.cookieDomain) {
+      cookieAttributes.domain = options.cookieDomain;
+    }
+
+    Cookies.remove(key ,cookieAttributes);
   }
 } as ClientStorage;
 
@@ -93,9 +99,16 @@ export const CookieStorageWithLegacySameSite = {
     CookieStorage.save(key, value, options);
   },
 
-  remove(key: string) {
-    CookieStorage.remove(key);
-    CookieStorage.remove(`${LEGACY_PREFIX}${key}`);
+  remove(key: string, options?: ClientStorageOptions) {
+    let cookieAttributes: Cookies.CookieAttributes = {};
+
+    if (options?.cookieDomain) {
+      cookieAttributes.domain = options.cookieDomain;
+    }
+
+    Cookies.remove(key ,cookieAttributes);
+    CookieStorage.remove(key, options);
+    CookieStorage.remove(`${LEGACY_PREFIX}${key}`, options);
   }
 } as ClientStorage;
 
