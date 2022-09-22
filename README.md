@@ -8,7 +8,7 @@ Auth0 SDK for Single Page Applications using [Authorization Code Grant Flow with
 ![Downloads](https://img.shields.io/npm/dw/@auth0/auth0-spa-js)
 [![License](https://img.shields.io/:license-mit-blue.svg?style=flat)](https://opensource.org/licenses/MIT)
 
-> ℹ️ A new major version of Auth0-SPA-JS is available in **First Availability**! Try it out today, any feedback is appreciated. Read all about it on [the `first-availability` branch](https://github.com/auth0/auth0-spa-js/tree/first-availability).
+> ℹ️ A new major version of Auth0-SPA-JS is available in **Beta**! Try it out today, any feedback is appreciated. Read all about it on [the `beta` branch](https://github.com/auth0/auth0-spa-js/tree/beta).
 
 ## Table of Contents
 
