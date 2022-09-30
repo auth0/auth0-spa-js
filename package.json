@@ -42,7 +42,7 @@
     "cli-table": "^0.3.6",
     "concurrently": "^6.4.0",
     "cypress": "7.2.0",
-    "es-check": "^6.1.1",
+    "es-check": "^7.0.1",
     "eslint": "^7.32.0",
     "gzip-size": "^6.0.0",
     "husky": "^7.0.4",
