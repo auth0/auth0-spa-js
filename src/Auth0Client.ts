@@ -857,7 +857,7 @@ export default class Auth0Client {
       scope: getUniqueScopes(this.defaultScope, this.scope, options.scope)
     };
 
-    return singlePromise(
+    const result = await singlePromise(
       () =>
         this._getTokenSilently({
           ignoreCache,
@@ -865,11 +865,13 @@ export default class Auth0Client {
         }),
       `${this.options.client_id}::${getTokenOptions.audience}::${getTokenOptions.scope}`
     );
+
+    return options.detailedResponse ? result : result.access_token;
   }
 
   private async _getTokenSilently(
     options: GetTokenSilentlyOptions = {}
-  ): Promise<string | GetTokenSilentlyVerboseResponse> {
+  ): Promise<GetTokenSilentlyVerboseResponse> {
     const { ignoreCache, ...getTokenOptions } = options;
 
     // Check the cache before acquiring the lock to avoid the latency of
@@ -878,8 +880,7 @@ export default class Auth0Client {
       const entry = await this._getEntryFromCache({
         scope: getTokenOptions.scope,
         audience: getTokenOptions.audience || 'default',
-        client_id: this.options.client_id,
-        getDetailedEntry: options.detailedResponse
+        client_id: this.options.client_id
       });
 
       if (entry) {
@@ -902,8 +903,7 @@ export default class Auth0Client {
           const entry = await this._getEntryFromCache({
             scope: getTokenOptions.scope,
             audience: getTokenOptions.audience || 'default',
-            client_id: this.options.client_id,
-            getDetailedEntry: options.detailedResponse
+            client_id: this.options.client_id
           });
 
           if (entry) {
@@ -925,19 +925,15 @@ export default class Auth0Client {
           cookieDomain: this.options.cookieDomain
         });
 
-        if (options.detailedResponse) {
-          const { id_token, access_token, oauthTokenScope, expires_in } =
-            authResult;
+        const { id_token, access_token, oauthTokenScope, expires_in } =
+          authResult;
 
-          return {
-            id_token,
-            access_token,
-            ...(oauthTokenScope ? { scope: oauthTokenScope } : null),
-            expires_in
-          };
-        }
-
-        return authResult.access_token;
+        return {
+          id_token,
+          access_token,
+          ...(oauthTokenScope ? { scope: oauthTokenScope } : null),
+          expires_in
+        };
       } finally {
         await lock.releaseLock(GET_TOKEN_SILENTLY_LOCK_KEY);
         window.removeEventListener('pagehide', this._releaseLockOnPageHide);
@@ -1303,18 +1299,14 @@ export default class Auth0Client {
     );
 
     if (entry && entry.access_token) {
-      if (getDetailedEntry) {
-        const { id_token, access_token, oauthTokenScope, expires_in } = entry;
+      const { id_token, access_token, oauthTokenScope, expires_in } = entry;
 
-        return {
-          id_token,
-          access_token,
-          ...(oauthTokenScope ? { scope: oauthTokenScope } : null),
-          expires_in
-        };
-      }
-
-      return entry.access_token;
+      return {
+        id_token,
+        access_token,
+        ...(oauthTokenScope ? { scope: oauthTokenScope } : null),
+        expires_in
+      };
     }
   }
 
