@@ -1281,13 +1281,11 @@ export default class Auth0Client {
   private async _getEntryFromCache({
     scope,
     audience,
-    client_id,
-    getDetailedEntry = false
+    client_id
   }: {
     scope: string;
     audience: string;
     client_id: string;
-    getDetailedEntry?: boolean;
   }) {
     const entry = await this.cacheManager.get(
       new CacheKey({
