@@ -49,7 +49,7 @@ const fetchWithWorker = async (
   scope: string,
   fetchOptions: FetchOptions,
   timeout: number,
-  worker?: Worker,
+  worker: Worker,
   useFormData?: boolean
 ) => {
   return sendMessage(
@@ -93,7 +93,7 @@ export const switchFetch = async (
 
 export async function getJSON<T>(
   url: string,
-  timeout: number,
+  timeout: number | undefined,
   audience: string,
   scope: string,
   options: FetchOptions,

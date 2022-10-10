@@ -8,7 +8,7 @@ interface Transaction {
   audience: string;
   appState?: any;
   code_verifier: string;
-  redirect_uri: string;
+  redirect_uri?: string;
   organizationId?: string;
   state?: string;
 }

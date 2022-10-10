@@ -44,7 +44,7 @@ export const decode = (token: string) => {
     throw new Error('ID token could not be decoded');
   }
   const payloadJSON = JSON.parse(urlDecodeB64(payload));
-  const claims: IdToken = { __raw: token };
+  const claims: Partial<IdToken> = { __raw: token };
   const user: any = {};
   Object.keys(payloadJSON).forEach(k => {
     claims[k] = payloadJSON[k];
@@ -55,7 +55,7 @@ export const decode = (token: string) => {
   return {
     encoded: { header, payload, signature },
     header: JSON.parse(urlDecodeB64(header)),
-    claims,
+    claims: claims as IdToken,
     user
   };
 };
@@ -147,7 +147,7 @@ export const verify = (options: JWTVerifyOptions) => {
   }
 
   /* c8 ignore next 5 */
-  if (!isNumber(decoded.claims.exp)) {
+  if (decoded.claims.exp == null || !isNumber(decoded.claims.exp)) {
     throw new Error(
       'Expiration Time (exp) claim must be a number present in the ID token'
     );
@@ -161,15 +161,8 @@ export const verify = (options: JWTVerifyOptions) => {
   const leeway = options.leeway || 60;
   const now = new Date(options.now || Date.now());
   const expDate = new Date(0);
-  const nbfDate = new Date(0);
-  const authTimeDate = new Date(0);
-
-  authTimeDate.setUTCSeconds(
-    parseInt(decoded.claims.auth_time) + options.max_age + leeway
-  );
 
   expDate.setUTCSeconds(decoded.claims.exp + leeway);
-  nbfDate.setUTCSeconds(decoded.claims.nbf - leeway);
 
   if (now > expDate) {
     throw new Error(
@@ -177,16 +170,27 @@ export const verify = (options: JWTVerifyOptions) => {
     );
   }
 
-  if (isNumber(decoded.claims.nbf) && now < nbfDate) {
-    throw new Error(
-      `Not Before time (nbf) claim in the ID token indicates that this token can't be used just yet. Current time (${now}) is before ${nbfDate}`
-    );
+  if (decoded.claims.nbf != null && isNumber(decoded.claims.nbf)) {
+    const nbfDate = new Date(0);
+    nbfDate.setUTCSeconds((decoded.claims.nbf || 0) - leeway);
+    if (now < nbfDate) {
+      throw new Error(
+        `Not Before time (nbf) claim in the ID token indicates that this token can't be used just yet. Current time (${now}) is before ${nbfDate}`
+      );
+    }
   }
 
-  if (isNumber(decoded.claims.auth_time) && now > authTimeDate) {
-    throw new Error(
-      `Authentication Time (auth_time) claim in the ID token indicates that too much time has passed since the last end-user authentication. Current time (${now}) is after last auth at ${authTimeDate}`
+  if (decoded.claims.auth_time != null && isNumber(decoded.claims.auth_time)) {
+    const authTimeDate = new Date(0);
+    authTimeDate.setUTCSeconds(
+      parseInt(decoded.claims.auth_time) + (options.max_age as number) + leeway
     );
+
+    if (now > authTimeDate) {
+      throw new Error(
+        `Authentication Time (auth_time) claim in the ID token indicates that too much time has passed since the last end-user authentication. Current time (${now}) is after last auth at ${authTimeDate}`
+      );
+    }
   }
 
   if (options.organizationId) {

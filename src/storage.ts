@@ -56,7 +56,7 @@ export const CookieStorage = {
       cookieAttributes.domain = options.cookieDomain;
     }
 
-    Cookies.remove(key ,cookieAttributes);
+    Cookies.remove(key, cookieAttributes);
   }
 } as ClientStorage;
 
@@ -106,7 +106,7 @@ export const CookieStorageWithLegacySameSite = {
       cookieAttributes.domain = options.cookieDomain;
     }
 
-    Cookies.remove(key ,cookieAttributes);
+    Cookies.remove(key, cookieAttributes);
     CookieStorage.remove(key, options);
     CookieStorage.remove(`${LEGACY_PREFIX}${key}`, options);
   }
@@ -124,7 +124,7 @@ export const SessionStorage = {
 
     const value = sessionStorage.getItem(key);
 
-    if (typeof value === 'undefined') {
+    if (value == null) {
       return;
     }
 

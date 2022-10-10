@@ -17,7 +17,7 @@ export class CacheKey {
   constructor(
     data: CacheKeyData,
     public prefix: string = CACHE_KEY_PREFIX,
-    public suffix: string = null
+    public suffix?: string
   ) {
     this.clientId = data.clientId;
     this.scope = data.scope;
@@ -98,7 +98,7 @@ export type MaybePromise<T> = Promise<T> | T;
 
 export interface ICache {
   set<T = Cacheable>(key: string, entry: T): MaybePromise<void>;
-  get<T = Cacheable>(key: string): MaybePromise<T | null>;
+  get<T = Cacheable>(key: string): MaybePromise<T | undefined>;
   remove(key: string): MaybePromise<void>;
   allKeys?(): MaybePromise<string[]>;
 }

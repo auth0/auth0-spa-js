@@ -49,24 +49,24 @@ export const cacheFactory = (location: string) => {
 export const getAuthorizeParams = (
   clientOptions: Auth0ClientOptions,
   scope: string,
-  authorizeOptions: AuthorizationParams,
+  authorizationParams: AuthorizationParams,
   state: string,
   nonce: string,
   code_challenge: string,
-  redirect_uri: string,
-  response_mode: string
+  redirect_uri: string | undefined,
+  response_mode: string | undefined
 ): AuthorizeOptions => {
   return {
     client_id: clientOptions.clientId,
     ...clientOptions.authorizationParams,
-    ...authorizeOptions,
-    scope: getUniqueScopes(scope, authorizeOptions?.scope),
+    ...authorizationParams,
+    scope: getUniqueScopes(scope, authorizationParams.scope),
     response_type: 'code',
     response_mode: response_mode || 'query',
     state,
     nonce,
     redirect_uri:
-      redirect_uri || clientOptions.authorizationParams.redirect_uri,
+      redirect_uri || clientOptions.authorizationParams?.redirect_uri,
     code_challenge,
     code_challenge_method: 'S256'
   };

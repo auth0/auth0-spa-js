@@ -39,7 +39,7 @@ export class CacheKeyManifest {
     }
   }
 
-  get(): MaybePromise<KeyManifestEntry> {
+  get(): MaybePromise<KeyManifestEntry | undefined> {
     return this.cache.get<KeyManifestEntry>(this.manifestKey);
   }
 
