@@ -1376,6 +1376,33 @@ describe('Auth0Client', () => {
       }
     });
 
+    it('uses the correct response type for subsequent requests that occur before the response', async () => {
+      const auth0 = setup();
+      await loginWithRedirect(auth0);
+      await (auth0 as any).cacheManager.clear();
+
+      jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
+        access_token: TEST_ACCESS_TOKEN,
+        state: TEST_STATE
+      });
+
+      mockFetch.mockResolvedValue(
+        fetchResponse(true, {
+          id_token: TEST_ID_TOKEN,
+          access_token: TEST_ACCESS_TOKEN,
+          expires_in: 86400
+        })
+      );
+
+      const [result1, result2] = await Promise.all([
+        auth0.getTokenSilently(),
+        auth0.getTokenSilently({ detailedResponse: true })
+      ]);
+
+      expect(result1).toEqual(TEST_ACCESS_TOKEN);
+      expect(result2.access_token).toEqual(TEST_ACCESS_TOKEN);
+    });
+
     it('uses the cache for multiple token requests with audience and scope', async () => {
       const auth0 = setup();
       await loginWithRedirect(auth0);

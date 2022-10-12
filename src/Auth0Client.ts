@@ -648,17 +648,19 @@ export class Auth0Client {
       }
     };
 
-    return singlePromise(
+    const result = await singlePromise(
       () => this._getTokenSilently(localOptions),
       `${this.options.clientId}::${localOptions.authorizationParams.audience}::${localOptions.authorizationParams.scope}`
     );
+
+    return options.detailedResponse ? result : result?.access_token;
   }
 
   private async _getTokenSilently(
     options: GetTokenSilentlyOptions & {
       authorizationParams: AuthorizationParams & { scope: string };
     }
-  ): Promise<undefined | string | GetTokenSilentlyVerboseResponse> {
+  ): Promise<undefined | GetTokenSilentlyVerboseResponse> {
     const { cacheMode, ...getTokenOptions } = options;
 
     // Check the cache before acquiring the lock to avoid the latency of
@@ -667,8 +669,7 @@ export class Auth0Client {
       const entry = await this._getEntryFromCache({
         scope: getTokenOptions.authorizationParams.scope,
         audience: getTokenOptions.authorizationParams.audience || 'default',
-        clientId: this.options.clientId,
-        getDetailedEntry: options.detailedResponse
+        clientId: this.options.clientId
       });
 
       if (entry) {
@@ -695,8 +696,7 @@ export class Auth0Client {
           const entry = await this._getEntryFromCache({
             scope: getTokenOptions.authorizationParams.scope,
             audience: getTokenOptions.authorizationParams.audience || 'default',
-            clientId: this.options.clientId,
-            getDetailedEntry: options.detailedResponse
+            clientId: this.options.clientId
           });
 
           if (entry) {
@@ -708,19 +708,15 @@ export class Auth0Client {
           ? await this._getTokenUsingRefreshToken(getTokenOptions)
           : await this._getTokenFromIFrame(getTokenOptions);
 
-        if (options.detailedResponse) {
-          const { id_token, access_token, oauthTokenScope, expires_in } =
-            authResult;
+        const { id_token, access_token, oauthTokenScope, expires_in } =
+          authResult;
 
-          return {
-            id_token,
-            access_token,
-            ...(oauthTokenScope ? { scope: oauthTokenScope } : null),
-            expires_in
-          };
-        }
-
-        return authResult.access_token;
+        return {
+          id_token,
+          access_token,
+          ...(oauthTokenScope ? { scope: oauthTokenScope } : null),
+          expires_in
+        };
       } finally {
         await lock.releaseLock(GET_TOKEN_SILENTLY_LOCK_KEY);
         window.removeEventListener('pagehide', this._releaseLockOnPageHide);
@@ -1047,14 +1043,12 @@ export class Auth0Client {
   private async _getEntryFromCache({
     scope,
     audience,
-    clientId,
-    getDetailedEntry = false
+    clientId
   }: {
     scope: string;
     audience: string;
     clientId: string;
-    getDetailedEntry?: boolean;
-  }): Promise<undefined | string | GetTokenSilentlyVerboseResponse> {
+  }): Promise<undefined | GetTokenSilentlyVerboseResponse> {
     const entry = await this.cacheManager.get(
       new CacheKey({
         scope,
@@ -1065,21 +1059,16 @@ export class Auth0Client {
     );
 
     if (entry && entry.access_token) {
-      if (getDetailedEntry) {
-        const { access_token, oauthTokenScope, expires_in } =
-          entry as CacheEntry;
-        const cache = await this._getIdTokenFromCache();
-        return (
-          cache && {
-            id_token: cache.id_token,
-            access_token,
-            ...(oauthTokenScope ? { scope: oauthTokenScope } : null),
-            expires_in
-          }
-        );
-      }
-
-      return entry.access_token;
+      const { access_token, oauthTokenScope, expires_in } = entry as CacheEntry;
+      const cache = await this._getIdTokenFromCache();
+      return (
+        cache && {
+          id_token: cache.id_token,
+          access_token,
+          ...(oauthTokenScope ? { scope: oauthTokenScope } : null),
+          expires_in
+        }
+      );
     }
   }
 
