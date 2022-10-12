@@ -57,7 +57,7 @@ Next, configure the following URLs for your application under the "Application U
 
 Take note of the **Client ID** and **Domain** values under the "Basic Information" section. You'll need these values in the next step.
 
-### Creating the client
+### Configure the SDK
 
 Create an `Auth0Client` instance before rendering or initializing your application. You should only have one instance of the client.
 
@@ -142,11 +142,15 @@ Please do not report security vulnerabilities on the public GitHub issue tracker
 
 ## What is Auth0?
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="./auth_dark_mode.png">
-  <img alt="Auth0 Logo" src="./auth0_light_mode.png">
-</picture>
-
-Auth0 is an easy to implement, adaptable authentication and authorization platform. To learn more checkout [Why Auth0?](https://auth0.com/why-auth0)
-
-This project is licensed under the MIT license. See the [LICENSE](./LICENSE) file for more info.
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="./auth_dark_mode">
+    <img alt="Auth0 Logo" src="./auth0_light_mode">
+  </picture>
+</p>
+<p align="center">
+  Auth0 is an easy to implement, adaptable authentication and authorization platform. To learn more checkout <a href="https://auth0.com/why-auth0">Why Auth0?</a>
+</p>
+<p align="center">
+  This project is licensed under the MIT license. See the <a href="./LICENSE"> LICENSE</a> file for more info.
+</p>
