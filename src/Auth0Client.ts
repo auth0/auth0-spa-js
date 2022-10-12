@@ -906,7 +906,7 @@ export class Auth0Client {
           code: codeResult.code as string,
           grant_type: 'authorization_code',
           redirect_uri,
-          timeout: options.authorizationParams?.timeout || this.httpTimeoutMs
+          timeout: options.authorizationParams.timeout || this.httpTimeoutMs
         },
         {
           nonceIn
@@ -930,16 +930,10 @@ export class Auth0Client {
   }
 
   private async _getTokenUsingRefreshToken(
-    opts: GetTokenSilentlyOptions
+    options: GetTokenSilentlyOptions & {
+      authorizationParams: AuthorizationParams & { scope: string };
+    }
   ): Promise<GetTokenSilentlyResult> {
-    let options = {
-      ...opts,
-      authorizationParams: {
-        ...opts.authorizationParams,
-        scope: getUniqueScopes(this.scope, opts.authorizationParams?.scope)
-      }
-    };
-
     const cache = await this.cacheManager.get(
       new CacheKey({
         scope: options.authorizationParams.scope,
