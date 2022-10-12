@@ -113,8 +113,6 @@ window.addEventListener('load', async () => {
 });
 ```
 
-### 3 -
-
 ## API Reference
 
 Explore API Methods available in auth0-spa-js.
@@ -134,11 +132,11 @@ We appreciate feedback and contribution to this repo! Before you get started, pl
 - [Auth0's code of conduct guidelines](https://github.com/auth0/open-source-template/blob/master/CODE-OF-CONDUCT.md)
 - [This repo's contribution guide](./CONTRIBUTING.md)
 
-## Raise an issue
+### Raise an issue
 
 To provide feedback or report a bug, please [raise an issue on our issue tracker](https://github.com/auth0/auth0-spa-js/issues).
 
-## Vulnerability Reporting
+### Vulnerability Reporting
 
 Please do not report security vulnerabilities on the public GitHub issue tracker. The [Responsible Disclosure Program](https://auth0.com/whitehat) details the procedure for disclosing security issues.
 
