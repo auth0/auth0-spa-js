@@ -1,5 +1,13 @@
 # Change Log
 
+## [v1.22.5](https://github.com/auth0/auth0-spa-js/tree/v1.22.5) (2022-10-12)
+
+[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v1.22.4...v1.22.5)
+
+**Fixed**
+
+- Ensure getTokenSilently works when mixing return types [\#1016](https://github.com/auth0/auth0-spa-js/pull/1016) ([frederikprijck](https://github.com/frederikprijck))
+
 ## [v1.22.4](https://github.com/auth0/auth0-spa-js/tree/v1.22.4) (2022-09-08)
 
 [Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v1.22.3...v1.22.4)
