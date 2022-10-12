@@ -119,6 +119,22 @@ cacheFactories.forEach(cacheFactory => {
       expect(await manager.get(key)).toStrictEqual(data);
     });
 
+    it('should return an entry from the cache if no scopes provided', async () => {
+      const data = {
+        ...defaultData,
+        scope: 'read:messages write:messages'
+      };
+
+      await manager.set(data);
+
+      const key = new CacheKey({
+        clientId: TEST_CLIENT_ID,
+        audience: TEST_AUDIENCE
+      });
+
+      expect(await manager.get(key)).toStrictEqual(data);
+    });
+
     it('should return an entry directly from the cache if the key matches exactly', async () => {
       const data = {
         ...defaultData,
