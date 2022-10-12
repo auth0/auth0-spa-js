@@ -247,5 +247,5 @@ export const parseNumber = (value: any): number | undefined => {
   if (typeof value !== 'string') {
     return value;
   }
-  return parseInt(value as string, 10) || undefined;
+  return parseInt(value, 10) || undefined;
 };

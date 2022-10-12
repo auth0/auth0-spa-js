@@ -44,7 +44,7 @@ export class CacheManager {
     );
 
     if (!entry && cacheKey.scope && cacheKey.audience) {
-      const entryByScope = (await this.get(cacheKey)) as CacheEntry | undefined;
+      const entryByScope = await this.get(cacheKey);
 
       if (!entryByScope) {
         return;
