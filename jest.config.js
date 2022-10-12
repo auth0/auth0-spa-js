@@ -8,7 +8,8 @@ module.exports = {
     '/node_modules/',
     './cypress',
     './jest.config.js',
-    './__tests__'
+    './__tests__',
+    './src/index.ts'
   ],
   reporters: [
     'default',
