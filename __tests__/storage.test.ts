@@ -215,14 +215,7 @@ describe('CookieStorageWithLegacySameSite', () => {
 });
 
 describe('SessionStorage', () => {
-  //let cookieMock;
-
-  beforeEach(() => {
-    //cookieMock = jest.mocked(esCookie);
-  });
-
   it('returns undefined when there is no object', () => {
-    //const Cookie = cookieMock;
     const key = 'key';
 
     jest.mocked(sessionStorage.getItem).mockReturnValue(null);

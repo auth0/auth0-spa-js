@@ -636,7 +636,7 @@ export class Auth0Client {
   public async getTokenSilently(
     options: GetTokenSilentlyOptions = {}
   ): Promise<undefined | string | GetTokenSilentlyVerboseResponse> {
-    let localOptions: GetTokenSilentlyOptions & {
+    const localOptions: GetTokenSilentlyOptions & {
       authorizationParams: AuthorizationParams & { scope: string };
     } = {
       cacheMode: 'on',
