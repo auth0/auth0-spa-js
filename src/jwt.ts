@@ -172,7 +172,7 @@ export const verify = (options: JWTVerifyOptions) => {
 
   if (decoded.claims.nbf != null && isNumber(decoded.claims.nbf)) {
     const nbfDate = new Date(0);
-    nbfDate.setUTCSeconds((decoded.claims.nbf || 0) - leeway);
+    nbfDate.setUTCSeconds(decoded.claims.nbf - leeway);
     if (now < nbfDate) {
       throw new Error(
         `Not Before time (nbf) claim in the ID token indicates that this token can't be used just yet. Current time (${now}) is before ${nbfDate}`
