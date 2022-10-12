@@ -47,7 +47,9 @@ export const cacheFactory = (location: string) => {
  * @ignore
  */
 export const getAuthorizeParams = (
-  clientOptions: Auth0ClientOptions,
+  clientOptions: Auth0ClientOptions & {
+    authorizationParams: AuthorizationParams;
+  },
   scope: string,
   authorizationParams: AuthorizationParams,
   state: string,
@@ -66,7 +68,7 @@ export const getAuthorizeParams = (
     state,
     nonce,
     redirect_uri:
-      redirect_uri || clientOptions.authorizationParams?.redirect_uri,
+      redirect_uri || clientOptions.authorizationParams.redirect_uri,
     code_challenge,
     code_challenge_method: 'S256'
   };
