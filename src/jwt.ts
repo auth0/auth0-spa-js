@@ -44,7 +44,7 @@ export const decode = (token: string) => {
     throw new Error('ID token could not be decoded');
   }
   const payloadJSON = JSON.parse(urlDecodeB64(payload));
-  const claims: Partial<IdToken> = { __raw: token };
+  const claims: IdToken = { __raw: token };
   const user: any = {};
   Object.keys(payloadJSON).forEach(k => {
     claims[k] = payloadJSON[k];
@@ -55,7 +55,7 @@ export const decode = (token: string) => {
   return {
     encoded: { header, payload, signature },
     header: JSON.parse(urlDecodeB64(header)),
-    claims: claims as IdToken,
+    claims,
     user
   };
 };
