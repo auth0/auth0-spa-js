@@ -47,20 +47,22 @@ export const cacheFactory = (location: string) => {
  * @ignore
  */
 export const getAuthorizeParams = (
-  clientOptions: Auth0ClientOptions,
+  clientOptions: Auth0ClientOptions & {
+    authorizationParams: AuthorizationParams;
+  },
   scope: string,
-  authorizeOptions: AuthorizationParams,
+  authorizationParams: AuthorizationParams,
   state: string,
   nonce: string,
   code_challenge: string,
-  redirect_uri: string,
-  response_mode: string
+  redirect_uri: string | undefined,
+  response_mode: string | undefined
 ): AuthorizeOptions => {
   return {
     client_id: clientOptions.clientId,
     ...clientOptions.authorizationParams,
-    ...authorizeOptions,
-    scope: getUniqueScopes(scope, authorizeOptions?.scope),
+    ...authorizationParams,
+    scope: getUniqueScopes(scope, authorizationParams.scope),
     response_type: 'code',
     response_mode: response_mode || 'query',
     state,

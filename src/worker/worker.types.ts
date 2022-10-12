@@ -8,8 +8,8 @@ export type WorkerRefreshTokenMessage = {
   fetchUrl: string;
   fetchOptions: FetchOptions;
   useFormData?: boolean;
-  auth?: {
-    audience?: string;
-    scope?: string;
+  auth: {
+    audience: string;
+    scope: string;
   };
 };

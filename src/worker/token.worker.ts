@@ -44,8 +44,8 @@ const messageHandler = async ({
 
   try {
     const body = useFormData
-      ? formDataToObject(fetchOptions.body)
-      : JSON.parse(fetchOptions.body);
+      ? formDataToObject(fetchOptions.body as string)
+      : JSON.parse(fetchOptions.body as string);
 
     if (!body.refresh_token && body.grant_type === 'refresh_token') {
       const refreshToken = getRefreshToken(audience, scope);
@@ -65,7 +65,7 @@ const messageHandler = async ({
           });
     }
 
-    let abortController: AbortController;
+    let abortController: AbortController | undefined;
 
     if (typeof AbortController === 'function') {
       abortController = new AbortController();
@@ -125,7 +125,7 @@ const messageHandler = async ({
 // Don't run `addEventListener` in our tests (this is replaced in rollup)
 if (process.env.NODE_ENV === 'test') {
   module.exports = { messageHandler };
-/* c8 ignore next 4  */
+  /* c8 ignore next 4  */
 } else {
   // @ts-ignore
   addEventListener('message', messageHandler);

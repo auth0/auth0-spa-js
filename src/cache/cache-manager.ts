@@ -15,12 +15,14 @@ import {
 const DEFAULT_EXPIRY_ADJUSTMENT_SECONDS = 0;
 
 export class CacheManager {
+  private nowProvider: () => number | Promise<number>;
+
   constructor(
     private cache: ICache,
     private keyManifest?: CacheKeyManifest,
-    private nowProvider?: () => number | Promise<number>
+    nowProvider?: () => number | Promise<number>
   ) {
-    this.nowProvider = this.nowProvider || DEFAULT_NOW_PROVIDER;
+    this.nowProvider = nowProvider || DEFAULT_NOW_PROVIDER;
   }
 
   async setIdToken(
@@ -48,10 +50,18 @@ export class CacheManager {
         return;
       }
 
+      if (!entryByScope.id_token || !entryByScope.decodedToken) {
+        return;
+      }
+
       return {
         id_token: entryByScope.id_token,
         decodedToken: entryByScope.decodedToken
       };
+    }
+
+    if (!entry) {
+      return;
     }
 
     return { id_token: entry.id_token, decodedToken: entry.decodedToken };
@@ -143,10 +153,12 @@ export class CacheManager {
     };
   }
 
-  private async getCacheKeys(): Promise<string[]> {
-    return this.keyManifest
-      ? (await this.keyManifest.get())?.keys
-      : await this.cache.allKeys();
+  private async getCacheKeys(): Promise<string[] | undefined> {
+    if (this.keyManifest) {
+      return (await this.keyManifest.get())?.keys;
+    } else if (this.cache.allKeys) {
+      return this.cache.allKeys();
+    }
   }
 
   /**

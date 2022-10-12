@@ -269,7 +269,7 @@ export type CacheLocation = 'memory' | 'localstorage';
 export interface AuthorizeOptions extends AuthorizationParams {
   response_type: string;
   response_mode: string;
-  redirect_uri: string;
+  redirect_uri?: string;
   nonce: string;
   state: string;
   scope: string;

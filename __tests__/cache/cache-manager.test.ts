@@ -9,6 +9,7 @@ import {
   CacheEntry,
   CacheKey,
   CACHE_KEY_PREFIX,
+  DecodedToken,
   ICache
 } from '../../src/cache/shared';
 
@@ -113,6 +114,22 @@ cacheFactories.forEach(cacheFactory => {
         clientId: TEST_CLIENT_ID,
         audience: TEST_AUDIENCE,
         scope: 'read:messages'
+      });
+
+      expect(await manager.get(key)).toStrictEqual(data);
+    });
+
+    it('should return an entry from the cache if no scopes provided', async () => {
+      const data = {
+        ...defaultData,
+        scope: 'read:messages write:messages'
+      };
+
+      await manager.set(data);
+
+      const key = new CacheKey({
+        clientId: TEST_CLIENT_ID,
+        audience: TEST_AUDIENCE
       });
 
       expect(await manager.get(key)).toStrictEqual(data);
@@ -595,6 +612,184 @@ cacheFactories.forEach(cacheFactory => {
       expect(await manager.get(CacheKey.fromCacheEntry(entry3))).toStrictEqual(
         entry3
       );
+    });
+
+    describe('getIdToken', () => {
+      beforeEach(async () => {
+        await manager.clear();
+      });
+
+      it('should read from the id token cache if exists', async () => {
+        const cacheKey = new CacheKey({
+          clientId: TEST_CLIENT_ID,
+          audience: TEST_AUDIENCE,
+          scope: 'read:messages'
+        });
+
+        await manager.setIdToken(
+          defaultData.client_id,
+          defaultData.id_token as string,
+          defaultData.decodedToken as DecodedToken
+        );
+
+        const cacheSpy = jest.spyOn(cache, 'get');
+
+        const result = await manager.getIdToken(cacheKey);
+
+        expect(cache.get).toHaveBeenCalledWith(
+          new CacheKey(
+            {
+              clientId: TEST_CLIENT_ID
+            },
+            CACHE_KEY_PREFIX,
+            '@@user@@'
+          ).toKey()
+        );
+        expect(cache.get).toHaveBeenCalledTimes(1);
+        expect(result).toBeDefined();
+
+        cacheSpy.mockClear();
+      });
+
+      it('should read from the access token cache if not found in id token cache', async () => {
+        const cacheKey = new CacheKey({
+          clientId: TEST_CLIENT_ID,
+          audience: TEST_AUDIENCE,
+          scope: 'read:messages'
+        });
+
+        await manager.set({
+          ...defaultData,
+          scope: 'read:messages'
+        });
+
+        const cacheSpy = jest.spyOn(cache, 'get');
+
+        const result = await manager.getIdToken(cacheKey);
+
+        expect(cache.get).toHaveBeenCalledWith(cacheKey.toKey());
+        expect(cache.get).toHaveBeenCalledTimes(2);
+        expect(result).toBeDefined();
+
+        cacheSpy.mockClear();
+      });
+
+      it('should return undefined when nothing found', async () => {
+        const cacheKey = new CacheKey({
+          clientId: TEST_CLIENT_ID,
+          audience: TEST_AUDIENCE,
+          scope: 'read:messages'
+        });
+
+        const cacheSpy = jest.spyOn(cache, 'get').mockImplementation(key => {
+          if (key.indexOf('@@user@@') > -1) {
+            return null;
+          } else {
+            return null;
+          }
+        });
+
+        const result = await manager.getIdToken(cacheKey);
+
+        expect(cache.get).toHaveBeenCalledWith(
+          new CacheKey(
+            {
+              clientId: TEST_CLIENT_ID
+            },
+            CACHE_KEY_PREFIX,
+            '@@user@@'
+          ).toKey()
+        );
+        expect(cache.get).toHaveBeenCalledWith(cacheKey.toKey());
+        expect(result).toBeUndefined();
+
+        cacheSpy.mockClear();
+      });
+
+      it('should return undefined when no id token in access token cache', async () => {
+        const cacheKey = new CacheKey({
+          clientId: TEST_CLIENT_ID,
+          audience: TEST_AUDIENCE,
+          scope: 'read:messages'
+        });
+
+        await manager.set({
+          ...defaultData,
+          scope: 'read:messages',
+          id_token: undefined
+        });
+
+        const result = await manager.getIdToken(cacheKey);
+
+        expect(result).toBeUndefined();
+      });
+
+      it('should return undefined when no decoded token in access token cache', async () => {
+        const cacheKey = new CacheKey({
+          clientId: TEST_CLIENT_ID,
+          audience: TEST_AUDIENCE,
+          scope: 'read:messages'
+        });
+
+        await manager.set({
+          ...defaultData,
+          scope: 'read:messages',
+          decodedToken: undefined
+        });
+
+        const result = await manager.getIdToken(cacheKey);
+
+        expect(result).toBeUndefined();
+      });
+
+      it('should return undefined if not found in id token cache and no scope set', async () => {
+        const cacheKey = new CacheKey({
+          clientId: TEST_CLIENT_ID,
+          audience: TEST_AUDIENCE
+        });
+
+        const cacheSpy = jest.spyOn(cache, 'get');
+
+        const result = await manager.getIdToken(cacheKey);
+
+        expect(cache.get).toHaveBeenCalledWith(
+          new CacheKey(
+            {
+              clientId: TEST_CLIENT_ID
+            },
+            CACHE_KEY_PREFIX,
+            '@@user@@'
+          ).toKey()
+        );
+        expect(cache.get).toHaveBeenCalledTimes(1);
+        expect(result).toBeUndefined();
+
+        cacheSpy.mockClear();
+      });
+      it('should return undefined if not found in id token cache and no audience set', async () => {
+        const cacheKey = new CacheKey({
+          clientId: TEST_CLIENT_ID,
+          scope: 'read:messages'
+        });
+
+        const cacheSpy = jest.spyOn(cache, 'get');
+
+        const result = await manager.getIdToken(cacheKey);
+
+        expect(cache.get).toHaveBeenCalledWith(
+          new CacheKey(
+            {
+              clientId: TEST_CLIENT_ID
+            },
+            CACHE_KEY_PREFIX,
+            '@@user@@'
+          ).toKey()
+        );
+        expect(cache.get).toHaveBeenCalledTimes(1);
+        expect(result).toBeUndefined();
+
+        cacheSpy.mockClear();
+      });
     });
   });
 });

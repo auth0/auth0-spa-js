@@ -27,7 +27,8 @@ import {
   CacheManager,
   CacheEntry,
   IdTokenEntry,
-  CACHE_KEY_ID_TOKEN_SUFFIX
+  CACHE_KEY_ID_TOKEN_SUFFIX,
+  DecodedToken
 } from './cache';
 
 import { TransactionManager } from './transaction-manager';
@@ -121,12 +122,12 @@ export class Auth0Client {
   private readonly isAuthenticatedCookieName: string;
   private readonly nowProvider: () => number | Promise<number>;
   private readonly httpTimeoutMs: number;
-  private readonly options: Auth0ClientOptions & { authorizationParams: AuthorizationParams };
+  private readonly options: Auth0ClientOptions & {
+    authorizationParams: AuthorizationParams;
+  };
   private readonly userCache: ICache = new InMemoryCache().enclosedCache;
 
-  cacheLocation: CacheLocation;
-
-  private worker: Worker;
+  private worker?: Worker;
 
   private readonly defaultOptions: Partial<Auth0ClientOptions> = {
     authorizationParams: {
@@ -154,18 +155,19 @@ export class Auth0Client {
       );
     }
 
+    let cacheLocation: CacheLocation | undefined;
     let cache: ICache;
 
     if (options.cache) {
       cache = options.cache;
     } else {
-      this.cacheLocation = options.cacheLocation || CACHE_LOCATION_MEMORY;
+      cacheLocation = options.cacheLocation || CACHE_LOCATION_MEMORY;
 
-      if (!cacheFactory(this.cacheLocation)) {
-        throw new Error(`Invalid cache location "${this.cacheLocation}"`);
+      if (!cacheFactory(cacheLocation)) {
+        throw new Error(`Invalid cache location "${cacheLocation}"`);
       }
 
-      cache = cacheFactory(this.cacheLocation)();
+      cache = cacheFactory(cacheLocation)();
     }
 
     this.httpTimeoutMs = options.httpTimeoutInSeconds
@@ -213,7 +215,7 @@ export class Auth0Client {
       cache,
       !cache.allKeys
         ? new CacheKeyManifest(cache, this.options.clientId)
-        : null,
+        : undefined,
       this.nowProvider
     );
 
@@ -225,7 +227,7 @@ export class Auth0Client {
       typeof window !== 'undefined' &&
       window.Worker &&
       this.options.useRefreshTokens &&
-      this.cacheLocation === CACHE_LOCATION_MEMORY
+      cacheLocation === CACHE_LOCATION_MEMORY
     ) {
       this.worker = new TokenWorker();
     }
@@ -281,7 +283,7 @@ export class Auth0Client {
   ): Promise<{
     scope: string;
     audience: string;
-    redirect_uri: string;
+    redirect_uri?: string;
     nonce: string;
     code_verifier: string;
     state: string;
@@ -300,7 +302,7 @@ export class Auth0Client {
       state,
       nonce,
       code_challenge,
-      authorizationParams?.redirect_uri ||
+      authorizationParams.redirect_uri ||
         this.options.authorizationParams.redirect_uri ||
         fallbackRedirectUri,
       authorizeOptions?.response_mode
@@ -360,7 +362,7 @@ export class Auth0Client {
     }
 
     const params = await this._prepareAuthorizeUrl(
-      options.authorizationParams,
+      options.authorizationParams || {},
       { response_mode: 'web_message' },
       window.location.origin
     );
@@ -389,7 +391,7 @@ export class Auth0Client {
         scope: params.scope,
         code_verifier: params.code_verifier,
         grant_type: 'authorization_code',
-        code: codeResult.code,
+        code: codeResult.code as string,
         redirect_uri: params.redirect_uri
       },
       {
@@ -449,7 +451,7 @@ export class Auth0Client {
       this.options.authorizationParams.organization;
 
     const { url, ...transaction } = await this._prepareAuthorizeUrl(
-      urlOptions.authorizationParams
+      urlOptions.authorizationParams || {}
     );
 
     this.transactionManager.create({
@@ -497,7 +499,7 @@ export class Auth0Client {
     if (error) {
       throw new AuthenticationError(
         error,
-        error_description,
+        error_description || error,
         state,
         transaction.appState
       );
@@ -521,7 +523,7 @@ export class Auth0Client {
         scope: transaction.scope,
         code_verifier: transaction.code_verifier,
         grant_type: 'authorization_code',
-        code,
+        code: code as string,
         ...(redirect_uri ? { redirect_uri } : {})
       },
       { nonceIn, organizationId }
@@ -633,8 +635,10 @@ export class Auth0Client {
    */
   public async getTokenSilently(
     options: GetTokenSilentlyOptions = {}
-  ): Promise<string | GetTokenSilentlyVerboseResponse> {
-    options = {
+  ): Promise<undefined | string | GetTokenSilentlyVerboseResponse> {
+    const localOptions: GetTokenSilentlyOptions & {
+      authorizationParams: AuthorizationParams & { scope: string };
+    } = {
       cacheMode: 'on',
       ...options,
       authorizationParams: {
@@ -645,14 +649,16 @@ export class Auth0Client {
     };
 
     return singlePromise(
-      () => this._getTokenSilently(options),
-      `${this.options.clientId}::${options.authorizationParams.audience}::${options.authorizationParams.scope}`
+      () => this._getTokenSilently(localOptions),
+      `${this.options.clientId}::${localOptions.authorizationParams.audience}::${localOptions.authorizationParams.scope}`
     );
   }
 
   private async _getTokenSilently(
-    options: GetTokenSilentlyOptions
-  ): Promise<string | GetTokenSilentlyVerboseResponse> {
+    options: GetTokenSilentlyOptions & {
+      authorizationParams: AuthorizationParams & { scope: string };
+    }
+  ): Promise<undefined | string | GetTokenSilentlyVerboseResponse> {
     const { cacheMode, ...getTokenOptions } = options;
 
     // Check the cache before acquiring the lock to avoid the latency of
@@ -688,8 +694,7 @@ export class Auth0Client {
         if (cacheMode !== 'off') {
           const entry = await this._getEntryFromCache({
             scope: getTokenOptions.authorizationParams.scope,
-            audience:
-              getTokenOptions.authorizationParams.audience || 'default',
+            audience: getTokenOptions.authorizationParams.audience || 'default',
             clientId: this.options.clientId,
             getDetailedEntry: options.detailedResponse
           });
@@ -741,7 +746,7 @@ export class Auth0Client {
     options: GetTokenWithPopupOptions = {},
     config: PopupConfigOptions = {}
   ) {
-    options = {
+    const localOptions = {
       ...options,
       authorizationParams: {
         ...this.options.authorizationParams,
@@ -755,17 +760,17 @@ export class Auth0Client {
       ...config
     };
 
-    await this.loginWithPopup(options, config);
+    await this.loginWithPopup(localOptions, config);
 
     const cache = await this.cacheManager.get(
       new CacheKey({
-        scope: options.authorizationParams.scope,
-        audience: options.authorizationParams.audience || 'default',
+        scope: localOptions.authorizationParams.scope,
+        audience: localOptions.authorizationParams.audience || 'default',
         clientId: this.options.clientId
       })
     );
 
-    return cache.access_token;
+    return cache!.access_token;
   }
 
   /**
@@ -815,7 +820,7 @@ export class Auth0Client {
    * ```
    *
    * Clears the application session and performs a redirect to `/v2/logout`, using
-   * the parameters provided as arguments, to clear the Auth0 session. 
+   * the parameters provided as arguments, to clear the Auth0 session.
    *
    * If the `federated` option is specified it also clears the Identity Provider session.
    * [Read more about how Logout works at Auth0](https://auth0.com/docs/logout).
@@ -826,13 +831,13 @@ export class Auth0Client {
     const { onRedirect, ...logoutOptions } = options;
 
     await this.cacheManager.clear();
-    
+
     this.cookieStorage.remove(this.orgHintCookieName, {
-        cookieDomain: this.options.cookieDomain
-      });
+      cookieDomain: this.options.cookieDomain
+    });
     this.cookieStorage.remove(this.isAuthenticatedCookieName, {
-        cookieDomain: this.options.cookieDomain
-      });
+      cookieDomain: this.options.cookieDomain
+    });
     this.userCache.remove(CACHE_KEY_ID_TOKEN_SUFFIX);
 
     const url = this._buildLogoutUrl(logoutOptions);
@@ -845,9 +850,11 @@ export class Auth0Client {
   }
 
   private async _getTokenFromIFrame(
-    options: GetTokenSilentlyOptions
+    options: GetTokenSilentlyOptions & {
+      authorizationParams: AuthorizationParams & { scope: string };
+    }
   ): Promise<GetTokenSilentlyResult> {
-    const params: AuthorizationParams = {
+    const params: AuthorizationParams & { scope: string } = {
       ...options.authorizationParams,
       prompt: 'none'
     };
@@ -896,7 +903,7 @@ export class Auth0Client {
         {
           ...options.authorizationParams,
           code_verifier,
-          code: codeResult.code,
+          code: codeResult.code as string,
           grant_type: 'authorization_code',
           redirect_uri,
           timeout: options.authorizationParams.timeout || this.httpTimeoutMs
@@ -923,16 +930,10 @@ export class Auth0Client {
   }
 
   private async _getTokenUsingRefreshToken(
-    options: GetTokenSilentlyOptions
+    options: GetTokenSilentlyOptions & {
+      authorizationParams: AuthorizationParams & { scope: string };
+    }
   ): Promise<GetTokenSilentlyResult> {
-    options = {
-      ...options,
-      authorizationParams: {
-        ...options.authorizationParams,
-        scope: getUniqueScopes(this.scope, options.authorizationParams.scope)
-      }
-    };
-
     const cache = await this.cacheManager.get(
       new CacheKey({
         scope: options.authorizationParams.scope,
@@ -999,7 +1000,9 @@ export class Auth0Client {
     }
   }
 
-  private async _saveEntryInCache(entry: CacheEntry) {
+  private async _saveEntryInCache(
+    entry: CacheEntry & { id_token: string; decodedToken: DecodedToken }
+  ) {
     const { id_token, decodedToken, ...entryWithoutIdToken } = entry;
 
     this.userCache.set(CACHE_KEY_ID_TOKEN_SUFFIX, {
@@ -1051,7 +1054,7 @@ export class Auth0Client {
     audience: string;
     clientId: string;
     getDetailedEntry?: boolean;
-  }) {
+  }): Promise<undefined | string | GetTokenSilentlyVerboseResponse> {
     const entry = await this.cacheManager.get(
       new CacheKey({
         scope,
@@ -1063,14 +1066,17 @@ export class Auth0Client {
 
     if (entry && entry.access_token) {
       if (getDetailedEntry) {
-        const { access_token, oauthTokenScope, expires_in } = entry;
+        const { access_token, oauthTokenScope, expires_in } =
+          entry as CacheEntry;
         const cache = await this._getIdTokenFromCache();
-        return {
-          id_token: cache?.id_token,
-          access_token,
-          ...(oauthTokenScope ? { scope: oauthTokenScope } : null),
-          expires_in
-        };
+        return (
+          cache && {
+            id_token: cache.id_token,
+            access_token,
+            ...(oauthTokenScope ? { scope: oauthTokenScope } : null),
+            expires_in
+          }
+        );
       }
 
       return entry.access_token;
@@ -1134,7 +1140,7 @@ export class Auth0Client {
 
 interface BaseRequestTokenOptions {
   audience?: string;
-  scope?: string;
+  scope: string;
   timeout?: number;
   redirect_uri?: string;
 }
@@ -1147,7 +1153,7 @@ interface PKCERequestTokenOptions extends BaseRequestTokenOptions {
 
 interface RefreshTokenRequestTokenOptions extends BaseRequestTokenOptions {
   grant_type: 'refresh_token';
-  refresh_token: string;
+  refresh_token?: string;
 }
 
 interface RequestTokenAdditionalParameters {

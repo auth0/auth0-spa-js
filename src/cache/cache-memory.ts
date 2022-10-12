@@ -1,4 +1,4 @@
-import { Cacheable, ICache } from './shared';
+import { Cacheable, ICache, MaybePromise } from './shared';
 
 export class InMemoryCache {
   public enclosedCache: ICache = (function () {
@@ -9,7 +9,7 @@ export class InMemoryCache {
         cache[key] = entry;
       },
 
-      get<T = Cacheable>(key: string) {
+      get<T = Cacheable>(key: string): MaybePromise<T | undefined> {
         const cacheEntry = cache[key] as T;
 
         if (!cacheEntry) {

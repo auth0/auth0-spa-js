@@ -1,7 +1,10 @@
 const singlePromiseMap: Record<string, Promise<any>> = {};
 
-export const singlePromise = <T>(cb: () => Promise<T>, key: string) => {
-  let promise = singlePromiseMap[key];
+export const singlePromise = <T>(
+  cb: () => Promise<T>,
+  key: string
+): Promise<T> => {
+  let promise: null | Promise<T> = singlePromiseMap[key];
   if (!promise) {
     promise = cb().finally(() => {
       delete singlePromiseMap[key];

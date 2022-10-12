@@ -101,7 +101,7 @@ export const openPopup = (url: string) => {
 
 export const runPopup = (config: PopupConfigOptions) => {
   return new Promise<AuthenticationResult>((resolve, reject) => {
-    let popupEventListener: EventListenerOrEventListenerObject;
+    let popupEventListener: (e: MessageEvent) => void;
 
     // Check each second if the popup is closed triggering a PopupCancelledError
     const popupTimer = setInterval(() => {
@@ -232,7 +232,10 @@ export const getDomain = (domainUrl: string) => {
 /**
  * @ignore
  */
-export const getTokenIssuer = (issuer: string, domainUrl: string) => {
+export const getTokenIssuer = (
+  issuer: string | undefined,
+  domainUrl: string
+) => {
   if (issuer) {
     return issuer.startsWith('https://') ? issuer : `https://${issuer}/`;
   }
@@ -240,7 +243,7 @@ export const getTokenIssuer = (issuer: string, domainUrl: string) => {
   return `${domainUrl}/`;
 };
 
-export const parseNumber = (value: any): number => {
+export const parseNumber = (value: any): number | undefined => {
   if (typeof value !== 'string') {
     return value;
   }
