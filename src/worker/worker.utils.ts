@@ -16,6 +16,7 @@ export const sendMessage = (message: WorkerRefreshTokenMessage, to: Worker) =>
       } else {
         resolve(event.data);
       }
+      messageChannel.port1.close();
     };
 
     to.postMessage(message, [messageChannel.port2]);
