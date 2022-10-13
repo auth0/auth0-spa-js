@@ -7,6 +7,7 @@
 **Fixed**
 
 - Ensure getTokenSilently works when mixing return types [\#1016](https://github.com/auth0/auth0-spa-js/pull/1016) ([frederikprijck](https://github.com/frederikprijck))
+- Close MessageChannel after receiving and processing message from worker [\#1023](https://github.com/auth0/auth0-spa-js/pull/1023) ([ewanharris](https://github.com/ewanharris))
 
 ## [v2.0.0-beta.0](https://github.com/auth0/auth0-spa-js/tree/v2.0.0-beta.0) (2022-10-01)
 
