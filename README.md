@@ -92,7 +92,7 @@ try {
 
 ### Logging In
 
-You can then use login using the `Auth0Client instance you created:
+You can then use login using the `Auth0Client` instance you created:
 
 ```html
 <button id="login">Click to Login</button>
