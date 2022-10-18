@@ -17,6 +17,7 @@ Auth0 SDK for Single Page Applications using [Authorization Code Grant Flow with
 - [Quickstart](https://auth0.com/docs/quickstart/spa/vanillajs/interactive) - our interactive guide for quickly adding login, logout and user information to your app using Auth0.
 - [Sample app](https://github.com/auth0-samples/auth0-javascript-samples/tree/master/01-Login) - a full-fledged sample app integrated with Auth0.
 - [FAQs](./FAQ.md) - frequently asked questions about auth0-spa-js SDK.
+- [Examples](./EXAMPLES.md) - code samples for common scenarios.
 - [Docs Site](https://auth0.com/docs) - explore our Docs site and learn more about Auth0.
 
 ## Getting Started
@@ -112,6 +113,8 @@ window.addEventListener('load', async () => {
   console.log(user);
 });
 ```
+
+For other comprehensive examples, see the [EXAMPLES.md](./EXAMPLES.md) document.
 
 ## API Reference
 
