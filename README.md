@@ -10,14 +10,14 @@ Auth0 SDK for Single Page Applications using [Authorization Code Grant Flow with
 
 > ℹ️ A new major version of Auth0-SPA-JS is available in **Beta**! Try it out today, any feedback is appreciated. Read all about it on [the `beta` branch](https://github.com/auth0/auth0-spa-js/tree/beta).
 
-:books: [Documentation](#documentation) - :rocket: [Getting Started](#getting-started) - :computer: [API Reference](#api-reference) - :speech_balloon: [Feedback](#feedback)
+📚 [Documentation](#documentation) - 🚀 [Getting Started](#getting-started) - 💻 [API Reference](#api-reference) - 💬 [Feedback](#feedback)
 
 ## Documentation
 
 - [Quickstart](https://auth0.com/docs/quickstart/spa/vanillajs/interactive) - our interactive guide for quickly adding login, logout and user information to your app using Auth0.
 - [Sample app](https://github.com/auth0-samples/auth0-javascript-samples/tree/master/01-Login) - a full-fledged sample app integrated with Auth0.
-- [FAQs](./FAQ.md) - frequently asked questions about auth0-spa-js SDK.
-- [Examples](./EXAMPLES.md) - code samples for common scenarios.
+- [FAQs](https://github.com/auth0/auth0-spa-js/blob/master/FAQ.md) - frequently asked questions about auth0-spa-js SDK.
+- [Examples](https://github.com/auth0/auth0-spa-js/blob/master/EXAMPLES.md) - code samples for common scenarios.
 - [Docs Site](https://auth0.com/docs) - explore our Docs site and learn more about Auth0.
 
 ## Getting Started
@@ -114,7 +114,7 @@ window.addEventListener('load', async () => {
 });
 ```
 
-For other comprehensive examples, see the [EXAMPLES.md](./EXAMPLES.md) document.
+For other comprehensive examples, see the [EXAMPLES.md](https://github.com/auth0/auth0-spa-js/blob/master/EXAMPLES.md) document.
 
 ## API Reference
 
@@ -133,7 +133,7 @@ We appreciate feedback and contribution to this repo! Before you get started, pl
 
 - [Auth0's general contribution guidelines](https://github.com/auth0/open-source-template/blob/master/GENERAL-CONTRIBUTING.md)
 - [Auth0's code of conduct guidelines](https://github.com/auth0/open-source-template/blob/master/CODE-OF-CONDUCT.md)
-- [This repo's contribution guide](./CONTRIBUTING.md)
+- [This repo's contribution guide](https://github.com/auth0/auth0-spa-js/blob/master/CONTRIBUTIN.md)
 
 ### Raise an issue
 
@@ -147,9 +147,9 @@ Please do not report security vulnerabilities on the public GitHub issue tracker
 
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="./auth0_dark_mode.png" width="150">
-    <source media="(prefers-color-scheme: light)" srcset="./auth0_light_mode.png" width="150">
-    <img alt="Auth0 Logo" src="./auth0_light_mode.png" width="150">
+    <source media="(prefers-color-scheme: dark)" srcset="https://cdn.auth0.com/website/sdks/logos/auth0_dark_mode.png" width="150">
+    <source media="(prefers-color-scheme: light)" srcset="https://cdn.auth0.com/website/sdks/logos/auth0_light_mode.png" width="150">
+    <img alt="Auth0 Logo" src="https://cdn.auth0.com/website/sdks/logos/auth0_light_mode.png" width="150">
   </picture>
 </p>
 <p align="center">
