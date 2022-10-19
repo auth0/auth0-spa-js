@@ -1,6 +1,4 @@
-# @auth0/auth0-spa-js
-
-Auth0 SDK for Single Page Applications using [Authorization Code Grant Flow with PKCE](https://auth0.com/docs/api-auth/tutorials/authorization-code-grant-pkce).
+![Auth0 SDK for Single Page Applications using Authorization Code Grant Flow with PKCE.](./banner.png)
 
 ![Release](https://img.shields.io/npm/v/@auth0/auth0-spa-js)
 [![Codecov](https://img.shields.io/codecov/c/github/auth0/auth0-spa-js)](https://codecov.io/gh/auth0/auth0-spa-js)

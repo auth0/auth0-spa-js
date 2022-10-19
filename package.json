@@ -10,7 +10,7 @@
   "scripts": {
     "dev": "rimraf dist && rollup -c --watch",
     "start": "npm run dev",
-    "docs": "typedoc --options ./typedoc.js --module commonjs",
+    "docs": "typedoc --options ./typedoc.js --module commonjs && cp ./banner.png ./docs",
     "build": "rimraf dist && rollup -m -c --environment NODE_ENV:production && npm run test:es-check",
     "build:stats": "npm run build -- --environment WITH_STATS:true && open stats.html",
     "lint:security": "eslint ./src --ext ts --no-eslintrc --config ./.eslintrc.security",
