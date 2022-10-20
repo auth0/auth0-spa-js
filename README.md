@@ -28,13 +28,13 @@
 Using [npm](https://npmjs.org) in your project directory run the following command:
 
 ```sh
-npm install @auth0/auth0-spa-js
+npm install @auth0/auth0-spa-js@beta
 ```
 
 From the CDN:
 
 ```html
-<script src="https://cdn.auth0.com/js/auth0-spa-js/1.22/auth0-spa-js.production.js"></script>
+<script src="https://cdn.auth0.com/js/auth0-spa-js/2.0/auth0-spa-js.production.js"></script>
 ```
 
 ### Configure Auth0
