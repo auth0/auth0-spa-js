@@ -1,37 +1,35 @@
-# @auth0/auth0-spa-js (Beta)
-
-Auth0 SDK for Single Page Applications using [Authorization Code Grant Flow with PKCE](https://auth0.com/docs/api-auth/tutorials/authorization-code-grant-pkce).
+![Auth0 SDK for Single Page Applications using Authorization Code Grant Flow with PKCE.](https://cdn.auth0.com/website/sdks/banners/spa-js-banner.png)
 
 > :warning: Please be aware that v2 is currently in [**Beta**](https://auth0.com/docs/troubleshoot/product-lifecycle/product-release-stages). Whilst we encourage you to test the update within your applications, we do no recommend using this version in production yet. Please follow the [migration guide](./MIGRATION_GUIDE.md) when updating your application.
 
 ![Stage: Beta Release](https://img.shields.io/badge/stage-fa-yellow)
-[![CircleCI](https://circleci.com/gh/auth0/auth0-spa-js.svg?style=svg)](https://circleci.com/gh/auth0/auth0-spa-js)
-![Release](https://img.shields.io/github/v/release/auth0/auth0-spa-js)
+![Release](https://img.shields.io/npm/v/@auth0/auth0-spa-js)
 [![Codecov](https://img.shields.io/codecov/c/github/auth0/auth0-spa-js)](https://codecov.io/gh/auth0/auth0-spa-js)
 ![Downloads](https://img.shields.io/npm/dw/@auth0/auth0-spa-js)
 [![License](https://img.shields.io/:license-mit-blue.svg?style=flat)](https://opensource.org/licenses/MIT)
+![CircleCI](https://img.shields.io/circleci/build/github/auth0/auth0-spa-js)
 
 > ℹ️ A new major version of Auth0-SPA-JS is available in **Beta**! Try it out today, any feedback is appreciated. Read all about it on [the `beta` branch](https://github.com/auth0/auth0-spa-js/tree/beta).
 
-## Table of Contents
-
-- [Documentation](#documentation)
-- [Installation](#installation)
-- [Getting Started](#getting-started)
-- [Contributing](#contributing)
-- [Support + Feedback](#support--feedback)
-- [Frequently Asked Questions](#frequently-asked-questions)
-- [Vulnerability Reporting](#vulnerability-reporting)
-- [What is Auth0](#what-is-auth0)
-- [License](#license)
+📚 [Documentation](#documentation) - 🚀 [Getting Started](#getting-started) - 💻 [API Reference](#api-reference) - 💬 [Feedback](#feedback)
 
 ## Documentation
 
-- [Documentation](https://auth0.com/docs/libraries/auth0-spa-js)
-- [API reference](https://auth0.github.io/auth0-spa-js/)
-- [Migrate from Auth0.js to the Auth0 Single Page App SDK](https://auth0.com/docs/libraries/auth0-spa-js/migrate-from-auth0js)
+- [Quickstart](https://auth0.com/docs/quickstart/spa/vanillajs/interactive) - our interactive guide for quickly adding login, logout and user information to your app using Auth0.
+- [Sample app](https://github.com/auth0-samples/auth0-javascript-samples/tree/master/01-Login) - a full-fledged sample app integrated with Auth0.
+- [FAQs](https://github.com/auth0/auth0-spa-js/blob/master/FAQ.md) - frequently asked questions about auth0-spa-js SDK.
+- [Examples](https://github.com/auth0/auth0-spa-js/blob/master/EXAMPLES.md) - code samples for common scenarios.
+- [Docs Site](https://auth0.com/docs) - explore our Docs site and learn more about Auth0.
 
-## Installation
+## Getting Started
+
+### Installation
+
+Using [npm](https://npmjs.org) in your project directory run the following command:
+
+```sh
+npm install @auth0/auth0-spa-js
+```
 
 From the CDN:
 
@@ -39,21 +37,7 @@ From the CDN:
 <script src="https://cdn.auth0.com/js/auth0-spa-js/1.22/auth0-spa-js.production.js"></script>
 ```
 
-Using [npm](https://npmjs.org):
-
-```sh
-npm install @auth0/auth0-spa-js@fa
-```
-
-Using [yarn](https://yarnpkg.com):
-
-```sh
-yarn add @auth0/auth0-spa-js@fa
-```
-
-## Getting Started
-
-### Auth0 Configuration
+### Configure Auth0
 
 Create a **Single Page Application** in the [Auth0 Dashboard](https://manage.auth0.com/#/applications).
 
@@ -75,7 +59,7 @@ Next, configure the following URLs for your application under the "Application U
 
 Take note of the **Client ID** and **Domain** values under the "Basic Information" section. You'll need these values in the next step.
 
-### Creating the client
+### Configure the SDK
 
 Create an `Auth0Client` instance before rendering or initializing your application. You should only have one instance of the client.
 
@@ -89,17 +73,6 @@ const auth0 = await createAuth0Client({
   authorizationParams: {
     redirect_uri: '<MY_CALLBACK_URL>'
   }
-});
-
-//with promises
-createAuth0Client({
-  domain: '<AUTH0_DOMAIN>',
-  clientId: '<AUTH0_CLIENT_ID>',
-  authorizationParams: {
-    redirect_uri: '<MY_CALLBACK_URL>'
-  }
-}).then(auth0 => {
-  //...
 });
 
 //or, you can just instantiate the client on it's own
@@ -123,15 +96,15 @@ try {
 }
 ```
 
-### 1 - Login
+### Logging In
+
+You can then use login using the `Auth0Client` instance you created:
 
 ```html
 <button id="login">Click to Login</button>
 ```
 
 ```js
-//with async/await
-
 //redirect to the Universal Login Page
 document.getElementById('login').addEventListener('click', async () => {
   await auth0.loginWithRedirect();
@@ -144,245 +117,22 @@ window.addEventListener('load', async () => {
   const user = await auth0.getUser();
   console.log(user);
 });
-
-//with promises
-
-//redirect to the Universal Login Page
-document.getElementById('login').addEventListener('click', () => {
-  auth0.loginWithRedirect().catch(() => {
-    //error while redirecting the user
-  });
-});
-
-//in your callback route (<MY_CALLBACK_URL>)
-window.addEventListener('load', () => {
-  auth0.handleRedirectCallback().then(redirectResult => {
-    //logged in. you can get the user profile like this:
-    auth0.getUser().then(user => {
-      console.log(user);
-    });
-  });
-});
 ```
 
-### 2 - Calling an API
+For other comprehensive examples, see the [EXAMPLES.md](https://github.com/auth0/auth0-spa-js/blob/master/EXAMPLES.md) document.
 
-```html
-<button id="call-api">Call an API</button>
-```
+## API Reference
 
-```js
-//with async/await
-document.getElementById('call-api').addEventListener('click', async () => {
-  const accessToken = await auth0.getTokenSilently();
-  const result = await fetch('https://myapi.com', {
-    method: 'GET',
-    headers: {
-      Authorization: `Bearer ${accessToken}`
-    }
-  });
-  const data = await result.json();
-  console.log(data);
-});
+Explore API Methods available in auth0-spa-js.
 
-//with promises
-document.getElementById('call-api').addEventListener('click', () => {
-  auth0
-    .getTokenSilently()
-    .then(accessToken =>
-      fetch('https://myapi.com', {
-        method: 'GET',
-        headers: {
-          Authorization: `Bearer ${accessToken}`
-        }
-      })
-    )
-    .then(result => result.json())
-    .then(data => {
-      console.log(data);
-    });
-});
-```
+- [Configuration Options](https://auth0.github.io/auth0-spa-js/interfaces/auth0clientoptions.html)
 
-### 3 - Logout
+- [Auth0Client](https://auth0.github.io/auth0-spa-js/classes/auth0client.html)
+- [createAuth0Client](https://auth0.github.io/auth0-spa-js/globals.html#createauth0client)
 
-```html
-<button id="logout">Logout</button>
-```
+## Feedback
 
-```js
-import { createAuth0Client } from '@auth0/auth0-spa-js';
-
-document.getElementById('logout').addEventListener('click', () => {
-  auth0.logout();
-});
-```
-
-You can redirect users back to your app after logging out. This URL must appear in the **Allowed Logout URLs** setting for the app in your [Auth0 Dashboard](https://manage.auth0.com):
-
-```js
-auth0.logout({
-  returnTo: 'https://your.custom.url.example.com/'
-});
-```
-
-### Data caching options
-
-The SDK can be configured to cache ID tokens and access tokens either in memory or in local storage. The default is in memory. This setting can be controlled using the `cacheLocation` option when creating the Auth0 client.
-
-To use the in-memory mode, no additional options need are required as this is the default setting. To configure the SDK to cache data using local storage, set `cacheLocation` as follows:
-
-```js
-await createAuth0Client({
-  domain: '<AUTH0_DOMAIN>',
-  clientId: '<AUTH0_CLIENT_ID>',,
-  cacheLocation: 'localstorage' // valid values are: 'memory' or 'localstorage',
-  authorizationParams: {
-    redirect_uri: '<MY_CALLBACK_URL>'
-  }
-});
-```
-
-**Important:** This feature will allow the caching of data **such as ID and access tokens** to be stored in local storage. Exercising this option changes the security characteristics of your application and **should not be used lightly**. Extra care should be taken to mitigate against XSS attacks and minimize the risk of tokens being stolen from local storage.
-
-#### Creating a custom cache
-
-The SDK can be configured to use a custom cache store that is implemented by your application. This is useful if you are using this SDK in an environment where more secure token storage is available, such as potentially a hybrid mobile app.
-
-To do this, provide an object to the `cache` property of the SDK configuration.
-
-The object should implement the following functions. Note that all of these functions can optionally return a Promise or a static value.
-
-| Signature                        | Return type                    | Description                                                                                                                                                                                                                                                                                       |
-| -------------------------------- | ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `get(key)`                       | Promise<object> or object      | Returns the item from the cache with the specified key, or `undefined` if it was not found                                                                                                                                                                                                        |
-| `set(key: string, object: any) ` | Promise<void> or void          | Sets an item into the cache                                                                                                                                                                                                                                                                       |
-| `remove(key)`                    | Promise<void> or void          | Removes a single item from the cache at the specified key, or no-op if the item was not found                                                                                                                                                                                                     |
-| `allKeys()`                      | Promise<string[]> or string [] | (optional) Implement this if your cache has the ability to return a list of all keys. Otherwise, the SDK internally records its own key manifest using your cache. **Note**: if you only want to ensure you only return keys used by this SDK, the keys we use are prefixed with `@@auth0spajs@@` |
-
-Here's an example of a custom cache implementation that uses `sessionStorage` to store tokens and apply it to the Auth0 SPA SDK:
-
-```js
-const sessionStorageCache = {
-  get: function (key) {
-    return JSON.parse(sessionStorage.getItem(key));
-  },
-
-  set: function (key, value) {
-    sessionStorage.setItem(key, JSON.stringify(value));
-  },
-
-  remove: function (key) {
-    sessionStorage.removeItem(key);
-  },
-
-  // Optional
-  allKeys: function () {
-    return Object.keys(sessionStorage);
-  }
-};
-
-await createAuth0Client({
-  domain: '<AUTH0_DOMAIN>',
-  clientId: '<AUTH0_CLIENT_ID>',
-  cache: sessionStorageCache,
-  authorizationParams: {
-    redirect_uri: '<MY_CALLBACK_URL>'
-  }
-});
-```
-
-**Note:** The `cache` property takes precedence over the `cacheLocation` property if both are set. A warning is displayed in the console if this scenario occurs.
-
-We also export the internal `InMemoryCache` and `LocalStorageCache` implementations, so you can wrap your custom cache around these implementations if you wish.
-
-### Refresh Tokens
-
-Refresh tokens can be used to request new access tokens. [Read more about how our refresh tokens work for browser-based applications](https://auth0.com/docs/tokens/concepts/refresh-token-rotation) to help you decide whether or not you need to use them.
-
-To enable the use of refresh tokens, set the `useRefreshTokens` option to `true`:
-
-```js
-await createAuth0Client({
-  domain: '<AUTH0_DOMAIN>',
-  clientId: '<AUTH0_CLIENT_ID>',
-  useRefreshTokens: true,
-  authorizationParams: {
-    redirect_uri: '<MY_CALLBACK_URL>'
-  }
-});
-```
-
-Using this setting will cause the SDK to automatically send the `offline_access` scope to the authorization server. Refresh tokens will then be used to exchange for new access tokens instead of using a hidden iframe, and calls the `/oauth/token` endpoint directly. This means that in most cases the SDK does not rely on third-party cookies when using refresh tokens.
-
-**Note** This configuration option requires Rotating Refresh Tokens to be [enabled for your Auth0 Tenant](https://auth0.com/docs/tokens/guides/configure-refresh-token-rotation).
-
-#### Refresh Token fallback
-
-In all cases where a refresh token is not available, the SDK falls back to the legacy technique of using a hidden iframe with `prompt=none` to try and get a new access token and refresh token. This scenario would occur for example if you are using the in-memory cache and you have refreshed the page. In this case, any refresh token that was stored previously would be lost.
-
-If the fallback mechanism fails, a `login_required` error will be thrown and could be handled in order to put the user back through the authentication process.
-
-**Note**: This fallback mechanism does still require access to the Auth0 session cookie, so if third-party cookies are being blocked then this fallback will not work and the user must re-authenticate in order to get a new refresh token.
-
-### Organizations
-
-[Organizations](https://auth0.com/docs/organizations) is a set of features that provide better support for developers who build and maintain SaaS and Business-to-Business (B2B) applications.
-
-#### Log in to an organization
-
-Log in to an organization by specifying the `organization` parameter when setting up the client:
-
-```js
-createAuth0Client({
-  domain: '<AUTH0_DOMAIN>',
-  clientId: '<AUTH0_CLIENT_ID>',
-  authorizationParams: {
-    organization: '<MY_ORG_ID>',
-    redirect_uri: '<MY_CALLBACK_URL>'
-  }
-});
-```
-
-You can also specify the organization when logging in:
-
-```js
-// Using a redirect
-client.loginWithRedirect({
-  authorizationParams: {
-    organization: '<MY_ORG_ID>'
-  }
-});
-
-// Using a popup window
-client.loginWithPopup({
-  authorizationParams: {
-    organization: '<MY_ORG_ID>'
-  }
-});
-```
-
-#### Accept user invitations
-
-Accept a user invitation through the SDK by creating a route within your application that can handle the user invitation URL, and log the user in by passing the `organization` and `invitation` parameters from this URL. You can either use `loginWithRedirect` or `loginWithPopup` as needed.
-
-```js
-const url = new URL(invitationUrl);
-const params = new URLSearchParams(url.search);
-const organization = params.get('organization');
-const invitation = params.get('invitation');
-
-if (organization && invitation) {
-  client.loginWithRedirect({
-    authorizationParams: {
-      invitation,
-      organization
-    }
-  });
-}
-```
-
-## Contributing
+### Contributing
 
 We appreciate feedback and contribution to this repo! Before you get started, please see the following:
 
@@ -390,31 +140,26 @@ We appreciate feedback and contribution to this repo! Before you get started, pl
 - [Auth0's code of conduct guidelines](https://github.com/auth0/open-source-template/blob/master/CODE-OF-CONDUCT.md)
 - [This repo's contribution guide](https://github.com/auth0/auth0-spa-js/blob/master/CONTRIBUTING.md)
 
-## Support + Feedback
+### Raise an issue
 
-For support or to provide feedback, please [raise an issue on our issue tracker](https://github.com/auth0/auth0-spa-js/issues).
+To provide feedback or report a bug, please [raise an issue on our issue tracker](https://github.com/auth0/auth0-spa-js/issues).
 
-## Frequently Asked Questions
-
-For a rundown of common issues you might encounter when using the SDK, please check out [the FAQ](https://github.com/auth0/auth0-spa-js/blob/master/FAQ.md).
-
-## Vulnerability Reporting
+### Vulnerability Reporting
 
 Please do not report security vulnerabilities on the public GitHub issue tracker. The [Responsible Disclosure Program](https://auth0.com/whitehat) details the procedure for disclosing security issues.
 
 ## What is Auth0?
 
-Auth0 helps you to easily:
-
-- implement authentication with multiple identity providers, including social (e.g., Google, Facebook, Microsoft, LinkedIn, GitHub, Twitter, etc), or enterprise (e.g., Windows Azure AD, Google Apps, Active Directory, ADFS, SAML, etc.)
-- log in users with username/password databases, passwordless, or multi-factor authentication
-- link multiple user accounts together
-- generate signed JSON Web Tokens to authorize your API calls and flow the user identity securely
-- access demographics and analytics detailing how, when, and where users are logging in
-- enrich user profiles from other data sources using customizable JavaScript rules
-
-[Why Auth0?](https://auth0.com/why-auth0)
-
-## License
-
-This project is licensed under the MIT license. See the [LICENSE](https://github.com/auth0/auth0-spa-js/blob/master/LICENSE) file for more info.
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://cdn.auth0.com/website/sdks/logos/auth0_dark_mode.png" width="150">
+    <source media="(prefers-color-scheme: light)" srcset="https://cdn.auth0.com/website/sdks/logos/auth0_light_mode.png" width="150">
+    <img alt="Auth0 Logo" src="https://cdn.auth0.com/website/sdks/logos/auth0_light_mode.png" width="150">
+  </picture>
+</p>
+<p align="center">
+  Auth0 is an easy to implement, adaptable authentication and authorization platform. To learn more checkout <a href="https://auth0.com/why-auth0">Why Auth0?</a>
+</p>
+<p align="center">
+  This project is licensed under the MIT license. See the <a href="https://github.com/auth0/auth0-spa-js/blob/master/LICENSE"> LICENSE</a> file for more info.
+</p>
