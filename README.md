@@ -9,8 +9,6 @@
 [![License](https://img.shields.io/:license-mit-blue.svg?style=flat)](https://opensource.org/licenses/MIT)
 ![CircleCI](https://img.shields.io/circleci/build/github/auth0/auth0-spa-js)
 
-> ℹ️ A new major version of Auth0-SPA-JS is available in **Beta**! Try it out today, any feedback is appreciated. Read all about it on [the `beta` branch](https://github.com/auth0/auth0-spa-js/tree/beta).
-
 📚 [Documentation](#documentation) - 🚀 [Getting Started](#getting-started) - 💻 [API Reference](#api-reference) - 💬 [Feedback](#feedback)
 
 ## Documentation
