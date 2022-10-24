@@ -162,7 +162,7 @@ Log in to an organization by specifying the `organization` parameter when settin
 ```js
 await createAuth0Client({
   domain: '<AUTH0_DOMAIN>',
-  client_id: '<AUTH0_CLIENT_ID>',
+  clientId: '<AUTH0_CLIENT_ID>',
   organization: '<MY_ORG_ID>',
   authorizationParams: {
     redirect_uri: '<MY_CALLBACK_URL>'
@@ -206,18 +206,4 @@ if (organization && invitation) {
     }
   });
 
-```
-
-## Advanced options
-
-Advanced options can be set by specifying the `advancedOptions` property when configuring `Auth0Client`. Learn about the complete set of advanced options in the [API documentation](https://auth0.github.io/auth0-spa-js/interfaces/advancedoptions.html)
-
-```js
-createAuth0Client({
-  domain: '<AUTH0_DOMAIN>',
-  client_id: '<AUTH0_CLIENT_ID>',
-  advancedOptions: {
-    defaultScope: 'email' // change the scopes that are applied to every authz request. **Note**: `openid` is always specified regardless of this setting
-  }
-});
 ```
