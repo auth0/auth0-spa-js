@@ -56,7 +56,7 @@ export const CookieStorage = {
       cookieAttributes.domain = options.cookieDomain;
     }
 
-    Cookies.remove(key ,cookieAttributes);
+    Cookies.remove(key, cookieAttributes);
   }
 } as ClientStorage;
 
@@ -106,7 +106,7 @@ export const CookieStorageWithLegacySameSite = {
       cookieAttributes.domain = options.cookieDomain;
     }
 
-    Cookies.remove(key ,cookieAttributes);
+    Cookies.remove(key, cookieAttributes);
     CookieStorage.remove(key, options);
     CookieStorage.remove(`${LEGACY_PREFIX}${key}`, options);
   }
@@ -117,14 +117,14 @@ export const CookieStorageWithLegacySameSite = {
  */
 export const SessionStorage = {
   get<T extends Object>(key: string) {
-    /* istanbul ignore next */
+    /* c8 ignore next 3 */
     if (typeof sessionStorage === 'undefined') {
       return;
     }
 
     const value = sessionStorage.getItem(key);
 
-    if (typeof value === 'undefined') {
+    if (value == null) {
       return;
     }
 

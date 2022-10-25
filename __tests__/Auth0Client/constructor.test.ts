@@ -1,9 +1,8 @@
-import 'fast-text-encoding';
-import unfetch from 'unfetch';
 import { verify } from '../../src/jwt';
 import { MessageChannel } from 'worker_threads';
 import * as utils from '../../src/utils';
 import * as scope from '../../src/scope';
+import { expect } from '@jest/globals';
 
 // @ts-ignore
 
@@ -12,13 +11,12 @@ import { assertUrlEquals, loginWithRedirectFn, setupFn } from './helpers';
 import { TEST_CLIENT_ID, TEST_CODE_CHALLENGE, TEST_DOMAIN } from '../constants';
 import { ICache } from '../../src/cache';
 
-jest.mock('unfetch');
 jest.mock('es-cookie');
 jest.mock('../../src/jwt');
 jest.mock('../../src/worker/token.worker');
 
 const mockWindow = <any>global;
-const mockFetch = (mockWindow.fetch = <jest.Mock>unfetch);
+const mockFetch = <jest.Mock>mockWindow.fetch;
 const mockVerify = <jest.Mock>verify;
 
 const mockCache: ICache = {
@@ -79,30 +77,34 @@ describe('Auth0Client', () => {
     it('automatically adds the offline_access scope during construction', () => {
       const auth0 = setup({
         useRefreshTokens: true,
-        scope: 'test-scope'
+        authorizationParams: {
+          scope: 'profile email test-scope'
+        }
       });
 
-      expect((<any>auth0).scope).toBe('test-scope offline_access');
+      expect((<any>auth0).scope).toBe(
+        'openid profile email test-scope offline_access'
+      );
     });
 
     it('ensures the openid scope is defined when customizing default scopes', () => {
       const auth0 = setup({
-        advancedOptions: {
-          defaultScope: 'test-scope'
+        authorizationParams: {
+          scope: 'test-scope'
         }
       });
 
-      expect((<any>auth0).defaultScope).toBe('openid test-scope');
+      expect((<any>auth0).scope).toBe('openid test-scope');
     });
 
     it('allows an empty custom default scope', () => {
       const auth0 = setup({
-        advancedOptions: {
-          defaultScope: null
+        authorizationParams: {
+          scope: null
         }
       });
 
-      expect((<any>auth0).defaultScope).toBe('openid');
+      expect((<any>auth0).scope).toBe('openid');
     });
 
     it('should create issuer from domain', () => {
@@ -164,58 +166,6 @@ describe('Auth0Client', () => {
       await loginWithRedirectFn(mockWindow, mockFetch)(auth0);
 
       expect(mockCache.set).toHaveBeenCalled();
-    });
-  });
-
-  describe('buildLogoutUrl', () => {
-    it('creates correct query params with empty options', async () => {
-      const auth0 = setup();
-
-      const url = auth0.buildLogoutUrl();
-
-      assertUrlEquals(url, TEST_DOMAIN, '/v2/logout', {
-        client_id: TEST_CLIENT_ID
-      });
-    });
-
-    it('creates correct query params with `options.client_id` is null', async () => {
-      const auth0 = setup();
-
-      const url = new URL(auth0.buildLogoutUrl({ client_id: null }));
-      expect(url.searchParams.get('client_id')).toBeNull();
-    });
-
-    it('creates correct query params with `options.client_id` defined', async () => {
-      const auth0 = setup();
-
-      const url = auth0.buildLogoutUrl({ client_id: 'another-client-id' });
-
-      assertUrlEquals(url, TEST_DOMAIN, '/v2/logout', {
-        client_id: 'another-client-id'
-      });
-    });
-
-    it('creates correct query params with `options.returnTo` defined', async () => {
-      const auth0 = setup();
-
-      const url = auth0.buildLogoutUrl({
-        returnTo: 'https://return.to',
-        client_id: null
-      });
-
-      assertUrlEquals(url, TEST_DOMAIN, '/v2/logout', {
-        returnTo: 'https://return.to'
-      });
-    });
-
-    it('creates correct query params when `options.federated` is true', async () => {
-      const auth0 = setup();
-
-      const url = auth0.buildLogoutUrl({ federated: true, client_id: null });
-
-      assertUrlEquals(url, TEST_DOMAIN, '/v2/logout', {
-        federated: ''
-      });
     });
   });
 });

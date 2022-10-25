@@ -8,12 +8,12 @@ interface Transaction {
   audience: string;
   appState?: any;
   code_verifier: string;
-  redirect_uri: string;
+  redirect_uri?: string;
   organizationId?: string;
   state?: string;
 }
 
-export default class TransactionManager {
+export class TransactionManager {
   private transaction: Transaction | undefined;
   private storageKey: string;
 

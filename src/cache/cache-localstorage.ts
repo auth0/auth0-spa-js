@@ -1,11 +1,11 @@
-import { ICache, Cacheable, CACHE_KEY_PREFIX } from './shared';
+import { ICache, Cacheable, CACHE_KEY_PREFIX, MaybePromise } from './shared';
 
 export class LocalStorageCache implements ICache {
   public set<T = Cacheable>(key: string, entry: T) {
     localStorage.setItem(key, JSON.stringify(entry));
   }
 
-  public get<T = Cacheable>(key: string) {
+  public get<T = Cacheable>(key: string): MaybePromise<T | undefined> {
     const json = window.localStorage.getItem(key);
 
     if (!json) return;
@@ -13,8 +13,8 @@ export class LocalStorageCache implements ICache {
     try {
       const payload = JSON.parse(json) as T;
       return payload;
+      /* c8 ignore next 3 */
     } catch (e) {
-      /* istanbul ignore next */
       return;
     }
   }

@@ -1,10 +1,9 @@
-import 'fast-text-encoding';
-import unfetch from 'unfetch';
 import { verify } from '../../src/jwt';
 import { MessageChannel } from 'worker_threads';
 import * as utils from '../../src/utils';
 import * as scope from '../../src/scope';
 import * as http from '../../src/http';
+import { expect } from '@jest/globals';
 
 // @ts-ignore
 
@@ -32,13 +31,12 @@ import {
 
 import { DEFAULT_AUTH0_CLIENT } from '../../src/constants';
 
-jest.mock('unfetch');
 jest.mock('es-cookie');
 jest.mock('../../src/jwt');
 jest.mock('../../src/worker/token.worker');
 
 const mockWindow = <any>global;
-const mockFetch = (mockWindow.fetch = <jest.Mock>unfetch);
+const mockFetch = <jest.Mock>mockWindow.fetch;
 const mockVerify = <jest.Mock>verify;
 
 jest
@@ -144,7 +142,7 @@ describe('Auth0Client', () => {
 
       jest.spyOn(auth0['transactionManager'], 'remove');
       await loginWithRedirect(auth0);
-      expect(auth0['transactionManager'].remove).toHaveBeenCalledWith();
+      expect(auth0['transactionManager'].remove).toHaveBeenCalled();
     });
 
     it('should clear the transaction data when the /authorize call redirects with an error param', async () => {
@@ -167,7 +165,7 @@ describe('Auth0Client', () => {
       }
 
       expect(error).toBeDefined();
-      expect(auth0['transactionManager'].remove).toHaveBeenCalledWith();
+      expect(auth0['transactionManager'].remove).toHaveBeenCalled();
     });
 
     it('should throw an error if the /authorize call redirects with no params', async () => {
@@ -312,6 +310,35 @@ describe('Auth0Client', () => {
     });
   });
 
+  it('calls oauth/token without redirect uri if not set in transaction when not using useFormData', async () => {
+    window.history.pushState(
+      {},
+      'Test',
+      `#/callback/?code=${TEST_CODE}&state=${TEST_ENCODED_STATE}`
+    );
+
+    mockFetch.mockResolvedValueOnce(
+      fetchResponse(true, {
+        id_token: TEST_ID_TOKEN,
+        refresh_token: TEST_REFRESH_TOKEN,
+        access_token: TEST_ACCESS_TOKEN,
+        expires_in: 86400
+      })
+    );
+
+    const auth0 = setup({
+      useFormData: false
+    });
+    delete auth0['options']['authorizationParams']?.['redirect_uri'];
+
+    await loginWithRedirect(auth0);
+
+    expect(mockFetch.mock.calls[0][0]).toBe('https://auth0_domain/oauth/token');
+
+    const fetchBody = JSON.parse(mockFetch.mock.calls[0][1].body);
+    expect(fetchBody.redirect_uri).toBeUndefined();
+  });
+
   it('calls oauth/token without redirect uri if not set in transaction', async () => {
     window.history.pushState(
       {},
@@ -329,14 +356,26 @@ describe('Auth0Client', () => {
     );
 
     const auth0 = setup();
-    delete auth0['options']['redirect_uri'];
+    delete auth0['options']['authorizationParams']?.['redirect_uri'];
 
     await loginWithRedirect(auth0);
 
-    expect(mockFetch.mock.calls[0][0]).toBe('https://auth0_domain/oauth/token');
-
-    const fetchBody = JSON.parse(mockFetch.mock.calls[0][1].body);
-    expect(fetchBody.redirect_uri).toBeUndefined();
+    assertPostFn(mockFetch)(
+      'https://auth0_domain/oauth/token',
+      {
+        redirect_uri: undefined,
+        client_id: TEST_CLIENT_ID,
+        code_verifier: TEST_CODE_VERIFIER,
+        grant_type: 'authorization_code',
+        code: TEST_CODE
+      },
+      {
+        'Auth0-Client': btoa(JSON.stringify(DEFAULT_AUTH0_CLIENT)),
+        'Content-Type': 'application/x-www-form-urlencoded'
+      },
+      0,
+      false
+    );
   });
 
   it('calls oauth/token and uses form data if specified in the options', async () => {
@@ -355,9 +394,7 @@ describe('Auth0Client', () => {
       })
     );
 
-    const auth0 = setup({
-      useFormData: true
-    });
+    const auth0 = setup();
 
     await loginWithRedirect(auth0);
 
@@ -421,7 +458,7 @@ describe('Auth0Client', () => {
         }
       );
 
-      expect(auth0['transactionManager'].remove).toHaveBeenCalledWith();
+      expect(auth0['transactionManager'].remove).toHaveBeenCalled();
     });
 
     it('should clear the transaction data when the /authorize call redirects with an error param', async () => {
@@ -445,7 +482,7 @@ describe('Auth0Client', () => {
       }
 
       expect(error).toBeDefined();
-      expect(auth0['transactionManager'].remove).toHaveBeenCalledWith();
+      expect(auth0['transactionManager'].remove).toHaveBeenCalled();
     });
 
     it('should throw an error if the /authorize call redirects with no params', async () => {

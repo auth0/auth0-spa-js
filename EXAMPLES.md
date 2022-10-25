@@ -23,7 +23,9 @@ You can redirect users back to your app after logging out. This URL must appear 
 
 ```js
 auth0.logout({
-  returnTo: 'https://your.custom.url.example.com/'
+  logoutParams: {
+    returnTo: 'https://your.custom.url.example.com/'
+  }
 });
 ```
 
@@ -59,9 +61,11 @@ To enable the use of refresh tokens, set the `useRefreshTokens` option to `true`
 ```js
 await createAuth0Client({
   domain: '<AUTH0_DOMAIN>',
-  client_id: '<AUTH0_CLIENT_ID>',
-  redirect_uri: '<MY_CALLBACK_URL>',
-  useRefreshTokens: true
+  clientId: '<AUTH0_CLIENT_ID>',
+  useRefreshTokens: true,
+  authorizationParams: {
+    redirect_uri: '<MY_CALLBACK_URL>'
+  }
 });
 ```
 
@@ -86,9 +90,11 @@ To use the in-memory mode, no additional options need are required as this is th
 ```js
 await createAuth0Client({
   domain: '<AUTH0_DOMAIN>',
-  client_id: '<AUTH0_CLIENT_ID>',
-  redirect_uri: '<MY_CALLBACK_URL>',
-  cacheLocation: 'localstorage' // valid values are: 'memory' or 'localstorage'
+  clientId: '<AUTH0_CLIENT_ID>',,
+  cacheLocation: 'localstorage' // valid values are: 'memory' or 'localstorage',
+  authorizationParams: {
+    redirect_uri: '<MY_CALLBACK_URL>'
+  }
 });
 ```
 
@@ -133,9 +139,11 @@ const sessionStorageCache = {
 
 await createAuth0Client({
   domain: '<AUTH0_DOMAIN>',
-  client_id: '<AUTH0_CLIENT_ID>',
-  redirect_uri: '<MY_CALLBACK_URL>',
-  cache: sessionStorageCache
+  clientId: '<AUTH0_CLIENT_ID>',
+  cache: sessionStorageCache,
+  authorizationParams: {
+    redirect_uri: '<MY_CALLBACK_URL>'
+  }
 });
 ```
 
@@ -152,11 +160,13 @@ We also export the internal `InMemoryCache` and `LocalStorageCache` implementati
 Log in to an organization by specifying the `organization` parameter when setting up the client:
 
 ```js
-createAuth0Client({
+await createAuth0Client({
   domain: '<AUTH0_DOMAIN>',
-  client_id: '<AUTH0_CLIENT_ID>',
-  redirect_uri: '<MY_CALLBACK_URL>',
-  organization: '<MY_ORG_ID>'
+  clientId: '<AUTH0_CLIENT_ID>',
+  organization: '<MY_ORG_ID>',
+  authorizationParams: {
+    redirect_uri: '<MY_CALLBACK_URL>'
+  }
 });
 ```
 
@@ -164,13 +174,17 @@ You can also specify the organization when logging in:
 
 ```js
 // Using a redirect
-client.loginWithRedirect({
-  organization: '<MY_ORG_ID>'
+await client.loginWithRedirect({
+  authorizationParams: {
+    organization: '<MY_ORG_ID>'
+  }
 });
 
 // Using a popup window
-client.loginWithPopup({
-  organization: '<MY_ORG_ID>'
+await client.loginWithPopup({
+  authorizationParams: {
+    organization: '<MY_ORG_ID>'
+  }
 });
 ```
 
@@ -185,23 +199,11 @@ const organization = params.get('organization');
 const invitation = params.get('invitation');
 
 if (organization && invitation) {
-  client.loginWithRedirect({
-    organization,
-    invitation
+  await client.loginWithRedirect({
+    authorizationParams: {
+      invitation,
+      organization
+    }
   });
-}
-```
 
-## Advanced options
-
-Advanced options can be set by specifying the `advancedOptions` property when configuring `Auth0Client`. Learn about the complete set of advanced options in the [API documentation](https://auth0.github.io/auth0-spa-js/interfaces/advancedoptions.html)
-
-```js
-createAuth0Client({
-  domain: '<AUTH0_DOMAIN>',
-  client_id: '<AUTH0_CLIENT_ID>',
-  advancedOptions: {
-    defaultScope: 'email' // change the scopes that are applied to every authz request. **Note**: `openid` is always specified regardless of this setting
-  }
-});
 ```

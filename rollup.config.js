@@ -13,7 +13,7 @@ import { createApp } from './scripts/oidc-provider';
 
 import pkg from './package.json';
 
-const EXPORT_NAME = 'createAuth0Client';
+const EXPORT_NAME = 'auth0';
 
 const isProduction = process.env.NODE_ENV === 'production';
 const shouldGenerateStats = process.env.WITH_STATS === 'true';
@@ -47,7 +47,10 @@ const getPlugins = shouldMinify => {
         }
       }
     }),
-    replace({ 'process.env.NODE_ENV': `'${process.env.NODE_ENV}'` }),
+    replace({
+      'process.env.NODE_ENV': `'${process.env.NODE_ENV}'`,
+      preventAssignment: false
+    }),
     shouldMinify
       ? terser()
       : terser({
@@ -64,16 +67,12 @@ const getStatsPlugins = () => {
   return [visualizer(visualizerOptions), analyze({ summaryOnly: true })];
 };
 
-const footer = `('Auth0Client' in this) && this.console && this.console.warn && this.console.warn('Auth0Client already declared on the global namespace');
-this && this.${EXPORT_NAME} && (this.Auth0Client = this.Auth0Client || this.${EXPORT_NAME}.Auth0Client);`;
-
 let bundles = [
   {
-    input: 'src/index.cjs.ts',
+    input: 'src/index.ts',
     output: {
       name: EXPORT_NAME,
       file: 'dist/auth0-spa-js.development.js',
-      footer,
       format: 'umd',
       sourcemap: true
     },
@@ -98,12 +97,11 @@ let bundles = [
 if (isProduction) {
   bundles = bundles.concat(
     {
-      input: 'src/index.cjs.ts',
+      input: 'src/index.ts',
       output: [
         {
           name: EXPORT_NAME,
           file: 'dist/auth0-spa-js.production.js',
-          footer,
           format: 'umd'
         }
       ],
@@ -120,7 +118,7 @@ if (isProduction) {
       plugins: getPlugins(isProduction)
     },
     {
-      input: 'src/index.cjs.ts',
+      input: 'src/index.ts',
       output: [
         {
           name: EXPORT_NAME,
@@ -128,8 +126,7 @@ if (isProduction) {
           format: 'cjs'
         }
       ],
-      plugins: getPlugins(false),
-      external: Object.keys(pkg.dependencies)
+      plugins: getPlugins(false)
     }
   );
 }

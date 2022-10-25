@@ -9,7 +9,7 @@ import {
 } from '../../src';
 
 import * as utils from '../../src/utils';
-import Auth0Client from '../../src/Auth0Client';
+import { Auth0Client } from '../../src/Auth0Client';
 
 import {
   TEST_ACCESS_TOKEN,
@@ -21,6 +21,7 @@ import {
   TEST_REFRESH_TOKEN,
   TEST_STATE
 } from '../constants';
+import { expect } from '@jest/globals';
 
 const authorizationResponse: AuthenticationResult = {
   code: 'my_code',
@@ -105,16 +106,21 @@ export const fetchResponse = (ok, json) =>
 
 export const setupFn = (mockVerify: jest.Mock) => {
   return (config?: Partial<Auth0ClientOptions>, claims?: Partial<IdToken>) => {
-    const auth0 = new Auth0Client(
-      Object.assign(
-        {
-          domain: TEST_DOMAIN,
-          client_id: TEST_CLIENT_ID,
-          redirect_uri: TEST_REDIRECT_URI
-        },
-        config
-      )
-    );
+    const options: Auth0ClientOptions = {
+      domain: TEST_DOMAIN,
+      clientId: TEST_CLIENT_ID,
+      authorizationParams: {
+        redirect_uri: TEST_REDIRECT_URI
+      }
+    };
+
+    Object.assign(options.authorizationParams, config?.authorizationParams);
+
+    delete config?.authorizationParams;
+
+    Object.assign(options, config);
+
+    const auth0 = new Auth0Client(options);
 
     mockVerify.mockReturnValue({
       claims: Object.assign(
@@ -188,9 +194,9 @@ export const loginWithRedirectFn = (mockWindow, mockFetch) => {
     } = processDefaultLoginWithRedirectOptions(testConfig);
     await auth0.loginWithRedirect(options);
 
-    const redirectMethod = options?.redirectMethod || 'assign';
-
-    expect(mockWindow.location[redirectMethod]).toHaveBeenCalled();
+    if (!options?.onRedirect) {
+      expect(mockWindow.location.assign).toHaveBeenCalled();
+    }
 
     if (error && errorDescription) {
       window.history.pushState(

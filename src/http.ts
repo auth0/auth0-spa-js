@@ -1,5 +1,3 @@
-import fetch from 'unfetch';
-
 import {
   DEFAULT_FETCH_TIMEOUT_MS,
   DEFAULT_SILENT_TOKEN_RETRY_COUNT
@@ -51,7 +49,7 @@ const fetchWithWorker = async (
   scope: string,
   fetchOptions: FetchOptions,
   timeout: number,
-  worker?: Worker,
+  worker: Worker,
   useFormData?: boolean
 ) => {
   return sendMessage(
@@ -95,7 +93,7 @@ export const switchFetch = async (
 
 export async function getJSON<T>(
   url: string,
-  timeout: number,
+  timeout: number | undefined,
   audience: string,
   scope: string,
   options: FetchOptions,
@@ -128,9 +126,6 @@ export async function getJSON<T>(
   }
 
   if (fetchError) {
-    // unfetch uses XMLHttpRequest under the hood which throws
-    // ProgressEvents on error, which don't have message properties
-    fetchError.message = fetchError.message || 'Failed to fetch';
     throw fetchError;
   }
 

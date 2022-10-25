@@ -1,11 +1,9 @@
-import unfetch from 'unfetch';
 import { MISSING_REFRESH_TOKEN_ERROR_MESSAGE } from '../src/constants';
 import { assertPostFn } from './Auth0Client/helpers';
 import * as utils from '../src/utils';
+import { expect } from '@jest/globals';
 
-jest.mock('unfetch');
-
-const mockFetch = unfetch as jest.Mock;
+const mockFetch = <jest.Mock>window.fetch;
 
 describe('token worker', () => {
   let originalFetch;

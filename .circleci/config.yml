@@ -1,11 +1,11 @@
 version: 2.1
 orbs:
-  ship: auth0/ship@0.7.1
+  ship: auth0/ship@0
   codecov: codecov/codecov@3
 parameters:
   docker_image:
     type: string
-    default: cypress/browsers:node14.17.0-chrome91-ff89
+    default: cypress/browsers:node16.13.2-chrome100-ff98
 jobs:
   build:
     docker:
@@ -65,7 +65,7 @@ jobs:
               import { Auth0Client } from '@auth0/auth0-spa-js';
               new Auth0Client({
                 domain: 'DOMAIN',
-                client_id: 'CLIENT_ID'
+                clientId: 'CLIENT_ID'
               });
       - run:
           name: Build App
@@ -98,7 +98,7 @@ jobs:
               import { Auth0Client } from '@auth0/auth0-spa-js';
               new Auth0Client({
                 domain: 'DOMAIN',
-                client_id: 'CLIENT_ID'
+                clientId: 'CLIENT_ID'
               });
       - run:
           name: Build App
@@ -132,7 +132,7 @@ jobs:
               import { Auth0Client } from '@auth0/auth0-spa-js';
               new Auth0Client({
                 domain: 'DOMAIN',
-                client_id: 'CLIENT_ID'
+                clientId: 'CLIENT_ID'
               });
       - run:
           name: Build App
@@ -165,7 +165,7 @@ jobs:
               import { Auth0Client } from '@auth0/auth0-spa-js';
               new Auth0Client({
                 domain: 'DOMAIN',
-                client_id: 'CLIENT_ID'
+                clientId: 'CLIENT_ID'
               });
       - run:
           name: Build App
@@ -193,6 +193,7 @@ workflows:
           requires:
             - build
       - ship/node-publish:
+          publish-command: npm publish --tag beta
           context:
             - publish-npm
             - publish-gh
@@ -200,6 +201,7 @@ workflows:
             branches:
               only:
                 - master
+                - beta
           requires:
             - browserstack
             - test_gatsby

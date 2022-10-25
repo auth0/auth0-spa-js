@@ -6,18 +6,65 @@ import {
   ICache,
   CacheKey,
   CACHE_KEY_PREFIX,
-  WrappedCacheEntry
+  WrappedCacheEntry,
+  DecodedToken,
+  CACHE_KEY_ID_TOKEN_SUFFIX,
+  IdTokenEntry
 } from './shared';
 
 const DEFAULT_EXPIRY_ADJUSTMENT_SECONDS = 0;
 
 export class CacheManager {
+  private nowProvider: () => number | Promise<number>;
+
   constructor(
     private cache: ICache,
     private keyManifest?: CacheKeyManifest,
-    private nowProvider?: () => number | Promise<number>
+    nowProvider?: () => number | Promise<number>
   ) {
-    this.nowProvider = this.nowProvider || DEFAULT_NOW_PROVIDER;
+    this.nowProvider = nowProvider || DEFAULT_NOW_PROVIDER;
+  }
+
+  async setIdToken(
+    clientId: string,
+    idToken: string,
+    decodedToken: DecodedToken
+  ): Promise<void> {
+    const cacheKey = this.getIdTokenCacheKey(clientId);
+    await this.cache.set(cacheKey, {
+      id_token: idToken,
+      decodedToken
+    });
+    await this.keyManifest?.add(cacheKey);
+  }
+
+  async getIdToken(cacheKey: CacheKey): Promise<IdTokenEntry | undefined> {
+    const entry = await this.cache.get<IdTokenEntry>(
+      this.getIdTokenCacheKey(cacheKey.clientId)
+    );
+
+    if (!entry && cacheKey.scope && cacheKey.audience) {
+      const entryByScope = await this.get(cacheKey);
+
+      if (!entryByScope) {
+        return;
+      }
+
+      if (!entryByScope.id_token || !entryByScope.decodedToken) {
+        return;
+      }
+
+      return {
+        id_token: entryByScope.id_token,
+        decodedToken: entryByScope.decodedToken
+      };
+    }
+
+    if (!entry) {
+      return;
+    }
+
+    return { id_token: entry.id_token, decodedToken: entry.decodedToken };
   }
 
   async get(
@@ -69,7 +116,7 @@ export class CacheManager {
 
   async set(entry: CacheEntry): Promise<void> {
     const cacheKey = new CacheKey({
-      client_id: entry.client_id,
+      clientId: entry.client_id,
       scope: entry.scope,
       audience: entry.audience
     });
@@ -83,7 +130,7 @@ export class CacheManager {
   async clear(clientId?: string): Promise<void> {
     const keys = await this.getCacheKeys();
 
-    /* istanbul ignore next */
+    /* c8 ignore next */
     if (!keys) return;
 
     await keys
@@ -96,49 +143,43 @@ export class CacheManager {
     await this.keyManifest?.clear();
   }
 
-  /**
-   * Note: only call this if you're sure one of our internal (synchronous) caches are being used.
-   */
-  clearSync(clientId?: string): void {
-    const keys = this.cache.allKeys() as string[];
-
-    /* istanbul ignore next */
-    if (!keys) return;
-
-    keys
-      .filter(key => (clientId ? key.includes(clientId) : true))
-      .forEach(key => {
-        this.cache.remove(key);
-      });
-  }
-
   private async wrapCacheEntry(entry: CacheEntry): Promise<WrappedCacheEntry> {
     const now = await this.nowProvider();
     const expiresInTime = Math.floor(now / 1000) + entry.expires_in;
 
-    const expirySeconds = Math.min(
-      expiresInTime,
-      entry.decodedToken.claims.exp
-    );
-
     return {
       body: entry,
-      expiresAt: expirySeconds
+      expiresAt: expiresInTime
     };
   }
 
-  private async getCacheKeys(): Promise<string[]> {
-    return this.keyManifest
-      ? (await this.keyManifest.get())?.keys
-      : await this.cache.allKeys();
+  private async getCacheKeys(): Promise<string[] | undefined> {
+    if (this.keyManifest) {
+      return (await this.keyManifest.get())?.keys;
+    } else if (this.cache.allKeys) {
+      return this.cache.allKeys();
+    }
+  }
+
+  /**
+   * Returns the cache key to be used to store the id token
+   * @param clientId The client id used to link to the id token
+   * @returns The constructed cache key, as a string, to store the id token
+   */
+  private getIdTokenCacheKey(clientId: string) {
+    return new CacheKey(
+      { clientId },
+      CACHE_KEY_PREFIX,
+      CACHE_KEY_ID_TOKEN_SUFFIX
+    ).toKey();
   }
 
   /**
    * Finds the corresponding key in the cache based on the provided cache key.
-   * The keys inside the cache are in the format {prefix}::{client_id}::{audience}::{scope}.
+   * The keys inside the cache are in the format {prefix}::{clientId}::{audience}::{scope}.
    * The first key in the cache that satisfies the following conditions is returned
    *  - `prefix` is strict equal to Auth0's internally configured `keyPrefix`
-   *  - `client_id` is strict equal to the `cacheKey.client_id`
+   *  - `clientId` is strict equal to the `cacheKey.clientId`
    *  - `audience` is strict equal to the `cacheKey.audience`
    *  - `scope` contains at least all the `cacheKey.scope` values
    *  *
@@ -149,7 +190,7 @@ export class CacheManager {
     return allKeys.filter(key => {
       const cacheKey = CacheKey.fromKey(key);
       const scopeSet = new Set(cacheKey.scope && cacheKey.scope.split(' '));
-      const scopesToMatch = keyToMatch.scope.split(' ');
+      const scopesToMatch = keyToMatch.scope?.split(' ') || [];
 
       const hasAllScopes =
         cacheKey.scope &&
@@ -160,7 +201,7 @@ export class CacheManager {
 
       return (
         cacheKey.prefix === CACHE_KEY_PREFIX &&
-        cacheKey.client_id === keyToMatch.client_id &&
+        cacheKey.clientId === keyToMatch.clientId &&
         cacheKey.audience === keyToMatch.audience &&
         hasAllScopes
       );

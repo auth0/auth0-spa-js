@@ -1,4 +1,5 @@
 import { MissingRefreshTokenError } from '../errors';
+import { createQueryParams } from '../utils';
 import { WorkerRefreshTokenMessage } from './worker.types';
 
 let refreshTokens: Record<string, string> = {};
@@ -43,8 +44,8 @@ const messageHandler = async ({
 
   try {
     const body = useFormData
-      ? formDataToObject(fetchOptions.body)
-      : JSON.parse(fetchOptions.body);
+      ? formDataToObject(fetchOptions.body as string)
+      : JSON.parse(fetchOptions.body as string);
 
     if (!body.refresh_token && body.grant_type === 'refresh_token') {
       const refreshToken = getRefreshToken(audience, scope);
@@ -54,17 +55,17 @@ const messageHandler = async ({
       }
 
       fetchOptions.body = useFormData
-        ? new URLSearchParams({
+        ? createQueryParams({
             ...body,
             refresh_token: refreshToken
-          }).toString()
+          })
         : JSON.stringify({
             ...body,
             refresh_token: refreshToken
           });
     }
 
-    let abortController: AbortController;
+    let abortController: AbortController | undefined;
 
     if (typeof AbortController === 'function') {
       abortController = new AbortController();
@@ -122,9 +123,9 @@ const messageHandler = async ({
 };
 
 // Don't run `addEventListener` in our tests (this is replaced in rollup)
-/* istanbul ignore else  */
 if (process.env.NODE_ENV === 'test') {
   module.exports = { messageHandler };
+  /* c8 ignore next 4  */
 } else {
   // @ts-ignore
   addEventListener('message', messageHandler);

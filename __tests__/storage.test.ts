@@ -1,7 +1,10 @@
 import * as esCookie from 'es-cookie';
-import { MockedObject } from 'ts-jest/dist/utils/testing';
-import { mocked } from 'ts-jest/utils';
-import { CookieStorage, CookieStorageWithLegacySameSite } from '../src/storage';
+import {
+  CookieStorage,
+  CookieStorageWithLegacySameSite,
+  SessionStorage
+} from '../src/storage';
+import { expect } from '@jest/globals';
 
 jest.mock('es-cookie');
 
@@ -9,7 +12,7 @@ describe('CookieStorage', () => {
   let cookieMock;
 
   beforeEach(() => {
-    cookieMock = mocked(esCookie);
+    cookieMock = jest.mocked(esCookie);
   });
 
   it('saves a cookie', () => {
@@ -95,7 +98,22 @@ describe('CookieStorageWithLegacySameSite', () => {
   let cookieMock;
 
   beforeEach(() => {
-    cookieMock = mocked(esCookie);
+    cookieMock = jest.mocked(esCookie);
+  });
+
+  it('saves a cookie', () => {
+    const key = 'key';
+    const value = { some: 'value' };
+
+    CookieStorageWithLegacySameSite.save(key, value);
+
+    expect(cookieMock.set).toHaveBeenCalledWith(key, JSON.stringify(value), {});
+
+    expect(cookieMock.set).toHaveBeenCalledWith(
+      `_legacy_${key}`,
+      JSON.stringify(value),
+      {}
+    );
   });
 
   it('saves object', () => {
@@ -193,5 +211,50 @@ describe('CookieStorageWithLegacySameSite', () => {
     CookieStorageWithLegacySameSite.remove(key);
     expect(Cookie.remove).toHaveBeenCalledWith(key, {});
     expect(Cookie.remove).toHaveBeenCalledWith(`_legacy_${key}`, {});
+  });
+});
+
+describe('SessionStorage', () => {
+  it('returns undefined when there is no object', () => {
+    const key = 'key';
+
+    jest.mocked(sessionStorage.getItem).mockReturnValue(null);
+
+    const outputValue = SessionStorage.get(key);
+    expect(outputValue).toBeUndefined();
+  });
+
+  it('gets object', () => {
+    const key = 'key';
+    const value = { some: 'value' };
+
+    jest.mocked(sessionStorage.getItem).mockReturnValue(JSON.stringify(value));
+
+    const outputValue = SessionStorage.get(key);
+    expect(outputValue).toMatchObject(value);
+  });
+
+  it('saves an object', () => {
+    const key = 'key';
+    const value = { some: 'value' };
+
+    jest.mocked(sessionStorage.setItem).mockImplementation(() => {});
+
+    SessionStorage.save(key, value);
+
+    expect(sessionStorage.setItem).toHaveBeenCalledWith(
+      key,
+      JSON.stringify(value)
+    );
+  });
+
+  it('removes an object', () => {
+    const key = 'key';
+
+    jest.mocked(sessionStorage.removeItem).mockImplementation(() => {});
+
+    SessionStorage.remove(key);
+
+    expect(sessionStorage.removeItem).toHaveBeenCalledWith(key);
   });
 });

@@ -1,6 +1,6 @@
 module.exports = {
   rootDir: './',
-  testEnvironment: 'jsdom',
+  testEnvironment: './jest.environment',
   moduleFileExtensions: ['ts', 'js'],
   testMatch: ['**/__tests__/**/*.test.ts'],
   coverageProvider: 'v8',
@@ -8,7 +8,8 @@ module.exports = {
     '/node_modules/',
     './cypress',
     './jest.config.js',
-    './__tests__'
+    './__tests__',
+    './src/index.ts'
   ],
   reporters: [
     'default',
@@ -16,7 +17,7 @@ module.exports = {
   ],
   coverageReporters: ['lcov', 'text', 'text-summary'],
   preset: 'ts-jest',
-  setupFiles: ['jest-localstorage-mock'],
+  setupFiles: ['jest-localstorage-mock', './jest.setup.js'],
   globals: {
     'ts-jest': {
       tsconfig: './tsconfig.test.json'

@@ -1,10 +1,9 @@
-import 'fast-text-encoding';
 import * as esCookie from 'es-cookie';
-import unfetch from 'unfetch';
 import { verify } from '../../src/jwt';
 import { MessageChannel } from 'worker_threads';
 import * as utils from '../../src/utils';
 import * as scope from '../../src/scope';
+import { expect } from '@jest/globals';
 
 import {
   expectToHaveBeenCalledWithAuth0ClientParam,
@@ -36,13 +35,12 @@ import {
 } from '../constants';
 import version from '../../src/version';
 
-jest.mock('unfetch');
 jest.mock('es-cookie');
 jest.mock('../../src/jwt');
 jest.mock('../../src/worker/token.worker');
 
 const mockWindow = <any>global;
-const mockFetch = (mockWindow.fetch = <jest.Mock>unfetch);
+const mockFetch = <jest.Mock>mockWindow.fetch;
 const mockVerify = <jest.Mock>verify;
 const mockCookies = require('es-cookie');
 const tokenVerifier = require('../../src/jwt').verify;
@@ -102,8 +100,10 @@ describe('Auth0Client', () => {
   });
 
   describe('loginWithRedirect', () => {
-    it('should log the user in and get the token', async () => {
-      const auth0 = setup();
+    it('should log the user in and get the token when not using useFormData', async () => {
+      const auth0 = setup({
+        useFormData: false
+      });
 
       await loginWithRedirect(auth0);
 
@@ -141,10 +141,51 @@ describe('Auth0Client', () => {
       );
     });
 
+    it('should log the user in and get the token', async () => {
+      const auth0 = setup();
+
+      await loginWithRedirect(auth0);
+
+      const url = new URL(mockWindow.location.assign.mock.calls[0][0]);
+
+      assertUrlEquals(url, TEST_DOMAIN, '/authorize', {
+        client_id: TEST_CLIENT_ID,
+        redirect_uri: TEST_REDIRECT_URI,
+        scope: TEST_SCOPES,
+        response_type: 'code',
+        response_mode: 'query',
+        state: TEST_STATE,
+        nonce: TEST_NONCE,
+        code_challenge: TEST_CODE_CHALLENGE,
+        code_challenge_method: 'S256'
+      });
+
+      assertPost(
+        'https://auth0_domain/oauth/token',
+        {
+          redirect_uri: TEST_REDIRECT_URI,
+          client_id: TEST_CLIENT_ID,
+          code_verifier: TEST_CODE_VERIFIER,
+          grant_type: 'authorization_code',
+          code: TEST_CODE
+        },
+        {
+          'Auth0-Client': btoa(
+            JSON.stringify({
+              name: 'auth0-spa-js',
+              version: version
+            })
+          )
+        },
+        undefined,
+        false
+      );
+    });
+
     it('should log the user in using different default scope', async () => {
       const auth0 = setup({
-        advancedOptions: {
-          defaultScope: 'email'
+        authorizationParams: {
+          scope: 'email'
         }
       });
 
@@ -167,7 +208,9 @@ describe('Auth0Client', () => {
       const redirect_uri = 'https://custom-redirect-uri/callback';
 
       const auth0 = setup({
-        redirect_uri
+        authorizationParams: {
+          redirect_uri
+        }
       });
 
       await loginWithRedirect(auth0);
@@ -189,11 +232,15 @@ describe('Auth0Client', () => {
       const redirect_uri = 'https://custom-redirect-uri/callback';
 
       const auth0 = setup({
-        redirect_uri
+        authorizationParams: {
+          redirect_uri
+        }
       });
 
       await loginWithRedirect(auth0, {
-        redirect_uri: 'https://my-redirect-uri/callback'
+        authorizationParams: {
+          redirect_uri: 'https://my-redirect-uri/callback'
+        }
       });
 
       const url = new URL(mockWindow.location.assign.mock.calls[0][0]);
@@ -209,12 +256,14 @@ describe('Auth0Client', () => {
       );
     });
 
-    it('should log the user in by calling window.location.replace when redirectMethod=replace param is passed', async () => {
+    it('should log the user in by calling window.location.replace when specifying it as onRedirect', async () => {
       const auth0 = setup();
 
       await loginWithRedirect(auth0, {
-        audience: 'test_audience',
-        redirectMethod: 'replace'
+        authorizationParams: {
+          audience: 'test_audience'
+        },
+        onRedirect: async url => window.location.replace(url)
       });
 
       const url = new URL(mockWindow.location.replace.mock.calls[0][0]);
@@ -234,7 +283,9 @@ describe('Auth0Client', () => {
       const auth0 = setup();
 
       await loginWithRedirect(auth0, {
-        audience: 'test_audience'
+        authorizationParams: {
+          audience: 'test_audience'
+        }
       });
 
       const url = new URL(mockWindow.location.assign.mock.calls[0][0]);
@@ -271,35 +322,28 @@ describe('Auth0Client', () => {
     });
 
     it('should log the user in and get the user', async () => {
-      const auth0 = setup({ scope: 'foo' });
+      const auth0 = setup({ authorizationParams: { scope: 'foo' } });
       await loginWithRedirect(auth0);
 
       const expectedUser = { sub: 'me' };
 
       expect(await auth0.getUser()).toEqual(expectedUser);
-      expect(await auth0.getUser({})).toEqual(expectedUser);
-      expect(await auth0.getUser({ audience: 'default' })).toEqual(
-        expectedUser
-      );
-      expect(await auth0.getUser({ scope: 'foo' })).toEqual(expectedUser);
-      expect(await auth0.getUser({ audience: 'invalid' })).toBeUndefined();
     });
 
     it('should log the user in and get the user with custom scope', async () => {
       const auth0 = setup({
-        scope: 'scope1',
-        advancedOptions: {
-          defaultScope: 'scope2'
+        authorizationParams: {
+          scope: 'scope2 scope1'
         }
       });
 
-      await loginWithRedirect(auth0, { scope: 'scope3' });
+      await loginWithRedirect(auth0, {
+        authorizationParams: { scope: 'scope3' }
+      });
 
       const expectedUser = { sub: 'me' };
 
-      expect(await auth0.getUser({ scope: 'scope1 scope2 scope3' })).toEqual(
-        expectedUser
-      );
+      expect(await auth0.getUser()).toEqual(expectedUser);
     });
 
     it('should log the user in with custom auth0Client', async () => {
@@ -371,7 +415,9 @@ describe('Auth0Client', () => {
     });
 
     it('calls `tokenVerifier.verify` with the global organization id', async () => {
-      const auth0 = setup({ organization: 'test_org_123' });
+      const auth0 = setup({
+        authorizationParams: { organization: 'test_org_123' }
+      });
 
       await loginWithRedirect(auth0);
 
@@ -419,10 +465,13 @@ describe('Auth0Client', () => {
     });
 
     it('calls `tokenVerifier.verify` with the specific organization id', async () => {
-      const auth0 = setup({ organization: 'test_org_123' });
+      const auth0 = setup({
+        authorizationParams: { organization: 'test_org_123' }
+      });
 
-      await loginWithRedirect(auth0, { organization: 'test_org_456' });
-
+      await loginWithRedirect(auth0, {
+        authorizationParams: { organization: 'test_org_456' }
+      });
       expect(tokenVerifier).toHaveBeenCalledWith(
         expect.objectContaining({
           organizationId: 'test_org_456'
@@ -443,9 +492,28 @@ describe('Auth0Client', () => {
           access_token: TEST_ACCESS_TOKEN,
           expires_in: 86400,
           audience: 'default',
-          id_token: TEST_ID_TOKEN,
           scope: TEST_SCOPES
         })
+      );
+    });
+
+    it('saves user information into the cache', async () => {
+      const auth0 = setup();
+
+      const mockDecodedToken = {
+        claims: { sub: 'sub', aud: 'aus' },
+        user: { sub: 'sub' }
+      };
+      tokenVerifier.mockReturnValue(mockDecodedToken);
+
+      jest.spyOn(auth0['cacheManager'], 'setIdToken');
+
+      await loginWithRedirect(auth0);
+
+      expect(auth0['cacheManager']['setIdToken']).toHaveBeenCalledWith(
+        TEST_CLIENT_ID,
+        TEST_ID_TOKEN,
+        mockDecodedToken
       );
     });
 
@@ -499,16 +567,15 @@ describe('Auth0Client', () => {
       // list in Auth0Client._getParams so that it is not sent to the IdP
       const auth0 = setup({
         useRefreshTokens: true,
-        advancedOptions: {
-          defaultScope: 'openid profile email offline_access'
+        authorizationParams: {
+          scope: 'openid profile email offline_access'
         },
         useCookiesForTransactions: true,
         authorizeTimeoutInSeconds: 10,
         cacheLocation: 'localstorage',
         legacySameSiteCookie: true,
         nowProvider: () => Date.now(),
-        sessionCheckExpiryDays: 1,
-        useFormData: true
+        sessionCheckExpiryDays: 1
       });
 
       await loginWithRedirect(auth0);

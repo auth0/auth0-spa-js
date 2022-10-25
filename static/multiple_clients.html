@@ -30,7 +30,7 @@
         <div class="mb-5" v-for="client in clients" :key="client.id">
           <h2 v-text="client.name" class="text-2xl"></h2>
           <p class="text-gray-400" v-text="client.description"></p>
-          <p class="text-gray-400 mb-5" v-text="client.options.client_id"></p>
+          <p class="text-gray-400 mb-5" v-text="client.options.clientId"></p>
           <button
             type="submit"
             class="p-2 rounded bg-blue-700 text-white"
@@ -81,7 +81,9 @@
           const useAuth0 = false;
 
           const commonOptions = {
-            redirect_uri: `${window.location.origin}/multiple_clients.html`,
+            authorizationParams: {
+              redirect_uri: `${window.location.origin}/multiple_clients.html`
+            },
             cacheLocation: 'localstorage',
             useFormData: true,
             domain: useAuth0 ? 'brucke.auth0.com' : window.location.origin,
@@ -99,7 +101,7 @@
                 id: 1,
                 options: {
                   ...commonOptions,
-                  client_id: useAuth0
+                  clientId: useAuth0
                     ? 'IRLdsf27vEPiV5NNQjlNK7fwgmRuwyJY'
                     : 'multi-client-1'
                 },
@@ -115,7 +117,7 @@
                 id: 2,
                 options: {
                   ...commonOptions,
-                  client_id: useAuth0
+                  clientId: useAuth0
                     ? 'Q4TgHIYRcUBh2xe6l049ZR7X5JAeLzwI'
                     : 'multi-client-2',
                   useRefreshTokens: true
@@ -132,7 +134,7 @@
                 id: 3,
                 options: {
                   ...commonOptions,
-                  client_id: useAuth0
+                  clientId: useAuth0
                     ? 'Y7VQRCOOVeU7b0Y36cLA5OS4fUbIJfwV'
                     : 'multi-client-3',
                   useCookiesForTransactions: true
@@ -153,7 +155,7 @@
           };
 
           this.clients.map(client => {
-            client.auth0 = new Auth0Client(client.options);
+            client.auth0 = new auth0.Auth0Client(client.options);
           });
 
           if (
@@ -191,7 +193,7 @@
           async getTokenWith(client) {
             try {
               client.access_token = await client.auth0.getTokenSilently({
-                ignoreCache: true
+                cacheMode: 'off'
               });
 
               client.error = null;
@@ -202,7 +204,7 @@
           logoutOf(client) {
             client.auth0.logout({
               returnTo: `${window.location.origin}/multiple_clients.html`,
-              client_id: client.options.client_id
+              clientId: client.options.clientId
             });
           }
         }

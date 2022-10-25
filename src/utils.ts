@@ -101,7 +101,7 @@ export const openPopup = (url: string) => {
 
 export const runPopup = (config: PopupConfigOptions) => {
   return new Promise<AuthenticationResult>((resolve, reject) => {
-    let popupEventListener: EventListenerOrEventListenerObject;
+    let popupEventListener: (e: MessageEvent) => void;
 
     // Check each second if the popup is closed triggering a PopupCancelledError
     const popupTimer = setInterval(() => {
@@ -141,15 +141,9 @@ export const runPopup = (config: PopupConfigOptions) => {
 };
 
 export const getCrypto = () => {
-  //ie 11.x uses msCrypto
-  return (window.crypto || (window as any).msCrypto) as Crypto;
+  return window.crypto;
 };
 
-export const getCryptoSubtle = () => {
-  const crypto = getCrypto();
-  //safari 10.x uses webkitSubtle
-  return crypto.subtle || (crypto as any).webkitSubtle;
-};
 export const createRandomString = () => {
   const charset =
     '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-_~.';
@@ -164,41 +158,23 @@ export const createRandomString = () => {
 export const encode = (value: string) => btoa(value);
 export const decode = (value: string) => atob(value);
 
-export const createQueryParams = (params: any) => {
+const stripUndefined = (params: any) => {
   return Object.keys(params)
     .filter(k => typeof params[k] !== 'undefined')
-    .map(k => encodeURIComponent(k) + '=' + encodeURIComponent(params[k]))
-    .join('&');
+    .reduce((acc, key) => ({ ...acc, [key]: params[key] }), {});
+};
+
+export const createQueryParams = ({ clientId: client_id, ...params }: any) => {
+  return new URLSearchParams(
+    stripUndefined({ client_id, ...params })
+  ).toString();
 };
 
 export const sha256 = async (s: string) => {
-  const digestOp: any = getCryptoSubtle().digest(
+  const digestOp: any = getCrypto().subtle.digest(
     { name: 'SHA-256' },
     new TextEncoder().encode(s)
   );
-
-  // msCrypto (IE11) uses the old spec, which is not Promise based
-  // https://msdn.microsoft.com/en-us/expression/dn904640(v=vs.71)
-  // Instead of returning a promise, it returns a CryptoOperation
-  // with a result property in it.
-  // As a result, the various events need to be handled in the event that we're
-  // working in IE11 (hence the msCrypto check). These events just call resolve
-  // or reject depending on their intention.
-  if ((window as any).msCrypto) {
-    return new Promise((res, rej) => {
-      digestOp.oncomplete = (e: any) => {
-        res(e.target.result);
-      };
-
-      digestOp.onerror = (e: ErrorEvent) => {
-        rej(e.error);
-      };
-
-      digestOp.onabort = () => {
-        rej('The digest operation was aborted');
-      };
-    });
-  }
 
   return await digestOp;
 };
@@ -235,7 +211,7 @@ export const validateCrypto = () => {
       'For security reasons, `window.crypto` is required to run `auth0-spa-js`.'
     );
   }
-  if (typeof getCryptoSubtle() === 'undefined') {
+  if (typeof getCrypto().subtle === 'undefined') {
     throw new Error(`
       auth0-spa-js must run on a secure origin. See https://github.com/auth0/auth0-spa-js/blob/master/FAQ.md#why-do-i-get-auth0-spa-js-must-run-on-a-secure-origin for more information.
     `);
@@ -243,11 +219,33 @@ export const validateCrypto = () => {
 };
 
 /**
- * Returns an empty string when value is falsy, or when it's value is included in the exclude argument.
- * @param value The value to check
- * @param exclude An array of values that should result in an empty string.
- * @returns The value, or an empty string when falsy or included in the exclude argument.
+ * @ignore
  */
-export function valueOrEmptyString(value: string, exclude: string[] = []) {
-  return value && !exclude.includes(value) ? value : '';
-}
+export const getDomain = (domainUrl: string) => {
+  if (!/^https?:\/\//.test(domainUrl)) {
+    return `https://${domainUrl}`;
+  }
+
+  return domainUrl;
+};
+
+/**
+ * @ignore
+ */
+export const getTokenIssuer = (
+  issuer: string | undefined,
+  domainUrl: string
+) => {
+  if (issuer) {
+    return issuer.startsWith('https://') ? issuer : `https://${issuer}/`;
+  }
+
+  return `${domainUrl}/`;
+};
+
+export const parseNumber = (value: any): number | undefined => {
+  if (typeof value !== 'string') {
+    return value;
+  }
+  return parseInt(value, 10) || undefined;
+};

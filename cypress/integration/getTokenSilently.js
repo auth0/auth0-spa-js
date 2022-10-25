@@ -126,6 +126,8 @@ describe('getTokenSilently', () => {
       cy.setSwitch('local-storage', true);
       cy.setSwitch('use-cache', false);
       cy.setSwitch('refresh-tokens', true);
+      cy.setSwitch('refresh-token-fallback', true);
+
       cy.login();
 
       cy.intercept({

@@ -1,12 +1,13 @@
 ![Auth0 SDK for Single Page Applications using Authorization Code Grant Flow with PKCE.](https://cdn.auth0.com/website/sdks/banners/spa-js-banner.png)
 
+> :warning: Please be aware that v2 is currently in [**Beta**](https://auth0.com/docs/troubleshoot/product-lifecycle/product-release-stages). Whilst we encourage you to test the update within your applications, we do no recommend using this version in production yet. Please follow the [migration guide](./MIGRATION_GUIDE.md) when updating your application.
+
+![Stage: Beta Release](https://img.shields.io/badge/stage-fa-yellow)
 ![Release](https://img.shields.io/npm/v/@auth0/auth0-spa-js)
 [![Codecov](https://img.shields.io/codecov/c/github/auth0/auth0-spa-js)](https://codecov.io/gh/auth0/auth0-spa-js)
 ![Downloads](https://img.shields.io/npm/dw/@auth0/auth0-spa-js)
 [![License](https://img.shields.io/:license-mit-blue.svg?style=flat)](https://opensource.org/licenses/MIT)
 ![CircleCI](https://img.shields.io/circleci/build/github/auth0/auth0-spa-js)
-
-> ℹ️ A new major version of Auth0-SPA-JS is available in **Beta**! Try it out today, any feedback is appreciated. Read all about it on [the `beta` branch](https://github.com/auth0/auth0-spa-js/tree/beta).
 
 📚 [Documentation](#documentation) - 🚀 [Getting Started](#getting-started) - 💻 [API Reference](#api-reference) - 💬 [Feedback](#feedback)
 
@@ -25,13 +26,13 @@
 Using [npm](https://npmjs.org) in your project directory run the following command:
 
 ```sh
-npm install @auth0/auth0-spa-js
+npm install @auth0/auth0-spa-js@beta
 ```
 
 From the CDN:
 
 ```html
-<script src="https://cdn.auth0.com/js/auth0-spa-js/1.22/auth0-spa-js.production.js"></script>
+<script src="https://cdn.auth0.com/js/auth0-spa-js/2.0/auth0-spa-js.production.js"></script>
 ```
 
 ### Configure Auth0
@@ -61,13 +62,15 @@ Take note of the **Client ID** and **Domain** values under the "Basic Informatio
 Create an `Auth0Client` instance before rendering or initializing your application. You should only have one instance of the client.
 
 ```js
-import createAuth0Client from '@auth0/auth0-spa-js';
+import { createAuth0Client } from '@auth0/auth0-spa-js';
 
 //with async/await
 const auth0 = await createAuth0Client({
   domain: '<AUTH0_DOMAIN>',
-  client_id: '<AUTH0_CLIENT_ID>',
-  redirect_uri: '<MY_CALLBACK_URL>'
+  clientId: '<AUTH0_CLIENT_ID>',
+  authorizationParams: {
+    redirect_uri: '<MY_CALLBACK_URL>'
+  }
 });
 
 //or, you can just instantiate the client on it's own
@@ -75,8 +78,10 @@ import { Auth0Client } from '@auth0/auth0-spa-js';
 
 const auth0 = new Auth0Client({
   domain: '<AUTH0_DOMAIN>',
-  client_id: '<AUTH0_CLIENT_ID>',
-  redirect_uri: '<MY_CALLBACK_URL>'
+  clientId: '<AUTH0_CLIENT_ID>',
+  authorizationParams: {
+    redirect_uri: '<MY_CALLBACK_URL>'
+  }
 });
 
 //if you do this, you'll need to check the session yourself

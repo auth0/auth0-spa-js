@@ -197,11 +197,11 @@
         </div>
 
         <div class="form-group">
-          <label for="client_id">Client ID</label>
+          <label for="clientId">Client ID</label>
           <input
             type="text"
             class="form-control"
-            id="client_id"
+            id="clientId"
             v-model="clientId"
             data-cy="client-id"
           />
@@ -307,6 +307,21 @@
                 >Use token cache when fetching new tokens</label
               >
             </div>
+
+            <div class="custom-control custom-switch mb-5">
+              <input
+                type="checkbox"
+                class="custom-control-input"
+                id="refresh-token-fallback-switch"
+                v-model="useRefreshTokensFallback"
+              />
+              <label
+                for="refresh-token-fallback-switch"
+                class="custom-control-label"
+                data-cy="switch-refresh-token-fallback"
+                >Use iframe as a fallback for refresh tokens</label
+              >
+            </div>
           </div>
           <div class="col-md-6">
             <div class="custom-control custom-switch mb-5">
@@ -387,7 +402,7 @@
       var defaultAudience = '';
       var defaultOrganization = '';
 
-      var GenericError = createAuth0Client.GenericError;
+      var GenericError = auth0.GenericError;
 
       Vue.filter('concat', function (value) {
         if (value && value.length > 35) {
@@ -436,6 +451,7 @@
             organization: data.organization || defaultOrganization,
             useFormData: data.useFormData || false,
             useOrgAtLogin: data.useOrgAtLogin || false,
+            useRefreshTokensFallback: data.useRefreshTokensFallback || false,
             clientOptions: '',
             audienceScopes: [
               {
@@ -486,6 +502,10 @@
           useFormData: function () {
             this.initializeClient();
             this.saveForm();
+          },
+          useRefreshTokensFallback: function () {
+            this.initializeClient();
+            this.saveForm();
           }
         },
         computed: {
@@ -502,20 +522,24 @@
 
             var clientOptions = {
               domain: _self.domain,
-              client_id: _self.clientId,
+              clientId: _self.clientId,
               cacheLocation: _self.useLocalStorage ? 'localstorage' : 'memory',
               useRefreshTokens: _self.useRefreshTokens,
               useCookiesForTransactions: _self.useCookiesForTransactions,
-              redirect_uri: window.location.origin,
-              useFormData: _self.useFormData
+              useFormData: _self.useFormData,
+              useRefreshTokensFallback: _self.useRefreshTokensFallback,
+              authorizationParams: {
+                redirect_uri: window.location.origin
+              }
             };
 
             if (_self.audience) {
-              clientOptions.audience = _self.audience;
+              clientOptions.authorizationParams.audience = _self.audience;
             }
 
             if (_self.organization && !_self.useOrgAtLogin) {
-              clientOptions.organization = _self.organization;
+              clientOptions.authorizationParams.organization =
+                _self.organization;
             }
 
             if (_self.useCustomStorage) {
@@ -536,26 +560,30 @@
 
             var _init = function (auth0) {
               _self.auth0 = auth0;
-              window.auth0 = auth0; // Cypress integration tests support
+              window.auth0Instance = auth0; // Cypress integration tests support
               _self.loading = false;
 
-              auth0.isAuthenticated().then(function (isAuthenticated) {
+              _self.auth0.isAuthenticated().then(function (isAuthenticated) {
                 _self.isAuthenticated = isAuthenticated;
               });
             };
 
             if (_self.useConstructor) {
               console.log('Initializing using the constructor');
-              _init(new Auth0Client(clientOptions));
+              _init(new auth0.Auth0Client(clientOptions));
             } else {
               console.log('Initializing using the factory function');
-              createAuth0Client(clientOptions).then(_init);
+              auth0.createAuth0Client(clientOptions).then(_init);
             }
           },
           saveForm: function () {
             localStorage.setItem(
               'spa-playground-data',
               JSON.stringify({
+                authorizationParams: {
+                  audience: this.audience,
+                  organization: this.organization
+                },
                 domain: this.domain,
                 clientId: this.clientId,
                 useLocalStorage: this.useLocalStorage,
@@ -564,10 +592,9 @@
                 useConstructor: this.useConstructor,
                 useCookiesForTransactions: this.useCookiesForTransactions,
                 useCache: this.useCache,
-                audience: this.audience,
-                organization: this.organization,
                 useFormData: this.useFormData,
-                useOrgAtLogin: this.useOrgAtLogin
+                useOrgAtLogin: this.useOrgAtLogin,
+                useRefreshTokensFallback: this.useRefreshTokensFallback
               })
             );
 
@@ -584,8 +611,9 @@
             this.useConstructor = false;
             this.useCookiesForTransactions = false;
             this.organization = defaultOrganization;
-            this.useFormData = false;
+            this.useFormData = true;
             this.useOrgAtLogin = false;
+            this.useRefreshTokensFallback = false;
             this.saveForm();
           },
           showAuth0Info: function () {
@@ -609,7 +637,7 @@
             this.clientId = defaultClientId;
             this.audience = defaultAudience;
             this.organization = defaultOrganization;
-            this.useFormData = false;
+            this.useFormData = true;
             this.saveForm();
           },
           useNodeOidcProvider() {
@@ -626,10 +654,12 @@
             _self.auth0
               .checkSession()
               .then(function () {
-                return auth0.isAuthenticated().then(function (isAuthenticated) {
-                  _self.isAuthenticated = isAuthenticated;
-                  _self.showAuth0Info();
-                });
+                return _self.auth0
+                  .isAuthenticated()
+                  .then(function (isAuthenticated) {
+                    _self.isAuthenticated = isAuthenticated;
+                    _self.showAuth0Info();
+                  });
               })
               .catch(function (e) {
                 _self.error = e;
@@ -639,17 +669,19 @@
             var _self = this;
 
             var options = {
-              redirect_uri: window.location.origin + '/callback.html'
+              authorizationParams: {
+                redirect_uri: window.location.origin + '/callback.html'
+              }
             };
 
             if (_self.organization) {
-              options.organization = _self.organization;
+              options.authorizationParams.organization = _self.organization;
             }
 
             _self.auth0
               .loginWithPopup(options)
               .then(function () {
-                auth0.isAuthenticated().then(function (isAuthenticated) {
+                _self.auth0.isAuthenticated().then(function (isAuthenticated) {
                   _self.isAuthenticated = isAuthenticated;
                   _self.showAuth0Info();
                 });
@@ -660,11 +692,15 @@
           },
           loginRedirect: function () {
             var _self = this;
-            var options = { scope: _self.audienceScopes[0].scope };
+            var options = {
+              authorizationParams: {
+                scope: _self.audienceScopes[0].scope
+              }
+            };
 
             if (_self.organization) {
               if (_self.useOrgAtLogin) {
-                options.organization = _self.organization;
+                options.authorizationParams.organization = _self.organization;
               }
             }
 
@@ -680,7 +716,7 @@
                 window.location.origin + '/'
               );
 
-              auth0.isAuthenticated().then(function (isAuthenticated) {
+              _self.auth0.isAuthenticated().then(function (isAuthenticated) {
                 _self.isAuthenticated = isAuthenticated;
                 _self.showAuth0Info();
               });
@@ -691,15 +727,17 @@
 
             _self.auth0
               .getTokenSilently({
-                audience: audience,
-                scope: scope,
-                ignoreCache: !_self.useCache
+                authorizationParams: {
+                  audience: audience,
+                  scope: scope
+                },
+                cacheMode: _self.useCache ? 'on' : 'off'
               })
               .then(function (token) {
                 access_tokens.push(token);
                 _self.error = null;
 
-                auth0.isAuthenticated().then(function (isAuthenticated) {
+                _self.auth0.isAuthenticated().then(function (isAuthenticated) {
                   _self.isAuthenticated = isAuthenticated;
                 });
               })
@@ -721,7 +759,12 @@
             var _self = this;
 
             _self.auth0
-              .getTokenWithPopup({ audience: audience, scope: scope })
+              .getTokenWithPopup({
+                authorizationParams: {
+                  audience: audience,
+                  scope: scope
+                }
+              })
               .then(function (token) {
                 access_tokens.push(token);
               })
@@ -731,13 +774,17 @@
           },
           logout: function () {
             this.auth0.logout({
-              returnTo: window.location.origin
+              logoutParams: {
+                returnTo: window.location.origin
+              }
             });
           },
           logoutNoClient: function () {
             this.auth0.logout({
-              client_id: null,
-              returnTo: window.location.origin
+              clientId: null,
+              logoutParams: {
+                returnTo: window.location.origin
+              }
             });
           },
           loginHandleInvitationUrl: function () {
@@ -751,8 +798,10 @@
 
                 if (orgMatches) {
                   this.auth0.loginWithRedirect({
-                    organization: orgMatches[1],
-                    invitation: inviteMatches[1]
+                    authorizationParams: {
+                      organization: orgMatches[1],
+                      invitation: inviteMatches[1]
+                    }
                   });
                 }
               }

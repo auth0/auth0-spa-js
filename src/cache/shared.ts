@@ -1,20 +1,25 @@
 import { IdToken, User } from '../global';
 
 export const CACHE_KEY_PREFIX = '@@auth0spajs@@';
+export const CACHE_KEY_ID_TOKEN_SUFFIX = '@@user@@';
 
 export type CacheKeyData = {
-  audience: string;
-  scope: string;
-  client_id: string;
+  audience?: string;
+  scope?: string;
+  clientId: string;
 };
 
 export class CacheKey {
-  public client_id: string;
-  public scope: string;
-  public audience: string;
+  public clientId: string;
+  public scope?: string;
+  public audience?: string;
 
-  constructor(data: CacheKeyData, public prefix: string = CACHE_KEY_PREFIX) {
-    this.client_id = data.client_id;
+  constructor(
+    data: CacheKeyData,
+    public prefix: string = CACHE_KEY_PREFIX,
+    public suffix?: string
+  ) {
+    this.clientId = data.clientId;
     this.scope = data.scope;
     this.audience = data.audience;
   }
@@ -24,7 +29,9 @@ export class CacheKey {
    * @returns A string representation of the key
    */
   toKey(): string {
-    return `${this.prefix}::${this.client_id}::${this.audience}::${this.scope}`;
+    return [this.prefix, this.clientId, this.audience, this.scope, this.suffix]
+      .filter(Boolean)
+      .join('::');
   }
 
   /**
@@ -33,9 +40,9 @@ export class CacheKey {
    * @returns An instance of `CacheKey`
    */
   static fromKey(key: string): CacheKey {
-    const [prefix, client_id, audience, scope] = key.split('::');
+    const [prefix, clientId, audience, scope] = key.split('::');
 
-    return new CacheKey({ client_id, scope, audience }, prefix);
+    return new CacheKey({ clientId, scope, audience }, prefix);
   }
 
   /**
@@ -44,26 +51,31 @@ export class CacheKey {
    * @returns An instance of `CacheKey`
    */
   static fromCacheEntry(entry: CacheEntry): CacheKey {
-    const { scope, audience, client_id } = entry;
+    const { scope, audience, client_id: clientId } = entry;
 
     return new CacheKey({
       scope,
       audience,
-      client_id
+      clientId
     });
   }
 }
 
-interface DecodedToken {
+export interface DecodedToken {
   claims: IdToken;
   user: User;
 }
 
-export type CacheEntry = {
+export interface IdTokenEntry {
   id_token: string;
+  decodedToken: DecodedToken;
+}
+
+export type CacheEntry = {
+  id_token?: string;
   access_token: string;
   expires_in: number;
-  decodedToken: DecodedToken;
+  decodedToken?: DecodedToken;
   audience: string;
   scope: string;
   client_id: string;
@@ -86,7 +98,7 @@ export type MaybePromise<T> = Promise<T> | T;
 
 export interface ICache {
   set<T = Cacheable>(key: string, entry: T): MaybePromise<void>;
-  get<T = Cacheable>(key: string): MaybePromise<T | null>;
+  get<T = Cacheable>(key: string): MaybePromise<T | undefined>;
   remove(key: string): MaybePromise<void>;
   allKeys?(): MaybePromise<string[]>;
 }

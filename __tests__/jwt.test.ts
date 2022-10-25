@@ -2,12 +2,13 @@ import { decode, verify } from '../src/jwt';
 import IDTokenVerifier from 'idtoken-verifier';
 import jwt from 'jsonwebtoken';
 import { generateKeyPairSync } from 'crypto';
+import { expect } from '@jest/globals';
 
 const verifyOptions = {
   iss: 'https://brucke.auth0.com/',
   aud: 'k5u3o2fiAA8XweXEEX604KCwCjzjtMU6',
   nonce: 'omcw.ptjx3~.8VBm3OuMziLdn5PB0uXG',
-  client_id: 'the_client_id'
+  clientId: 'the_client_id'
 };
 
 const createPrivateKey = () => {
@@ -124,7 +125,7 @@ describe('jwt', () => {
     return new Promise<void>(res => {
       verifier.verify(id_token, verifyOptions.nonce, (err, payload) => {
         expect(err).toBe(null);
-        expect(claims).toMatchObject(payload);
+        expect(claims).toMatchObject(payload as Record<string, string>);
         res();
       });
     });
@@ -329,7 +330,7 @@ describe('jwt', () => {
     expect(() =>
       verify({ ...verifyOptions, id_token, max_age: maxAge, leeway })
     ).toThrow(
-      `Authentication Time (auth_time) claim in the ID token indicates that too much time has passed since the last end-user authentication. Currrent time (${new Date(
+      `Authentication Time (auth_time) claim in the ID token indicates that too much time has passed since the last end-user authentication. Current time (${new Date(
         now
       )}) is after last auth at ${authTimeDateCorrected}`
     );
