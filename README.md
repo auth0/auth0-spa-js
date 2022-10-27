@@ -1,8 +1,5 @@
 ![Auth0 SDK for Single Page Applications using Authorization Code Grant Flow with PKCE.](https://cdn.auth0.com/website/sdks/banners/spa-js-banner.png)
 
-> :warning: Please be aware that v2 is currently in [**Beta**](https://auth0.com/docs/troubleshoot/product-lifecycle/product-release-stages). Whilst we encourage you to test the update within your applications, we do no recommend using this version in production yet. Please follow the [migration guide](./MIGRATION_GUIDE.md) when updating your application.
-
-![Stage: Beta Release](https://img.shields.io/badge/stage-fa-yellow)
 ![Release](https://img.shields.io/npm/v/@auth0/auth0-spa-js)
 [![Codecov](https://img.shields.io/codecov/c/github/auth0/auth0-spa-js)](https://codecov.io/gh/auth0/auth0-spa-js)
 ![Downloads](https://img.shields.io/npm/dw/@auth0/auth0-spa-js)
@@ -26,7 +23,7 @@
 Using [npm](https://npmjs.org) in your project directory run the following command:
 
 ```sh
-npm install @auth0/auth0-spa-js@beta
+npm install @auth0/auth0-spa-js
 ```
 
 From the CDN:
