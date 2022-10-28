@@ -120,10 +120,10 @@ For other comprehensive examples, see the [EXAMPLES.md](https://github.com/auth0
 
 Explore API Methods available in auth0-spa-js.
 
-- [Configuration Options](https://auth0.github.io/auth0-spa-js/interfaces/auth0clientoptions.html)
+- [Configuration Options](https://auth0.github.io/auth0-spa-js/interfaces/Auth0ClientOptions.html)
 
-- [Auth0Client](https://auth0.github.io/auth0-spa-js/classes/auth0client.html)
-- [createAuth0Client](https://auth0.github.io/auth0-spa-js/globals.html#createauth0client)
+- [Auth0Client](https://auth0.github.io/auth0-spa-js/classes/Auth0Client.html)
+- [createAuth0Client](https://auth0.github.io/auth0-spa-js/functions/createAuth0Client.html)
 
 ## Feedback
 
