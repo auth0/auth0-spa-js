@@ -11,6 +11,7 @@ With the v2 release of Auth0-SPA-JS, we have improved both performance and devel
   - [Introduction of logoutParams](#introduction-of-logoutparameters)
   - [buildAuthorizeUrl has been removed](#buildauthorizeurl-has-been-removed)
   - [buildLogoutUrl has been removed](#buildlogouturl-has-been-removed)
+  - [localOnly logout has been removed, and replaced by onRedirect](#localonly-logout-has-been-removed-and-replaced-by-onredirect)
   - [redirectMode has been removed from loginWithRedirect](#redirectmode-has-been-removed-from-loginwithredirect)
   - [ignoreCache on getTokenSilentlyhas been replaced by cacheMode](#ignorecache-on-gettokensilentlyhas-been-replaced-by-cachemode)
   - [application/x-www-form-urlencoded is used by default instead of application/json](#applicationx-www-form-urlencoded-is-used-by-default-instead-of-applicationjson)
@@ -175,7 +176,7 @@ With v2, `buildLogoutUrl` has been removed and you should update any code that i
 
 ```ts
 client.logout({
-  onRedirect(url) {
+  async onRedirect(url) {
     // Redirect using Capacitor's Browser plugin
     await Browser.open({ url });
   }
@@ -183,6 +184,18 @@ client.logout({
 ```
 
 This method was removed because, when using our SDK, the logout method is expected to be called regardless of the browser used. Instead of calling both `logout` and `buildLogoutUrl`, you can now change the redirect behaviour when calling `logout`.
+
+### `localOnly` logout has been removed, and replaced by `onRedirect`
+
+When calling the SDK's `logout` method, v1 supports the ability to specify `localOnly: true`, ensuring our SDK does not redirect to Auth0 but only clears the user state from the application.
+
+With v2, we have removed `localOnly`, but instead provided a way for developers to take control of the redirect behavior by setting `onRedirect`. In order to achieve localOnly logout with v2, you should set `onRedirect` to a noop function.
+
+```ts
+client.logout({
+  async onRedirect() {}
+});
+```
 
 ### `redirectMode` has been removed from `loginWithRedirect`
 
@@ -198,7 +211,7 @@ With the release of v2, we have removed `redirectMode`. If you want to use anyth
 
 ```ts
 await client.loginWithRedirect({
-  onRedirect(url) {
+  async onRedirect(url) {
     window.location.replace(url);
   }
 });
