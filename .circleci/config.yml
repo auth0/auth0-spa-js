@@ -5,15 +5,17 @@ orbs:
 parameters:
   docker_image:
     type: string
-    default: cypress/browsers:node16.13.2-chrome100-ff98
+    default: cypress/browsers:node18.12.0-chrome106-ff106
 jobs:
   build:
     docker:
       - image: << pipeline.parameters.docker_image >>
     working_directory: ~/repo
     steps:
+      - run: apt-get update
+      - run: apt-get install -y gnupg dirmngr
       - checkout
-      - run: npm ci
+      - run: npm ci --legacy-peer-deps
       - run:
           name: build
           command: npm run build
@@ -34,7 +36,7 @@ jobs:
     working_directory: ~/repo
     steps:
       - checkout
-      - run: npm ci
+      - run: npm ci --legacy-peer-deps
       - restore_cache:
           key: spa-dist-{{ .Revision }}
       - run: npx concurrently --raw --kill-others --success first "npm:dev" "wait-on http://127.0.0.1:3000/ && browserstack-cypress run --build-name $CIRCLE_BRANCH"
@@ -42,6 +44,7 @@ jobs:
     docker:
       - image: << pipeline.parameters.docker_image >>
     working_directory: ~/repo
+    resource_class: large
     steps:
       - checkout:
           path: spa-js
