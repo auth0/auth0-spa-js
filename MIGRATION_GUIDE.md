@@ -5,7 +5,7 @@ With the v2 release of Auth0-SPA-JS, we have improved both performance and devel
 **Please review this guide thoroughly to understand the changes required to migrate your application to v2.**
 
 - [Polyfills and supported browsers](#polyfills-and-supported-browsers)
-- [Public API changes](#polyfills-and-supported-browsers)
+- [Public API changes](#public-api-changes)
   - [client_id has been renamed to clientId](#client_id-has-been-renamed-to-clientid)
   - [Introduction of authorizationParams](#introduction-of-authorizationparams)
   - [Introduction of logoutParams](#introduction-of-logoutparameters)
