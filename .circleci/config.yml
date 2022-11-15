@@ -44,6 +44,7 @@ jobs:
     docker:
       - image: << pipeline.parameters.docker_image >>
     working_directory: ~/repo
+    resource_class: large
     steps:
       - checkout:
           path: spa-js
