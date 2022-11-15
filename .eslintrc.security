@@ -15,9 +15,7 @@
     "ecmaVersion": 6,
     "sourceType": "module"
   },
-  "rules": {
-    "@typescript-eslint/tslint/config": ["error", {
-      "lintFile": "./security-tslint.json"
-    }],
-  }
+  "extends": [
+    "plugin:security/recommended"
+  ]
 }

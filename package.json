@@ -49,6 +49,7 @@
     "es-check": "^7.0.1",
     "es-cookie": "~1.3.2",
     "eslint": "^8.22.0",
+    "eslint-plugin-security": "^1.5.0",
     "gzip-size": "^7.0.0",
     "husky": "^7.0.4",
     "idtoken-verifier": "^2.2.2",
@@ -78,8 +79,6 @@
     "serve": "^14.0.1",
     "ts-jest": "^28.0.8",
     "tslib": "^2.4.0",
-    "tslint": "^6.1.3",
-    "tslint-config-security": "^1.16.0",
     "typedoc": "^0.23.10",
     "typescript": "^4.7.4",
     "wait-on": "^6.0.0"
