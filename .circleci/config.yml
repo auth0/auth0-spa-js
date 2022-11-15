@@ -51,10 +51,9 @@ jobs:
       - restore_cache:
           key: spa-dist-{{ .Revision }}
       - run: mv dist spa-js
-      - run: npm install -g gatsby-cli@4
       - run:
           name: Create App
-          command: gatsby new my-app < /dev/null
+          command: npx gatsby new my-app < /dev/null
       - run:
           name: Install SPA JS
           command: |
