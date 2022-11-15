@@ -18,7 +18,7 @@ With the v2 release of Auth0-SPA-JS, we have improved both performance and devel
   - [No more iframe fallback by default when using refresh tokens](#no-more-iframe-fallback-by-default-when-using-refresh-tokens)
   - [getUser and getIdTokenClaims](#getuser-and-getidtokenclaims)
   - [Changes to default scopes (profile and email)](#changes-to-default-scopes-profile-and-email)
-    - [defaultScope](#defaultscope)
+    - [advancedOptions and defaultScope are removed](#advancedoptions-and-defaultscope-are-removed)
   - [checkSession no longer throws exceptions](#checksession-no-longer-throws-exceptions)
   - [getIdTokenClaimsOptions type has been removed](#getidtokenclaimsoptions-type-has-been-removed)
 - [Module output](#module-output)
