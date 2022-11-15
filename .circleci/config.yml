@@ -12,6 +12,7 @@ jobs:
       - image: << pipeline.parameters.docker_image >>
     working_directory: ~/repo
     steps:
+      - run: apt-get install -y  gnupg dirmngr
       - checkout
       - run: npm ci --legacy-peer-deps
       - run:
