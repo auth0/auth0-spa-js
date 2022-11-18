@@ -5,20 +5,20 @@ With the v2 release of Auth0-SPA-JS, we have improved both performance and devel
 **Please review this guide thoroughly to understand the changes required to migrate your application to v2.**
 
 - [Polyfills and supported browsers](#polyfills-and-supported-browsers)
-- [Public API changes](#polyfills-and-supported-browsers)
+- [Public API changes](#public-api-changes)
   - [client_id has been renamed to clientId](#client_id-has-been-renamed-to-clientid)
   - [Introduction of authorizationParams](#introduction-of-authorizationparams)
-  - [Introduction of logoutParams](#introduction-of-logoutparameters)
+  - [Introduction of logoutParams](#introduction-of-logoutparams)
   - [buildAuthorizeUrl has been removed](#buildauthorizeurl-has-been-removed)
   - [buildLogoutUrl has been removed](#buildlogouturl-has-been-removed)
   - [localOnly logout has been removed, and replaced by onRedirect](#localonly-logout-has-been-removed-and-replaced-by-onredirect)
-  - [redirectMode has been removed from loginWithRedirect](#redirectmode-has-been-removed-from-loginwithredirect)
-  - [ignoreCache on getTokenSilentlyhas been replaced by cacheMode](#ignorecache-on-gettokensilentlyhas-been-replaced-by-cachemode)
+  - [redirectMethod has been removed from loginWithRedirect](#redirectmethod-has-been-removed-from-loginwithredirect)
+  - [ignoreCache on getTokenSilentlyhas been replaced by cacheMode](#ignorecache-on-gettokensilently-has-been-replaced-by-cachemode)
   - [application/x-www-form-urlencoded is used by default instead of application/json](#applicationx-www-form-urlencoded-is-used-by-default-instead-of-applicationjson)
   - [No more iframe fallback by default when using refresh tokens](#no-more-iframe-fallback-by-default-when-using-refresh-tokens)
   - [getUser and getIdTokenClaims](#getuser-and-getidtokenclaims)
   - [Changes to default scopes (profile and email)](#changes-to-default-scopes-profile-and-email)
-    - [defaultScope](#defaultscope)
+    - [advancedOptions and defaultScope are removed](#advancedoptions-and-defaultscope-are-removed)
   - [checkSession no longer throws exceptions](#checksession-no-longer-throws-exceptions)
   - [getIdTokenClaimsOptions type has been removed](#getidtokenclaimsoptions-type-has-been-removed)
 - [Module output](#module-output)
@@ -197,17 +197,17 @@ client.logout({
 });
 ```
 
-### `redirectMode` has been removed from `loginWithRedirect`
+### `redirectMethod` has been removed from `loginWithRedirect`
 
-In v1, Auth0Client’s `loginWithRedirect` takes a `redirectMode` that can be set to any of `assign` and `replace`, allowing the users to control whether the SDK should redirect using `window.location.assign` or `window.location.replace`.
+In v1, Auth0Client’s `loginWithRedirect` takes a `redirectMethod` that can be set to any of `assign` and `replace`, allowing the users to control whether the SDK should redirect using `window.location.assign` or `window.location.replace`.
 
 ```ts
 await client.loginWithRedirect({
-  redirectMode: 'replace'
+  redirectMethod: 'replace'
 });
 ```
 
-With the release of v2, we have removed `redirectMode`. If you want to use anything but `window.location.assign` to handle the redirect to Auth0, you should implement `onRedirect`:
+With the release of v2, we have removed `redirectMethod`. If you want to use anything but `window.location.assign` to handle the redirect to Auth0, you should implement `onRedirect`:
 
 ```ts
 await client.loginWithRedirect({
