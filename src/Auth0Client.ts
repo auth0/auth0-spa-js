@@ -920,7 +920,7 @@ export class Auth0Client {
     } catch (e) {
       if (e.error === 'login_required') {
         this.logout({
-          onRedirect: async () => {}
+          openUrl: false
         });
       }
       throw e;
