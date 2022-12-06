@@ -279,6 +279,42 @@ describe('Auth0Client', () => {
       );
     });
 
+    it('should log the user in by calling window.location.replace when specifying it as openUrl', async () => {
+      const auth0 = setup();
+
+      await loginWithRedirect(auth0, {
+        authorizationParams: {
+          audience: 'test_audience'
+        },
+        openUrl: async url => window.location.replace(url)
+      });
+
+      const url = new URL(mockWindow.location.replace.mock.calls[0][0]);
+
+      assertUrlEquals(
+        url,
+        TEST_DOMAIN,
+        '/authorize',
+        {
+          audience: 'test_audience'
+        },
+        false
+      );
+    });
+
+    it('skips `window.location.assign` when `options.openUrl` is provided', async () => {
+      const auth0 = setup();
+
+      await loginWithRedirect(auth0, {
+        authorizationParams: {
+          audience: 'test_audience'
+        },
+        openUrl: false
+      });
+
+      expect(window.location.assign).not.toHaveBeenCalled();
+    });
+
     it('should log the user in with custom params', async () => {
       const auth0 = setup();
 
@@ -456,11 +492,13 @@ describe('Auth0Client', () => {
       await loginWithRedirect(auth0);
 
       expect(<jest.Mock>esCookie.remove).toHaveBeenCalledWith(
-        `auth0.${TEST_CLIENT_ID}.organization_hint`, {}
+        `auth0.${TEST_CLIENT_ID}.organization_hint`,
+        {}
       );
 
       expect(<jest.Mock>esCookie.remove).toHaveBeenCalledWith(
-        `_legacy_auth0.${TEST_CLIENT_ID}.organization_hint`, {}
+        `_legacy_auth0.${TEST_CLIENT_ID}.organization_hint`,
+        {}
       );
     });
 

@@ -89,7 +89,8 @@ import {
   cacheFactory,
   getAuthorizeParams,
   GET_TOKEN_SILENTLY_LOCK_KEY,
-  OLD_IS_AUTHENTICATED_COOKIE_NAME
+  OLD_IS_AUTHENTICATED_COOKIE_NAME,
+  patchOpenUrlWithOnRedirect
 } from './Auth0Client.utils';
 
 /**
@@ -444,7 +445,8 @@ export class Auth0Client {
   public async loginWithRedirect<TAppState = any>(
     options: RedirectLoginOptions<TAppState> = {}
   ) {
-    const { onRedirect, fragment, appState, ...urlOptions } = options;
+    const { openUrl, fragment, appState, ...urlOptions } =
+      patchOpenUrlWithOnRedirect(options);
 
     const organizationId =
       urlOptions.authorizationParams?.organization ||
@@ -462,9 +464,9 @@ export class Auth0Client {
 
     const urlWithFragment = fragment ? `${url}#${fragment}` : url;
 
-    if (onRedirect) {
-      await onRedirect(urlWithFragment);
-    } else {
+    if (openUrl) {
+      await openUrl(urlWithFragment);
+    } else if (openUrl !== false) {
       window.location.assign(urlWithFragment);
     }
   }
@@ -824,7 +826,7 @@ export class Auth0Client {
    * @param options
    */
   public async logout(options: LogoutOptions = {}): Promise<void> {
-    const { onRedirect, ...logoutOptions } = options;
+    const { openUrl, ...logoutOptions } = patchOpenUrlWithOnRedirect(options);
 
     await this.cacheManager.clear();
 
@@ -838,9 +840,9 @@ export class Auth0Client {
 
     const url = this._buildLogoutUrl(logoutOptions);
 
-    if (onRedirect) {
-      await onRedirect(url);
-    } else {
+    if (openUrl) {
+      await openUrl(url);
+    } else if (openUrl !== false) {
       window.location.assign(url);
     }
   }

@@ -2,7 +2,8 @@ import { ICache, InMemoryCache, LocalStorageCache } from './cache';
 import {
   Auth0ClientOptions,
   AuthorizationParams,
-  AuthorizeOptions
+  AuthorizeOptions,
+  LogoutOptions
 } from './global';
 import { getUniqueScopes } from './scope';
 
@@ -72,4 +73,24 @@ export const getAuthorizeParams = (
     code_challenge,
     code_challenge_method: 'S256'
   };
+};
+
+/**
+ * @ignore
+ *
+ * Function used to provide support for the deprecated onRedirect through openUrl.
+ */
+export const patchOpenUrlWithOnRedirect = <
+  T extends Pick<LogoutOptions, 'openUrl' | 'onRedirect'>
+>(
+  options: T
+) => {
+  const { openUrl, onRedirect, ...originalOptions } = options;
+
+  const result = {
+    ...originalOptions,
+    openUrl: openUrl === false || openUrl ? openUrl : onRedirect
+  };
+
+  return result as T;
 };
