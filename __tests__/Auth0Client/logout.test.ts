@@ -155,10 +155,21 @@ describe('Auth0Client', () => {
       );
     });
 
-    it('removes the organization hint cookie from storage when `options.onRedirect` is set', async () => {
+    it('removes authenticated cookie from storage when `options.openUrl` is set', async () => {
       const auth0 = setup();
 
-      await auth0.logout({ onRedirect: async () => {} });
+      await auth0.logout({ openUrl: async () => {} });
+
+      expect(esCookie.remove).toHaveBeenCalledWith(
+        `auth0.${TEST_CLIENT_ID}.is.authenticated`,
+        {}
+      );
+    });
+
+    it('removes the organization hint cookie from storage when `options.openUrl` is set', async () => {
+      const auth0 = setup();
+
+      await auth0.logout({ openUrl: async () => {} });
 
       expect(esCookie.remove).toHaveBeenCalledWith(
         `auth0.${TEST_CLIENT_ID}.organization_hint`,
@@ -179,7 +190,27 @@ describe('Auth0Client', () => {
       );
     });
 
+    it('skips `window.location.assign` when `options.openUrl` is provided', async () => {
+      const auth0 = setup();
+      const openUrl = jest.fn();
+      await auth0.logout({ openUrl });
+
+      expect(window.location.assign).not.toHaveBeenCalled();
+      expect(openUrl).toHaveBeenCalledWith(
+        expect.stringContaining(
+          'https://auth0_domain/v2/logout?client_id=auth0_client_id'
+        )
+      );
+    });
+
     it('calls `window.location.assign` when `options.onRedirect` is not provided', async () => {
+      const auth0 = setup();
+
+      await auth0.logout();
+      expect(window.location.assign).toHaveBeenCalled();
+    });
+
+    it('calls `window.location.assign` when `options.openUrl` is not provided', async () => {
       const auth0 = setup();
 
       await auth0.logout();
@@ -196,14 +227,12 @@ describe('Auth0Client', () => {
       expect(await auth0.isAuthenticated()).toBe(false);
     });
 
-    it('can access isAuthenticated immediately after local logout when using a custom async cache', async () => {
-      const auth0 = setup({
-        cache: new InMemoryAsyncCacheNoKeys()
-      });
+    it('can access isAuthenticated immediately after local logout', async () => {
+      const auth0 = setup();
 
       await loginWithRedirect(auth0);
       expect(await auth0.isAuthenticated()).toBe(true);
-      await auth0.logout({ onRedirect: async () => {} });
+      await auth0.logout({ openUrl: async () => {} });
 
       expect(await auth0.isAuthenticated()).toBe(false);
     });
@@ -216,6 +245,42 @@ describe('Auth0Client', () => {
       await loginWithRedirect(auth0);
       expect(await auth0.isAuthenticated()).toBe(true);
       await auth0.logout({ onRedirect: async () => {} });
+
+      expect(await auth0.isAuthenticated()).toBe(false);
+    });
+
+    it('can access isAuthenticated immediately after local logout when using a custom async cache - using openUrl', async () => {
+      const auth0 = setup({
+        cache: new InMemoryAsyncCacheNoKeys()
+      });
+
+      await loginWithRedirect(auth0);
+      expect(await auth0.isAuthenticated()).toBe(true);
+      await auth0.logout({ openUrl: async () => {} });
+
+      expect(await auth0.isAuthenticated()).toBe(false);
+    });
+
+    it('can access isAuthenticated immediately after local logout when using a custom async cache', async () => {
+      const auth0 = setup({
+        cache: new InMemoryAsyncCacheNoKeys()
+      });
+
+      await loginWithRedirect(auth0);
+      expect(await auth0.isAuthenticated()).toBe(true);
+      await auth0.logout({ onRedirect: async () => {} });
+
+      expect(await auth0.isAuthenticated()).toBe(false);
+    });
+
+    it('can access isAuthenticated immediately after local logout when using a custom async cache - using openUrl', async () => {
+      const auth0 = setup({
+        cache: new InMemoryAsyncCacheNoKeys()
+      });
+
+      await loginWithRedirect(auth0);
+      expect(await auth0.isAuthenticated()).toBe(true);
+      await auth0.logout({ openUrl: async () => {} });
 
       expect(await auth0.isAuthenticated()).toBe(false);
     });

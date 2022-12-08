@@ -22,6 +22,7 @@ import {
   TEST_STATE
 } from '../constants';
 import { expect } from '@jest/globals';
+import { patchOpenUrlWithOnRedirect } from '../../src/Auth0Client.utils';
 
 const authorizationResponse: AuthenticationResult = {
   code: 'my_code',
@@ -194,7 +195,9 @@ export const loginWithRedirectFn = (mockWindow, mockFetch) => {
     } = processDefaultLoginWithRedirectOptions(testConfig);
     await auth0.loginWithRedirect(options);
 
-    if (!options?.onRedirect) {
+    const patchesOptions = options && patchOpenUrlWithOnRedirect(options);
+
+    if (!patchesOptions || patchesOptions.openUrl == null) {
       expect(mockWindow.location.assign).toHaveBeenCalled();
     }
 

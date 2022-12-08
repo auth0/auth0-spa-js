@@ -296,8 +296,21 @@ export interface RedirectLoginOptions<TAppState = any>
    *     window.location.replace(url);
    *   }
    * });
+   * @deprecated since v2.0.1, use `openUrl` instead.
    */
   onRedirect?: (url: string) => Promise<void>;
+
+  /**
+   * Used to control the redirect and not rely on the SDK to do the actual redirect.
+   *
+   * @example
+   * const client = new Auth0Client({
+   *   async openUrl(url) {
+   *     window.location.replace(url);
+   *   }
+   * });
+   */
+  openUrl?: (url: string) => Promise<void>;
 }
 
 export interface RedirectLoginResult<TAppState = any> {
@@ -442,8 +455,23 @@ export interface LogoutOptions extends LogoutUrlOptions {
    *     window.location.replace(url);
    *   }
    * });
+   * @deprecated since v2.0.1, use `openUrl` instead.
    */
   onRedirect?: (url: string) => Promise<void>;
+
+  /**
+   * Used to control the redirect and not rely on the SDK to do the actual redirect.
+   *
+   * Set to `false` to disable the redirect, or provide a function to handle the actual redirect yourself.
+   *
+   * @example
+   * await auth0.logout({
+   *   async openUrl(url) {
+   *     window.location.replace(url);
+   *   }
+   * });
+   */
+  openUrl?: false | ((url: string) => Promise<void>);
 }
 
 /**
