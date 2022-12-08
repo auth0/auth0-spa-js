@@ -14,7 +14,7 @@
     "build": "rimraf dist && rollup -m -c --environment NODE_ENV:production && npm run test:es-check",
     "build:stats": "rimraf dist && rollup -m -c --environment NODE_ENV:production --environment WITH_STATS:true && npm run test:es-check && open bundle-stats/index.html",
     "lint:security": "eslint ./src --ext ts --no-eslintrc --config ./.eslintrc.security",
-    "test": "jest --coverage --silent",
+    "test": "jest",
     "test:watch": "jest --coverage --watch",
     "test:debug": "node --inspect node_modules/.bin/jest --runInBand",
     "test:open:integration": "cypress open",

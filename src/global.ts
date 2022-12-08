@@ -303,8 +303,6 @@ export interface RedirectLoginOptions<TAppState = any>
   /**
    * Used to control the redirect and not rely on the SDK to do the actual redirect.
    *
-   * Set to `false` to disable the redirect, or provide a function to handle the actual redirect yourself.
-   *
    * @example
    * const client = new Auth0Client({
    *   async openUrl(url) {
@@ -312,7 +310,7 @@ export interface RedirectLoginOptions<TAppState = any>
    *   }
    * });
    */
-  openUrl?: false | ((url: string) => Promise<void>);
+  openUrl?: (url: string) => Promise<void>;
 }
 
 export interface RedirectLoginResult<TAppState = any> {

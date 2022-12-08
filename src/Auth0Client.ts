@@ -466,7 +466,7 @@ export class Auth0Client {
 
     if (openUrl) {
       await openUrl(urlWithFragment);
-    } else if (openUrl !== false) {
+    } else {
       window.location.assign(urlWithFragment);
     }
   }

@@ -309,7 +309,7 @@ describe('Auth0Client', () => {
         authorizationParams: {
           audience: 'test_audience'
         },
-        openUrl: false
+        openUrl: async () => {}
       });
 
       expect(window.location.assign).not.toHaveBeenCalled();
