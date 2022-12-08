@@ -1,5 +1,14 @@
 # Change Log
 
+## [v2.0.1](https://github.com/auth0/auth0-spa-js/tree/v2.0.1) (2022-12-08)
+[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.0.0...v2.0.1)
+
+**Changed**
+- Add openUrl and deprecate onRedirect [\#1058](https://github.com/auth0/auth0-spa-js/pull/1058) ([frederikprijck](https://github.com/frederikprijck))
+
+**Fixed**
+- Export MissingRefreshTokenError [\#1043](https://github.com/auth0/auth0-spa-js/pull/1043) ([frederikprijck](https://github.com/frederikprijck))
+
 ## [v2.0.0](https://github.com/auth0/auth0-spa-js/tree/v2.0.0) (2022-10-27)
 
 [Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v1.22.5...v2.0.0)
