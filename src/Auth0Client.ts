@@ -3,7 +3,7 @@ import Lock from 'browser-tabs-lock';
 import {
   createQueryParams,
   runPopup,
-  parseQueryResult,
+  parseAuthenticationResult,
   encode,
   createRandomString,
   runIframe,
@@ -486,7 +486,7 @@ export class Auth0Client {
       throw new Error('There are no query params available for parsing.');
     }
 
-    const { state, code, error, error_description } = parseQueryResult(
+    const { state, code, error, error_description } = parseAuthenticationResult(
       queryStringFragments.join('')
     );
 

@@ -42,7 +42,12 @@ export const assertPostFn = (mockFetch: jest.Mock) => {
     expect(url).toEqual(actualUrl);
 
     expect(body).toEqual(
-      json ? JSON.parse(call.body) : utils.parseQueryResult(call.body)
+      json
+        ? JSON.parse(call.body)
+        : Array.from(new URLSearchParams(call.body).entries()).reduce(
+            (acc, curr) => ({ ...acc, [curr[0]]: curr[1] }),
+            {}
+          )
     );
 
     if (headers) {

@@ -1,5 +1,5 @@
 import {
-  parseQueryResult,
+  parseAuthenticationResult,
   createQueryParams,
   bufferToBase64UrlEncoded,
   createRandomString,
@@ -23,27 +23,21 @@ afterEach(() => {
 });
 
 describe('utils', () => {
-  describe('parseQueryResult', () => {
+  describe('parseAuthenticationResult', () => {
     it('parses the query string', () => {
       expect(
-        parseQueryResult('value=test&otherValue=another-test')
+        parseAuthenticationResult('code=test&state=another-test')
       ).toMatchObject({
-        value: 'test',
-        otherValue: 'another-test'
+        code: 'test',
+        state: 'another-test'
       });
     });
     it('strips off hash values', () => {
       expect(
-        parseQueryResult('code=some-code&state=some-state#__')
+        parseAuthenticationResult('code=some-code&state=some-state#__')
       ).toMatchObject({
         code: 'some-code',
         state: 'some-state'
-      });
-    });
-    it('converts `expires_in` to int', () => {
-      expect(parseQueryResult('value=test&expires_in=10')).toMatchObject({
-        value: 'test',
-        expires_in: 10
       });
     });
   });
