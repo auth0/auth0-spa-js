@@ -32,6 +32,25 @@ describe('utils', () => {
         state: 'another-test'
       });
     });
+
+    it('parses the query string when containing raw =', () => {
+      expect(
+        parseAuthenticationResult('code=test&state=another-test==')
+      ).toMatchObject({
+        code: 'test',
+        state: 'another-test=='
+      });
+    });
+
+    it('parses the query string when containing url encoded =', () => {
+      expect(
+        parseAuthenticationResult('code=test&state=another-test%3D%3D')
+      ).toMatchObject({
+        code: 'test',
+        state: 'another-test=='
+      });
+    });
+
     it('strips off hash values', () => {
       expect(
         parseAuthenticationResult('code=some-code&state=some-state#__')
