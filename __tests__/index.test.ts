@@ -50,7 +50,7 @@ const setup = async (
   utils.sha256.mockReturnValue(Promise.resolve(TEST_ARRAY_BUFFER));
   utils.bufferToBase64UrlEncoded.mockReturnValue(TEST_BASE64_ENCODED_STRING);
 
-  utils.parseQueryResult.mockReturnValue({
+  utils.parseAuthenticationResult.mockReturnValue({
     state: TEST_ENCODED_STATE,
     code: TEST_CODE
   });
