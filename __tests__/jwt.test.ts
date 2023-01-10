@@ -11,6 +11,8 @@ const verifyOptions = {
   clientId: 'the_client_id'
 };
 
+const symmetricKey = 'shared secret';
+
 const createPrivateKey = () => {
   const { privateKey } = generateKeyPairSync('rsa', {
     modulusLength: 2048
@@ -27,8 +29,12 @@ const DEFAULT_PAYLOAD = <any>{
   nonce: verifyOptions.nonce,
   azp: verifyOptions.aud
 };
-const createJWT = (payload = DEFAULT_PAYLOAD, options = {}) => {
-  const key = createPrivateKey();
+const createJWT = (
+  payload = DEFAULT_PAYLOAD,
+  options: Record<string, any> = {}
+) => {
+  const key = options.algorithm === 'HS256' ? symmetricKey : createPrivateKey();
+
   return jwt.sign(payload, key, {
     algorithm: 'RS256',
     audience: verifyOptions.aud,
@@ -43,6 +49,7 @@ const verifier = new IDTokenVerifier({
   issuer: verifyOptions.iss,
   audience: verifyOptions.aud
 });
+
 verifier.getRsaVerifier = (_, __, cb) => cb(null, { verify: () => true });
 
 describe('jwt', () => {
@@ -171,10 +178,12 @@ describe('jwt', () => {
     const id_token = await createJWT(DEFAULT_PAYLOAD, {
       algorithm: 'HS256'
     });
+
     expect(() => verify({ ...verifyOptions, id_token })).toThrow(
       `Signature algorithm of "HS256" is not supported. Expected the ID token to be signed with "RS256".`
     );
   });
+
   it('validates issuer is present', async () => {
     const id_token = await createJWT(DEFAULT_PAYLOAD, { issuer: '' });
     expect(() => verify({ ...verifyOptions, id_token })).toThrow(
