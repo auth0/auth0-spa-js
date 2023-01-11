@@ -20,14 +20,19 @@ const createPrivateKey = () => {
   });
 };
 
+const symmetricKey = 'shared secret';
+
 const DEFAULT_PAYLOAD = <any>{
   sub: 'id|123',
   payload: true,
   nonce: verifyOptions.nonce,
   azp: verifyOptions.aud
 };
-const createJWT = (payload = DEFAULT_PAYLOAD, options = {}) => {
-  const key = createPrivateKey();
+const createJWT = (
+  payload = DEFAULT_PAYLOAD,
+  options: Record<string, any> = {}
+) => {
+  const key = options.algorithm === 'HS256' ? symmetricKey : createPrivateKey();
   return jwt.sign(payload, key, {
     algorithm: 'RS256',
     audience: verifyOptions.aud,

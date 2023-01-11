@@ -40,7 +40,7 @@ jobs:
       - run: npx concurrently --raw --kill-others --success first "npm:dev" "wait-on http://127.0.0.1:3000/ && browserstack-cypress run --build-name $CIRCLE_BRANCH"
   test_gatsby:
     docker:
-      - image: << pipeline.parameters.docker_image >>
+      - image: cypress/browsers:node18.12.0-chrome106-ff106
     working_directory: ~/repo
     steps:
       - checkout:
@@ -140,7 +140,7 @@ jobs:
           working_directory: my-app
   test_angular:
     docker:
-      - image: << pipeline.parameters.docker_image >>
+      - image: cypress/browsers:node18.12.0-chrome106-ff106
     working_directory: ~/repo
     steps:
       - checkout:
