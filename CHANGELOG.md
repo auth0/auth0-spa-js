@@ -1,5 +1,17 @@
 # Change Log
 
+## [v2.0.2](https://github.com/auth0/auth0-spa-js/tree/v2.0.2) (2023-01-12)
+
+[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.0.1...v2.0.2)
+
+**Security**
+
+- Bump jsonwebtoken to v9 [\#1062](https://github.com/auth0/auth0-spa-js/pull/1062) ([dependabot](https://github.com/apps/dependabot))
+
+This patch release is identical to `2.0.1` but has been released to ensure tooling no longer detects a vulnerable version of `jsonwebtoken` being used.
+
+Even though 2.0.1 was not vulnerable for the related [CVE](https://unit42.paloaltonetworks.com/jsonwebtoken-vulnerability-cve-2022-23529/) because of the fact that `jsonwebtoken` is a devDependency, we are cutting a release to ensure build tools no longer report our SDK as vulnerable to the mentioned CVE.
+
 ## [v2.0.1](https://github.com/auth0/auth0-spa-js/tree/v2.0.1) (2022-12-08)
 [Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.0.0...v2.0.1)
 
