@@ -200,6 +200,7 @@ workflows:
             branches:
               only:
                 - master
+                - v1
           requires:
             - browserstack
             - test_gatsby
