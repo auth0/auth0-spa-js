@@ -132,7 +132,7 @@ describe('Auth0Client', () => {
       );
     });
 
-    it('clears the cache', async () => {
+    it('clears the cache for the global clientId', async () => {
       const auth0 = setup();
 
       jest
@@ -141,7 +141,39 @@ describe('Auth0Client', () => {
 
       await auth0.logout();
 
+      expect(auth0['cacheManager']['clear']).toHaveBeenCalledWith(
+        TEST_CLIENT_ID
+      );
+    });
+
+    it('clears the cache for the provided clientId', async () => {
+      const auth0 = setup();
+
+      jest
+        .spyOn(auth0['cacheManager'], 'clear')
+        .mockReturnValueOnce(Promise.resolve());
+
+      await auth0.logout({ clientId: 'client_123' });
+
+      expect(auth0['cacheManager']['clear']).toHaveBeenCalledWith('client_123');
+      expect(auth0['cacheManager']['clear']).not.toHaveBeenCalledWith(
+        TEST_CLIENT_ID
+      );
+    });
+
+    it('clears the cache for all client ids', async () => {
+      const auth0 = setup();
+
+      jest
+        .spyOn(auth0['cacheManager'], 'clear')
+        .mockReturnValueOnce(Promise.resolve());
+
+      await auth0.logout({ clientId: null });
+
       expect(auth0['cacheManager']['clear']).toHaveBeenCalled();
+      expect(auth0['cacheManager']['clear']).not.toHaveBeenCalledWith(
+        TEST_CLIENT_ID
+      );
     });
 
     it('removes authenticated cookie from storage when `options.onRedirect` is set', async () => {

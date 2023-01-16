@@ -410,7 +410,7 @@ export interface LogoutUrlOptions {
    *
    * [Read more about how redirecting after logout works](https://auth0.com/docs/logout/guides/redirect-users-after-logout)
    */
-  clientId?: string;
+  clientId?: string | null;
 
   /**
    * Parameters to pass to the logout endpoint. This can be known parameters defined by Auth0 or custom parameters
