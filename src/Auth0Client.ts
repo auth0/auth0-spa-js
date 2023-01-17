@@ -828,7 +828,11 @@ export class Auth0Client {
   public async logout(options: LogoutOptions = {}): Promise<void> {
     const { openUrl, ...logoutOptions } = patchOpenUrlWithOnRedirect(options);
 
-    await this.cacheManager.clear();
+    if (options.clientId === null) {
+      await this.cacheManager.clear();
+    } else {
+      await this.cacheManager.clear(options.clientId || this.options.clientId);
+    }
 
     this.cookieStorage.remove(this.orgHintCookieName, {
       cookieDomain: this.options.cookieDomain
