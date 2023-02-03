@@ -132,7 +132,8 @@ describe('CookieStorageWithLegacySameSite', () => {
       `_legacy_${key}`,
       JSON.stringify(value),
       {
-        expires: options.daysUntilExpire
+        expires: options.daysUntilExpire,
+        domain: options.cookieDomain
       }
     );
   });
