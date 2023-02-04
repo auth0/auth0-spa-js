@@ -91,6 +91,10 @@ export const CookieStorageWithLegacySameSite = {
       cookieAttributes.expires = options.daysUntilExpire;
     }
 
+    if (options?.cookieDomain) {
+      cookieAttributes.domain = options.cookieDomain;
+    }
+
     Cookies.set(
       `${LEGACY_PREFIX}${key}`,
       JSON.stringify(value),

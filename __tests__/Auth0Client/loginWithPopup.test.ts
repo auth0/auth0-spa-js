@@ -682,7 +682,8 @@ describe('Auth0Client', () => {
         `_legacy_auth0.${TEST_CLIENT_ID}.organization_hint`,
         JSON.stringify(TEST_ORG_ID),
         {
-          expires: 1
+          expires: 1,
+          domain: TEST_DOMAIN
         }
       );
 
@@ -702,11 +703,13 @@ describe('Auth0Client', () => {
       await loginWithPopup(auth0);
 
       expect(<jest.Mock>esCookie.remove).toHaveBeenCalledWith(
-        `_legacy_auth0.${TEST_CLIENT_ID}.organization_hint`, {}
+        `_legacy_auth0.${TEST_CLIENT_ID}.organization_hint`,
+        {}
       );
 
       expect(<jest.Mock>esCookie.remove).toHaveBeenCalledWith(
-        `auth0.${TEST_CLIENT_ID}.organization_hint`, {}
+        `auth0.${TEST_CLIENT_ID}.organization_hint`,
+        {}
       );
     });
 
