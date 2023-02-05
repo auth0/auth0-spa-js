@@ -1,5 +1,12 @@
 # Change Log
 
+## [v2.0.3](https://github.com/auth0/auth0-spa-js/tree/v2.0.3) (2023-02-04)
+[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.0.2...v2.0.3)
+
+**Fixed**
+- Ensure cookieDomain is used when using legacy Cookiestorage [\#1071](https://github.com/auth0/auth0-spa-js/pull/1071) ([frederikprijck](https://github.com/frederikprijck))
+- Ensure to only clear current client cache when logging out [\#1068](https://github.com/auth0/auth0-spa-js/pull/1068) ([frederikprijck](https://github.com/frederikprijck))
+
 ## [v2.0.2](https://github.com/auth0/auth0-spa-js/tree/v2.0.2) (2023-01-12)
 
 [Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.0.1...v2.0.2)
