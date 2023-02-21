@@ -79,3 +79,9 @@ In most browsers, secure origins are origins that match at least one of the foll
 If you're running your application from a secure origin, it's possible that your browser doesn't support the Web Crypto API. For a compatibility table, please check https://caniuse.com/#feat=mdn-api_subtlecrypto
 
 ## Why doesn't my SPA auto-login on page refresh when MFA is enabled?
+
+## Why am i getting a `missing_refresh_token` error after upgrading to v2?
+
+[As mentioned in the migration guide](https://github.com/auth0/auth0-spa-js/blob/master/MIGRATION_GUIDE.md#no-more-iframe-fallback-by-default-when-using-refresh-tokens), when using refresh tokens in v1 the SDK used to default to using an iframe as a fallback whenever there was no refresh token available . This happend because `useRefreshTokensFallback` was set to `true` by default and because of [this check](https://github.com/auth0/auth0-spa-js/blob/master/src/Auth0Client.ts#L952). With v2, we have flipped the default for `useRefreshTokensFallback` to `true`, because iframes do not work in browsers that have third party cookies disabled unless you have Auth0 configured to use [Custom Domains](https://auth0.com/docs/customize/custom-domains).
+
+Even though with v1, unless you explicitly set `useRefreshTokensFallback `to `false`, the SDK would never throw a `missing_refresh_token` error. The consequence of this change is that with v2, it will surface that error unless you explicitly set it to `true`. That means you either need to handle the `missing_refresh_token` error and call `loginWithRedirect` / `loginWithPopup`, or set `useRefreshTokensFallback` to true.
