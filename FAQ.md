@@ -78,8 +78,6 @@ In most browsers, secure origins are origins that match at least one of the foll
 
 If you're running your application from a secure origin, it's possible that your browser doesn't support the Web Crypto API. For a compatibility table, please check https://caniuse.com/#feat=mdn-api_subtlecrypto
 
-## Why doesn't my SPA auto-login on page refresh when MFA is enabled?
-
 ## Why am I getting a `missing_refresh_token` error after upgrading to v2?
 
 v1 of the SDK used an iframe as a backup if no refresh token was available. You could control this behaviour with the `useRefreshTokensFallback` option, which was `true` by default. With v2, we have flipped the default for `useRefreshTokensFallback` to `false` (see [the migration guide](https://github.com/auth0/auth0-spa-js/blob/master/MIGRATION_GUIDE.md#no-more-iframe-fallback-by-default-when-using-refresh-tokens)). As a result, you may encounter `missing_refresh_token` errors. 
