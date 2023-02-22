@@ -116,6 +116,7 @@ const messageHandler = async ({
     port.postMessage({
       ok: false,
       json: {
+        error: error.error,
         error_description: error.message
       }
     });

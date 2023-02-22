@@ -5,7 +5,11 @@ import {
 
 import { sendMessage } from './worker/worker.utils';
 import { FetchOptions } from './global';
-import { GenericError, MfaRequiredError } from './errors';
+import {
+  GenericError,
+  MfaRequiredError,
+  MissingRefreshTokenError
+} from './errors';
 
 export const createAbortController = () => new AbortController();
 
@@ -140,6 +144,10 @@ export async function getJSON<T>(
 
     if (error === 'mfa_required') {
       throw new MfaRequiredError(error, errorMessage, data.mfa_token);
+    }
+
+    if (error === 'missing_refresh_token') {
+      throw new MissingRefreshTokenError(audience, scope);
     }
 
     throw new GenericError(error || 'request_error', errorMessage);
