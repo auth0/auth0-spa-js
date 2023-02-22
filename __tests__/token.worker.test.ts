@@ -165,6 +165,7 @@ describe('token worker', () => {
       }
     });
 
+    expect(response.json.error).toBe('missing_refresh_token');
     expect(response.json.error_description).toContain(
       MISSING_REFRESH_TOKEN_ERROR_MESSAGE
     );

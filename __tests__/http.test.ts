@@ -1,4 +1,4 @@
-import { MfaRequiredError } from '../src/errors';
+import { MfaRequiredError, MissingRefreshTokenError } from '../src/errors';
 import { switchFetch, getJSON } from '../src/http';
 import { expect } from '@jest/globals';
 
@@ -46,5 +46,18 @@ describe('getJson', () => {
     await expect(
       getJSON('https://test.com/', null, null, null, {}, undefined)
     ).rejects.toHaveProperty('mfa_token', '1234');
+  });
+
+  it('throws MissingRefreshTokenError when missing_refresh_token is returned', async () => {
+    mockUnfetch.mockImplementation(() =>
+      Promise.resolve({
+        ok: false,
+        json: () => Promise.resolve({ error: 'missing_refresh_token' })
+      })
+    );
+
+    await expect(
+      getJSON('https://test.com/', null, null, null, {}, undefined)
+    ).rejects.toBeInstanceOf(MissingRefreshTokenError);
   });
 });
