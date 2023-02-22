@@ -1,5 +1,11 @@
 # Change Log
 
+## [v2.0.4](https://github.com/auth0/auth0-spa-js/tree/v2.0.4) (2023-02-22)
+[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.0.3...v2.0.4)
+
+**Fixed**
+- Correctly expose missing_refresh_token error from worker [\#1080](https://github.com/auth0/auth0-spa-js/pull/1080) ([frederikprijck](https://github.com/frederikprijck))
+
 ## [v2.0.3](https://github.com/auth0/auth0-spa-js/tree/v2.0.3) (2023-02-04)
 [Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.0.2...v2.0.3)
 
