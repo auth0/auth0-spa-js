@@ -31,7 +31,7 @@ auth0.logout({
 
 ## Calling an API
 
-Retrieve an access token to pass along in the `Authorization` header using thw `getTokenSilently` API.
+Retrieve an access token to pass along in the `Authorization` header using the `getTokenSilently` API.
 
 ```html
 <button id="call-api">Call an API</button>
