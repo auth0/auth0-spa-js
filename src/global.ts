@@ -305,12 +305,21 @@ export interface RedirectLoginOptions<TAppState = any>
    *
    * @example
    * const client = new Auth0Client({
-   *   async openUrl(url) {
+   *   openUrl(url) {
    *     window.location.replace(url);
    *   }
    * });
+   *
+   * @example
+   * import { Browser } from '@capacitor/browser';
+   *
+   * const client = new Auth0Client({
+   *   async openUrl(url) {
+   *     await Browser.open({ url });
+   *   }
+   * });
    */
-  openUrl?: (url: string) => Promise<void>;
+  openUrl?: (url: string) => Promise<void> | void;
 }
 
 export interface RedirectLoginResult<TAppState = any> {
@@ -466,12 +475,21 @@ export interface LogoutOptions extends LogoutUrlOptions {
    *
    * @example
    * await auth0.logout({
-   *   async openUrl(url) {
+   *   openUrl(url) {
    *     window.location.replace(url);
    *   }
    * });
+   *
+   * @example
+   * import { Browser } from '@capacitor/browser';
+   *
+   * await auth0.logout({
+   *   async openUrl(url) {
+   *     await Browser.open({ url });
+   *   }
+   * });
    */
-  openUrl?: false | ((url: string) => Promise<void>);
+  openUrl?: false | ((url: string) => Promise<void> | void);
 }
 
 /**
