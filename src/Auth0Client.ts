@@ -279,6 +279,7 @@ export class Auth0Client {
 
   private async _prepareAuthorizeUrl(
     authorizationParams: AuthorizationParams,
+    appState?: any,
     authorizeOptions?: Partial<AuthorizeOptions>,
     fallbackRedirectUri?: string
   ): Promise<{
@@ -290,7 +291,7 @@ export class Auth0Client {
     state: string;
     url: string;
   }> {
-    const state = encode(createRandomString());
+    const state = appState || encode(createRandomString());
     const nonce = encode(createRandomString());
     const code_verifier = createRandomString();
     const code_challengeBuffer = await sha256(code_verifier);
@@ -364,6 +365,7 @@ export class Auth0Client {
 
     const params = await this._prepareAuthorizeUrl(
       options.authorizationParams || {},
+      undefined,
       { response_mode: 'web_message' },
       window.location.origin
     );
@@ -453,7 +455,8 @@ export class Auth0Client {
       this.options.authorizationParams.organization;
 
     const { url, ...transaction } = await this._prepareAuthorizeUrl(
-      urlOptions.authorizationParams || {}
+      urlOptions.authorizationParams || {},
+      options.appState,
     );
 
     this.transactionManager.create({
@@ -877,6 +880,7 @@ export class Auth0Client {
       audience
     } = await this._prepareAuthorizeUrl(
       params,
+      undefined,
       { response_mode: 'web_message' },
       window.location.origin
     );
