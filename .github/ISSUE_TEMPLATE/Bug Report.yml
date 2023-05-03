@@ -1,0 +1,91 @@
+name: 🐞 Report a bug
+description: Have you found a bug or issue? Create a bug report for this library
+labels: ["bug"]
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Please do not report security vulnerabilities here**. The [Responsible Disclosure Program](https://auth0.com/responsible-disclosure-policy) details the procedure for disclosing security issues.
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Checklist
+      options:
+        - label: The issue can be reproduced in the [auth0-spa-js sample app](https://github.com/auth0-samples/auth0-javascript-samples/tree/master/01-Login) (or N/A).
+          required: true
+        - label: I have looked into the [Readme](https://github.com/auth0/auth0-spa-js#readme), [Examples](https://github.com/auth0/auth0-spa-js/blob/master/EXAMPLES.md), and [FAQ](https://github.com/auth0/auth0-spa-js/blob/master/FAQ.md) and have not found a suitable solution or answer.
+          required: true
+        - label: I have looked into the [documentation](https://auth0.com/docs/libraries/auth0-single-page-app-sdk) and [API documentation](https://auth0.github.io/auth0-spa-js/), and have not found a suitable solution or answer.
+          required: true
+        - label: I have searched the [issues](https://github.com/auth0/auth0-spa-js/issues) and have not found a suitable solution or answer.
+          required: true
+        - label: I have searched the [Auth0 Community](https://community.auth0.com) forums and have not found a suitable solution or answer.
+          required: true
+        - label: I agree to the terms within the [Auth0 Code of Conduct](https://github.com/auth0/open-source-template/blob/master/CODE-OF-CONDUCT.md).
+          required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: Provide a clear and concise description of the issue, including what you expected to happen.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction
+      description: Detail the steps taken to reproduce this error, and whether this issue can be reproduced consistently or if it is intermittent.
+      placeholder: |
+        1. Step 1...
+        2. Step 2...
+        3. ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional context
+      description: Other libraries that might be involved, or any other relevant information you think would be useful.
+    validations:
+      required: false
+
+  - type: input
+    id: environment-version
+    attributes:
+      label: auth0-spa-js version
+    validations:
+      required: true
+
+  - type: input
+    id: environment-framework
+    attributes:
+      label: Which framework are you using (React, Angular, Vue...)?
+    validations:
+      required: true
+
+  - type: input
+    id: environment-framework-version
+    attributes:
+      label: Framework version
+    validations:
+      required: true
+
+  - type: dropdown
+    id: environment-browser
+    attributes:
+      label: Which browsers have you tested in?
+      multiple: true
+      options:
+        - Chrome
+        - Edge
+        - Safari
+        - Firefox
+        - Opera
+        - Other
+    validations:
+      required: true
