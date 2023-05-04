@@ -66,14 +66,14 @@ body:
     attributes:
       label: Which framework are you using (React, Angular, Vue...)?
     validations:
-      required: true
+      required: false
 
   - type: input
     id: environment-framework-version
     attributes:
       label: Framework version
     validations:
-      required: true
+      required: false
 
   - type: dropdown
     id: environment-browser
