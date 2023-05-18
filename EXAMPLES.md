@@ -163,9 +163,9 @@ Log in to an organization by specifying the `organization` parameter when settin
 await createAuth0Client({
   domain: '<AUTH0_DOMAIN>',
   clientId: '<AUTH0_CLIENT_ID>',
-  organization: '<MY_ORG_ID>',
   authorizationParams: {
-    redirect_uri: '<MY_CALLBACK_URL>'
+    redirect_uri: '<MY_CALLBACK_URL>',
+    organization: '<MY_ORG_ID>'
   }
 });
 ```
