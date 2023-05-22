@@ -1,22 +1,28 @@
 # Change Log
 
 ## [v2.0.5](https://github.com/auth0/auth0-spa-js/tree/v2.0.5) (2023-05-22)
+
 [Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.0.4...v2.0.5)
 
 **Changed**
-- feat: distinguish between missing and invalid state [\#1099](https://github.com/auth0/auth0-spa-js/pull/1099) ([frederikprijck](https://github.com/frederikprijck))
+
+- distinguish between missing and invalid state [\#1099](https://github.com/auth0/auth0-spa-js/pull/1099) ([frederikprijck](https://github.com/frederikprijck))
 - Allow sync openUrl [\#1087](https://github.com/auth0/auth0-spa-js/pull/1087) ([adamjmcgrath](https://github.com/adamjmcgrath))
 
 ## [v2.0.4](https://github.com/auth0/auth0-spa-js/tree/v2.0.4) (2023-02-22)
+
 [Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.0.3...v2.0.4)
 
 **Fixed**
+
 - Correctly expose missing_refresh_token error from worker [\#1080](https://github.com/auth0/auth0-spa-js/pull/1080) ([frederikprijck](https://github.com/frederikprijck))
 
 ## [v2.0.3](https://github.com/auth0/auth0-spa-js/tree/v2.0.3) (2023-02-04)
+
 [Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.0.2...v2.0.3)
 
 **Fixed**
+
 - Ensure cookieDomain is used when using legacy Cookiestorage [\#1071](https://github.com/auth0/auth0-spa-js/pull/1071) ([frederikprijck](https://github.com/frederikprijck))
 - Ensure to only clear current client cache when logging out [\#1068](https://github.com/auth0/auth0-spa-js/pull/1068) ([frederikprijck](https://github.com/frederikprijck))
 
@@ -33,12 +39,15 @@ This patch release is identical to `2.0.1` but has been released to ensure tooli
 Even though 2.0.1 was not vulnerable for the related [CVE](https://unit42.paloaltonetworks.com/jsonwebtoken-vulnerability-cve-2022-23529/) because of the fact that `jsonwebtoken` is a devDependency, we are cutting a release to ensure build tools no longer report our SDK as vulnerable to the mentioned CVE.
 
 ## [v2.0.1](https://github.com/auth0/auth0-spa-js/tree/v2.0.1) (2022-12-08)
+
 [Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.0.0...v2.0.1)
 
 **Changed**
+
 - Add openUrl and deprecate onRedirect [\#1058](https://github.com/auth0/auth0-spa-js/pull/1058) ([frederikprijck](https://github.com/frederikprijck))
 
 **Fixed**
+
 - Export MissingRefreshTokenError [\#1043](https://github.com/auth0/auth0-spa-js/pull/1043) ([frederikprijck](https://github.com/frederikprijck))
 
 ## [v2.0.0](https://github.com/auth0/auth0-spa-js/tree/v2.0.0) (2022-10-27)
