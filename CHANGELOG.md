@@ -1,5 +1,12 @@
 # Change Log
 
+## [v2.0.5](https://github.com/auth0/auth0-spa-js/tree/v2.0.5) (2023-05-22)
+[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.0.4...v2.0.5)
+
+**Changed**
+- feat: distinguish between missing and invalid state [\#1099](https://github.com/auth0/auth0-spa-js/pull/1099) ([frederikprijck](https://github.com/frederikprijck))
+- Allow sync openUrl [\#1087](https://github.com/auth0/auth0-spa-js/pull/1087) ([adamjmcgrath](https://github.com/adamjmcgrath))
+
 ## [v2.0.4](https://github.com/auth0/auth0-spa-js/tree/v2.0.4) (2023-02-22)
 [Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.0.3...v2.0.4)
 
