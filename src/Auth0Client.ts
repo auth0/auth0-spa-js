@@ -493,7 +493,7 @@ export class Auth0Client {
     const transaction = this.transactionManager.get();
 
     if (!transaction) {
-      throw new Error('Invalid state');
+      throw new GenericError('missing_transaction', 'Invalid state');
     }
 
     this.transactionManager.remove();
@@ -512,7 +512,7 @@ export class Auth0Client {
       !transaction.code_verifier ||
       (transaction.state && transaction.state !== state)
     ) {
-      throw new Error('Invalid state');
+      throw new GenericError('state_mismatch', 'Invalid state');
     }
 
     const organizationId = transaction.organizationId;

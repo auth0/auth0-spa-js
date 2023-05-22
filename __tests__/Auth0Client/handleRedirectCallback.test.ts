@@ -30,6 +30,7 @@ import {
 } from '../constants';
 
 import { DEFAULT_AUTH0_CLIENT } from '../../src/constants';
+import { GenericError } from '../../src';
 
 jest.mock('es-cookie');
 jest.mock('../../src/jwt');
@@ -204,6 +205,9 @@ describe('Auth0Client', () => {
 
       expect(error).toBeDefined();
       expect(error.message).toBe('Invalid state');
+      expect(error.error).toBe('missing_transaction');
+      expect(error).toBeInstanceOf(Error);
+      expect(error).toBeInstanceOf(GenericError);
     });
 
     it('returns the transactions appState', async () => {
@@ -269,8 +273,9 @@ describe('Auth0Client', () => {
 
     it('should fail with an error if the state in the transaction does not match the request', async () => {
       const auth0 = setup();
+      let error;
 
-      await expect(async () => {
+      try {
         await loginWithRedirect(
           auth0,
           {},
@@ -281,7 +286,15 @@ describe('Auth0Client', () => {
             }
           }
         );
-      }).rejects.toEqual(new Error('Invalid state'));
+      } catch (e) {
+        error = e;
+      }
+
+      expect(error).toBeDefined();
+      expect(error.message).toBe('Invalid state');
+      expect(error.error).toBe('state_mismatch');
+      expect(error).toBeInstanceOf(Error);
+      expect(error).toBeInstanceOf(GenericError);
     });
 
     it('should not validate the state if there is no state in the transaction', async () => {
