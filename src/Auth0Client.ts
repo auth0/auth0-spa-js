@@ -379,7 +379,7 @@ export class Auth0Client {
     });
 
     if (params.state !== codeResult.state) {
-      throw new Error('Invalid state');
+      throw new GenericError('state_mismatch', 'Invalid state');
     }
 
     const organizationId =
@@ -898,7 +898,7 @@ export class Auth0Client {
       const codeResult = await runIframe(url, this.domainUrl, authorizeTimeout);
 
       if (stateIn !== codeResult.state) {
-        throw new Error('Invalid state');
+        throw new GenericError('state_mismatch', 'Invalid state');
       }
 
       const tokenResult = await this._requestToken(

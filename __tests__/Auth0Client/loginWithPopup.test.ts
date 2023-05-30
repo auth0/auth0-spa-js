@@ -34,6 +34,7 @@ import {
   DEFAULT_AUTH0_CLIENT,
   DEFAULT_POPUP_CONFIG_OPTIONS
 } from '../../src/constants';
+import { GenericError } from '../../src/errors';
 
 jest.mock('es-cookie');
 jest.mock('../../src/jwt');
@@ -476,16 +477,25 @@ describe('Auth0Client', () => {
 
     it('throws error if state from popup response is different from the provided state', async () => {
       const auth0 = setup();
+      let error;
 
-      await expect(
-        loginWithPopup(auth0, undefined, undefined, {
+      try {
+        await loginWithPopup(auth0, undefined, undefined, {
           authorize: {
             response: {
               state: 'other-state'
             }
           }
-        })
-      ).rejects.toThrowError('Invalid state');
+        });
+      } catch (e) {
+        error = e;
+      }
+
+      expect(error).toBeDefined();
+      expect(error.message).toBe('Invalid state');
+      expect(error.error).toBe('state_mismatch');
+      expect(error).toBeInstanceOf(Error);
+      expect(error).toBeInstanceOf(GenericError);
     });
 
     it('calls `tokenVerifier.verify` with the `issuer` from in the oauth/token response', async () => {
