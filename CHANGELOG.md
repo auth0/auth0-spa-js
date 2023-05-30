@@ -1,5 +1,11 @@
 # Change Log
 
+## [v2.0.6](https://github.com/auth0/auth0-spa-js/tree/v2.0.6) (2023-05-30)
+[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.0.5...v2.0.6)
+
+**Fixed**
+- Fix missing invalid state errors with Generic Error [\#1102](https://github.com/auth0/auth0-spa-js/pull/1102) ([frederikprijck](https://github.com/frederikprijck))
+
 ## [v2.0.5](https://github.com/auth0/auth0-spa-js/tree/v2.0.5) (2023-05-22)
 
 [Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.0.4...v2.0.5)
