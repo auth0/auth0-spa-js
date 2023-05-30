@@ -1835,9 +1835,19 @@ describe('Auth0Client', () => {
         })
       );
 
-      await expect(auth0.getTokenSilently()).rejects.toThrowError(
-        'Invalid state'
-      );
+      let error;
+
+      try {
+        await auth0.getTokenSilently();
+      } catch (e) {
+        error = e;
+      }
+
+      expect(error).toBeDefined();
+      expect(error.message).toBe('Invalid state');
+      expect(error.error).toBe('state_mismatch');
+      expect(error).toBeInstanceOf(Error);
+      expect(error).toBeInstanceOf(GenericError);
     });
 
     it('saves into cache', async () => {
