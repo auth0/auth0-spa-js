@@ -17,7 +17,7 @@ export class TransactionManager {
   private transaction: Transaction | undefined;
   private storageKey: string;
 
-  constructor(private storage: ClientStorage, private clientId: string) {
+  constructor(private storage: ClientStorage, private clientId: string, private cookieDomain?: string) {
     this.storageKey = `${TRANSACTION_STORAGE_KEY_PREFIX}.${this.clientId}`;
     this.transaction = this.storage.get(this.storageKey);
   }
@@ -26,7 +26,8 @@ export class TransactionManager {
     this.transaction = transaction;
 
     this.storage.save(this.storageKey, transaction, {
-      daysUntilExpire: 1
+      daysUntilExpire: 1,
+      cookieDomain: this.cookieDomain,
     });
   }
 
@@ -36,6 +37,8 @@ export class TransactionManager {
 
   public remove() {
     delete this.transaction;
-    this.storage.remove(this.storageKey);
+    this.storage.remove(this.storageKey, {
+      cookieDomain: this.cookieDomain
+    });
   }
 }
