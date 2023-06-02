@@ -1,5 +1,11 @@
 # Change Log
 
+## [v2.0.7](https://github.com/auth0/auth0-spa-js/tree/v2.0.7) (2023-06-02)
+[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.0.6...v2.0.7)
+
+**Changed**
+- Make TransactionManager use CookieDomain [\#1105](https://github.com/auth0/auth0-spa-js/pull/1105) ([ZdravkoDonev-gtmhub](https://github.com/ZdravkoDonev-gtmhub))
+
 ## [v2.0.6](https://github.com/auth0/auth0-spa-js/tree/v2.0.6) (2023-05-30)
 [Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.0.5...v2.0.6)
 
