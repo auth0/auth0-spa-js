@@ -1,5 +1,5 @@
 import { TransactionManager } from '../src/transaction-manager';
-import { SessionStorage } from '../src/storage';
+import { CookieStorage, SessionStorage } from '../src/storage';
 import { TEST_CLIENT_ID, TEST_STATE } from './constants';
 import { expect } from '@jest/globals';
 
@@ -81,4 +81,36 @@ describe('transaction manager', () => {
       expect(sessionStorage.removeItem).toHaveBeenCalledWith(transactionKey());
     });
   });
+  
+ describe('CookieStorage usage', () => {
+    it("`create` saves the transaction in the storage with the provided domain", () => {
+      CookieStorage.save = jest.fn();
+      const cookieDomain = "vanity.auth.com";
+      tm = new TransactionManager(CookieStorage, TEST_CLIENT_ID, cookieDomain);
+      tm.create(transaction);
+
+      expect(CookieStorage.save).toHaveBeenCalledWith(
+        transactionKey(),
+        expect.anything(),
+        {
+          daysUntilExpire: 1,
+          cookieDomain: cookieDomain
+        }
+      );
+    });
+
+    it("`remove` deletes the transaction in the storage with the provided domain", () => {
+      CookieStorage.remove = jest.fn();
+      const cookieDomain = "vanity.auth.com";
+      tm = new TransactionManager(CookieStorage, TEST_CLIENT_ID, cookieDomain);
+      tm.remove();
+
+      expect(CookieStorage.remove).toHaveBeenCalledWith(
+        transactionKey(),
+        {
+          cookieDomain: cookieDomain
+        }
+      );
+    });    
+  });  
 });

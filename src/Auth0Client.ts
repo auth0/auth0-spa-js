@@ -207,7 +207,8 @@ export class Auth0Client {
 
     this.transactionManager = new TransactionManager(
       transactionStorage,
-      this.options.clientId
+      this.options.clientId,
+      this.options.cookieDomain,
     );
 
     this.nowProvider = this.options.nowProvider || DEFAULT_NOW_PROVIDER;
