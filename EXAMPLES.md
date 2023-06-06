@@ -188,11 +188,11 @@ await client.loginWithPopup({
 });
 ```
 
-### Switch to a different organizations
+### Switch to a different organization
 
 When working with multiple organizations, there might be a situation where you want your users to be able to switch between different organizations.
 
-Important to realize is that the authentication state in the SDK is build around the organization, so in order to switch organizations, you need to logout and login again. However, it's enough to log out from the SDK and not from Auth0. Doing that ensures that, when calling login again, the user might not be prompted for their credentials depending on whether or not they have an active session with Auth0.
+To do this, clear the local logged in state from your application and login to Auth0 again, leveraging any existing Auth0 session to prevent the user from being prompted for their credentials.
 
 ```ts
 async function switchOrganization(newOrganization: string) {
@@ -206,8 +206,6 @@ async function switchOrganization(newOrganization: string) {
 ```
 
 **Note:** Ensure to pass any additional parameters to `loginWithRedirect` (or `loginWithPopup`) just as you might have passed on other occurences of calling login.
-
-Doing the above will ensure the SDK removes any token that is linked to the current organization, and logs in again to retrieve tokens for the new organization.
 
 ### Accept user invitations
 
