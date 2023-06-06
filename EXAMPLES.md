@@ -188,6 +188,25 @@ await client.loginWithPopup({
 });
 ```
 
+### Switch to a different organization
+
+When working with multiple organizations, there might be a situation where you want your users to be able to switch between different organizations.
+
+To do this, clear the local logged in state from your application and login to Auth0 again, leveraging any existing Auth0 session to prevent the user from being prompted for their credentials.
+
+```ts
+async function switchOrganization(newOrganization: string) {
+  await client.logout({ openUrl: false });
+  await client.loginWithRedirect({
+    authorizationParams: {
+      organization: newOrganization
+    }
+  });
+}
+```
+
+**Note:** Ensure to pass any additional parameters to `loginWithRedirect` (or `loginWithPopup`) just as you might have passed on other occurences of calling login.
+
 ### Accept user invitations
 
 Accept a user invitation through the SDK by creating a route within your application that can handle the user invitation URL, and log the user in by passing the `organization` and `invitation` parameters from this URL. You can either use `loginWithRedirect` or `loginWithPopup` as needed.
