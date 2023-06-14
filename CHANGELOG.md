@@ -1,5 +1,11 @@
 # Change Log
 
+## [v2.0.8](https://github.com/auth0/auth0-spa-js/tree/v2.0.8) (2023-06-14)
+[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.0.7...v2.0.8)
+
+**Changed**
+- Lazily retrieve transaction from transaction storage [\#1108](https://github.com/auth0/auth0-spa-js/pull/1108) ([frederikprijck](https://github.com/frederikprijck))
+
 ## [v2.0.7](https://github.com/auth0/auth0-spa-js/tree/v2.0.7) (2023-06-02)
 [Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.0.6...v2.0.7)
 
