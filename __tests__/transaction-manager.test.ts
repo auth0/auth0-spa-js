@@ -27,9 +27,12 @@ describe('transaction manager', () => {
     jest.resetAllMocks();
   });
 
-  describe('constructor', () => {
+  describe('get', () => {
     it('loads transactions from storage (per key)', () => {
       tm = new TransactionManager(SessionStorage, TEST_CLIENT_ID);
+
+      tm.get();
+
       expect(sessionStorage.getItem).toHaveBeenCalledWith(transactionKey());
     });
   });
@@ -59,7 +62,7 @@ describe('transaction manager', () => {
     });
 
     it('`get` with a transaction should return the transaction', () => {
-      tm.create(transaction);
+      jest.mocked(sessionStorage.getItem).mockReturnValue(transactionJson);
       expect(tm.get()).toMatchObject(transaction);
     });
 
@@ -81,11 +84,11 @@ describe('transaction manager', () => {
       expect(sessionStorage.removeItem).toHaveBeenCalledWith(transactionKey());
     });
   });
-  
- describe('CookieStorage usage', () => {
-    it("`create` saves the transaction in the storage with the provided domain", () => {
+
+  describe('CookieStorage usage', () => {
+    it('`create` saves the transaction in the storage with the provided domain', () => {
       CookieStorage.save = jest.fn();
-      const cookieDomain = "vanity.auth.com";
+      const cookieDomain = 'vanity.auth.com';
       tm = new TransactionManager(CookieStorage, TEST_CLIENT_ID, cookieDomain);
       tm.create(transaction);
 
@@ -99,18 +102,15 @@ describe('transaction manager', () => {
       );
     });
 
-    it("`remove` deletes the transaction in the storage with the provided domain", () => {
+    it('`remove` deletes the transaction in the storage with the provided domain', () => {
       CookieStorage.remove = jest.fn();
-      const cookieDomain = "vanity.auth.com";
+      const cookieDomain = 'vanity.auth.com';
       tm = new TransactionManager(CookieStorage, TEST_CLIENT_ID, cookieDomain);
       tm.remove();
 
-      expect(CookieStorage.remove).toHaveBeenCalledWith(
-        transactionKey(),
-        {
-          cookieDomain: cookieDomain
-        }
-      );
-    });    
-  });  
+      expect(CookieStorage.remove).toHaveBeenCalledWith(transactionKey(), {
+        cookieDomain: cookieDomain
+      });
+    });
+  });
 });

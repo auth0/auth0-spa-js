@@ -135,7 +135,7 @@ describe('Auth0Client', () => {
       expect(error.error).toBe('some-error');
       expect(error.error_description).toBe('some-error-description');
       expect(error.state).toBe('error-state');
-      expect(error.appState).toBe(appState);
+      expect(error.appState).toEqual(appState);
     });
 
     it('should clear the transaction data when the /authorize call redirects with a code param', async () => {
@@ -220,7 +220,7 @@ describe('Auth0Client', () => {
       const result = await loginWithRedirect(auth0, { appState });
 
       expect(result).toBeDefined();
-      expect(result.appState).toBe(appState);
+      expect(result.appState).toEqual(appState);
     });
 
     it('uses the custom http timeout value if specified', async () => {
@@ -234,7 +234,7 @@ describe('Auth0Client', () => {
 
       expect((http.switchFetch as jest.Mock).mock.calls[0][6]).toEqual(40000);
       expect(result).toBeDefined();
-      expect(result.appState).toBe(appState);
+      expect(result.appState).toEqual(appState);
     });
 
     it('does not store the scope from token endpoint if none was returned', async () => {
@@ -456,7 +456,7 @@ describe('Auth0Client', () => {
       expect(error.error).toBe('some-error');
       expect(error.error_description).toBe('some-error-description');
       expect(error.state).toBe('error-state');
-      expect(error.appState).toBe(appState);
+      expect(error.appState).toEqual(appState);
     });
 
     it('should clear the transaction data when the /authorize call redirects with a code param', async () => {
