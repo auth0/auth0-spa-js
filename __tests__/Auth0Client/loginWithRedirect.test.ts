@@ -35,7 +35,6 @@ import {
 } from '../constants';
 import version from '../../src/version';
 
-jest.mock('es-cookie');
 jest.mock('../../src/jwt');
 jest.mock('../../src/worker/token.worker');
 
@@ -59,6 +58,9 @@ describe('Auth0Client', () => {
   const oldWindowLocation = window.location;
 
   beforeEach(() => {
+    jest.spyOn(mockCookies, 'get');
+    jest.spyOn(mockCookies, 'set');
+    jest.spyOn(mockCookies, 'remove');
     // https://www.benmvp.com/blog/mocking-window-location-methods-jest-jsdom/
     delete window.location;
     window.location = Object.defineProperties(
