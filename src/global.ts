@@ -82,10 +82,9 @@ export interface AuthorizationParams {
    *
    * This will specify an `organization` parameter in your user's login request.
    *
-   * - If you provide an Organization ID (a string with the prefix `org_`), it will be validated against the `org_id` claim of your user's ID Token
-   * - If you provide an Organization Name (a string *without* the prefix `org_`), it will be validated against the `org_name` claim of your user's ID Token.
+   * - If you provide an Organization ID (a string with the prefix `org_`), it will be validated against the `org_id` claim of your user's ID Token. The validation is case-sensitive.
+   * - If you provide an Organization Name (a string *without* the prefix `org_`), it will be validated against the `org_name` claim of your user's ID Token. The validation is case-insensitive.
    *
-   * The validation is case-insensitive.
    */
   organization?: string;
 

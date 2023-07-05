@@ -194,7 +194,7 @@ export const verify = (options: JWTVerifyOptions) => {
   }
 
   if (options.organization) {
-    const org = options.organization.trim().toLowerCase();
+    const org = options.organization.trim();
     if (org.startsWith('org_')) {
       const orgId = org;
       if (!decoded.claims.org_id) {
@@ -207,7 +207,7 @@ export const verify = (options: JWTVerifyOptions) => {
         );
       }
     } else {
-      const orgName = org;
+      const orgName = org.toLowerCase();
       // TODO should we verify if there is an `org_id` claim?
       if (!decoded.claims.org_name) {
         throw new Error(
