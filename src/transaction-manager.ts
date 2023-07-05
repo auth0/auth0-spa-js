@@ -9,7 +9,7 @@ interface Transaction {
   appState?: any;
   code_verifier: string;
   redirect_uri?: string;
-  organizationId?: string;
+  organization?: string;
   state?: string;
 }
 

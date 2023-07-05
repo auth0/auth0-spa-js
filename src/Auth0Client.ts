@@ -208,7 +208,7 @@ export class Auth0Client {
     this.transactionManager = new TransactionManager(
       transactionStorage,
       this.options.clientId,
-      this.options.cookieDomain,
+      this.options.cookieDomain
     );
 
     this.nowProvider = this.options.nowProvider || DEFAULT_NOW_PROVIDER;
@@ -249,7 +249,7 @@ export class Auth0Client {
   private async _verifyIdToken(
     id_token: string,
     nonce?: string,
-    organizationId?: string
+    organization?: string
   ) {
     const now = await this.nowProvider();
 
@@ -258,16 +258,16 @@ export class Auth0Client {
       aud: this.options.clientId,
       id_token,
       nonce,
-      organizationId,
+      organization,
       leeway: this.options.leeway,
       max_age: parseNumber(this.options.authorizationParams.max_age),
       now
     });
   }
 
-  private _processOrgIdHint(organizationId?: string) {
-    if (organizationId) {
-      this.cookieStorage.save(this.orgHintCookieName, organizationId, {
+  private _processOrgHint(organization?: string) {
+    if (organization) {
+      this.cookieStorage.save(this.orgHintCookieName, organization, {
         daysUntilExpire: this.sessionCheckExpiryDays,
         cookieDomain: this.options.cookieDomain
       });
@@ -383,7 +383,7 @@ export class Auth0Client {
       throw new GenericError('state_mismatch', 'Invalid state');
     }
 
-    const organizationId =
+    const organization =
       options.authorizationParams?.organization ||
       this.options.authorizationParams.organization;
 
@@ -398,7 +398,7 @@ export class Auth0Client {
       },
       {
         nonceIn: params.nonce,
-        organizationId
+        organization
       }
     );
   }
@@ -449,7 +449,7 @@ export class Auth0Client {
     const { openUrl, fragment, appState, ...urlOptions } =
       patchOpenUrlWithOnRedirect(options);
 
-    const organizationId =
+    const organization =
       urlOptions.authorizationParams?.organization ||
       this.options.authorizationParams.organization;
 
@@ -460,7 +460,7 @@ export class Auth0Client {
     this.transactionManager.create({
       ...transaction,
       appState,
-      ...(organizationId && { organizationId })
+      ...(organization && { organization })
     });
 
     const urlWithFragment = fragment ? `${url}#${fragment}` : url;
@@ -516,7 +516,7 @@ export class Auth0Client {
       throw new GenericError('state_mismatch', 'Invalid state');
     }
 
-    const organizationId = transaction.organizationId;
+    const organization = transaction.organization;
     const nonceIn = transaction.nonce;
     const redirect_uri = transaction.redirect_uri;
 
@@ -529,7 +529,7 @@ export class Auth0Client {
         code: code as string,
         ...(redirect_uri ? { redirect_uri } : {})
       },
-      { nonceIn, organizationId }
+      { nonceIn, organization }
     );
 
     return {
@@ -862,10 +862,10 @@ export class Auth0Client {
       prompt: 'none'
     };
 
-    const orgIdHint = this.cookieStorage.get<string>(this.orgHintCookieName);
+    const orgHint = this.cookieStorage.get<string>(this.orgHintCookieName);
 
-    if (orgIdHint && !params.organization) {
-      params.organization = orgIdHint;
+    if (orgHint && !params.organization) {
+      params.organization = orgHint;
     }
 
     const {
@@ -912,7 +912,8 @@ export class Auth0Client {
           timeout: options.authorizationParams.timeout || this.httpTimeoutMs
         },
         {
-          nonceIn
+          nonceIn,
+          organization: params.organization
         }
       );
 
@@ -1095,7 +1096,7 @@ export class Auth0Client {
     options: PKCERequestTokenOptions | RefreshTokenRequestTokenOptions,
     additionalParameters?: RequestTokenAdditionalParameters
   ) {
-    const { nonceIn, organizationId } = additionalParameters || {};
+    const { nonceIn, organization } = additionalParameters || {};
     const authResult = await oauthToken(
       {
         baseUrl: this.domainUrl,
@@ -1111,7 +1112,7 @@ export class Auth0Client {
     const decodedToken = await this._verifyIdToken(
       authResult.id_token,
       nonceIn,
-      organizationId
+      organization
     );
 
     await this._saveEntryInCache({
@@ -1128,7 +1129,7 @@ export class Auth0Client {
       cookieDomain: this.options.cookieDomain
     });
 
-    this._processOrgIdHint(decodedToken.claims.org_id);
+    this._processOrgHint(organization);
 
     return { ...authResult, decodedToken };
   }
@@ -1154,5 +1155,5 @@ interface RefreshTokenRequestTokenOptions extends BaseRequestTokenOptions {
 
 interface RequestTokenAdditionalParameters {
   nonceIn?: string;
-  organizationId?: string;
+  organization?: string;
 }

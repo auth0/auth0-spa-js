@@ -1954,7 +1954,10 @@ describe('Auth0Client', () => {
     });
 
     it('stores the org_id in a hint cookie if returned in the ID token claims', async () => {
-      const auth0 = setup({}, { org_id: TEST_ORG_ID });
+      const auth0 = setup(
+        { authorizationParams: { organization: TEST_ORG_ID } },
+        { org_id: TEST_ORG_ID }
+      );
 
       jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
         access_token: TEST_ACCESS_TOKEN,
