@@ -588,7 +588,7 @@ export interface IdToken {
   at_hash?: string;
   c_hash?: string;
   acr?: string;
-  amr?: string;
+  amr?: string[];
   sub_jwk?: string;
   cnf?: string;
   sid?: string;
