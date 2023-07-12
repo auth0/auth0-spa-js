@@ -452,7 +452,7 @@ describe('Auth0Client', () => {
       );
     });
 
-    it('calls `tokenVerifier.verify` with the global organization id', async () => {
+    it('calls `tokenVerifier.verify` with the global organization', async () => {
       const auth0 = setup({
         authorizationParams: { organization: 'org_123' }
       });
@@ -466,7 +466,7 @@ describe('Auth0Client', () => {
       );
     });
 
-    it('stores the organization ID in a hint cookie', async () => {
+    it('stores the organization in a hint cookie', async () => {
       const auth0 = setup(
         { authorizationParams: { organization: TEST_ORG_ID } },
         { org_id: TEST_ORG_ID }
@@ -491,7 +491,8 @@ describe('Auth0Client', () => {
       );
     });
 
-    it('removes the org hint cookie if no org_id claim in the ID token', async () => {
+    it('removes the organization hint cookie if no organization specified', async () => {
+      // TODO: WHAT IS ORG_NAME ?
       const auth0 = setup({});
 
       await loginWithRedirect(auth0);
@@ -507,7 +508,7 @@ describe('Auth0Client', () => {
       );
     });
 
-    it('calls `tokenVerifier.verify` with the specific organization id', async () => {
+    it('calls `tokenVerifier.verify` with the specific organization', async () => {
       const auth0 = setup({
         authorizationParams: { organization: 'org_123' }
       });

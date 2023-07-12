@@ -1983,7 +1983,7 @@ describe('Auth0Client', () => {
       );
     });
 
-    it('removes organization hint cookie if no org claim was returned in the ID token', async () => {
+    it('removes organization hint cookie if no organization was specified', async () => {
       const auth0 = setup({});
 
       jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({

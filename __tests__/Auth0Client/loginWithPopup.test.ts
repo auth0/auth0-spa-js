@@ -559,7 +559,7 @@ describe('Auth0Client', () => {
       );
     });
 
-    it('calls `tokenVerifier.verify` with the organization id', async () => {
+    it('calls `tokenVerifier.verify` with the organization', async () => {
       const auth0 = setup({
         authorizationParams: { organization: 'org_123' }
       });
@@ -573,7 +573,7 @@ describe('Auth0Client', () => {
       );
     });
 
-    it('calls `tokenVerifier.verify` with the organization id given in the login method', async () => {
+    it('calls `tokenVerifier.verify` with the organization given in the login method', async () => {
       const auth0 = setup();
       await loginWithPopup(auth0, {
         authorizationParams: { organization: 'org_123' }
