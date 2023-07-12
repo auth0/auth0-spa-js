@@ -213,9 +213,9 @@ export const verify = (options: JWTVerifyOptions) => {
         throw new Error(
           'Organization Name (org_name) claim must be a string present in the ID token'
         );
-      } else if (orgName !== decoded.claims.org_name) {
+      } else if (orgName !== decoded.claims.org_name.toLowerCase()) {
         throw new Error(
-          `Organization Name (org_name) claim mismatch in the ID token; expected "${orgName}", found "${decoded.claims.org_name}"`
+          `Organization Name (org_name) claim mismatch in the ID token; expected "${orgName}", found "${decoded.claims.org_name.toLowerCase()}"`
         );
       }
     }
