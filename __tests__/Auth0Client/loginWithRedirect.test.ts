@@ -452,22 +452,25 @@ describe('Auth0Client', () => {
       );
     });
 
-    it('calls `tokenVerifier.verify` with the global organization id', async () => {
+    it('calls `tokenVerifier.verify` with the global organization', async () => {
       const auth0 = setup({
-        authorizationParams: { organization: 'test_org_123' }
+        authorizationParams: { organization: 'org_123' }
       });
 
       await loginWithRedirect(auth0);
 
       expect(tokenVerifier).toHaveBeenCalledWith(
         expect.objectContaining({
-          organizationId: 'test_org_123'
+          organization: 'org_123'
         })
       );
     });
 
-    it('stores the organization ID in a hint cookie', async () => {
-      const auth0 = setup({}, { org_id: TEST_ORG_ID });
+    it('stores the organization in a hint cookie', async () => {
+      const auth0 = setup(
+        { authorizationParams: { organization: TEST_ORG_ID } },
+        { org_id: TEST_ORG_ID }
+      );
 
       await loginWithRedirect(auth0);
 
@@ -488,7 +491,8 @@ describe('Auth0Client', () => {
       );
     });
 
-    it('removes the org hint cookie if no org_id claim in the ID token', async () => {
+    it('removes the organization hint cookie if no organization specified', async () => {
+      // TODO: WHAT IS ORG_NAME ?
       const auth0 = setup({});
 
       await loginWithRedirect(auth0);
@@ -504,9 +508,9 @@ describe('Auth0Client', () => {
       );
     });
 
-    it('calls `tokenVerifier.verify` with the specific organization id', async () => {
+    it('calls `tokenVerifier.verify` with the specific organization', async () => {
       const auth0 = setup({
-        authorizationParams: { organization: 'test_org_123' }
+        authorizationParams: { organization: 'org_123' }
       });
 
       await loginWithRedirect(auth0, {
@@ -514,7 +518,7 @@ describe('Auth0Client', () => {
       });
       expect(tokenVerifier).toHaveBeenCalledWith(
         expect.objectContaining({
-          organizationId: 'test_org_456'
+          organization: 'test_org_456'
         })
       );
     });

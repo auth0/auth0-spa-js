@@ -153,14 +153,62 @@ describe('jwt', () => {
   });
 
   it('verifies correctly with an organization ID', async () => {
-    const org_id = 'test_org_123';
+    const org_id = 'org_123';
 
     const id_token = await createJWT({ ...DEFAULT_PAYLOAD, org_id });
 
     const { encoded, header, claims } = verify({
       ...verifyOptions,
       id_token,
-      organizationId: org_id
+      organization: org_id
+    });
+
+    expect({ encoded, header, payload: claims }).toMatchObject(
+      verifier.decode(id_token)
+    );
+  });
+
+  it('verifies correctly with an organization Name', async () => {
+    const org_name = 'my-org';
+
+    const id_token = await createJWT({ ...DEFAULT_PAYLOAD, org_name });
+
+    const { encoded, header, claims } = verify({
+      ...verifyOptions,
+      id_token,
+      organization: org_name
+    });
+
+    expect({ encoded, header, payload: claims }).toMatchObject(
+      verifier.decode(id_token)
+    );
+  });
+
+  it('verifies correctly with an organization Name in wrong case', async () => {
+    const org_name = 'my-org';
+
+    const id_token = await createJWT({ ...DEFAULT_PAYLOAD, org_name });
+
+    const { encoded, header, claims } = verify({
+      ...verifyOptions,
+      id_token,
+      organization: 'My-org'
+    });
+
+    expect({ encoded, header, payload: claims }).toMatchObject(
+      verifier.decode(id_token)
+    );
+  });
+
+  it('verifies correctly with an organization Name surrounded by whitespace', async () => {
+    const org_name = 'my-org';
+
+    const id_token = await createJWT({ ...DEFAULT_PAYLOAD, org_name });
+
+    const { encoded, header, claims } = verify({
+      ...verifyOptions,
+      id_token,
+      organization: '  my-org  '
     });
 
     expect({ encoded, header, payload: claims }).toMatchObject(
@@ -369,26 +417,49 @@ describe('jwt', () => {
     ).not.toThrow();
   });
 
-  it('validate org_id is present when organizationId is provided', async () => {
+  it('validate org_id is present when organization id is provided', async () => {
     const id_token = await createJWT({ ...DEFAULT_PAYLOAD });
 
     expect(() =>
-      verify({ ...verifyOptions, id_token, organizationId: 'test_org_123' })
+      verify({ ...verifyOptions, id_token, organization: 'org_123' })
     ).toThrow(
       'Organization ID (org_id) claim must be a string present in the ID token'
     );
   });
 
-  it('validate org_id matches the claim when organizationId is provided', async () => {
+  it('validate org_id matches the claim when organization id is provided', async () => {
     const id_token = await createJWT({
       ...DEFAULT_PAYLOAD,
       org_id: 'test_org_456'
     });
 
     expect(() =>
-      verify({ ...verifyOptions, id_token, organizationId: 'test_org_123' })
+      verify({ ...verifyOptions, id_token, organization: 'org_123' })
     ).toThrow(
-      'Organization ID (org_id) claim mismatch in the ID token; expected "test_org_123", found "test_org_456"'
+      'Organization ID (org_id) claim mismatch in the ID token; expected "org_123", found "test_org_456"'
+    );
+  });
+
+  it('validate org_name is present when organization name is provided', async () => {
+    const id_token = await createJWT({ ...DEFAULT_PAYLOAD });
+
+    expect(() =>
+      verify({ ...verifyOptions, id_token, organization: 'my-org' })
+    ).toThrow(
+      'Organization Name (org_name) claim must be a string present in the ID token'
+    );
+  });
+
+  it('validate org_id matches the claim when organization id is provided', async () => {
+    const id_token = await createJWT({
+      ...DEFAULT_PAYLOAD,
+      org_name: 'my-other-org'
+    });
+
+    expect(() =>
+      verify({ ...verifyOptions, id_token, organization: 'my-org' })
+    ).toThrow(
+      'Organization Name (org_name) claim mismatch in the ID token; expected "my-org", found "my-other-org"'
     );
   });
 });

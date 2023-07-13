@@ -78,10 +78,13 @@ export interface AuthorizationParams {
   connection?: string;
 
   /**
-   * The Id of an organization to log in to.
+   * The organization to log in to.
    *
-   * This will specify an `organization` parameter in your user's login request and will add a step to validate
-   * the `org_id` claim in your user's ID Token.
+   * This will specify an `organization` parameter in your user's login request.
+   *
+   * - If you provide an Organization ID (a string with the prefix `org_`), it will be validated against the `org_id` claim of your user's ID Token. The validation is case-sensitive.
+   * - If you provide an Organization Name (a string *without* the prefix `org_`), it will be validated against the `org_name` claim of your user's ID Token. The validation is case-insensitive.
+   *
    */
   organization?: string;
 
@@ -551,7 +554,7 @@ export interface JWTVerifyOptions {
   nonce?: string;
   leeway?: number;
   max_age?: number;
-  organizationId?: string;
+  organization?: string;
   now?: number;
 }
 
@@ -593,6 +596,7 @@ export interface IdToken {
   cnf?: string;
   sid?: string;
   org_id?: string;
+  org_name?: string;
   [key: string]: any;
 }
 

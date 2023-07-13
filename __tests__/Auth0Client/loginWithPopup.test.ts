@@ -559,29 +559,29 @@ describe('Auth0Client', () => {
       );
     });
 
-    it('calls `tokenVerifier.verify` with the organization id', async () => {
+    it('calls `tokenVerifier.verify` with the organization', async () => {
       const auth0 = setup({
-        authorizationParams: { organization: 'test_org_123' }
+        authorizationParams: { organization: 'org_123' }
       });
 
       await loginWithPopup(auth0);
 
       expect(tokenVerifier).toHaveBeenCalledWith(
         expect.objectContaining({
-          organizationId: 'test_org_123'
+          organization: 'org_123'
         })
       );
     });
 
-    it('calls `tokenVerifier.verify` with the organization id given in the login method', async () => {
+    it('calls `tokenVerifier.verify` with the organization given in the login method', async () => {
       const auth0 = setup();
       await loginWithPopup(auth0, {
-        authorizationParams: { organization: 'test_org_123' }
+        authorizationParams: { organization: 'org_123' }
       });
 
       expect(tokenVerifier).toHaveBeenCalledWith(
         expect.objectContaining({
-          organizationId: 'test_org_123'
+          organization: 'org_123'
         })
       );
     });
@@ -682,7 +682,10 @@ describe('Auth0Client', () => {
 
     it('saves organization hint cookie in storage', async () => {
       const auth0 = setup(
-        { cookieDomain: TEST_DOMAIN },
+        {
+          cookieDomain: TEST_DOMAIN,
+          authorizationParams: { organization: TEST_ORG_ID }
+        },
         { org_id: TEST_ORG_ID }
       );
 

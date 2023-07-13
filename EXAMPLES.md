@@ -165,7 +165,7 @@ await createAuth0Client({
   clientId: '<AUTH0_CLIENT_ID>',
   authorizationParams: {
     redirect_uri: '<MY_CALLBACK_URL>',
-    organization: '<MY_ORG_ID>'
+    organization: '<MY_ORG_ID_OR_NAME>'
   }
 });
 ```
@@ -176,14 +176,14 @@ You can also specify the organization when logging in:
 // Using a redirect
 await client.loginWithRedirect({
   authorizationParams: {
-    organization: '<MY_ORG_ID>'
+    organization: '<MY_ORG_ID_OR_NAME>'
   }
 });
 
 // Using a popup window
 await client.loginWithPopup({
   authorizationParams: {
-    organization: '<MY_ORG_ID>'
+    organization: '<MY_ORG_ID_OR_NAME>'
   }
 });
 ```
