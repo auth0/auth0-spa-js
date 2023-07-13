@@ -70,7 +70,7 @@ const auth0 = await createAuth0Client({
   }
 });
 
-//or, you can just instantiate the client on it's own
+//or, you can just instantiate the client on its own
 import { Auth0Client } from '@auth0/auth0-spa-js';
 
 const auth0 = new Auth0Client({
