@@ -1,5 +1,14 @@
 # Change Log
 
+## [v2.1.0](https://github.com/auth0/auth0-spa-js/tree/v2.1.0) (2023-07-13)
+[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.0.8...v2.1.0)
+
+**Added**
+- Support Organization Name [\#1113](https://github.com/auth0/auth0-spa-js/pull/1113) ([frederikprijck](https://github.com/frederikprijck))
+
+**Fixed**
+- Ensure AMR claim is set to an array of strings [\#1112](https://github.com/auth0/auth0-spa-js/pull/1112) ([frederikprijck](https://github.com/frederikprijck))
+
 ## [v2.0.8](https://github.com/auth0/auth0-spa-js/tree/v2.0.8) (2023-06-14)
 [Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.0.7...v2.0.8)
 
