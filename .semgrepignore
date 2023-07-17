@@ -3,7 +3,5 @@ __tests__/
 cypress/
 docs/
 static/
-CHANGELOG.md
-DEVELOPMENT.md
-FAQ.md
-README.md
+scripts/prepack.js
+*.md
