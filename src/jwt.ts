@@ -215,7 +215,7 @@ export const verify = (options: JWTVerifyOptions) => {
         );
       } else if (orgName !== decoded.claims.org_name) {
         throw new Error(
-          `Organization Name (org_name) claim mismatch in the ID token; expected "${orgName}", found "${decoded.claims.org_name.toLowerCase()}"`
+          `Organization Name (org_name) claim mismatch in the ID token; expected "${orgName}", found "${decoded.claims.org_name}"`
         );
       }
     }
