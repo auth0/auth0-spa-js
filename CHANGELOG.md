@@ -1,5 +1,11 @@
 # Change Log
 
+## [v2.1.1](https://github.com/auth0/auth0-spa-js/tree/v2.1.1) (2023-07-18)
+[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.1.0...v2.1.1)
+
+**Changed**
+- Do not lowercase org_name claim [\#1117](https://github.com/auth0/auth0-spa-js/pull/1117) ([frederikprijck](https://github.com/frederikprijck))
+
 ## [v2.1.0](https://github.com/auth0/auth0-spa-js/tree/v2.1.0) (2023-07-13)
 [Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.0.8...v2.1.0)
 
