@@ -224,5 +224,6 @@ if (organization && invitation) {
       organization
     }
   });
+}
 
 ```
