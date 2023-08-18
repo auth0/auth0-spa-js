@@ -491,6 +491,28 @@ describe('Auth0Client', () => {
       );
     });
 
+    it('stores the organization in a hint cookie when no organization was set but a claim was found', async () => {
+      const auth0 = setup({}, { org_id: TEST_ORG_ID });
+
+      await loginWithRedirect(auth0);
+
+      expect(<jest.Mock>esCookie.set).toHaveBeenCalledWith(
+        `auth0.${TEST_CLIENT_ID}.organization_hint`,
+        JSON.stringify(TEST_ORG_ID),
+        {
+          expires: 1
+        }
+      );
+
+      expect(<jest.Mock>esCookie.set).toHaveBeenCalledWith(
+        `_legacy_auth0.${TEST_CLIENT_ID}.organization_hint`,
+        JSON.stringify(TEST_ORG_ID),
+        {
+          expires: 1
+        }
+      );
+    });
+
     it('removes the organization hint cookie if no organization specified', async () => {
       // TODO: WHAT IS ORG_NAME ?
       const auth0 = setup({});

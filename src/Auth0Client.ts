@@ -1129,7 +1129,7 @@ export class Auth0Client {
       cookieDomain: this.options.cookieDomain
     });
 
-    this._processOrgHint(organization);
+    this._processOrgHint(organization || decodedToken.claims.org_id);
 
     return { ...authResult, decodedToken };
   }
