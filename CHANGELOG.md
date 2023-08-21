@@ -1,5 +1,11 @@
 # Change Log
 
+## [v2.1.2](https://github.com/auth0/auth0-spa-js/tree/v2.1.2) (2023-08-21)
+[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.1.1...v2.1.2)
+
+**Fixed**
+- Ensure organization cookie is set when no organization was set [\#1123](https://github.com/auth0/auth0-spa-js/pull/1123) ([frederikprijck](https://github.com/frederikprijck))
+
 ## [v2.1.1](https://github.com/auth0/auth0-spa-js/tree/v2.1.1) (2023-07-18)
 [Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.1.0...v2.1.1)
 
