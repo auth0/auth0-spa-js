@@ -1,0 +1,57 @@
+name: Run framework test
+description: Run tests for a given framework
+
+inputs:
+  node:
+    description: The Node version to use
+    required: false
+    default: 18
+  cache:
+    description: Cache key to restore for build artifacts.
+    required: true
+  install:
+    description: The installation command to run
+    required: true
+  content:
+    description: The SDK entrypoint code to inject.
+    required: true
+  import:
+    description: The SDK's import code to inject.
+    required: true
+
+runs:
+  using: composite
+
+  steps:
+    - name: Setup Node
+      uses: actions/setup-node@v3
+      with:
+        node-version: ${{ inputs.node }}
+        cache: 'npm'
+
+    - name: Restore build artifacts
+      uses: actions/cache/restore@v3
+      with:
+        path: .
+        key: ${{ inputs.cache }}
+
+    - name: Install dependencies
+      shell: bash
+      run: npm ci
+
+    - name: Create application
+      shell: bash
+      run: ${{ inputs.install }}
+
+    - name: Install SDK
+      shell: bash
+      run: |
+        npm link '../'
+        ${{ inputs.content }}
+        ${{ inputs.import }}
+      working-directory: my-app
+
+    - name: Build application
+      shell: bash
+      run: npm run build
+      working-directory: my-app
