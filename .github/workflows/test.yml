@@ -30,16 +30,7 @@ env:
     });
 
 jobs:
-  authorize:
-    name: Authorize
-    environment: ${{ github.event_name == 'pull_request_target' && github.event.pull_request.head.repo.full_name != github.repository && 'external' || 'internal' }}
-    runs-on: ubuntu-latest
-    steps:
-      - run: true
-
   test:
-    needs: authorize # Require approval before running on forked pull requests
-
     name: Build Package
     runs-on: ubuntu-latest
 
