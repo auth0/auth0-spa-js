@@ -13,6 +13,9 @@ permissions:
   contents: read
   packages: write
 
+env:
+  NODE_VERSION: 18
+
 jobs:
   publish-npm:
     name: 'NPM'
