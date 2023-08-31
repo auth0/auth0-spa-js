@@ -87,3 +87,14 @@ To mitigate this, use one of the following solutions:
 - Revert to the v1 behaviour by setting `useRefreshTokenFallback` to `true`.
 
 In all cases, the fallback will not work in browsers where third-party cookies are blocked, unless you are using [custom domains](https://auth0.com/docs/customize/custom-domains).
+
+## Why is the passwordless magic link not working?
+
+By default, the SDK stores transactional data in the browser's session storage. This means that the authentication flow needs to be finished in the same browser tab it was started.
+This can cause issues when using passwordless with magic links, as that typically opens in a new tab. To solve this, our SDK can be configured to store the transactional data in a cookie instead of session storage:
+
+```ts
+new Auth0Client({
+  useCookiesForTransaction: true
+});
+```
