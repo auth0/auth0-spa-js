@@ -88,7 +88,6 @@ To mitigate this, use one of the following solutions:
 
 In all cases, the fallback will not work in browsers where third-party cookies are blocked, unless you are using [custom domains](https://auth0.com/docs/customize/custom-domains).
 
-
 ## Why is the passwordless magic link not working?
 
 By default, our SDK stores transactional data in the browser's session storage. This means that the authentication flow needs to be finished in the same browser tab it was started. 
