@@ -90,7 +90,7 @@ In all cases, the fallback will not work in browsers where third-party cookies a
 
 ## Why is the passwordless magic link not working?
 
-By default, our SDK stores transactional data in the browser's session storage. This means that the authentication flow needs to be finished in the same browser tab it was started. 
+By default, the SDK stores transactional data in the browser's session storage. This means that the authentication flow needs to be finished in the same browser tab it was started.
 This can cause issues when using passwordless with magic links, as that typically opens in a new tab. To solve this, our SDK can be configured to store the transactional data in a cookie instead of session storage:
 
 ```ts
