@@ -89,4 +89,4 @@ You may specify a different port for the development server by specifying the `D
 DEV_PORT=8080 npm start
 ```
 
-The Playground may not cover all use cases. In this case, modify the [index.html file](https://github.com/auth0/auth0-spa-js/blob/master/static/index.html) to configure the SDK as desired to invoke different behaviors.
+The Playground may not cover all use cases. In this case, modify the [index.html file](https://github.com/auth0/auth0-spa-js/blob/main/static/index.html) to configure the SDK as desired to invoke different behaviors.

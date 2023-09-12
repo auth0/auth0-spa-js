@@ -24,8 +24,8 @@ Please read [Auth0's contribution guidelines](https://github.com/auth0/open-sour
 
 ### Adding tests
 
-- Unit tests go inside [\_\_tests\_\_](https://github.com/auth0/auth0-spa-js/tree/master/__tests__)
-- Integration tests go inside [cypress/integration](https://github.com/auth0/auth0-spa-js/tree/master/cypress/integration)
+- Unit tests go inside [\_\_tests\_\_](https://github.com/auth0/auth0-spa-js/tree/main/__tests__)
+- Integration tests go inside [cypress/integration](https://github.com/auth0/auth0-spa-js/tree/main/cypress/integration)
 
 ### Running tests
 
