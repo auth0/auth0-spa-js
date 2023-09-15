@@ -107,4 +107,4 @@ Authentication is about who you are (id token), not what you can do (access toke
 So even when the refresh token fails, or `getTokenSilently` returns nothing, that doesn't impact the existence of the id token, and as a consequence of that, the authentication state. So it's expected for isAuthenticated to stay true in that case.
 
 On top of that, the SDK can have multiple access tokens and multiple refresh tokens (e.g. when using multiple audience and scope combinations to call multiple API's), but only one id token.
-If there are multiple access and refresh tokens, and one of the refresh tokens fails, it doesnt mean the other access tokens or refresh tokens are invalid and they might still be perfectly usable.
+If there are multiple access and refresh tokens, and one of the refresh tokens fails, it doesn't mean the other access tokens or refresh tokens are invalid, they might still be perfectly usable.
