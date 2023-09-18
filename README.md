@@ -12,8 +12,8 @@
 
 - [Quickstart](https://auth0.com/docs/quickstart/spa/vanillajs/interactive) - our interactive guide for quickly adding login, logout and user information to your app using Auth0.
 - [Sample app](https://github.com/auth0-samples/auth0-javascript-samples/tree/master/01-Login) - a full-fledged sample app integrated with Auth0.
-- [FAQs](https://github.com/auth0/auth0-spa-js/blob/master/FAQ.md) - frequently asked questions about auth0-spa-js SDK.
-- [Examples](https://github.com/auth0/auth0-spa-js/blob/master/EXAMPLES.md) - code samples for common scenarios.
+- [FAQs](https://github.com/auth0/auth0-spa-js/blob/main/FAQ.md) - frequently asked questions about auth0-spa-js SDK.
+- [Examples](https://github.com/auth0/auth0-spa-js/blob/main/EXAMPLES.md) - code samples for common scenarios.
 - [Docs Site](https://auth0.com/docs) - explore our Docs site and learn more about Auth0.
 
 ## Getting Started
@@ -113,7 +113,7 @@ window.addEventListener('load', async () => {
 });
 ```
 
-For other comprehensive examples, see the [EXAMPLES.md](https://github.com/auth0/auth0-spa-js/blob/master/EXAMPLES.md) document.
+For other comprehensive examples, see the [EXAMPLES.md](https://github.com/auth0/auth0-spa-js/blob/main/EXAMPLES.md) document.
 
 ## API Reference
 
@@ -132,7 +132,7 @@ We appreciate feedback and contribution to this repo! Before you get started, pl
 
 - [Auth0's general contribution guidelines](https://github.com/auth0/open-source-template/blob/master/GENERAL-CONTRIBUTING.md)
 - [Auth0's code of conduct guidelines](https://github.com/auth0/open-source-template/blob/master/CODE-OF-CONDUCT.md)
-- [This repo's contribution guide](https://github.com/auth0/auth0-spa-js/blob/master/CONTRIBUTING.md)
+- [This repo's contribution guide](https://github.com/auth0/auth0-spa-js/blob/main/CONTRIBUTING.md)
 
 ### Raise an issue
 
@@ -155,5 +155,5 @@ Please do not report security vulnerabilities on the public GitHub issue tracker
   Auth0 is an easy to implement, adaptable authentication and authorization platform. To learn more checkout <a href="https://auth0.com/why-auth0">Why Auth0?</a>
 </p>
 <p align="center">
-  This project is licensed under the MIT license. See the <a href="https://github.com/auth0/auth0-spa-js/blob/master/LICENSE"> LICENSE</a> file for more info.
+  This project is licensed under the MIT license. See the <a href="https://github.com/auth0/auth0-spa-js/blob/main/LICENSE"> LICENSE</a> file for more info.
 </p>

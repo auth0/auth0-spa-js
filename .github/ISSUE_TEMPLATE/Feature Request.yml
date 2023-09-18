@@ -1,6 +1,6 @@
 name: 🧩 Feature request
 description: Suggest an idea or a feature for this library
-labels: ["feature request"]
+labels: ['feature request']
 
 body:
   - type: checkboxes
@@ -8,7 +8,7 @@ body:
     attributes:
       label: Checklist
       options:
-        - label: I have looked into the [Readme](https://github.com/auth0/auth0-spa-js#readme), [Examples](https://github.com/auth0/auth0-spa-js/blob/master/EXAMPLES.md), and [FAQ](https://github.com/auth0/auth0-spa-js/blob/master/FAQ.md) and have not found a suitable solution or answer.
+        - label: I have looked into the [Readme](https://github.com/auth0/auth0-spa-js#readme), [Examples](https://github.com/auth0/auth0-spa-js/blob/main/EXAMPLES.md), and [FAQ](https://github.com/auth0/auth0-spa-js/blob/main/FAQ.md) and have not found a suitable solution or answer.
           required: true
         - label: I have looked into the [documentation](https://auth0.com/docs/libraries/auth0-single-page-app-sdk) and [API documentation](https://auth0.github.io/auth0-spa-js/), and have not found a suitable solution or answer.
           required: true
