@@ -210,7 +210,7 @@ export const validateCrypto = () => {
   }
   if (typeof getCrypto().subtle === 'undefined') {
     throw new Error(`
-      auth0-spa-js must run on a secure origin. See https://github.com/auth0/auth0-spa-js/blob/master/FAQ.md#why-do-i-get-auth0-spa-js-must-run-on-a-secure-origin for more information.
+      auth0-spa-js must run on a secure origin. See https://github.com/auth0/auth0-spa-js/blob/main/FAQ.md#why-do-i-get-auth0-spa-js-must-run-on-a-secure-origin for more information.
     `);
   }
 };

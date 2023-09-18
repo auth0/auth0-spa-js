@@ -1178,7 +1178,7 @@
             throw new Error("For security reasons, `window.crypto` is required to run `auth0-spa-js`.");
         }
         if (typeof getCrypto().subtle === "undefined") {
-            throw new Error("\n      auth0-spa-js must run on a secure origin. See https://github.com/auth0/auth0-spa-js/blob/master/FAQ.md#why-do-i-get-auth0-spa-js-must-run-on-a-secure-origin for more information.\n    ");
+            throw new Error("\n      auth0-spa-js must run on a secure origin. See https://github.com/auth0/auth0-spa-js/blob/main/FAQ.md#why-do-i-get-auth0-spa-js-must-run-on-a-secure-origin for more information.\n    ");
         }
     };
     function fetch$1(e, n) {
