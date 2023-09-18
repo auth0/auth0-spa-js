@@ -80,9 +80,10 @@ If you're running your application from a secure origin, it's possible that your
 
 ## Why am I getting a `missing_refresh_token` error after upgrading to v2?
 
-v1 of the SDK used an iframe as a backup if no refresh token was available. You could control this behaviour with the `useRefreshTokensFallback` option, which was `true` by default. With v2, we have flipped the default for `useRefreshTokensFallback` to `false` (see [the migration guide](https://github.com/auth0/auth0-spa-js/blob/master/MIGRATION_GUIDE.md#no-more-iframe-fallback-by-default-when-using-refresh-tokens)). As a result, you may encounter `missing_refresh_token` errors. 
+v1 of the SDK used an iframe as a backup if no refresh token was available. You could control this behaviour with the `useRefreshTokensFallback` option, which was `true` by default. With v2, we have flipped the default for `useRefreshTokensFallback` to `false` (see [the migration guide](https://github.com/auth0/auth0-spa-js/blob/main/MIGRATION_GUIDE.md#no-more-iframe-fallback-by-default-when-using-refresh-tokens)). As a result, you may encounter `missing_refresh_token` errors.
 
 To mitigate this, use one of the following solutions:
+
 - Handle the error, and log the user in again using `loginWithRedirect` or `loginWithPopup`.
 - Revert to the v1 behaviour by setting `useRefreshTokenFallback` to `true`.
 
