@@ -102,7 +102,7 @@ new Auth0Client({
 
 ## How to use from a CDN
 
-There are two ways to use our SDK when you want to rely on a Content Delivery Network to host the bundle and not install our SDK through the npn registry.
+There are two ways to use our SDK when you want to rely on a Content Delivery Network to host the bundle and not install our SDK through the npm registry.
 
 ### Using our own CDN bundle
 
