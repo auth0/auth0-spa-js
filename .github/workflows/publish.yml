@@ -11,7 +11,6 @@ on:
 
 permissions:
   contents: read
-  packages: write
 
 env:
   NODE_VERSION: 18
@@ -31,6 +30,7 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
+          registry-url: 'https://registry.npmjs.org'
 
       - name: Build package
         uses: ./.github/actions/build
@@ -42,32 +42,3 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-      - name: Publish release to CDN
-        run: ccu --trace
-
-  publish-gh:
-    needs: publish-npm # Don't publish to GitHub Packages until NPM is done
-
-    name: 'GitHub Packages'
-    runs-on: ubuntu-latest
-    environment: release
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node
-        uses: actions/setup-node@v3
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-
-      - name: Build package
-        uses: ./.github/actions/build
-        with:
-          node: ${{ env.NODE_VERSION }}
-
-      - name: Publish release to GitHub Packages
-        run: npm publish
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
