@@ -99,3 +99,39 @@ new Auth0Client({
   useCookiesForTransaction: true
 });
 ```
+
+## How to use from a CDN
+
+There are two ways to use our SDK when you want to rely on a Content Delivery Network to host the bundle and not install our SDK through the npm registry.
+
+### Using our own CDN bundle
+
+Our own CDN bundle exposes both `createAuth0Client` and `Auth0Client` on a global `auth0` variable, and can be used as shown below. 
+
+```html
+<script>
+const client = auth0.createAuth0Client({ ... });
+// or
+const client = new auth0.Auth0Client({ ... });
+</script>
+```
+
+### Using import maps with unpkg
+If you want to use a CDN bundle together with import maps, you will need to use our ESM bundle from unpkg:
+
+```html
+<script type="importmap">
+{
+  "imports": {
+    "@auth0/auth0-spa-js": "https://www.unpkg.com/@auth0/auth0-spa-js@2.1.2/dist/auth0-spa-js.production.esm.js"
+  }
+}
+</script>
+<script type="module">
+  import { createAuth0Client, Auth0Client } from '@auth0/auth0-spa-js';
+  
+  const client = createAuth0Client({ ... });
+  // or
+  const client = new Auth0Client({ ... });
+</script>
+```
