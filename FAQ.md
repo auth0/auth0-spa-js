@@ -137,7 +137,7 @@ If you want to use a CDN bundle together with import maps, you will need to use 
 ```
 
 ## Why is isAuthenticated returning true when there are no tokens available to call an API?
-As long as the SDK has an id token, you are considered authenticated, because it knows who you are. It might be that there isn't a valid access token and you are unable to call an API, the SDK still knows who you are because of the id token.
+As long as the SDK has an id token, you are considered authenticated, because it knows who you are. It might be that there isn't a valid access token and you are unable to call an API, but the SDK still knows who you are because of the id token.
 
 Authentication is about who you are (id token), not what you can do (access token). The latter is authorization, which is also why you pass the access token to the API in the Authorization header.
 
