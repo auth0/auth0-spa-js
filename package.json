@@ -45,7 +45,7 @@
     "browserstack-cypress-cli": "1.8.1",
     "cli-table": "^0.3.6",
     "concurrently": "^7.3.0",
-    "cypress": "7.2.0",
+    "cypress": "13.2.0",
     "es-check": "^7.0.1",
     "es-cookie": "~1.3.2",
     "eslint": "^8.22.0",
@@ -79,7 +79,7 @@
     "serve": "^14.0.1",
     "ts-jest": "^28.0.8",
     "tslib": "^2.4.0",
-    "typedoc": "^0.23.10",
+    "typedoc": "^0.25.1",
     "typescript": "^4.7.4",
     "wait-on": "^6.0.0"
   },
