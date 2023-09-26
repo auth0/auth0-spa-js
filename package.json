@@ -42,7 +42,7 @@
     "@typescript-eslint/parser": "^5.33.1",
     "babel-jest": "^28.1.3",
     "browser-tabs-lock": "^1.2.15",
-    "browserstack-cypress-cli": "1.8.1",
+    "browserstack-cypress-cli": "1.25.3",
     "cli-table": "^0.3.6",
     "concurrently": "^7.3.0",
     "cypress": "13.2.0",
