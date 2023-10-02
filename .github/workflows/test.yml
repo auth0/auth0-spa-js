@@ -137,10 +137,10 @@ jobs:
       - name: Run framework tests
         uses: ./.github/actions/framework
         with:
-          node: ${{ env.NODE_VERSION }}
+          node: 20
           cache: ${{ env.CACHE_KEY }}
           install: |
-            npx -p @vue/cli vue create my-app -d < /dev/null
+            npx -p @vue/cli vue create my-app -d --packageManager npm  < /dev/null
           content: |
             echo -e "${{ env.AUTH0_CONTENT }}" > src/auth0.js;
           import: |
