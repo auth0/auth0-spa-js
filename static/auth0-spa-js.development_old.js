@@ -2914,6 +2914,7 @@
                         _a = parseQueryResult(queryStringFragments.join("")), state = _a.state, code = _a.code, 
                         error = _a.error, error_description = _a.error_description;
                         transaction = this.transactionManager.get();
+												console.log('transaction ======>', transaction)
                         if (!transaction) {
                             throw new Error("Invalid state");
                         }
