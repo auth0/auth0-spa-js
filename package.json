@@ -39,7 +39,7 @@
     "@typescript-eslint/eslint-plugin-tslint": "^5.33.1",
     "@typescript-eslint/parser": "^5.33.1",
     "browser-tabs-lock": "^1.2.15",
-    "browserstack-cypress-cli": "1.25.3",
+    "browserstack-cypress-cli": "1.26.0",
     "cli-table": "^0.3.6",
     "concurrently": "^7.3.0",
     "cypress": "13.3.1",
