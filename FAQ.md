@@ -85,7 +85,7 @@ v1 of the SDK used an iframe as a backup if no refresh token was available. You 
 To mitigate this, use one of the following solutions:
 
 - Handle the error, and log the user in again using `loginWithRedirect` or `loginWithPopup`.
-- Revert to the v1 behaviour by setting `useRefreshTokenFallback` to `true`.
+- Revert to the v1 behaviour by setting `useRefreshTokensFallback` to `true`.
 
 In all cases, the fallback will not work in browsers where third-party cookies are blocked, unless you are using [custom domains](https://auth0.com/docs/customize/custom-domains).
 
