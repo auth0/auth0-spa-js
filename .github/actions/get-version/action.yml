@@ -1,0 +1,23 @@
+name: Return the version extracted from the branch name
+
+#
+# Returns the version from a branch name of a pull request. It expects the branch name to be in the format release/vX.Y.Z, release/X.Y.Z, release/vX.Y.Z-beta.N. etc.
+#
+# TODO: Remove once the common repo is public.
+#
+
+outputs:
+  version:
+    value: ${{ steps.get_version.outputs.VERSION }}
+
+runs:
+  using: composite
+
+  steps:
+    - id: get_version
+      shell: bash
+      run: |
+        VERSION=$(echo ${BRANCH_NAME} | sed -r 's#release/+##g')
+        echo "VERSION=${VERSION}" >> $GITHUB_OUTPUT
+      env:
+        BRANCH_NAME: ${{ github.event.pull_request.head.ref }}
