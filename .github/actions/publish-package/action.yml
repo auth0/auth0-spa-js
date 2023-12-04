@@ -1,0 +1,31 @@
+name: Publish release to package manager
+
+inputs:
+  node-version:
+    required: true
+  npm-token:
+    required: true
+
+runs:
+  using: composite
+
+  steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ inputs.node-version }}
+        cache: 'npm'
+        registry-url: 'https://registry.npmjs.org'
+
+    - name: Build package
+      uses: ./.github/actions/build
+      with:
+        ${{ inputs.node-version }}
+
+    - name: Publish release to NPM
+      run: npm publish
+      env:
+        NODE_AUTH_TOKEN: ${{ inputs.npm-token }}

@@ -1,0 +1,70 @@
+name: Create GitHub Release
+
+on:
+  pull_request:
+    types:
+      - closed
+
+permissions:
+  contents: write
+
+env:
+  NODE_VERSION: 18
+
+### TODO: Replace instances of './.github/actions/' w/ `auth0/dx-sdk-actions/` and append `@latest` after the common `dx-sdk-actions` repo is made public.
+### TODO: Also remove `get-prerelease`, `get-version`, `release-create`, `tag-create` and `tag-exists` actions from this repo's .github/actions folder once the repo is public.
+
+jobs:
+  release:
+    if: github.event.pull_request.merged && startsWith(github.event.pull_request.head.ref, 'release/')
+    runs-on: ubuntu-latest
+    environment: release
+
+    steps:
+      # Checkout the code
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # Get the version from the branch name
+      - id: get_version
+        uses: ./.github/actions/get-version
+
+      # Get the prerelease flag from the branch name
+      - id: get_prerelease
+        uses: ./.github/actions/get-prerelease
+        with:
+          version: ${{ steps.get_version.outputs.version }}
+
+      # Check if the tag already exists
+      - id: tag_exists
+        uses: ./.github/actions/tag-exists
+        with:
+          tag: ${{ steps.get_version.outputs.version }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      # If the tag already exists, exit with an error
+      - if: steps.tag_exists.outputs.exists == 'true'
+        run: exit 1
+
+      # Publish the release to our package manager
+      - uses: ./.github/actions/publish-package
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          npm-token: ${{ secrets.NPM_TOKEN }}
+
+      # Create a tag for the release
+      - uses: ./.github/actions/tag-create
+        with:
+          tag: ${{ steps.get_version.outputs.version }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      # Create a release for the tag
+      - uses: ./.github/actions/release-create
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          name: ${{ steps.get_version.outputs.version }}
+          body: ${{ github.event.pull_request.body }}
+          tag: ${{ steps.get_version.outputs.version }}
+          commit: ${{ github.sha }}
+          prerelease: ${{ steps.get_prerelease.outputs.prerelease }}
