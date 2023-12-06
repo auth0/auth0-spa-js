@@ -1,0 +1,44 @@
+name: Return the release notes extracted from the PR body
+
+#
+# Returns the release notes from the content of a pull request linked to a release branch. It expects the branch name to be in the format release/vX.Y.Z, release/X.Y.Z, release/vX.Y.Z-beta.N. etc.
+#
+# TODO: Remove once the common repo is public.
+#
+inputs:
+  version :
+    required: true
+  repo_name:
+    required: false
+  repo_owner:
+    required: true
+  token:
+    required: true
+
+runs:
+  using: composite
+
+  steps:
+    - id: get_release_notes
+      shell: bash
+      run: |
+        RELEASE_PR_BRANCH="release/$VERSION"
+        API_URL="https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/pulls"
+        RELEASE_NOTES=$(curl -G \
+        -H "Accept: application/json" \
+        -H "Authorization: token $GITHUB_TOKEN" \
+        --data-urlencode "state=all" \
+        --data-urlencode "head=$REPO_OWNER:$RELEASE_PR_BRANCH" \
+        "$API_URL" | jq -r ".[0].body"
+        )
+        {
+          echo 'RELEASE_NOTES<<EOF'
+          echo $RELEASE_NOTES
+          echo 'EOF'
+        } >> $GITHUB_ENV
+      
+      env:
+        GITHUB_TOKEN: ${{ inputs.token }}
+        REPO_OWNER: ${{ inputs.repo_owner }}
+        REPO_NAME: ${{ inputs.repo_name }}
+        VERSION: ${{ inputs.version }}

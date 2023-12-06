@@ -4,6 +4,7 @@ on:
   pull_request:
     types:
       - closed
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -16,7 +17,7 @@ env:
 
 jobs:
   release:
-    if: github.event.pull_request.merged && startsWith(github.event.pull_request.head.ref, 'release/')
+    if: github.event_name == 'workflow_dispatch' || (github.event.pull_request.merged && startsWith(github.event.pull_request.head.ref, 'release/'))
     runs-on: ubuntu-latest
     environment: release
 
@@ -35,6 +36,16 @@ jobs:
         uses: ./.github/actions/get-prerelease
         with:
           version: ${{ steps.get_version.outputs.version }}
+      
+      # Get the release notes
+      # This will expose the release notes as env.RELEASE_NOTES
+      - id: get_release_notes
+        uses: ./.github/actions/get-release-notes
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          version: ${{ steps.get_version.outputs.version }}
+          repo_owner: ${{ github.repository_owner }}
+          repo_name: ${{ github.event.repository.name }}
 
       # Check if the tag already exists
       - id: tag_exists
@@ -43,28 +54,27 @@ jobs:
           tag: ${{ steps.get_version.outputs.version }}
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      # If the tag already exists, exit with an error
-      - if: steps.tag_exists.outputs.exists == 'true'
-        run: exit 1
-
       # Publish the release to our package manager
       - uses: ./.github/actions/publish-package
+        if: steps.tag_exists.outputs.exists == 'false'
         with:
           node-version: ${{ env.NODE_VERSION }}
           npm-token: ${{ secrets.NPM_TOKEN }}
 
       # Create a tag for the release
       - uses: ./.github/actions/tag-create
+        if: steps.tag_exists.outputs.exists == 'false'
         with:
           tag: ${{ steps.get_version.outputs.version }}
           token: ${{ secrets.GITHUB_TOKEN }}
 
       # Create a release for the tag
       - uses: ./.github/actions/release-create
+        if: steps.tag_exists.outputs.exists == 'false'
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           name: ${{ steps.get_version.outputs.version }}
-          body: ${{ github.event.pull_request.body }}
+          body: ${{ env.RELEASE_NOTES }}
           tag: ${{ steps.get_version.outputs.version }}
           commit: ${{ github.sha }}
           prerelease: ${{ steps.get_prerelease.outputs.prerelease }}
