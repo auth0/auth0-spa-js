@@ -13,7 +13,7 @@ const login = instanceId => {
 
 describe('using multiple clients in the app', () => {
   beforeEach(() => {
-    cy.server();
+    //cy.intercept();
     cy.visit('http://127.0.0.1:3000/multiple_clients.html');
     get('client-logout-1').click();
     cy.window().then(win => win.localStorage.clear());
