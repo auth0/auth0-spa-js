@@ -69,6 +69,19 @@ const getStatsPlugins = () => {
 
 let bundles = [
   {
+    input: 'src/worker/token.worker.ts',
+    output: {
+      name: EXPORT_NAME,
+      file: 'dist/auth0-spa-js.worker.development.js',
+      format: 'umd',
+      sourcemap: true
+    },
+    plugins: [...getPlugins(false)],
+    watch: {
+      clearScreen: false
+    }
+  },
+  {
     input: 'src/index.ts',
     output: {
       name: EXPORT_NAME,
@@ -96,6 +109,17 @@ let bundles = [
 
 if (isProduction) {
   bundles = bundles.concat(
+    {
+      input: 'src/worker/token.worker.ts',
+      output: [
+        {
+          name: EXPORT_NAME,
+          file: 'dist/auth0-spa-js.worker.production.js',
+          format: 'umd'
+        }
+      ],
+      plugins: [...getPlugins(isProduction), ...getStatsPlugins()]
+    },
     {
       input: 'src/index.ts',
       output: [

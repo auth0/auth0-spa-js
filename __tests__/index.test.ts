@@ -158,6 +158,19 @@ describe('Auth0', () => {
       expect(auth0).toBeInstanceOf(Auth0Client);
     });
 
+    it('should load token worker from provided URL when provided', async () => {
+      const workerUrl = '/hosted/auth0.worker.js';
+
+      await createAuth0Client({
+        domain: TEST_DOMAIN,
+        clientId: TEST_CLIENT_ID,
+        useRefreshTokens: true,
+        workerUrl,
+      });
+
+      expect(window.Worker).toHaveBeenCalledWith(workerUrl);
+    });
+
     it('should call `utils.validateCrypto`', async () => {
       const { utils } = await setup();
 

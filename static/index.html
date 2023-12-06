@@ -322,6 +322,21 @@
                 >Use iframe as a fallback for refresh tokens</label
               >
             </div>
+
+            <div class="custom-control custom-switch mb-5">
+              <input
+                type="checkbox"
+                class="custom-control-input"
+                id="worker_url_switch"
+                v-model="useWorkerUrl"
+              />
+              <label
+                for="worker_url_switch"
+                class="custom-control-label"
+                data-cy="switch-use-worker-url"
+                >Use Hosted Worker URL</label
+              >
+            </div>
           </div>
           <div class="col-md-6">
             <div class="custom-control custom-switch mb-5">
@@ -453,6 +468,7 @@
             useOrgAtLogin: data.useOrgAtLogin || false,
             useRefreshTokensFallback: data.useRefreshTokensFallback || false,
             clientOptions: '',
+            useWorkerUrl: data.useWorkerUrl || false,
             audienceScopes: [
               {
                 audience: data.audience || defaultAudience,
@@ -506,7 +522,11 @@
           useRefreshTokensFallback: function () {
             this.initializeClient();
             this.saveForm();
-          }
+          },
+          useWorkerUrl: function () {
+            this.initializeClient();
+            this.saveForm();
+          },
         },
         computed: {
           scopesWithSuffix: function () {
@@ -528,6 +548,7 @@
               useCookiesForTransactions: _self.useCookiesForTransactions,
               useFormData: _self.useFormData,
               useRefreshTokensFallback: _self.useRefreshTokensFallback,
+              workerUrl: _self.useWorkerUrl ? '/auth0-spa-js.worker.development.js' : undefined,
               authorizationParams: {
                 redirect_uri: window.location.origin
               }
@@ -594,7 +615,8 @@
                 useCache: this.useCache,
                 useFormData: this.useFormData,
                 useOrgAtLogin: this.useOrgAtLogin,
-                useRefreshTokensFallback: this.useRefreshTokensFallback
+                useRefreshTokensFallback: this.useRefreshTokensFallback,
+                useWorkerUrl: this.useWorkerUrl,
               })
             );
 
@@ -614,6 +636,7 @@
             this.useFormData = true;
             this.useOrgAtLogin = false;
             this.useRefreshTokensFallback = false;
+            this.useWorkerUrl = false;
             this.saveForm();
           },
           showAuth0Info: function () {
