@@ -266,7 +266,7 @@ export interface Auth0ClientOptions extends BaseLoginOptions {
    * at `<module_path>/dist/auth0-spa-js.worker.production.js`, from the same host as your application or using the Auth0 CDN 
    * `https://cdn.auth0.com/js/auth0-spa-js/<version>/auth0-spa-js.worker.production.js`.
    * 
-   * **Note**: The worker is only used when `useRefreshTokens: true` and no custom `cache` is provided.
+   * **Note**: The worker is only used when `useRefreshTokens: true`, `cacheLocation: 'memory'`, and the `cache` is not custom.
    */
   workerUrl?: string;
 }
