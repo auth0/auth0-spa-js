@@ -168,5 +168,64 @@ describe('getTokenSilently', () => {
         );
       });
     });
+
+    describe('with workerUrl', () => {
+      const workerUrl = 'auth0-spa-js.worker.development.js';
+
+      it('loads the hosted worker file', () => {
+        whenReady();
+
+        cy.intercept({
+          method: 'GET',
+          url: workerUrl
+        }).as('workerLoaded');
+
+        cy.setSwitch('refresh-tokens', true);
+        cy.setSwitch('use-worker-url', true);
+
+        cy.wait('@workerLoaded').its('response.statusCode').should('eq', 200);
+      });
+
+      it('retrieves tokens using the hosted worker file', () => {
+        whenReady();
+
+        cy.setSwitch('refresh-tokens', true);
+        cy.setSwitch('use-worker-url', true);
+        cy.setSwitch('use-cache', false);
+
+        cy.intercept({
+          method: 'POST',
+          url: '**/oauth/token'
+        }).as('tokenApiCheck');
+
+        cy.login();
+        cy.getAccessTokens().should('have.length', 1);
+
+        cy.wait('@tokenApiCheck')
+          .its('request')
+          .then(request => {
+            cy.wrap(request)
+              .its('headers.referer')
+              .should('contain', workerUrl);
+            cy.wrap(request)
+              .its('body')
+              .should('contain', 'grant_type=authorization_code');
+          });
+
+        cy.getTokenSilently();
+        cy.getAccessTokens().should('have.length', 2);
+
+        cy.wait('@tokenApiCheck')
+          .its('request')
+          .then(request => {
+            cy.wrap(request)
+              .its('headers.referer')
+              .should('contain', workerUrl);
+            cy.wrap(request)
+              .its('body')
+              .should('contain', 'grant_type=refresh_token');
+          });
+      });
+    });
   });
 });
