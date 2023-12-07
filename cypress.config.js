@@ -1,6 +1,6 @@
-import { defineConfig } from 'cypress'
+const { defineConfig } = require('cypress');
 
-export default defineConfig({
+module.exports = defineConfig({
   chromeWebSecurity: false,
   viewportWidth: 1000,
   viewportHeight: 1000,
@@ -10,6 +10,5 @@ export default defineConfig({
     setupNodeEvents(on, config) {
       return require('./cypress/plugins/index.js')(on, config)
     },
-    excludeSpecPattern: 'migration.js',
   },
 })
