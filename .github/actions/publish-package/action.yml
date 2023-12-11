@@ -23,7 +23,7 @@ runs:
     - name: Build package
       uses: ./.github/actions/build
       with:
-        ${{ inputs.node-version }}
+        node: ${{ inputs.node-version }}
 
     - name: Publish release to NPM
       shell: bash
