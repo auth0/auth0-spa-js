@@ -19,24 +19,18 @@ runs:
   using: composite
 
   steps:
-    - id: get_release_notes
-      shell: bash
-      run: |
-        RELEASE_PR_BRANCH="release/$VERSION"
-        API_URL="https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/pulls"
-        RELEASE_NOTES=$(curl -G \
-        -H "Accept: application/json" \
-        -H "Authorization: token $GITHUB_TOKEN" \
-        --data-urlencode "state=all" \
-        --data-urlencode "head=$REPO_OWNER:$RELEASE_PR_BRANCH" \
-        "$API_URL" | jq -r ".[0].body"
-        )
-        {
-          echo 'RELEASE_NOTES<<EOF'
-          echo $RELEASE_NOTES
-          echo 'EOF'
-        } >> $GITHUB_ENV
-      
+    - uses: actions/github-script@v7
+      id: get_release_notes
+      with:
+        result-encoding: string
+        script: |
+          const { data: pulls } = await github.rest.pulls.list({
+            owner: process.env.REPO_OWNER,
+            repo: process.env.REPO_NAME,
+            state: 'all',
+            head: `${process.env.REPO_OWNER}:release/${process.env.VERSION}`,
+          });
+          core.exportVariable('RELEASE_NOTES', pulls[0].body)
       env:
         GITHUB_TOKEN: ${{ inputs.token }}
         REPO_OWNER: ${{ inputs.repo_owner }}
