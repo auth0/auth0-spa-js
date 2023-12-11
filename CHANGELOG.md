@@ -1,5 +1,11 @@
 # Change Log
 
+## [v2.1.3](https://github.com/auth0/auth0-spa-js/tree/v2.1.3) (2023-12-11)
+[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.1.2...v2.1.3)
+
+**Changed**
+- feat: support for hosted token worker [\#1208](https://github.com/auth0/auth0-spa-js/pull/1208) ([DJMcK](https://github.com/DJMcK))
+
 ## [v2.1.2](https://github.com/auth0/auth0-spa-js/tree/v2.1.2) (2023-08-21)
 [Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.1.1...v2.1.2)
 
