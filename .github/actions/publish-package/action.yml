@@ -26,6 +26,7 @@ runs:
         ${{ inputs.node-version }}
 
     - name: Publish release to NPM
+      shell: bash
       run: npm publish
       env:
         NODE_AUTH_TOKEN: ${{ inputs.npm-token }}
