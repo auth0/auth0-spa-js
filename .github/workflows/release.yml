@@ -64,12 +64,6 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           npm-token: ${{ secrets.NPM_TOKEN }}
 
-      # Create a tag for the release
-      - uses: ./.github/actions/tag-create
-        with:
-          tag: ${{ steps.get_version.outputs.version }}
-          token: ${{ secrets.GITHUB_TOKEN }}
-
       # Create a release for the tag
       - uses: ./.github/actions/release-create
         with:
