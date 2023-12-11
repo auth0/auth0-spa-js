@@ -17,7 +17,7 @@ env:
 
 jobs:
   release:
-    if: github.event_name == 'workflow_dispatch' || (github.event.pull_request.merged && startsWith(github.event.pull_request.head.ref, 'release/'))
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     environment: release
 
