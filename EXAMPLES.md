@@ -5,7 +5,6 @@
 - [Refresh Tokens](#refresh-tokens)
 - [Data Caching Options](#creating-a-custom-cache)
 - [Organizations](#organizations)
-- [Advanced Options](#advanced-options)
 
 ## Logging Out
 
