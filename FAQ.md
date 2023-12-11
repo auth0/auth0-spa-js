@@ -106,30 +106,31 @@ There are two ways to use our SDK when you want to rely on a Content Delivery Ne
 
 ### Using our own CDN bundle
 
-Our own CDN bundle exposes both `createAuth0Client` and `Auth0Client` on a global `auth0` variable, and can be used as shown below. 
+Our own CDN bundle exposes both `createAuth0Client` and `Auth0Client` on a global `auth0` variable, and can be used as shown below.
 
 ```html
 <script>
-const client = auth0.createAuth0Client({ ... });
-// or
-const client = new auth0.Auth0Client({ ... });
+  const client = auth0.createAuth0Client({ ... });
+  // or
+  const client = new auth0.Auth0Client({ ... });
 </script>
 ```
 
 ### Using import maps with unpkg
+
 If you want to use a CDN bundle together with import maps, you will need to use our ESM bundle from unpkg:
 
 ```html
 <script type="importmap">
-{
-  "imports": {
-    "@auth0/auth0-spa-js": "https://www.unpkg.com/@auth0/auth0-spa-js@2.1.2/dist/auth0-spa-js.production.esm.js"
+  {
+    "imports": {
+      "@auth0/auth0-spa-js": "https://www.unpkg.com/@auth0/auth0-spa-js@2.1.2/dist/auth0-spa-js.production.esm.js"
+    }
   }
-}
 </script>
 <script type="module">
   import { createAuth0Client, Auth0Client } from '@auth0/auth0-spa-js';
-  
+
   const client = createAuth0Client({ ... });
   // or
   const client = new Auth0Client({ ... });
@@ -137,6 +138,7 @@ If you want to use a CDN bundle together with import maps, you will need to use 
 ```
 
 ## Why is isAuthenticated returning true when there are no tokens available to call an API?
+
 As long as the SDK has an id token, you are considered authenticated, because it knows who you are. It might be that there isn't a valid access token and you are unable to call an API, but the SDK still knows who you are because of the id token.
 
 Authentication is about who you are (id token), not what you can do (access token). The latter is authorization, which is also why you pass the access token to the API in the Authorization header.
@@ -145,3 +147,37 @@ So even when the refresh token fails, or `getTokenSilently` returns nothing, tha
 
 On top of that, the SDK can have multiple access tokens and multiple refresh tokens (e.g. when using multiple audience and scope combinations to call multiple API's), but only one id token.
 If there are multiple access and refresh tokens, and one of the refresh tokens fails, it doesn't mean the other access tokens or refresh tokens are invalid, they might still be perfectly usable.
+
+## The Token Worker is being blocked by my Content-Security-Policy (CSP), what should I do?
+
+When using refresh tokens - along with the default in-memory cache - the SDK will leverage a [`Worker`](https://developer.mozilla.org/en-US/docs/Web/API/Worker) to globally isolate the refresh token from the rest of your application.
+
+By default, to reduce the friction of getting started with the SDK, we ship that `Worker` code with the main SDK bundle and dynamically pass it as a string to create a new `Worker`.
+
+Unless configured to allow for that, Content-Security-Policy (CSP) will block the loading of the dynamic `blob:`.
+
+To allow you to keep strict Content-Security-Policy (CSP), and not have to allow `blob:` in your CSP, we also ship the `Worker` as a separate compiled JavaScript file. You can find that file in [`./dist/auth0-spa-js.worker.production.js`](./dist/auth0-spa-js.worker.production.js) or on our CDN. This allows you to either copy the worker JavaScript file to your web server's public assets folder or load it from our CDN.
+
+For example, if I have a folder called `static` in the root of my project then I could update my build script to copy the worker file to it:
+
+```sh
+my-build-script && cp ./node_modules/@auth0/auth0-spa-js/dist/auth0-spa-js.worker.development.js ./static/
+```
+
+Now when instantiating the SDK, I can configure it to load the worker code from that location:
+
+```ts
+import { createAuth0Client, Auth0Client } from '@auth0/auth0-spa-js';
+
+const client = createAuth0Client({
+  ...
+  workerUrl: '/static/auth0-spa-js.worker.production.js'
+});
+// or
+const client = new Auth0Client({
+  ...
+  workerUrl: '/static/auth0-spa-js.worker.production.js'
+});
+```
+
+In this case, the loading of the `Worker` would comply with a CSP that included `'self'`. You can follow similar steps if you'd prefer to copy the file to your own CDN instead.

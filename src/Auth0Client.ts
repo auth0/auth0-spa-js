@@ -231,7 +231,11 @@ export class Auth0Client {
       this.options.useRefreshTokens &&
       cacheLocation === CACHE_LOCATION_MEMORY
     ) {
-      this.worker = new TokenWorker();
+      if (this.options.workerUrl) {
+        this.worker = new Worker(this.options.workerUrl);
+      } else {
+        this.worker = new TokenWorker();
+      }
     }
   }
 
