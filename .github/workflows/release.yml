@@ -8,6 +8,7 @@ on:
 
 permissions:
   contents: write
+  id-token: write # For publishing to npm using --provenance
 
 env:
   NODE_VERSION: 18
@@ -36,7 +37,7 @@ jobs:
         uses: ./.github/actions/get-prerelease
         with:
           version: ${{ steps.get_version.outputs.version }}
-      
+
       # Get the release notes
       # This will expose the release notes as env.RELEASE_NOTES
       - id: get_release_notes
@@ -62,6 +63,7 @@ jobs:
       - uses: ./.github/actions/publish-package
         with:
           node-version: ${{ env.NODE_VERSION }}
+          version: ${{ steps.get_version.outputs.version }}
           npm-token: ${{ secrets.NPM_TOKEN }}
 
       # Create a release for the tag

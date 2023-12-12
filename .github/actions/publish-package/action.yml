@@ -5,6 +5,10 @@ inputs:
     required: true
   npm-token:
     required: true
+  version:
+    required: true
+  release-directory:
+    default: './'
 
 runs:
   using: composite
@@ -27,6 +31,16 @@ runs:
 
     - name: Publish release to NPM
       shell: bash
-      run: npm publish
+      working-directory: ${{ inputs.release-directory }}
+      run: |
+        if [[ "${VERSION}" == *"beta"* ]]; then
+          TAG="beta"
+        elif [[ "${VERSION}" == *"alpha"* ]]; then
+          TAG="alpha"
+        else
+          TAG="latest"
+        fi
+        npm publish --provenance --tag $TAG
       env:
         NODE_AUTH_TOKEN: ${{ inputs.npm-token }}
+        VERSION: ${{ inputs.version }}
