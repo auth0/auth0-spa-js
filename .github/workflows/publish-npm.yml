@@ -55,8 +55,9 @@ jobs:
           repo_name: ${{ github.event.repository.name }}
 
       # If the tag already exists, exit with an error
-      - if: steps.tag_exists.outputs.exists == 'true'
-        run: exit 1
+      - run: echo "Test"
+        env:
+          test: steps.tag_exists.outputs.exists
 
       # If the tag already exists, exit with an error
       - if: steps.tag_exists.outputs.exists == true
