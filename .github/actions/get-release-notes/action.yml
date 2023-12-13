@@ -15,6 +15,10 @@ inputs:
   token:
     required: true
 
+outputs:
+  release-notes:
+    value: ${{ steps.get_release_notes.outputs.RELEASE_NOTES }}
+
 runs:
   using: composite
 
@@ -30,7 +34,7 @@ runs:
             state: 'all',
             head: `${process.env.REPO_OWNER}:release/${process.env.VERSION}`,
           });
-          core.exportVariable('RELEASE_NOTES', pulls[0].body)
+          core.setOutput('RELEASE_NOTES', pulls[0].body);
       env:
         GITHUB_TOKEN: ${{ inputs.token }}
         REPO_OWNER: ${{ inputs.repo_owner }}

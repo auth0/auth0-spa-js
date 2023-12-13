@@ -71,7 +71,7 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           name: ${{ steps.get_version.outputs.version }}
-          body: ${{ env.RELEASE_NOTES }}
+          body: ${{ steps.get_release_notes.outputs.release-notes }}
           tag: ${{ steps.get_version.outputs.version }}
           commit: ${{ github.sha }}
           prerelease: ${{ steps.get_prerelease.outputs.prerelease }}
