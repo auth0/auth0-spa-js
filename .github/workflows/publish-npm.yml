@@ -58,6 +58,10 @@ jobs:
       - if: steps.tag_exists.outputs.exists == 'true'
         run: exit 1
 
+      # If the tag already exists, exit with an error
+      - if: steps.tag_exists.outputs.exists == true
+        run: exit 1
+
       # Publish the release to our package manager
       - uses: ./.github/actions/publish-package
         if: false
