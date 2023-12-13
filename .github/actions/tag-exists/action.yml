@@ -21,7 +21,7 @@ runs:
   using: composite
 
   steps:
-    - id: check
+    - id: tag-exists
       shell: bash
       run: |
         GET_API_URL="https://api.github.com/repos/${GITHUB_REPOSITORY}/git/ref/tags/${TAG_NAME}"
