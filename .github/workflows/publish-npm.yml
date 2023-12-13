@@ -51,6 +51,8 @@ jobs:
         with:
           tag: ${{ steps.get_version.outputs.version }}
           token: ${{ secrets.GITHUB_TOKEN }}
+          repo_owner: ${{ github.repository_owner }}
+          repo_name: ${{ github.event.repository.name }}
 
       # If the tag already exists, exit with an error
       - if: steps.tag_exists.outputs.exists == 'true'
@@ -58,6 +60,7 @@ jobs:
 
       # Publish the release to our package manager
       - uses: ./.github/actions/publish-package
+        if: false
         with:
           node-version: ${{ inputs.node-version }}
           npm-token: ${{ secrets.NPM_TOKEN }}
@@ -66,6 +69,7 @@ jobs:
 
       # Create a release for the tag
       - uses: ./.github/actions/release-create
+        if: false
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           name: ${{ steps.get_version.outputs.version }}

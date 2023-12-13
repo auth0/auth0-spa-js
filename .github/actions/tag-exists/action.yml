@@ -11,6 +11,10 @@ inputs:
     required: true
   tag:
     required: true
+  repo_owner:
+    required: true
+  repo_name:
+    required: true
 
 outputs:
   exists:
@@ -33,4 +37,5 @@ runs:
         fi
       env:
         TAG_NAME: ${{ inputs.tag }}
+        GITHUB_REPOSITORY: ${{ inputs.repo_owner }}/${{ inputs.repo_name }}
         GITHUB_TOKEN: ${{ inputs.token }}
