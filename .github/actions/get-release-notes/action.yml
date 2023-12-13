@@ -35,7 +35,6 @@ runs:
             head: `${process.env.REPO_OWNER}:release/${process.env.VERSION}`,
           });
           core.setOutput('RELEASE_NOTES', pulls[0].body);
-          core.exportVariable('RELEASE_NOTES', pulls[0].body);
       env:
         GITHUB_TOKEN: ${{ inputs.token }}
         REPO_OWNER: ${{ inputs.repo_owner }}
