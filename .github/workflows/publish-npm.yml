@@ -57,7 +57,7 @@ jobs:
       # If the tag already exists, exit with an error
       - run: echo "Test"
         env:
-          test: steps.tag_exists.outputs.exists
+          test: ${{ steps.tag_exists.outputs.exists }}
 
       # If the tag already exists, exit with an error
       - if: steps.tag_exists.outputs.exists == true
