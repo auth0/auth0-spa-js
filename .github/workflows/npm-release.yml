@@ -5,8 +5,13 @@ on:
     inputs:
       node-version:
         required: true
+        type: string
       require-build:
         default: true
+        type: string
+      release-directory:
+        default: './'
+        type: string
     secrets:
       github-token:
         required: true
@@ -62,6 +67,7 @@ jobs:
           require-build: ${{ inputs.require-build }}
           version: ${{ steps.get_version.outputs.version }}
           npm-token: ${{ secrets.npm-token }}
+          release-directory: ${{ inputs.release-directory }}
 
       # Create a release for the tag
       - uses: ./release-create
