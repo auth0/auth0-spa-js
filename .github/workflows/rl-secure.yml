@@ -1,0 +1,53 @@
+name: RL-Secure Workflow
+run-name: rl-scanner-only
+
+on:
+  merge_group:
+  workflow_dispatch:
+  push:
+    branches: ['main']
+  pull_request:
+    types:
+      - opened
+      - synchronize
+
+jobs:
+  checkout-build-scan-only:
+    runs-on: ubuntu-latest
+
+    permissions:
+      statuses: write
+      pull-requests: write
+      security-events: write
+      actions: read
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install npm dependencies
+        run: npm install
+
+      - name: Create tgz build artifact
+        run: |
+          tar -czvf auth0-spa-js.tgz *
+
+      - name: Create build artifact
+        id: output_build_artifact
+        run: |
+          echo "scanfile=auth0-spa-js.tgz" >> $GITHUB_OUTPUT
+
+      - name: Scan packages with rl-secure
+        id: scan
+        env:
+          RLSECURE_ENCODED_LICENSE: ${{ secrets.RLSECURE_ENCODED_LICENSE }}
+          RLSECURE_SITE_KEY: ${{ secrets.RLSECURE_SITE_KEY }}
+        uses: reversinglabs/gh-action-rl-scanner-composite@v1
+        with:
+          artifact-to-scan: ${{ steps.output_build_artifact.outputs.scanfile }}
+
+      - name: Get the scan status output
+        if: success() || failure()
+        run: |
+          echo "The status is: '${{ steps.scan.outputs.status }}'"
+          echo "The description is: '${{ steps.scan.outputs.description }}'"
