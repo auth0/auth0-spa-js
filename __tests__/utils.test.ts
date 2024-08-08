@@ -10,7 +10,8 @@ import {
   runIframe,
   urlDecodeB64,
   getCrypto,
-  validateCrypto
+  validateCrypto,
+  getTokenIssuer
 } from '../src/utils';
 
 import { DEFAULT_AUTHORIZE_TIMEOUT_IN_SECONDS } from '../src/constants';
@@ -491,6 +492,35 @@ describe('utils', () => {
       expect(validateCrypto).toThrowError(`
       auth0-spa-js must run on a secure origin. See https://github.com/auth0/auth0-spa-js/blob/main/FAQ.md#why-do-i-get-auth0-spa-js-must-run-on-a-secure-origin for more information.
     `);
+    });
+  });
+
+  describe('getTokenIssuer', () => {
+    it('should add https:// to a non well formed URL', () => {
+      const issuer = getTokenIssuer('www.issuer.com', 'https://www.domain.com');
+      expect(issuer).toBe('https://www.issuer.com/');
+    });
+    it('should not add https:// to a well formed URL with HTTPS protocol', () => {
+      const issuer = getTokenIssuer(
+        'https://www.issuer.com',
+        'https://www.domain.com'
+      );
+      expect(issuer).toBe('https://www.issuer.com');
+    });
+    it('should not add https:// to a well formed URL with HTTP protocol', () => {
+      const issuer = getTokenIssuer(
+        'http://www.issuer.com',
+        'https://www.domain.com'
+      );
+      expect(issuer).toBe('http://www.issuer.com');
+    });
+    it('should return domain when issuer is undefined', () => {
+      const issuer = getTokenIssuer(undefined, 'https://www.domain.com');
+      expect(issuer).toBe('https://www.domain.com/');
+    });
+    it('should return domain when issuer is an empty string', () => {
+      const issuer = getTokenIssuer('', 'https://www.domain.com');
+      expect(issuer).toBe('https://www.domain.com/');
     });
   });
 });
