@@ -234,7 +234,7 @@ export const getTokenIssuer = (
   domainUrl: string
 ) => {
   if (issuer) {
-    return issuer.startsWith('https://') ? issuer : `https://${issuer}/`;
+    return /^https?:\/\//.test(issuer) ? issuer : `https://${issuer}/`;
   }
 
   return `${domainUrl}/`;
