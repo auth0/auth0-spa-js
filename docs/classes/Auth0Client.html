@@ -15,7 +15,7 @@
 <p>Check if the user is logged in using <code>getTokenSilently</code>. The difference
 with <code>getTokenSilently</code> is that this doesn&#39;t return a token, but it will
 pre-fill the token cache.</p>
-<p>This method also heeds the <code>auth0.{clientId}.is.authenticated</code> cookie, as an optimization
+<p>This method also needs the <code>auth0.{clientId}.is.authenticated</code> cookie, as an optimization
  to prevent calling Auth0 unnecessarily. If the cookie is not present because
 there was no previous login (or it has expired) then tokens will not be refreshed.</p>
 <p>It should be used for silently logging in the user when you instantiate the
