@@ -550,7 +550,7 @@ export class Auth0Client {
    * with `getTokenSilently` is that this doesn't return a token, but it will
    * pre-fill the token cache.
    *
-   * This method also heeds the `auth0.{clientId}.is.authenticated` cookie, as an optimization
+   * This method also needs the `auth0.{clientId}.is.authenticated` cookie, as an optimization
    *  to prevent calling Auth0 unnecessarily. If the cookie is not present because
    * there was no previous login (or it has expired) then tokens will not be refreshed.
    *
