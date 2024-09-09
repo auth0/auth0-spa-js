@@ -1,3 +1,4 @@
+New! Keyboard shortcuts … Drive keyboard shortcuts have been updated to give you first-letters navigation
 #!/usr/bin/env python3
 
 import argparse
@@ -86,13 +87,13 @@ def generate_report(rlsecure_path, workdir, targetdir, artifact_name, artifact_v
     except subprocess.CalledProcessError as e:
         sys.exit(f'[x] Failed to generate report: {e}')
 
-def detect_malware(report_file, artifact_name, artifact_version, repository, commit, build_env):
+def detect_malware(report_file):
     report_data = load_report(report_file)
     try:
         report_metadata = report_data['report']['metadata']
         malware_violation_rule_ids = MALWARE_VIOLATION_IDS
 
-        is_malware_detected = process_and_export_violations(report_metadata, malware_violation_rule_ids, artifact_name, artifact_version, repository, commit, build_env)
+        is_malware_detected = process_violations(report_metadata, malware_violation_rule_ids)
 
         if not is_malware_detected:
             print('[i] No Malware was detected.')
@@ -108,50 +109,17 @@ def load_report(report_file):
     except Exception:
         sys.exit(f'[x] Error reading report data from {report_file}')
 
-import sys
-
-def process_and_export_violations(report_metadata, malware_violation_rule_ids, artifact_name, artifact_version, repository, commit, build_env):
+def process_violations(report_metadata, malware_violation_rule_ids):
     print('----------------- Detections -----------------', file=sys.stderr)
-
     is_malware_detected = False
-    violations = []
 
-    if report_metadata['violations']:
-        for _, violation in report_metadata['violations'].items():
-            if violation['rule_id'] in malware_violation_rule_ids:
+    if violations := report_metadata['violations']:
+        for _, violation in violations.items():
+            if violation['rule_id'] in malware_violation_rule_ids: # Malware was detected
                 is_malware_detected = True
-                violations.append(violation)
-
                 for component_id in violation['references']['component']:
                     print(f'[!] {violation["rule_id"]}: {violation["description"]} -> {report_metadata["components"][component_id]["path"]}', file=sys.stderr)
-
-                report_malware_detection(violation['rule_id'])
-
-
-    file_name = 'violations.txt'
-    print('------------------RL Wrapper Scanner Save Violations------------------', file=sys.stderr)
-    with open(file_name, 'w') as file:
-        file.write('## 🚨 RL Wrapper Scanner Results: Malware Detected\n\n')
-        file.write(f'**Artifact:** {artifact_name}\n')
-        file.write(f'**Version:** {artifact_version}\n')
-        file.write(f'**Repository:** {repository}\n')
-        file.write(f'**Commit SHA:** {commit}\n\n')
-        file.write('### Malware Details:\n')
-
-        if violations:
-            for violation in violations:
-                file.write(f'- **Type:** Detected: {violation["rule_id"]}: {violation["description"]}\n')
-        else:
-            file.write('- ⚠️ No malware was detected.\n\n')
-
-        file.write('- ⚠️ Please review the artifact and resolve the issue before proceeding.\n\n')
-        file.write('### Additional Info:\n')
-        file.write(f'- Environment: {build_env}\n')
-
-        if is_malware_detected:
-            file.write('- Scan completed with malware detected.\n')
-        else:
-            file.write('- Scan completed without detecting malware.\n')
+                    report_malware_detection(violation['rule_id'])
 
     return is_malware_detected
 
@@ -270,7 +238,7 @@ def main():
     scan_artifact(rlsecure_path, args.artifact, workdir, args.name, args.version)
     generate_report(rlsecure_path, workdir, targetdir, args.name, args.version)
 
-    is_non_compliant_violations = detect_malware(f'{workdir}/{targetdir}/report.rl.json', args.name, args.version, args.repository, args.commit, args.build_env)
+    is_non_compliant_violations = detect_malware(f'{workdir}/{targetdir}/report.rl.json')
 
     s3_results_path = submit_to_s3(workdir, targetdir, s3_bucket_name, tool_name, args.name, args.version, timestamp)
 
