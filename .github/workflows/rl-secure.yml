@@ -59,8 +59,10 @@ jobs:
             --build-env "GitHub Actions"
         continue-on-error: true
 
-      - name: List Files in Root Directory
-        run: ls -la
+      - name: Find and List violations.txt in /tmp
+        run: |
+          echo "Searching for violations.txt in /tmp:"
+          find /tmp -name 'violations.txt' -print
 
       - name: Add or Update PR Comment
         uses: actions/github-script@v6
@@ -68,29 +70,40 @@ jobs:
           script: |
             const fs = require('fs');
             const path = require('path');
-            const glob = require('glob');
-            const util = require('util');
+            const { promisify } = require('util');
+            const readdir = promisify(fs.readdir);
+            const prNumber = context.issue.number;
+            const repoOwner = context.repo.owner;
+            const repoName = context.repo.repo;
+            const header = 'RL-Secure Scanner Results';
 
-            const globPromise = util.promisify(glob);
-                        const pattern = '/tmp/*/violations.txt';
-            let foundFilePath = null;
-
-            try {
-              const files = await globPromise(pattern);
-              if (files.length > 0) {
-                foundFilePath = files[0];
-                console.log(`Found file at: ${foundFilePath}`);
-              } else {
-                console.log('No file found matching pattern.');
+            // Search for violations.txt in /tmp/ directories
+            async function findFile(dir) {
+              try {
+                const files = await readdir(dir);
+                for (const file of files) {
+                  const filePath = path.join(dir, file);
+                  const stat = await promisify(fs.stat)(filePath);
+                  if (stat.isDirectory()) {
+                    const foundFile = await findFile(filePath);
+                    if (foundFile) return foundFile;
+                  } else if (file === 'violations.txt') {
+                    return filePath;
+                  }
+                }
+              } catch (error) {
+                console.error('Error reading directory:', error);
               }
+              return null;
+            }
 
-              if (foundFilePath) {
-                const commentBody = fs.readFileSync(foundFilePath, 'utf8');
+            (async () => {
+              const tmpDir = '/tmp';
+              const filePath = await findFile(tmpDir);
 
-                const prNumber = context.issue.number;
-                const repoOwner = context.repo.owner;
-                const repoName = context.repo.repo;
-                const header = 'RL-Secure Scanner Results';
+              if (filePath) {
+                console.log(`Found file at: ${filePath}`);
+                const commentBody = fs.readFileSync(filePath, 'utf8');
 
                 const { data: comments } = await github.rest.issues.listComments({
                   owner: repoOwner,
@@ -118,8 +131,6 @@ jobs:
               } else {
                 console.log('File not found.');
               }
-            } catch (error) {
-              console.error('Error finding or reading file:', error);
-            }
+            })();
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
