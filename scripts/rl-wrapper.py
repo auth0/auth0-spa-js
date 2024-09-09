@@ -131,6 +131,7 @@ def process_and_export_violations(report_metadata, malware_violation_rule_ids, a
 
     file_name = 'violations.txt'
     file_path = os.path.join(base_dir, file_name)
+    print(f'Saving violations to {file_path}', file=sys.stderr)
     print('------------------RL Wrapper Scanner Save Violations------------------', file=sys.stderr)
     with open(file_path, 'w') as file:
         file.write('## 🚨 RL Wrapper Scanner Results: Malware Detected\n\n')
