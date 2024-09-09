@@ -63,7 +63,7 @@ jobs:
         with:
           script: |
             const fs = require('fs');
-            const path = 'violations.txt';
+            const path = 'scripts/violations.txt';
             const commentBody = fs.readFileSync(path, 'utf8');
 
             const prNumber = context.issue.number;

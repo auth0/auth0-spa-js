@@ -126,7 +126,7 @@ def process_and_export_violations(report_metadata, malware_violation_rule_ids, a
                     print(f'[!] {violation["rule_id"]}: {violation["description"]} -> {report_metadata["components"][component_id]["path"]}', file=sys.stderr)
 
                 report_malware_detection(violation['rule_id'])
-
+    print('------------------RL Wrapper Scanner Save Violations------------------', file=sys.stderr)
     with open('violations.txt', 'w') as file:
         file.write('## 🚨 RL Wrapper Scanner Results: Malware Detected\n\n')
         file.write(f'**Artifact:** {artifact_name}\n')
