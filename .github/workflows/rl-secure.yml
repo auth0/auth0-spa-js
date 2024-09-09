@@ -56,5 +56,5 @@ jobs:
             --version "${{ steps.get_version.outputs.version }}" \
             --repository "${{ github.repository }}" \
             --commit "${{ github.sha }}" \
-            --build-env "GitHub Actions"
+            --build-env "github_action"
         continue-on-error: true
