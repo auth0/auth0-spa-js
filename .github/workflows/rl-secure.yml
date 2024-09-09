@@ -59,7 +59,40 @@ jobs:
             --build-env "GitHub Actions"
         continue-on-error: true
       - name: Add or Update PR Comment
-        uses: marocchino/sticky-pull-request-comment@v2
+        uses: actions/github-script@v6
         with:
-          header: RL-Secure Scanner Results
-          path: violations.txt
+          script: |
+            const fs = require('fs');
+            const path = 'violations.txt';
+            const commentBody = fs.readFileSync(path, 'utf8');
+
+            const prNumber = context.issue.number;
+            const repoOwner = context.repo.owner;
+            const repoName = context.repo.repo;
+            const header = 'RL-Secure Scanner Results';
+
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: repoOwner,
+              repo: repoName,
+              issue_number: prNumber
+            });
+
+            const existingComment = comments.find(comment => comment.body.startsWith(header));
+
+            if (existingComment) {
+              await github.rest.issues.updateComment({
+                owner: repoOwner,
+                repo: repoName,
+                comment_id: existingComment.id,
+                body: `${header}\n\n${commentBody}`
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: repoOwner,
+                repo: repoName,
+                issue_number: prNumber,
+                body: `${header}\n\n${commentBody}`
+              });
+            }
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
