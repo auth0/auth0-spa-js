@@ -44,7 +44,7 @@ jobs:
           pip install --upgrade pip
           pip install -r scripts/requirements.txt
 
-      - name: Run RL Wrapper Scanner
+      - name: Run Reversing Labs Wrapper Scanner
         env:
           RLSECURE_ENCODED_LICENSE: ${{ secrets.RLSECURE_ENCODED_LICENSE }}
           RLSECURE_SITE_KEY: ${{ secrets.RLSECURE_SITE_KEY }}
