@@ -57,7 +57,7 @@ jobs:
             --repository "${{ github.repository }}" \
             --commit "${{ github.sha }}" \
             --build-env "GitHub Actions"
-
+        continue-on-error: true
       - name: Add or Update PR Comment
         uses: marocchino/sticky-pull-request-comment@v2
         with:
