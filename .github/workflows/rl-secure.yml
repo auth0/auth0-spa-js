@@ -67,36 +67,59 @@ jobs:
         with:
           script: |
             const fs = require('fs');
-            const path = 'violations.txt';
-            const commentBody = fs.readFileSync(path, 'utf8');
+            const path = require('path');
+            const glob = require('glob');
+            const util = require('util');
 
-            const prNumber = context.issue.number;
-            const repoOwner = context.repo.owner;
-            const repoName = context.repo.repo;
-            const header = 'RL-Secure Scanner Results';
+            const globPromise = util.promisify(glob);
+                        const pattern = '/tmp/*/violations.txt';
+            let foundFilePath = null;
 
-            const { data: comments } = await github.rest.issues.listComments({
-              owner: repoOwner,
-              repo: repoName,
-              issue_number: prNumber
-            });
+            try {
+              const files = await globPromise(pattern);
+              if (files.length > 0) {
+                foundFilePath = files[0];
+                console.log(`Found file at: ${foundFilePath}`);
+              } else {
+                console.log('No file found matching pattern.');
+              }
 
-            const existingComment = comments.find(comment => comment.body.startsWith(header));
+              if (foundFilePath) {
+                const commentBody = fs.readFileSync(foundFilePath, 'utf8');
 
-            if (existingComment) {
-              await github.rest.issues.updateComment({
-                owner: repoOwner,
-                repo: repoName,
-                comment_id: existingComment.id,
-                body: `${header}\n\n${commentBody}`
-              });
-            } else {
-              await github.rest.issues.createComment({
-                owner: repoOwner,
-                repo: repoName,
-                issue_number: prNumber,
-                body: `${header}\n\n${commentBody}`
-              });
+                const prNumber = context.issue.number;
+                const repoOwner = context.repo.owner;
+                const repoName = context.repo.repo;
+                const header = 'RL-Secure Scanner Results';
+
+                const { data: comments } = await github.rest.issues.listComments({
+                  owner: repoOwner,
+                  repo: repoName,
+                  issue_number: prNumber
+                });
+
+                const existingComment = comments.find(comment => comment.body.startsWith(header));
+
+                if (existingComment) {
+                  await github.rest.issues.updateComment({
+                    owner: repoOwner,
+                    repo: repoName,
+                    comment_id: existingComment.id,
+                    body: `${header}\n\n${commentBody}`
+                  });
+                } else {
+                  await github.rest.issues.createComment({
+                    owner: repoOwner,
+                    repo: repoName,
+                    issue_number: prNumber,
+                    body: `${header}\n\n${commentBody}`
+                  });
+                }
+              } else {
+                console.log('File not found.');
+              }
+            } catch (error) {
+              console.error('Error finding or reading file:', error);
             }
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
