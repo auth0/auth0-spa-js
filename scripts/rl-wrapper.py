@@ -150,7 +150,6 @@ def process_and_export_violations(report_metadata, malware_violation_rule_ids, a
         else:
             file.write('- Scan completed without detecting malware.\n')
 
-    print(f'[i] Violations saved to {os.getcwd()}/violations.txt', file=sys.stderr)
     return is_malware_detected
 
 def report_malware_detection(rule_id):

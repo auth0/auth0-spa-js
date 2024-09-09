@@ -58,12 +58,16 @@ jobs:
             --commit "${{ github.sha }}" \
             --build-env "GitHub Actions"
         continue-on-error: true
+
+      - name: List Files in Root Directory
+        run: ls -la
+
       - name: Add or Update PR Comment
         uses: actions/github-script@v6
         with:
           script: |
             const fs = require('fs');
-            const path = 'scripts/violations.txt';
+            const path = 'violations.txt';
             const commentBody = fs.readFileSync(path, 'utf8');
 
             const prNumber = context.issue.number;
