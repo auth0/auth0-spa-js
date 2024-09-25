@@ -24,7 +24,10 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Install npm dependencies
-        run: npm install
+        run: npm ci
+
+      - name: Build Dist Folder
+        run: npm run build
 
       - name: Create tgz build artifact
         run: |
@@ -43,6 +46,13 @@ jobs:
         run: |
           pip install --upgrade pip
           pip install -r scripts/requirements.txt
+
+      - name: Configure test AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          role-to-assume: ${{ secrets.TEST_AWS_ARN }}
+          aws-region: us-east-2
+          mask-aws-account-id: true
 
       - name: Run Reversing Labs Wrapper Scanner
         env:

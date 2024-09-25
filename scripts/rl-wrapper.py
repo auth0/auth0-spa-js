@@ -91,11 +91,8 @@ def detect_malware(report_file):
     try:
         report_metadata = report_data['report']['metadata']
         malware_violation_rule_ids = MALWARE_VIOLATION_IDS
-
         is_malware_detected = process_violations(report_metadata, malware_violation_rule_ids)
 
-        if not is_malware_detected:
-            print('[i] No Malware was detected.')
     except KeyError:
         handle_key_error()
 
@@ -109,21 +106,13 @@ def load_report(report_file):
         sys.exit(f'[x] Error reading report data from {report_file}')
 
 def process_violations(report_metadata, malware_violation_rule_ids):
-    print('----------------- Detections -----------------', file=sys.stderr)
     is_malware_detected = False
 
     if violations := report_metadata['violations']:
         for _, violation in violations.items():
             if violation['rule_id'] in malware_violation_rule_ids: # Malware was detected
                 is_malware_detected = True
-                for component_id in violation['references']['component']:
-                    print(f'[!] {violation["rule_id"]}: {violation["description"]} -> {report_metadata["components"][component_id]["path"]}', file=sys.stderr)
-                    report_malware_detection(violation['rule_id'])
-
     return is_malware_detected
-
-def report_malware_detection(rule_id):
-    print(f'\t* More information on the detections can be found at: https://docs.secure.software/policies/malware/{rule_id}', file=sys.stderr)
 
 def handle_key_error():
     _, _, traceback = sys.exc_info()
@@ -160,18 +149,18 @@ def upload_to_s3(file_path, s3_bucket_name, s3_key):
     s3 = boto3.client('s3')
     try:
         s3.upload_file(file_path, s3_bucket_name, s3_key)
-        print(f'[i] S3 - Uploaded {file_path} to s3://{s3_bucket_name}/{s3_key}')
+        print(f'[i] S3 - Uploaded to s3://.../{s3_key}')
         return
     except FileNotFoundError:
-        sys.exit(f'[x] S3 - The file {file_path} was not found.')
+        sys.exit(f'[x] S3 - The file file was not found.')
     except NoCredentialsError:
         sys.exit('[x] S3 - Credentials not available.')
     except ClientError as e:
-        sys.exit(f'[x] S3 - Failed to upload {file_path} to S3: {e}.')
+        sys.exit(f'[x] S3 - Failed to upload file to S3: {e}.')
 
-def submit_to_s3(workdir, targetdir, s3_bucket_name, tool_name, artifact_name, artifact_version, timestamp):
+def submit_to_s3(workdir, targetdir, s3_bucket_name, tool_name, artifact_repo, artifact_name, artifact_version, timestamp):
     print('---------------------------------------------')
-    s3_results_path = f'{tool_name}/{artifact_name}/{artifact_version}/{timestamp}'
+    s3_results_path = f'{tool_name}/{artifact_repo}/{artifact_name}/{artifact_version}/{timestamp}'
 
     rl_html_path = f'{workdir}/{targetdir}/rl-html'
     rl_json_path = f'{workdir}/{targetdir}/report.rl.json'
@@ -185,6 +174,7 @@ def submit_to_s3(workdir, targetdir, s3_bucket_name, tool_name, artifact_name, a
     return s3_results_path
 
 def submit_to_scan_log(payload):
+    print('[+] Scan Completed')
     print('---------------------------------------------')
     endpoint = 'https://signal-handler.oktasecurity.com/scan'
     headers = {
@@ -198,7 +188,7 @@ def submit_to_scan_log(payload):
         print(f'[i] ScanLog - Request successful: {response.status_code}')
         return response
     except requests.exceptions.RequestException as e:
-        sys.exit(f'[x] ScanLog - Request failed: {e}')
+        sys.exit(f'[x] ScanLog - Request failed.')
 
 def main():
     args = parse_arguments()
@@ -208,8 +198,6 @@ def main():
 
     if not (RLSECURE_SITE_KEY or RLSECURE_LICENSE):
         sys.exit('[x] Missing RLSECURE_SITE_KEY and/or RLSECURE_LICENSE.')
-
-    print(f'''Artifact: {args.artifact}\nName: {args.name}\nVersion: {args.version}\n----------------- Execution -----------------''')
 
     workdir = create_workdir()
     timestamp = generate_timestamp()
@@ -229,7 +217,6 @@ def main():
         args.artifact = compress_folder(args.artifact, output_name=artifact_package, output_path=f'{workdir}/{targetdir}')
 
     if not rlsecure_path:
-        print('[i] "rl-secure" not found, installing.')
         install_rlsecure(workdir, RLSECURE_LICENSE, RLSECURE_SITE_KEY)
         rlsecure_path = f'{workdir}/reversinglabs/rl-secure'
 
@@ -239,7 +226,7 @@ def main():
 
     is_non_compliant_violations = detect_malware(f'{workdir}/{targetdir}/report.rl.json')
 
-    s3_results_path = submit_to_s3(workdir, targetdir, s3_bucket_name, tool_name, args.name, args.version, timestamp)
+    s3_results_path = submit_to_s3(workdir, targetdir, s3_bucket_name, tool_name, args.repository, args.name, args.version, timestamp)
 
     payload = { # Pass these in as arguments
         'repository_name': f'{args.repository}',
