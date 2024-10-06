@@ -3,7 +3,7 @@ name: Browserstack
 on:
   merge_group:
   workflow_dispatch:
-  pull_request_target:
+  pull_request:
     types:
       - opened
       - synchronize
@@ -22,15 +22,8 @@ env:
   NODE_VERSION: 18
 
 jobs:
-  authorize:
-    name: Authorize
-    environment: ${{ github.actor != 'dependabot[bot]' && github.event_name == 'pull_request_target' && github.event.pull_request.head.repo.full_name != github.repository && 'external' || 'internal' }}
-    runs-on: ubuntu-latest
-    steps:
-      - run: true
 
   browserstack:
-    needs: authorize
 
     name: BrowserStack Tests
     runs-on: ubuntu-latest
