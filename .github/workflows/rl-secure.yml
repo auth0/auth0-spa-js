@@ -13,8 +13,6 @@ on:
 
 jobs:
   rl-scanner:
-    if: github.event_name == 'workflow_dispatch' ||
-      (github.event_name == 'pull_request' && startsWith(github.event.pull_request.head.ref, 'release/'))
     runs-on: ubuntu-latest
 
     permissions:
