@@ -1,5 +1,5 @@
-name: RL-Secure Workflow
-run-name: rl-scanner-only
+name: RL-Secure
+run-name: rl-scanner
 
 on:
   merge_group:
@@ -12,14 +12,14 @@ on:
       - synchronize
 
 jobs:
-  checkout-build-scan-only:
+  rl-scanner:
+    if: github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'pull_request' && startsWith(github.event.pull_request.head.ref, 'release/'))
     runs-on: ubuntu-latest
-
-    environment: security
 
     permissions:
       pull-requests: write
-      id-token: write # This is required for requesting the JWT
+      id-token: write
 
     steps:
       - uses: actions/checkout@v4
@@ -36,23 +36,18 @@ jobs:
 
       - name: Get Artifact Version
         id: get_version
-        run: echo "::set-output name=version::$(cat .version)"
+        run: echo "version=$(cat .version)" >> $GITHUB_ENV
 
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.9'
+          python-version: "3.10"
 
-      - name: Install Python dependencies
-        run: |
-          pip install --upgrade pip
-          pip install -r scripts/requirements.txt
-
-      - name: Configure test AWS credentials
+      - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
-          role-to-assume: ${{ secrets.TEST_AWS_ARN }}
-          aws-region: us-east-2
+          role-to-assume: ${{ secrets.PRODSEC_TOOLS_ARN }}
+          aws-region: us-east-1
           mask-aws-account-id: true
 
       - name: Run Reversing Labs Wrapper Scanner
@@ -60,8 +55,11 @@ jobs:
           RLSECURE_LICENSE: ${{ secrets.RLSECURE_LICENSE }}
           RLSECURE_SITE_KEY: ${{ secrets.RLSECURE_SITE_KEY }}
           SIGNAL_HANDLER_TOKEN: ${{ secrets.SIGNAL_HANDLER_TOKEN }}
+          WRAPPER_INDEX_URL: "https://${{ secrets.PRODSEC_TOOLS_USER }}:${{ secrets.PRODSEC_TOOLS_TOKEN }}@a0us.jfrog.io/artifactory/api/pypi/python-local/simple"
+          PYTHONUNBUFFERED: 1
         run: |
-          python scripts/rl-wrapper.py \
+          pip install rl-wrapper --index-url $WRAPPER_INDEX_URL && \
+          rl-wrapper \
             --artifact "$(pwd)/auth0-spa-js.tgz" \
             --name "${{ github.event.repository.name }}" \
             --version "${{ steps.get_version.outputs.version }}" \
