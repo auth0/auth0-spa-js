@@ -76,7 +76,8 @@ import {
   User,
   IdToken,
   GetTokenSilentlyVerboseResponse,
-  TokenEndpointResponse
+  TokenEndpointResponse,
+  TokenEndpointOptions
 } from './global';
 
 // @ts-ignore
@@ -123,6 +124,7 @@ export class Auth0Client {
   private readonly isAuthenticatedCookieName: string;
   private readonly nowProvider: () => number | Promise<number>;
   private readonly httpTimeoutMs: number;
+  private readonly tokenEndpointHandler: (options: TokenEndpointOptions, worker?: Worker) => Promise<TokenEndpointResponse>;
   private readonly options: Auth0ClientOptions & {
     authorizationParams: AuthorizationParams;
   };
@@ -212,6 +214,8 @@ export class Auth0Client {
     );
 
     this.nowProvider = this.options.nowProvider || DEFAULT_NOW_PROVIDER;
+
+    this.tokenEndpointHandler = this.options.tokenEndpointHandler || oauthToken;
 
     this.cacheManager = new CacheManager(
       cache,
@@ -1101,7 +1105,7 @@ export class Auth0Client {
     additionalParameters?: RequestTokenAdditionalParameters
   ) {
     const { nonceIn, organization } = additionalParameters || {};
-    const authResult = await oauthToken(
+    const authResult = await this.tokenEndpointHandler(
       {
         baseUrl: this.domainUrl,
         client_id: this.options.clientId,

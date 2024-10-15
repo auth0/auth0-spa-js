@@ -269,6 +269,13 @@ export interface Auth0ClientOptions extends BaseLoginOptions {
    * **Note**: The worker is only used when `useRefreshTokens: true`, `cacheLocation: 'memory'`, and the `cache` is not custom.
    */
   workerUrl?: string;
+
+  /**
+   * If provided, the SDK will use this method to communicate with token endpoint.
+   * @param options
+   * @param worker
+   */
+  tokenEndpointHandler?: (options: TokenEndpointOptions, worker?: Worker) => Promise<TokenEndpointResponse>;
 }
 
 /**
