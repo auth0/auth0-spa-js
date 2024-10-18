@@ -13,6 +13,8 @@ on:
 
 jobs:
   rl-scanner:
+    if: github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'pull_request' && startsWith(github.event.pull_request.head.ref, 'release/'))
     runs-on: ubuntu-latest
 
     permissions:
@@ -69,4 +71,3 @@ jobs:
             --repository "${{ github.repository }}" \
             --commit "${{ github.sha }}" \
             --build-env "github_action"
-        continue-on-error: true
