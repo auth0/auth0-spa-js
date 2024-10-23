@@ -65,7 +65,7 @@ jobs:
           rl-wrapper \
             --artifact "$(pwd)/auth0-spa-js.tgz" \
             --name "${{ github.event.repository.name }}" \
-            --version "${{ steps.get_version.outputs.version }}" \
+            --version "${{ env.version }}" \
             --repository "${{ github.repository }}" \
             --commit "${{ github.sha }}" \
-            --build-env "github_action"
+            --build-env "github_actions"
