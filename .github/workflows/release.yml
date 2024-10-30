@@ -15,8 +15,21 @@ permissions:
 ### TODO: Also remove `npm-release` workflow from this repo's .github/workflows folder once the repo is public.
 
 jobs:
+  rl-scanner:
+    uses: ./.github/workflows/rl-secure.yml
+    with:
+      node-version: 18
+      artifact-name: 'auth0-spa-js.tgz'
+    secrets:
+      RLSECURE_LICENSE: ${{ secrets.RLSECURE_LICENSE }}
+      RLSECURE_SITE_KEY: ${{ secrets.RLSECURE_SITE_KEY }}
+      SIGNAL_HANDLER_TOKEN: ${{ secrets.SIGNAL_HANDLER_TOKEN }}
+      PRODSEC_TOOLS_USER: ${{ secrets.PRODSEC_TOOLS_USER }}
+      PRODSEC_TOOLS_TOKEN: ${{ secrets.PRODSEC_TOOLS_TOKEN }}
+      PRODSEC_TOOLS_ARN: ${{ secrets.PRODSEC_TOOLS_ARN }}
   release:
     uses: ./.github/workflows/npm-release.yml
+    needs: rl-scanner
     with:
       node-version: 18
       require-build: true
