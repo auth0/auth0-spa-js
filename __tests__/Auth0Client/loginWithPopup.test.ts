@@ -785,5 +785,35 @@ describe('Auth0Client', () => {
         false
       );
     });
+
+    it('should close the popup upon successful login', async () => {
+      const auth0 = setup();
+
+      const popup = {
+        location: {
+          href: ''
+        },
+        close: jest.fn()
+      }
+
+      await loginWithPopup(auth0, {}, {popup});
+
+      expect(popup.close).toHaveBeenCalledTimes(1);
+    });
+
+    it('should not close the popup when suppressPopupClose is true', async () => {
+      const auth0 = setup();
+
+      const popup = {
+        location: {
+          href: ''
+        },
+        close: jest.fn()
+      }
+
+      await loginWithPopup(auth0, {}, {popup, suppressPopupClose: true});
+
+      expect(popup.close).not.toHaveBeenCalled();
+    });
   });
 });

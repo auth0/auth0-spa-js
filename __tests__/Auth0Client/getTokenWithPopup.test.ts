@@ -214,5 +214,40 @@ describe('Auth0Client', () => {
 
       expect(config.popup.location.href).toMatch(/global-audience/);
     });
+
+    it('should close the popup when complete', async () => {
+      const auth0 = await localSetup()
+
+      const config = {
+        popup: {
+          location: {
+            href: ''
+          },
+          close: jest.fn()
+        }
+      };
+
+      await auth0.getTokenWithPopup({}, config);
+
+      expect(config.popup.close).toHaveBeenCalledTimes(1)
+    });
+
+    it('should not close the popup when suppressPopupClose is true', async () => {
+      const auth0 = await localSetup()
+
+      const config = {
+        popup: {
+          location: {
+            href: ''
+          },
+          close: jest.fn()
+        },
+        suppressPopupClose: true
+      };
+
+      await auth0.getTokenWithPopup({}, config);
+
+      expect(config.popup.close).not.toHaveBeenCalled()
+    });
   });
 });

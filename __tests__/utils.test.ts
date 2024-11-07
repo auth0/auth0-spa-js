@@ -245,6 +245,21 @@ describe('utils', () => {
       expect(popup.close).toHaveBeenCalled();
     });
 
+    it('does not close popup when suppressPopupClose is true', async () => {
+      const message = {
+        data: {
+          type: 'authorization_response',
+          response: { id_token: 'id_token' }
+        }
+      };
+
+      const { popup } = setup(message);
+
+      await runPopup({ popup, suppressPopupClose: true })
+
+      expect(popup.close).not.toHaveBeenCalled();
+    });
+
     it('returns authorization error message', async () => {
       const message = {
         data: {
