@@ -216,7 +216,7 @@ describe('Auth0Client', () => {
     });
 
     it('should close the popup when complete', async () => {
-      const auth0 = await localSetup()
+      const auth0 = await localSetup();
 
       const config = {
         popup: {
@@ -229,11 +229,11 @@ describe('Auth0Client', () => {
 
       await auth0.getTokenWithPopup({}, config);
 
-      expect(config.popup.close).toHaveBeenCalledTimes(1)
+      expect(config.popup.close).toHaveBeenCalledTimes(1);
     });
 
     it('should not close the popup when suppressPopupClose is true', async () => {
-      const auth0 = await localSetup()
+      const auth0 = await localSetup();
 
       const config = {
         popup: {
@@ -247,7 +247,7 @@ describe('Auth0Client', () => {
 
       await auth0.getTokenWithPopup({}, config);
 
-      expect(config.popup.close).not.toHaveBeenCalled()
+      expect(config.popup.close).not.toHaveBeenCalled();
     });
   });
 });

@@ -794,7 +794,7 @@ describe('Auth0Client', () => {
           href: ''
         },
         close: jest.fn()
-      }
+      };
 
       await loginWithPopup(auth0, {}, {popup});
 
@@ -809,7 +809,7 @@ describe('Auth0Client', () => {
           href: ''
         },
         close: jest.fn()
-      }
+      };
 
       await loginWithPopup(auth0, {}, {popup, suppressPopupClose: true});
 

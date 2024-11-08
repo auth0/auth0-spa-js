@@ -255,7 +255,7 @@ describe('utils', () => {
 
       const { popup } = setup(message);
 
-      await runPopup({ popup, suppressPopupClose: true })
+      await runPopup({ popup, suppressPopupClose: true });
 
       expect(popup.close).not.toHaveBeenCalled();
     });
