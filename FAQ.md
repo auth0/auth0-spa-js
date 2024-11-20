@@ -197,3 +197,6 @@ loginWithRedirect({
 ```
 
 Doing so for connections such as Google or Microsoft, would automatically redirect you to them instead of showing the Auth0 login page first.
+
+ℹ️ You can find the connection's logical identifier as the **connection name** in the connection settings in the Auth0 dashboard for your tenant.
+
