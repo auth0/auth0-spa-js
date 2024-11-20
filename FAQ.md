@@ -185,7 +185,7 @@ In this case, the loading of the `Worker` would comply with a CSP that included 
 ## How can I skip the Auth0 login page?
 
 When integrating with third party providers such as Google or Microsoft, being redirected to Auth0 before being redirected to the corresponding provider can be sub-optimal in terms of user-experience.
-If you only have a single connection enabled, or you know up front how the user wants to authenticate, you can set the `connection` parameter when calling `loginWithRedirect()` or `loginWithPopup`:
+If you only have a single connection enabled, or you know up front how the user wants to authenticate, you can set the `connection` parameter when calling `loginWithRedirect()` or `loginWithPopup()`:
 
 ```
 loginWithRedirect({
