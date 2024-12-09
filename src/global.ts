@@ -84,6 +84,8 @@ export interface AuthorizationParams {
    *
    * - If you provide an Organization ID (a string with the prefix `org_`), it will be validated against the `org_id` claim of your user's ID Token. The validation is case-sensitive.
    * - If you provide an Organization Name (a string *without* the prefix `org_`), it will be validated against the `org_name` claim of your user's ID Token. The validation is case-insensitive.
+   *   To use an Organization Name you must have "Allow Organization Names in Authentication API" switched on in your Auth0 settings dashboard.
+   *   More information is available on the [Auth0 documentation portal](https://auth0.com/docs/manage-users/organizations/configure-organizations/use-org-name-authentication-api)
    *
    */
   organization?: string;
