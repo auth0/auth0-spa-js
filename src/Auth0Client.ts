@@ -715,12 +715,13 @@ export class Auth0Client {
           ? await this._getTokenUsingRefreshToken(getTokenOptions)
           : await this._getTokenFromIFrame(getTokenOptions);
 
-        const { id_token, access_token, oauthTokenScope, expires_in } =
+        const { id_token, access_token, refresh_token, oauthTokenScope, expires_in } =
           authResult;
 
         return {
           id_token,
           access_token,
+          refresh_token,
           ...(oauthTokenScope ? { scope: oauthTokenScope } : null),
           expires_in
         };
