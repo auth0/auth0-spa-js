@@ -1145,7 +1145,6 @@ export class Auth0Client {
   /*
   Custom Token Exchange
   * **Implementation Notes:**
-  *
   * - Ensure that the `subject_token` provided has been securely obtained and is valid according
   *   to your external identity provider's policies before invoking this function.
   * - The function leverages internal helper methods:
@@ -1153,11 +1152,6 @@ export class Auth0Client {
   *   - `getUniqueScopes` merges and de-duplicates scopes between the provided options and
   *     the instance's default scopes.
   *   - `_requestToken` performs the actual HTTP request to the token endpoint.
-  * - For front-end SDKs (like spa-js), note that tokens are automatically cached in both cookies
-  *   and memory to optimize subsequent authentication flows.
-  * - When integrating Custom Token Exchange into your application, always ensure that caching,
-  *   token renewal, and token validation logic follow security best practices.
-  *
   */
 
   /**
