@@ -5,27 +5,17 @@ import * as scope from '../../src/scope';
 
 // @ts-ignore
 
-import {
-  assertPostFn,
-  fetchResponse,
-  setupFn,
-  setupMessageEventLister
-} from './helpers';
+import { fetchResponse, setupFn, setupMessageEventLister } from './helpers';
 
 import {
   TEST_ACCESS_TOKEN,
-  TEST_CLIENT_ID,
-  TEST_CODE,
   TEST_CODE_CHALLENGE,
-  TEST_CODE_VERIFIER,
   TEST_ID_TOKEN,
-  TEST_REDIRECT_URI,
   TEST_REFRESH_TOKEN,
   TEST_STATE
 } from '../constants';
 
 import { Auth0ClientOptions } from '../../src';
-import { DEFAULT_AUTH0_CLIENT } from '../../src/constants';
 import { expect } from '@jest/globals';
 import { CustomTokenExchangeOptions } from '../../src/TokenExchange';
 
@@ -36,7 +26,6 @@ jest.mock('../../src/worker/token.worker');
 const mockWindow = <any>global;
 const mockFetch = <jest.Mock>mockWindow.fetch;
 const mockVerify = <jest.Mock>verify;
-const assertPost = assertPostFn(mockFetch);
 
 jest
   .spyOn(utils, 'bufferToBase64UrlEncoded')
@@ -50,20 +39,6 @@ describe('Auth0Client', () => {
   const oldWindowLocation = window.location;
 
   beforeEach(() => {
-    // https://www.benmvp.com/blog/mocking-window-location-methods-jest-jsdom/
-    delete window.location;
-    window.location = Object.defineProperties(
-      {},
-      {
-        ...Object.getOwnPropertyDescriptors(oldWindowLocation),
-        assign: {
-          configurable: true,
-          value: jest.fn()
-        }
-      }
-    ) as Location;
-    // --
-
     mockWindow.open = jest.fn();
     mockWindow.addEventListener = jest.fn();
     mockWindow.crypto = {
