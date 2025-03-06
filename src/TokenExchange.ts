@@ -72,29 +72,3 @@ export type CustomTokenExchangeOptions = {
    */
   [key: string]: unknown;
 };
-
-/**
- * Enforces namespace ownership requirements for token types
- *
- * @param tokenType - Proposed subject_token_type value
- * @throws {Error} When reserved namespace pattern detected
- *
- * @privateRemarks
- * Implements RFC 8693 Section 4.1 requirements for token type URIs
- *
- * @see {@link https://www.rfc-editor.org/rfc/rfc8693#section-4.1 | RFC 8693 Section 4.1}
- */
-export const validateTokenType = (tokenType: string): void => {
-  const reservedPatterns = [
-    /^urn:ietf:params:oauth:/i,
-    /^https:\/\/auth0\.com\//i,
-    /^urn:auth0:/i
-  ];
-
-  if (reservedPatterns.some(pattern => pattern.test(tokenType))) {
-    throw new Error(
-      `Invalid subject_token_type '${tokenType}'. ` +
-        `Reserved namespaces are prohibited. Use URIs under your organization's control.`
-    );
-  }
-};

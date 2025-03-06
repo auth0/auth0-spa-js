@@ -61,7 +61,7 @@ describe('Auth0Client', () => {
     window.location = oldWindowLocation;
   });
 
-  describe('getTokenWithPopup()', () => {
+  describe('exchangeToken()', () => {
     const localSetup = async (clientOptions?: Partial<Auth0ClientOptions>) => {
       const auth0 = setup(clientOptions);
 
@@ -98,7 +98,7 @@ describe('Auth0Client', () => {
       return auth0;
     };
 
-    it('calls `loginWithPopup` with the correct default options', async () => {
+    it('calls `exchangeToken` with the correct default options', async () => {
       const auth0 = await localSetup();
       const cteOptions: CustomTokenExchangeOptions = {
         subject_token: 'external_token_value',
@@ -112,27 +112,6 @@ describe('Auth0Client', () => {
       expect(result.access_token).toEqual('fake_access_token');
       expect(result.expires_in).toEqual(3600);
       expect(typeof result.scope).toBe('string');
-    });
-
-    it('should throw an error for invalid subject_token_type from reserved namespaces', async () => {
-      // List of reserved token types that must be rejected.
-      const invalidTokenTypes = [
-        'urn:ietf:params:oauth:foo',
-        'https://auth0.com/token',
-        'urn:auth0:token'
-      ];
-
-      const auth0 = await localSetup();
-
-      // Each invalid token type should cause exchangeToken to reject with an Error.
-      for (const tokenType of invalidTokenTypes) {
-        const cteOptions: CustomTokenExchangeOptions = {
-          subject_token: 'external_token_value',
-          subject_token_type: tokenType,
-          audience: 'https://api.test.com'
-        };
-        await expect(auth0.exchangeToken(cteOptions)).rejects.toThrow(Error);
-      }
     });
   });
 });

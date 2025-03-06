@@ -92,7 +92,7 @@ import {
   OLD_IS_AUTHENTICATED_COOKIE_NAME,
   patchOpenUrlWithOnRedirect
 } from './Auth0Client.utils';
-import { CustomTokenExchangeOptions, validateTokenType } from './TokenExchange';
+import { CustomTokenExchangeOptions } from './TokenExchange';
 
 /**
  * @ignore
@@ -1195,8 +1195,6 @@ export class Auth0Client {
   async exchangeToken(
     options: CustomTokenExchangeOptions
   ): Promise<TokenEndpointResponse> {
-    validateTokenType(options.subject_token_type);
-
     return this._requestToken({
       grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
       subject_token: options.subject_token,
