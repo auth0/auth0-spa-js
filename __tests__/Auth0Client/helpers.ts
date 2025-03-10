@@ -304,6 +304,12 @@ export const setupMessageEventLister = (
   });
 };
 
+export const setupFailingPopup = (
+  mockWindow: any
+) => {
+  mockWindow.open.mockReturnValue(null);
+}
+
 export const loginWithPopupFn = (mockWindow, mockFetch) => {
   return async (
     auth0,
