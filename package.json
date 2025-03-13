@@ -60,7 +60,7 @@
     "prettier": "^2.7.1",
     "pretty-quick": "^3.1.2",
     "rimraf": "^3.0.2",
-    "rollup": "^2.78.0",
+    "rollup": "^3.29.5",
     "rollup-plugin-analyzer": "^4.0.0",
     "rollup-plugin-commonjs": "^10.1.0",
     "rollup-plugin-dev": "^1.1.3",
