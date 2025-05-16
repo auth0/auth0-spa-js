@@ -118,7 +118,8 @@ export class CacheManager {
     const cacheKey = new CacheKey({
       clientId: entry.client_id,
       scope: entry.scope,
-      audience: entry.audience
+      audience: entry.audience,
+      organization: entry.organization
     });
 
     const wrappedEntry = await this.wrapCacheEntry(entry);
@@ -203,6 +204,7 @@ export class CacheManager {
         cacheKey.prefix === CACHE_KEY_PREFIX &&
         cacheKey.clientId === keyToMatch.clientId &&
         cacheKey.audience === keyToMatch.audience &&
+        cacheKey.organization === keyToMatch.organization &&
         hasAllScopes
       );
     })[0];

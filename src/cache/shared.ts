@@ -6,6 +6,7 @@ export const CACHE_KEY_ID_TOKEN_SUFFIX = '@@user@@';
 export type CacheKeyData = {
   audience?: string;
   scope?: string;
+  organization?: string;
   clientId: string;
 };
 
@@ -13,6 +14,7 @@ export class CacheKey {
   public clientId: string;
   public scope?: string;
   public audience?: string;
+  public organization?: string;
 
   constructor(
     data: CacheKeyData,
@@ -22,6 +24,7 @@ export class CacheKey {
     this.clientId = data.clientId;
     this.scope = data.scope;
     this.audience = data.audience;
+    this.organization = data.organization;
   }
 
   /**
@@ -29,7 +32,7 @@ export class CacheKey {
    * @returns A string representation of the key
    */
   toKey(): string {
-    return [this.prefix, this.clientId, this.audience, this.scope, this.suffix]
+    return [this.prefix, this.clientId, this.audience, this.scope, this.organization, this.suffix]
       .filter(Boolean)
       .join('::');
   }
@@ -40,9 +43,9 @@ export class CacheKey {
    * @returns An instance of `CacheKey`
    */
   static fromKey(key: string): CacheKey {
-    const [prefix, clientId, audience, scope] = key.split('::');
+    const [prefix, clientId, audience, scope, organization] = key.split('::');
 
-    return new CacheKey({ clientId, scope, audience }, prefix);
+    return new CacheKey({ clientId, scope, audience, organization }, prefix);
   }
 
   /**
@@ -51,11 +54,12 @@ export class CacheKey {
    * @returns An instance of `CacheKey`
    */
   static fromCacheEntry(entry: CacheEntry): CacheKey {
-    const { scope, audience, client_id: clientId } = entry;
+    const { scope, audience, organization, client_id: clientId } = entry;
 
     return new CacheKey({
       scope,
       audience,
+      organization,
       clientId
     });
   }
@@ -78,6 +82,7 @@ export type CacheEntry = {
   decodedToken?: DecodedToken;
   audience: string;
   scope: string;
+  organization?: string;
   client_id: string;
   refresh_token?: string;
   oauthTokenScope?: string;

@@ -658,7 +658,7 @@ export class Auth0Client {
 
     const result = await singlePromise(
       () => this._getTokenSilently(localOptions),
-      `${this.options.clientId}::${localOptions.authorizationParams.audience}::${localOptions.authorizationParams.scope}`
+      `${this.options.clientId}::${localOptions.authorizationParams.audience}::${localOptions.authorizationParams.scope}::${localOptions.authorizationParams.organization}`
     );
 
     return options.detailedResponse ? result : result?.access_token;
@@ -670,6 +670,7 @@ export class Auth0Client {
     }
   ): Promise<undefined | GetTokenSilentlyVerboseResponse> {
     const { cacheMode, ...getTokenOptions } = options;
+    const orgHint = this.cookieStorage.get<string>(this.orgHintCookieName);
 
     // Check the cache before acquiring the lock to avoid the latency of
     // `lock.acquireLock` when the cache is populated.
@@ -677,6 +678,7 @@ export class Auth0Client {
       const entry = await this._getEntryFromCache({
         scope: getTokenOptions.authorizationParams.scope,
         audience: getTokenOptions.authorizationParams.audience || 'default',
+        organization: getTokenOptions.authorizationParams.organization || orgHint || 'default',
         clientId: this.options.clientId
       });
 
@@ -704,6 +706,7 @@ export class Auth0Client {
           const entry = await this._getEntryFromCache({
             scope: getTokenOptions.authorizationParams.scope,
             audience: getTokenOptions.authorizationParams.audience || 'default',
+            organization: getTokenOptions.authorizationParams.organization || orgHint || 'default',
             clientId: this.options.clientId
           });
 
@@ -765,11 +768,13 @@ export class Auth0Client {
     };
 
     await this.loginWithPopup(localOptions, config);
+    const orgHint = this.cookieStorage.get<string>(this.orgHintCookieName);
 
     const cache = await this.cacheManager.get(
       new CacheKey({
         scope: localOptions.authorizationParams.scope,
         audience: localOptions.authorizationParams.audience || 'default',
+        organization: localOptions.authorizationParams.organization || orgHint || 'default',
         clientId: this.options.clientId
       })
     );
@@ -943,10 +948,12 @@ export class Auth0Client {
       authorizationParams: AuthorizationParams & { scope: string };
     }
   ): Promise<GetTokenSilentlyResult> {
+    const orgHint = this.cookieStorage.get<string>(this.orgHintCookieName);
     const cache = await this.cacheManager.get(
       new CacheKey({
         scope: options.authorizationParams.scope,
         audience: options.authorizationParams.audience || 'default',
+        organization: options.authorizationParams.organization || orgHint || 'default',
         clientId: this.options.clientId
       })
     );
@@ -1030,12 +1037,15 @@ export class Auth0Client {
 
   private async _getIdTokenFromCache() {
     const audience = this.options.authorizationParams.audience || 'default';
+    const orgHint = this.cookieStorage.get<string>(this.orgHintCookieName);
+    const organization = this.options.authorizationParams.organization || orgHint || 'default';
 
     const cache = await this.cacheManager.getIdToken(
       new CacheKey({
         clientId: this.options.clientId,
         audience,
-        scope: this.scope
+        scope: this.scope,
+        organization
       })
     );
 
@@ -1056,16 +1066,19 @@ export class Auth0Client {
   private async _getEntryFromCache({
     scope,
     audience,
+    organization,
     clientId
   }: {
     scope: string;
     audience: string;
+    organization?: string;
     clientId: string;
   }): Promise<undefined | GetTokenSilentlyVerboseResponse> {
     const entry = await this.cacheManager.get(
       new CacheKey({
         scope,
         audience,
+        organization,
         clientId
       }),
       60 // get a new token if within 60 seconds of expiring
@@ -1128,6 +1141,7 @@ export class Auth0Client {
       decodedToken,
       scope: options.scope,
       audience: options.audience || 'default',
+      organization: options.organization || organization || 'default',
       ...(authResult.scope ? { oauthTokenScope: authResult.scope } : null),
       client_id: this.options.clientId
     });
@@ -1207,6 +1221,7 @@ export class Auth0Client {
 
 interface BaseRequestTokenOptions {
   audience?: string;
+  organization?: string;
   scope: string;
   timeout?: number;
   redirect_uri?: string;
