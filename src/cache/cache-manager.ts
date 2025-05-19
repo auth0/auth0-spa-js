@@ -72,58 +72,50 @@ export class CacheManager {
     cacheKey: CacheKey,
     expiryAdjustmentSeconds = DEFAULT_EXPIRY_ADJUSTMENT_SECONDS
   ): Promise<Partial<CacheEntry> | undefined> {
-    // should we filter first by organization?
-
-    // If we don't have any tokens in memory, we should request an AT
-    const keys = await this.getCacheKeys();
-    console.log('1- keys', keys)
-    if (!keys) return;
-
-    // active + audience + scope + organization
     const activeTokenMatchingAudienceScopeOrganization = await this.getActiveTokenMatchingAudienceScopeOrganization(cacheKey, expiryAdjustmentSeconds);
-    console.log('2- activeTokenMatchingAudienceScopeOrganization', activeTokenMatchingAudienceScopeOrganization)
+    console.log('1- activeTokenMatchingAudienceScopeOrganization', activeTokenMatchingAudienceScopeOrganization)
     if (activeTokenMatchingAudienceScopeOrganization) {
       return activeTokenMatchingAudienceScopeOrganization.body;
     }
 
-    // RT + inactive + audience match + scope match + org
     const inactiveTokenMatchingAudienceScopeOrganization = await this.getInactiveTokenMatchingAudienceScopeOrganization(cacheKey, expiryAdjustmentSeconds);
 
-    console.log('3- inactiveTokenMatchingAudienceScopeOrganization', inactiveTokenMatchingAudienceScopeOrganization)
+    console.log('2- inactiveTokenMatchingAudienceScopeOrganization', inactiveTokenMatchingAudienceScopeOrganization)
     if (inactiveTokenMatchingAudienceScopeOrganization) {
-      // Save temporaly the entry with the RT only
-      return this.updateCacheAndGetRefreshToken(inactiveTokenMatchingAudienceScopeOrganization, cacheKey);
-
-      //if inactive and without RT we remove it from memory
-    } else {
-      await this.removeEntryFromCache(cacheKey);
+      return inactiveTokenMatchingAudienceScopeOrganization.body;
     }
 
-    // RT + audience + organization match
+    const keys = await this.getCacheKeys();
+    console.log('3- keys', keys)
+    if (!keys) return;
+
     const tokenWithRefreshTokenMatchingAudienceOrganization = await this.getTokenWithRefreshTokenMatchingAudienceOrganization(
       cacheKey,
       keys,
+      expiryAdjustmentSeconds,
     );
 
     console.log("4-tokenWithRefreshTokenMatchingAudienceOrganization", tokenWithRefreshTokenMatchingAudienceOrganization)
     if (tokenWithRefreshTokenMatchingAudienceOrganization) {
-      // Save temporaly the entry with the RT only
-      return this.updateCacheAndGetRefreshToken(tokenWithRefreshTokenMatchingAudienceOrganization, cacheKey);
+      return tokenWithRefreshTokenMatchingAudienceOrganization.body;
     }
 
-    console.log('5-no found')
-    // no compatible tokenSet
     return;
   }
 
-  async updateCacheAndGetRefreshToken(entry: WrappedCacheEntry, cacheKey: CacheKey): Promise<Partial<CacheEntry>> {
+  async updateCacheAndGetRefreshToken(entry: WrappedCacheEntry, cacheKey: CacheKey): Promise<WrappedCacheEntry | undefined> {
+    if (!entry.body.refresh_token) {
+      await this.removeEntryFromCache(cacheKey);
+      return;
+    }
+
     entry.body = {
       refresh_token: entry.body.refresh_token,
     };
 
     await this.cache.set(cacheKey.toKey(), entry);
 
-    return entry.body;
+    return entry;
   };
 
   async removeEntryFromCache(cacheKey: CacheKey): Promise<void> {
@@ -160,9 +152,7 @@ export class CacheManager {
       cacheKey.toKey()
     );
 
-    if (!entry) {
-      return undefined;
-    }
+    if (!entry) return undefined;
 
     const isExpired = await CacheManagerUtils.isTokenExpired(
       entry,
@@ -170,24 +160,42 @@ export class CacheManager {
       this.nowProvider
     );
 
-    return isExpired && !entry.body.refresh_token ? undefined : entry;
+    if (isExpired) {
+      return this.updateCacheAndGetRefreshToken(entry, cacheKey);
+    }
+
+    return entry;
   }
 
   async getTokenWithRefreshTokenMatchingAudienceOrganization(
-    keyToMatch: CacheKey, keys: string[]
+    keyToMatch: CacheKey,
+    keys: string[],
+    expiryAdjustmentSeconds: number,
   ): Promise<WrappedCacheEntry | undefined> {
     const foundKey = keys.find((storageKey) => {
       return CacheManagerUtils.hasDefaultParameters(storageKey, keyToMatch)
         && CacheManagerUtils.hasMatchingAudience(storageKey, keyToMatch)
         && CacheManagerUtils.hasMatchingOrganization()
-        && CacheManagerUtils.hasCompatibleTokens(storageKey, keyToMatch)
+        && CacheManagerUtils.hasCompatibleScopes(storageKey, keyToMatch)
     });
 
     if (!foundKey) return undefined;
 
     const entry = await this.cache.get<WrappedCacheEntry>(foundKey);
 
-    return entry?.body.refresh_token ? entry : undefined;
+    if (!entry) return undefined;
+
+    const isExpired = await CacheManagerUtils.isTokenExpired(
+      entry,
+      expiryAdjustmentSeconds,
+      this.nowProvider,
+    );
+
+    if (isExpired) {
+      return this.updateCacheAndGetRefreshToken(entry, keyToMatch);
+    }
+
+    return entry;
   }
 
   async get(

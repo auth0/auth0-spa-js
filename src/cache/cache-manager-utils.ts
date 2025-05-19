@@ -1,7 +1,7 @@
 import { CACHE_KEY_PREFIX, CacheKey, WrappedCacheEntry } from "./shared";
 
 const CacheManagerUtils = {
-  hasCompatibleTokens(key: string, keyToMatch: CacheKey): boolean {
+  hasCompatibleScopes(key: string, keyToMatch: CacheKey): boolean {
     const cacheKey = CacheKey.fromKey(key);
     const scopeSet = new Set(cacheKey.scope && cacheKey.scope.split(' '));
     const scopesToMatch = keyToMatch.scope?.split(' ') || [];

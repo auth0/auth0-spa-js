@@ -3,6 +3,7 @@ import {
   InMemoryCache,
   LocalStorageCache
 } from '../../src/cache';
+import CacheManagerUtils from '../../src/cache/cache-manager-utils';
 import { CacheKeyManifest } from '../../src/cache/key-manifest';
 
 import {
@@ -51,7 +52,13 @@ const defaultData: CacheEntry = {
 };
 
 const cacheFactories = [
-  { new: () => new LocalStorageCache(), name: 'LocalStorageCache' },
+  {
+    new: () => {
+      // Make sure that cache is actually empty between tests
+      window.localStorage.clear();
+      return new LocalStorageCache()
+    }, name: 'LocalStorageCache'
+  },
   {
     new: () => new InMemoryCache().enclosedCache,
     name: 'Cache with allKeys'
@@ -85,7 +92,8 @@ cacheFactories.forEach(cacheFactory => {
     });
 
     afterEach(() => {
-      jest.clearAllMocks();
+      jest.restoreAllMocks();
+      jest.resetModules();
     });
 
     it('returns undefined when there is nothing in the cache', async () => {
@@ -789,6 +797,477 @@ cacheFactories.forEach(cacheFactory => {
         expect(result).toBeUndefined();
 
         cacheSpy.mockClear();
+      });
+    });
+
+    describe('getCompatibleToken', () => {
+      describe('when there is nothing in the cache', () => {
+        it('returns undefined', async () => {
+          const result = await manager.getCompatibleToken(defaultKey);
+
+          expect(result).toBeFalsy();
+        });
+      });
+
+      describe('when some entry match with exact audience, organization and scopes and is active', () => {
+        it('returns entry', async () => {
+          jest.spyOn(manager, 'getActiveTokenMatchingAudienceScopeOrganization');
+
+          const data = {
+            ...defaultData,
+            scope: TEST_SCOPES,
+            audience: TEST_AUDIENCE,
+            organization: 'organizationA',
+          };
+
+          await manager.set(data);
+
+          const key = new CacheKey({
+            clientId: TEST_CLIENT_ID,
+            audience: TEST_AUDIENCE,
+            // organization: 'organizationA',
+            scope: TEST_SCOPES
+          });
+
+          const res = await manager.getCompatibleToken(key);
+
+          expect(res).toStrictEqual(data);
+          expect(manager.getActiveTokenMatchingAudienceScopeOrganization).toHaveBeenCalledTimes(1);
+        });
+      });
+
+      describe('when some entry match with exact audience, organization and scopes and is not active', () => {
+        it('returns entry', async () => {
+          jest.spyOn(manager, 'getActiveTokenMatchingAudienceScopeOrganization');
+          jest.spyOn(manager, 'getInactiveTokenMatchingAudienceScopeOrganization');
+          jest.spyOn(manager, 'updateCacheAndGetRefreshToken');
+          jest.spyOn(CacheManagerUtils, 'isTokenExpired').mockResolvedValue(true);
+
+          const data = {
+            ...defaultData,
+            scope: TEST_SCOPES,
+            audience: TEST_AUDIENCE,
+            organization: 'organizationA',
+            refresh_token: TEST_REFRESH_TOKEN,
+          };
+
+          await manager.set(data);
+
+          const key = new CacheKey({
+            clientId: TEST_CLIENT_ID,
+            audience: TEST_AUDIENCE,
+            // organization: 'organizationA',
+            scope: TEST_SCOPES
+          });
+
+          const res = await manager.getCompatibleToken(key);
+
+          const expectedResult = { refresh_token: TEST_REFRESH_TOKEN };
+
+          expect(res).toStrictEqual(expectedResult);
+          expect(manager.getActiveTokenMatchingAudienceScopeOrganization).toHaveBeenCalledTimes(1);
+          expect(manager.getInactiveTokenMatchingAudienceScopeOrganization).toHaveBeenCalledTimes(1);
+          expect(manager.updateCacheAndGetRefreshToken).toHaveBeenCalledTimes(1);
+        });
+      });
+
+      describe("when some entry match with exact audience, organization and has compatible scopes", () => {
+        it("returns entry", async () => {
+          jest.spyOn(manager, 'getActiveTokenMatchingAudienceScopeOrganization');
+          jest.spyOn(manager, 'getInactiveTokenMatchingAudienceScopeOrganization');
+          jest.spyOn(manager, 'getTokenWithRefreshTokenMatchingAudienceOrganization');
+
+          const data = {
+            ...defaultData,
+            scope: 'read:user update:user',
+            audience: TEST_AUDIENCE,
+            organization: 'organizationA',
+            refresh_token: TEST_REFRESH_TOKEN,
+          };
+
+          await manager.set(data);
+
+          const key = new CacheKey({
+            clientId: TEST_CLIENT_ID,
+            audience: TEST_AUDIENCE,
+            // organization: 'organizationA',
+            scope: 'read:user'
+          });
+
+          const res = await manager.getCompatibleToken(key);
+
+          expect(res).toStrictEqual(data);
+          expect(manager.getActiveTokenMatchingAudienceScopeOrganization).toHaveBeenCalledTimes(1);
+          expect(manager.getInactiveTokenMatchingAudienceScopeOrganization).toHaveBeenCalledTimes(1);
+        });
+      });
+    });
+
+    describe('updateCacheAndGetRefreshToken', () => {
+      describe('when entry does not have refresh_token', () => {
+        it('returns undefined and removes entry from memory', async () => {
+          jest.spyOn(manager, 'removeEntryFromCache');
+
+          const key = new CacheKey({
+            clientId: TEST_CLIENT_ID,
+            audience: TEST_AUDIENCE,
+            // organization: 'organizationA',
+            scope: 'read:user'
+          });
+
+          const entry = {
+            body: {
+              ...defaultData,
+              scope: 'read:user update:user',
+              audience: TEST_AUDIENCE,
+              organization: 'organizationA',
+            },
+            expiresAt: 0,
+          };
+
+          const res = await manager.updateCacheAndGetRefreshToken(entry, key);
+
+          expect(res).toBeFalsy();
+          expect(manager.removeEntryFromCache).toHaveBeenCalledTimes(1);
+        });
+      });
+
+      describe('when entry has refresh_token', () => {
+        it('sets entry in cache and returns refresh_token', async () => {
+          jest.spyOn(cache, 'set');
+
+          const key = new CacheKey({
+            clientId: TEST_CLIENT_ID,
+            audience: TEST_AUDIENCE,
+            // organization: 'organizationA',
+            scope: 'read:user'
+          });
+
+          const entry = {
+            body: {
+              ...defaultData,
+              scope: 'read:user update:user',
+              audience: TEST_AUDIENCE,
+              organization: 'organizationA',
+              refresh_token: TEST_REFRESH_TOKEN,
+            },
+            expiresAt: 0,
+          };
+
+          const expectedResult = { refresh_token: TEST_REFRESH_TOKEN };
+
+          const res = await manager.updateCacheAndGetRefreshToken(entry, key);
+
+          expect(res?.body).toEqual(expectedResult);
+          expect(cache.set).toHaveBeenCalledTimes(1);
+        });
+      });
+    });
+
+    describe('removeEntryFromCache', () => {
+      it('removes entry and key from cache', async () => {
+        jest.spyOn(cache, 'remove');
+
+        const key = new CacheKey({
+          clientId: TEST_CLIENT_ID,
+          audience: TEST_AUDIENCE,
+          // organization: 'organizationA',
+          scope: 'read:user'
+        });
+
+        await manager.removeEntryFromCache(key);
+
+        expect(cache.remove).toHaveBeenCalledTimes(1);
+      });
+    });
+
+    describe('getActiveTokenMatchingAudienceScopeOrganization', () => {
+      describe('when entry is not found', () => {
+        it('returns undefined', async () => {
+          const key = new CacheKey({
+            clientId: TEST_CLIENT_ID,
+            audience: TEST_AUDIENCE,
+            // organization: 'organizationA',
+            scope: 'read:user'
+          });
+
+          const res = await manager.getActiveTokenMatchingAudienceScopeOrganization(
+            key,
+          );
+
+          expect(res).toBeFalsy();
+        });
+      });
+      describe('when entry is found but is expired', () => {
+        it('returns undefined', async () => {
+          jest.spyOn(CacheManagerUtils, 'isTokenExpired').mockResolvedValue(true);
+
+          const data = {
+            ...defaultData,
+            scope: 'read:user',
+            audience: TEST_AUDIENCE,
+            organization: 'organizationA',
+            refresh_token: TEST_REFRESH_TOKEN,
+          };
+
+          await manager.set(data);
+
+          const key = new CacheKey({
+            clientId: TEST_CLIENT_ID,
+            audience: TEST_AUDIENCE,
+            // organization: 'organizationA',
+            scope: 'read:user'
+          });
+
+          const res = await manager.getActiveTokenMatchingAudienceScopeOrganization(
+            key,
+          );
+
+          expect(res).toBeFalsy();
+        });
+      });
+      describe('when entry is found and is active', () => {
+        it('returns entry', async () => {
+          jest.spyOn(CacheManagerUtils, 'isTokenExpired').mockResolvedValue(false);
+
+          const data = {
+            ...defaultData,
+            scope: 'read:user',
+            audience: TEST_AUDIENCE,
+            organization: 'organizationA',
+            refresh_token: TEST_REFRESH_TOKEN,
+          };
+
+          await manager.set(data);
+
+          const key = new CacheKey({
+            clientId: TEST_CLIENT_ID,
+            audience: TEST_AUDIENCE,
+            // organization: 'organizationA',
+            scope: 'read:user'
+          });
+
+          const res = await manager.getActiveTokenMatchingAudienceScopeOrganization(
+            key,
+          );
+
+          expect(res?.body).toEqual(data);
+        });
+      });
+    });
+
+    describe("getInactiveTokenMatchingAudienceScopeOrganization", () => {
+      describe('when entry is not found', () => {
+        it('returns undefined', async () => {
+          const key = new CacheKey({
+            clientId: TEST_CLIENT_ID,
+            audience: TEST_AUDIENCE,
+            // organization: 'organizationA',
+            scope: 'read:user'
+          });
+
+          const res = await manager.getInactiveTokenMatchingAudienceScopeOrganization(
+            key,
+          );
+
+          expect(res).toBeFalsy();
+        });
+      });
+      describe('when entry is found and is expired', () => {
+        it('calls updateCacheAndGetRefreshToken', async () => {
+          jest.spyOn(CacheManagerUtils, 'isTokenExpired').mockResolvedValue(true);
+          jest.spyOn(manager, 'updateCacheAndGetRefreshToken');
+
+          const data = {
+            ...defaultData,
+            scope: 'read:user update:user',
+            audience: TEST_AUDIENCE,
+            organization: 'organizationA',
+          };
+
+          await manager.set(data);
+
+          const key = new CacheKey({
+            clientId: TEST_CLIENT_ID,
+            audience: TEST_AUDIENCE,
+            // organization: 'organizationA',
+            scope: 'read:user update:user'
+          });
+
+          await manager.getInactiveTokenMatchingAudienceScopeOrganization(
+            key,
+          );
+
+          expect(manager.updateCacheAndGetRefreshToken).toBeCalledTimes(1);
+        });
+      });
+      describe('when entry is found and is not expired', () => {
+        it('returns entry', async () => {
+          jest.spyOn(CacheManagerUtils, 'isTokenExpired').mockResolvedValue(false);
+
+          const data = {
+            ...defaultData,
+            scope: 'read:user update:user',
+            audience: TEST_AUDIENCE,
+            organization: 'organizationA',
+            refresh_token: TEST_REFRESH_TOKEN,
+          };
+
+          await manager.set(data);
+
+          const key = new CacheKey({
+            clientId: TEST_CLIENT_ID,
+            audience: TEST_AUDIENCE,
+            // organization: 'organizationA',
+            scope: 'read:user update:user'
+          });
+
+          const res = await manager.getInactiveTokenMatchingAudienceScopeOrganization(
+            key,
+          );
+
+          expect(res?.body).toEqual(data);
+        });
+      });
+    });
+
+    describe('getTokenWithRefreshTokenMatchingAudienceOrganization', () => {
+      describe('when key is not found', () => {
+        it('returns undefined', async () => {
+          jest.spyOn(CacheManagerUtils, 'hasDefaultParameters').mockReturnValue(true);
+          jest.spyOn(CacheManagerUtils, 'hasMatchingAudience').mockReturnValue(false);
+          jest.spyOn(CacheManagerUtils, 'hasMatchingOrganization').mockReturnValue(false);
+          jest.spyOn(CacheManagerUtils, 'hasCompatibleScopes').mockReturnValue(false);
+
+          const data = {
+            ...defaultData,
+            scope: 'read:user update:user',
+            audience: TEST_AUDIENCE,
+            organization: 'organizationA',
+          };
+
+          await manager.set(data);
+
+          const key = new CacheKey({
+            clientId: TEST_CLIENT_ID,
+            audience: TEST_AUDIENCE,
+            // organization: 'organizationA',
+            scope: 'read:user update:user'
+          });
+
+          const res = await manager.getTokenWithRefreshTokenMatchingAudienceOrganization(
+            key,
+            [],
+            0,
+          );
+
+          expect(res).toBeFalsy();
+        });
+      });
+
+      describe('when key is found but the entry does not exist', () => {
+        it('returns undefined', async () => {
+          jest.spyOn(CacheManagerUtils, 'hasDefaultParameters').mockReturnValue(true);
+          jest.spyOn(CacheManagerUtils, 'hasMatchingAudience').mockReturnValue(true);
+          jest.spyOn(CacheManagerUtils, 'hasMatchingOrganization').mockReturnValue(true);
+          jest.spyOn(CacheManagerUtils, 'hasCompatibleScopes').mockReturnValue(true);
+
+          // const data = {
+          //   ...defaultData,
+          //   scope: 'read:user update:user',
+          //   audience: TEST_AUDIENCE,
+          //   organization: 'organizationA',
+          // };
+
+          // await manager.set(data);
+
+          const key = new CacheKey({
+            clientId: TEST_CLIENT_ID,
+            audience: TEST_AUDIENCE,
+            // organization: 'organizationA',
+            scope: 'read:user update:user'
+          });
+
+          const res = await manager.getTokenWithRefreshTokenMatchingAudienceOrganization(
+            key,
+            ['@@auth0spajs@@::auth0_client_id::my_audience::read:user update:user'],
+            0,
+          );
+
+          expect(res).toBeFalsy();
+        });
+      });
+
+      describe('when key and entry are found and is expired', () => {
+        it('calls updateCacheAndGetRefreshToken', async () => {
+          jest.spyOn(CacheManagerUtils, 'hasDefaultParameters').mockReturnValue(true);
+          jest.spyOn(CacheManagerUtils, 'hasMatchingAudience').mockReturnValue(true);
+          jest.spyOn(CacheManagerUtils, 'hasMatchingOrganization').mockReturnValue(true);
+          jest.spyOn(CacheManagerUtils, 'hasCompatibleScopes').mockReturnValue(true);
+          jest.spyOn(CacheManagerUtils, 'isTokenExpired').mockResolvedValue(true);
+          jest.spyOn(manager, 'updateCacheAndGetRefreshToken');
+
+          const data = {
+            ...defaultData,
+            scope: 'read:user update:user',
+            audience: TEST_AUDIENCE,
+            organization: 'organizationA',
+            refresh_token: TEST_REFRESH_TOKEN,
+          };
+
+          await manager.set(data);
+
+          const key = new CacheKey({
+            clientId: TEST_CLIENT_ID,
+            audience: TEST_AUDIENCE,
+            // organization: 'organizationA',
+            scope: 'read:user update:user'
+          });
+
+          await manager.getTokenWithRefreshTokenMatchingAudienceOrganization(
+            key,
+            ['@@auth0spajs@@::auth0_client_id::my_audience::read:user update:user'],
+            0,
+          );
+
+          expect(manager.updateCacheAndGetRefreshToken).toHaveBeenCalledTimes(1);
+        });
+      });
+
+      describe('when key and entry are found and not expired', () => {
+        it('returns entry', async () => {
+          jest.spyOn(CacheManagerUtils, 'hasDefaultParameters').mockReturnValue(true);
+          jest.spyOn(CacheManagerUtils, 'hasMatchingAudience').mockReturnValue(true);
+          jest.spyOn(CacheManagerUtils, 'hasMatchingOrganization').mockReturnValue(true);
+          jest.spyOn(CacheManagerUtils, 'hasCompatibleScopes').mockReturnValue(true);
+          jest.spyOn(CacheManagerUtils, 'isTokenExpired').mockResolvedValue(false);
+          jest.spyOn(manager, 'updateCacheAndGetRefreshToken');
+
+          const data = {
+            ...defaultData,
+            scope: 'read:user update:user',
+            audience: TEST_AUDIENCE,
+            organization: 'organizationA',
+            refresh_token: TEST_REFRESH_TOKEN,
+          };
+
+          await manager.set(data);
+
+          const key = new CacheKey({
+            clientId: TEST_CLIENT_ID,
+            audience: TEST_AUDIENCE,
+            // organization: 'organizationA',
+            scope: 'read:user update:user'
+          });
+
+          const res = await manager.getTokenWithRefreshTokenMatchingAudienceOrganization(
+            key,
+            ['@@auth0spajs@@::auth0_client_id::my_audience::read:user update:user'],
+            0,
+          );
+
+          expect(res?.body).toEqual(data);
+        });
       });
     });
   });
