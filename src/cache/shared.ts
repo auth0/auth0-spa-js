@@ -82,7 +82,7 @@ export type CacheEntry = {
   decodedToken?: DecodedToken;
   audience: string;
   scope: string;
-  organization?: string;
+  organization: string;
   client_id: string;
   refresh_token?: string;
   oauthTokenScope?: string;

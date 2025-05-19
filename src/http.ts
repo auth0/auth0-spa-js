@@ -50,6 +50,7 @@ const fetchWithoutWorker = async (
 const fetchWithWorker = async (
   fetchUrl: string,
   audience: string,
+  organization: string,
   scope: string,
   fetchOptions: FetchOptions,
   timeout: number,
@@ -60,7 +61,8 @@ const fetchWithWorker = async (
     {
       auth: {
         audience,
-        scope
+        organization,
+        scope,
       },
       timeout,
       fetchUrl,
@@ -74,6 +76,7 @@ const fetchWithWorker = async (
 export const switchFetch = async (
   fetchUrl: string,
   audience: string,
+  organization: string,
   scope: string,
   fetchOptions: FetchOptions,
   worker?: Worker,
@@ -84,6 +87,7 @@ export const switchFetch = async (
     return fetchWithWorker(
       fetchUrl,
       audience,
+      organization,
       scope,
       fetchOptions,
       timeout,
@@ -99,6 +103,7 @@ export async function getJSON<T>(
   url: string,
   timeout: number | undefined,
   audience: string,
+  organization: string,
   scope: string,
   options: FetchOptions,
   worker?: Worker,
@@ -112,6 +117,7 @@ export async function getJSON<T>(
       response = await switchFetch(
         url,
         audience,
+        organization,
         scope,
         options,
         worker,

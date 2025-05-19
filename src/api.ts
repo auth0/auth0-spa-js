@@ -8,6 +8,7 @@ export async function oauthToken(
     baseUrl,
     timeout,
     audience,
+    organization,
     scope,
     auth0Client,
     useFormData,
@@ -23,6 +24,7 @@ export async function oauthToken(
     `${baseUrl}/oauth/token`,
     timeout,
     audience || 'default',
+    organization || 'default',
     scope,
     {
       method: 'POST',

@@ -10,6 +10,7 @@ export type WorkerRefreshTokenMessage = {
   useFormData?: boolean;
   auth: {
     audience: string;
+    organization: string;
     scope: string;
   };
 };
