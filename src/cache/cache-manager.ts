@@ -72,13 +72,19 @@ export class CacheManager {
     cacheKey: CacheKey,
     expiryAdjustmentSeconds = DEFAULT_EXPIRY_ADJUSTMENT_SECONDS
   ): Promise<Partial<CacheEntry> | undefined> {
-    const activeTokenMatchingAudienceScopeOrganization = await this.getActiveTokenMatchingAudienceScopeOrganization(cacheKey, expiryAdjustmentSeconds);
+    const activeTokenMatchingAudienceScopeOrganization = await this.getActiveTokenMatchingAudienceScopeOrganization(
+      cacheKey,
+      expiryAdjustmentSeconds,
+    );
 
     if (activeTokenMatchingAudienceScopeOrganization) {
       return activeTokenMatchingAudienceScopeOrganization.body;
     }
 
-    const inactiveTokenMatchingAudienceScopeOrganization = await this.getInactiveTokenMatchingAudienceScopeOrganization(cacheKey, expiryAdjustmentSeconds);
+    const inactiveTokenMatchingAudienceScopeOrganization = await this.getInactiveTokenMatchingAudienceScopeOrganization(
+      cacheKey,
+      expiryAdjustmentSeconds,
+    );
 
     if (inactiveTokenMatchingAudienceScopeOrganization) {
       return inactiveTokenMatchingAudienceScopeOrganization.body;
@@ -196,53 +202,6 @@ export class CacheManager {
     return entry;
   }
 
-  async get(
-    cacheKey: CacheKey,
-    expiryAdjustmentSeconds = DEFAULT_EXPIRY_ADJUSTMENT_SECONDS
-  ): Promise<Partial<CacheEntry> | undefined> {
-    let wrappedEntry = await this.cache.get<WrappedCacheEntry>(
-      cacheKey.toKey()
-    );
-
-    if (!wrappedEntry) {
-      const keys = await this.getCacheKeys();
-
-      if (!keys) return;
-
-      const matchedKey = this.matchExistingCacheKey(cacheKey, keys);
-
-      if (matchedKey) {
-        wrappedEntry = await this.cache.get<WrappedCacheEntry>(matchedKey);
-      }
-    }
-
-    // If we still don't have an entry, exit.
-    if (!wrappedEntry) {
-      return;
-    }
-
-    const now = await this.nowProvider();
-    const nowSeconds = Math.floor(now / 1000);
-
-    if (wrappedEntry.expiresAt - expiryAdjustmentSeconds < nowSeconds) {
-      if (wrappedEntry.body.refresh_token) {
-        wrappedEntry.body = {
-          refresh_token: wrappedEntry.body.refresh_token
-        };
-
-        await this.cache.set(cacheKey.toKey(), wrappedEntry);
-        return wrappedEntry.body;
-      }
-
-      await this.cache.remove(cacheKey.toKey());
-      await this.keyManifest?.remove(cacheKey.toKey());
-
-      return;
-    }
-
-    return wrappedEntry.body;
-  }
-
   async set(entry: CacheEntry): Promise<void> {
     const cacheKey = new CacheKey({
       clientId: entry.client_id,
@@ -301,39 +260,5 @@ export class CacheManager {
       CACHE_KEY_PREFIX,
       CACHE_KEY_ID_TOKEN_SUFFIX
     ).toKey();
-  }
-
-  /**
-   * Finds the corresponding key in the cache based on the provided cache key.
-   * The keys inside the cache are in the format {prefix}::{clientId}::{audience}::{scope}.
-   * The first key in the cache that satisfies the following conditions is returned
-   *  - `prefix` is strict equal to Auth0's internally configured `keyPrefix`
-   *  - `clientId` is strict equal to the `cacheKey.clientId`
-   *  - `audience` is strict equal to the `cacheKey.audience`
-   *  - `scope` contains at least all the `cacheKey.scope` values
-   *  *
-   * @param keyToMatch The provided cache key
-   * @param allKeys A list of existing cache keys
-   */
-  private matchExistingCacheKey(keyToMatch: CacheKey, allKeys: Array<string>) {
-    return allKeys.filter(key => {
-      const cacheKey = CacheKey.fromKey(key);
-      const scopeSet = new Set(cacheKey.scope && cacheKey.scope.split(' '));
-      const scopesToMatch = keyToMatch.scope?.split(' ') || [];
-
-      const hasAllScopes =
-        cacheKey.scope &&
-        scopesToMatch.reduce(
-          (acc, current) => acc && scopeSet.has(current),
-          true
-        );
-
-      return (
-        cacheKey.prefix === CACHE_KEY_PREFIX &&
-        cacheKey.clientId === keyToMatch.clientId &&
-        cacheKey.audience === keyToMatch.audience &&
-        hasAllScopes
-      );
-    })[0];
   }
 }

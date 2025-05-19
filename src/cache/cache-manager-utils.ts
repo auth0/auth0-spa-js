@@ -1,5 +1,10 @@
 import { CACHE_KEY_PREFIX, CacheKey, WrappedCacheEntry } from "./shared";
 
+/**
+ * Finds the corresponding key in the cache based on the provided cache key.
+ * The keys inside the cache are in the format {prefix}::{clientId}::{audience}::{scope}.
+ * - `scope` contains at least all the `cacheKey.scope` values
+ */
 const hasCompatibleScopes = (key: string, keyToMatch: CacheKey): boolean => {
   const cacheKey = CacheKey.fromKey(key);
   const scopeSet = new Set(cacheKey.scope && cacheKey.scope.split(' '));
@@ -12,12 +17,23 @@ const hasCompatibleScopes = (key: string, keyToMatch: CacheKey): boolean => {
     ) : false;
 };
 
+/**
+ * Finds the corresponding key in the cache based on the provided cache key.
+ * The keys inside the cache are in the format {prefix}::{clientId}::{audience}::{scope}.
+ * - `audience` is strict equal to the `cacheKey.audience`
+ */
 const hasMatchingAudience = (key: string, keyToMatch: CacheKey): boolean => {
   const cacheKey = CacheKey.fromKey(key);
 
   return cacheKey.audience === keyToMatch.audience
 };
 
+/**
+ * Finds the corresponding key in the cache based on the provided cache key.
+ * The keys inside the cache are in the format {prefix}::{clientId}::{audience}::{scope}.
+ * - `prefix` is strict equal to Auth0's internally configured `keyPrefix`
+ * - `clientId` is strict equal to the `cacheKey.clientId`
+ */
 const hasDefaultParameters = (key: string, keyToMatch: CacheKey): boolean => {
   const cacheKey = CacheKey.fromKey(key);
 
