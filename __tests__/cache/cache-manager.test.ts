@@ -871,8 +871,8 @@ cacheFactories.forEach(cacheFactory => {
         });
       });
 
-      describe("when some entry match with exact audience, organization and has compatible scopes", () => {
-        it("returns entry", async () => {
+      describe('when some entry match with exact audience, organization and has compatible scopes', () => {
+        it('returns entry', async () => {
           jest.spyOn(manager, 'getActiveTokenMatchingAudienceScopeOrganization');
           jest.spyOn(manager, 'getInactiveTokenMatchingAudienceScopeOrganization');
           jest.spyOn(manager, 'getTokenWithRefreshTokenMatchingAudienceOrganization');
@@ -1056,7 +1056,7 @@ cacheFactories.forEach(cacheFactory => {
       });
     });
 
-    describe("getInactiveTokenMatchingAudienceScopeOrganization", () => {
+    describe('getInactiveTokenMatchingAudienceScopeOrganization', () => {
       describe('when entry is not found', () => {
         it('returns undefined', async () => {
           const key = new CacheKey({
