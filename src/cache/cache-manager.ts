@@ -73,20 +73,19 @@ export class CacheManager {
     expiryAdjustmentSeconds = DEFAULT_EXPIRY_ADJUSTMENT_SECONDS
   ): Promise<Partial<CacheEntry> | undefined> {
     const activeTokenMatchingAudienceScopeOrganization = await this.getActiveTokenMatchingAudienceScopeOrganization(cacheKey, expiryAdjustmentSeconds);
-    console.log('1- activeTokenMatchingAudienceScopeOrganization', activeTokenMatchingAudienceScopeOrganization)
+
     if (activeTokenMatchingAudienceScopeOrganization) {
       return activeTokenMatchingAudienceScopeOrganization.body;
     }
 
     const inactiveTokenMatchingAudienceScopeOrganization = await this.getInactiveTokenMatchingAudienceScopeOrganization(cacheKey, expiryAdjustmentSeconds);
 
-    console.log('2- inactiveTokenMatchingAudienceScopeOrganization', inactiveTokenMatchingAudienceScopeOrganization)
     if (inactiveTokenMatchingAudienceScopeOrganization) {
       return inactiveTokenMatchingAudienceScopeOrganization.body;
     }
 
     const keys = await this.getCacheKeys();
-    console.log('3- keys', keys)
+
     if (!keys) return;
 
     const tokenWithRefreshTokenMatchingAudienceOrganization = await this.getTokenWithRefreshTokenMatchingAudienceOrganization(
@@ -95,7 +94,6 @@ export class CacheManager {
       expiryAdjustmentSeconds,
     );
 
-    console.log("4-tokenWithRefreshTokenMatchingAudienceOrganization", tokenWithRefreshTokenMatchingAudienceOrganization)
     if (tokenWithRefreshTokenMatchingAudienceOrganization) {
       return tokenWithRefreshTokenMatchingAudienceOrganization.body;
     }
