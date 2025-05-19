@@ -1,5 +1,5 @@
 import { DEFAULT_NOW_PROVIDER } from '../constants';
-import CacheManagerUtils from './cache-manager-utils';
+import { CacheManagerUtils } from './cache-manager-utils';
 import { CacheKeyManifest } from './key-manifest';
 
 import {

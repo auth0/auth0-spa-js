@@ -3,7 +3,7 @@ import {
   InMemoryCache,
   LocalStorageCache
 } from '../../src/cache';
-import CacheManagerUtils from '../../src/cache/cache-manager-utils';
+import { CacheManagerUtils } from '../../src/cache/cache-manager-utils';
 import { CacheKeyManifest } from '../../src/cache/key-manifest';
 
 import {
