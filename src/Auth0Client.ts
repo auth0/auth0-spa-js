@@ -102,6 +102,7 @@ type GetTokenSilentlyResult = TokenEndpointResponse & {
   scope: string;
   oauthTokenScope?: string;
   audience: string;
+  organization: string;
 };
 
 /**
@@ -290,6 +291,7 @@ export class Auth0Client {
   ): Promise<{
     scope: string;
     audience: string;
+    organization: string;
     redirect_uri?: string;
     nonce: string;
     code_verifier: string;
@@ -322,6 +324,7 @@ export class Auth0Client {
       code_verifier,
       scope: params.scope,
       audience: params.audience || 'default',
+      organization: params.organization || '<no_org>',
       redirect_uri: params.redirect_uri,
       state,
       url
@@ -678,7 +681,7 @@ export class Auth0Client {
       const entry = await this._getEntryFromCache({
         scope: getTokenOptions.authorizationParams.scope,
         audience: getTokenOptions.authorizationParams.audience || 'default',
-        organization: getTokenOptions.authorizationParams.organization || orgHint || 'default',
+        organization: getTokenOptions.authorizationParams.organization || orgHint || '<no_org>',
         clientId: this.options.clientId
       });
 
@@ -706,7 +709,7 @@ export class Auth0Client {
           const entry = await this._getEntryFromCache({
             scope: getTokenOptions.authorizationParams.scope,
             audience: getTokenOptions.authorizationParams.audience || 'default',
-            organization: getTokenOptions.authorizationParams.organization || orgHint || 'default',
+            organization: getTokenOptions.authorizationParams.organization || orgHint || '<no_org>',
             clientId: this.options.clientId
           });
 
@@ -774,7 +777,7 @@ export class Auth0Client {
       new CacheKey({
         scope: localOptions.authorizationParams.scope,
         audience: localOptions.authorizationParams.audience || 'default',
-        organization: localOptions.authorizationParams.organization || orgHint || 'default',
+        organization: localOptions.authorizationParams.organization || orgHint || '<no_org>',
         clientId: this.options.clientId
       })
     );
@@ -931,7 +934,8 @@ export class Auth0Client {
         ...tokenResult,
         scope: scope,
         oauthTokenScope: tokenResult.scope,
-        audience: audience
+        audience: audience,
+        organization: params.organization || '<no_org>',
       };
     } catch (e) {
       if (e.error === 'login_required') {
@@ -953,7 +957,7 @@ export class Auth0Client {
       new CacheKey({
         scope: options.authorizationParams.scope,
         audience: options.authorizationParams.audience || 'default',
-        organization: options.authorizationParams.organization || orgHint || 'default',
+        organization: options.authorizationParams.organization || orgHint || '<no_org>',
         clientId: this.options.clientId
       })
     );
@@ -969,7 +973,8 @@ export class Auth0Client {
 
       throw new MissingRefreshTokenError(
         options.authorizationParams.audience || 'default',
-        options.authorizationParams.scope
+        options.authorizationParams.scope,
+        options.authorizationParams.organization || orgHint || '<no_org>',
       );
     }
 
@@ -996,7 +1001,8 @@ export class Auth0Client {
         ...tokenResult,
         scope: options.authorizationParams.scope,
         oauthTokenScope: tokenResult.scope,
-        audience: options.authorizationParams.audience || 'default'
+        audience: options.authorizationParams.audience || 'default',
+        organization: options.authorizationParams.organization || orgHint || '<no_org>',
       };
     } catch (e) {
       if (
@@ -1038,7 +1044,7 @@ export class Auth0Client {
   private async _getIdTokenFromCache() {
     const audience = this.options.authorizationParams.audience || 'default';
     const orgHint = this.cookieStorage.get<string>(this.orgHintCookieName);
-    const organization = this.options.authorizationParams.organization || orgHint || 'default';
+    const organization = this.options.authorizationParams.organization || orgHint || '<no_org>';
 
     const cache = await this.cacheManager.getIdToken(
       new CacheKey({
@@ -1071,7 +1077,7 @@ export class Auth0Client {
   }: {
     scope: string;
     audience: string;
-    organization?: string;
+    organization: string;
     clientId: string;
   }): Promise<undefined | GetTokenSilentlyVerboseResponse> {
     const entry = await this.cacheManager.get(
@@ -1125,6 +1131,7 @@ export class Auth0Client {
         auth0Client: this.options.auth0Client,
         useFormData: this.options.useFormData,
         timeout: this.httpTimeoutMs,
+        organization,
         ...options
       },
       this.worker
@@ -1141,7 +1148,7 @@ export class Auth0Client {
       decodedToken,
       scope: options.scope,
       audience: options.audience || 'default',
-      organization: options.organization || organization || 'default',
+      organization: options.organization || organization || '<no_org>',
       ...(authResult.scope ? { oauthTokenScope: authResult.scope } : null),
       client_id: this.options.clientId
     });
@@ -1214,8 +1221,8 @@ export class Auth0Client {
       subject_token: options.subject_token,
       subject_token_type: options.subject_token_type,
       scope: getUniqueScopes(options.scope, this.scope),
-      audience: this.options.authorizationParams.audience
-    });
+      audience: this.options.authorizationParams.audience,
+    }, { organization: this.options.authorizationParams.organization });
   }
 }
 

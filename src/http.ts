@@ -153,7 +153,7 @@ export async function getJSON<T>(
     }
 
     if (error === 'missing_refresh_token') {
-      throw new MissingRefreshTokenError(audience, scope);
+      throw new MissingRefreshTokenError(audience, scope, organization);
     }
 
     throw new GenericError(error || 'request_error', errorMessage);

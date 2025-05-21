@@ -24,7 +24,7 @@ export async function oauthToken(
     `${baseUrl}/oauth/token`,
     timeout,
     audience || 'default',
-    organization || 'default',
+    organization || '<no_org>',
     scope,
     {
       method: 'POST',
