@@ -15,9 +15,11 @@ export async function oauthToken(
   }: TokenEndpointOptions,
   worker?: Worker
 ) {
+  const newOptions = options.grant_type === 'refresh_token' ? { ...options, audience, scope } : options;
+
   const body = useFormData
-    ? createQueryParams(options)
-    : JSON.stringify(options);
+    ? createQueryParams(newOptions)
+    : JSON.stringify(newOptions);
 
   return await getJSON<TokenEndpointResponse>(
     `${baseUrl}/oauth/token`,

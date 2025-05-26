@@ -899,6 +899,45 @@ cacheFactories.forEach(cacheFactory => {
           expect(res).toStrictEqual(data);
           expect(manager.getActiveTokenMatchingAudienceScopeOrganization).toHaveBeenCalledTimes(1);
           expect(manager.getInactiveTokenMatchingAudienceScopeOrganization).toHaveBeenCalledTimes(1);
+          expect(manager.getTokenWithRefreshTokenMatchingAudienceOrganization).toHaveBeenCalledTimes(1);
+        });
+      });
+
+      describe('when some entry match with the same organization', () => {
+        it('returns entry', async () => {
+          jest.spyOn(manager, 'getActiveTokenMatchingAudienceScopeOrganization');
+          jest.spyOn(manager, 'getInactiveTokenMatchingAudienceScopeOrganization');
+          jest.spyOn(manager, 'getTokenWithRefreshTokenMatchingAudienceOrganization');
+          jest.spyOn(manager, 'getTokenWithRefreshTokenMatchingOrganization');
+
+          const data = {
+            ...defaultData,
+            scope: 'read:user update:user',
+            audience: TEST_AUDIENCE,
+            organization: 'organizationA',
+            refresh_token: TEST_REFRESH_TOKEN,
+          };
+
+          await manager.set(data);
+
+          const key = new CacheKey({
+            clientId: TEST_CLIENT_ID,
+            audience: 'New audience',
+            // organization: 'organizationA',
+            scope: 'read:book',
+          });
+
+          const res = await manager.getCompatibleToken(key);
+
+          expect(res).toMatchObject({
+            refresh_token: data.refresh_token,
+            audience: key.audience,
+            scope: key.scope,
+          });
+          expect(manager.getActiveTokenMatchingAudienceScopeOrganization).toHaveBeenCalledTimes(1);
+          expect(manager.getInactiveTokenMatchingAudienceScopeOrganization).toHaveBeenCalledTimes(1);
+          expect(manager.getTokenWithRefreshTokenMatchingAudienceOrganization).toHaveBeenCalledTimes(1);
+          expect(manager.getTokenWithRefreshTokenMatchingOrganization).toHaveBeenCalledTimes(1);
         });
       });
     });
@@ -1266,6 +1305,112 @@ cacheFactories.forEach(cacheFactory => {
           );
 
           expect(res?.body).toEqual(data);
+        });
+      });
+    });
+
+    describe('getTokenWithRefreshTokenMatchingOrganization', () => {
+      describe('when key is not found', () => {
+        it('returns undefined', async () => {
+          jest.spyOn(CacheManagerUtils, 'hasDefaultParameters').mockReturnValue(false);
+          jest.spyOn(CacheManagerUtils, 'hasMatchingOrganization').mockReturnValue(false);
+
+          const key = new CacheKey({
+            clientId: TEST_CLIENT_ID,
+            audience: 'New audience',
+            // organization: 'organizationA',
+            scope: 'read:user update:user'
+          });
+
+          const res = await manager.getTokenWithRefreshTokenMatchingOrganization(
+            key,
+            ['@@auth0spajs@@::auth0_client_id::my_audience::read:user update:user'],
+          );
+
+          expect(res).toBeFalsy();
+        });
+      });
+      describe('when key is found but not entry', () => {
+        it('returns undefined', async () => {
+          jest.spyOn(CacheManagerUtils, 'hasDefaultParameters').mockReturnValue(true);
+          jest.spyOn(CacheManagerUtils, 'hasMatchingOrganization').mockReturnValue(true);
+
+          const key = new CacheKey({
+            clientId: TEST_CLIENT_ID,
+            audience: 'New audience',
+            // organization: 'organizationA',
+            scope: 'read:user update:user'
+          });
+
+          const res = await manager.getTokenWithRefreshTokenMatchingOrganization(
+            key,
+            ['@@auth0spajs@@::auth0_client_id::my_audience::read:user update:user'],
+          );
+
+          expect(res).toBeFalsy();
+        });
+      });
+      describe('when entry is found but it does not have refresh_token', () => {
+        it('returns undefined', async () => {
+          jest.spyOn(CacheManagerUtils, 'hasDefaultParameters').mockReturnValue(true);
+          jest.spyOn(CacheManagerUtils, 'hasMatchingOrganization').mockReturnValue(true);
+
+          const key = new CacheKey({
+            clientId: TEST_CLIENT_ID,
+            audience: 'New audience',
+            // organization: 'organizationA',
+            scope: 'read:books update:books'
+          });
+
+          const data = {
+            ...defaultData,
+            scope: 'read:user update:user',
+            audience: TEST_AUDIENCE,
+            organization: 'organizationA',
+          };
+
+          await manager.set(data);
+
+          const res = await manager.getTokenWithRefreshTokenMatchingOrganization(
+            key,
+            ['@@auth0spajs@@::auth0_client_id::my_audience::read:user update:user'],
+          );
+
+          expect(res).toBeFalsy();
+        });
+      });
+      describe('when entry is found and has refresh_token', () => {
+        it('returns entry', async () => {
+          jest.spyOn(CacheManagerUtils, 'hasDefaultParameters').mockReturnValue(true);
+          jest.spyOn(CacheManagerUtils, 'hasMatchingOrganization').mockReturnValue(true);
+
+          const data = {
+            ...defaultData,
+            scope: 'read:user update:user',
+            audience: TEST_AUDIENCE,
+            organization: 'organizationA',
+            refresh_token: TEST_REFRESH_TOKEN,
+          };
+
+          await manager.set(data);
+
+          const key = new CacheKey({
+            clientId: TEST_CLIENT_ID,
+            audience: 'New audience',
+            // organization: 'organizationA',
+            scope: 'read:books update:books'
+          });
+
+          const res = await manager.getTokenWithRefreshTokenMatchingOrganization(
+            key,
+            ['@@auth0spajs@@::auth0_client_id::my_audience::read:user update:user'],
+          );
+
+          expect(res?.body).toMatchObject({
+            refresh_token: data.refresh_token,
+            scope: key.scope,
+            audience: key.audience,
+          });
         });
       });
     });

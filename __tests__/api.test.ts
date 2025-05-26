@@ -9,7 +9,7 @@ import { oauthToken } from '../src/api';
 // @ts-ignore
 import Worker from '../src/worker/token.worker';
 import { MessageChannel } from 'worker_threads';
-import { TEST_REDIRECT_URI } from './constants';
+import { TEST_AUDIENCE, TEST_REDIRECT_URI, TEST_REFRESH_TOKEN, TEST_SCOPES } from './constants';
 import { expect } from '@jest/globals';
 (<any>global).MessageChannel = MessageChannel;
 
@@ -328,5 +328,31 @@ describe('oauthToken', () => {
     expect(result.access_token).toBe('access-token');
     expect(mockFetch).toHaveBeenCalledTimes(2);
     expect(abortController.abort).toHaveBeenCalled();
+  });
+
+  describe('when grant_type is refresh_token', () => {
+    it('requests access_token sending audience and scope inside the body', async () => {
+      const fetchResult = {
+        ok: true,
+        json: () => Promise.resolve({ access_token: 'access-token' })
+      };
+
+      mockFetch.mockReturnValue(Promise.resolve(fetchResult));
+
+      const result = await oauthToken({
+        baseUrl: 'https://test.com',
+        client_id: 'client_idIn',
+        code: 'codeIn',
+        code_verifier: 'code_verifierIn',
+        timeout: 500,
+        grant_type: 'refresh_token',
+        refresh_token: TEST_REFRESH_TOKEN,
+        auth0Client: DEFAULT_AUTH0_CLIENT,
+        audience: TEST_AUDIENCE,
+        scope: TEST_SCOPES,
+      });
+
+      expect(result.access_token).toBe('access-token');
+    });
   });
 });

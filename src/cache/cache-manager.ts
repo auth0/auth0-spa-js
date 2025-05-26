@@ -104,6 +104,17 @@ export class CacheManager {
       return tokenWithRefreshTokenMatchingAudienceOrganization.body;
     }
 
+    const tokenWithRefreshTokenMatchingOrganization = await this.getTokenWithRefreshTokenMatchingOrganization(
+      cacheKey,
+      keys,
+    );
+
+    console.log('tokenWithRefreshTokenMatchingOrganization', tokenWithRefreshTokenMatchingOrganization)
+
+    if (tokenWithRefreshTokenMatchingOrganization) {
+      return tokenWithRefreshTokenMatchingOrganization.body;
+    }
+
     return;
   }
 
@@ -198,6 +209,31 @@ export class CacheManager {
     if (isExpired) {
       return this.updateCacheAndGetRefreshToken(entry, keyToMatch);
     }
+
+    return entry;
+  }
+
+  async getTokenWithRefreshTokenMatchingOrganization(
+    keyToMatch: CacheKey,
+    keys: string[],
+  ): Promise<WrappedCacheEntry | undefined> {
+    const foundKey = keys.find((storageKey) => {
+      return CacheManagerUtils.hasDefaultParameters(storageKey, keyToMatch)
+        && CacheManagerUtils.hasMatchingOrganization()
+        && CacheManagerUtils.hasAudience(storageKey)
+    });
+
+    if (!foundKey) return undefined;
+
+    const entry = await this.cache.get<WrappedCacheEntry>(foundKey);
+
+    if (!entry || !entry.body.refresh_token) return undefined;
+
+    entry.body = {
+      refresh_token: entry.body.refresh_token,
+      scope: keyToMatch.scope,
+      audience: keyToMatch.audience,
+    };
 
     return entry;
   }
