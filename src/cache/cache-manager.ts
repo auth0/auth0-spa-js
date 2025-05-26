@@ -45,7 +45,7 @@ export class CacheManager {
     );
 
     if (!entry && cacheKey.scope && cacheKey.audience) {
-      const entryByScope = await this.getCompatibleToken(cacheKey);
+      const entryByScope = await this.getToken(cacheKey);
 
       if (!entryByScope) {
         return;
@@ -68,22 +68,26 @@ export class CacheManager {
     return { id_token: entry.id_token, decodedToken: entry.decodedToken };
   }
 
-  async getCompatibleToken(
+  async getToken(
     cacheKey: CacheKey,
-    expiryAdjustmentSeconds = DEFAULT_EXPIRY_ADJUSTMENT_SECONDS
+    options: {
+      expiryAdjustmentSeconds: number,
+    } = {
+        expiryAdjustmentSeconds: DEFAULT_EXPIRY_ADJUSTMENT_SECONDS,
+      },
   ): Promise<Partial<CacheEntry> | undefined> {
-    const activeTokenMatchingAudienceScopeOrganization = await this.getActiveTokenMatchingAudienceScopeOrganization(
+    const activeTokenMatchingAudienceScopeOrganization = await this.getActiveToken(
       cacheKey,
-      expiryAdjustmentSeconds,
+      options.expiryAdjustmentSeconds,
     );
 
     if (activeTokenMatchingAudienceScopeOrganization) {
       return activeTokenMatchingAudienceScopeOrganization.body;
     }
 
-    const inactiveTokenMatchingAudienceScopeOrganization = await this.getInactiveTokenMatchingAudienceScopeOrganization(
+    const inactiveTokenMatchingAudienceScopeOrganization = await this.getInactiveToken(
       cacheKey,
-      expiryAdjustmentSeconds,
+      options.expiryAdjustmentSeconds,
     );
 
     if (inactiveTokenMatchingAudienceScopeOrganization) {
@@ -94,10 +98,10 @@ export class CacheManager {
 
     if (!keys) return;
 
-    const tokenWithRefreshTokenMatchingAudienceOrganization = await this.getTokenWithRefreshTokenMatchingAudienceOrganization(
+    const tokenWithRefreshTokenMatchingAudienceOrganization = await this.getSiblingToken(
       cacheKey,
       keys,
-      expiryAdjustmentSeconds,
+      options.expiryAdjustmentSeconds,
     );
 
     if (tokenWithRefreshTokenMatchingAudienceOrganization) {
@@ -107,10 +111,15 @@ export class CacheManager {
     return;
   }
 
-  async updateCacheAndGetRefreshToken(entry: WrappedCacheEntry, cacheKey: CacheKey): Promise<WrappedCacheEntry | undefined> {
+  async onNoRefreshableToken(cacheKey: CacheKey): Promise<undefined> {
+    await this.cache.remove(cacheKey.toKey());
+    await this.keyManifest?.remove(cacheKey.toKey());
+    return;
+  }
+
+  async getRefreshToken(entry: WrappedCacheEntry, cacheKey: CacheKey): Promise<WrappedCacheEntry | undefined> {
     if (!entry.body.refresh_token) {
-      await this.removeEntryFromCache(cacheKey);
-      return;
+      return this.onNoRefreshableToken(cacheKey);
     }
 
     entry.body = {
@@ -122,14 +131,9 @@ export class CacheManager {
     return entry;
   };
 
-  async removeEntryFromCache(cacheKey: CacheKey): Promise<void> {
-    await this.cache.remove(cacheKey.toKey());
-    await this.keyManifest?.remove(cacheKey.toKey());
-  }
-
-  async getActiveTokenMatchingAudienceScopeOrganization(
+  async getActiveToken(
     cacheKey: CacheKey,
-    expiryAdjustmentSeconds = DEFAULT_EXPIRY_ADJUSTMENT_SECONDS
+    expiryAdjustmentSeconds: number,
   ): Promise<WrappedCacheEntry | undefined> {
     const entry = await this.cache.get<WrappedCacheEntry>(
       cacheKey.toKey()
@@ -148,9 +152,9 @@ export class CacheManager {
     return isExpired ? undefined : entry;
   }
 
-  async getInactiveTokenMatchingAudienceScopeOrganization(
+  async getInactiveToken(
     cacheKey: CacheKey,
-    expiryAdjustmentSeconds = DEFAULT_EXPIRY_ADJUSTMENT_SECONDS
+    expiryAdjustmentSeconds: number
   ): Promise<WrappedCacheEntry | undefined> {
     const entry = await this.cache.get<WrappedCacheEntry>(
       cacheKey.toKey()
@@ -165,23 +169,18 @@ export class CacheManager {
     );
 
     if (isExpired) {
-      return this.updateCacheAndGetRefreshToken(entry, cacheKey);
+      return this.getRefreshToken(entry, cacheKey);
     }
 
     return entry;
   }
 
-  async getTokenWithRefreshTokenMatchingAudienceOrganization(
+  async getSiblingToken(
     keyToMatch: CacheKey,
     keys: string[],
     expiryAdjustmentSeconds: number,
   ): Promise<WrappedCacheEntry | undefined> {
-    const foundKey = keys.find((storageKey) => {
-      return CacheManagerUtils.hasDefaultParameters(storageKey, keyToMatch)
-        && CacheManagerUtils.hasMatchingAudience(storageKey, keyToMatch)
-        && CacheManagerUtils.hasMatchingOrganization()
-        && CacheManagerUtils.hasCompatibleScopes(storageKey, keyToMatch)
-    });
+    const foundKey = CacheManagerUtils.findKey(keys, keyToMatch);
 
     if (!foundKey) return undefined;
 
@@ -196,7 +195,7 @@ export class CacheManager {
     );
 
     if (isExpired) {
-      return this.updateCacheAndGetRefreshToken(entry, keyToMatch);
+      return this.getRefreshToken(entry, keyToMatch);
     }
 
     return entry;

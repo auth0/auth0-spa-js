@@ -766,7 +766,7 @@ export class Auth0Client {
 
     await this.loginWithPopup(localOptions, config);
 
-    const cache = await this.cacheManager.getCompatibleToken(
+    const cache = await this.cacheManager.getToken(
       new CacheKey({
         scope: localOptions.authorizationParams.scope,
         audience: localOptions.authorizationParams.audience || 'default',
@@ -943,7 +943,7 @@ export class Auth0Client {
       authorizationParams: AuthorizationParams & { scope: string };
     }
   ): Promise<GetTokenSilentlyResult> {
-    const cache = await this.cacheManager.getCompatibleToken(
+    const cache = await this.cacheManager.getToken(
       new CacheKey({
         scope: options.authorizationParams.scope,
         audience: options.authorizationParams.audience || 'default',
@@ -1062,13 +1062,15 @@ export class Auth0Client {
     audience: string;
     clientId: string;
   }): Promise<undefined | GetTokenSilentlyVerboseResponse> {
-    const entry = await this.cacheManager.getCompatibleToken(
+    const entry = await this.cacheManager.getToken(
       new CacheKey({
         scope,
         audience,
         clientId
       }),
-      60 // get a new token if within 60 seconds of expiring
+      {
+        expiryAdjustmentSeconds: 60 // get a new token if within 60 seconds of expiring
+      },
     );
 
     if (entry && entry.access_token) {

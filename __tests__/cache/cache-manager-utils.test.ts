@@ -174,4 +174,72 @@ describe('CacheManagerUtils', () => {
       });
     });
   });
+
+  describe('isMatchingKey', () => {
+    it('calls hasMatchingAudience, hasMatchingOrganization and hasCompatibleScopes', () => {
+      const entry = new CacheKey({
+        clientId: TEST_CLIENT_ID,
+        audience: TEST_AUDIENCE,
+        // organization: 'organizationA',
+        scope: 'read:user update:user'
+      });
+
+      const key = '@@auth0spajs@@::auth0_client_id::my_audience::read:user update:user';
+
+      jest.spyOn(CacheManagerUtils, 'hasCompatibleScopes');
+      jest.spyOn(CacheManagerUtils, 'hasMatchingAudience');
+      jest.spyOn(CacheManagerUtils, 'hasMatchingOrganization');
+
+      CacheManagerUtils.isMatchingKey(key, entry);
+
+      expect(CacheManagerUtils.hasCompatibleScopes).toHaveBeenCalledTimes(1);
+      expect(CacheManagerUtils.hasMatchingAudience).toHaveBeenCalledTimes(1);
+      expect(CacheManagerUtils.hasMatchingOrganization).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('findKey', () => {
+    describe('when some key from cache matches', () => {
+      it('returns key', () => {
+        const entry = new CacheKey({
+          clientId: TEST_CLIENT_ID,
+          audience: TEST_AUDIENCE,
+          // organization: 'organizationA',
+          scope: 'read:user update:user'
+        });
+
+        const keys = ['@@auth0spajs@@::auth0_client_id::my_audience::read:user update:user'];
+
+        jest.spyOn(CacheManagerUtils, 'hasDefaultParameters').mockReturnValue(true);
+        jest.spyOn(CacheManagerUtils, 'isMatchingKey').mockReturnValue(true);
+
+        const res = CacheManagerUtils.findKey(keys, entry);
+
+        expect(res).toEqual(keys[0]);
+        expect(CacheManagerUtils.hasDefaultParameters).toHaveBeenCalledTimes(1);
+        expect(CacheManagerUtils.isMatchingKey).toHaveBeenCalledTimes(1);
+      });
+    });
+    describe('when no key from cache matches', () => {
+      it('returns undefined', () => {
+        const entry = new CacheKey({
+          clientId: TEST_CLIENT_ID,
+          audience: TEST_AUDIENCE,
+          // organization: 'organizationA',
+          scope: 'read:user update:user'
+        });
+
+        const keys = ['@@auth0spajs@@::auth0_client_id::my_audience::read:user update:user'];
+
+        jest.spyOn(CacheManagerUtils, 'hasDefaultParameters').mockReturnValue(false);
+        jest.spyOn(CacheManagerUtils, 'isMatchingKey').mockReturnValue(false);
+
+        const res = CacheManagerUtils.findKey(keys, entry);
+
+        expect(res).toEqual(undefined);
+        expect(CacheManagerUtils.hasDefaultParameters).toHaveBeenCalled();
+        expect(CacheManagerUtils.isMatchingKey).toHaveBeenCalled();
+      });
+    });
+  });
 });

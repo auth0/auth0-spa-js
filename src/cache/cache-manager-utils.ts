@@ -56,10 +56,31 @@ const isTokenExpired = async (
   return entry.expiresAt - expiryAdjustmentSeconds < nowSeconds;
 };
 
+const isMatchingKey = (
+  storageKey: string,
+  keyToMatch: CacheKey,
+): boolean => {
+  return CacheManagerUtils.hasMatchingAudience(storageKey, keyToMatch)
+    && CacheManagerUtils.hasMatchingOrganization()
+    && CacheManagerUtils.hasCompatibleScopes(storageKey, keyToMatch);
+}
+
+const findKey = (
+  keys: string[],
+  keyToMatch: CacheKey,
+): string | undefined => {
+  return keys.find((storageKey) => {
+    return CacheManagerUtils.hasDefaultParameters(storageKey, keyToMatch)
+      && CacheManagerUtils.isMatchingKey(storageKey, keyToMatch)
+  });
+}
+
 export const CacheManagerUtils = {
   hasCompatibleScopes,
   hasMatchingAudience,
   hasDefaultParameters,
   hasMatchingOrganization,
   isTokenExpired,
+  findKey,
+  isMatchingKey,
 };
