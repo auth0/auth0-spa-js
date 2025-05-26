@@ -180,9 +180,15 @@ describe('Auth0Client', () => {
         state: TEST_STATE
       });
 
-      (<jest.Mock>esCookie.get)
-        .mockReturnValueOnce(JSON.stringify(true))
-        .mockReturnValueOnce(JSON.stringify(TEST_ORG_ID));
+      (<jest.Mock>esCookie.get).mockImplementation((key) => {
+        if (key === `auth0.${TEST_CLIENT_ID}.is.authenticated`) {
+          return true;
+        }
+        if (key === `auth0.${TEST_CLIENT_ID}.organization_hint`) {
+          return JSON.stringify(TEST_ORG_ID);
+        }
+        return null;
+      });
 
       await checkSession(auth0);
 

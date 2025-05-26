@@ -13,7 +13,8 @@ import {
   TEST_ACCESS_TOKEN,
   dayInSeconds,
   nowSeconds,
-  TEST_AUDIENCE
+  TEST_AUDIENCE,
+  TEST_ORG_ID
 } from '../constants';
 import { InMemoryAsyncCacheNoKeys } from './shared';
 import { expect } from '@jest/globals';
@@ -31,6 +32,7 @@ const defaultEntry: CacheEntry = {
   client_id: TEST_CLIENT_ID,
   audience: TEST_AUDIENCE,
   scope: TEST_SCOPES,
+  organization: TEST_ORG_ID,
   id_token: TEST_ID_TOKEN,
   access_token: TEST_ACCESS_TOKEN,
   expires_in: dayInSeconds,
@@ -127,6 +129,7 @@ cacheFactories.forEach(cacheFactory => {
       const data = {
         client_id: TEST_CLIENT_ID,
         audience: TEST_AUDIENCE,
+        organization: TEST_ORG_ID,
         scope: 'the_scope the_scope2 the_scope3',
         id_token: TEST_ID_TOKEN,
         access_token: TEST_ACCESS_TOKEN,

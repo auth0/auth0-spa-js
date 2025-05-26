@@ -133,6 +133,7 @@ describe('oauthToken', () => {
         },
         auth: {
           audience: '__test_audience__',
+          organization: '<no_org>',
           scope: '__test_scope__'
         },
         timeout: 10000

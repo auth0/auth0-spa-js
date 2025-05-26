@@ -291,7 +291,6 @@ export class Auth0Client {
   ): Promise<{
     scope: string;
     audience: string;
-    organization: string;
     redirect_uri?: string;
     nonce: string;
     code_verifier: string;
@@ -324,7 +323,6 @@ export class Auth0Client {
       code_verifier,
       scope: params.scope,
       audience: params.audience || 'default',
-      organization: params.organization || '<no_org>',
       redirect_uri: params.redirect_uri,
       state,
       url
@@ -1043,9 +1041,15 @@ export class Auth0Client {
 
   private async _getIdTokenFromCache() {
     const audience = this.options.authorizationParams.audience || 'default';
-    const orgHint = this.cookieStorage.get<string>(this.orgHintCookieName);
-    const organization = this.options.authorizationParams.organization || orgHint || '<no_org>';
+    let orgHint;
 
+    if (typeof document !== 'undefined') {
+      orgHint = this.cookieStorage.get(
+        this.orgHintCookieName
+      ) as string;
+    }
+  
+    const organization = this.options.authorizationParams.organization || orgHint || '<no_org>';
     const cache = await this.cacheManager.getIdToken(
       new CacheKey({
         clientId: this.options.clientId,

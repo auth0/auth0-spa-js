@@ -157,7 +157,7 @@ describe('Auth0Client', () => {
 
       expect(mockWindow.open).toHaveBeenCalled();
 
-      expect((http.switchFetch as jest.Mock).mock.calls[0][6]).toEqual(60000);
+      expect((http.switchFetch as jest.Mock).mock.calls[0][7]).toEqual(60000);
 
       // prettier-ignore
       const url = (utils.runPopup as jest.Mock).mock.calls[0][0].popup.location.href;

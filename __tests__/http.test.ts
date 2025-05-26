@@ -15,7 +15,7 @@ describe('switchFetch', () => {
       })
     );
     jest.spyOn(window, 'clearTimeout');
-    await switchFetch('https://test.com/', null, null, {}, undefined);
+    await switchFetch('https://test.com/', null, null, null, {}, undefined);
     expect(clearTimeout).toBeCalledTimes(1);
   });
 });
@@ -30,7 +30,7 @@ describe('getJson', () => {
     );
 
     await expect(
-      getJSON('https://test.com/', null, null, null, {}, undefined)
+      getJSON('https://test.com/', null, null, null, null, {}, undefined)
     ).rejects.toBeInstanceOf(MfaRequiredError);
   });
 
@@ -44,7 +44,7 @@ describe('getJson', () => {
     );
 
     await expect(
-      getJSON('https://test.com/', null, null, null, {}, undefined)
+      getJSON('https://test.com/', null, null, null, null, {}, undefined)
     ).rejects.toHaveProperty('mfa_token', '1234');
   });
 
@@ -57,7 +57,7 @@ describe('getJson', () => {
     );
 
     await expect(
-      getJSON('https://test.com/', null, null, null, {}, undefined)
+      getJSON('https://test.com/', null, null, null, null, {}, undefined)
     ).rejects.toBeInstanceOf(MissingRefreshTokenError);
   });
 });
