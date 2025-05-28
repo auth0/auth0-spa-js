@@ -1,48 +1,97 @@
 # Change Log
 
+## [v2.2.0](https://github.com/auth0/auth0-spa-js/tree/v2.2.0) (2025-05-28)
+
+[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.1.3...v2.2.0)
+
+**Added**
+
+- Custom Token Exchange [\#1344](https://github.com/auth0/auth0-spa-js/pull/1344) ([tusharpandey13](https://github.com/tusharpandey13))
+- Add RL-Secure workflow for scanning build artifacts [\#1281](https://github.com/auth0/auth0-spa-js/pull/1281) ([developerkunal](https://github.com/developerkunal))
+- build(deps): Bump codecov/codecov-action from 3.1.4 to 3.1.5 [\#1238](https://github.com/auth0/auth0-spa-js/pull/1238) ([dependabot[bot]](https://github.com/apps/dependabot))
+
+**Changed**
+
+- build(deps-dev): Bump ejs from 3.1.8 to 3.1.10 [\#1267](https://github.com/auth0/auth0-spa-js/pull/1267) ([dependabot[bot]](https://github.com/apps/dependabot))
+- build(deps-dev): Bump braces from 3.0.2 to 3.0.3 [\#1278](https://github.com/auth0/auth0-spa-js/pull/1278) ([dependabot[bot]](https://github.com/apps/dependabot))
+- build(deps-dev): Bump axios from 1.6.2 to 1.7.7 [\#1298](https://github.com/auth0/auth0-spa-js/pull/1298) ([dependabot[bot]](https://github.com/apps/dependabot))
+- Changed the trigger from pull_request_target to pull_request for better security [\#1297](https://github.com/auth0/auth0-spa-js/pull/1297) ([gyaneshgouraw-okta](https://github.com/gyaneshgouraw-okta))
+- Update codeowner file with new GitHub team name [\#1288](https://github.com/auth0/auth0-spa-js/pull/1288) ([stevenwong-okta](https://github.com/stevenwong-okta))
+- chore: migrate jenkins job to k8s agent pipeline [\#1251](https://github.com/auth0/auth0-spa-js/pull/1251) ([xmanwms95](https://github.com/xmanwms95))
+- build(deps-dev): Bump typedoc from 0.25.4 to 0.25.9 [\#1250](https://github.com/auth0/auth0-spa-js/pull/1250) ([dependabot[bot]](https://github.com/apps/dependabot))
+- build(deps): Bump actions/cache from 3 to 4 [\#1236](https://github.com/auth0/auth0-spa-js/pull/1236) ([dependabot[bot]](https://github.com/apps/dependabot))
+- build(deps-dev): Bump eslint from 8.55.0 to 8.56.0 [\#1223](https://github.com/auth0/auth0-spa-js/pull/1223) ([dependabot[bot]](https://github.com/apps/dependabot))
+- build(deps): Bump github/codeql-action from 2 to 3 [\#1221](https://github.com/auth0/auth0-spa-js/pull/1221) ([dependabot[bot]](https://github.com/apps/dependabot))
+- Update automated release process to latest version [\#1222](https://github.com/auth0/auth0-spa-js/pull/1222) ([frederikprijck](https://github.com/frederikprijck))
+- build(deps-dev): Bump browserstack-cypress-cli from 1.27.0 to 1.28.0 [\#1220](https://github.com/auth0/auth0-spa-js/pull/1220) ([dependabot[bot]](https://github.com/apps/dependabot))
+- build(deps-dev): Bump rollup-plugin-visualizer from 5.10.0 to 5.11.0 [\#1215](https://github.com/auth0/auth0-spa-js/pull/1215) ([dependabot[bot]](https://github.com/apps/dependabot))
+
+**Fixed**
+
+- Fix release workflows [\#1361](https://github.com/auth0/auth0-spa-js/pull/1361) ([tusharpandey13](https://github.com/tusharpandey13))
+- Use outputs for capturing release-notes [\#1218](https://github.com/auth0/auth0-spa-js/pull/1218) ([frederikprijck](https://github.com/frederikprijck))
+- Ensure tag-exists action works as intended [\#1217](https://github.com/auth0/auth0-spa-js/pull/1217) ([frederikprijck](https://github.com/frederikprijck))
+- Align release process by supporting npm provenance and tag and release-directory [\#1216](https://github.com/auth0/auth0-spa-js/pull/1216) ([frederikprijck](https://github.com/frederikprijck))
+- Bring back pull_request trigger to release process [\#1214](https://github.com/auth0/auth0-spa-js/pull/1214) ([frederikprijck](https://github.com/frederikprijck))
+
 ## [v2.1.3](https://github.com/auth0/auth0-spa-js/tree/v2.1.3) (2023-12-11)
+
 [Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.1.2...v2.1.3)
 
 **Changed**
+
 - feat: support for hosted token worker [\#1208](https://github.com/auth0/auth0-spa-js/pull/1208) ([DJMcK](https://github.com/DJMcK))
 
 ## [v2.1.2](https://github.com/auth0/auth0-spa-js/tree/v2.1.2) (2023-08-21)
+
 [Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.1.1...v2.1.2)
 
 **Fixed**
+
 - Ensure organization cookie is set when no organization was set [\#1123](https://github.com/auth0/auth0-spa-js/pull/1123) ([frederikprijck](https://github.com/frederikprijck))
 
 ## [v2.1.1](https://github.com/auth0/auth0-spa-js/tree/v2.1.1) (2023-07-18)
+
 [Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.1.0...v2.1.1)
 
 **Changed**
+
 - Do not lowercase org_name claim [\#1117](https://github.com/auth0/auth0-spa-js/pull/1117) ([frederikprijck](https://github.com/frederikprijck))
 
 ## [v2.1.0](https://github.com/auth0/auth0-spa-js/tree/v2.1.0) (2023-07-13)
+
 [Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.0.8...v2.1.0)
 
 **Added**
+
 - Support Organization Name [\#1113](https://github.com/auth0/auth0-spa-js/pull/1113) ([frederikprijck](https://github.com/frederikprijck))
 
 **Fixed**
+
 - Ensure AMR claim is set to an array of strings [\#1112](https://github.com/auth0/auth0-spa-js/pull/1112) ([frederikprijck](https://github.com/frederikprijck))
 
 ## [v2.0.8](https://github.com/auth0/auth0-spa-js/tree/v2.0.8) (2023-06-14)
+
 [Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.0.7...v2.0.8)
 
 **Changed**
+
 - Lazily retrieve transaction from transaction storage [\#1108](https://github.com/auth0/auth0-spa-js/pull/1108) ([frederikprijck](https://github.com/frederikprijck))
 
 ## [v2.0.7](https://github.com/auth0/auth0-spa-js/tree/v2.0.7) (2023-06-02)
+
 [Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.0.6...v2.0.7)
 
 **Changed**
+
 - Make TransactionManager use CookieDomain [\#1105](https://github.com/auth0/auth0-spa-js/pull/1105) ([ZdravkoDonev-gtmhub](https://github.com/ZdravkoDonev-gtmhub))
 
 ## [v2.0.6](https://github.com/auth0/auth0-spa-js/tree/v2.0.6) (2023-05-30)
+
 [Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.0.5...v2.0.6)
 
 **Fixed**
+
 - Fix missing invalid state errors with Generic Error [\#1102](https://github.com/auth0/auth0-spa-js/pull/1102) ([frederikprijck](https://github.com/frederikprijck))
 
 ## [v2.0.5](https://github.com/auth0/auth0-spa-js/tree/v2.0.5) (2023-05-22)
