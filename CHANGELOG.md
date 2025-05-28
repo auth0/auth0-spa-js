@@ -1,5 +1,34 @@
 # Change Log
 
+## [v2.2.0](https://github.com/auth0/auth0-spa-js/tree/v2.2.0) (2025-05-27)
+[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.1.3...v2.2.0)
+
+**Added**
+- Custom Token Exchange [\#1344](https://github.com/auth0/auth0-spa-js/pull/1344) ([tusharpandey13](https://github.com/tusharpandey13))
+- Add RL-Secure workflow for scanning build artifacts [\#1281](https://github.com/auth0/auth0-spa-js/pull/1281) ([developerkunal](https://github.com/developerkunal))
+
+**Changed**
+- build(deps-dev): Bump ejs from 3.1.8 to 3.1.10 [\#1267](https://github.com/auth0/auth0-spa-js/pull/1267) ([dependabot[bot]](https://github.com/apps/dependabot))
+- build(deps-dev): Bump braces from 3.0.2 to 3.0.3 [\#1278](https://github.com/auth0/auth0-spa-js/pull/1278) ([dependabot[bot]](https://github.com/apps/dependabot))
+- build(deps-dev): Bump axios from 1.6.2 to 1.7.7 [\#1298](https://github.com/auth0/auth0-spa-js/pull/1298) ([dependabot[bot]](https://github.com/apps/dependabot))
+-  Changed the trigger from pull_request_target to pull_request for better security [\#1297](https://github.com/auth0/auth0-spa-js/pull/1297) ([gyaneshgouraw-okta](https://github.com/gyaneshgouraw-okta))
+- Update codeowner file with new GitHub team name [\#1288](https://github.com/auth0/auth0-spa-js/pull/1288) ([stevenwong-okta](https://github.com/stevenwong-okta))
+- build(deps-dev): Bump typedoc from 0.25.4 to 0.25.9 [\#1250](https://github.com/auth0/auth0-spa-js/pull/1250) ([dependabot[bot]](https://github.com/apps/dependabot))
+- build(deps): Bump codecov/codecov-action from 3.1.4 to 3.1.5 [\#1238](https://github.com/auth0/auth0-spa-js/pull/1238) ([dependabot[bot]](https://github.com/apps/dependabot))
+- build(deps): Bump actions/cache from 3 to 4 [\#1236](https://github.com/auth0/auth0-spa-js/pull/1236) ([dependabot[bot]](https://github.com/apps/dependabot))
+- build(deps-dev): Bump eslint from 8.55.0 to 8.56.0 [\#1223](https://github.com/auth0/auth0-spa-js/pull/1223) ([dependabot[bot]](https://github.com/apps/dependabot))
+- build(deps): Bump github/codeql-action from 2 to 3 [\#1221](https://github.com/auth0/auth0-spa-js/pull/1221) ([dependabot[bot]](https://github.com/apps/dependabot))
+- Update automated release process to latest version [\#1222](https://github.com/auth0/auth0-spa-js/pull/1222) ([frederikprijck](https://github.com/frederikprijck))
+- build(deps-dev): Bump browserstack-cypress-cli from 1.27.0 to 1.28.0 [\#1220](https://github.com/auth0/auth0-spa-js/pull/1220) ([dependabot[bot]](https://github.com/apps/dependabot))
+- Use outputs for capturing release-notes [\#1218](https://github.com/auth0/auth0-spa-js/pull/1218) ([frederikprijck](https://github.com/frederikprijck))
+- build(deps-dev): Bump rollup-plugin-visualizer from 5.10.0 to 5.11.0 [\#1215](https://github.com/auth0/auth0-spa-js/pull/1215) ([dependabot[bot]](https://github.com/apps/dependabot))
+
+**Fixed**
+- chore: migrate jenkins job to k8s agent pipeline [\#1251](https://github.com/auth0/auth0-spa-js/pull/1251) ([xmanwms95](https://github.com/xmanwms95))
+- Ensure tag-exists action works as intended [\#1217](https://github.com/auth0/auth0-spa-js/pull/1217) ([frederikprijck](https://github.com/frederikprijck))
+- Align release process by supporting npm provenance and tag and release-directory [\#1216](https://github.com/auth0/auth0-spa-js/pull/1216) ([frederikprijck](https://github.com/frederikprijck))
+- Bring back pull_request trigger to release process [\#1214](https://github.com/auth0/auth0-spa-js/pull/1214) ([frederikprijck](https://github.com/frederikprijck))
+
 ## [v2.1.3](https://github.com/auth0/auth0-spa-js/tree/v2.1.3) (2023-12-11)
 [Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.1.2...v2.1.3)
 
