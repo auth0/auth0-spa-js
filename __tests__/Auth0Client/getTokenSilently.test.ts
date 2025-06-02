@@ -2276,9 +2276,10 @@ describe('Auth0Client', () => {
         detailedResponse: true
       });
 
-      // No refresh_token included here, or oauthTokenScope
+      // No oauthTokenScope included here
       expect(response).toStrictEqual({
         id_token: TEST_ID_TOKEN,
+        refresh_token: TEST_REFRESH_TOKEN,
         access_token: TEST_ACCESS_TOKEN,
         expires_in: 86400
       });
@@ -2304,9 +2305,10 @@ describe('Auth0Client', () => {
         detailedResponse: true
       });
 
-      // No refresh_token included here, or oauthTokenScope
+      // No oauthTokenScope included here
       expect(response).toStrictEqual({
         id_token: TEST_ID_TOKEN,
+        refresh_token: TEST_REFRESH_TOKEN,
         access_token: TEST_ACCESS_TOKEN,
         expires_in: 86400,
         scope: 'read:messages'
