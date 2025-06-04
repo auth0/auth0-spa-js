@@ -109,8 +109,6 @@ export class CacheManager {
       keys,
     );
 
-    console.log('tokenWithRefreshTokenMatchingOrganization', tokenWithRefreshTokenMatchingOrganization)
-
     if (tokenWithRefreshTokenMatchingOrganization) {
       return tokenWithRefreshTokenMatchingOrganization.body;
     }
@@ -233,6 +231,7 @@ export class CacheManager {
       refresh_token: entry.body.refresh_token,
       scope: keyToMatch.scope,
       audience: keyToMatch.audience,
+      isMRRT: true,
     };
 
     return entry;
@@ -265,6 +264,30 @@ export class CacheManager {
       }, Promise.resolve());
 
     await this.keyManifest?.clear();
+  }
+
+  async updateEntry(
+    oldRefreshToken: string | undefined,
+    newRefreshToken: string,
+  ): Promise<void> {
+    const keys = await this.getCacheKeys();
+
+    if (!keys) return;
+
+    keys.forEach(async (key) => {
+      const entry = await this.cache.get<WrappedCacheEntry>(key);
+
+      if (!entry) return;
+
+      if (entry.body?.refresh_token === oldRefreshToken) {
+        const cacheKey = {
+          ...entry.body,
+          refresh_token: newRefreshToken,
+        } as CacheEntry;
+
+        await this.set(cacheKey);
+      }
+    })
   }
 
   private async wrapCacheEntry(entry: CacheEntry): Promise<WrappedCacheEntry> {

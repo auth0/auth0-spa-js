@@ -28,6 +28,13 @@ const hasMatchingAudience = (key: string, keyToMatch: CacheKey): boolean => {
   return cacheKey.audience === keyToMatch.audience
 };
 
+// TODO-ari: remove that. Only created for testing purposes
+const hasAudience = (key: string): boolean => {
+  const cacheKey = CacheKey.fromKey(key);
+
+  return cacheKey.audience !== '@@user@@';
+}
+
 /**
  * Finds the corresponding key in the cache based on the provided cache key.
  * The keys inside the cache are in the format {prefix}::{clientId}::{audience}::{scope}.
@@ -62,4 +69,5 @@ export const CacheManagerUtils = {
   hasDefaultParameters,
   hasMatchingOrganization,
   isTokenExpired,
+  hasAudience,
 };

@@ -985,6 +985,15 @@ export class Auth0Client {
         ...(timeout && { timeout })
       });
 
+      // If is refreshed with MRRT, we update all entries that have the old 
+      // refresh_token with the new one if the server responded with one
+      if (tokenResult.refresh_token && (cache && cache.isMRRT)) {
+        await this.cacheManager.updateEntry(
+          cache.refresh_token,
+          tokenResult.refresh_token
+        );
+      }
+
       return {
         ...tokenResult,
         scope: options.authorizationParams.scope,
@@ -1202,6 +1211,25 @@ export class Auth0Client {
       scope: getUniqueScopes(options.scope, this.scope),
       audience: this.options.authorizationParams.audience
     });
+  }
+
+  // TODO-ari: remove that or mantain?
+  public async getAccessToken(
+    options: GetTokenSilentlyOptions & {
+      authorizationParams: AuthorizationParams & { scope: string };
+      fallback: string
+    }
+  ): Promise<string | undefined> {
+    try {
+      const getTokenSilently = await this._getTokenSilently(options);
+      return getTokenSilently?.access_token;
+    } catch (error) {
+      if (options.fallback === 'popup') {
+        return await this.getTokenWithPopup(options);
+      }
+
+      throw error;
+    }
   }
 }
 
