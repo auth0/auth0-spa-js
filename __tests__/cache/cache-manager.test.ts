@@ -97,7 +97,7 @@ cacheFactories.forEach(cacheFactory => {
     });
 
     it('returns undefined when there is nothing in the cache', async () => {
-      const result = await manager.getCompatibleToken(defaultKey);
+      const result = await manager.getToken(defaultKey);
 
       expect(result).toBeFalsy();
     });
@@ -124,7 +124,7 @@ cacheFactories.forEach(cacheFactory => {
         scope: 'read:messages'
       });
 
-      expect(await manager.getCompatibleToken(key)).toStrictEqual(data);
+      expect(await manager.getToken(key)).toStrictEqual(data);
     });
 
     it('should return an entry from the cache if no scopes provided', async () => {
@@ -140,7 +140,7 @@ cacheFactories.forEach(cacheFactory => {
         audience: TEST_AUDIENCE
       });
 
-      expect(await manager.getCompatibleToken(key)).toStrictEqual(data);
+      expect(await manager.getToken(key)).toStrictEqual(data);
     });
 
     it('should return an entry directly from the cache if the key matches exactly', async () => {
@@ -157,7 +157,7 @@ cacheFactories.forEach(cacheFactory => {
         scope: 'read:messages write:messages'
       });
 
-      expect(await manager.getCompatibleToken(key)).toStrictEqual(data);
+      expect(await manager.getToken(key)).toStrictEqual(data);
     });
 
     it('should not fetch from the cache if allKeys returns empty array of keys', async () => {
@@ -173,7 +173,7 @@ cacheFactories.forEach(cacheFactory => {
       cache.set(defaultKey.toKey(), defaultData);
 
       expect(
-        await manager.getCompatibleToken(
+        await manager.getToken(
           new CacheKey({ clientId: 'test', audience: 'test', scope: 'test' })
         )
       ).not.toBeDefined();
@@ -191,7 +191,7 @@ cacheFactories.forEach(cacheFactory => {
         // Remove the manifest entry that is created by the manifest
         await cache.remove(manifestKey);
 
-        const result = await manager.getCompatibleToken(defaultKey);
+        const result = await manager.getToken(defaultKey);
 
         expect(result).toStrictEqual(defaultData);
         expect(await cache.get(manifestKey)).toBeTruthy();
@@ -212,7 +212,7 @@ cacheFactories.forEach(cacheFactory => {
         scope: 'read:messages read:actions'
       });
 
-      expect(await manager.getCompatibleToken(key)).toBeFalsy();
+      expect(await manager.getToken(key)).toBeFalsy();
     });
 
     it('returns undefined from the cache when expires_in < expiryAdjustmentSeconds', async () => {
@@ -224,13 +224,15 @@ cacheFactories.forEach(cacheFactory => {
       await manager.set(data);
 
       expect(
-        await manager.getCompatibleToken(
+        await manager.getToken(
           new CacheKey({
             clientId: TEST_CLIENT_ID,
             audience: TEST_AUDIENCE,
             scope: TEST_SCOPES
           }),
-          60
+          {
+            expiryAdjustmentSeconds: 60,
+          }
         )
       ).toBeFalsy();
     });
@@ -239,9 +241,9 @@ cacheFactories.forEach(cacheFactory => {
       const cacheSpy = jest.spyOn(cache, 'remove');
 
       await manager.set(defaultData);
-      expect(await manager.getCompatibleToken(defaultKey)).toStrictEqual(defaultData);
+      expect(await manager.getToken(defaultKey)).toStrictEqual(defaultData);
       cache.remove(defaultKey.toKey());
-      expect(await manager.getCompatibleToken(defaultKey)).toBeFalsy();
+      expect(await manager.getToken(defaultKey)).toBeFalsy();
       expect(cacheSpy).toHaveBeenCalledWith(defaultKey.toKey());
     });
 
@@ -268,13 +270,13 @@ cacheFactories.forEach(cacheFactory => {
         const cacheKey = CacheKey.fromCacheEntry(data);
 
         // Test that the cache state is normal up until just before the expiry time..
-        expect(await manager.getCompatibleToken(cacheKey)).toStrictEqual(data);
+        expect(await manager.getToken(cacheKey)).toStrictEqual(data);
 
         // Advance the time to just past the expiry..
         const dateNowStub = jest.fn(() => now + (dayInSeconds + 60) * 1000);
         global.Date.now = dateNowStub;
 
-        expect(await manager.getCompatibleToken(cacheKey)).toStrictEqual({
+        expect(await manager.getToken(cacheKey)).toStrictEqual({
           refresh_token: TEST_REFRESH_TOKEN
         });
 
@@ -293,9 +295,14 @@ cacheFactories.forEach(cacheFactory => {
       const cacheKey = CacheKey.fromCacheEntry(data);
 
       // Test that the cache state is normal before we expire the data
-      expect(await manager.getCompatibleToken(cacheKey)).toStrictEqual(data);
+      expect(await manager.getToken(cacheKey)).toStrictEqual(data);
 
-      const result = await manager.getCompatibleToken(cacheKey, 60);
+      const result = await manager.getToken(
+        cacheKey,
+        {
+          expiryAdjustmentSeconds: 60,
+        },
+      );
 
       // And test that the cache has been emptied
       expect(result).toBeTruthy();
@@ -317,14 +324,17 @@ cacheFactories.forEach(cacheFactory => {
       const cacheKey = CacheKey.fromCacheEntry(data);
 
       // Test that the cache state is normal before we expire the data
-      expect(await manager.getCompatibleToken(cacheKey)).toStrictEqual(data);
+      expect(await manager.getToken(cacheKey)).toStrictEqual(data);
 
       // Move back in time to ensure the token is valid
       provider.mockResolvedValue(
         now - (expiryAdjustmentSeconds - data.expires_in) * 1000
       );
 
-      const result = await manager.getCompatibleToken(cacheKey, expiryAdjustmentSeconds);
+      const result = await manager.getToken(
+        cacheKey,
+        { expiryAdjustmentSeconds },
+      );
 
       // And test that the cache has been emptied
       expect(result).toBeTruthy();
@@ -352,14 +362,14 @@ cacheFactories.forEach(cacheFactory => {
       const cacheKey = CacheKey.fromCacheEntry(data);
 
       // Test that the cache state is normal before we expire the data
-      expect(await manager.getCompatibleToken(cacheKey)).toStrictEqual(data);
+      expect(await manager.getToken(cacheKey)).toStrictEqual(data);
 
       // Advance the time to just past the expiry..
       const dateNowStub = jest.fn(() => (now + dayInSeconds + 100) * 1000);
 
       global.Date.now = dateNowStub;
 
-      const result = await manager.getCompatibleToken(cacheKey);
+      const result = await manager.getToken(cacheKey);
 
       global.Date.now = realDateNow;
 
@@ -398,12 +408,12 @@ cacheFactories.forEach(cacheFactory => {
       const cacheKey = CacheKey.fromCacheEntry(data);
 
       // Test that the cache state is normal before we expire the data
-      expect(await manager.getCompatibleToken(cacheKey)).toStrictEqual(data);
+      expect(await manager.getToken(cacheKey)).toStrictEqual(data);
 
       // Advance the time to just past the expiry..
       provider.mockResolvedValue((now + dayInSeconds + 100) * 1000);
 
-      const result = await manager.getCompatibleToken(cacheKey);
+      const result = await manager.getToken(cacheKey);
 
       // And test that the cache has been emptied
       expect(result).toBeFalsy();
@@ -440,12 +450,12 @@ cacheFactories.forEach(cacheFactory => {
       const cacheKey = CacheKey.fromCacheEntry(data);
 
       // Test that the cache state is normal before we expire the data
-      expect(await manager.getCompatibleToken(cacheKey)).toStrictEqual(data);
+      expect(await manager.getToken(cacheKey)).toStrictEqual(data);
 
       // Advance the time to just past the expiry..
       provider.mockReturnValue((now + dayInSeconds + 100) * 1000);
 
-      const result = await manager.getCompatibleToken(cacheKey);
+      const result = await manager.getToken(cacheKey);
 
       // And test that the cache has been emptied
       expect(result).toBeFalsy();
@@ -473,13 +483,13 @@ cacheFactories.forEach(cacheFactory => {
       const cacheKey = CacheKey.fromCacheEntry(data);
 
       // Test that the cache state is normal before we expire the data
-      expect(await manager.getCompatibleToken(cacheKey)).toStrictEqual(data);
+      expect(await manager.getToken(cacheKey)).toStrictEqual(data);
 
       // Advance the time to just past the expiry..
       const dateNowStub = jest.fn(() => (now + dayInSeconds + 100) * 1000);
       global.Date.now = dateNowStub;
 
-      const result = await manager.getCompatibleToken(cacheKey);
+      const result = await manager.getToken(cacheKey);
 
       global.Date.now = realDateNow;
 
@@ -511,12 +521,12 @@ cacheFactories.forEach(cacheFactory => {
       const cacheKey = CacheKey.fromCacheEntry(data);
 
       // Test that the cache state is normal before we expire the data
-      expect(await manager.getCompatibleToken(cacheKey)).toStrictEqual(data);
+      expect(await manager.getToken(cacheKey)).toStrictEqual(data);
 
       // Advance the time to just past the expiry..
       provider.mockResolvedValue((now + dayInSeconds + 100) * 1000);
 
-      const result = await manager.getCompatibleToken(cacheKey);
+      const result = await manager.getToken(cacheKey);
 
       // And test that the cache has been emptied
       expect(result).toBeFalsy();
@@ -546,12 +556,12 @@ cacheFactories.forEach(cacheFactory => {
       const cacheKey = CacheKey.fromCacheEntry(data);
 
       // Test that the cache state is normal before we expire the data
-      expect(await manager.getCompatibleToken(cacheKey)).toStrictEqual(data);
+      expect(await manager.getToken(cacheKey)).toStrictEqual(data);
 
       // Advance the time to just past the expiry..
       provider.mockReturnValue((now + dayInSeconds + 100) * 1000);
 
-      const result = await manager.getCompatibleToken(cacheKey);
+      const result = await manager.getToken(cacheKey);
 
       // And test that the cache has been emptied
       expect(result).toBeFalsy();
@@ -573,22 +583,22 @@ cacheFactories.forEach(cacheFactory => {
       await manager.set(entry2);
       await manager.set(entry3);
 
-      expect(await manager.getCompatibleToken(CacheKey.fromCacheEntry(entry1))).toStrictEqual(
+      expect(await manager.getToken(CacheKey.fromCacheEntry(entry1))).toStrictEqual(
         entry1
       );
 
-      expect(await manager.getCompatibleToken(CacheKey.fromCacheEntry(entry2))).toStrictEqual(
+      expect(await manager.getToken(CacheKey.fromCacheEntry(entry2))).toStrictEqual(
         entry2
       );
 
-      expect(await manager.getCompatibleToken(CacheKey.fromCacheEntry(entry3))).toStrictEqual(
+      expect(await manager.getToken(CacheKey.fromCacheEntry(entry3))).toStrictEqual(
         entry3
       );
 
       await manager.clear();
-      expect(await manager.getCompatibleToken(CacheKey.fromCacheEntry(entry1))).toBeFalsy();
-      expect(await manager.getCompatibleToken(CacheKey.fromCacheEntry(entry2))).toBeFalsy();
-      expect(await manager.getCompatibleToken(CacheKey.fromCacheEntry(entry3))).toBeFalsy();
+      expect(await manager.getToken(CacheKey.fromCacheEntry(entry1))).toBeFalsy();
+      expect(await manager.getToken(CacheKey.fromCacheEntry(entry2))).toBeFalsy();
+      expect(await manager.getToken(CacheKey.fromCacheEntry(entry3))).toBeFalsy();
     });
 
     it('clears only the keys relating to a specific client ID from the cache', async () => {
@@ -600,24 +610,24 @@ cacheFactories.forEach(cacheFactory => {
       await manager.set(entry2);
       await manager.set(entry3);
 
-      expect(await manager.getCompatibleToken(CacheKey.fromCacheEntry(entry1))).toStrictEqual(
+      expect(await manager.getToken(CacheKey.fromCacheEntry(entry1))).toStrictEqual(
         entry1
       );
 
-      expect(await manager.getCompatibleToken(CacheKey.fromCacheEntry(entry2))).toStrictEqual(
+      expect(await manager.getToken(CacheKey.fromCacheEntry(entry2))).toStrictEqual(
         entry2
       );
 
-      expect(await manager.getCompatibleToken(CacheKey.fromCacheEntry(entry3))).toStrictEqual(
+      expect(await manager.getToken(CacheKey.fromCacheEntry(entry3))).toStrictEqual(
         entry3
       );
 
       await manager.clear(TEST_CLIENT_ID);
-      expect(await manager.getCompatibleToken(CacheKey.fromCacheEntry(entry1))).toBeFalsy();
-      expect(await manager.getCompatibleToken(CacheKey.fromCacheEntry(entry2))).toBeFalsy();
+      expect(await manager.getToken(CacheKey.fromCacheEntry(entry1))).toBeFalsy();
+      expect(await manager.getToken(CacheKey.fromCacheEntry(entry2))).toBeFalsy();
 
       // Should not be removed as it has a different client ID from the manager instance
-      expect(await manager.getCompatibleToken(CacheKey.fromCacheEntry(entry3))).toStrictEqual(
+      expect(await manager.getToken(CacheKey.fromCacheEntry(entry3))).toStrictEqual(
         entry3
       );
     });
@@ -800,10 +810,10 @@ cacheFactories.forEach(cacheFactory => {
       });
     });
 
-    describe('getCompatibleToken', () => {
+    describe('getToken', () => {
       describe('when there is nothing in the cache', () => {
         it('returns undefined', async () => {
-          const result = await manager.getCompatibleToken(defaultKey);
+          const result = await manager.getToken(defaultKey);
 
           expect(result).toBeFalsy();
         });
@@ -811,7 +821,7 @@ cacheFactories.forEach(cacheFactory => {
 
       describe('when some entry match with exact audience, organization and scopes and is active', () => {
         it('returns entry', async () => {
-          jest.spyOn(manager, 'getActiveTokenMatchingAudienceScopeOrganization');
+          jest.spyOn(manager, 'getActiveToken');
 
           const data = {
             ...defaultData,
@@ -829,18 +839,18 @@ cacheFactories.forEach(cacheFactory => {
             scope: TEST_SCOPES
           });
 
-          const res = await manager.getCompatibleToken(key);
+          const res = await manager.getToken(key);
 
           expect(res).toStrictEqual(data);
-          expect(manager.getActiveTokenMatchingAudienceScopeOrganization).toHaveBeenCalledTimes(1);
+          expect(manager.getActiveToken).toHaveBeenCalledTimes(1);
         });
       });
 
       describe('when some entry match with exact audience, organization and scopes and is not active', () => {
         it('returns entry', async () => {
-          jest.spyOn(manager, 'getActiveTokenMatchingAudienceScopeOrganization');
-          jest.spyOn(manager, 'getInactiveTokenMatchingAudienceScopeOrganization');
-          jest.spyOn(manager, 'updateCacheAndGetRefreshToken');
+          jest.spyOn(manager, 'getActiveToken');
+          jest.spyOn(manager, 'getInactiveToken');
+          jest.spyOn(manager, 'getRefreshToken');
           jest.spyOn(CacheManagerUtils, 'isTokenExpired').mockResolvedValue(true);
 
           const data = {
@@ -860,22 +870,22 @@ cacheFactories.forEach(cacheFactory => {
             scope: TEST_SCOPES
           });
 
-          const res = await manager.getCompatibleToken(key);
+          const res = await manager.getToken(key);
 
           const expectedResult = { refresh_token: TEST_REFRESH_TOKEN };
 
           expect(res).toStrictEqual(expectedResult);
-          expect(manager.getActiveTokenMatchingAudienceScopeOrganization).toHaveBeenCalledTimes(1);
-          expect(manager.getInactiveTokenMatchingAudienceScopeOrganization).toHaveBeenCalledTimes(1);
-          expect(manager.updateCacheAndGetRefreshToken).toHaveBeenCalledTimes(1);
+          expect(manager.getActiveToken).toHaveBeenCalledTimes(1);
+          expect(manager.getInactiveToken).toHaveBeenCalledTimes(1);
+          expect(manager.getRefreshToken).toHaveBeenCalledTimes(1);
         });
       });
 
       describe('when some entry match with exact audience, organization and has compatible scopes', () => {
         it('returns entry', async () => {
-          jest.spyOn(manager, 'getActiveTokenMatchingAudienceScopeOrganization');
-          jest.spyOn(manager, 'getInactiveTokenMatchingAudienceScopeOrganization');
-          jest.spyOn(manager, 'getTokenWithRefreshTokenMatchingAudienceOrganization');
+          jest.spyOn(manager, 'getActiveToken');
+          jest.spyOn(manager, 'getInactiveToken');
+          jest.spyOn(manager, 'getSiblingToken');
 
           const data = {
             ...defaultData,
@@ -894,21 +904,20 @@ cacheFactories.forEach(cacheFactory => {
             scope: 'read:user'
           });
 
-          const res = await manager.getCompatibleToken(key);
+          const res = await manager.getToken(key);
 
           expect(res).toStrictEqual(data);
-          expect(manager.getActiveTokenMatchingAudienceScopeOrganization).toHaveBeenCalledTimes(1);
-          expect(manager.getInactiveTokenMatchingAudienceScopeOrganization).toHaveBeenCalledTimes(1);
-          expect(manager.getTokenWithRefreshTokenMatchingAudienceOrganization).toHaveBeenCalledTimes(1);
+          expect(manager.getActiveToken).toHaveBeenCalledTimes(1);
+          expect(manager.getInactiveToken).toHaveBeenCalledTimes(1);
         });
       });
 
       describe('when some entry match with the same organization', () => {
         it('returns entry', async () => {
-          jest.spyOn(manager, 'getActiveTokenMatchingAudienceScopeOrganization');
-          jest.spyOn(manager, 'getInactiveTokenMatchingAudienceScopeOrganization');
-          jest.spyOn(manager, 'getTokenWithRefreshTokenMatchingAudienceOrganization');
-          jest.spyOn(manager, 'getTokenWithRefreshTokenMatchingOrganization');
+          jest.spyOn(manager, 'getActiveToken');
+          jest.spyOn(manager, 'getInactiveToken');
+          jest.spyOn(manager, 'getSiblingToken');
+          jest.spyOn(manager, 'getMRRTToken');
 
           const data = {
             ...defaultData,
@@ -927,25 +936,25 @@ cacheFactories.forEach(cacheFactory => {
             scope: 'read:book',
           });
 
-          const res = await manager.getCompatibleToken(key);
+          const res = await manager.getToken(key);
 
           expect(res).toMatchObject({
             refresh_token: data.refresh_token,
             audience: key.audience,
             scope: key.scope,
           });
-          expect(manager.getActiveTokenMatchingAudienceScopeOrganization).toHaveBeenCalledTimes(1);
-          expect(manager.getInactiveTokenMatchingAudienceScopeOrganization).toHaveBeenCalledTimes(1);
-          expect(manager.getTokenWithRefreshTokenMatchingAudienceOrganization).toHaveBeenCalledTimes(1);
-          expect(manager.getTokenWithRefreshTokenMatchingOrganization).toHaveBeenCalledTimes(1);
+          expect(manager.getActiveToken).toHaveBeenCalledTimes(1);
+          expect(manager.getInactiveToken).toHaveBeenCalledTimes(1);
+          expect(manager.getSiblingToken).toHaveBeenCalledTimes(1);
+          expect(manager.getMRRTToken).toHaveBeenCalledTimes(1);
         });
       });
     });
 
-    describe('updateCacheAndGetRefreshToken', () => {
+    describe('getRefreshToken', () => {
       describe('when entry does not have refresh_token', () => {
         it('returns undefined and removes entry from memory', async () => {
-          jest.spyOn(manager, 'removeEntryFromCache');
+          jest.spyOn(manager, 'onNoRefreshableToken');
 
           const key = new CacheKey({
             clientId: TEST_CLIENT_ID,
@@ -964,10 +973,10 @@ cacheFactories.forEach(cacheFactory => {
             expiresAt: 0,
           };
 
-          const res = await manager.updateCacheAndGetRefreshToken(entry, key);
+          const res = await manager.getRefreshToken(entry, key);
 
           expect(res).toBeFalsy();
-          expect(manager.removeEntryFromCache).toHaveBeenCalledTimes(1);
+          expect(manager.onNoRefreshableToken).toHaveBeenCalledTimes(1);
         });
       });
 
@@ -995,7 +1004,7 @@ cacheFactories.forEach(cacheFactory => {
 
           const expectedResult = { refresh_token: TEST_REFRESH_TOKEN };
 
-          const res = await manager.updateCacheAndGetRefreshToken(entry, key);
+          const res = await manager.getRefreshToken(entry, key);
 
           expect(res?.body).toEqual(expectedResult);
           expect(cache.set).toHaveBeenCalledTimes(1);
@@ -1003,7 +1012,7 @@ cacheFactories.forEach(cacheFactory => {
       });
     });
 
-    describe('removeEntryFromCache', () => {
+    describe('onNoRefreshableToken', () => {
       it('removes entry and key from cache', async () => {
         jest.spyOn(cache, 'remove');
 
@@ -1014,13 +1023,13 @@ cacheFactories.forEach(cacheFactory => {
           scope: 'read:user'
         });
 
-        await manager.removeEntryFromCache(key);
+        await manager.onNoRefreshableToken(key);
 
         expect(cache.remove).toHaveBeenCalledTimes(1);
       });
     });
 
-    describe('getActiveTokenMatchingAudienceScopeOrganization', () => {
+    describe('getActiveToken', () => {
       describe('when entry is not found', () => {
         it('returns undefined', async () => {
           const key = new CacheKey({
@@ -1030,8 +1039,9 @@ cacheFactories.forEach(cacheFactory => {
             scope: 'read:user'
           });
 
-          const res = await manager.getActiveTokenMatchingAudienceScopeOrganization(
+          const res = await manager.getActiveToken(
             key,
+            0,
           );
 
           expect(res).toBeFalsy();
@@ -1058,8 +1068,9 @@ cacheFactories.forEach(cacheFactory => {
             scope: 'read:user'
           });
 
-          const res = await manager.getActiveTokenMatchingAudienceScopeOrganization(
+          const res = await manager.getActiveToken(
             key,
+            0,
           );
 
           expect(res).toBeFalsy();
@@ -1086,8 +1097,9 @@ cacheFactories.forEach(cacheFactory => {
             scope: 'read:user'
           });
 
-          const res = await manager.getActiveTokenMatchingAudienceScopeOrganization(
+          const res = await manager.getActiveToken(
             key,
+            0,
           );
 
           expect(res?.body).toEqual(data);
@@ -1095,7 +1107,7 @@ cacheFactories.forEach(cacheFactory => {
       });
     });
 
-    describe('getInactiveTokenMatchingAudienceScopeOrganization', () => {
+    describe('getInactiveToken', () => {
       describe('when entry is not found', () => {
         it('returns undefined', async () => {
           const key = new CacheKey({
@@ -1104,17 +1116,18 @@ cacheFactories.forEach(cacheFactory => {
             scope: 'read:user'
           });
 
-          const res = await manager.getInactiveTokenMatchingAudienceScopeOrganization(
+          const res = await manager.getInactiveToken(
             key,
+            0,
           );
 
           expect(res).toBeFalsy();
         });
       });
       describe('when entry is found and is expired', () => {
-        it('calls updateCacheAndGetRefreshToken', async () => {
+        it('calls getRefreshToken', async () => {
           jest.spyOn(CacheManagerUtils, 'isTokenExpired').mockResolvedValue(true);
-          jest.spyOn(manager, 'updateCacheAndGetRefreshToken');
+          jest.spyOn(manager, 'getRefreshToken');
 
           const data = {
             ...defaultData,
@@ -1132,11 +1145,12 @@ cacheFactories.forEach(cacheFactory => {
             scope: 'read:user update:user'
           });
 
-          await manager.getInactiveTokenMatchingAudienceScopeOrganization(
+          await manager.getInactiveToken(
             key,
+            0,
           );
 
-          expect(manager.updateCacheAndGetRefreshToken).toBeCalledTimes(1);
+          expect(manager.getRefreshToken).toBeCalledTimes(1);
         });
       });
       describe('when entry is found and is not expired', () => {
@@ -1160,8 +1174,9 @@ cacheFactories.forEach(cacheFactory => {
             scope: 'read:user update:user'
           });
 
-          const res = await manager.getInactiveTokenMatchingAudienceScopeOrganization(
+          const res = await manager.getInactiveToken(
             key,
+            0,
           );
 
           expect(res?.body).toEqual(data);
@@ -1169,13 +1184,10 @@ cacheFactories.forEach(cacheFactory => {
       });
     });
 
-    describe('getTokenWithRefreshTokenMatchingAudienceOrganization', () => {
+    describe('getSiblingToken', () => {
       describe('when key is not found', () => {
         it('returns undefined', async () => {
-          jest.spyOn(CacheManagerUtils, 'hasDefaultParameters').mockReturnValue(true);
-          jest.spyOn(CacheManagerUtils, 'hasMatchingAudience').mockReturnValue(false);
-          jest.spyOn(CacheManagerUtils, 'hasMatchingOrganization').mockReturnValue(false);
-          jest.spyOn(CacheManagerUtils, 'hasCompatibleScopes').mockReturnValue(false);
+          jest.spyOn(CacheManagerUtils, 'findKey').mockReturnValue(undefined);
 
           const data = {
             ...defaultData,
@@ -1193,7 +1205,7 @@ cacheFactories.forEach(cacheFactory => {
             scope: 'read:user update:user'
           });
 
-          const res = await manager.getTokenWithRefreshTokenMatchingAudienceOrganization(
+          const res = await manager.getSiblingToken(
             key,
             [],
             0,
@@ -1205,19 +1217,9 @@ cacheFactories.forEach(cacheFactory => {
 
       describe('when key is found but the entry does not exist', () => {
         it('returns undefined', async () => {
-          jest.spyOn(CacheManagerUtils, 'hasDefaultParameters').mockReturnValue(true);
-          jest.spyOn(CacheManagerUtils, 'hasMatchingAudience').mockReturnValue(true);
-          jest.spyOn(CacheManagerUtils, 'hasMatchingOrganization').mockReturnValue(true);
-          jest.spyOn(CacheManagerUtils, 'hasCompatibleScopes').mockReturnValue(true);
+          const foundKey = '@@auth0spajs@@::auth0_client_id::my_audience::read:user update:user';
 
-          // const data = {
-          //   ...defaultData,
-          //   scope: 'read:user update:user',
-          //   audience: TEST_AUDIENCE,
-          //   organization: 'organizationA',
-          // };
-
-          // await manager.set(data);
+          jest.spyOn(CacheManagerUtils, 'findKey').mockReturnValue(foundKey);
 
           const key = new CacheKey({
             clientId: TEST_CLIENT_ID,
@@ -1226,9 +1228,9 @@ cacheFactories.forEach(cacheFactory => {
             scope: 'read:user update:user'
           });
 
-          const res = await manager.getTokenWithRefreshTokenMatchingAudienceOrganization(
+          const res = await manager.getSiblingToken(
             key,
-            ['@@auth0spajs@@::auth0_client_id::my_audience::read:user update:user'],
+            [foundKey],
             0,
           );
 
@@ -1237,13 +1239,12 @@ cacheFactories.forEach(cacheFactory => {
       });
 
       describe('when key and entry are found and is expired', () => {
-        it('calls updateCacheAndGetRefreshToken', async () => {
-          jest.spyOn(CacheManagerUtils, 'hasDefaultParameters').mockReturnValue(true);
-          jest.spyOn(CacheManagerUtils, 'hasMatchingAudience').mockReturnValue(true);
-          jest.spyOn(CacheManagerUtils, 'hasMatchingOrganization').mockReturnValue(true);
-          jest.spyOn(CacheManagerUtils, 'hasCompatibleScopes').mockReturnValue(true);
+        it('calls getRefreshToken', async () => {
+          const foundKey = '@@auth0spajs@@::auth0_client_id::my_audience::read:user update:user';
+
+          jest.spyOn(CacheManagerUtils, 'findKey').mockReturnValue(foundKey);
           jest.spyOn(CacheManagerUtils, 'isTokenExpired').mockResolvedValue(true);
-          jest.spyOn(manager, 'updateCacheAndGetRefreshToken');
+          jest.spyOn(manager, 'getRefreshToken');
 
           const data = {
             ...defaultData,
@@ -1262,24 +1263,23 @@ cacheFactories.forEach(cacheFactory => {
             scope: 'read:user update:user'
           });
 
-          await manager.getTokenWithRefreshTokenMatchingAudienceOrganization(
+          await manager.getSiblingToken(
             key,
-            ['@@auth0spajs@@::auth0_client_id::my_audience::read:user update:user'],
+            [foundKey],
             0,
           );
 
-          expect(manager.updateCacheAndGetRefreshToken).toHaveBeenCalledTimes(1);
+          expect(manager.getRefreshToken).toHaveBeenCalledTimes(1);
         });
       });
 
       describe('when key and entry are found and not expired', () => {
         it('returns entry', async () => {
-          jest.spyOn(CacheManagerUtils, 'hasDefaultParameters').mockReturnValue(true);
-          jest.spyOn(CacheManagerUtils, 'hasMatchingAudience').mockReturnValue(true);
-          jest.spyOn(CacheManagerUtils, 'hasMatchingOrganization').mockReturnValue(true);
-          jest.spyOn(CacheManagerUtils, 'hasCompatibleScopes').mockReturnValue(true);
+          const foundKey = '@@auth0spajs@@::auth0_client_id::my_audience::read:user update:user';
+
+          jest.spyOn(CacheManagerUtils, 'findKey').mockReturnValue(foundKey);
           jest.spyOn(CacheManagerUtils, 'isTokenExpired').mockResolvedValue(false);
-          jest.spyOn(manager, 'updateCacheAndGetRefreshToken');
+          jest.spyOn(manager, 'getRefreshToken');
 
           const data = {
             ...defaultData,
@@ -1298,9 +1298,9 @@ cacheFactories.forEach(cacheFactory => {
             scope: 'read:user update:user'
           });
 
-          const res = await manager.getTokenWithRefreshTokenMatchingAudienceOrganization(
+          const res = await manager.getSiblingToken(
             key,
-            ['@@auth0spajs@@::auth0_client_id::my_audience::read:user update:user'],
+            [foundKey],
             0,
           );
 
@@ -1309,7 +1309,7 @@ cacheFactories.forEach(cacheFactory => {
       });
     });
 
-    describe('getTokenWithRefreshTokenMatchingOrganization', () => {
+    describe('getMRRTToken', () => {
       describe('when key is not found', () => {
         it('returns undefined', async () => {
           jest.spyOn(CacheManagerUtils, 'hasDefaultParameters').mockReturnValue(false);
@@ -1322,7 +1322,7 @@ cacheFactories.forEach(cacheFactory => {
             scope: 'read:user update:user'
           });
 
-          const res = await manager.getTokenWithRefreshTokenMatchingOrganization(
+          const res = await manager.getMRRTToken(
             key,
             ['@@auth0spajs@@::auth0_client_id::my_audience::read:user update:user'],
           );
@@ -1342,7 +1342,7 @@ cacheFactories.forEach(cacheFactory => {
             scope: 'read:user update:user'
           });
 
-          const res = await manager.getTokenWithRefreshTokenMatchingOrganization(
+          const res = await manager.getMRRTToken(
             key,
             ['@@auth0spajs@@::auth0_client_id::my_audience::read:user update:user'],
           );
@@ -1371,7 +1371,7 @@ cacheFactories.forEach(cacheFactory => {
 
           await manager.set(data);
 
-          const res = await manager.getTokenWithRefreshTokenMatchingOrganization(
+          const res = await manager.getMRRTToken(
             key,
             ['@@auth0spajs@@::auth0_client_id::my_audience::read:user update:user'],
           );
@@ -1401,7 +1401,7 @@ cacheFactories.forEach(cacheFactory => {
             scope: 'read:books update:books'
           });
 
-          const res = await manager.getTokenWithRefreshTokenMatchingOrganization(
+          const res = await manager.getMRRTToken(
             key,
             ['@@auth0spajs@@::auth0_client_id::my_audience::read:user update:user'],
           );
