@@ -11,11 +11,14 @@ export async function oauthToken(
     scope,
     auth0Client,
     useFormData,
+    useMRRT,
     ...options
   }: TokenEndpointOptions,
   worker?: Worker
 ) {
-  const newOptions = options.grant_type === 'refresh_token' ? { ...options, audience, scope } : options;
+
+  // When doing a refresh with MRRT enabled, we need to send to the server both audience and scopes inside the body
+  const newOptions = options.grant_type === 'refresh_token' && useMRRT ? { ...options, audience, scope } : options;
 
   const body = useFormData
     ? createQueryParams(newOptions)

@@ -72,8 +72,10 @@ export class CacheManager {
     cacheKey: CacheKey,
     options: {
       expiryAdjustmentSeconds: number,
+      useMRRT: boolean | undefined
     } = {
         expiryAdjustmentSeconds: DEFAULT_EXPIRY_ADJUSTMENT_SECONDS,
+        useMRRT: false
       },
   ): Promise<Partial<CacheEntry> | undefined> {
     const activeToken = await this.getActiveToken(
@@ -108,13 +110,15 @@ export class CacheManager {
       return siblingToken.body;
     }
 
-    const MRRTToken = await this.getMRRTToken(
-      cacheKey,
-      keys,
-    );
+    if (options.useMRRT) {
+      const MRRTToken = await this.getMRRTToken(
+        cacheKey,
+        keys,
+      );
 
-    if (MRRTToken) {
-      return MRRTToken.body;
+      if (MRRTToken) {
+        return MRRTToken.body;
+      }
     }
 
     return;

@@ -232,6 +232,7 @@ cacheFactories.forEach(cacheFactory => {
           }),
           {
             expiryAdjustmentSeconds: 60,
+            useMRRT: false,
           }
         )
       ).toBeFalsy();
@@ -301,6 +302,7 @@ cacheFactories.forEach(cacheFactory => {
         cacheKey,
         {
           expiryAdjustmentSeconds: 60,
+          useMRRT: false,
         },
       );
 
@@ -333,7 +335,7 @@ cacheFactories.forEach(cacheFactory => {
 
       const result = await manager.getToken(
         cacheKey,
-        { expiryAdjustmentSeconds },
+        { expiryAdjustmentSeconds, useMRRT: false, },
       );
 
       // And test that the cache has been emptied
@@ -936,7 +938,10 @@ cacheFactories.forEach(cacheFactory => {
             scope: 'read:book',
           });
 
-          const res = await manager.getToken(key);
+          const res = await manager.getToken(
+            key,
+            { expiryAdjustmentSeconds: 0, useMRRT: true },
+          );
 
           expect(res).toMatchObject({
             refresh_token: data.refresh_token,
