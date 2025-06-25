@@ -102,7 +102,7 @@ type GetTokenSilentlyResult = TokenEndpointResponse & {
   scope: string;
   oauthTokenScope?: string;
   audience: string;
-  organization: string;
+  organization?: string;
 };
 
 /**
@@ -311,8 +311,8 @@ export class Auth0Client {
       nonce,
       code_challenge,
       authorizationParams.redirect_uri ||
-        this.options.authorizationParams.redirect_uri ||
-        fallbackRedirectUri,
+      this.options.authorizationParams.redirect_uri ||
+      fallbackRedirectUri,
       authorizeOptions?.response_mode
     );
 
@@ -933,7 +933,7 @@ export class Auth0Client {
         scope: scope,
         oauthTokenScope: tokenResult.scope,
         audience: audience,
-        organization: params.organization || '<no_org>',
+        organization: params.organization,
       };
     } catch (e) {
       if (e.error === 'login_required') {
@@ -1044,11 +1044,11 @@ export class Auth0Client {
     let orgHint;
 
     if (typeof document !== 'undefined') {
-      orgHint = this.cookieStorage.get(
+      orgHint = this.cookieStorage.get<string>(
         this.orgHintCookieName
-      ) as string;
+      );
     }
-  
+
     const organization = this.options.authorizationParams.organization || orgHint || '<no_org>';
     const cache = await this.cacheManager.getIdToken(
       new CacheKey({
