@@ -4,12 +4,14 @@ import {
 } from './constants';
 
 import { sendMessage } from './worker/worker.utils';
-import { FetchOptions } from './global';
+import { FetchOptions, FetchResponse } from './global';
 import {
   GenericError,
   MfaRequiredError,
-  MissingRefreshTokenError
+  MissingRefreshTokenError,
+  UseDpopNonceError
 } from './errors';
+import { Dpop } from './dpop/dpop';
 
 export const createAbortController = () => new AbortController();
 
@@ -18,7 +20,13 @@ const dofetch = async (fetchUrl: string, fetchOptions: FetchOptions) => {
 
   return {
     ok: response.ok,
-    json: await response.json()
+    json: await response.json(),
+
+    /**
+     * This is not needed, but do it anyway so the types are the same
+     * as if we were using a web worker (which *does* need this).
+     */
+    headers: Object.fromEntries(response.headers)
   };
 };
 
@@ -102,10 +110,21 @@ export async function getJSON<T>(
   scope: string,
   options: FetchOptions,
   worker?: Worker,
-  useFormData?: boolean
+  useFormData?: boolean,
+  dpop?: Pick<Dpop, 'generateProof' | 'setNonce'>,
+  isDpopRetry?: boolean
 ): Promise<T> {
+  if (dpop) {
+    const dpopProof = await dpop.generateProof({
+      url,
+      method: options.method || 'GET'
+    });
+
+    options.headers = { ...options.headers, dpop: dpopProof };
+  }
+
   let fetchError: null | Error = null;
-  let response: any;
+  let response!: FetchResponse;
 
   for (let i = 0; i < DEFAULT_SILENT_TOKEN_RETRY_COUNT; i++) {
     try {
@@ -135,8 +154,16 @@ export async function getJSON<T>(
 
   const {
     json: { error, error_description, ...data },
+    headers,
     ok
   } = response;
+
+  // a new DPoP nonce can appear in both error and success responses!
+  const newDpopNonce = headers['dpop-nonce'];
+
+  if (dpop && newDpopNonce) {
+    dpop.setNonce(newDpopNonce);
+  }
 
   if (!ok) {
     const errorMessage =
@@ -148,6 +175,34 @@ export async function getJSON<T>(
 
     if (error === 'missing_refresh_token') {
       throw new MissingRefreshTokenError(audience, scope);
+    }
+
+    /**
+     * When DPoP is used and we get a `use_dpop_nonce` error from the server,
+     * we must retry ONCE with any new nonce received in the rejected request.
+     *
+     * If a new nonce was not received or the retry fails again, we give up and
+     * throw the error as is.
+     */
+    if (error === 'use_dpop_nonce') {
+      if (!dpop || !newDpopNonce) {
+        throw new UseDpopNonceError(newDpopNonce);
+      }
+
+      if (!isDpopRetry) {
+        // repeat the call but with isDpopRetry=true to avoid any more retries
+        return getJSON(
+          url,
+          timeout,
+          audience,
+          scope,
+          options,
+          worker,
+          useFormData,
+          dpop,
+          true // !
+        );
+      }
     }
 
     throw new GenericError(error || 'request_error', errorMessage);

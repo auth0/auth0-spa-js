@@ -93,6 +93,7 @@ import {
   patchOpenUrlWithOnRedirect
 } from './Auth0Client.utils';
 import { CustomTokenExchangeOptions } from './TokenExchange';
+import { Dpop } from './dpop/dpop';
 
 /**
  * @ignore
@@ -119,6 +120,7 @@ export class Auth0Client {
   private readonly tokenIssuer: string;
   private readonly scope: string;
   private readonly cookieStorage: ClientStorage;
+  private readonly dpop: Dpop | undefined;
   private readonly sessionCheckExpiryDays: number;
   private readonly orgHintCookieName: string;
   private readonly isAuthenticatedCookieName: string;
@@ -222,6 +224,10 @@ export class Auth0Client {
       this.nowProvider
     );
 
+    this.dpop = this.options.useDpop
+      ? new Dpop(this.options.clientId)
+      : undefined;
+
     this.domainUrl = getDomain(this.options.domain);
     this.tokenIssuer = getTokenIssuer(this.options.issuer, this.domainUrl);
 
@@ -301,6 +307,7 @@ export class Auth0Client {
     const code_verifier = createRandomString();
     const code_challengeBuffer = await sha256(code_verifier);
     const code_challenge = bufferToBase64UrlEncoded(code_challengeBuffer);
+    const thumbprint = await this.dpop?.calculateThumbprint();
 
     const params = getAuthorizeParams(
       this.options,
@@ -312,7 +319,8 @@ export class Auth0Client {
       authorizationParams.redirect_uri ||
         this.options.authorizationParams.redirect_uri ||
         fallbackRedirectUri,
-      authorizeOptions?.response_mode
+      authorizeOptions?.response_mode,
+      thumbprint
     );
 
     const url = this._authorizeUrl(params);
@@ -848,6 +856,8 @@ export class Auth0Client {
     });
     this.userCache.remove(CACHE_KEY_ID_TOKEN_SUFFIX);
 
+    await this.dpop?.clear();
+
     const url = this._buildLogoutUrl(logoutOptions);
 
     if (openUrl) {
@@ -1120,6 +1130,7 @@ export class Auth0Client {
         auth0Client: this.options.auth0Client,
         useFormData: this.options.useFormData,
         timeout: this.httpTimeoutMs,
+        dpop: this.dpop,
         ...options
       },
       this.worker

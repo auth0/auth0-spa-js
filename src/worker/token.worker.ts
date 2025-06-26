@@ -19,7 +19,7 @@ const deleteRefreshToken = (audience: string, scope: string) =>
   delete refreshTokens[cacheKey(audience, scope)];
 
 const wait = (time: number) =>
-  new Promise(resolve => setTimeout(resolve, time));
+  new Promise<void>(resolve => setTimeout(resolve, time));
 
 const formDataToObject = (formData: string): Record<string, any> => {
   const queryParams = new URLSearchParams(formData);
@@ -72,7 +72,7 @@ const messageHandler = async ({
       fetchOptions.signal = abortController.signal;
     }
 
-    let response: any;
+    let response: void | Response;
 
     try {
       response = await Promise.race([
@@ -110,7 +110,13 @@ const messageHandler = async ({
 
     port.postMessage({
       ok: response.ok,
-      json
+      json,
+
+      /**
+       * Serializing a Fetch API Headers interface inside a cross-origin
+       * message is not supported, so convert it to a plain object.
+       */
+      headers: Object.fromEntries(response.headers)
     });
   } catch (error) {
     port.postMessage({

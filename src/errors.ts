@@ -96,6 +96,14 @@ export class MissingRefreshTokenError extends GenericError {
   }
 }
 
+export class UseDpopNonceError extends GenericError {
+  constructor(public newDpopNonce: string | undefined) {
+    super('use_dpop_nonce', 'Server rejected DPoP proof: wrong nonce');
+
+    Object.setPrototypeOf(this, UseDpopNonceError.prototype);
+  }
+}
+
 /**
  * Returns an empty string when value is falsy, or when it's value is included in the exclude argument.
  * @param value The value to check
