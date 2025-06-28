@@ -16,8 +16,8 @@ export async function oauthToken(
   worker?: Worker
 ) {
   const body = useFormData
-    ? createQueryParams(options)
-    : JSON.stringify(options);
+    ? createQueryParams({ ...options, audience, scope })
+    : JSON.stringify({ ...options, audience, scope });
 
   return await getJSON<TokenEndpointResponse>(
     `${baseUrl}/oauth/token`,
