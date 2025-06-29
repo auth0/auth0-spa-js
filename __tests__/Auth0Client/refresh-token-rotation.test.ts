@@ -29,7 +29,6 @@ jest
   .spyOn(utils, 'bufferToBase64UrlEncoded')
   .mockReturnValue(TEST_CODE_CHALLENGE);
 
-const assertPost = assertPostFn(mockFetch);
 const setup = setupFn(mockVerify);
 
 describe('Auth0Client - Refresh Token Rotation', () => {
