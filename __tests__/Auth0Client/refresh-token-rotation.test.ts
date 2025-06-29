@@ -6,7 +6,7 @@ import { expect } from '@jest/globals';
 // @ts-ignore
 import { acquireLockSpy } from 'browser-tabs-lock';
 
-import { assertPostFn, setupFn } from './helpers';
+import { setupFn } from './helpers';
 
 import {
   TEST_ACCESS_TOKEN,
