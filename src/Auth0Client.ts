@@ -93,16 +93,10 @@ import {
   patchOpenUrlWithOnRedirect
 } from './Auth0Client.utils';
 import { CustomTokenExchangeOptions } from './TokenExchange';
-
-/**
- * @ignore
- */
-type GetTokenSilentlyResult = TokenEndpointResponse & {
-  decodedToken: ReturnType<typeof verifyIdToken>;
-  scope: string;
-  oauthTokenScope?: string;
-  audience: string;
-};
+import {
+  RefreshTokenRotationManager,
+  GetTokenSilentlyResult
+} from './rotation-manager';
 
 /**
  * @ignore
@@ -128,6 +122,7 @@ export class Auth0Client {
     authorizationParams: AuthorizationParams;
   };
   private readonly userCache: ICache = new InMemoryCache().enclosedCache;
+  private readonly rotationManager: RefreshTokenRotationManager;
 
   private worker?: Worker;
 
@@ -182,11 +177,11 @@ export class Auth0Client {
         : CookieStorageWithLegacySameSite;
 
     this.orgHintCookieName = buildOrganizationHintCookieName(
-      this.options.clientId
+      this.options.clientId!
     );
 
     this.isAuthenticatedCookieName = buildIsAuthenticatedCookieName(
-      this.options.clientId
+      this.options.clientId!
     );
 
     this.sessionCheckExpiryDays =
@@ -238,6 +233,12 @@ export class Auth0Client {
         this.worker = new TokenWorker();
       }
     }
+
+    this.rotationManager = new RefreshTokenRotationManager(
+      this.cacheManager,
+      this.options,
+      this._requestToken.bind(this)
+    );
   }
 
   private _url(path: string) {
@@ -719,6 +720,46 @@ export class Auth0Client {
         const { id_token, access_token, oauthTokenScope, expires_in } =
           authResult;
 
+        // For refresh token flows, ensure new refresh tokens are saved to cache
+        // This is critical for refresh token rotation scenarios
+        if (
+          this.options.useRefreshTokens &&
+          authResult.refresh_token &&
+          id_token &&
+          authResult.decodedToken
+        ) {
+          const existingEntry = await this.cacheManager.get(
+            new CacheKey({
+              scope: getTokenOptions.authorizationParams.scope,
+              audience:
+                getTokenOptions.authorizationParams.audience || 'default',
+              clientId: this.options.clientId
+            })
+          );
+
+          // Only update the cache if the refresh token is different (indicating rotation)
+          if (
+            !existingEntry ||
+            existingEntry.refresh_token !== authResult.refresh_token
+          ) {
+            const cacheEntry = {
+              id_token,
+              access_token,
+              expires_in,
+              decodedToken: authResult.decodedToken,
+              scope: getTokenOptions.authorizationParams.scope,
+              audience: authResult.audience,
+              client_id: this.options.clientId,
+              refresh_token: authResult.refresh_token,
+              ...(authResult.scope
+                ? { oauthTokenScope: authResult.scope }
+                : null)
+            };
+
+            await this._saveEntryInCache(cacheEntry);
+          }
+        }
+
         return {
           id_token,
           access_token,
@@ -943,13 +984,25 @@ export class Auth0Client {
       authorizationParams: AuthorizationParams & { scope: string };
     }
   ): Promise<GetTokenSilentlyResult> {
-    const cache = await this.cacheManager.get(
+    let cache = await this.cacheManager.get(
       new CacheKey({
         scope: options.authorizationParams.scope,
         audience: options.authorizationParams.audience || 'default',
         clientId: this.options.clientId
       })
     );
+
+    // If no exact scope match found, try to find any valid refresh token for this client/audience
+    if (
+      (!cache || !cache.refresh_token) &&
+      this.options.cacheLocation === 'localstorage' &&
+      this.options.clientId
+    ) {
+      cache = await this.rotationManager.cacheIndex.findAnyValidRefreshToken(
+        this.options.clientId,
+        options.authorizationParams.audience || 'default'
+      );
+    }
 
     // If you don't have a refresh token in memory
     // and you don't have a refresh token in web worker memory
@@ -1003,6 +1056,23 @@ export class Auth0Client {
         this.options.useRefreshTokensFallback
       ) {
         return await this._getTokenFromIFrame(options);
+      }
+
+      // If we get an invalid_grant error and we're not using web worker,
+      // try to detect refresh token rotation and find an alternative valid refresh token
+      if (
+        !this.worker &&
+        e.message &&
+        e.message.indexOf(INVALID_REFRESH_TOKEN_ERROR_MESSAGE) > -1
+      ) {
+        const alternativeResult = await this.rotationManager.detectRotation(
+          options,
+          cache && cache.refresh_token
+        );
+
+        if (alternativeResult) {
+          return alternativeResult;
+        }
       }
 
       throw e;
@@ -1170,7 +1240,7 @@ export class Auth0Client {
    * - `subject_token`: The external token provided via the options.
    * - `subject_token_type`: The type of the external token (validated by this function).
    * - `scope`: A unique set of scopes, generated by merging the scopes supplied in the options
-   *            with the SDK’s default scopes.
+   *            with the SDK's default scopes.
    * - `audience`: The target audience, as determined by the SDK's authorization configuration.
    *
    * **Example Usage:**
