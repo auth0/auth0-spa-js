@@ -8,12 +8,7 @@ import { acquireLockSpy } from 'browser-tabs-lock';
 
 import { setupFn, fetchResponse, loginWithRedirectFn } from './helpers';
 
-import {
-  TEST_ACCESS_TOKEN,
-  TEST_CLIENT_ID,
-  TEST_CODE_CHALLENGE,
-  TEST_ID_TOKEN
-} from '../constants';
+import { TEST_ACCESS_TOKEN, TEST_CODE_CHALLENGE } from '../constants';
 
 import { INVALID_REFRESH_TOKEN_ERROR_MESSAGE } from '../../src/constants';
 
@@ -96,13 +91,6 @@ describe('Auth0Client - Refresh Token Rotation', () => {
       // Verify that the rotation manager exists and has required methods
       expect(auth0['rotationManager']).toBeDefined();
       expect(typeof auth0['rotationManager'].detectRotation).toBe('function');
-      expect(typeof auth0['rotationManager'].cleanupInvalidated).toBe(
-        'function'
-      );
-      expect(auth0['rotationManager'].cacheIndex).toBeDefined();
-      expect(
-        typeof auth0['rotationManager'].cacheIndex.findAnyValidRefreshToken
-      ).toBe('function');
     });
 
     it('should not apply rotation detection for memory cache', async () => {
@@ -173,9 +161,9 @@ describe('Auth0Client - Refresh Token Rotation', () => {
         
         FIX IMPLEMENTED:
         - Enhanced _getTokenUsingRefreshToken() to detect invalid_grant errors
-        - Created RefreshTokenRotationManager class in separate rotation-manager.ts file
+        - Created RotationManager class in separate rotation-manager.ts file
         - Added detectRotation() method to search for alternative valid refresh tokens
-        - Added CacheIndexManager.findAnyValidRefreshToken() to find candidates from localStorage
+        - Uses CacheManager.findRefreshTokensByClient() to find candidates from localStorage
         - Added cleanupInvalidated() method to clean up invalidated tokens
         
         RESULT:

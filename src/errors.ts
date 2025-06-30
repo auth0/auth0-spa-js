@@ -97,6 +97,18 @@ export class MissingRefreshTokenError extends GenericError {
 }
 
 /**
+ * Error thrown when refresh token rotation detection fails
+ */
+export class RefreshTokenRotationError extends Error {
+  constructor(message: string, public readonly cause?: Error) {
+    super(message);
+    this.name = 'RefreshTokenRotationError';
+    //https://github.com/Microsoft/TypeScript-wiki/blob/master/Breaking-Changes.md#extending-built-ins-like-error-array-and-map-may-no-longer-work
+    Object.setPrototypeOf(this, RefreshTokenRotationError.prototype);
+  }
+}
+
+/**
  * Returns an empty string when value is falsy, or when it's value is included in the exclude argument.
  * @param value The value to check
  * @param exclude An array of values that should result in an empty string.

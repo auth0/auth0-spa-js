@@ -93,10 +93,18 @@ import {
   patchOpenUrlWithOnRedirect
 } from './Auth0Client.utils';
 import { CustomTokenExchangeOptions } from './TokenExchange';
-import {
-  RefreshTokenRotationManager,
-  GetTokenSilentlyResult
-} from './rotation-manager';
+
+/**
+ * Token result type for rotation operations
+ */
+export type GetTokenSilentlyResult = TokenEndpointResponse & {
+  decodedToken: any;
+  scope: string;
+  oauthTokenScope?: string;
+  audience: string;
+};
+
+import { RotationManager } from './rotation-manager';
 
 /**
  * @ignore
@@ -122,7 +130,7 @@ export class Auth0Client {
     authorizationParams: AuthorizationParams;
   };
   private readonly userCache: ICache = new InMemoryCache().enclosedCache;
-  private readonly rotationManager: RefreshTokenRotationManager;
+  private readonly rotationManager: RotationManager;
 
   private worker?: Worker;
 
@@ -234,7 +242,7 @@ export class Auth0Client {
       }
     }
 
-    this.rotationManager = new RefreshTokenRotationManager(
+    this.rotationManager = new RotationManager(
       this.cacheManager,
       this.options,
       this._requestToken.bind(this)
@@ -998,10 +1006,11 @@ export class Auth0Client {
       this.options.cacheLocation === 'localstorage' &&
       this.options.clientId
     ) {
-      cache = await this.rotationManager.cacheIndex.findAnyValidRefreshToken(
+      const refreshTokens = await this.cacheManager.findRefreshTokensByClient(
         this.options.clientId,
         options.authorizationParams.audience || 'default'
       );
+      cache = refreshTokens.length > 0 ? refreshTokens[0] : undefined;
     }
 
     // If you don't have a refresh token in memory
