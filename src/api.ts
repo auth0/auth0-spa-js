@@ -3,12 +3,6 @@ import { DEFAULT_AUTH0_CLIENT } from './constants';
 import { getJSON } from './http';
 import { createQueryParams } from './utils';
 
-const stripUndefined = (params: any) => {
-  return Object.keys(params)
-    .filter(k => typeof params[k] !== 'undefined')
-    .reduce((acc, key) => ({ ...acc, [key]: params[key] }), {});
-};
-
 export async function oauthToken(
   {
     baseUrl,
@@ -21,16 +15,18 @@ export async function oauthToken(
   }: TokenEndpointOptions,
   worker?: Worker
 ) {
-  // Only include scope and audience for token exchange requests
-  // For other grant types (especially refresh_token), excluding scope prevents "Access Token Descoping"
   const isTokenExchange =
     options.grant_type === 'urn:ietf:params:oauth:grant-type:token-exchange';
 
-  const allParams = isTokenExchange ? { ...options, audience, scope } : options;
+  const allParams = {
+    ...options,
+    ...(isTokenExchange && audience && { audience }),
+    ...(isTokenExchange && scope && { scope })
+  };
 
   const body = useFormData
     ? createQueryParams(allParams)
-    : JSON.stringify(stripUndefined(allParams));
+    : JSON.stringify(allParams);
 
   return await getJSON<TokenEndpointResponse>(
     `${baseUrl}/oauth/token`,
