@@ -1186,9 +1186,9 @@ export class Auth0Client {
    * // Exchange the external token for Auth0 tokens
    * try {
    *   const tokenResponse = await instance.exchangeToken(options);
-   *   console.log('Token response:', tokenResponse);
+   *   // Use tokenResponse.access_token, tokenResponse.id_token, etc.
    * } catch (error) {
-   *   console.error('Token exchange failed:', error);
+   *   // Handle token exchange error
    * }
    * ```
    */

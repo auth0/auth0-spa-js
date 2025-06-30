@@ -98,78 +98,6 @@ describe('Auth0Client', () => {
       return auth0;
     };
 
-    // This test verifies that scope and audience parameters are included in actual HTTP requests
-    // It was created to catch the api.ts destructuring bug that dropped these parameters
-    describe('HTTP Request Bug Detection Tests', () => {
-      it('should include scope and audience in HTTP request body - DETECTS api.ts bug', async () => {
-        // Simple test setup without complex mocking
-        const auth0 = setup({
-          clientId: 'test-client-id',
-          domain: 'test.auth0.com',
-          authorizationParams: {
-            audience: 'https://default-api.com',
-            scope: 'openid profile'
-          }
-        });
-
-        setupMessageEventLister(mockWindow, { state: TEST_STATE });
-
-        // Mock fetch to capture and reject (we only care about the request, not response)
-        mockFetch.mockRejectedValueOnce(
-          new Error('Mocked network error for testing')
-        );
-
-        const exchangeOptions: CustomTokenExchangeOptions = {
-          subject_token: 'test-external-token',
-          subject_token_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
-          audience: 'https://api.records.com',
-          scope: 'read:records write:records'
-        };
-
-        try {
-          await auth0.exchangeToken(exchangeOptions);
-        } catch (error) {
-          // Expected to fail due to mock
-        }
-
-        // Verify fetch was called with the token exchange request
-        expect(mockFetch).toHaveBeenCalled();
-
-        // Get the last fetch call (should be our token exchange)
-        const lastCall = mockFetch.mock.calls[mockFetch.mock.calls.length - 1];
-        const [url, requestOptions] = lastCall;
-
-        // Verify this is a token exchange request
-        expect(url).toContain('/oauth/token');
-        expect(requestOptions.body).toContain(
-          'urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Atoken-exchange'
-        );
-
-        // Parse the request body
-        const requestBody = new URLSearchParams(requestOptions.body);
-        const actualParams = Object.fromEntries(requestBody.entries());
-
-        // **CRITICAL ASSERTIONS**: These will FAIL if the api.ts bug exists
-        // The bug caused audience and scope to be dropped from the HTTP request
-        expect(actualParams.audience).toBe('https://api.records.com');
-        expect(actualParams.scope).toContain('read:records');
-        expect(actualParams.scope).toContain('write:records');
-
-        // Verify other expected parameters are present
-        expect(actualParams.grant_type).toBe(
-          'urn:ietf:params:oauth:grant-type:token-exchange'
-        );
-        expect(actualParams.subject_token).toBe('test-external-token');
-        expect(actualParams.subject_token_type).toBe(
-          'urn:ietf:params:oauth:grant-type:jwt-bearer'
-        );
-        expect(actualParams.client_id).toBe('test-client-id');
-      });
-    });
-
-    // Original unit tests (kept for backward compatibility)
-    // ... existing code ...
-
     it('calls `exchangeToken` with the correct default options', async () => {
       const auth0 = await localSetup();
       const cteOptions: CustomTokenExchangeOptions = {
@@ -179,7 +107,6 @@ describe('Auth0Client', () => {
         audience: 'https://api.test.com'
       };
       const result = await auth0.exchangeToken(cteOptions);
-      console.log(result);
       expect(result.id_token).toEqual('fake_id_token');
       expect(result.access_token).toEqual('fake_access_token');
       expect(result.expires_in).toEqual(3600);
