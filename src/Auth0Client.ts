@@ -1231,6 +1231,10 @@ export class Auth0Client {
     });
   }
 
+  public async getDpopNonce(): Promise<string | undefined> {
+    return this.dpop?.getNonce();
+  }
+
   // TODO: docs
   public generateDpopProof(params: {
     url: string;

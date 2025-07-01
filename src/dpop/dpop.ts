@@ -8,6 +8,10 @@ export class Dpop {
     this.storage = new DpopStorage(clientId);
   }
 
+  public getNonce(): Promise<string | undefined> {
+    return this.storage.findNonce();
+  }
+
   public setNonce(nonce: string): Promise<void> {
     return this.storage.setNonce(nonce);
   }
