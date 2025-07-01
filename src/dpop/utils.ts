@@ -2,7 +2,11 @@ import * as dpopLib from 'dpop';
 
 const KEY_PAIR_ALGORITHM: dpopLib.JWSAlgorithm = 'ES256';
 
-const SUPPORTED_GRANT_TYPES = ['authorization_code', 'refresh_token'];
+const SUPPORTED_GRANT_TYPES = [
+  'authorization_code',
+  'refresh_token',
+  'urn:ietf:params:oauth:grant-type:token-exchange'
+];
 
 export type KeyPair = Readonly<dpopLib.KeyPair>;
 
