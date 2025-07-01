@@ -543,6 +543,7 @@ export interface TokenEndpointOptions {
 
 export type TokenEndpointResponse = {
   id_token: string;
+  token_type: string;
   access_token: string;
   refresh_token?: string;
   expires_in: number;

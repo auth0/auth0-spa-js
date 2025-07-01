@@ -724,11 +724,17 @@ export class Auth0Client {
           ? await this._getTokenUsingRefreshToken(getTokenOptions)
           : await this._getTokenFromIFrame(getTokenOptions);
 
-        const { id_token, access_token, oauthTokenScope, expires_in } =
-          authResult;
+        const {
+          id_token,
+          token_type,
+          access_token,
+          oauthTokenScope,
+          expires_in
+        } = authResult;
 
         return {
           id_token,
+          token_type,
           access_token,
           ...(oauthTokenScope ? { scope: oauthTokenScope } : null),
           expires_in
@@ -1090,11 +1096,13 @@ export class Auth0Client {
     );
 
     if (entry && entry.access_token) {
-      const { access_token, oauthTokenScope, expires_in } = entry as CacheEntry;
+      const { token_type, access_token, oauthTokenScope, expires_in } =
+        entry as CacheEntry;
       const cache = await this._getIdTokenFromCache();
       return (
         cache && {
           id_token: cache.id_token,
+          token_type,
           access_token,
           ...(oauthTokenScope ? { scope: oauthTokenScope } : null),
           expires_in
@@ -1221,6 +1229,21 @@ export class Auth0Client {
       scope: getUniqueScopes(options.scope, this.scope),
       audience: options.audience || this.options.authorizationParams.audience
     });
+  }
+
+  // TODO: docs
+  public generateDpopProof(params: {
+    url: string;
+    method: string;
+    accessToken?: string;
+  }): Promise<string> {
+    if (!this.dpop) {
+      throw new Error(
+        '`useDpop` must be enabled in order to generate a DPoP proof.'
+      );
+    }
+
+    return this.dpop.generateProof(params);
   }
 }
 
