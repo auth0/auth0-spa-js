@@ -49,6 +49,11 @@ export const DEFAULT_SCOPE = 'openid profile email';
 /**
  * @ignore
  */
+export const DEFAULT_ORGANIZATION = '<no_org>';
+
+/**
+ * @ignore
+ */
 export const DEFAULT_SESSION_CHECK_EXPIRY_DAYS = 1;
 
 /**

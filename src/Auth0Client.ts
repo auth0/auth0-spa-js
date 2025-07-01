@@ -57,7 +57,8 @@ import {
   DEFAULT_AUTH0_CLIENT,
   INVALID_REFRESH_TOKEN_ERROR_MESSAGE,
   DEFAULT_NOW_PROVIDER,
-  DEFAULT_FETCH_TIMEOUT_MS
+  DEFAULT_FETCH_TIMEOUT_MS,
+  DEFAULT_ORGANIZATION
 } from './constants';
 
 import {
@@ -679,7 +680,7 @@ export class Auth0Client {
       const entry = await this._getEntryFromCache({
         scope: getTokenOptions.authorizationParams.scope,
         audience: getTokenOptions.authorizationParams.audience || 'default',
-        organization: getTokenOptions.authorizationParams.organization || orgHint || '<no_org>',
+        organization: getTokenOptions.authorizationParams.organization || orgHint || DEFAULT_ORGANIZATION,
         clientId: this.options.clientId
       });
 
@@ -707,7 +708,7 @@ export class Auth0Client {
           const entry = await this._getEntryFromCache({
             scope: getTokenOptions.authorizationParams.scope,
             audience: getTokenOptions.authorizationParams.audience || 'default',
-            organization: getTokenOptions.authorizationParams.organization || orgHint || '<no_org>',
+            organization: getTokenOptions.authorizationParams.organization || orgHint || DEFAULT_ORGANIZATION,
             clientId: this.options.clientId
           });
 
@@ -775,7 +776,7 @@ export class Auth0Client {
       new CacheKey({
         scope: localOptions.authorizationParams.scope,
         audience: localOptions.authorizationParams.audience || 'default',
-        organization: localOptions.authorizationParams.organization || orgHint || '<no_org>',
+        organization: localOptions.authorizationParams.organization || orgHint || DEFAULT_ORGANIZATION,
         clientId: this.options.clientId
       })
     );
@@ -955,7 +956,7 @@ export class Auth0Client {
       new CacheKey({
         scope: options.authorizationParams.scope,
         audience: options.authorizationParams.audience || 'default',
-        organization: options.authorizationParams.organization || orgHint || '<no_org>',
+        organization: options.authorizationParams.organization || orgHint || DEFAULT_ORGANIZATION,
         clientId: this.options.clientId
       })
     );
@@ -972,7 +973,7 @@ export class Auth0Client {
       throw new MissingRefreshTokenError(
         options.authorizationParams.audience || 'default',
         options.authorizationParams.scope,
-        options.authorizationParams.organization || orgHint || '<no_org>',
+        options.authorizationParams.organization || orgHint || DEFAULT_ORGANIZATION,
       );
     }
 
@@ -1000,7 +1001,7 @@ export class Auth0Client {
         scope: options.authorizationParams.scope,
         oauthTokenScope: tokenResult.scope,
         audience: options.authorizationParams.audience || 'default',
-        organization: options.authorizationParams.organization || orgHint || '<no_org>',
+        organization: options.authorizationParams.organization || orgHint || DEFAULT_ORGANIZATION,
       };
     } catch (e) {
       if (
@@ -1044,12 +1045,10 @@ export class Auth0Client {
     let orgHint;
 
     if (typeof document !== 'undefined') {
-      orgHint = this.cookieStorage.get<string>(
-        this.orgHintCookieName
-      );
+      orgHint = this.cookieStorage.get<string>(this.orgHintCookieName);
     }
 
-    const organization = this.options.authorizationParams.organization || orgHint || '<no_org>';
+    const organization = this.options.authorizationParams.organization || orgHint || DEFAULT_ORGANIZATION;
     const cache = await this.cacheManager.getIdToken(
       new CacheKey({
         clientId: this.options.clientId,
@@ -1152,7 +1151,7 @@ export class Auth0Client {
       decodedToken,
       scope: options.scope,
       audience: options.audience || 'default',
-      organization: options.organization || organization || '<no_org>',
+      organization: organization || DEFAULT_ORGANIZATION,
       ...(authResult.scope ? { oauthTokenScope: authResult.scope } : null),
       client_id: this.options.clientId
     });

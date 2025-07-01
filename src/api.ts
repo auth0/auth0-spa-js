@@ -1,5 +1,5 @@
 import { TokenEndpointOptions, TokenEndpointResponse } from './global';
-import { DEFAULT_AUTH0_CLIENT } from './constants';
+import { DEFAULT_AUTH0_CLIENT, DEFAULT_ORGANIZATION } from './constants';
 import { getJSON } from './http';
 import { createQueryParams } from './utils';
 
@@ -24,7 +24,7 @@ export async function oauthToken(
     `${baseUrl}/oauth/token`,
     timeout,
     audience || 'default',
-    organization || '<no_org>',
+    organization || DEFAULT_ORGANIZATION,
     scope,
     {
       method: 'POST',
