@@ -27,17 +27,16 @@ export class Dpop {
     return keyPair;
   }
 
-  public async generateProof({
-    url,
-    method,
-    accessToken
-  }: {
+  public async generateProof(params: {
     url: string;
     method: string;
+    nonce?: string;
     accessToken?: string;
   }): Promise<string> {
+    const { url, method, accessToken } = params;
+
     const [nonce, keyPair] = await Promise.all([
-      this.storage.findNonce(),
+      params.nonce ?? this.storage.findNonce(),
       this.getOrGenerateKeyPair()
     ]);
 

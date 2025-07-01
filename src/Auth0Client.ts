@@ -1239,7 +1239,8 @@ export class Auth0Client {
   public generateDpopProof(params: {
     url: string;
     method: string;
-    accessToken?: string;
+    nonce?: string;
+    accessToken: string;
   }): Promise<string> {
     if (!this.dpop) {
       throw new Error(
