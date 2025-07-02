@@ -1,5 +1,5 @@
 import version from '../src/version';
-import { MISSING_ORGANIZATION, DEFAULT_SCOPE } from '../src/constants';
+import { NO_ORG, DEFAULT_SCOPE } from '../src/constants';
 
 export const TEST_AUTH0_CLIENT_QUERY_STRING = `&auth0Client=${encodeURIComponent(
   btoa(
@@ -33,7 +33,7 @@ export const TEST_USER_ID = 'user-id';
 export const TEST_USER_EMAIL = 'user@email.com';
 export const TEST_APP_STATE = { bestPet: 'dog' };
 export const TEST_ORG_ID = 'org_id_123';
-export const TEST_NO_ORG = MISSING_ORGANIZATION;
+export const TEST_NO_ORG = NO_ORG;
 
 export const nowSeconds = () => Math.floor(Date.now() / 1000);
 export const dayInSeconds = 86400;

@@ -187,7 +187,7 @@ describe('Auth0Client', () => {
         if (key === `auth0.${TEST_CLIENT_ID}.organization_hint`) {
           return JSON.stringify(TEST_ORG_ID);
         }
-        return null;
+        return undefined;
       });
 
       await checkSession(auth0);

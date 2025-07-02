@@ -58,7 +58,7 @@ import {
   INVALID_REFRESH_TOKEN_ERROR_MESSAGE,
   DEFAULT_NOW_PROVIDER,
   DEFAULT_FETCH_TIMEOUT_MS,
-  MISSING_ORGANIZATION
+  NO_ORG
 } from './constants';
 
 import {
@@ -586,7 +586,7 @@ export class Auth0Client {
 
     try {
       await this.getTokenSilently(options);
-    } catch (_) {}
+    } catch (_) { }
   }
 
   /**
@@ -680,7 +680,7 @@ export class Auth0Client {
       const entry = await this._getEntryFromCache({
         scope: getTokenOptions.authorizationParams.scope,
         audience: getTokenOptions.authorizationParams.audience || 'default',
-        organization: getTokenOptions.authorizationParams.organization || orgHint || MISSING_ORGANIZATION,
+        organization: getTokenOptions.authorizationParams.organization || orgHint || NO_ORG,
         clientId: this.options.clientId
       });
 
@@ -708,7 +708,7 @@ export class Auth0Client {
           const entry = await this._getEntryFromCache({
             scope: getTokenOptions.authorizationParams.scope,
             audience: getTokenOptions.authorizationParams.audience || 'default',
-            organization: getTokenOptions.authorizationParams.organization || orgHint || MISSING_ORGANIZATION,
+            organization: getTokenOptions.authorizationParams.organization || orgHint || NO_ORG,
             clientId: this.options.clientId
           });
 
@@ -776,7 +776,7 @@ export class Auth0Client {
       new CacheKey({
         scope: localOptions.authorizationParams.scope,
         audience: localOptions.authorizationParams.audience || 'default',
-        organization: localOptions.authorizationParams.organization || orgHint || MISSING_ORGANIZATION,
+        organization: localOptions.authorizationParams.organization || orgHint || NO_ORG,
         clientId: this.options.clientId
       })
     );
@@ -956,7 +956,7 @@ export class Auth0Client {
       new CacheKey({
         scope: options.authorizationParams.scope,
         audience: options.authorizationParams.audience || 'default',
-        organization: options.authorizationParams.organization || orgHint || MISSING_ORGANIZATION,
+        organization: options.authorizationParams.organization || orgHint || NO_ORG,
         clientId: this.options.clientId
       })
     );
@@ -973,7 +973,7 @@ export class Auth0Client {
       throw new MissingRefreshTokenError(
         options.authorizationParams.audience || 'default',
         options.authorizationParams.scope,
-        options.authorizationParams.organization || orgHint || MISSING_ORGANIZATION,
+        options.authorizationParams.organization || orgHint || NO_ORG,
       );
     }
 
@@ -1001,7 +1001,7 @@ export class Auth0Client {
         scope: options.authorizationParams.scope,
         oauthTokenScope: tokenResult.scope,
         audience: options.authorizationParams.audience || 'default',
-        organization: options.authorizationParams.organization || orgHint || MISSING_ORGANIZATION,
+        organization: options.authorizationParams.organization || orgHint || NO_ORG,
       };
     } catch (e) {
       if (
@@ -1144,7 +1144,7 @@ export class Auth0Client {
       decodedToken,
       scope: options.scope,
       audience: options.audience || 'default',
-      organization: organization || MISSING_ORGANIZATION,
+      organization: organization || NO_ORG,
       ...(authResult.scope ? { oauthTokenScope: authResult.scope } : null),
       client_id: this.options.clientId
     });

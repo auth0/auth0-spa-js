@@ -49,7 +49,7 @@ export const DEFAULT_SCOPE = 'openid profile email';
 /**
  * @ignore
  */
-export const MISSING_ORGANIZATION = '<no_org>';
+export const NO_ORG = '<no_org>';
 
 /**
  * @ignore
