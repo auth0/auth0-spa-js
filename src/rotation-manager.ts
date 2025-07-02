@@ -72,7 +72,6 @@ export class RotationManager {
             ...(timeout && { timeout })
           });
 
-          // Success! Clean up the invalidated token and return result
           this.cleanupInvalidated(invalidToken);
 
           return {
@@ -98,7 +97,7 @@ export class RotationManager {
   private cleanupInvalidated(invalidToken?: string): void {
     if (!invalidToken) return;
 
-    // Fire and forget cleanup - don't block the success flow
+    // Async cleanup
     this.cacheManager
       .getAllCacheKeys()
       .then(cacheKeys => {
@@ -119,13 +118,13 @@ export class RotationManager {
                 }
               })
               .catch(() => {
-                // Ignore cleanup errors
+                // Do not throw on error, continue
               });
           }
         }
       })
       .catch(() => {
-        // Ignore cleanup errors - it's just an optimization
+        // Do not throw on error, continue
       });
   }
 }
