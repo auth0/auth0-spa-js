@@ -357,6 +357,16 @@ export interface PopupConfigOptions {
    * security restrictions around when popups can be invoked (e.g. from a user click event)
    */
   popup?: any;
+
+  /**
+   * If true, popup will not be closed on successful login response. This may
+   * be useful in contexts where closing the popup too soon may interrupt the
+   * login flow in the app (such as Chrome extensions) or if you need to use the
+   * popup for an additional step. It is recommended that this be used with the
+   * popup option so that you have a reference to the popup and can close it
+   * when desired.
+   */
+  suppressPopupClose?: boolean;
 }
 
 export interface GetTokenSilentlyOptions {

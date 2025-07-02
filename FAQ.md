@@ -181,3 +181,52 @@ const client = new Auth0Client({
 ```
 
 In this case, the loading of the `Worker` would comply with a CSP that included `'self'`. You can follow similar steps if you'd prefer to copy the file to your own CDN instead.
+
+## How can this be used in a Chrome extension?
+
+Auth0 for a Chrome extension popup can be approached in a few different ways.
+
+You can avoid it altogether by having users login via a companion web app or in the extension options page instead of the extension popup. Either of these options allow you to use this library as you normally would for any other SPA.
+You may also be able to get login working in the popup via the Chrome identity APIs `launchWebAuthFlow`, though this requires more configuration and direct management of the OAuth flow. This library will not work when using the identity API.
+
+If you want to use this library to handle login from the extension popup itself, that can be done with a few workarounds.
+
+### Login in extensions
+
+Redirects do not work in extensions, so you have to use `loginWithPopup`.
+
+The problem with popups in Chrome extensions is that Chrome will close an open extension when the browser window gains focus. Notably, this happens when a popup is closed and focus is automatically returned to the browser.
+When a Chrome extension popup gets closed, any scripts that are running inside it are terminated immediately so there is no opportunity to complete the login flow or persist the application state.
+
+By default, the Auth0 popup will be closed as soon as the Auth0Client receives an `authorization_reponse` from the popup, which is *before* that response is used to request a token and save it to the cache.
+To allow the flow to complete, you need to set `suppressPopupClose` to prevent the popup from closing too soon. It is recommended that you also pass in the popup, so you can control it and close it once the flow is complete.
+
+```ts
+const handleLogin = async () => {
+  const popup = window.open('', 'auth0:authorize:popup', `width=400,height=600,popup,resizable,status=1`);
+  await client.loginWithPopup({}, {popup, suppressPopupClose: true})
+  // do anything else needed to complete the login flow for you app (e.g. analytics callback, etc)
+  popup.close()
+  // code after this will most likely not be reached
+}
+```
+
+### Logout in extensions
+
+The `logout` method will, by default, redirect to the Auth0 logout page. This does not work in an extension.
+
+You can prevent the redirect entirely by setting the `openUrl` option to false.
+However, this will *only* log the user out of the [application session layer](https://auth0.com/docs/manage-users/sessions/session-layers). 
+
+If you need to log the user out of the Auth0 session layer as well, you can pass a function to the `openUrl` option that fetches the url instead of redirecting to it:
+
+```ts
+client.logout({
+  async openUrl(url) {
+    await fetch(url, {
+      credentials: 'include',
+      mode: 'no-cors',
+    })
+  }
+})
+```
