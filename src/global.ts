@@ -262,10 +262,10 @@ export interface Auth0ClientOptions extends BaseLoginOptions {
 
   /**
    * If provided, the SDK will load the token worker from this URL instead of the integrated `blob`. An example of when this is useful is if you have strict
-   * Content-Security-Policy (CSP) and wish to avoid needing to set `worker-src: blob:`. We recommend either serving the worker, which you can find in the module 
-   * at `<module_path>/dist/auth0-spa-js.worker.production.js`, from the same host as your application or using the Auth0 CDN 
+   * Content-Security-Policy (CSP) and wish to avoid needing to set `worker-src: blob:`. We recommend either serving the worker, which you can find in the module
+   * at `<module_path>/dist/auth0-spa-js.worker.production.js`, from the same host as your application or using the Auth0 CDN
    * `https://cdn.auth0.com/js/auth0-spa-js/<version>/auth0-spa-js.worker.production.js`.
-   * 
+   *
    * **Note**: The worker is only used when `useRefreshTokens: true`, `cacheLocation: 'memory'`, and the `cache` is not custom.
    */
   workerUrl?: string;
@@ -534,6 +534,7 @@ export type TokenEndpointResponse = {
   refresh_token?: string;
   expires_in: number;
   scope?: string;
+  token_type?: string;
 };
 
 /**

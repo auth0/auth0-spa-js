@@ -716,14 +716,20 @@ export class Auth0Client {
           ? await this._getTokenUsingRefreshToken(getTokenOptions)
           : await this._getTokenFromIFrame(getTokenOptions);
 
-        const { id_token, access_token, oauthTokenScope, expires_in } =
-          authResult;
+        const {
+          id_token,
+          access_token,
+          oauthTokenScope,
+          expires_in,
+          token_type
+        } = authResult;
 
         return {
           id_token,
           access_token,
           ...(oauthTokenScope ? { scope: oauthTokenScope } : null),
-          expires_in
+          expires_in,
+          ...(token_type ? { token_type } : null)
         };
       } finally {
         await lock.releaseLock(GET_TOKEN_SILENTLY_LOCK_KEY);
@@ -1072,14 +1078,16 @@ export class Auth0Client {
     );
 
     if (entry && entry.access_token) {
-      const { access_token, oauthTokenScope, expires_in } = entry as CacheEntry;
+      const { access_token, oauthTokenScope, expires_in, token_type } =
+        entry as CacheEntry;
       const cache = await this._getIdTokenFromCache();
       return (
         cache && {
           id_token: cache.id_token,
           access_token,
           ...(oauthTokenScope ? { scope: oauthTokenScope } : null),
-          expires_in
+          expires_in,
+          ...(token_type ? { token_type } : null)
         }
       );
     }
