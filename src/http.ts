@@ -3,6 +3,7 @@ import {
   DEFAULT_SILENT_TOKEN_RETRY_COUNT
 } from './constants';
 
+import { fromEntries } from './utils';
 import { sendMessage } from './worker/worker.utils';
 import { FetchOptions, FetchResponse } from './global';
 import {
@@ -26,7 +27,7 @@ const dofetch = async (fetchUrl: string, fetchOptions: FetchOptions) => {
      * This is not needed, but do it anyway so the types are the same
      * as if we were using a web worker (which *does* need this).
      */
-    headers: Object.fromEntries(response.headers)
+    headers: fromEntries(response.headers)
   };
 };
 

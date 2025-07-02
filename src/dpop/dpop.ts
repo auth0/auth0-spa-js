@@ -36,7 +36,7 @@ export class Dpop {
     const { url, method, accessToken } = params;
 
     const [nonce, keyPair] = await Promise.all([
-      params.nonce ?? this.storage.findNonce(),
+      params.nonce ? params.nonce : this.storage.findNonce(),
       this.getOrGenerateKeyPair()
     ]);
 

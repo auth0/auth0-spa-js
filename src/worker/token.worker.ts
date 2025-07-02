@@ -1,5 +1,5 @@
 import { MissingRefreshTokenError } from '../errors';
-import { createQueryParams } from '../utils';
+import { createQueryParams, fromEntries } from '../utils';
 import { WorkerRefreshTokenMessage } from './worker.types';
 
 let refreshTokens: Record<string, string> = {};
@@ -116,7 +116,7 @@ const messageHandler = async ({
        * Serializing a Fetch API Headers interface inside a cross-origin
        * message is not supported, so convert it to a plain object.
        */
-      headers: Object.fromEntries(response.headers)
+      headers: fromEntries(response.headers)
     });
   } catch (error) {
     port.postMessage({
