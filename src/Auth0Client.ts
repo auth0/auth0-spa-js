@@ -725,13 +725,8 @@ export class Auth0Client {
           ? await this._getTokenUsingRefreshToken(getTokenOptions)
           : await this._getTokenFromIFrame(getTokenOptions);
 
-        const {
-          id_token,
-          access_token,
-          oauthTokenScope,
-          expires_in,
-          token_type
-        } = authResult;
+        const { id_token, access_token, oauthTokenScope, expires_in } =
+          authResult;
 
         // For refresh token flows, ensure new refresh tokens are saved to cache
         // This is critical for refresh token rotation scenarios
@@ -766,8 +761,7 @@ export class Auth0Client {
               refresh_token: authResult.refresh_token,
               ...(authResult.scope
                 ? { oauthTokenScope: authResult.scope }
-                : null),
-              ...(token_type ? { token_type } : null)
+                : null)
             };
 
             await this._saveEntryInCache(cacheEntry);
@@ -778,8 +772,7 @@ export class Auth0Client {
           id_token,
           access_token,
           ...(oauthTokenScope ? { scope: oauthTokenScope } : null),
-          expires_in,
-          ...(token_type ? { token_type } : null)
+          expires_in
         };
       } finally {
         await lock.releaseLock(GET_TOKEN_SILENTLY_LOCK_KEY);
@@ -1158,16 +1151,14 @@ export class Auth0Client {
     );
 
     if (entry && entry.access_token) {
-      const { access_token, oauthTokenScope, expires_in, token_type } =
-        entry as CacheEntry;
+      const { access_token, oauthTokenScope, expires_in } = entry as CacheEntry;
       const cache = await this._getIdTokenFromCache();
       return (
         cache && {
           id_token: cache.id_token,
           access_token,
           ...(oauthTokenScope ? { scope: oauthTokenScope } : null),
-          expires_in,
-          ...(token_type ? { token_type } : null)
+          expires_in
         }
       );
     }
