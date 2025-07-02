@@ -102,7 +102,7 @@ describe('Auth0Client', () => {
       getMock.mockImplementation((key: string) => {
         if (
           key ===
-          '@@auth0spajs@@::auth0_client_id::default::openid profile email::<no_org>'
+          '@@auth0spajs@@::auth0_client_id::default::openid profile email'
         ) {
           return {
             body: { id_token: 'abc', decodedToken: { user: { sub: '123' } } }
@@ -117,7 +117,7 @@ describe('Auth0Client', () => {
         '@@auth0spajs@@::auth0_client_id::@@user@@'
       );
       expect(cache.get).toBeCalledWith(
-        '@@auth0spajs@@::auth0_client_id::default::openid profile email::<no_org>'
+        '@@auth0spajs@@::auth0_client_id::default::openid profile email'
       );
       expect(user?.sub).toBe('123');
     });

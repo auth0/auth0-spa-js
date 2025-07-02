@@ -43,7 +43,7 @@ export class CacheManager {
       this.getIdTokenCacheKey(cacheKey.clientId)
     );
 
-    if (!entry && cacheKey.scope && cacheKey.audience && cacheKey.organization) {
+    if (!entry && cacheKey.scope && cacheKey.audience) {
       const entryByScope = await this.get(cacheKey);
 
       if (!entryByScope) {

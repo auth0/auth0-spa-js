@@ -1,6 +1,6 @@
 import {
   DEFAULT_AUTH0_CLIENT,
-  DEFAULT_ORGANIZATION,
+  MISSING_ORGANIZATION,
   DEFAULT_SILENT_TOKEN_RETRY_COUNT
 } from '../src/constants';
 
@@ -134,7 +134,7 @@ describe('oauthToken', () => {
         },
         auth: {
           audience: '__test_audience__',
-          organization: DEFAULT_ORGANIZATION,
+          organization: MISSING_ORGANIZATION,
           scope: '__test_scope__'
         },
         timeout: 10000
