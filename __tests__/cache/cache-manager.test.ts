@@ -21,7 +21,9 @@ import {
   TEST_SCOPES,
   dayInSeconds,
   nowSeconds,
-  TEST_REFRESH_TOKEN
+  TEST_REFRESH_TOKEN,
+  TEST_ORG_ID,
+  TEST_NO_ORG
 } from '../constants';
 import { InMemoryAsyncCacheNoKeys } from './shared';
 
@@ -30,13 +32,15 @@ import { expect } from '@jest/globals';
 const defaultKey = new CacheKey({
   clientId: TEST_CLIENT_ID,
   audience: TEST_AUDIENCE,
-  scope: TEST_SCOPES
+  scope: TEST_SCOPES,
+  organization: TEST_NO_ORG
 });
 
 const defaultData: CacheEntry = {
   client_id: TEST_CLIENT_ID,
   audience: TEST_AUDIENCE,
   scope: TEST_SCOPES,
+  organization: TEST_NO_ORG,
   id_token: TEST_ID_TOKEN,
   access_token: TEST_ACCESS_TOKEN,
   expires_in: dayInSeconds,
@@ -113,6 +117,7 @@ cacheFactories.forEach(cacheFactory => {
       const key = new CacheKey({
         clientId: TEST_CLIENT_ID,
         audience: TEST_AUDIENCE,
+        organization: TEST_NO_ORG,
         scope: 'read:messages'
       });
 
@@ -129,7 +134,8 @@ cacheFactories.forEach(cacheFactory => {
 
       const key = new CacheKey({
         clientId: TEST_CLIENT_ID,
-        audience: TEST_AUDIENCE
+        audience: TEST_AUDIENCE,
+        organization: TEST_NO_ORG,
       });
 
       expect(await manager.get(key)).toStrictEqual(data);
@@ -146,6 +152,7 @@ cacheFactories.forEach(cacheFactory => {
       const key = new CacheKey({
         clientId: TEST_CLIENT_ID,
         audience: TEST_AUDIENCE,
+        organization: TEST_NO_ORG,
         scope: 'read:messages write:messages'
       });
 
@@ -166,7 +173,7 @@ cacheFactories.forEach(cacheFactory => {
 
       expect(
         await manager.get(
-          new CacheKey({ clientId: 'test', audience: 'test', scope: 'test' })
+          new CacheKey({ clientId: 'test', audience: 'test', scope: 'test', organization: 'test' })
         )
       ).not.toBeDefined();
 
@@ -201,6 +208,7 @@ cacheFactories.forEach(cacheFactory => {
       const key = new CacheKey({
         clientId: TEST_CLIENT_ID,
         audience: TEST_AUDIENCE,
+        organization: TEST_NO_ORG,
         scope: 'read:messages read:actions'
       });
 
@@ -220,6 +228,7 @@ cacheFactories.forEach(cacheFactory => {
           new CacheKey({
             clientId: TEST_CLIENT_ID,
             audience: TEST_AUDIENCE,
+            organization: TEST_NO_ORG,
             scope: TEST_SCOPES
           }),
           60
@@ -235,6 +244,88 @@ cacheFactories.forEach(cacheFactory => {
       cache.remove(defaultKey.toKey());
       expect(await manager.get(defaultKey)).toBeFalsy();
       expect(cacheSpy).toHaveBeenCalledWith(defaultKey.toKey());
+    });
+
+    it('should include organization in the cache key', async () => {
+      const cacheKey = new CacheKey({
+        clientId: TEST_CLIENT_ID,
+        audience: TEST_AUDIENCE,
+        scope: TEST_SCOPES,
+        organization: TEST_ORG_ID
+      });
+
+      expect(cacheKey.toKey()).toContain(TEST_ORG_ID);
+    });
+
+    it('should retrieve cache entry using organization', async () => {
+      const data = { ...defaultData, organization: TEST_ORG_ID };
+
+      await manager.set(data);
+
+      const cacheKey = new CacheKey({
+        clientId: TEST_CLIENT_ID,
+        audience: TEST_AUDIENCE,
+        scope: TEST_SCOPES,
+        organization: TEST_ORG_ID
+      });
+
+      const result = await manager.get(cacheKey);
+
+      expect(result).toStrictEqual(data);
+    });
+
+    it('should not retrieve cache entry if organization does not match', async () => {
+      const data = { ...defaultData, organization: TEST_ORG_ID };
+
+      await manager.set(data);
+
+      const cacheKey = new CacheKey({
+        clientId: TEST_CLIENT_ID,
+        audience: TEST_AUDIENCE,
+        scope: TEST_SCOPES,
+        organization: 'different-org'
+      });
+
+      const result = await manager.get(cacheKey);
+
+      expect(result).toBeFalsy();
+    });
+
+    it('should not retrieve cache entry if organization is not set', async () => {
+      const data = { ...defaultData, organization: TEST_ORG_ID };
+
+      await manager.set(data);
+
+      const cacheKey = new CacheKey({
+        clientId: TEST_CLIENT_ID,
+        audience: TEST_AUDIENCE,
+        scope: TEST_SCOPES
+      });
+
+      const result = await manager.get(cacheKey);
+
+      expect(result).toBeFalsy();
+    });
+
+    it('should update cache entry when organization changes', async () => {
+      const data = { ...defaultData };
+
+      await manager.set(data);
+
+      const updatedData = { ...defaultData, organization: 'new-org' };
+
+      await manager.set(updatedData);
+
+      const cacheKey = new CacheKey({
+        clientId: TEST_CLIENT_ID,
+        audience: TEST_AUDIENCE,
+        scope: TEST_SCOPES,
+        organization: 'new-org'
+      });
+
+      const result = await manager.get(cacheKey);
+
+      expect(result).toStrictEqual(updatedData);
     });
 
     describe('when refresh tokens are used', () => {
@@ -623,6 +714,7 @@ cacheFactories.forEach(cacheFactory => {
         const cacheKey = new CacheKey({
           clientId: TEST_CLIENT_ID,
           audience: TEST_AUDIENCE,
+          organization: TEST_NO_ORG,
           scope: 'read:messages'
         });
 
@@ -655,6 +747,7 @@ cacheFactories.forEach(cacheFactory => {
         const cacheKey = new CacheKey({
           clientId: TEST_CLIENT_ID,
           audience: TEST_AUDIENCE,
+          organization: TEST_NO_ORG,
           scope: 'read:messages'
         });
 
@@ -678,6 +771,7 @@ cacheFactories.forEach(cacheFactory => {
         const cacheKey = new CacheKey({
           clientId: TEST_CLIENT_ID,
           audience: TEST_AUDIENCE,
+          organization: TEST_NO_ORG,
           scope: 'read:messages'
         });
 
@@ -710,6 +804,7 @@ cacheFactories.forEach(cacheFactory => {
         const cacheKey = new CacheKey({
           clientId: TEST_CLIENT_ID,
           audience: TEST_AUDIENCE,
+          organization: TEST_NO_ORG,
           scope: 'read:messages'
         });
 
@@ -728,6 +823,7 @@ cacheFactories.forEach(cacheFactory => {
         const cacheKey = new CacheKey({
           clientId: TEST_CLIENT_ID,
           audience: TEST_AUDIENCE,
+          organization: TEST_NO_ORG,
           scope: 'read:messages'
         });
 
@@ -745,7 +841,8 @@ cacheFactories.forEach(cacheFactory => {
       it('should return undefined if not found in id token cache and no scope set', async () => {
         const cacheKey = new CacheKey({
           clientId: TEST_CLIENT_ID,
-          audience: TEST_AUDIENCE
+          audience: TEST_AUDIENCE,
+          organization: TEST_NO_ORG,
         });
 
         const cacheSpy = jest.spyOn(cache, 'get');

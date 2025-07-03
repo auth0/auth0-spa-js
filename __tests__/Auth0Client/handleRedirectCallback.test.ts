@@ -232,7 +232,7 @@ describe('Auth0Client', () => {
 
       const result = await loginWithRedirect(auth0, { appState });
 
-      expect((http.switchFetch as jest.Mock).mock.calls[0][6]).toEqual(40000);
+      expect((http.switchFetch as jest.Mock).mock.calls[0][7]).toEqual(40000);
       expect(result).toBeDefined();
       expect(result.appState).toEqual(appState);
     });

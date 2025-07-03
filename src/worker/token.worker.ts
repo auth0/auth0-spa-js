@@ -4,19 +4,20 @@ import { WorkerRefreshTokenMessage } from './worker.types';
 
 let refreshTokens: Record<string, string> = {};
 
-const cacheKey = (audience: string, scope: string) => `${audience}|${scope}`;
+const cacheKey = (audience: string, scope: string, organization: string) => `${audience}|${scope}|${organization}`;
 
-const getRefreshToken = (audience: string, scope: string) =>
-  refreshTokens[cacheKey(audience, scope)];
+const getRefreshToken = (audience: string, scope: string, organization: string) =>
+  refreshTokens[cacheKey(audience, scope, organization)];
 
 const setRefreshToken = (
   refreshToken: string,
   audience: string,
-  scope: string
-) => (refreshTokens[cacheKey(audience, scope)] = refreshToken);
+  scope: string,
+  organization: string
+) => (refreshTokens[cacheKey(audience, scope, organization)] = refreshToken);
 
-const deleteRefreshToken = (audience: string, scope: string) =>
-  delete refreshTokens[cacheKey(audience, scope)];
+const deleteRefreshToken = (audience: string, scope: string, organization: string) =>
+  delete refreshTokens[cacheKey(audience, scope, organization)];
 
 const wait = (time: number) =>
   new Promise(resolve => setTimeout(resolve, time));
@@ -40,7 +41,7 @@ const messageHandler = async ({
     refresh_token?: string;
   };
 
-  const { audience, scope } = auth || {};
+  const { audience, scope, organization } = auth || {};
 
   try {
     const body = useFormData
@@ -48,10 +49,10 @@ const messageHandler = async ({
       : JSON.parse(fetchOptions.body as string);
 
     if (!body.refresh_token && body.grant_type === 'refresh_token') {
-      const refreshToken = getRefreshToken(audience, scope);
+      const refreshToken = getRefreshToken(audience, scope, organization);
 
       if (!refreshToken) {
-        throw new MissingRefreshTokenError(audience, scope);
+        throw new MissingRefreshTokenError(audience, scope, organization);
       }
 
       fetchOptions.body = useFormData
@@ -102,10 +103,10 @@ const messageHandler = async ({
     json = await response.json();
 
     if (json.refresh_token) {
-      setRefreshToken(json.refresh_token, audience, scope);
+      setRefreshToken(json.refresh_token, audience, scope, organization);
       delete json.refresh_token;
     } else {
-      deleteRefreshToken(audience, scope);
+      deleteRefreshToken(audience, scope, organization);
     }
 
     port.postMessage({

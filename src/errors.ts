@@ -85,7 +85,7 @@ export class MfaRequiredError extends GenericError {
  * Error thrown when there is no refresh token to use
  */
 export class MissingRefreshTokenError extends GenericError {
-  constructor(public audience: string, public scope: string) {
+  constructor(public audience: string, public scope: string, public organization: string) {
     super(
       'missing_refresh_token',
       `Missing Refresh Token (audience: '${valueOrEmptyString(audience, [

@@ -57,7 +57,8 @@ import {
   DEFAULT_AUTH0_CLIENT,
   INVALID_REFRESH_TOKEN_ERROR_MESSAGE,
   DEFAULT_NOW_PROVIDER,
-  DEFAULT_FETCH_TIMEOUT_MS
+  DEFAULT_FETCH_TIMEOUT_MS,
+  NO_ORG
 } from './constants';
 
 import {
@@ -102,6 +103,7 @@ type GetTokenSilentlyResult = TokenEndpointResponse & {
   scope: string;
   oauthTokenScope?: string;
   audience: string;
+  organization?: string;
 };
 
 /**
@@ -310,8 +312,8 @@ export class Auth0Client {
       nonce,
       code_challenge,
       authorizationParams.redirect_uri ||
-        this.options.authorizationParams.redirect_uri ||
-        fallbackRedirectUri,
+      this.options.authorizationParams.redirect_uri ||
+      fallbackRedirectUri,
       authorizeOptions?.response_mode
     );
 
@@ -584,7 +586,7 @@ export class Auth0Client {
 
     try {
       await this.getTokenSilently(options);
-    } catch (_) {}
+    } catch (_) { }
   }
 
   /**
@@ -658,7 +660,7 @@ export class Auth0Client {
 
     const result = await singlePromise(
       () => this._getTokenSilently(localOptions),
-      `${this.options.clientId}::${localOptions.authorizationParams.audience}::${localOptions.authorizationParams.scope}`
+      `${this.options.clientId}::${localOptions.authorizationParams.audience}::${localOptions.authorizationParams.scope}::${localOptions.authorizationParams.organization}`
     );
 
     return options.detailedResponse ? result : result?.access_token;
@@ -670,6 +672,7 @@ export class Auth0Client {
     }
   ): Promise<undefined | GetTokenSilentlyVerboseResponse> {
     const { cacheMode, ...getTokenOptions } = options;
+    const orgHint = this.cookieStorage.get<string>(this.orgHintCookieName);
 
     // Check the cache before acquiring the lock to avoid the latency of
     // `lock.acquireLock` when the cache is populated.
@@ -677,6 +680,7 @@ export class Auth0Client {
       const entry = await this._getEntryFromCache({
         scope: getTokenOptions.authorizationParams.scope,
         audience: getTokenOptions.authorizationParams.audience || 'default',
+        organization: getTokenOptions.authorizationParams.organization || orgHint || NO_ORG,
         clientId: this.options.clientId
       });
 
@@ -704,6 +708,7 @@ export class Auth0Client {
           const entry = await this._getEntryFromCache({
             scope: getTokenOptions.authorizationParams.scope,
             audience: getTokenOptions.authorizationParams.audience || 'default',
+            organization: getTokenOptions.authorizationParams.organization || orgHint || NO_ORG,
             clientId: this.options.clientId
           });
 
@@ -765,11 +770,13 @@ export class Auth0Client {
     };
 
     await this.loginWithPopup(localOptions, config);
+    const orgHint = this.cookieStorage.get<string>(this.orgHintCookieName);
 
     const cache = await this.cacheManager.get(
       new CacheKey({
         scope: localOptions.authorizationParams.scope,
         audience: localOptions.authorizationParams.audience || 'default',
+        organization: localOptions.authorizationParams.organization || orgHint || NO_ORG,
         clientId: this.options.clientId
       })
     );
@@ -926,7 +933,8 @@ export class Auth0Client {
         ...tokenResult,
         scope: scope,
         oauthTokenScope: tokenResult.scope,
-        audience: audience
+        audience: audience,
+        organization: params.organization,
       };
     } catch (e) {
       if (e.error === 'login_required') {
@@ -943,10 +951,12 @@ export class Auth0Client {
       authorizationParams: AuthorizationParams & { scope: string };
     }
   ): Promise<GetTokenSilentlyResult> {
+    const orgHint = this.cookieStorage.get<string>(this.orgHintCookieName);
     const cache = await this.cacheManager.get(
       new CacheKey({
         scope: options.authorizationParams.scope,
         audience: options.authorizationParams.audience || 'default',
+        organization: options.authorizationParams.organization || orgHint || NO_ORG,
         clientId: this.options.clientId
       })
     );
@@ -962,7 +972,8 @@ export class Auth0Client {
 
       throw new MissingRefreshTokenError(
         options.authorizationParams.audience || 'default',
-        options.authorizationParams.scope
+        options.authorizationParams.scope,
+        options.authorizationParams.organization || orgHint || NO_ORG,
       );
     }
 
@@ -989,7 +1000,8 @@ export class Auth0Client {
         ...tokenResult,
         scope: options.authorizationParams.scope,
         oauthTokenScope: tokenResult.scope,
-        audience: options.authorizationParams.audience || 'default'
+        audience: options.authorizationParams.audience || 'default',
+        organization: options.authorizationParams.organization || orgHint || NO_ORG,
       };
     } catch (e) {
       if (
@@ -1056,16 +1068,19 @@ export class Auth0Client {
   private async _getEntryFromCache({
     scope,
     audience,
+    organization,
     clientId
   }: {
     scope: string;
     audience: string;
+    organization: string;
     clientId: string;
   }): Promise<undefined | GetTokenSilentlyVerboseResponse> {
     const entry = await this.cacheManager.get(
       new CacheKey({
         scope,
         audience,
+        organization,
         clientId
       }),
       60 // get a new token if within 60 seconds of expiring
@@ -1112,6 +1127,7 @@ export class Auth0Client {
         auth0Client: this.options.auth0Client,
         useFormData: this.options.useFormData,
         timeout: this.httpTimeoutMs,
+        organization,
         ...options
       },
       this.worker
@@ -1128,6 +1144,7 @@ export class Auth0Client {
       decodedToken,
       scope: options.scope,
       audience: options.audience || 'default',
+      organization: organization || NO_ORG,
       ...(authResult.scope ? { oauthTokenScope: authResult.scope } : null),
       client_id: this.options.clientId
     });
@@ -1200,13 +1217,14 @@ export class Auth0Client {
       subject_token: options.subject_token,
       subject_token_type: options.subject_token_type,
       scope: getUniqueScopes(options.scope, this.scope),
-      audience: this.options.authorizationParams.audience
-    });
+      audience: this.options.authorizationParams.audience,
+    }, { organization: this.options.authorizationParams.organization });
   }
 }
 
 interface BaseRequestTokenOptions {
   audience?: string;
+  organization?: string;
   scope: string;
   timeout?: number;
   redirect_uri?: string;

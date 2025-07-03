@@ -484,7 +484,7 @@ describe('Auth0Client', () => {
 
       await getTokenSilently(auth0);
 
-      expect((http.switchFetch as jest.Mock).mock.calls[0][6]).toEqual(30000);
+      expect((http.switchFetch as jest.Mock).mock.calls[0][7]).toEqual(30000);
     });
 
     it('refreshes the token when no cache available', async () => {
@@ -969,31 +969,30 @@ describe('Auth0Client', () => {
           supported: true
         }
       ].forEach(({ name, userAgent, supported }) =>
-        it(`refreshes the token ${
-          supported ? 'with' : 'without'
-        } the worker, when ${name}`, async () => {
-          const originalUserAgent = window.navigator.userAgent;
+        it(`refreshes the token ${supported ? 'with' : 'without'
+          } the worker, when ${name}`, async () => {
+            const originalUserAgent = window.navigator.userAgent;
 
-          Object.defineProperty(window.navigator, 'userAgent', {
-            value: userAgent,
-            configurable: true
-          });
+            Object.defineProperty(window.navigator, 'userAgent', {
+              value: userAgent,
+              configurable: true
+            });
 
-          const auth0 = setup({
-            useRefreshTokens: true,
-            cacheLocation: 'memory'
-          });
+            const auth0 = setup({
+              useRefreshTokens: true,
+              cacheLocation: 'memory'
+            });
 
-          if (supported) {
-            expect((<any>auth0).worker).toBeDefined();
-          } else {
-            expect((<any>auth0).worker).toBeUndefined();
-          }
+            if (supported) {
+              expect((<any>auth0).worker).toBeDefined();
+            } else {
+              expect((<any>auth0).worker).toBeUndefined();
+            }
 
-          Object.defineProperty(window.navigator, 'userAgent', {
-            value: originalUserAgent
-          });
-        })
+            Object.defineProperty(window.navigator, 'userAgent', {
+              value: originalUserAgent
+            });
+          })
       );
     });
 
@@ -2046,12 +2045,15 @@ describe('Auth0Client', () => {
         state: TEST_STATE
       });
 
-      (esCookie.get as jest.Mock).mockImplementationOnce(
-        key =>
-          key === `auth0.${TEST_CLIENT_ID}.organization_hint` &&
-          JSON.stringify(TEST_ORG_ID)
-      );
-
+      (<jest.Mock>esCookie.get).mockImplementation((key) => {
+        if (key === `auth0.${TEST_CLIENT_ID}.is.authenticated`) {
+          return true;
+        }
+        if (key === `auth0.${TEST_CLIENT_ID}.organization_hint`) {
+          return JSON.stringify(TEST_ORG_ID);
+        }
+        return undefined;
+      });
       await getTokenSilently(auth0);
 
       expect(utils.runIframe).toHaveBeenCalledWith(
@@ -2128,7 +2130,7 @@ describe('Auth0Client', () => {
         1
       );
 
-      expect((http.switchFetch as jest.Mock).mock.calls[0][6]).toEqual(20000);
+      expect((http.switchFetch as jest.Mock).mock.calls[0][7]).toEqual(20000);
     });
 
     it('when using Refresh Tokens, falls back to iframe when refresh token is expired and useRefreshTokensFallback is set to true', async () => {
@@ -2313,7 +2315,7 @@ describe('Auth0Client', () => {
       });
     });
 
-    it('returns the full response when "detailedReponse: true" and using cache', async () => {
+    it('returns the full response when "detailedResponse: true" and using cache', async () => {
       const auth0 = setup();
 
       await loginWithRedirect(auth0);
@@ -2323,6 +2325,12 @@ describe('Auth0Client', () => {
         .mockResolvedValue({
           state: TEST_STATE
         });
+
+      jest.spyOn(auth0['cacheManager'], 'get').mockResolvedValue({
+        id_token: TEST_ID_TOKEN,
+        access_token: TEST_ACCESS_TOKEN,
+        expires_in: 86400
+      });
 
       const response = await auth0.getTokenSilently({
         detailedResponse: true
