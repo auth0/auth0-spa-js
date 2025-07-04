@@ -224,5 +224,88 @@ if (organization && invitation) {
     }
   });
 }
+```
+
+## Custom Token Exchange (CTE)
+
+Enable secure token exchange between external identity providers and Auth0 using RFC 8693 standards.
+
+### Basic Implementation
+
+```js
+// Initialize client with custom token exchange configuration
+const auth0 = await createAuth0Client({
+  domain: '<AUTH0_DOMAIN>',
+  clientId: '<AUTH0_CLIENT_ID>',
+  authorizationParams: {
+    audience: 'https://your-api.example.com'
+  }
+});
+
+// Exchange external token for Auth0 tokens
+async function performTokenExchange() {
+  try {
+    const tokenResponse = await auth0.exchangeToken({
+      subject_token: 'EXTERNAL_PROVIDER_TOKEN',
+      subject_token_type: 'urn:example:external-token',
+      scope: 'openid profile email'
+    });
+
+    console.log('Received tokens:', tokenResponse);
+  } catch (error) {
+    console.error('Exchange failed:', error);
+  }
+}
+```
+
+### Required Auth0 Configuration
+
+1. **Create Token Exchange Profile** in Auth0 Dashboard:
+
+```typescript
+await managementClient.tokenExchangeProfiles.create({
+  action_id: 'custom-auth-action',
+  name: 'External System Exchange',
+  subject_token_type: 'urn:example:external-token',
+  type: 'custom_authentication'
+});
+```
+
+2. **Add Required Scopes** to your API in Auth0:
 
 ```
+urn:auth0:oauth2:grant-type:token-exchange
+```
+
+### Security Considerations
+
+- Validate external tokens in Auth0 Actions using cryptographic verification
+- Implement anti-replay mechanisms for subject tokens
+- Store refresh tokens securely when using `offline_access` scope
+
+### Error Handling
+
+```js
+async function safeTokenExchange() {
+  try {
+    return await auth0.exchangeToken(/* ... */);
+  } catch (error) {
+    if (error.error === 'invalid_token') {
+      // Handle token validation errors
+      await auth0.logout();
+      window.location.reload();
+    }
+    if (error.error === 'insufficient_scope') {
+      // Request additional scopes
+      await auth0.loginWithPopup({
+        authorizationParams: {
+          scope: 'additional_scope_required'
+        }
+      });
+    }
+  }
+}
+```
+
+[Token Exchange Documentation](https://auth0.com/docs/authenticate/login/token-exchange)  
+[RFC 8693 Spec](https://tools.ietf.org/html/rfc8693)
