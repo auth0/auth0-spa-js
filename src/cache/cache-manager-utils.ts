@@ -41,10 +41,6 @@ const hasDefaultParameters = (key: string, keyToMatch: CacheKey): boolean => {
     && cacheKey.clientId === keyToMatch.clientId;
 };
 
-const hasMatchingOrganization = (): boolean => {
-  return true;
-};
-
 const isTokenExpired = async (
   entry: WrappedCacheEntry,
   expiryAdjustmentSeconds: number,
@@ -61,7 +57,6 @@ const isMatchingKey = (
   keyToMatch: CacheKey,
 ): boolean => {
   return CacheManagerUtils.hasMatchingAudience(storageKey, keyToMatch)
-    && CacheManagerUtils.hasMatchingOrganization()
     && CacheManagerUtils.hasCompatibleScopes(storageKey, keyToMatch);
 }
 
@@ -79,7 +74,6 @@ export const CacheManagerUtils = {
   hasCompatibleScopes,
   hasMatchingAudience,
   hasDefaultParameters,
-  hasMatchingOrganization,
   isTokenExpired,
   findKey,
   isMatchingKey,
