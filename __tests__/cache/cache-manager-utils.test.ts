@@ -11,7 +11,6 @@ describe('CacheManagerUtils', () => {
         const keyToMatch = new CacheKey({
           clientId: TEST_CLIENT_ID,
           audience: TEST_AUDIENCE,
-          // organization: 'organizationA',
           scope: 'read:user'
         });
 
@@ -30,7 +29,6 @@ describe('CacheManagerUtils', () => {
         const keyToMatch = new CacheKey({
           clientId: TEST_CLIENT_ID,
           audience: TEST_AUDIENCE,
-          // organization: 'organizationA',
           scope: 'read:user'
         });
 
@@ -52,7 +50,6 @@ describe('CacheManagerUtils', () => {
         const keyToMatch = new CacheKey({
           clientId: TEST_CLIENT_ID,
           audience: TEST_AUDIENCE,
-          // organization: 'organizationA',
           scope: 'read:user'
         });
 
@@ -71,7 +68,6 @@ describe('CacheManagerUtils', () => {
         const keyToMatch = new CacheKey({
           clientId: TEST_CLIENT_ID,
           audience: TEST_AUDIENCE,
-          // organization: 'organizationA',
           scope: 'read:user'
         });
 
@@ -93,7 +89,6 @@ describe('CacheManagerUtils', () => {
         const keyToMatch = new CacheKey({
           clientId: TEST_CLIENT_ID,
           audience: TEST_AUDIENCE,
-          // organization: 'organizationA',
           scope: 'read:user'
         });
 
@@ -112,7 +107,6 @@ describe('CacheManagerUtils', () => {
         const keyToMatch = new CacheKey({
           clientId: TEST_CLIENT_ID,
           audience: TEST_AUDIENCE,
-          // organization: 'organizationA',
           scope: 'read:user'
         });
 
@@ -135,7 +129,6 @@ describe('CacheManagerUtils', () => {
           body: {
             clientId: TEST_CLIENT_ID,
             audience: TEST_AUDIENCE,
-            // organization: 'organizationA',
             scope: 'read:user',
           },
           expiresAt: 0,
@@ -158,7 +151,6 @@ describe('CacheManagerUtils', () => {
           body: {
             clientId: TEST_CLIENT_ID,
             audience: TEST_AUDIENCE,
-            // organization: 'organizationA',
             scope: 'read:user',
           },
           expiresAt: 0,
@@ -180,7 +172,6 @@ describe('CacheManagerUtils', () => {
       const entry = new CacheKey({
         clientId: TEST_CLIENT_ID,
         audience: TEST_AUDIENCE,
-        // organization: 'organizationA',
         scope: 'read:user update:user'
       });
 
@@ -188,13 +179,11 @@ describe('CacheManagerUtils', () => {
 
       jest.spyOn(CacheManagerUtils, 'hasCompatibleScopes');
       jest.spyOn(CacheManagerUtils, 'hasMatchingAudience');
-      jest.spyOn(CacheManagerUtils, 'hasMatchingOrganization');
 
       CacheManagerUtils.isMatchingKey(key, entry);
 
       expect(CacheManagerUtils.hasCompatibleScopes).toHaveBeenCalledTimes(1);
       expect(CacheManagerUtils.hasMatchingAudience).toHaveBeenCalledTimes(1);
-      expect(CacheManagerUtils.hasMatchingOrganization).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -204,7 +193,6 @@ describe('CacheManagerUtils', () => {
         const entry = new CacheKey({
           clientId: TEST_CLIENT_ID,
           audience: TEST_AUDIENCE,
-          // organization: 'organizationA',
           scope: 'read:user update:user'
         });
 
@@ -225,7 +213,6 @@ describe('CacheManagerUtils', () => {
         const entry = new CacheKey({
           clientId: TEST_CLIENT_ID,
           audience: TEST_AUDIENCE,
-          // organization: 'organizationA',
           scope: 'read:user update:user'
         });
 

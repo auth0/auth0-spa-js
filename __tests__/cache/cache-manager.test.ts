@@ -835,7 +835,6 @@ cacheFactories.forEach(cacheFactory => {
           const key = new CacheKey({
             clientId: TEST_CLIENT_ID,
             audience: TEST_AUDIENCE,
-            // organization: 'organizationA',
             scope: TEST_SCOPES
           });
 
@@ -866,7 +865,6 @@ cacheFactories.forEach(cacheFactory => {
           const key = new CacheKey({
             clientId: TEST_CLIENT_ID,
             audience: TEST_AUDIENCE,
-            // organization: 'organizationA',
             scope: TEST_SCOPES
           });
 
@@ -900,7 +898,6 @@ cacheFactories.forEach(cacheFactory => {
           const key = new CacheKey({
             clientId: TEST_CLIENT_ID,
             audience: TEST_AUDIENCE,
-            // organization: 'organizationA',
             scope: 'read:user'
           });
 
@@ -921,7 +918,6 @@ cacheFactories.forEach(cacheFactory => {
           const key = new CacheKey({
             clientId: TEST_CLIENT_ID,
             audience: TEST_AUDIENCE,
-            // organization: 'organizationA',
             scope: 'read:user'
           });
 
@@ -949,7 +945,6 @@ cacheFactories.forEach(cacheFactory => {
           const key = new CacheKey({
             clientId: TEST_CLIENT_ID,
             audience: TEST_AUDIENCE,
-            // organization: 'organizationA',
             scope: 'read:user'
           });
 
@@ -981,7 +976,6 @@ cacheFactories.forEach(cacheFactory => {
         const key = new CacheKey({
           clientId: TEST_CLIENT_ID,
           audience: TEST_AUDIENCE,
-          // organization: 'organizationA',
           scope: 'read:user'
         });
 
@@ -997,7 +991,6 @@ cacheFactories.forEach(cacheFactory => {
           const key = new CacheKey({
             clientId: TEST_CLIENT_ID,
             audience: TEST_AUDIENCE,
-            // organization: 'organizationA',
             scope: 'read:user'
           });
 
@@ -1026,7 +1019,6 @@ cacheFactories.forEach(cacheFactory => {
           const key = new CacheKey({
             clientId: TEST_CLIENT_ID,
             audience: TEST_AUDIENCE,
-            // organization: 'organizationA',
             scope: 'read:user'
           });
 
@@ -1055,7 +1047,6 @@ cacheFactories.forEach(cacheFactory => {
           const key = new CacheKey({
             clientId: TEST_CLIENT_ID,
             audience: TEST_AUDIENCE,
-            // organization: 'organizationA',
             scope: 'read:user'
           });
 
@@ -1103,7 +1094,6 @@ cacheFactories.forEach(cacheFactory => {
           const key = new CacheKey({
             clientId: TEST_CLIENT_ID,
             audience: TEST_AUDIENCE,
-            // organization: 'organizationA',
             scope: 'read:user update:user'
           });
 
@@ -1132,7 +1122,6 @@ cacheFactories.forEach(cacheFactory => {
           const key = new CacheKey({
             clientId: TEST_CLIENT_ID,
             audience: TEST_AUDIENCE,
-            // organization: 'organizationA',
             scope: 'read:user update:user'
           });
 
@@ -1163,7 +1152,6 @@ cacheFactories.forEach(cacheFactory => {
           const key = new CacheKey({
             clientId: TEST_CLIENT_ID,
             audience: TEST_AUDIENCE,
-            // organization: 'organizationA',
             scope: 'read:user update:user'
           });
 
@@ -1186,7 +1174,6 @@ cacheFactories.forEach(cacheFactory => {
           const key = new CacheKey({
             clientId: TEST_CLIENT_ID,
             audience: TEST_AUDIENCE,
-            // organization: 'organizationA',
             scope: 'read:user update:user'
           });
 
@@ -1221,7 +1208,6 @@ cacheFactories.forEach(cacheFactory => {
           const key = new CacheKey({
             clientId: TEST_CLIENT_ID,
             audience: TEST_AUDIENCE,
-            // organization: 'organizationA',
             scope: 'read:user update:user'
           });
 
@@ -1256,7 +1242,6 @@ cacheFactories.forEach(cacheFactory => {
           const key = new CacheKey({
             clientId: TEST_CLIENT_ID,
             audience: TEST_AUDIENCE,
-            // organization: 'organizationA',
             scope: 'read:user update:user'
           });
 
