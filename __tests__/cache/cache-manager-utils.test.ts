@@ -168,7 +168,7 @@ describe('CacheManagerUtils', () => {
   });
 
   describe('isMatchingKey', () => {
-    it('calls hasMatchingAudience, hasMatchingOrganization and hasCompatibleScopes', () => {
+    it('calls hasMatchingAudience and hasCompatibleScopes', () => {
       const entry = new CacheKey({
         clientId: TEST_CLIENT_ID,
         audience: TEST_AUDIENCE,
