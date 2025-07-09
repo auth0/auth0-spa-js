@@ -97,7 +97,7 @@ cacheFactories.forEach(cacheFactory => {
     });
 
     it('returns undefined when there is nothing in the cache', async () => {
-      const result = await manager.getToken(defaultKey);
+      const result = await manager.get(defaultKey);
 
       expect(result).toBeFalsy();
     });
@@ -124,7 +124,7 @@ cacheFactories.forEach(cacheFactory => {
         scope: 'read:messages'
       });
 
-      expect(await manager.getToken(key)).toStrictEqual(data);
+      expect(await manager.get(key)).toStrictEqual(data);
     });
 
     it('should return an entry from the cache if no scopes provided', async () => {
@@ -140,7 +140,7 @@ cacheFactories.forEach(cacheFactory => {
         audience: TEST_AUDIENCE
       });
 
-      expect(await manager.getToken(key)).toStrictEqual(data);
+      expect(await manager.get(key)).toStrictEqual(data);
     });
 
     it('should return an entry directly from the cache if the key matches exactly', async () => {
@@ -157,7 +157,7 @@ cacheFactories.forEach(cacheFactory => {
         scope: 'read:messages write:messages'
       });
 
-      expect(await manager.getToken(key)).toStrictEqual(data);
+      expect(await manager.get(key)).toStrictEqual(data);
     });
 
     it('should not fetch from the cache if allKeys returns empty array of keys', async () => {
@@ -173,7 +173,7 @@ cacheFactories.forEach(cacheFactory => {
       cache.set(defaultKey.toKey(), defaultData);
 
       expect(
-        await manager.getToken(
+        await manager.get(
           new CacheKey({ clientId: 'test', audience: 'test', scope: 'test' })
         )
       ).not.toBeDefined();
@@ -191,7 +191,7 @@ cacheFactories.forEach(cacheFactory => {
         // Remove the manifest entry that is created by the manifest
         await cache.remove(manifestKey);
 
-        const result = await manager.getToken(defaultKey);
+        const result = await manager.get(defaultKey);
 
         expect(result).toStrictEqual(defaultData);
         expect(await cache.get(manifestKey)).toBeTruthy();
@@ -212,7 +212,7 @@ cacheFactories.forEach(cacheFactory => {
         scope: 'read:messages read:actions'
       });
 
-      expect(await manager.getToken(key)).toBeFalsy();
+      expect(await manager.get(key)).toBeFalsy();
     });
 
     it('returns undefined from the cache when expires_in < expiryAdjustmentSeconds', async () => {
@@ -224,7 +224,7 @@ cacheFactories.forEach(cacheFactory => {
       await manager.set(data);
 
       expect(
-        await manager.getToken(
+        await manager.get(
           new CacheKey({
             clientId: TEST_CLIENT_ID,
             audience: TEST_AUDIENCE,
@@ -241,9 +241,9 @@ cacheFactories.forEach(cacheFactory => {
       const cacheSpy = jest.spyOn(cache, 'remove');
 
       await manager.set(defaultData);
-      expect(await manager.getToken(defaultKey)).toStrictEqual(defaultData);
+      expect(await manager.get(defaultKey)).toStrictEqual(defaultData);
       cache.remove(defaultKey.toKey());
-      expect(await manager.getToken(defaultKey)).toBeFalsy();
+      expect(await manager.get(defaultKey)).toBeFalsy();
       expect(cacheSpy).toHaveBeenCalledWith(defaultKey.toKey());
     });
 
@@ -270,13 +270,13 @@ cacheFactories.forEach(cacheFactory => {
         const cacheKey = CacheKey.fromCacheEntry(data);
 
         // Test that the cache state is normal up until just before the expiry time..
-        expect(await manager.getToken(cacheKey)).toStrictEqual(data);
+        expect(await manager.get(cacheKey)).toStrictEqual(data);
 
         // Advance the time to just past the expiry..
         const dateNowStub = jest.fn(() => now + (dayInSeconds + 60) * 1000);
         global.Date.now = dateNowStub;
 
-        expect(await manager.getToken(cacheKey)).toStrictEqual({
+        expect(await manager.get(cacheKey)).toStrictEqual({
           refresh_token: TEST_REFRESH_TOKEN
         });
 
@@ -295,9 +295,9 @@ cacheFactories.forEach(cacheFactory => {
       const cacheKey = CacheKey.fromCacheEntry(data);
 
       // Test that the cache state is normal before we expire the data
-      expect(await manager.getToken(cacheKey)).toStrictEqual(data);
+      expect(await manager.get(cacheKey)).toStrictEqual(data);
 
-      const result = await manager.getToken(
+      const result = await manager.get(
         cacheKey,
         {
           expiryAdjustmentSeconds: 60,
@@ -324,14 +324,14 @@ cacheFactories.forEach(cacheFactory => {
       const cacheKey = CacheKey.fromCacheEntry(data);
 
       // Test that the cache state is normal before we expire the data
-      expect(await manager.getToken(cacheKey)).toStrictEqual(data);
+      expect(await manager.get(cacheKey)).toStrictEqual(data);
 
       // Move back in time to ensure the token is valid
       provider.mockResolvedValue(
         now - (expiryAdjustmentSeconds - data.expires_in) * 1000
       );
 
-      const result = await manager.getToken(
+      const result = await manager.get(
         cacheKey,
         { expiryAdjustmentSeconds },
       );
@@ -362,14 +362,14 @@ cacheFactories.forEach(cacheFactory => {
       const cacheKey = CacheKey.fromCacheEntry(data);
 
       // Test that the cache state is normal before we expire the data
-      expect(await manager.getToken(cacheKey)).toStrictEqual(data);
+      expect(await manager.get(cacheKey)).toStrictEqual(data);
 
       // Advance the time to just past the expiry..
       const dateNowStub = jest.fn(() => (now + dayInSeconds + 100) * 1000);
 
       global.Date.now = dateNowStub;
 
-      const result = await manager.getToken(cacheKey);
+      const result = await manager.get(cacheKey);
 
       global.Date.now = realDateNow;
 
@@ -408,12 +408,12 @@ cacheFactories.forEach(cacheFactory => {
       const cacheKey = CacheKey.fromCacheEntry(data);
 
       // Test that the cache state is normal before we expire the data
-      expect(await manager.getToken(cacheKey)).toStrictEqual(data);
+      expect(await manager.get(cacheKey)).toStrictEqual(data);
 
       // Advance the time to just past the expiry..
       provider.mockResolvedValue((now + dayInSeconds + 100) * 1000);
 
-      const result = await manager.getToken(cacheKey);
+      const result = await manager.get(cacheKey);
 
       // And test that the cache has been emptied
       expect(result).toBeFalsy();
@@ -450,12 +450,12 @@ cacheFactories.forEach(cacheFactory => {
       const cacheKey = CacheKey.fromCacheEntry(data);
 
       // Test that the cache state is normal before we expire the data
-      expect(await manager.getToken(cacheKey)).toStrictEqual(data);
+      expect(await manager.get(cacheKey)).toStrictEqual(data);
 
       // Advance the time to just past the expiry..
       provider.mockReturnValue((now + dayInSeconds + 100) * 1000);
 
-      const result = await manager.getToken(cacheKey);
+      const result = await manager.get(cacheKey);
 
       // And test that the cache has been emptied
       expect(result).toBeFalsy();
@@ -483,13 +483,13 @@ cacheFactories.forEach(cacheFactory => {
       const cacheKey = CacheKey.fromCacheEntry(data);
 
       // Test that the cache state is normal before we expire the data
-      expect(await manager.getToken(cacheKey)).toStrictEqual(data);
+      expect(await manager.get(cacheKey)).toStrictEqual(data);
 
       // Advance the time to just past the expiry..
       const dateNowStub = jest.fn(() => (now + dayInSeconds + 100) * 1000);
       global.Date.now = dateNowStub;
 
-      const result = await manager.getToken(cacheKey);
+      const result = await manager.get(cacheKey);
 
       global.Date.now = realDateNow;
 
@@ -521,12 +521,12 @@ cacheFactories.forEach(cacheFactory => {
       const cacheKey = CacheKey.fromCacheEntry(data);
 
       // Test that the cache state is normal before we expire the data
-      expect(await manager.getToken(cacheKey)).toStrictEqual(data);
+      expect(await manager.get(cacheKey)).toStrictEqual(data);
 
       // Advance the time to just past the expiry..
       provider.mockResolvedValue((now + dayInSeconds + 100) * 1000);
 
-      const result = await manager.getToken(cacheKey);
+      const result = await manager.get(cacheKey);
 
       // And test that the cache has been emptied
       expect(result).toBeFalsy();
@@ -556,12 +556,12 @@ cacheFactories.forEach(cacheFactory => {
       const cacheKey = CacheKey.fromCacheEntry(data);
 
       // Test that the cache state is normal before we expire the data
-      expect(await manager.getToken(cacheKey)).toStrictEqual(data);
+      expect(await manager.get(cacheKey)).toStrictEqual(data);
 
       // Advance the time to just past the expiry..
       provider.mockReturnValue((now + dayInSeconds + 100) * 1000);
 
-      const result = await manager.getToken(cacheKey);
+      const result = await manager.get(cacheKey);
 
       // And test that the cache has been emptied
       expect(result).toBeFalsy();
@@ -583,22 +583,22 @@ cacheFactories.forEach(cacheFactory => {
       await manager.set(entry2);
       await manager.set(entry3);
 
-      expect(await manager.getToken(CacheKey.fromCacheEntry(entry1))).toStrictEqual(
+      expect(await manager.get(CacheKey.fromCacheEntry(entry1))).toStrictEqual(
         entry1
       );
 
-      expect(await manager.getToken(CacheKey.fromCacheEntry(entry2))).toStrictEqual(
+      expect(await manager.get(CacheKey.fromCacheEntry(entry2))).toStrictEqual(
         entry2
       );
 
-      expect(await manager.getToken(CacheKey.fromCacheEntry(entry3))).toStrictEqual(
+      expect(await manager.get(CacheKey.fromCacheEntry(entry3))).toStrictEqual(
         entry3
       );
 
       await manager.clear();
-      expect(await manager.getToken(CacheKey.fromCacheEntry(entry1))).toBeFalsy();
-      expect(await manager.getToken(CacheKey.fromCacheEntry(entry2))).toBeFalsy();
-      expect(await manager.getToken(CacheKey.fromCacheEntry(entry3))).toBeFalsy();
+      expect(await manager.get(CacheKey.fromCacheEntry(entry1))).toBeFalsy();
+      expect(await manager.get(CacheKey.fromCacheEntry(entry2))).toBeFalsy();
+      expect(await manager.get(CacheKey.fromCacheEntry(entry3))).toBeFalsy();
     });
 
     it('clears only the keys relating to a specific client ID from the cache', async () => {
@@ -610,24 +610,24 @@ cacheFactories.forEach(cacheFactory => {
       await manager.set(entry2);
       await manager.set(entry3);
 
-      expect(await manager.getToken(CacheKey.fromCacheEntry(entry1))).toStrictEqual(
+      expect(await manager.get(CacheKey.fromCacheEntry(entry1))).toStrictEqual(
         entry1
       );
 
-      expect(await manager.getToken(CacheKey.fromCacheEntry(entry2))).toStrictEqual(
+      expect(await manager.get(CacheKey.fromCacheEntry(entry2))).toStrictEqual(
         entry2
       );
 
-      expect(await manager.getToken(CacheKey.fromCacheEntry(entry3))).toStrictEqual(
+      expect(await manager.get(CacheKey.fromCacheEntry(entry3))).toStrictEqual(
         entry3
       );
 
       await manager.clear(TEST_CLIENT_ID);
-      expect(await manager.getToken(CacheKey.fromCacheEntry(entry1))).toBeFalsy();
-      expect(await manager.getToken(CacheKey.fromCacheEntry(entry2))).toBeFalsy();
+      expect(await manager.get(CacheKey.fromCacheEntry(entry1))).toBeFalsy();
+      expect(await manager.get(CacheKey.fromCacheEntry(entry2))).toBeFalsy();
 
       // Should not be removed as it has a different client ID from the manager instance
-      expect(await manager.getToken(CacheKey.fromCacheEntry(entry3))).toStrictEqual(
+      expect(await manager.get(CacheKey.fromCacheEntry(entry3))).toStrictEqual(
         entry3
       );
     });
@@ -810,10 +810,10 @@ cacheFactories.forEach(cacheFactory => {
       });
     });
 
-    describe('getToken', () => {
+    describe('get', () => {
       describe('when there is nothing in the cache', () => {
         it('returns undefined', async () => {
-          const result = await manager.getToken(defaultKey);
+          const result = await manager.get(defaultKey);
 
           expect(result).toBeFalsy();
         });
@@ -838,7 +838,7 @@ cacheFactories.forEach(cacheFactory => {
             scope: TEST_SCOPES
           });
 
-          const res = await manager.getToken(key);
+          const res = await manager.get(key);
 
           expect(res).toStrictEqual(data);
           expect(manager.getActiveToken).toHaveBeenCalledTimes(1);
@@ -868,7 +868,7 @@ cacheFactories.forEach(cacheFactory => {
             scope: TEST_SCOPES
           });
 
-          const res = await manager.getToken(key);
+          const res = await manager.get(key);
 
           const expectedResult = { refresh_token: TEST_REFRESH_TOKEN };
 
@@ -901,7 +901,7 @@ cacheFactories.forEach(cacheFactory => {
             scope: 'read:user'
           });
 
-          const res = await manager.getToken(key);
+          const res = await manager.get(key);
 
           expect(res).toStrictEqual(data);
           expect(manager.getActiveToken).toHaveBeenCalledTimes(1);

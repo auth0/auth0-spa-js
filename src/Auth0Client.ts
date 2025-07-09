@@ -766,7 +766,7 @@ export class Auth0Client {
 
     await this.loginWithPopup(localOptions, config);
 
-    const cache = await this.cacheManager.getToken(
+    const cache = await this.cacheManager.get(
       new CacheKey({
         scope: localOptions.authorizationParams.scope,
         audience: localOptions.authorizationParams.audience || 'default',
@@ -943,7 +943,7 @@ export class Auth0Client {
       authorizationParams: AuthorizationParams & { scope: string };
     }
   ): Promise<GetTokenSilentlyResult> {
-    const cache = await this.cacheManager.getToken(
+    const cache = await this.cacheManager.get(
       new CacheKey({
         scope: options.authorizationParams.scope,
         audience: options.authorizationParams.audience || 'default',
@@ -1062,7 +1062,7 @@ export class Auth0Client {
     audience: string;
     clientId: string;
   }): Promise<undefined | GetTokenSilentlyVerboseResponse> {
-    const entry = await this.cacheManager.getToken(
+    const entry = await this.cacheManager.get(
       new CacheKey({
         scope,
         audience,
