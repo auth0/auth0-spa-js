@@ -1,6 +1,6 @@
 import { Auth0Client } from '../../src/Auth0Client';
 import { expect } from '@jest/globals';
-import { fetchResponse, setupFn, getTokenSilentlyFn } from './helpers';
+import { setupFn, getTokenSilentlyFn } from './helpers';
 import { verify } from '../../src/jwt';
 import * as utils from '../../src/utils';
 
@@ -32,13 +32,17 @@ describe('Auth0Client - Event Origin Extraction', () => {
     // Set up the helper functions
     setup = setupFn(mockVerify);
     getTokenSilently = getTokenSilentlyFn(mockWindow, mockFetch);
-    
+
     // Setup utils mocks
     jest.spyOn(utils, 'createQueryParams').mockReturnValue('query=params');
     jest.spyOn(utils, 'encode').mockReturnValue('encoded-state');
     jest.spyOn(utils, 'createRandomString').mockReturnValue('random-string');
-    jest.spyOn(utils, 'sha256').mockReturnValue(Promise.resolve('array-buffer'));
-    jest.spyOn(utils, 'bufferToBase64UrlEncoded').mockReturnValue('base64-encoded');
+    jest
+      .spyOn(utils, 'sha256')
+      .mockReturnValue(Promise.resolve('array-buffer'));
+    jest
+      .spyOn(utils, 'bufferToBase64UrlEncoded')
+      .mockReturnValue('base64-encoded');
     jest.spyOn(utils, 'validateCrypto').mockReturnValue(undefined);
     jest.spyOn(utils, 'getDomain').mockImplementation((domain: string) => {
       if (!/^https?:\/\//.test(domain)) {
