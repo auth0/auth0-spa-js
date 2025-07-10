@@ -901,7 +901,15 @@ export class Auth0Client {
       const authorizeTimeout =
         options.timeoutInSeconds || this.options.authorizeTimeoutInSeconds;
 
-      const codeResult = await runIframe(url, new URL(this.domainUrl).origin, authorizeTimeout);
+      // Extract origin from domainUrl, fallback to domainUrl if URL parsing fails
+      let eventOrigin: string;
+      try {
+        eventOrigin = new URL(this.domainUrl).origin;
+      } catch {
+        eventOrigin = this.domainUrl;
+      }
+
+      const codeResult = await runIframe(url, eventOrigin, authorizeTimeout);
 
       if (stateIn !== codeResult.state) {
         throw new GenericError('state_mismatch', 'Invalid state');
