@@ -911,7 +911,7 @@ cacheFactories.forEach(cacheFactory => {
         });
       });
 
-      describe('when some entry match with the same organization', () => {
+      describe('when we request a token for a different audience', () => {
         it('returns entry', async () => {
           jest.spyOn(manager, 'getActiveToken');
           jest.spyOn(manager, 'getInactiveToken');
@@ -931,11 +931,10 @@ cacheFactories.forEach(cacheFactory => {
           const key = new CacheKey({
             clientId: TEST_CLIENT_ID,
             audience: 'New audience',
-            // organization: 'organizationA',
             scope: 'read:book',
           });
 
-          const res = await manager.getToken(
+          const res = await manager.get(
             key,
             { expiryAdjustmentSeconds: 0, useMRRT: true },
           );
@@ -1303,12 +1302,11 @@ cacheFactories.forEach(cacheFactory => {
       describe('when key is not found', () => {
         it('returns undefined', async () => {
           jest.spyOn(CacheManagerUtils, 'hasDefaultParameters').mockReturnValue(false);
-          jest.spyOn(CacheManagerUtils, 'hasMatchingOrganization').mockReturnValue(false);
+          jest.spyOn(CacheManagerUtils, 'isIdToken').mockReturnValue(false);
 
           const key = new CacheKey({
             clientId: TEST_CLIENT_ID,
             audience: 'New audience',
-            // organization: 'organizationA',
             scope: 'read:user update:user'
           });
 
@@ -1323,12 +1321,11 @@ cacheFactories.forEach(cacheFactory => {
       describe('when key is found but not entry', () => {
         it('returns undefined', async () => {
           jest.spyOn(CacheManagerUtils, 'hasDefaultParameters').mockReturnValue(true);
-          jest.spyOn(CacheManagerUtils, 'hasMatchingOrganization').mockReturnValue(true);
+          jest.spyOn(CacheManagerUtils, 'isIdToken').mockReturnValue(false);
 
           const key = new CacheKey({
             clientId: TEST_CLIENT_ID,
             audience: 'New audience',
-            // organization: 'organizationA',
             scope: 'read:user update:user'
           });
 
@@ -1343,12 +1340,11 @@ cacheFactories.forEach(cacheFactory => {
       describe('when entry is found but it does not have refresh_token', () => {
         it('returns undefined', async () => {
           jest.spyOn(CacheManagerUtils, 'hasDefaultParameters').mockReturnValue(true);
-          jest.spyOn(CacheManagerUtils, 'hasMatchingOrganization').mockReturnValue(true);
+          jest.spyOn(CacheManagerUtils, 'isIdToken').mockReturnValue(false);
 
           const key = new CacheKey({
             clientId: TEST_CLIENT_ID,
             audience: 'New audience',
-            // organization: 'organizationA',
             scope: 'read:books update:books'
           });
 
@@ -1372,7 +1368,7 @@ cacheFactories.forEach(cacheFactory => {
       describe('when entry is found and has refresh_token', () => {
         it('returns entry', async () => {
           jest.spyOn(CacheManagerUtils, 'hasDefaultParameters').mockReturnValue(true);
-          jest.spyOn(CacheManagerUtils, 'hasMatchingOrganization').mockReturnValue(true);
+          jest.spyOn(CacheManagerUtils, 'isIdToken').mockReturnValue(false);
 
           const data = {
             ...defaultData,
@@ -1387,7 +1383,6 @@ cacheFactories.forEach(cacheFactory => {
           const key = new CacheKey({
             clientId: TEST_CLIENT_ID,
             audience: 'New audience',
-            // organization: 'organizationA',
             scope: 'read:books update:books'
           });
 
