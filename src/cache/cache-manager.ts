@@ -72,8 +72,10 @@ export class CacheManager {
     cacheKey: CacheKey,
     options: {
       expiryAdjustmentSeconds: number,
+      useMRRT: boolean | undefined
     } = {
         expiryAdjustmentSeconds: DEFAULT_EXPIRY_ADJUSTMENT_SECONDS,
+        useMRRT: false
       },
   ): Promise<Partial<CacheEntry> | undefined> {
     const activeToken = await this.getActiveToken(
@@ -106,6 +108,17 @@ export class CacheManager {
 
     if (siblingToken) {
       return siblingToken.body;
+    }
+
+    if (options.useMRRT) {
+      const MRRTToken = await this.getMRRTToken(
+        cacheKey,
+        keys,
+      );
+
+      if (MRRTToken) {
+        return MRRTToken.body;
+      }
     }
 
     return;
@@ -201,6 +214,31 @@ export class CacheManager {
     return entry;
   }
 
+  async getMRRTToken(
+    keyToMatch: CacheKey,
+    keys: string[],
+  ): Promise<WrappedCacheEntry | undefined> {
+    const foundKey = keys.find((storageKey) => {
+      return CacheManagerUtils.hasDefaultParameters(storageKey, keyToMatch)
+        && !CacheManagerUtils.isIdToken(storageKey)
+    });
+
+    if (!foundKey) return undefined;
+
+    const entry = await this.cache.get<WrappedCacheEntry>(foundKey);
+
+    if (!entry || !entry.body.refresh_token) return undefined;
+
+    entry.body = {
+      refresh_token: entry.body.refresh_token,
+      scope: keyToMatch.scope,
+      audience: keyToMatch.audience,
+      isMRRT: true,
+    };
+
+    return entry;
+  }
+
   async set(entry: CacheEntry): Promise<void> {
     const cacheKey = new CacheKey({
       clientId: entry.client_id,
@@ -228,6 +266,30 @@ export class CacheManager {
       }, Promise.resolve());
 
     await this.keyManifest?.clear();
+  }
+
+  async updateEntry(
+    oldRefreshToken: string | undefined,
+    newRefreshToken: string,
+  ): Promise<void> {
+    const keys = await this.getCacheKeys();
+
+    if (!keys) return;
+
+    keys.forEach(async (key) => {
+      const entry = await this.cache.get<WrappedCacheEntry>(key);
+
+      if (!entry) return;
+
+      if (entry.body?.refresh_token === oldRefreshToken) {
+        const cacheKey = {
+          ...entry.body,
+          refresh_token: newRefreshToken,
+        } as CacheEntry;
+
+        await this.set(cacheKey);
+      }
+    })
   }
 
   private async wrapCacheEntry(entry: CacheEntry): Promise<WrappedCacheEntry> {

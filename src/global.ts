@@ -269,6 +269,11 @@ export interface Auth0ClientOptions extends BaseLoginOptions {
    * **Note**: The worker is only used when `useRefreshTokens: true`, `cacheLocation: 'memory'`, and the `cache` is not custom.
    */
   workerUrl?: string;
+
+  /**
+   * If provided, the SDK will allow the refreshing of tokens using MRRT
+   */
+  useMRRT?: boolean;
 }
 
 /**
@@ -342,7 +347,7 @@ export interface RedirectLoginResult<TAppState = any> {
   appState?: TAppState;
 }
 
-export interface PopupLoginOptions extends BaseLoginOptions {}
+export interface PopupLoginOptions extends BaseLoginOptions { }
 
 export interface PopupConfigOptions {
   /**

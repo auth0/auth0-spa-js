@@ -81,6 +81,7 @@ export type CacheEntry = {
   client_id: string;
   refresh_token?: string;
   oauthTokenScope?: string;
+  isMRRT?: boolean;
 };
 
 export type WrappedCacheEntry = {

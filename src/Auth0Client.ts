@@ -771,7 +771,11 @@ export class Auth0Client {
         scope: localOptions.authorizationParams.scope,
         audience: localOptions.authorizationParams.audience || 'default',
         clientId: this.options.clientId
-      })
+      }),
+      {
+        useMRRT: this.options.useMRRT,
+        expiryAdjustmentSeconds: 0,
+      },
     );
 
     return cache!.access_token;
@@ -948,7 +952,11 @@ export class Auth0Client {
         scope: options.authorizationParams.scope,
         audience: options.authorizationParams.audience || 'default',
         clientId: this.options.clientId
-      })
+      }),
+      {
+        useMRRT: this.options.useMRRT,
+        expiryAdjustmentSeconds: 0,
+      },
     );
 
     // If you don't have a refresh token in memory
@@ -984,6 +992,15 @@ export class Auth0Client {
         redirect_uri,
         ...(timeout && { timeout })
       });
+
+      // If is refreshed with MRRT, we update all entries that have the old 
+      // refresh_token with the new one if the server responded with one
+      if (tokenResult.refresh_token && this.options.useMRRT) {
+        await this.cacheManager.updateEntry(
+          cache?.refresh_token,
+          tokenResult.refresh_token
+        );
+      }
 
       return {
         ...tokenResult,
@@ -1069,7 +1086,8 @@ export class Auth0Client {
         clientId
       }),
       {
-        expiryAdjustmentSeconds: 60 // get a new token if within 60 seconds of expiring
+        expiryAdjustmentSeconds: 60, // get a new token if within 60 seconds of expiring,
+        useMRRT: this.options.useMRRT,
       },
     );
 
@@ -1114,6 +1132,7 @@ export class Auth0Client {
         auth0Client: this.options.auth0Client,
         useFormData: this.options.useFormData,
         timeout: this.httpTimeoutMs,
+        useMRRT: this.options.useMRRT,
         ...options
       },
       this.worker
@@ -1204,6 +1223,25 @@ export class Auth0Client {
       scope: getUniqueScopes(options.scope, this.scope),
       audience: this.options.authorizationParams.audience
     });
+  }
+
+  // TODO-ari: remove that or mantain?
+  public async getAccessToken(
+    options: GetTokenSilentlyOptions & {
+      authorizationParams: AuthorizationParams & { scope: string };
+      fallback: string
+    }
+  ): Promise<string | undefined> {
+    try {
+      const getTokenSilently = await this._getTokenSilently(options);
+      return getTokenSilently?.access_token;
+    } catch (error) {
+      if (options.fallback === 'popup') {
+        return await this.getTokenWithPopup(options);
+      }
+
+      throw error;
+    }
   }
 }
 

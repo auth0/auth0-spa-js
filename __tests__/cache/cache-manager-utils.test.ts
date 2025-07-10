@@ -230,4 +230,25 @@ describe('CacheManagerUtils', () => {
       });
     });
   });
+
+  describe("isIdToken", () => {
+    describe("when audience is CACHE_KEY_ID_TOKEN_SUFFIX", () => {
+      it("returns true", () => {
+        const key = "@@auth0spajs@@::T3H5fYkaBS2IMn74yRCP8YPaghRf3y80::@@user@@";
+
+        const res = CacheManagerUtils.isIdToken(key);
+
+        expect(res).toEqual(true);
+      });
+    });
+    describe("when audience is not CACHE_KEY_ID_TOKEN_SUFFIX", () => {
+      it("returns false", () => {
+        const key = "@@auth0spajs@@::auth0_client_id::my_audience::read:user update:user";
+
+        const res = CacheManagerUtils.isIdToken(key);
+
+        expect(res).toEqual(false);
+      });
+    });
+  });
 });

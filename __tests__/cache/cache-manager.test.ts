@@ -232,6 +232,7 @@ cacheFactories.forEach(cacheFactory => {
           }),
           {
             expiryAdjustmentSeconds: 60,
+            useMRRT: false,
           }
         )
       ).toBeFalsy();
@@ -301,6 +302,7 @@ cacheFactories.forEach(cacheFactory => {
         cacheKey,
         {
           expiryAdjustmentSeconds: 60,
+          useMRRT: false,
         },
       );
 
@@ -333,7 +335,7 @@ cacheFactories.forEach(cacheFactory => {
 
       const result = await manager.get(
         cacheKey,
-        { expiryAdjustmentSeconds },
+        { expiryAdjustmentSeconds, useMRRT: false, },
       );
 
       // And test that the cache has been emptied
@@ -908,6 +910,46 @@ cacheFactories.forEach(cacheFactory => {
           expect(manager.getInactiveToken).toHaveBeenCalledTimes(1);
         });
       });
+
+      describe('when we request a token for a different audience', () => {
+        it('returns entry', async () => {
+          jest.spyOn(manager, 'getActiveToken');
+          jest.spyOn(manager, 'getInactiveToken');
+          jest.spyOn(manager, 'getSiblingToken');
+          jest.spyOn(manager, 'getMRRTToken');
+
+          const data = {
+            ...defaultData,
+            scope: 'read:user update:user',
+            audience: TEST_AUDIENCE,
+            organization: 'organizationA',
+            refresh_token: TEST_REFRESH_TOKEN,
+          };
+
+          await manager.set(data);
+
+          const key = new CacheKey({
+            clientId: TEST_CLIENT_ID,
+            audience: 'New audience',
+            scope: 'read:book',
+          });
+
+          const res = await manager.get(
+            key,
+            { expiryAdjustmentSeconds: 0, useMRRT: true },
+          );
+
+          expect(res).toMatchObject({
+            refresh_token: data.refresh_token,
+            audience: key.audience,
+            scope: key.scope,
+          });
+          expect(manager.getActiveToken).toHaveBeenCalledTimes(1);
+          expect(manager.getInactiveToken).toHaveBeenCalledTimes(1);
+          expect(manager.getSiblingToken).toHaveBeenCalledTimes(1);
+          expect(manager.getMRRTToken).toHaveBeenCalledTimes(1);
+        });
+      });
     });
 
     describe('getRefreshToken', () => {
@@ -1252,6 +1294,176 @@ cacheFactories.forEach(cacheFactory => {
           );
 
           expect(res?.body).toEqual(data);
+        });
+      });
+    });
+
+    describe('getMRRTToken', () => {
+      describe('when key is not found', () => {
+        it('returns undefined', async () => {
+          jest.spyOn(CacheManagerUtils, 'hasDefaultParameters').mockReturnValue(false);
+          jest.spyOn(CacheManagerUtils, 'isIdToken').mockReturnValue(false);
+
+          const key = new CacheKey({
+            clientId: TEST_CLIENT_ID,
+            audience: 'New audience',
+            scope: 'read:user update:user'
+          });
+
+          const res = await manager.getMRRTToken(
+            key,
+            ['@@auth0spajs@@::auth0_client_id::my_audience::read:user update:user'],
+          );
+
+          expect(res).toBeFalsy();
+        });
+      });
+      describe('when key is found but not entry', () => {
+        it('returns undefined', async () => {
+          jest.spyOn(CacheManagerUtils, 'hasDefaultParameters').mockReturnValue(true);
+          jest.spyOn(CacheManagerUtils, 'isIdToken').mockReturnValue(false);
+
+          const key = new CacheKey({
+            clientId: TEST_CLIENT_ID,
+            audience: 'New audience',
+            scope: 'read:user update:user'
+          });
+
+          const res = await manager.getMRRTToken(
+            key,
+            ['@@auth0spajs@@::auth0_client_id::my_audience::read:user update:user'],
+          );
+
+          expect(res).toBeFalsy();
+        });
+      });
+      describe('when entry is found but it does not have refresh_token', () => {
+        it('returns undefined', async () => {
+          jest.spyOn(CacheManagerUtils, 'hasDefaultParameters').mockReturnValue(true);
+          jest.spyOn(CacheManagerUtils, 'isIdToken').mockReturnValue(false);
+
+          const key = new CacheKey({
+            clientId: TEST_CLIENT_ID,
+            audience: 'New audience',
+            scope: 'read:books update:books'
+          });
+
+          const data = {
+            ...defaultData,
+            scope: 'read:user update:user',
+            audience: TEST_AUDIENCE,
+            organization: 'organizationA',
+          };
+
+          await manager.set(data);
+
+          const res = await manager.getMRRTToken(
+            key,
+            ['@@auth0spajs@@::auth0_client_id::my_audience::read:user update:user'],
+          );
+
+          expect(res).toBeFalsy();
+        });
+      });
+      describe('when entry is found and has refresh_token', () => {
+        it('returns entry', async () => {
+          jest.spyOn(CacheManagerUtils, 'hasDefaultParameters').mockReturnValue(true);
+          jest.spyOn(CacheManagerUtils, 'isIdToken').mockReturnValue(false);
+
+          const data = {
+            ...defaultData,
+            scope: 'read:user update:user',
+            audience: TEST_AUDIENCE,
+            organization: 'organizationA',
+            refresh_token: TEST_REFRESH_TOKEN,
+          };
+
+          await manager.set(data);
+
+          const key = new CacheKey({
+            clientId: TEST_CLIENT_ID,
+            audience: 'New audience',
+            scope: 'read:books update:books'
+          });
+
+          const res = await manager.getMRRTToken(
+            key,
+            ['@@auth0spajs@@::auth0_client_id::my_audience::read:user update:user'],
+          );
+
+          expect(res?.body).toMatchObject({
+            refresh_token: data.refresh_token,
+            scope: key.scope,
+            audience: key.audience,
+          });
+        });
+      });
+    });
+
+    describe('updateEntry', () => {
+      describe('when there are not keys in cache', () => {
+        it('returns undefined', async () => {
+          const res = await manager.updateEntry('1234', '4567');
+
+          expect(res).toBeFalsy();
+        });
+      });
+      describe('when it does not find any matching entry', () => {
+        it('returns undefined', async () => {
+          jest.spyOn(cache, 'get').mockReturnValue(undefined);
+
+          const data = {
+            ...defaultData,
+            scope: 'read:user update:user',
+            audience: TEST_AUDIENCE,
+            organization: 'organizationA',
+            refresh_token: TEST_REFRESH_TOKEN,
+          };
+
+          await manager.set(data);
+
+          const res = await manager.updateEntry('1234', '4567');
+
+          expect(res).toBeFalsy();
+        });
+      });
+      describe('when it does find a matching entry but it does not have same refresh_token', () => {
+        it('returns undefined', async () => {
+          const data = {
+            ...defaultData,
+            scope: 'read:user update:user',
+            audience: TEST_AUDIENCE,
+            organization: 'organizationA',
+            refresh_token: '1234',
+          };
+
+          await manager.set(data);
+
+          const res = await manager.updateEntry(TEST_REFRESH_TOKEN, '4567');
+
+          expect(res).toBeFalsy();
+        });
+      });
+      describe('when it does find a matching entry and has same refresh_token', () => {
+        it('updates entry in cache with new refresh_token', async () => {
+          jest.spyOn(manager, 'set');
+
+          const data = {
+            ...defaultData,
+            scope: 'read:user update:user',
+            audience: TEST_AUDIENCE,
+            organization: 'organizationA',
+            refresh_token: TEST_REFRESH_TOKEN,
+            clientId: TEST_CLIENT_ID,
+          };
+
+          await manager.set(data);
+
+          const newToken = '4567';
+
+          await manager.updateEntry(TEST_REFRESH_TOKEN, newToken);
+
+          expect(manager.set).toHaveBeenCalled();
         });
       });
     });

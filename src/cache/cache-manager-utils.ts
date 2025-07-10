@@ -1,4 +1,4 @@
-import { CACHE_KEY_PREFIX, CacheKey, WrappedCacheEntry } from "./shared";
+import { CACHE_KEY_ID_TOKEN_SUFFIX, CACHE_KEY_PREFIX, CacheKey, WrappedCacheEntry } from "./shared";
 
 /**
  * Finds the corresponding key in the cache based on the provided cache key.
@@ -27,6 +27,12 @@ const hasMatchingAudience = (key: string, keyToMatch: CacheKey): boolean => {
 
   return cacheKey.audience === keyToMatch.audience
 };
+
+const isIdToken = (key: string): boolean => {
+  const cacheKey = CacheKey.fromKey(key);
+
+  return cacheKey.audience === CACHE_KEY_ID_TOKEN_SUFFIX;
+}
 
 /**
  * Finds the corresponding key in the cache based on the provided cache key.
@@ -77,4 +83,5 @@ export const CacheManagerUtils = {
   isTokenExpired,
   findKey,
   isMatchingKey,
+  isIdToken,
 };
