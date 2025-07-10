@@ -220,8 +220,7 @@ export class CacheManager {
   ): Promise<WrappedCacheEntry | undefined> {
     const foundKey = keys.find((storageKey) => {
       return CacheManagerUtils.hasDefaultParameters(storageKey, keyToMatch)
-        && CacheManagerUtils.hasMatchingOrganization()
-        && CacheManagerUtils.hasAudience(storageKey)
+        && !CacheManagerUtils.isIdToken(storageKey)
     });
 
     if (!foundKey) return undefined;
