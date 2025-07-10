@@ -45,7 +45,7 @@ export class CacheManager {
     );
 
     if (!entry && cacheKey.scope && cacheKey.audience) {
-      const entryByScope = await this.getToken(cacheKey);
+      const entryByScope = await this.get(cacheKey);
 
       if (!entryByScope) {
         return;
@@ -68,7 +68,7 @@ export class CacheManager {
     return { id_token: entry.id_token, decodedToken: entry.decodedToken };
   }
 
-  async getToken(
+  async get(
     cacheKey: CacheKey,
     options: {
       expiryAdjustmentSeconds: number,
