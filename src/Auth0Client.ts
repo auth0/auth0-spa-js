@@ -310,8 +310,8 @@ export class Auth0Client {
       nonce,
       code_challenge,
       authorizationParams.redirect_uri ||
-        this.options.authorizationParams.redirect_uri ||
-        fallbackRedirectUri,
+      this.options.authorizationParams.redirect_uri ||
+      fallbackRedirectUri,
       authorizeOptions?.response_mode
     );
 
@@ -584,7 +584,7 @@ export class Auth0Client {
 
     try {
       await this.getTokenSilently(options);
-    } catch (_) {}
+    } catch (_) { }
   }
 
   /**
@@ -1068,7 +1068,9 @@ export class Auth0Client {
         audience,
         clientId
       }),
-      60 // get a new token if within 60 seconds of expiring
+      {
+        expiryAdjustmentSeconds: 60 // get a new token if within 60 seconds of expiring
+      },
     );
 
     if (entry && entry.access_token) {
