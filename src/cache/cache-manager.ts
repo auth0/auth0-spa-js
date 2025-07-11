@@ -1,5 +1,5 @@
 import { DEFAULT_NOW_PROVIDER } from '../constants';
-import { CacheManagerUtils } from './cache-manager-utils';
+import * as CacheManagerUtils from './cache-manager-utils';
 import { CacheKeyManifest } from './key-manifest';
 
 import {
@@ -96,7 +96,9 @@ export class CacheManager {
 
     const keys = await this.getCacheKeys();
 
-    if (!keys) return;
+    if (!keys) {
+      return
+    };
 
     const siblingToken = await this.getSiblingToken(
       cacheKey,
@@ -140,8 +142,8 @@ export class CacheManager {
     );
 
     if (!entry) {
-      return undefined;
-    }
+      return undefined
+    };
 
     const isExpired = await CacheManagerUtils.isTokenExpired(
       entry,
@@ -160,7 +162,9 @@ export class CacheManager {
       cacheKey.toKey()
     );
 
-    if (!entry) return undefined;
+    if (!entry) {
+      return undefined
+    };
 
     const isExpired = await CacheManagerUtils.isTokenExpired(
       entry,
@@ -182,11 +186,15 @@ export class CacheManager {
   ): Promise<WrappedCacheEntry | undefined> {
     const foundKey = CacheManagerUtils.findKey(keys, keyToMatch);
 
-    if (!foundKey) return undefined;
+    if (!foundKey) {
+      return undefined
+    };
 
     const entry = await this.cache.get<WrappedCacheEntry>(foundKey);
 
-    if (!entry) return undefined;
+    if (!entry) {
+      return undefined
+    };
 
     const isExpired = await CacheManagerUtils.isTokenExpired(
       entry,

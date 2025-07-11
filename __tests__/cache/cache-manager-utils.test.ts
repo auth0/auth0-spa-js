@@ -1,5 +1,5 @@
 import { CacheKey } from "../../src/cache";
-import { CacheManagerUtils } from "../../src/cache/cache-manager-utils";
+import * as CacheManagerUtils from "../../src/cache/cache-manager-utils";
 import { TEST_AUDIENCE, TEST_CLIENT_ID } from "../constants";
 import { expect } from '@jest/globals';
 

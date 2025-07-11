@@ -5,7 +5,7 @@ import { CACHE_KEY_PREFIX, CacheKey, WrappedCacheEntry } from "./shared";
  * The keys inside the cache are in the format {prefix}::{clientId}::{audience}::{scope}.
  * - `scope` contains at least all the `cacheKey.scope` values
  */
-const hasCompatibleScopes = (key: string, keyToMatch: CacheKey): boolean => {
+export const hasCompatibleScopes = (key: string, keyToMatch: CacheKey): boolean => {
   const cacheKey = CacheKey.fromKey(key);
   const scopeSet = new Set(cacheKey.scope && cacheKey.scope.split(' '));
   const scopesToMatch = keyToMatch.scope?.split(' ') || [];
@@ -22,7 +22,7 @@ const hasCompatibleScopes = (key: string, keyToMatch: CacheKey): boolean => {
  * The keys inside the cache are in the format {prefix}::{clientId}::{audience}::{scope}.
  * - `audience` is strict equal to the `cacheKey.audience`
  */
-const hasMatchingAudience = (key: string, keyToMatch: CacheKey): boolean => {
+export const hasMatchingAudience = (key: string, keyToMatch: CacheKey): boolean => {
   const cacheKey = CacheKey.fromKey(key);
 
   return cacheKey.audience === keyToMatch.audience
@@ -34,14 +34,14 @@ const hasMatchingAudience = (key: string, keyToMatch: CacheKey): boolean => {
  * - `prefix` is strict equal to Auth0's internally configured `keyPrefix`
  * - `clientId` is strict equal to the `cacheKey.clientId`
  */
-const hasDefaultParameters = (key: string, keyToMatch: CacheKey): boolean => {
+export const hasDefaultParameters = (key: string, keyToMatch: CacheKey): boolean => {
   const cacheKey = CacheKey.fromKey(key);
 
   return cacheKey.prefix === CACHE_KEY_PREFIX
     && cacheKey.clientId === keyToMatch.clientId;
 };
 
-const isTokenExpired = async (
+export const isTokenExpired = async (
   entry: WrappedCacheEntry,
   expiryAdjustmentSeconds: number,
   nowProvider: () => number | Promise<number>
@@ -52,29 +52,20 @@ const isTokenExpired = async (
   return entry.expiresAt - expiryAdjustmentSeconds < nowSeconds;
 };
 
-const isMatchingKey = (
+export const isMatchingKey = (
   storageKey: string,
   keyToMatch: CacheKey,
 ): boolean => {
-  return CacheManagerUtils.hasMatchingAudience(storageKey, keyToMatch)
-    && CacheManagerUtils.hasCompatibleScopes(storageKey, keyToMatch);
+  return hasMatchingAudience(storageKey, keyToMatch)
+    && hasCompatibleScopes(storageKey, keyToMatch);
 }
 
-const findKey = (
+export const findKey = (
   keys: string[],
   keyToMatch: CacheKey,
 ): string | undefined => {
   return keys.find((storageKey) => {
-    return CacheManagerUtils.hasDefaultParameters(storageKey, keyToMatch)
-      && CacheManagerUtils.isMatchingKey(storageKey, keyToMatch)
+    return hasDefaultParameters(storageKey, keyToMatch)
+      && isMatchingKey(storageKey, keyToMatch)
   });
 }
-
-export const CacheManagerUtils = {
-  hasCompatibleScopes,
-  hasMatchingAudience,
-  hasDefaultParameters,
-  isTokenExpired,
-  findKey,
-  isMatchingKey,
-};
