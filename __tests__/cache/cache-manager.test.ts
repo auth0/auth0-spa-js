@@ -821,13 +821,10 @@ cacheFactories.forEach(cacheFactory => {
 
       describe('when some entry match with exact audience, organization and scopes and is active', () => {
         it('returns entry', async () => {
-          jest.spyOn(manager, 'getActiveToken');
-
           const data = {
             ...defaultData,
             scope: TEST_SCOPES,
             audience: TEST_AUDIENCE,
-            organization: 'organizationA',
           };
 
           await manager.set(data);
@@ -841,22 +838,18 @@ cacheFactories.forEach(cacheFactory => {
           const res = await manager.get(key);
 
           expect(res).toStrictEqual(data);
-          expect(manager.getActiveToken).toHaveBeenCalledTimes(1);
         });
       });
 
       describe('when some entry match with exact audience, organization and scopes and is not active', () => {
         it('returns entry', async () => {
-          jest.spyOn(manager, 'getActiveToken');
-          jest.spyOn(manager, 'getInactiveToken');
-          jest.spyOn(manager, 'getRefreshToken');
+          manager["getActiveAccessToken"] = jest.fn();
           jest.spyOn(CacheManagerUtils, 'isTokenExpired').mockResolvedValue(true);
 
           const data = {
             ...defaultData,
             scope: TEST_SCOPES,
             audience: TEST_AUDIENCE,
-            organization: 'organizationA',
             refresh_token: TEST_REFRESH_TOKEN,
           };
 
@@ -873,23 +866,15 @@ cacheFactories.forEach(cacheFactory => {
           const expectedResult = { refresh_token: TEST_REFRESH_TOKEN };
 
           expect(res).toStrictEqual(expectedResult);
-          expect(manager.getActiveToken).toHaveBeenCalledTimes(1);
-          expect(manager.getInactiveToken).toHaveBeenCalledTimes(1);
-          expect(manager.getRefreshToken).toHaveBeenCalledTimes(1);
         });
       });
 
       describe('when some entry match with exact audience, organization and has compatible scopes', () => {
         it('returns entry', async () => {
-          jest.spyOn(manager, 'getActiveToken');
-          jest.spyOn(manager, 'getInactiveToken');
-          jest.spyOn(manager, 'getSiblingToken');
-
           const data = {
             ...defaultData,
             scope: 'read:user update:user',
             audience: TEST_AUDIENCE,
-            organization: 'organizationA',
             refresh_token: TEST_REFRESH_TOKEN,
           };
 
@@ -904,354 +889,6 @@ cacheFactories.forEach(cacheFactory => {
           const res = await manager.get(key);
 
           expect(res).toStrictEqual(data);
-          expect(manager.getActiveToken).toHaveBeenCalledTimes(1);
-          expect(manager.getInactiveToken).toHaveBeenCalledTimes(1);
-        });
-      });
-    });
-
-    describe('getRefreshToken', () => {
-      describe('when entry does not have refresh_token', () => {
-        it('returns undefined and removes entry from memory', async () => {
-          jest.spyOn(manager, 'onNoRefreshableToken');
-
-          const key = new CacheKey({
-            clientId: TEST_CLIENT_ID,
-            audience: TEST_AUDIENCE,
-            scope: 'read:user'
-          });
-
-          const entry = {
-            body: {
-              ...defaultData,
-              scope: 'read:user update:user',
-              audience: TEST_AUDIENCE,
-              organization: 'organizationA',
-            },
-            expiresAt: 0,
-          };
-
-          const res = await manager.getRefreshToken(entry, key);
-
-          expect(res).toBeFalsy();
-          expect(manager.onNoRefreshableToken).toHaveBeenCalledTimes(1);
-        });
-      });
-
-      describe('when entry has refresh_token', () => {
-        it('sets entry in cache and returns refresh_token', async () => {
-          jest.spyOn(cache, 'set');
-
-          const key = new CacheKey({
-            clientId: TEST_CLIENT_ID,
-            audience: TEST_AUDIENCE,
-            scope: 'read:user'
-          });
-
-          const entry = {
-            body: {
-              ...defaultData,
-              scope: 'read:user update:user',
-              audience: TEST_AUDIENCE,
-              organization: 'organizationA',
-              refresh_token: TEST_REFRESH_TOKEN,
-            },
-            expiresAt: 0,
-          };
-
-          const expectedResult = { refresh_token: TEST_REFRESH_TOKEN };
-
-          const res = await manager.getRefreshToken(entry, key);
-
-          expect(res?.body).toEqual(expectedResult);
-          expect(cache.set).toHaveBeenCalledTimes(1);
-        });
-      });
-    });
-
-    describe('onNoRefreshableToken', () => {
-      it('removes entry and key from cache', async () => {
-        jest.spyOn(cache, 'remove');
-
-        const key = new CacheKey({
-          clientId: TEST_CLIENT_ID,
-          audience: TEST_AUDIENCE,
-          scope: 'read:user'
-        });
-
-        await manager.onNoRefreshableToken(key);
-
-        expect(cache.remove).toHaveBeenCalledTimes(1);
-      });
-    });
-
-    describe('getActiveToken', () => {
-      describe('when entry is not found', () => {
-        it('returns undefined', async () => {
-          const key = new CacheKey({
-            clientId: TEST_CLIENT_ID,
-            audience: TEST_AUDIENCE,
-            scope: 'read:user'
-          });
-
-          const res = await manager.getActiveToken(
-            key,
-            0,
-          );
-
-          expect(res).toBeFalsy();
-        });
-      });
-      describe('when entry is found but is expired', () => {
-        it('returns undefined', async () => {
-          jest.spyOn(CacheManagerUtils, 'isTokenExpired').mockResolvedValue(true);
-
-          const data = {
-            ...defaultData,
-            scope: 'read:user',
-            audience: TEST_AUDIENCE,
-            organization: 'organizationA',
-            refresh_token: TEST_REFRESH_TOKEN,
-          };
-
-          await manager.set(data);
-
-          const key = new CacheKey({
-            clientId: TEST_CLIENT_ID,
-            audience: TEST_AUDIENCE,
-            scope: 'read:user'
-          });
-
-          const res = await manager.getActiveToken(
-            key,
-            0,
-          );
-
-          expect(res).toBeFalsy();
-        });
-      });
-      describe('when entry is found and is active', () => {
-        it('returns entry', async () => {
-          jest.spyOn(CacheManagerUtils, 'isTokenExpired').mockResolvedValue(false);
-
-          const data = {
-            ...defaultData,
-            scope: 'read:user',
-            audience: TEST_AUDIENCE,
-            organization: 'organizationA',
-            refresh_token: TEST_REFRESH_TOKEN,
-          };
-
-          await manager.set(data);
-
-          const key = new CacheKey({
-            clientId: TEST_CLIENT_ID,
-            audience: TEST_AUDIENCE,
-            scope: 'read:user'
-          });
-
-          const res = await manager.getActiveToken(
-            key,
-            0,
-          );
-
-          expect(res?.body).toEqual(data);
-        });
-      });
-    });
-
-    describe('getInactiveToken', () => {
-      describe('when entry is not found', () => {
-        it('returns undefined', async () => {
-          const key = new CacheKey({
-            clientId: TEST_CLIENT_ID,
-            audience: TEST_AUDIENCE,
-            scope: 'read:user'
-          });
-
-          const res = await manager.getInactiveToken(
-            key,
-            0,
-          );
-
-          expect(res).toBeFalsy();
-        });
-      });
-      describe('when entry is found and is expired', () => {
-        it('calls getRefreshToken', async () => {
-          jest.spyOn(CacheManagerUtils, 'isTokenExpired').mockResolvedValue(true);
-          jest.spyOn(manager, 'getRefreshToken');
-
-          const data = {
-            ...defaultData,
-            scope: 'read:user update:user',
-            audience: TEST_AUDIENCE,
-            organization: 'organizationA',
-          };
-
-          await manager.set(data);
-
-          const key = new CacheKey({
-            clientId: TEST_CLIENT_ID,
-            audience: TEST_AUDIENCE,
-            scope: 'read:user update:user'
-          });
-
-          await manager.getInactiveToken(
-            key,
-            0,
-          );
-
-          expect(manager.getRefreshToken).toBeCalledTimes(1);
-        });
-      });
-      describe('when entry is found and is not expired', () => {
-        it('returns entry', async () => {
-          jest.spyOn(CacheManagerUtils, 'isTokenExpired').mockResolvedValue(false);
-
-          const data = {
-            ...defaultData,
-            scope: 'read:user update:user',
-            audience: TEST_AUDIENCE,
-            organization: 'organizationA',
-            refresh_token: TEST_REFRESH_TOKEN,
-          };
-
-          await manager.set(data);
-
-          const key = new CacheKey({
-            clientId: TEST_CLIENT_ID,
-            audience: TEST_AUDIENCE,
-            scope: 'read:user update:user'
-          });
-
-          const res = await manager.getInactiveToken(
-            key,
-            0,
-          );
-
-          expect(res?.body).toEqual(data);
-        });
-      });
-    });
-
-    describe('getSiblingToken', () => {
-      describe('when key is not found', () => {
-        it('returns undefined', async () => {
-          jest.spyOn(CacheManagerUtils, 'findKey').mockReturnValue(undefined);
-
-          const data = {
-            ...defaultData,
-            scope: 'read:user update:user',
-            audience: TEST_AUDIENCE,
-            organization: 'organizationA',
-          };
-
-          await manager.set(data);
-
-          const key = new CacheKey({
-            clientId: TEST_CLIENT_ID,
-            audience: TEST_AUDIENCE,
-            scope: 'read:user update:user'
-          });
-
-          const res = await manager.getSiblingToken(
-            key,
-            [],
-            0,
-          );
-
-          expect(res).toBeFalsy();
-        });
-      });
-
-      describe('when key is found but the entry does not exist', () => {
-        it('returns undefined', async () => {
-          const foundKey = '@@auth0spajs@@::auth0_client_id::my_audience::read:user update:user';
-
-          jest.spyOn(CacheManagerUtils, 'findKey').mockReturnValue(foundKey);
-
-          const key = new CacheKey({
-            clientId: TEST_CLIENT_ID,
-            audience: TEST_AUDIENCE,
-            scope: 'read:user update:user'
-          });
-
-          const res = await manager.getSiblingToken(
-            key,
-            [foundKey],
-            0,
-          );
-
-          expect(res).toBeFalsy();
-        });
-      });
-
-      describe('when key and entry are found and is expired', () => {
-        it('calls getRefreshToken', async () => {
-          const foundKey = '@@auth0spajs@@::auth0_client_id::my_audience::read:user update:user';
-
-          jest.spyOn(CacheManagerUtils, 'findKey').mockReturnValue(foundKey);
-          jest.spyOn(CacheManagerUtils, 'isTokenExpired').mockResolvedValue(true);
-          jest.spyOn(manager, 'getRefreshToken');
-
-          const data = {
-            ...defaultData,
-            scope: 'read:user update:user',
-            audience: TEST_AUDIENCE,
-            organization: 'organizationA',
-            refresh_token: TEST_REFRESH_TOKEN,
-          };
-
-          await manager.set(data);
-
-          const key = new CacheKey({
-            clientId: TEST_CLIENT_ID,
-            audience: TEST_AUDIENCE,
-            scope: 'read:user update:user'
-          });
-
-          await manager.getSiblingToken(
-            key,
-            [foundKey],
-            0,
-          );
-
-          expect(manager.getRefreshToken).toHaveBeenCalledTimes(1);
-        });
-      });
-
-      describe('when key and entry are found and not expired', () => {
-        it('returns entry', async () => {
-          const foundKey = '@@auth0spajs@@::auth0_client_id::my_audience::read:user update:user';
-
-          jest.spyOn(CacheManagerUtils, 'findKey').mockReturnValue(foundKey);
-          jest.spyOn(CacheManagerUtils, 'isTokenExpired').mockResolvedValue(false);
-          jest.spyOn(manager, 'getRefreshToken');
-
-          const data = {
-            ...defaultData,
-            scope: 'read:user update:user',
-            audience: TEST_AUDIENCE,
-            organization: 'organizationA',
-            refresh_token: TEST_REFRESH_TOKEN,
-          };
-
-          await manager.set(data);
-
-          const key = new CacheKey({
-            clientId: TEST_CLIENT_ID,
-            audience: TEST_AUDIENCE,
-            scope: 'read:user update:user'
-          });
-
-          const res = await manager.getSiblingToken(
-            key,
-            [foundKey],
-            0,
-          );
-
-          expect(res?.body).toEqual(data);
         });
       });
     });

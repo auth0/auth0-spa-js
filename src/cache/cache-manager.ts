@@ -71,14 +71,14 @@ export class CacheManager {
   async get(
     cacheKey: CacheKey,
     options: {
-      expiryAdjustmentSeconds: number,
+      expiryAdjustmentSeconds: number;
     } = {
-        expiryAdjustmentSeconds: DEFAULT_EXPIRY_ADJUSTMENT_SECONDS,
-      },
+        expiryAdjustmentSeconds: DEFAULT_EXPIRY_ADJUSTMENT_SECONDS
+      }
   ): Promise<Partial<CacheEntry> | undefined> {
-    const activeToken = await this.getActiveToken(
+    const activeToken = await this.getActiveAccessToken(
       cacheKey,
-      options.expiryAdjustmentSeconds,
+      options.expiryAdjustmentSeconds
     );
 
     if (activeToken) {
@@ -87,7 +87,7 @@ export class CacheManager {
 
     const inactiveToken = await this.getInactiveToken(
       cacheKey,
-      options.expiryAdjustmentSeconds,
+      options.expiryAdjustmentSeconds
     );
 
     if (inactiveToken) {
@@ -97,13 +97,13 @@ export class CacheManager {
     const keys = await this.getCacheKeys();
 
     if (!keys) {
-      return
-    };
+      return;
+    }
 
     const siblingToken = await this.getSiblingToken(
       cacheKey,
       keys,
-      options.expiryAdjustmentSeconds,
+      options.expiryAdjustmentSeconds
     );
 
     if (siblingToken) {
@@ -113,100 +113,109 @@ export class CacheManager {
     return;
   }
 
-  async onNoRefreshableToken(cacheKey: CacheKey): Promise<undefined> {
+  private async onNoRefreshableToken(cacheKey: CacheKey): Promise<undefined> {
     await this.cache.remove(cacheKey.toKey());
     await this.keyManifest?.remove(cacheKey.toKey());
     return;
   }
 
-  async getRefreshToken(entry: WrappedCacheEntry, cacheKey: CacheKey): Promise<WrappedCacheEntry | undefined> {
+  private async getRefreshToken(
+    entry: WrappedCacheEntry,
+    cacheKey: CacheKey
+  ): Promise<WrappedCacheEntry | undefined> {
     if (!entry.body.refresh_token) {
       return this.onNoRefreshableToken(cacheKey);
     }
 
     entry.body = {
-      refresh_token: entry.body.refresh_token,
+      refresh_token: entry.body.refresh_token
     };
 
     await this.cache.set(cacheKey.toKey(), entry);
 
     return entry;
-  };
-
-  async getActiveToken(
-    cacheKey: CacheKey,
-    expiryAdjustmentSeconds: number,
-  ): Promise<WrappedCacheEntry | undefined> {
-    const entry = await this.cache.get<WrappedCacheEntry>(
-      cacheKey.toKey()
-    );
-
-    if (!entry) {
-      return undefined
-    };
-
-    const isExpired = await CacheManagerUtils.isTokenExpired(
-      entry,
-      expiryAdjustmentSeconds,
-      this.nowProvider,
-    );
-
-    return isExpired ? undefined : entry;
   }
 
-  async getInactiveToken(
-    cacheKey: CacheKey,
+  private async getAccessToken(
+    cacheKey: string,
     expiryAdjustmentSeconds: number
-  ): Promise<WrappedCacheEntry | undefined> {
-    const entry = await this.cache.get<WrappedCacheEntry>(
-      cacheKey.toKey()
-    );
+  ): Promise<{ tokenset: WrappedCacheEntry, isExpired: boolean } | undefined> {
+    const tokenset = await this.cache.get<WrappedCacheEntry>(cacheKey);
 
-    if (!entry) {
-      return undefined
-    };
+    if (!tokenset) {
+      return undefined;
+    }
 
     const isExpired = await CacheManagerUtils.isTokenExpired(
-      entry,
+      tokenset,
       expiryAdjustmentSeconds,
       this.nowProvider
     );
 
-    if (isExpired) {
-      return this.getRefreshToken(entry, cacheKey);
-    }
-
-    return entry;
+    return { tokenset, isExpired };
   }
 
-  async getSiblingToken(
+  private async getActiveAccessToken(
+    cacheKey: CacheKey,
+    expiryAdjustmentSeconds: number
+  ) {
+    const entry = await this.getAccessToken(cacheKey.toKey(), expiryAdjustmentSeconds);
+
+    return !entry || entry.isExpired ? undefined : entry.tokenset;
+  }
+
+  private async getInactiveToken(
+    cacheKey: CacheKey,
+    expiryAdjustmentSeconds: number
+  ): Promise<WrappedCacheEntry | undefined> {
+    const entry = await this.getAccessToken(cacheKey.toKey(), expiryAdjustmentSeconds);
+
+    return entry && entry.isExpired
+      ? this.getRefreshToken(entry.tokenset, cacheKey)
+      : undefined;
+  }
+
+  private async getSiblingToken(
     keyToMatch: CacheKey,
     keys: string[],
-    expiryAdjustmentSeconds: number,
+    expiryAdjustmentSeconds: number
   ): Promise<WrappedCacheEntry | undefined> {
     const foundKey = CacheManagerUtils.findKey(keys, keyToMatch);
 
     if (!foundKey) {
-      return undefined
-    };
-
-    const entry = await this.cache.get<WrappedCacheEntry>(foundKey);
-
-    if (!entry) {
-      return undefined
-    };
-
-    const isExpired = await CacheManagerUtils.isTokenExpired(
-      entry,
-      expiryAdjustmentSeconds,
-      this.nowProvider,
-    );
-
-    if (isExpired) {
-      return this.getRefreshToken(entry, keyToMatch);
+      return undefined;
     }
 
-    return entry;
+    const entry = await this.getAccessToken(
+      foundKey,
+      expiryAdjustmentSeconds
+    );
+
+    if (!entry) {
+      return undefined;
+    }
+
+    return entry.isExpired
+      ? this.getRefreshToken(entry.tokenset, keyToMatch)
+      : entry.tokenset;
+
+    // const entry = await this.cache.get<WrappedCacheEntry>(foundKey);
+
+    // if (!entry) {
+    //   return undefined
+    // };
+
+    // const isExpired = await CacheManagerUtils.isTokenExpired(
+    //   entry,
+    //   expiryAdjustmentSeconds,
+    //   this.nowProvider,
+    // );
+
+    // if (isExpired) {
+    //   return this.getRefreshToken(entry, keyToMatch);
+    // }
+
+    // return entry;
   }
 
   async set(entry: CacheEntry): Promise<void> {
