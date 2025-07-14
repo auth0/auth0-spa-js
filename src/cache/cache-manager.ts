@@ -76,22 +76,22 @@ export class CacheManager {
         expiryAdjustmentSeconds: DEFAULT_EXPIRY_ADJUSTMENT_SECONDS
       }
   ): Promise<Partial<CacheEntry> | undefined> {
-    const activeToken = await this.getActiveAccessToken(
+    const accessToken = await this.getNonExpiredAccessToken(
       cacheKey,
       options.expiryAdjustmentSeconds
     );
 
-    if (activeToken) {
-      return activeToken.body;
+    if (accessToken) {
+      return accessToken.body;
     }
 
-    const inactiveToken = await this.getInactiveToken(
+    const expiredToken = await this.getTokenToRefresh(
       cacheKey,
       options.expiryAdjustmentSeconds
     );
 
-    if (inactiveToken) {
-      return inactiveToken.body;
+    if (expiredToken) {
+      return expiredToken.body;
     }
 
     const keys = await this.getCacheKeys();
@@ -100,14 +100,14 @@ export class CacheManager {
       return;
     }
 
-    const siblingToken = await this.getSiblingToken(
+    const compatibleToken = await this.getCompatibleToken(
       cacheKey,
       keys,
       options.expiryAdjustmentSeconds
     );
 
-    if (siblingToken) {
-      return siblingToken.body;
+    if (compatibleToken) {
+      return compatibleToken.body;
     }
 
     return;
@@ -155,7 +155,7 @@ export class CacheManager {
     return { tokenset, isExpired };
   }
 
-  private async getActiveAccessToken(
+  private async getNonExpiredAccessToken(
     cacheKey: CacheKey,
     expiryAdjustmentSeconds: number
   ) {
@@ -164,7 +164,7 @@ export class CacheManager {
     return !entry || entry.isExpired ? undefined : entry.tokenset;
   }
 
-  private async getInactiveToken(
+  private async getTokenToRefresh(
     cacheKey: CacheKey,
     expiryAdjustmentSeconds: number
   ): Promise<WrappedCacheEntry | undefined> {
@@ -175,7 +175,7 @@ export class CacheManager {
       : undefined;
   }
 
-  private async getSiblingToken(
+  private async getCompatibleToken(
     keyToMatch: CacheKey,
     keys: string[],
     expiryAdjustmentSeconds: number
@@ -198,24 +198,6 @@ export class CacheManager {
     return entry.isExpired
       ? this.getRefreshToken(entry.tokenset, keyToMatch)
       : entry.tokenset;
-
-    // const entry = await this.cache.get<WrappedCacheEntry>(foundKey);
-
-    // if (!entry) {
-    //   return undefined
-    // };
-
-    // const isExpired = await CacheManagerUtils.isTokenExpired(
-    //   entry,
-    //   expiryAdjustmentSeconds,
-    //   this.nowProvider,
-    // );
-
-    // if (isExpired) {
-    //   return this.getRefreshToken(entry, keyToMatch);
-    // }
-
-    // return entry;
   }
 
   async set(entry: CacheEntry): Promise<void> {

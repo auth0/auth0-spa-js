@@ -843,7 +843,6 @@ cacheFactories.forEach(cacheFactory => {
 
       describe('when some entry match with exact audience, organization and scopes and is not active', () => {
         it('returns entry', async () => {
-          manager["getActiveAccessToken"] = jest.fn();
           jest.spyOn(CacheManagerUtils, 'isTokenExpired').mockResolvedValue(true);
 
           const data = {
