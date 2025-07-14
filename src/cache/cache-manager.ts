@@ -158,6 +158,8 @@ export class CacheManager {
       return (await this.keyManifest.get())?.keys;
     } else if (this.cache.allKeys) {
       return this.cache.allKeys();
+    } else {
+      return undefined;
     }
   }
 
