@@ -38,12 +38,13 @@ export type CustomTokenExchangeOptions = {
    * The target audience for the requested Auth0 token
    *
    * @remarks
-   * Must match exactly with an API identifier configured in your Auth0 tenant
+   * Must match exactly with an API identifier configured in your Auth0 tenant.
+   * If not provided, falls back to the client's default audience.
    *
    * @example
    * "https://api.your-service.com/v1"
    */
-  audience: string;
+  audience?: string;
 
   /**
    * Space-separated list of OAuth 2.0 scopes being requested

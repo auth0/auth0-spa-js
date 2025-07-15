@@ -15,9 +15,18 @@ export async function oauthToken(
   }: TokenEndpointOptions,
   worker?: Worker
 ) {
+  const isTokenExchange =
+    options.grant_type === 'urn:ietf:params:oauth:grant-type:token-exchange';
+
+  const allParams = {
+    ...options,
+    ...(isTokenExchange && audience && { audience }),
+    ...(isTokenExchange && scope && { scope })
+  };
+
   const body = useFormData
-    ? createQueryParams(options)
-    : JSON.stringify(options);
+    ? createQueryParams(allParams)
+    : JSON.stringify(allParams);
 
   return await getJSON<TokenEndpointResponse>(
     `${baseUrl}/oauth/token`,
