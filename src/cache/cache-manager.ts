@@ -1,5 +1,6 @@
 import { DEFAULT_NOW_PROVIDER } from '../constants';
 import { CacheKeyManifest } from './key-manifest';
+import { RefreshTokenRotationError } from '../errors';
 
 import {
   CacheEntry,
@@ -15,7 +16,7 @@ import {
 const DEFAULT_EXPIRY_ADJUSTMENT_SECONDS = 0;
 
 export class CacheManager {
-  private nowProvider: () => number | Promise<number>;
+  private readonly nowProvider: () => number | Promise<number>;
 
   constructor(
     private cache: ICache,
@@ -206,5 +207,45 @@ export class CacheManager {
         hasAllScopes
       );
     })[0];
+  }
+
+  public async getAllCacheKeys(): Promise<string[]> {
+    const cacheKeysResult = this.cache.allKeys ? this.cache.allKeys() : [];
+    return Array.isArray(cacheKeysResult)
+      ? cacheKeysResult
+      : await cacheKeysResult;
+  }
+
+  public async findRefreshTokensByClient(
+    clientId: string,
+    audience: string
+  ): Promise<CacheEntry[]> {
+    try {
+      const cache = this.cache;
+      const cacheKeys = await this.getAllCacheKeys();
+
+      const entries: CacheEntry[] = [];
+
+      for (const key of cacheKeys) {
+        const cacheKey = CacheKey.fromKey(key);
+        if (
+          cacheKey.clientId === clientId &&
+          cacheKey.audience === audience &&
+          cacheKey.scope // Only entries with scopes (not id token entries)
+        ) {
+          const entry = (await cache.get(key)) as any;
+          if (entry?.refresh_token) {
+            entries.push(entry);
+          }
+        }
+      }
+
+      return entries;
+    } catch (error) {
+      throw new RefreshTokenRotationError(
+        'Failed to find refresh tokens by client',
+        error instanceof Error ? error : new Error(String(error))
+      );
+    }
   }
 }
