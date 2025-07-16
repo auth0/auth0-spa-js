@@ -1,4 +1,5 @@
 import { DEFAULT_NOW_PROVIDER } from '../constants';
+import * as CacheManagerUtils from './cache-manager-utils';
 import { CacheKeyManifest } from './key-manifest';
 
 import {
@@ -69,49 +70,134 @@ export class CacheManager {
 
   async get(
     cacheKey: CacheKey,
-    expiryAdjustmentSeconds = DEFAULT_EXPIRY_ADJUSTMENT_SECONDS
+    options: {
+      expiryAdjustmentSeconds: number;
+    } = {
+        expiryAdjustmentSeconds: DEFAULT_EXPIRY_ADJUSTMENT_SECONDS
+      }
   ): Promise<Partial<CacheEntry> | undefined> {
-    let wrappedEntry = await this.cache.get<WrappedCacheEntry>(
-      cacheKey.toKey()
+    const accessToken = await this.getNonExpiredAccessToken(
+      cacheKey,
+      options.expiryAdjustmentSeconds
     );
 
-    if (!wrappedEntry) {
-      const keys = await this.getCacheKeys();
-
-      if (!keys) return;
-
-      const matchedKey = this.matchExistingCacheKey(cacheKey, keys);
-
-      if (matchedKey) {
-        wrappedEntry = await this.cache.get<WrappedCacheEntry>(matchedKey);
-      }
+    if (accessToken) {
+      return accessToken.body;
     }
 
-    // If we still don't have an entry, exit.
-    if (!wrappedEntry) {
+    const expiredToken = await this.getTokenToRefresh(
+      cacheKey,
+      options.expiryAdjustmentSeconds
+    );
+
+    if (expiredToken) {
+      return expiredToken.body;
+    }
+
+    const keys = await this.getCacheKeys();
+
+    if (!keys) {
       return;
     }
 
-    const now = await this.nowProvider();
-    const nowSeconds = Math.floor(now / 1000);
+    const compatibleToken = await this.getCompatibleToken(
+      cacheKey,
+      keys,
+      options.expiryAdjustmentSeconds
+    );
 
-    if (wrappedEntry.expiresAt - expiryAdjustmentSeconds < nowSeconds) {
-      if (wrappedEntry.body.refresh_token) {
-        wrappedEntry.body = {
-          refresh_token: wrappedEntry.body.refresh_token
-        };
-
-        await this.cache.set(cacheKey.toKey(), wrappedEntry);
-        return wrappedEntry.body;
-      }
-
-      await this.cache.remove(cacheKey.toKey());
-      await this.keyManifest?.remove(cacheKey.toKey());
-
-      return;
+    if (compatibleToken) {
+      return compatibleToken.body;
     }
 
-    return wrappedEntry.body;
+    return;
+  }
+
+  private async onNoRefreshableToken(cacheKey: CacheKey): Promise<undefined> {
+    await this.cache.remove(cacheKey.toKey());
+    await this.keyManifest?.remove(cacheKey.toKey());
+    return;
+  }
+
+  private async getRefreshToken(
+    entry: WrappedCacheEntry,
+    cacheKey: CacheKey
+  ): Promise<WrappedCacheEntry | undefined> {
+    if (!entry.body.refresh_token) {
+      return this.onNoRefreshableToken(cacheKey);
+    }
+
+    entry.body = {
+      refresh_token: entry.body.refresh_token
+    };
+
+    await this.cache.set(cacheKey.toKey(), entry);
+
+    return entry;
+  }
+
+  private async getAccessToken(
+    cacheKey: string,
+    expiryAdjustmentSeconds: number
+  ): Promise<{ tokenset: WrappedCacheEntry, isExpired: boolean } | undefined> {
+    const tokenset = await this.cache.get<WrappedCacheEntry>(cacheKey);
+
+    if (!tokenset) {
+      return undefined;
+    }
+
+    const isExpired = await CacheManagerUtils.isTokenExpired(
+      tokenset,
+      expiryAdjustmentSeconds,
+      this.nowProvider
+    );
+
+    return { tokenset, isExpired };
+  }
+
+  private async getNonExpiredAccessToken(
+    cacheKey: CacheKey,
+    expiryAdjustmentSeconds: number
+  ) {
+    const entry = await this.getAccessToken(cacheKey.toKey(), expiryAdjustmentSeconds);
+
+    return !entry || entry.isExpired ? undefined : entry.tokenset;
+  }
+
+  private async getTokenToRefresh(
+    cacheKey: CacheKey,
+    expiryAdjustmentSeconds: number
+  ): Promise<WrappedCacheEntry | undefined> {
+    const entry = await this.getAccessToken(cacheKey.toKey(), expiryAdjustmentSeconds);
+
+    return entry && entry.isExpired
+      ? this.getRefreshToken(entry.tokenset, cacheKey)
+      : undefined;
+  }
+
+  private async getCompatibleToken(
+    keyToMatch: CacheKey,
+    keys: string[],
+    expiryAdjustmentSeconds: number
+  ): Promise<WrappedCacheEntry | undefined> {
+    const foundKey = CacheManagerUtils.findKey(keys, keyToMatch);
+
+    if (!foundKey) {
+      return undefined;
+    }
+
+    const entry = await this.getAccessToken(
+      foundKey,
+      expiryAdjustmentSeconds
+    );
+
+    if (!entry) {
+      return undefined;
+    }
+
+    return entry.isExpired
+      ? this.getRefreshToken(entry.tokenset, keyToMatch)
+      : entry.tokenset;
   }
 
   async set(entry: CacheEntry): Promise<void> {
@@ -172,39 +258,5 @@ export class CacheManager {
       CACHE_KEY_PREFIX,
       CACHE_KEY_ID_TOKEN_SUFFIX
     ).toKey();
-  }
-
-  /**
-   * Finds the corresponding key in the cache based on the provided cache key.
-   * The keys inside the cache are in the format {prefix}::{clientId}::{audience}::{scope}.
-   * The first key in the cache that satisfies the following conditions is returned
-   *  - `prefix` is strict equal to Auth0's internally configured `keyPrefix`
-   *  - `clientId` is strict equal to the `cacheKey.clientId`
-   *  - `audience` is strict equal to the `cacheKey.audience`
-   *  - `scope` contains at least all the `cacheKey.scope` values
-   *  *
-   * @param keyToMatch The provided cache key
-   * @param allKeys A list of existing cache keys
-   */
-  private matchExistingCacheKey(keyToMatch: CacheKey, allKeys: Array<string>) {
-    return allKeys.filter(key => {
-      const cacheKey = CacheKey.fromKey(key);
-      const scopeSet = new Set(cacheKey.scope && cacheKey.scope.split(' '));
-      const scopesToMatch = keyToMatch.scope?.split(' ') || [];
-
-      const hasAllScopes =
-        cacheKey.scope &&
-        scopesToMatch.reduce(
-          (acc, current) => acc && scopeSet.has(current),
-          true
-        );
-
-      return (
-        cacheKey.prefix === CACHE_KEY_PREFIX &&
-        cacheKey.clientId === keyToMatch.clientId &&
-        cacheKey.audience === keyToMatch.audience &&
-        hasAllScopes
-      );
-    })[0];
   }
 }

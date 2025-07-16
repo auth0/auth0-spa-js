@@ -3,6 +3,7 @@ import {
   InMemoryCache,
   LocalStorageCache
 } from '../../src/cache';
+import * as CacheManagerUtils from '../../src/cache/cache-manager-utils';
 import { CacheKeyManifest } from '../../src/cache/key-manifest';
 
 import {
@@ -51,7 +52,13 @@ const defaultData: CacheEntry = {
 };
 
 const cacheFactories = [
-  { new: () => new LocalStorageCache(), name: 'LocalStorageCache' },
+  {
+    new: () => {
+      // Make sure that cache is actually empty between tests
+      window.localStorage.clear();
+      return new LocalStorageCache()
+    }, name: 'LocalStorageCache'
+  },
   {
     new: () => new InMemoryCache().enclosedCache,
     name: 'Cache with allKeys'
@@ -85,7 +92,8 @@ cacheFactories.forEach(cacheFactory => {
     });
 
     afterEach(() => {
-      jest.clearAllMocks();
+      jest.restoreAllMocks();
+      jest.resetModules();
     });
 
     it('returns undefined when there is nothing in the cache', async () => {
@@ -222,7 +230,9 @@ cacheFactories.forEach(cacheFactory => {
             audience: TEST_AUDIENCE,
             scope: TEST_SCOPES
           }),
-          60
+          {
+            expiryAdjustmentSeconds: 60,
+          }
         )
       ).toBeFalsy();
     });
@@ -287,7 +297,12 @@ cacheFactories.forEach(cacheFactory => {
       // Test that the cache state is normal before we expire the data
       expect(await manager.get(cacheKey)).toStrictEqual(data);
 
-      const result = await manager.get(cacheKey, 60);
+      const result = await manager.get(
+        cacheKey,
+        {
+          expiryAdjustmentSeconds: 60,
+        },
+      );
 
       // And test that the cache has been emptied
       expect(result).toBeTruthy();
@@ -316,7 +331,10 @@ cacheFactories.forEach(cacheFactory => {
         now - (expiryAdjustmentSeconds - data.expires_in) * 1000
       );
 
-      const result = await manager.get(cacheKey, expiryAdjustmentSeconds);
+      const result = await manager.get(
+        cacheKey,
+        { expiryAdjustmentSeconds },
+      );
 
       // And test that the cache has been emptied
       expect(result).toBeTruthy();
@@ -789,6 +807,88 @@ cacheFactories.forEach(cacheFactory => {
         expect(result).toBeUndefined();
 
         cacheSpy.mockClear();
+      });
+    });
+
+    describe('get', () => {
+      describe('when there is nothing in the cache', () => {
+        it('returns undefined', async () => {
+          const result = await manager.get(defaultKey);
+
+          expect(result).toBeFalsy();
+        });
+      });
+
+      describe('when some entry match with exact audience, organization and scopes and is active', () => {
+        it('returns entry', async () => {
+          const data = {
+            ...defaultData,
+            scope: TEST_SCOPES,
+            audience: TEST_AUDIENCE,
+          };
+
+          await manager.set(data);
+
+          const key = new CacheKey({
+            clientId: TEST_CLIENT_ID,
+            audience: TEST_AUDIENCE,
+            scope: TEST_SCOPES
+          });
+
+          const res = await manager.get(key);
+
+          expect(res).toStrictEqual(data);
+        });
+      });
+
+      describe('when some entry match with exact audience, organization and scopes and is not active', () => {
+        it('returns entry', async () => {
+          jest.spyOn(CacheManagerUtils, 'isTokenExpired').mockResolvedValue(true);
+
+          const data = {
+            ...defaultData,
+            scope: TEST_SCOPES,
+            audience: TEST_AUDIENCE,
+            refresh_token: TEST_REFRESH_TOKEN,
+          };
+
+          await manager.set(data);
+
+          const key = new CacheKey({
+            clientId: TEST_CLIENT_ID,
+            audience: TEST_AUDIENCE,
+            scope: TEST_SCOPES
+          });
+
+          const res = await manager.get(key);
+
+          const expectedResult = { refresh_token: TEST_REFRESH_TOKEN };
+
+          expect(res).toStrictEqual(expectedResult);
+        });
+      });
+
+      describe('when some entry match with exact audience, organization and has compatible scopes', () => {
+        it('returns entry', async () => {
+          const data = {
+            ...defaultData,
+            scope: 'read:user update:user',
+            audience: TEST_AUDIENCE,
+            refresh_token: TEST_REFRESH_TOKEN,
+          };
+
+          await manager.set(data);
+
+          const key = new CacheKey({
+            clientId: TEST_CLIENT_ID,
+            audience: TEST_AUDIENCE,
+            scope: 'read:user'
+          });
+
+          const res = await manager.get(key);
+
+          expect(res).toStrictEqual(data);
+        });
       });
     });
   });
