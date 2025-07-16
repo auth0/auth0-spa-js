@@ -1,5 +1,12 @@
 # Change Log
 
+## [v2.3.0](https://github.com/auth0/auth0-spa-js/tree/v2.3.0) (2025-07-16)
+[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.2.0...v2.3.0)
+
+**Fixed**
+- Fix: Token Exchange Ignoring Scope and Audience Parameters [\#1365](https://github.com/auth0/auth0-spa-js/pull/1365) ([tusharpandey13](https://github.com/tusharpandey13))
+- bugfix: Correctly extract origin from domainUrl [\#1372](https://github.com/auth0/auth0-spa-js/pull/1372) ([tusharpandey13](https://github.com/tusharpandey13))
+
 ## [v2.2.0](https://github.com/auth0/auth0-spa-js/tree/v2.2.0) (2025-05-28)
 
 [Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.1.3...v2.2.0)
