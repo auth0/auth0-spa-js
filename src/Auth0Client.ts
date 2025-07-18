@@ -143,6 +143,7 @@ export class Auth0Client {
     this.options = {
       ...this.defaultOptions,
       ...options,
+      ...(options.useMultiResourceRefreshTokens && { useRefreshTokens: true }),
       authorizationParams: {
         ...this.defaultOptions.authorizationParams,
         ...options.authorizationParams
@@ -626,7 +627,7 @@ export class Auth0Client {
    *
    * If refresh tokens are used, the token endpoint is called directly with the
    * 'refresh_token' grant. If no refresh token is available to make this call,
-   * the SDK will only fall back to using an iframe to the '/authorize' URL if 
+   * the SDK will only fall back to using an iframe to the '/authorize' URL if
    * the `useRefreshTokensFallback` setting has been set to `true`. By default this
    * setting is `false`.
    *
@@ -951,19 +952,27 @@ export class Auth0Client {
       authorizationParams: AuthorizationParams & { scope: string };
     }
   ): Promise<GetTokenSilentlyResult> {
-    const cache = await this.cacheManager.get(
-      new CacheKey({
-        scope: options.authorizationParams.scope,
-        audience: options.authorizationParams.audience || 'default',
-        clientId: this.options.clientId
-      })
-    );
+    let refresh_token: string | undefined;
+    if (this.options.useMultiResourceRefreshTokens) {
+      refresh_token = await this.cacheManager.getMultiResourceRefreshToken(
+        this.options.clientId
+      );
+    } else {
+      const cacheEntry = await this.cacheManager.get(
+        new CacheKey({
+          scope: options.authorizationParams.scope,
+          audience: options.authorizationParams.audience || 'default',
+          clientId: this.options.clientId
+        })
+      );
+      refresh_token = cacheEntry?.refresh_token;
+    }
 
     // If you don't have a refresh token in memory
     // and you don't have a refresh token in web worker memory
     // and useRefreshTokensFallback was explicitly enabled
     // fallback to an iframe
-    if ((!cache || !cache.refresh_token) && !this.worker) {
+    if (!refresh_token && !this.worker) {
       if (this.options.useRefreshTokensFallback) {
         return await this._getTokenFromIFrame(options);
       }
@@ -988,7 +997,7 @@ export class Auth0Client {
       const tokenResult = await this._requestToken({
         ...options.authorizationParams,
         grant_type: 'refresh_token',
-        refresh_token: cache && cache.refresh_token,
+        refresh_token,
         redirect_uri,
         ...(timeout && { timeout })
       });
@@ -1020,7 +1029,12 @@ export class Auth0Client {
   private async _saveEntryInCache(
     entry: CacheEntry & { id_token: string; decodedToken: DecodedToken }
   ) {
-    const { id_token, decodedToken, ...entryWithoutIdToken } = entry;
+    const {
+      id_token,
+      decodedToken,
+      refresh_token,
+      ...entryWithoutIdOrRefreshToken
+    } = entry;
 
     this.userCache.set(CACHE_KEY_ID_TOKEN_SUFFIX, {
       id_token,
@@ -1029,11 +1043,22 @@ export class Auth0Client {
 
     await this.cacheManager.setIdToken(
       this.options.clientId,
-      entry.id_token,
-      entry.decodedToken
+      id_token,
+      decodedToken
     );
 
-    await this.cacheManager.set(entryWithoutIdToken);
+    if (refresh_token && this.options.useMultiResourceRefreshTokens) {
+      await this.cacheManager.setMultiResourceRefreshToken(
+        this.options.clientId,
+        refresh_token
+      );
+      await this.cacheManager.set(entryWithoutIdOrRefreshToken);
+    } else {
+      await this.cacheManager.set({
+        ...(refresh_token && { refresh_token }),
+        ...entryWithoutIdOrRefreshToken
+      });
+    }
   }
 
   private async _getIdTokenFromCache() {
@@ -1120,6 +1145,8 @@ export class Auth0Client {
         auth0Client: this.options.auth0Client,
         useFormData: this.options.useFormData,
         timeout: this.httpTimeoutMs,
+        useMultiResourceRefreshTokens:
+          this.options.useMultiResourceRefreshTokens,
         ...options
       },
       this.worker

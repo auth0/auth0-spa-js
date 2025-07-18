@@ -11,28 +11,39 @@ export async function oauthToken(
     scope,
     auth0Client,
     useFormData,
+    useMultiResourceRefreshTokens,
     ...options
   }: TokenEndpointOptions,
   worker?: Worker
 ) {
   const isTokenExchange =
     options.grant_type === 'urn:ietf:params:oauth:grant-type:token-exchange';
+  const isMultiResourceRefreshToken =
+    options.grant_type === 'refresh_token' && useMultiResourceRefreshTokens;
+  const includeAudienceScope = isTokenExchange || isMultiResourceRefreshToken;
 
   const allParams = {
     ...options,
-    ...(isTokenExchange && audience && { audience }),
-    ...(isTokenExchange && scope && { scope })
+    ...(includeAudienceScope && audience && { audience }),
+    ...(includeAudienceScope && scope && { scope })
   };
 
   const body = useFormData
     ? createQueryParams(allParams)
     : JSON.stringify(allParams);
 
+  // If using MRRT, the refresh token is global for the client, so don't pass audience/scope to
+  // the worker so it will cache refresh tokens as global instead of tied to audience/scope.
+  const workerAudience = useMultiResourceRefreshTokens
+    ? undefined
+    : audience || 'default';
+  const workerScope = useMultiResourceRefreshTokens ? undefined : scope;
+
   return await getJSON<TokenEndpointResponse>(
     `${baseUrl}/oauth/token`,
     timeout,
-    audience || 'default',
-    scope,
+    workerAudience,
+    workerScope,
     {
       method: 'POST',
       body,

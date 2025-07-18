@@ -4,19 +4,24 @@ import { WorkerRefreshTokenMessage } from './worker.types';
 
 let refreshTokens: Record<string, string> = {};
 
-const cacheKey = (audience: string, scope: string) => `${audience}|${scope}`;
+const cacheKey = (audience: string | undefined, scope: string | undefined) =>
+  audience === undefined ? 'global' : `${audience}|${scope}`;
 
-const getRefreshToken = (audience: string, scope: string) =>
-  refreshTokens[cacheKey(audience, scope)];
+const getRefreshToken = (
+  audience: string | undefined,
+  scope: string | undefined
+) => refreshTokens[cacheKey(audience, scope)];
 
 const setRefreshToken = (
   refreshToken: string,
-  audience: string,
-  scope: string
+  audience: string | undefined,
+  scope: string | undefined
 ) => (refreshTokens[cacheKey(audience, scope)] = refreshToken);
 
-const deleteRefreshToken = (audience: string, scope: string) =>
-  delete refreshTokens[cacheKey(audience, scope)];
+const deleteRefreshToken = (
+  audience: string | undefined,
+  scope: string | undefined
+) => delete refreshTokens[cacheKey(audience, scope)];
 
 const wait = (time: number) =>
   new Promise(resolve => setTimeout(resolve, time));

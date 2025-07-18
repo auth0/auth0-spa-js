@@ -9,7 +9,8 @@ import {
   WrappedCacheEntry,
   DecodedToken,
   CACHE_KEY_ID_TOKEN_SUFFIX,
-  IdTokenEntry
+  IdTokenEntry,
+  CACHE_REFRESH_TOKEN_SUFFIX
 } from './shared';
 
 const DEFAULT_EXPIRY_ADJUSTMENT_SECONDS = 0;
@@ -65,6 +66,24 @@ export class CacheManager {
     }
 
     return { id_token: entry.id_token, decodedToken: entry.decodedToken };
+  }
+
+  async setMultiResourceRefreshToken(
+    clientId: string,
+    refreshToken: string
+  ): Promise<void> {
+    await this.cache.set<string>(
+      this.getMultiResourceRefreshTokenCacheKey(clientId),
+      refreshToken
+    );
+  }
+
+  async getMultiResourceRefreshToken(
+    clientId: string
+  ): Promise<string | undefined> {
+    return this.cache.get<string>(
+      this.getMultiResourceRefreshTokenCacheKey(clientId)
+    );
   }
 
   async get(
@@ -171,6 +190,19 @@ export class CacheManager {
       { clientId },
       CACHE_KEY_PREFIX,
       CACHE_KEY_ID_TOKEN_SUFFIX
+    ).toKey();
+  }
+
+  /**
+   * Returns the cache key to be used to store the refresh token when MRRT is enabled
+   * @param clientId The client id used to link to the refresh token
+   * @returns The constructed cache key, as a string, to store the refresh token
+   */
+  private getMultiResourceRefreshTokenCacheKey(clientId: string) {
+    return new CacheKey(
+      { clientId },
+      CACHE_KEY_PREFIX,
+      CACHE_REFRESH_TOKEN_SUFFIX
     ).toKey();
   }
 

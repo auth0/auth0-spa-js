@@ -2,6 +2,7 @@ import { IdToken, User } from '../global';
 
 export const CACHE_KEY_PREFIX = '@@auth0spajs@@';
 export const CACHE_KEY_ID_TOKEN_SUFFIX = '@@user@@';
+export const CACHE_REFRESH_TOKEN_SUFFIX = '@@refresh_token@@';
 
 export type CacheKeyData = {
   audience?: string;
