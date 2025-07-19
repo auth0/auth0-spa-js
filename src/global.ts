@@ -156,11 +156,20 @@ export interface Auth0ClientOptions extends BaseLoginOptions {
 
   /**
    * If true, refresh tokens are used to fetch new access tokens from the Auth0 server. If false, the legacy technique of using a hidden iframe and the `authorization_code` grant with `prompt=none` is used.
-   * The default setting is `false`.
+   * The default setting is `false`, unless `useMultiResourceRefreshTokens` is `true`, in which case the default setting is `true`.
    *
    * **Note**: Use of refresh tokens must be enabled by an administrator on your Auth0 client application.
    */
   useRefreshTokens?: boolean;
+
+  /**
+   * If true, enables [Multi-Resource Refresh Tokens (MRRT)](https://auth0.com/docs/secure/tokens/refresh-tokens/multi-resource-refresh-token). Setting this to true implicitly sets `useRefreshTokens` to `true` as well.
+   * The default setting is `false`.
+   *
+   * When enabled, `audience` and `scope` from `authorizationParams` will be sent in refresh token requests, allowing retrieval of access tokens for multiple APIs using a single refresh token.
+   * Additionally, cached refresh tokens will be tied only to the client ID, as opposed to a combination of client ID, audience, and scope.
+   */
+  useMultiResourceRefreshTokens?: boolean;
 
   /**
    * If true, fallback to the technique of using a hidden iframe and the `authorization_code` grant with `prompt=none` when unable to use refresh tokens. If false, the iframe fallback is not used and
@@ -264,10 +273,10 @@ export interface Auth0ClientOptions extends BaseLoginOptions {
 
   /**
    * If provided, the SDK will load the token worker from this URL instead of the integrated `blob`. An example of when this is useful is if you have strict
-   * Content-Security-Policy (CSP) and wish to avoid needing to set `worker-src: blob:`. We recommend either serving the worker, which you can find in the module 
-   * at `<module_path>/dist/auth0-spa-js.worker.production.js`, from the same host as your application or using the Auth0 CDN 
+   * Content-Security-Policy (CSP) and wish to avoid needing to set `worker-src: blob:`. We recommend either serving the worker, which you can find in the module
+   * at `<module_path>/dist/auth0-spa-js.worker.production.js`, from the same host as your application or using the Auth0 CDN
    * `https://cdn.auth0.com/js/auth0-spa-js/<version>/auth0-spa-js.worker.production.js`.
-   * 
+   *
    * **Note**: The worker is only used when `useRefreshTokens: true`, `cacheLocation: 'memory'`, and the `cache` is not custom.
    */
   workerUrl?: string;
@@ -527,6 +536,7 @@ export interface TokenEndpointOptions {
   timeout?: number;
   auth0Client: any;
   useFormData?: boolean;
+  useMultiResourceRefreshTokens?: boolean;
   [key: string]: any;
 }
 

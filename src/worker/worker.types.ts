@@ -9,7 +9,7 @@ export type WorkerRefreshTokenMessage = {
   fetchOptions: FetchOptions;
   useFormData?: boolean;
   auth: {
-    audience: string;
-    scope: string;
+    audience: string | undefined;
+    scope: string | undefined;
   };
 };

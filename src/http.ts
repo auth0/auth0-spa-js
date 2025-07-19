@@ -49,8 +49,8 @@ const fetchWithoutWorker = async (
 
 const fetchWithWorker = async (
   fetchUrl: string,
-  audience: string,
-  scope: string,
+  audience: string | undefined,
+  scope: string | undefined,
   fetchOptions: FetchOptions,
   timeout: number,
   worker: Worker,
@@ -73,8 +73,8 @@ const fetchWithWorker = async (
 
 export const switchFetch = async (
   fetchUrl: string,
-  audience: string,
-  scope: string,
+  audience: string | undefined,
+  scope: string | undefined,
   fetchOptions: FetchOptions,
   worker?: Worker,
   useFormData?: boolean,
@@ -98,8 +98,8 @@ export const switchFetch = async (
 export async function getJSON<T>(
   url: string,
   timeout: number | undefined,
-  audience: string,
-  scope: string,
+  audience: string | undefined,
+  scope: string | undefined,
   options: FetchOptions,
   worker?: Worker,
   useFormData?: boolean
