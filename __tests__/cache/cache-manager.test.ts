@@ -10,7 +10,8 @@ import {
   CacheKey,
   CACHE_KEY_PREFIX,
   DecodedToken,
-  ICache
+  ICache,
+  CACHE_REFRESH_TOKEN_SUFFIX
 } from '../../src/cache/shared';
 
 import {
@@ -785,6 +786,51 @@ cacheFactories.forEach(cacheFactory => {
             '@@user@@'
           ).toKey()
         );
+        expect(cache.get).toHaveBeenCalledTimes(1);
+        expect(result).toBeUndefined();
+
+        cacheSpy.mockClear();
+      });
+    });
+
+    describe('getMultiResourceRefreshToken', () => {
+      const cacheKey = new CacheKey(
+        { clientId: TEST_CLIENT_ID },
+        CACHE_KEY_PREFIX,
+        CACHE_REFRESH_TOKEN_SUFFIX
+      );
+
+      beforeEach(async () => {
+        await manager.clear();
+      });
+
+      it('should read the refresh token from cache if it exists', async () => {
+        await manager.setMultiResourceRefreshToken(
+          defaultData.client_id,
+          'foo'
+        );
+
+        const cacheSpy = jest.spyOn(cache, 'get');
+
+        const result = await manager.getMultiResourceRefreshToken(
+          defaultData.client_id
+        );
+
+        expect(cache.get).toHaveBeenCalledWith(cacheKey.toKey());
+        expect(cache.get).toHaveBeenCalledTimes(1);
+        expect(result).toEqual('foo');
+
+        cacheSpy.mockClear();
+      });
+
+      it('should return undefined if no refresh token exists', async () => {
+        const cacheSpy = jest.spyOn(cache, 'get');
+
+        const result = await manager.getMultiResourceRefreshToken(
+          defaultData.client_id
+        );
+
+        expect(cache.get).toHaveBeenCalledWith(cacheKey.toKey());
         expect(cache.get).toHaveBeenCalledTimes(1);
         expect(result).toBeUndefined();
 

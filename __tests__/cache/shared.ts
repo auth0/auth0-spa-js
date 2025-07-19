@@ -10,11 +10,6 @@ export class InMemoryAsyncCacheNoKeys implements ICache {
 
   get<T = Cacheable>(key: string) {
     const cacheEntry = this.cache[key] as T;
-
-    if (!cacheEntry) {
-      return Promise.resolve(null);
-    }
-
     return Promise.resolve(cacheEntry);
   }
 

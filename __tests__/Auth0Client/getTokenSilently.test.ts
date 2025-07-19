@@ -1806,6 +1806,113 @@ describe('Auth0Client', () => {
       expect(access_token).toEqual(TEST_ACCESS_TOKEN);
     });
 
+    it('sends audience and scope the token endpoint when using multi-resource refresh tokens when not using useFormData', async () => {
+      const auth0 = setup({
+        useMultiResourceRefreshTokens: true,
+        useFormData: false
+      });
+
+      await loginWithRedirect(auth0, undefined, {
+        token: {
+          response: { refresh_token: 'a_refresh_token' }
+        }
+      });
+
+      jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
+        access_token: TEST_ACCESS_TOKEN,
+        state: TEST_STATE
+      });
+
+      mockFetch.mockResolvedValue(
+        fetchResponse(true, {
+          id_token: TEST_ID_TOKEN,
+          refresh_token: TEST_REFRESH_TOKEN,
+          access_token: TEST_ACCESS_TOKEN,
+          expires_in: 86400
+        })
+      );
+
+      expect(utils.runIframe).not.toHaveBeenCalled();
+
+      const access_token = await auth0.getTokenSilently({
+        cacheMode: 'off',
+        authorizationParams: {
+          audience: 'foo',
+          scope: `${TEST_SCOPES} offline_access bar`
+        }
+      });
+
+      assertPost(
+        'https://auth0_domain/oauth/token',
+        {
+          redirect_uri: TEST_REDIRECT_URI,
+          client_id: TEST_CLIENT_ID,
+          grant_type: 'refresh_token',
+          refresh_token: 'a_refresh_token',
+          audience: 'foo',
+          scope: `${TEST_SCOPES} offline_access bar`
+        },
+        { 'Content-Type': 'application/json' },
+        1,
+        true
+      );
+
+      expect(access_token).toEqual(TEST_ACCESS_TOKEN);
+    });
+
+    it('sends audience and scope the token endpoint when using multi-resource refresh tokens', async () => {
+      const auth0 = setup({
+        useMultiResourceRefreshTokens: true
+      });
+
+      await loginWithRedirect(auth0, undefined, {
+        token: {
+          response: { refresh_token: 'a_refresh_token' }
+        }
+      });
+
+      jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
+        access_token: TEST_ACCESS_TOKEN,
+        state: TEST_STATE
+      });
+
+      mockFetch.mockResolvedValue(
+        fetchResponse(true, {
+          id_token: TEST_ID_TOKEN,
+          refresh_token: TEST_REFRESH_TOKEN,
+          access_token: TEST_ACCESS_TOKEN,
+          expires_in: 86400
+        })
+      );
+
+      expect(utils.runIframe).not.toHaveBeenCalled();
+
+      const access_token = await auth0.getTokenSilently({
+        cacheMode: 'off',
+        authorizationParams: {
+          audience: 'foo',
+          scope: 'bar'
+        }
+      });
+
+      assertPost(
+        'https://auth0_domain/oauth/token',
+        {
+          redirect_uri: TEST_REDIRECT_URI,
+          client_id: TEST_CLIENT_ID,
+          grant_type: 'refresh_token',
+          refresh_token: 'a_refresh_token',
+          audience: 'foo',
+          scope: `${TEST_SCOPES} offline_access bar`
+        },
+        { 'Content-Type': 'application/x-www-form-urlencoded' },
+        1,
+        false
+      );
+
+      expect(access_token).toEqual(TEST_ACCESS_TOKEN);
+    });
+
     it('calls `tokenVerifier.verify` with the `id_token` from in the oauth/token response', async () => {
       const auth0 = setup({
         issuer: 'test-123.auth0.com'
@@ -2462,6 +2569,183 @@ describe('Auth0Client', () => {
           scope: 'openid email read:messages offline_access'
         })
       );
+    });
+
+    it('uses refresh token for multiple APIs when using multi-resource refresh tokens', async () => {
+      const auth0 = setup({
+        useMultiResourceRefreshTokens: true,
+        cacheLocation: 'localstorage'
+      });
+
+      jest.spyOn(auth0['cacheManager'], 'setMultiResourceRefreshToken');
+      const setMultiResourceRefreshTokenMock = <jest.Mock>(
+        auth0['cacheManager'].setMultiResourceRefreshToken
+      );
+
+      let lastRefreshToken = 'a_refresh_token';
+      await loginWithRedirect(auth0, undefined, {
+        token: {
+          response: { refresh_token: lastRefreshToken }
+        }
+      });
+
+      expect(setMultiResourceRefreshTokenMock).toHaveBeenLastCalledWith(
+        TEST_CLIENT_ID,
+        lastRefreshToken
+      );
+
+      jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
+        access_token: TEST_ACCESS_TOKEN,
+        state: TEST_STATE
+      });
+
+      const testRequests = [
+        {
+          access_token: 'default_access_token',
+          refresh_token: 'refresh_token_1'
+        },
+        {
+          audience: 'foo',
+          scope: 'bar',
+          access_token: 'foo_access_token',
+          refresh_token: 'refresh_token_2'
+        },
+        {
+          audience: 'baz',
+          scope: 'qux',
+          access_token: 'baz_access_token',
+          refresh_token: 'refresh_token_3'
+        }
+      ];
+
+      let fetchRequestIndex = 1;
+      for (const testRequest of testRequests) {
+        mockFetch.mockResolvedValue(
+          fetchResponse(true, {
+            id_token: TEST_ID_TOKEN,
+            refresh_token: testRequest.refresh_token,
+            access_token: testRequest.access_token,
+            expires_in: 86400
+          })
+        );
+
+        const access_token = await auth0.getTokenSilently({
+          cacheMode: 'off',
+          authorizationParams: {
+            audience: testRequest.audience,
+            scope: testRequest.scope
+          }
+        });
+
+        expect(utils.runIframe).not.toHaveBeenCalled();
+
+        assertPost(
+          'https://auth0_domain/oauth/token',
+          {
+            redirect_uri: TEST_REDIRECT_URI,
+            client_id: TEST_CLIENT_ID,
+            grant_type: 'refresh_token',
+            refresh_token: lastRefreshToken,
+            scope: testRequest.scope
+              ? `${TEST_SCOPES} offline_access ${testRequest.scope}`
+              : `${TEST_SCOPES} offline_access`,
+            ...(testRequest.audience && { audience: testRequest.audience })
+          },
+          { 'Content-Type': 'application/x-www-form-urlencoded' },
+          fetchRequestIndex++,
+          false
+        );
+
+        expect(access_token).toEqual(testRequest.access_token);
+
+        lastRefreshToken = testRequest.refresh_token;
+        expect(setMultiResourceRefreshTokenMock).toHaveBeenLastCalledWith(
+          TEST_CLIENT_ID,
+          lastRefreshToken
+        );
+      }
+
+      expect(setMultiResourceRefreshTokenMock).toHaveBeenCalledTimes(4);
+    });
+
+    it('uses refresh token for multiple APIs when using multi-resource refresh tokens with worker', async () => {
+      const auth0 = setup({
+        useMultiResourceRefreshTokens: true
+      });
+
+      let lastRefreshToken = 'a_refresh_token';
+      await loginWithRedirect(auth0, undefined, {
+        token: {
+          response: { refresh_token: lastRefreshToken }
+        }
+      });
+
+      jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
+        access_token: TEST_ACCESS_TOKEN,
+        state: TEST_STATE
+      });
+
+      const testRequests = [
+        {
+          access_token: 'default_access_token',
+          refresh_token: 'refresh_token_1'
+        },
+        {
+          audience: 'foo',
+          scope: 'bar',
+          access_token: 'foo_access_token',
+          refresh_token: 'refresh_token_2'
+        },
+        {
+          audience: 'baz',
+          scope: 'qux',
+          access_token: 'baz_access_token',
+          refresh_token: 'refresh_token_3'
+        }
+      ];
+
+      let fetchRequestIndex = 1;
+      for (const testRequest of testRequests) {
+        mockFetch.mockResolvedValue(
+          fetchResponse(true, {
+            id_token: TEST_ID_TOKEN,
+            refresh_token: testRequest.refresh_token,
+            access_token: testRequest.access_token,
+            expires_in: 86400
+          })
+        );
+
+        const access_token = await auth0.getTokenSilently({
+          cacheMode: 'off',
+          authorizationParams: {
+            audience: testRequest.audience,
+            scope: testRequest.scope
+          }
+        });
+
+        expect(utils.runIframe).not.toHaveBeenCalled();
+
+        assertPost(
+          'https://auth0_domain/oauth/token',
+          {
+            redirect_uri: TEST_REDIRECT_URI,
+            client_id: TEST_CLIENT_ID,
+            grant_type: 'refresh_token',
+            refresh_token: lastRefreshToken,
+            scope: testRequest.scope
+              ? `${TEST_SCOPES} offline_access ${testRequest.scope}`
+              : `${TEST_SCOPES} offline_access`,
+            ...(testRequest.audience && { audience: testRequest.audience })
+          },
+          { 'Content-Type': 'application/x-www-form-urlencoded' },
+          fetchRequestIndex++,
+          false
+        );
+
+        expect(access_token).toEqual(testRequest.access_token);
+
+        lastRefreshToken = testRequest.refresh_token;
+      }
     });
   });
 });

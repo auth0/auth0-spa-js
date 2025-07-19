@@ -139,7 +139,7 @@
                   <ul v-for="token in current.access_tokens">
                     <li :data-cy="'access-token' + current.suffix">
                       {{token | concat}} (<a
-                        :href="'https://jwt.io?token=' + token"
+                        :href="'https://jwt.io#token=' + token"
                         target="_blank"
                         >view</a
                       >)
@@ -358,6 +358,21 @@
               <input
                 type="checkbox"
                 class="custom-control-input"
+                id="multi_resource_refresh_token_switch"
+                v-model="useMultiResourceRefreshTokens"
+              />
+              <label
+                for="multi_resource_refresh_token_switch"
+                class="custom-control-label"
+                data-cy="switch-multi-resource-refresh-tokens"
+                >Use multi-resource refresh tokens</label
+              >
+            </div>
+
+            <div class="custom-control custom-switch mb-5">
+              <input
+                type="checkbox"
+                class="custom-control-input"
                 id="constructor-switch"
                 v-model="useConstructor"
               />
@@ -454,6 +469,8 @@
             useLocalStorage: data.useLocalStorage || false,
             useCustomStorage: data.useCustomStorage || false,
             useRefreshTokens: data.useRefreshTokens || false,
+            useMultiResourceRefreshTokens:
+              data.useMultiResourceRefreshTokens || false,
             useCache: data.useCache === false ? false : true,
             useConstructor: data.useConstructor === false ? false : true,
             useCookiesForTransactions: data.useCookiesForTransactions || false,
@@ -482,6 +499,11 @@
                     : 'https://' + data.domain + '/api/v2/',
                 scope: 'read:rules',
                 access_tokens: []
+              },
+              {
+                audience: 'https://test-api.example.com',
+                scope: 'read:example',
+                access_tokens: []
               }
             ],
             error: null
@@ -500,6 +522,10 @@
             this.saveForm();
           },
           useRefreshTokens: function () {
+            this.initializeClient();
+            this.saveForm();
+          },
+          useMultiResourceRefreshTokens: function () {
             this.initializeClient();
             this.saveForm();
           },
@@ -526,7 +552,7 @@
           useWorkerUrl: function () {
             this.initializeClient();
             this.saveForm();
-          },
+          }
         },
         computed: {
           scopesWithSuffix: function () {
@@ -545,10 +571,14 @@
               clientId: _self.clientId,
               cacheLocation: _self.useLocalStorage ? 'localstorage' : 'memory',
               useRefreshTokens: _self.useRefreshTokens,
+              useMultiResourceRefreshTokens:
+                _self.useMultiResourceRefreshTokens,
               useCookiesForTransactions: _self.useCookiesForTransactions,
               useFormData: _self.useFormData,
               useRefreshTokensFallback: _self.useRefreshTokensFallback,
-              workerUrl: _self.useWorkerUrl ? '/auth0-spa-js.worker.development.js' : undefined,
+              workerUrl: _self.useWorkerUrl
+                ? '/auth0-spa-js.worker.development.js'
+                : undefined,
               authorizationParams: {
                 redirect_uri: window.location.origin
               }
@@ -610,13 +640,15 @@
                 useLocalStorage: this.useLocalStorage,
                 useCustomStorage: this.useCustomStorage,
                 useRefreshTokens: this.useRefreshTokens,
+                useMultiResourceRefreshTokens:
+                  this.useMultiResourceRefreshTokens,
                 useConstructor: this.useConstructor,
                 useCookiesForTransactions: this.useCookiesForTransactions,
                 useCache: this.useCache,
                 useFormData: this.useFormData,
                 useOrgAtLogin: this.useOrgAtLogin,
                 useRefreshTokensFallback: this.useRefreshTokensFallback,
-                useWorkerUrl: this.useWorkerUrl,
+                useWorkerUrl: this.useWorkerUrl
               })
             );
 
@@ -628,7 +660,8 @@
             this.useLocalStorage = false;
             this.useCustomStorage = false;
             this.useRefreshTokens = false;
-            this.useCache = true;
+            (this.useMultiResourceRefreshTokens = false),
+              (this.useCache = true);
             this.audience = defaultAudience;
             this.useConstructor = false;
             this.useCookiesForTransactions = false;
