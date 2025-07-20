@@ -94,7 +94,9 @@
         <div v-for="current in scopesWithSuffix">
           <div class="card mb-3 bg-light">
             <div class="card-header">
-              <strong>{{current.audience || 'default'}}</strong>
+              <strong :data-cy="'audience' + current.suffix"
+                >{{current.audience || 'default'}}</strong
+              >
               <span
                 v-for="s of current.scope.split(' ')"
                 class="badge badge-success ml-1"
@@ -345,6 +347,7 @@
                 class="custom-control-input"
                 id="refresh_token_switch"
                 v-model="useRefreshTokens"
+                :disabled="useMultiResourceRefreshTokens"
               />
               <label
                 for="refresh_token_switch"
@@ -566,6 +569,12 @@
           initializeClient: function () {
             var _self = this;
 
+            if (_self.useMultiResourceRefreshTokens) {
+              // Enabling useMultiResourceRefreshTokens implicitly enables useRefreshToken in the
+              // client, so update our state to match this behavior.
+              _self.useRefreshTokens = true;
+            }
+
             var clientOptions = {
               domain: _self.domain,
               clientId: _self.clientId,
@@ -660,8 +669,8 @@
             this.useLocalStorage = false;
             this.useCustomStorage = false;
             this.useRefreshTokens = false;
-            (this.useMultiResourceRefreshTokens = false),
-              (this.useCache = true);
+            this.useMultiResourceRefreshTokens = false;
+            this.useCache = true;
             this.audience = defaultAudience;
             this.useConstructor = false;
             this.useCookiesForTransactions = false;

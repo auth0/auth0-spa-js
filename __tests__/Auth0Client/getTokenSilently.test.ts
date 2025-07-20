@@ -1806,7 +1806,7 @@ describe('Auth0Client', () => {
       expect(access_token).toEqual(TEST_ACCESS_TOKEN);
     });
 
-    it('sends audience and scope the token endpoint when using multi-resource refresh tokens when not using useFormData', async () => {
+    it('sends audience and scope to the token endpoint when using multi-resource refresh tokens when not using useFormData', async () => {
       const auth0 = setup({
         useMultiResourceRefreshTokens: true,
         useFormData: false
@@ -1860,7 +1860,7 @@ describe('Auth0Client', () => {
       expect(access_token).toEqual(TEST_ACCESS_TOKEN);
     });
 
-    it('sends audience and scope the token endpoint when using multi-resource refresh tokens', async () => {
+    it('sends audience and scope to the token endpoint when using multi-resource refresh tokens', async () => {
       const auth0 = setup({
         useMultiResourceRefreshTokens: true
       });

@@ -228,4 +228,123 @@ describe('getTokenSilently', () => {
       });
     });
   });
+
+  describe('when using multi-resource refresh tokens', () => {
+    it('retrieves an access token using a refresh token', () => {
+      whenReady();
+
+      cy.setSwitch('local-storage', true);
+      cy.setSwitch('use-cache', false);
+      cy.setSwitch('multi-resource-refresh-tokens', true);
+
+      cy.login();
+
+      cy.intercept({
+        method: 'POST',
+        url: '**/oauth/token'
+      }).as('tokenApiCheck');
+
+      cy.getAccessTokens().should('have.length', 1);
+      cy.getTokenSilently();
+      cy.getAccessTokens().should('have.length', 2);
+
+      cy.wait('@tokenApiCheck').should(xhr => {
+        assert.equal(
+          formDataToObject(xhr.request.body).grant_type,
+          'refresh_token',
+          'used a refresh_token to get an access_token'
+        );
+      });
+    });
+
+    function testRequestingMultipleTokens() {
+      cy.login();
+
+      cy.intercept({
+        method: 'POST',
+        url: '**/oauth/token'
+      }).as('tokenApiCheck');
+
+      cy.getTokenSilently();
+      cy.getAccessTokens().should('have.length', 2);
+
+      cy.wait('@tokenApiCheck').should(xhr => {
+        const body = formDataToObject(xhr.request.body);
+        assert.equal(
+          body.grant_type,
+          'refresh_token',
+          'used a refresh_token to get an access_token'
+        );
+        assert.equal(
+          body.audience,
+          undefined,
+          'did not specify an audience for default access_token'
+        );
+      });
+
+      cy.getTokenSilently(1);
+      cy.getAccessTokens(1).should('have.length', 1);
+
+      let expectedAudience, expectedScope;
+      cy.getAudience(1).then(e => (expectedAudience = e.text()));
+      cy.getScope(1).then(e => (expectedScope = e.val()));
+
+      cy.wait('@tokenApiCheck').should(xhr => {
+        const body = formDataToObject(xhr.request.body);
+        assert.equal(
+          body.grant_type,
+          'refresh_token',
+          'used a refresh_token to get an access_token for second API'
+        );
+        assert.equal(
+          body.audience,
+          expectedAudience,
+          'used the audience for the second API'
+        );
+        assert.match(
+          body.scope,
+          new RegExp(`(^| )${expectedScope}( |$)`),
+          'used the scope for the second API'
+        );
+      });
+    }
+
+    it('retrieves access tokens for multiple audiences using a refresh token', () => {
+      whenReady();
+
+      cy.setSwitch('local-storage', true);
+      cy.setSwitch('use-cache', false);
+      cy.setSwitch('multi-resource-refresh-tokens', true);
+
+      testRequestingMultipleTokens();
+    });
+
+    describe('with workerUrl', () => {
+      const workerUrl = 'auth0-spa-js.worker.development.js';
+
+      it('loads the hosted worker file', () => {
+        whenReady();
+
+        cy.intercept({
+          method: 'GET',
+          url: workerUrl
+        }).as('workerLoaded');
+
+        cy.setSwitch('multi-resource-refresh-tokens', true);
+        cy.setSwitch('use-worker-url', true);
+
+        cy.wait('@workerLoaded').its('response.statusCode').should('eq', 200);
+      });
+
+      it('retrieves access tokens for multiple audiences using the hosted worker file', () => {
+        whenReady();
+
+        cy.setSwitch('multi-resource-refresh-tokens', true);
+        cy.setSwitch('use-worker-url', true);
+        cy.setSwitch('use-cache', false);
+
+        testRequestingMultipleTokens();
+      });
+    });
+  });
 });

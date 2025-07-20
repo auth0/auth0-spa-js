@@ -79,6 +79,14 @@ Cypress.Commands.add('getUser', () => cy.get('[data-cy=profile]'));
 
 Cypress.Commands.add('getError', () => cy.get(`[data-cy=error]`));
 
+Cypress.Commands.add('getAudience', index =>
+  cy.get(index ? `[data-cy=audience-${index}]` : '[data-cy=audience]')
+);
+
+Cypress.Commands.add('getScope', index =>
+  cy.get(index ? `[data-cy=scope-${index}]` : '[data-cy=scope]')
+);
+
 Cypress.Commands.add('getAccessTokens', index =>
   cy.get(index ? `[data-cy=access-token-${index}]` : '[data-cy=access-token]')
 );

@@ -86,6 +86,11 @@ const config = {
         };
       }
     };
+  },
+  issueRefreshToken(ctx, client, code) {
+    // Add extra scopes that may be requested during MRRT requests
+    code.scope += ' profile email read:rules read:example';
+    return true;
   }
 };
 
