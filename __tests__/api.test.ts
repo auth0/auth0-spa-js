@@ -234,7 +234,7 @@ describe('oauthToken', () => {
       .mockResolvedValue({
         ok: true,
         json: () => Promise.resolve({ access_token: 'access-token' }),
-        headers: new Headers(),
+        headers: new Headers()
       });
 
     const result = await oauthToken({
@@ -302,7 +302,7 @@ describe('oauthToken', () => {
     const fetchResult = {
       ok: true,
       json: () => Promise.resolve({ access_token: 'access-token' }),
-      headers: new Headers(),
+      headers: new Headers()
     };
 
     mockFetch.mockReturnValueOnce(
@@ -329,13 +329,9 @@ describe('oauthToken', () => {
   });
 
   it('passes the dpop handle when supported', async () => {
-    jest
-      .spyOn(dpopUtils, 'isGrantTypeSupported')
-      .mockReturnValue(true);
+    jest.spyOn(dpopUtils, 'isGrantTypeSupported').mockReturnValue(true);
 
-    jest
-      .spyOn(http, 'getJSON')
-      .mockResolvedValue({});
+    jest.spyOn(http, 'getJSON').mockResolvedValue({});
 
     const dpop = new Dpop(TEST_CLIENT_ID);
 
@@ -344,27 +340,23 @@ describe('oauthToken', () => {
       client_id: TEST_CLIENT_ID,
       grant_type: 'authorization_code',
       auth0Client: {},
-      dpop,
+      dpop
     });
 
     expect(jest.mocked(http.getJSON).mock.calls[0][7]).toBe(dpop);
   });
 
   it('does not pass the dpop handle when unsupported', async () => {
-    jest
-      .spyOn(dpopUtils, 'isGrantTypeSupported')
-      .mockReturnValue(false);
+    jest.spyOn(dpopUtils, 'isGrantTypeSupported').mockReturnValue(false);
 
-    jest
-      .spyOn(http, 'getJSON')
-      .mockResolvedValue({});
+    jest.spyOn(http, 'getJSON').mockResolvedValue({});
 
     await oauthToken({
       baseUrl: `https://${TEST_DOMAIN}`,
       client_id: TEST_CLIENT_ID,
       grant_type: 'authorization_code',
       auth0Client: {},
-      dpop: new Dpop(TEST_CLIENT_ID),
+      dpop: new Dpop(TEST_CLIENT_ID)
     });
 
     expect(jest.mocked(http.getJSON).mock.calls[0][7]).toBeUndefined();

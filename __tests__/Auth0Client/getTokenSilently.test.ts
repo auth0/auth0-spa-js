@@ -55,9 +55,7 @@ jest.mock('../../src/jwt');
 jest.mock('../../src/worker/token.worker');
 
 const mockWindow = <any>global;
-const mockFetch =
-  <jest.Mock<Promise<{ ok: boolean; json: () => any; headers: Headers; }>>>
-  mockWindow.fetch;
+const mockFetch = <jest.Mock>mockWindow.fetch;
 const mockVerify = <jest.Mock>verify;
 const tokenVerifier = require('../../src/jwt').verify;
 
