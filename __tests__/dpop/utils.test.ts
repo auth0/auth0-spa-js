@@ -48,9 +48,12 @@ describe('utils', () => {
   });
 
   describe('generateProof()', () => {
+    const originalUrl = 'https://user:pass@www.example.com:123/foo?bar=1#frag';
+    const expectedUrl = 'https://user:pass@www.example.com:123/foo';
+
     const params = {
       keyPair: TEST_DPOP_KEYPAIR,
-      url: 'https://example.com',
+      url: originalUrl,
       method: 'PATCH',
       nonce: TEST_DPOP_NONCE,
       accessToken: TEST_ACCESS_TOKEN
@@ -65,7 +68,7 @@ describe('utils', () => {
     it('delegates to dpop lib properly', () =>
       expect(dpopLib.generateProof).toHaveBeenCalledWith(
         params.keyPair,
-        params.url,
+        expectedUrl,
         params.method,
         params.nonce,
         params.accessToken
