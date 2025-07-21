@@ -7,7 +7,6 @@ import { switchFetch, getJSON } from '../src/http';
 import { expect } from '@jest/globals';
 import { TEST_AUDIENCE, TEST_CLIENT_ID, TEST_SCOPES } from './constants';
 import { Dpop } from '../src/dpop/dpop';
-import { FetchMock } from 'jest-fetch-mock/types';
 
 jest.mock('../src/worker/token.worker');
 

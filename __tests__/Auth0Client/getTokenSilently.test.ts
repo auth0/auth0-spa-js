@@ -1128,8 +1128,7 @@ describe('Auth0Client', () => {
               () =>
                 resolve({
                   ok: true,
-                  json: () => Promise.resolve({ access_token: 'access-token' }),
-                  headers: new Headers()
+                  json: () => Promise.resolve({ access_token: 'access-token' })
                 }),
               500
             )
@@ -1265,8 +1264,7 @@ describe('Auth0Client', () => {
               () =>
                 resolve({
                   ok: true,
-                  json: () => Promise.resolve({ access_token: 'access-token' }),
-                  headers: new Headers()
+                  json: () => Promise.resolve({ access_token: 'access-token' })
                 }),
               500
             )
@@ -2191,7 +2189,7 @@ describe('Auth0Client', () => {
       await loginWithRedirect(auth0);
 
       mockFetch.mockReset();
-      mockFetch.mockImplementation(() =>
+      mockFetch.mockImplementationOnce(() =>
         Promise.resolve({
           ok: false,
           json: () => ({

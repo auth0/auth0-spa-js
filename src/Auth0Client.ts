@@ -1233,25 +1233,41 @@ export class Auth0Client {
 
   protected _assertDpop(dpop: Dpop | undefined): asserts dpop is Dpop {
     if (!dpop) {
-      throw new Error(
-        '`useDpop` option must be enabled before using DPoP.'
-      );
+      throw new Error('`useDpop` option must be enabled before using DPoP.');
     }
   }
 
+  /**
+   * Returns the current DPoP nonce used for making requests to Auth0.
+   *
+   * It can return `undefined` because when starting fresh it will not
+   * be populated until after the first response from the server.
+   *
+   * It requires enabling the `useDpop` option.
+   */
   public async getDpopNonce(): Promise<string | undefined> {
     this._assertDpop(this.dpop);
 
     return this.dpop.getNonce();
   }
 
+  /**
+   * Gets the current DPoP nonce used for making requests to Auth0.
+   *
+   * It requires enabling the `useDpop` option.
+   */
   public async setDpopNonce(nonce: string): Promise<void> {
     this._assertDpop(this.dpop);
 
     return this.dpop.setNonce(nonce);
   }
 
-  // TODO: docs
+  /**
+   * Returns a string to be used to demonstrate possession of the private
+   * key used to cryptographically bind access tokens with DPoP.
+   *
+   * It requires enabling the `useDpop` option.
+   */
   public generateDpopProof(params: {
     url: string;
     method: string;
