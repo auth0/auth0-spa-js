@@ -160,15 +160,19 @@ export async function getJSON<T>(
     ok
   } = response;
 
-  /**
-   * Note that a new DPoP nonce can appear in both error and success responses!
-   *
-   * @see {@link https://www.rfc-editor.org/rfc/rfc9449.html#section-8.2-3}
-   */
-  const newDpopNonce = headers['dpop-nonce'];
+  let newDpopNonce: string | undefined;
 
-  if (dpop && newDpopNonce) {
-    await dpop.setNonce(newDpopNonce);
+  if (dpop) {
+    /**
+     * Note that a new DPoP nonce can appear in both error and success responses!
+     *
+     * @see {@link https://www.rfc-editor.org/rfc/rfc9449.html#section-8.2-3}
+     */
+    newDpopNonce = headers['dpop-nonce'];
+
+    if (newDpopNonce) {
+      await dpop.setNonce(newDpopNonce);
+    }
   }
 
   if (!ok) {
