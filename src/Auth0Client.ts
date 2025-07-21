@@ -1102,7 +1102,7 @@ export class Auth0Client {
       return (
         cache && {
           id_token: cache.id_token,
-          token_type,
+          token_type: token_type ? token_type : 'Bearer',
           access_token,
           ...(oauthTokenScope ? { scope: oauthTokenScope } : null),
           expires_in
@@ -1231,8 +1231,24 @@ export class Auth0Client {
     });
   }
 
+  protected _assertDpop(dpop: Dpop | undefined): asserts dpop is Dpop {
+    if (!dpop) {
+      throw new Error(
+        '`useDpop` option must be enabled before using DPoP.'
+      );
+    }
+  }
+
   public async getDpopNonce(): Promise<string | undefined> {
-    return this.dpop?.getNonce();
+    this._assertDpop(this.dpop);
+
+    return this.dpop.getNonce();
+  }
+
+  public async setDpopNonce(nonce: string): Promise<void> {
+    this._assertDpop(this.dpop);
+
+    return this.dpop.setNonce(nonce);
   }
 
   // TODO: docs
@@ -1242,11 +1258,7 @@ export class Auth0Client {
     nonce?: string;
     accessToken: string;
   }): Promise<string> {
-    if (!this.dpop) {
-      throw new Error(
-        '`useDpop` must be enabled in order to generate a DPoP proof.'
-      );
-    }
+    this._assertDpop(this.dpop);
 
     return this.dpop.generateProof(params);
   }

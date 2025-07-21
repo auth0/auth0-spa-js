@@ -1,4 +1,5 @@
 import { MissingRefreshTokenError } from '../errors';
+import { FetchResponse } from '../global';
 import { createQueryParams, fromEntries } from '../utils';
 import { WorkerRefreshTokenMessage } from './worker.types';
 
@@ -36,6 +37,8 @@ const messageHandler = async ({
   data: { timeout, auth, fetchUrl, fetchOptions, useFormData },
   ports: [port]
 }: MessageEvent<WorkerRefreshTokenMessage>) => {
+  let headers: FetchResponse['headers'] = {};
+
   let json: {
     refresh_token?: string;
   };
@@ -99,6 +102,7 @@ const messageHandler = async ({
       return;
     }
 
+    headers = fromEntries(response.headers);
     json = await response.json();
 
     if (json.refresh_token) {
@@ -111,12 +115,7 @@ const messageHandler = async ({
     port.postMessage({
       ok: response.ok,
       json,
-
-      /**
-       * Serializing a Fetch API Headers interface inside a cross-origin
-       * message is not supported, so convert it to a plain object.
-       */
-      headers: fromEntries(response.headers)
+      headers
     });
   } catch (error) {
     port.postMessage({
@@ -124,7 +123,8 @@ const messageHandler = async ({
       json: {
         error: error.error,
         error_description: error.message
-      }
+      },
+      headers
     });
   }
 };

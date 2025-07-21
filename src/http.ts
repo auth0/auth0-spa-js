@@ -24,8 +24,9 @@ const dofetch = async (fetchUrl: string, fetchOptions: FetchOptions) => {
     json: await response.json(),
 
     /**
-     * This is not needed, but do it anyway so the types are the same
-     * as if we were using a web worker (which *does* need this).
+     * This is not needed, but do it anyway so the object shape is the
+     * same as when using a Web Worker (which *does* need this, see
+     * src/worker/token.worker.ts).
      */
     headers: fromEntries(response.headers)
   };
@@ -159,11 +160,15 @@ export async function getJSON<T>(
     ok
   } = response;
 
-  // a new DPoP nonce can appear in both error and success responses!
+  /**
+   * Note that a new DPoP nonce can appear in both error and success responses!
+   *
+   * @see {@link https://www.rfc-editor.org/rfc/rfc9449.html#section-8.2-3}
+   */
   const newDpopNonce = headers['dpop-nonce'];
 
   if (dpop && newDpopNonce) {
-    dpop.setNonce(newDpopNonce);
+    await dpop.setNonce(newDpopNonce);
   }
 
   if (!ok) {
