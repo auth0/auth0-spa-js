@@ -90,6 +90,7 @@ describe('Auth0Client', () => {
           },
           id_token: 'fake_id_token',
           access_token: 'fake_access_token',
+          token_type: 'Bearer',
           expires_in: 3600,
           scope: requestOptions.scope
         };

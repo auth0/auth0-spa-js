@@ -17,8 +17,12 @@ export class DpopStorage {
     this.clientId = clientId;
   }
 
+  protected getVersion(): number {
+    return VERSION;
+  }
+
   protected createDbHandle(): Promise<IDBDatabase> {
-    const req = window.indexedDB.open(NAME, VERSION);
+    const req = window.indexedDB.open(NAME, this.getVersion());
 
     return new Promise((resolve, reject) => {
       req.onupgradeneeded = () =>

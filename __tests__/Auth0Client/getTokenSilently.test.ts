@@ -1,16 +1,20 @@
+import { expect } from '@jest/globals';
 import * as esCookie from 'es-cookie';
-import { verify } from '../../src/jwt';
 import { MessageChannel } from 'worker_threads';
-import * as utils from '../../src/utils';
-import * as promiseUtils from '../../src/promise-utils';
-import * as scope from '../../src/scope';
 import * as api from '../../src/api';
 import * as http from '../../src/http';
-import { expect } from '@jest/globals';
+import { verify } from '../../src/jwt';
+import * as promiseUtils from '../../src/promise-utils';
+import * as scope from '../../src/scope';
+import * as utils from '../../src/utils';
 
 import { expectToHaveBeenCalledWithAuth0ClientParam } from '../helpers';
 
-import { GET_TOKEN_SILENTLY_LOCK_KEY, TEST_ORG_ID } from '../constants';
+import {
+  GET_TOKEN_SILENTLY_LOCK_KEY,
+  TEST_ORG_ID,
+  TEST_TOKEN_TYPE
+} from '../constants';
 
 // @ts-ignore
 import { acquireLockSpy } from 'browser-tabs-lock';
@@ -51,7 +55,9 @@ jest.mock('../../src/jwt');
 jest.mock('../../src/worker/token.worker');
 
 const mockWindow = <any>global;
-const mockFetch = <jest.Mock>mockWindow.fetch;
+const mockFetch =
+  <jest.Mock<Promise<{ ok: boolean; json: () => any; headers: Headers; }>>>
+  mockWindow.fetch;
 const mockVerify = <jest.Mock>verify;
 const tokenVerifier = require('../../src/jwt').verify;
 
@@ -1124,7 +1130,8 @@ describe('Auth0Client', () => {
               () =>
                 resolve({
                   ok: true,
-                  json: () => Promise.resolve({ access_token: 'access-token' })
+                  json: () => Promise.resolve({ access_token: 'access-token' }),
+                  headers: new Headers()
                 }),
               500
             )
@@ -1260,7 +1267,8 @@ describe('Auth0Client', () => {
               () =>
                 resolve({
                   ok: true,
-                  json: () => Promise.resolve({ access_token: 'access-token' })
+                  json: () => Promise.resolve({ access_token: 'access-token' }),
+                  headers: new Headers()
                 }),
               500
             )
@@ -2148,7 +2156,8 @@ describe('Auth0Client', () => {
             refresh_token: TEST_REFRESH_TOKEN,
             access_token: TEST_ACCESS_TOKEN,
             expires_in: 86400
-          })
+          }),
+          headers: new Headers()
         })
       );
       // Fail only the first occurring /token request by providing it as mockImplementationOnce.
@@ -2160,7 +2169,8 @@ describe('Auth0Client', () => {
           json: () => ({
             error: 'invalid_grant',
             error_description: INVALID_REFRESH_TOKEN_ERROR_MESSAGE
-          })
+          }),
+          headers: new Headers()
         })
       );
 
@@ -2183,13 +2193,14 @@ describe('Auth0Client', () => {
       await loginWithRedirect(auth0);
 
       mockFetch.mockReset();
-      mockFetch.mockImplementationOnce(() =>
+      mockFetch.mockImplementation(() =>
         Promise.resolve({
           ok: false,
           json: () => ({
             error: 'invalid_grant',
             error_description: INVALID_REFRESH_TOKEN_ERROR_MESSAGE
-          })
+          }),
+          headers: new Headers()
         })
       );
 
@@ -2267,6 +2278,7 @@ describe('Auth0Client', () => {
           id_token: TEST_ID_TOKEN,
           refresh_token: TEST_REFRESH_TOKEN,
           access_token: TEST_ACCESS_TOKEN,
+          token_type: TEST_TOKEN_TYPE,
           expires_in: 86400
         })
       );
@@ -2280,6 +2292,7 @@ describe('Auth0Client', () => {
       expect(response).toStrictEqual({
         id_token: TEST_ID_TOKEN,
         access_token: TEST_ACCESS_TOKEN,
+        token_type: TEST_TOKEN_TYPE,
         expires_in: 86400
       });
     });
@@ -2294,6 +2307,7 @@ describe('Auth0Client', () => {
           id_token: TEST_ID_TOKEN,
           refresh_token: TEST_REFRESH_TOKEN,
           access_token: TEST_ACCESS_TOKEN,
+          token_type: TEST_TOKEN_TYPE,
           expires_in: 86400,
           scope: 'read:messages'
         })
@@ -2308,6 +2322,7 @@ describe('Auth0Client', () => {
       expect(response).toStrictEqual({
         id_token: TEST_ID_TOKEN,
         access_token: TEST_ACCESS_TOKEN,
+        token_type: TEST_TOKEN_TYPE,
         expires_in: 86400,
         scope: 'read:messages'
       });
@@ -2332,6 +2347,7 @@ describe('Auth0Client', () => {
       expect(response).toStrictEqual({
         id_token: TEST_ID_TOKEN,
         access_token: TEST_ACCESS_TOKEN,
+        token_type: TEST_TOKEN_TYPE,
         expires_in: 86400
       });
 
@@ -2397,6 +2413,7 @@ describe('Auth0Client', () => {
       expect(response).toStrictEqual({
         id_token: TEST_ID_TOKEN,
         access_token: TEST_ACCESS_TOKEN,
+        token_type: TEST_TOKEN_TYPE,
         expires_in: 86400,
         scope: 'read:messages'
       });
