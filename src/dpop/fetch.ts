@@ -30,13 +30,12 @@ export type FetchConfig<T> = {
   accessToken?:
     | string
     | ((client: Auth0ClientSubset) => Promise<string> | string);
-  body?: string;
   fetch?: FetchFunc<T>;
-  headers?: PlainHeaders;
-  method: string;
   nonceId: string;
-  timeout?: number;
-  url: string;
+  request: RequestInit & {
+    url: string;
+    timeout?: number;
+  };
 };
 
 /**
@@ -127,38 +126,48 @@ export class DpopFetch<GlobalOutput> {
   ): Promise<GlobalOutput | LocalOutput> {
     const {
       accessToken,
-      body,
       fetch: fetchFunc,
-      headers: initialHeaders,
-      method,
       nonceId,
-      timeout,
-      url
+      request: initialRequest
     } = await this.getFinalConfig(localConfig);
 
     const nonce = await this.dpop.getNonce(nonceId);
 
     const proof = await this.dpop.generateProof({
-      method,
-      url,
+      method: initialRequest.method || 'GET',
+      url: initialRequest.url,
       accessToken,
       nonce
     });
 
     const headers = new Headers({
-      ...initialHeaders,
+      ...initialRequest.headers,
       authorization: `DPoP ${accessToken}`,
       dpop: proof
     });
 
-    const request = new Request(url, {
-      method,
-      headers,
-      body,
-      signal: timeout ? AbortSignal.timeout(timeout) : undefined
-    });
+    const result = await fetchFunc(
+      new Request(initialRequest.url, {
+        ...initialRequest,
+        headers,
 
-    const result = await fetchFunc(request);
+        /**
+         * In order to support a request timeout, we would ideally ask the developer
+         * to pass an `AbortSignal.timeout()` in `initialRequest.signal`. However,
+         * very counterintuitively, that would start counting time *since its creation*
+         * and not since `fetch()` starts using it.
+         *
+         * This means that if the developer sets up their request when instantiating
+         * `Auth0Client` and enough time passes until they call `fetchWithDpop()`, the
+         * request will timeout immediately.
+         *
+         * So we have to create our own signal here from the `timeout` setting.
+         */
+        signal: initialRequest.timeout
+          ? AbortSignal.timeout(initialRequest.timeout)
+          : undefined
+      })
+    );
 
     const newNonce = this.getHeader(result.headers, DPOP_NONCE_HEADER);
 
