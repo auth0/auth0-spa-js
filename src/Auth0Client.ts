@@ -94,6 +94,7 @@ import {
 } from './Auth0Client.utils';
 import { CustomTokenExchangeOptions } from './TokenExchange';
 import { Dpop } from './dpop/dpop';
+import { DpopFetch, FetchConfig } from './dpop/fetch';
 
 /**
  * @ignore
@@ -113,7 +114,7 @@ const lock = new Lock();
 /**
  * Auth0 SDK for Single Page Applications using [Authorization Code Grant Flow with PKCE](https://auth0.com/docs/api-auth/tutorials/authorization-code-grant-pkce).
  */
-export class Auth0Client {
+export class Auth0Client<DpopFetchOutput = unknown> {
   private readonly transactionManager: TransactionManager;
   private readonly cacheManager: CacheManager;
   private readonly domainUrl: string;
@@ -121,19 +122,22 @@ export class Auth0Client {
   private readonly scope: string;
   private readonly cookieStorage: ClientStorage;
   private readonly dpop: Dpop | undefined;
+  private readonly dpopFetch: DpopFetch<DpopFetchOutput> | undefined;
   private readonly sessionCheckExpiryDays: number;
   private readonly orgHintCookieName: string;
   private readonly isAuthenticatedCookieName: string;
   private readonly nowProvider: () => number | Promise<number>;
   private readonly httpTimeoutMs: number;
-  private readonly options: Auth0ClientOptions & {
+  private readonly options: Auth0ClientOptions<DpopFetchOutput> & {
     authorizationParams: AuthorizationParams;
   };
   private readonly userCache: ICache = new InMemoryCache().enclosedCache;
 
   private worker?: Worker;
 
-  private readonly defaultOptions: Partial<Auth0ClientOptions> = {
+  private readonly defaultOptions: Partial<
+    Auth0ClientOptions<DpopFetchOutput>
+  > = {
     authorizationParams: {
       scope: DEFAULT_SCOPE
     },
@@ -141,7 +145,7 @@ export class Auth0Client {
     useFormData: true
   };
 
-  constructor(options: Auth0ClientOptions) {
+  constructor(options: Auth0ClientOptions<DpopFetchOutput>) {
     this.options = {
       ...this.defaultOptions,
       ...options,
@@ -226,6 +230,10 @@ export class Auth0Client {
 
     this.dpop = this.options.useDpop
       ? new Dpop(this.options.clientId)
+      : undefined;
+
+    this.dpopFetch = this.dpop
+      ? new DpopFetch(this, this.dpop, this.options.dpopFetchConfig)
       : undefined;
 
     this.domainUrl = getDomain(this.options.domain);
@@ -1231,8 +1239,10 @@ export class Auth0Client {
     });
   }
 
-  protected _assertDpop(dpop: Dpop | undefined): asserts dpop is Dpop {
-    if (!dpop) {
+  protected _assertDpop<T extends Dpop | DpopFetch<DpopFetchOutput>>(
+    ref: T | undefined
+  ): asserts ref is T {
+    if (!ref) {
       throw new Error('`useDpop` option must be enabled before using DPoP.');
     }
   }
@@ -1277,6 +1287,34 @@ export class Auth0Client {
     this._assertDpop(this.dpop);
 
     return this.dpop.generateProof(params);
+  }
+
+  /**
+   * Helper method to do your own requests with DPoP to a non-Auth0 custom API. It requires enabling the {@link Auth0ClientOptions.useDpop} option.
+   *
+   * It's optional to use, but it provides:
+   *
+   * - Automatic request configuration (proof generation, headers, etc).
+   * - Nonce storage and management.
+   * - Retry when a nonce is rejected.
+   *
+   * The configuration accepts the following:
+   *
+   * - `name`: arbitrary string to link internal state to this specific request type. Example: `my_custom_request`. Mandatory.
+   * - `method`: HTTP method for the request. Example: `POST`. Mandatory.
+   * - `url`: target URL for the HTTP request. Example: `https://api.example.com/v1/foo`. Mandatory.
+   * - `body`: stringified body for the HTTP request, if any. Example: `{ "foo": "bar" }`. Optional.
+   * - `accessToken`: string or method that returns the access token to use in this request. Example: `(client) => client.getTokenSilently()`. Mandatory.
+   * - `fetch`: if you have specific needs that a simple Fetch API call doesn't cover (alternative HTTP clients, a proxy, etc), you can provide your own implementation. It will receive all the pieces needed to put a request together, plus a pre-filled `Request` object (from the Fetch API) that you can modify and use if needed. The output of this implementation needs to contain the `status` code and the `headers` of the response plus any arbitrary `output` you might want to get as the return value of the call.
+   *
+   * Check the examples for details.
+   */
+  public fetchWithDpop(
+    config?: FetchConfig<DpopFetchOutput>
+  ): Promise<DpopFetchOutput> {
+    this._assertDpop(this.dpopFetch);
+
+    return this.dpopFetch.fetch(config);
   }
 }
 

@@ -1,5 +1,6 @@
 import { ICache } from './cache';
 import type { Dpop } from './dpop/dpop';
+import type { FetchConfig } from './dpop/fetch';
 
 export interface AuthorizationParams {
   /**
@@ -120,7 +121,8 @@ interface BaseLoginOptions {
   authorizationParams?: AuthorizationParams;
 }
 
-export interface Auth0ClientOptions extends BaseLoginOptions {
+export interface Auth0ClientOptions<DpopFetchOutput = any>
+  extends BaseLoginOptions {
   /**
    * Your Auth0 account domain such as `'example.auth0.com'`,
    * `'example.eu.auth0.com'` or , `'example.mycompany.com'`
@@ -281,6 +283,16 @@ export interface Auth0ClientOptions extends BaseLoginOptions {
    * The default setting is `false`.
    */
   useDpop?: boolean;
+
+  /**
+   * Default instance-level configuration for `Auth0Client.fetchWithDpop()`:
+   * if not provided it needs to be passed when calling the method instead.
+   *
+   * See {@link Auth0Client.fetchWithDpop} for details.
+   *
+   * It requires enabling the {@link Auth0ClientOptions.useDpop} option.
+   */
+  dpopFetchConfig?: FetchConfig<DpopFetchOutput>;
 }
 
 /**
