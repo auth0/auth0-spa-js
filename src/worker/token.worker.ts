@@ -33,7 +33,7 @@ const formDataToObject = (formData: string): Record<string, any> => {
 };
 
 const messageHandler = async ({
-  data: { timeout, auth, fetchUrl, fetchOptions, useFormData },
+  data: { timeout, auth, fetchUrl, fetchOptions, useFormData, useMrrt },
   ports: [port]
 }: MessageEvent<WorkerRefreshTokenMessage>) => {
   let json: {
@@ -48,7 +48,14 @@ const messageHandler = async ({
       : JSON.parse(fetchOptions.body as string);
 
     if (!body.refresh_token && body.grant_type === 'refresh_token') {
-      const refreshToken = getRefreshToken(audience, scope);
+      let refreshToken = getRefreshToken(audience, scope);
+
+      // When we don't have any refresh_token that matches the audience and scopes
+      // stored, and useMrrt is configured to true, we will use the last refresh_token
+      // returned by the server to do a refresh
+      if (!refreshToken && useMrrt) {
+        refreshToken = refreshTokens["latest_refresh_token"];
+      }
 
       if (!refreshToken) {
         throw new MissingRefreshTokenError(audience, scope);
@@ -56,13 +63,13 @@ const messageHandler = async ({
 
       fetchOptions.body = useFormData
         ? createQueryParams({
-            ...body,
-            refresh_token: refreshToken
-          })
+          ...body,
+          refresh_token: refreshToken
+        })
         : JSON.stringify({
-            ...body,
-            refresh_token: refreshToken
-          });
+          ...body,
+          refresh_token: refreshToken
+        });
     }
 
     let abortController: AbortController | undefined;
@@ -102,6 +109,12 @@ const messageHandler = async ({
     json = await response.json();
 
     if (json.refresh_token) {
+      // If useMrrt is configured to true we want to save the latest refresh_token
+      // to be used when refreshing tokens with MRRT
+      if (useMrrt && audience !== "default") {
+        refreshTokens["latest_refresh_token"] = json.refresh_token;
+      }
+
       setRefreshToken(json.refresh_token, audience, scope);
       delete json.refresh_token;
     } else {
