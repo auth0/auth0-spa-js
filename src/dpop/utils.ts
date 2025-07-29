@@ -1,5 +1,7 @@
 import * as dpopLib from 'dpop';
 
+export const DPOP_NONCE_HEADER = 'dpop-nonce';
+
 const KEY_PAIR_ALGORITHM: dpopLib.JWSAlgorithm = 'ES256';
 
 const SUPPORTED_GRANT_TYPES = [

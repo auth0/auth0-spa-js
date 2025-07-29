@@ -13,6 +13,7 @@ import {
   UseDpopNonceError
 } from './errors';
 import { Dpop } from './dpop/dpop';
+import { DPOP_NONCE_HEADER } from './dpop/utils';
 
 export const createAbortController = () => new AbortController();
 
@@ -169,7 +170,7 @@ export async function getJSON<T>(
      *
      * @see {@link https://www.rfc-editor.org/rfc/rfc9449.html#section-8.2-3}
      */
-    newDpopNonce = headers['dpop-nonce'];
+    newDpopNonce = headers[DPOP_NONCE_HEADER];
 
     if (newDpopNonce) {
       await dpop.setNonce(newDpopNonce);

@@ -96,6 +96,9 @@ export class MissingRefreshTokenError extends GenericError {
   }
 }
 
+/**
+ * Error thrown when the wrong DPoP nonce is used and a potential subsequent retry wasn't able to fix it.
+ */
 export class UseDpopNonceError extends GenericError {
   constructor(public newDpopNonce: string | undefined) {
     super('use_dpop_nonce', 'Server rejected DPoP proof: wrong nonce');

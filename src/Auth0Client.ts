@@ -1243,7 +1243,7 @@ export class Auth0Client {
    * It can return `undefined` because when starting fresh it will not
    * be populated until after the first response from the server.
    *
-   * It requires enabling the `useDpop` option.
+   * It requires enabling the {@link Auth0ClientOptions.useDpop} option.
    */
   public async getDpopNonce(): Promise<string | undefined> {
     this._assertDpop(this.dpop);
@@ -1254,7 +1254,7 @@ export class Auth0Client {
   /**
    * Gets the current DPoP nonce used for making requests to Auth0.
    *
-   * It requires enabling the `useDpop` option.
+   * It requires enabling the {@link Auth0ClientOptions.useDpop} option.
    */
   public async setDpopNonce(nonce: string): Promise<void> {
     this._assertDpop(this.dpop);
@@ -1266,7 +1266,7 @@ export class Auth0Client {
    * Returns a string to be used to demonstrate possession of the private
    * key used to cryptographically bind access tokens with DPoP.
    *
-   * It requires enabling the `useDpop` option.
+   * It requires enabling the {@link Auth0ClientOptions.useDpop} option.
    */
   public generateDpopProof(params: {
     url: string;
