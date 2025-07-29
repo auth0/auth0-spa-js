@@ -30,6 +30,8 @@ describe('Dpop', () => {
   describe('getNonce', () => {
     const { dpop, storage } = newTestDpop();
 
+    const owner = 'somebody';
+
     beforeEach(() => {
       jest.spyOn(storage, 'findNonce').mockResolvedValue(TEST_DPOP_NONCE);
     });
@@ -37,24 +39,28 @@ describe('Dpop', () => {
     let output: unknown;
 
     beforeEach(async () => {
-      output = await dpop.getNonce();
+      output = await dpop.getNonce(owner);
     });
 
-    it('delegates to storage.findNonce()', () =>
-      expect(output).toBe(TEST_DPOP_NONCE));
+    it('delegates to storage.findNonce()', () => {
+      expect(storage.findNonce).toHaveBeenCalledWith(owner);
+      expect(output).toBe(TEST_DPOP_NONCE);
+    });
   });
 
   describe('setNonce', () => {
     const { dpop, storage } = newTestDpop();
 
+    const owner = 'somebody';
+
     beforeEach(() => {
       jest.spyOn(storage, 'setNonce').mockResolvedValue();
     });
 
-    beforeEach(() => dpop.setNonce(TEST_DPOP_NONCE));
+    beforeEach(() => dpop.setNonce(TEST_DPOP_NONCE, owner));
 
     it('delegates to storage.setNonce()', () =>
-      expect(storage.setNonce).toHaveBeenCalledWith(TEST_DPOP_NONCE));
+      expect(storage.setNonce).toHaveBeenCalledWith(TEST_DPOP_NONCE, owner));
   });
 
   describe('getOrGenerateKeyPair()', () => {

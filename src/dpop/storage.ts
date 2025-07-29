@@ -7,6 +7,8 @@ const TABLES = {
   KEYPAIR: 'keypair'
 } as const;
 
+const DEFAULT_OWNER = 'auth0';
+
 type Table = (typeof TABLES)[keyof typeof TABLES];
 
 export class DpopStorage {
@@ -45,7 +47,7 @@ export class DpopStorage {
     table: string,
     mode: IDBTransactionMode,
     requestFactory: (table: IDBObjectStore) => IDBRequest<T>
-  ): Promise<T> {
+  ): Promise<T | undefined> {
     const db = await this.getDbHandle();
 
     const txn = db.transaction(table, mode);
@@ -59,46 +61,77 @@ export class DpopStorage {
     });
   }
 
-  public setNonce(nonce: string): Promise<void> {
-    return this.save(TABLES.NONCE, this.clientId, nonce);
+  protected buildKey(owner?: string): string {
+    const finalOwner = owner
+      ? `_${owner}` // prefix to avoid collisions
+      : DEFAULT_OWNER;
+
+    return `${this.clientId}::${finalOwner}`;
+  }
+
+  public setNonce(nonce: string, owner?: string): Promise<void> {
+    return this.save(TABLES.NONCE, this.buildKey(owner), nonce);
   }
 
   public setKeyPair(keyPair: KeyPair): Promise<void> {
-    return this.save(TABLES.KEYPAIR, this.clientId, keyPair);
+    return this.save(TABLES.KEYPAIR, this.buildKey(), keyPair);
   }
 
-  protected async save(table: Table, key: string, obj: unknown): Promise<void> {
+  protected async save(
+    table: Table,
+    key: IDBValidKey,
+    obj: unknown
+  ): Promise<void> {
     await this.executeDbRequest(table, 'readwrite', table =>
       table.put(obj, key)
     );
   }
 
-  public findNonce(): Promise<string | undefined> {
-    return this.find(TABLES.NONCE, this.clientId);
+  public findNonce(owner?: string): Promise<string | undefined> {
+    return this.find(TABLES.NONCE, this.buildKey(owner));
   }
 
   public findKeyPair(): Promise<KeyPair | undefined> {
-    return this.find(TABLES.KEYPAIR, this.clientId);
+    return this.find(TABLES.KEYPAIR, this.buildKey());
   }
 
   protected find<T = unknown>(
     table: Table,
-    key: string
+    key: IDBValidKey
   ): Promise<T | undefined> {
     return this.executeDbRequest(table, 'readonly', table => table.get(key));
   }
 
-  public clearNonces(): Promise<void> {
-    return this.clear(TABLES.NONCE, this.clientId);
-  }
-
-  public clearKeyPairs(): Promise<void> {
-    return this.clear(TABLES.KEYPAIR, this.clientId);
-  }
-
-  protected clear(table: Table, key: string): Promise<void> {
-    return this.executeDbRequest<undefined>(table, 'readwrite', table =>
-      table.delete(key)
+  protected async deleteBy(
+    table: Table,
+    predicate: (key: IDBValidKey) => boolean
+  ): Promise<void> {
+    const allKeys = await this.executeDbRequest(table, 'readonly', table =>
+      table.getAllKeys()
     );
+
+    allKeys
+      ?.filter(predicate)
+      .map(k =>
+        this.executeDbRequest(table, 'readwrite', table => table.delete(k))
+      );
+  }
+
+  protected async deleteByClientId(
+    table: Table,
+    clientId: string
+  ): Promise<void> {
+    return this.deleteBy(
+      table,
+      k => typeof k === 'string' && k.startsWith(`${clientId}::`)
+    );
+  }
+
+  public async clearNonces(): Promise<void> {
+    return this.deleteByClientId(TABLES.NONCE, this.clientId);
+  }
+
+  public async clearKeyPairs(): Promise<void> {
+    return this.deleteByClientId(TABLES.KEYPAIR, this.clientId);
   }
 }

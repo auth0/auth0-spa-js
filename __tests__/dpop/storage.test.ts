@@ -106,16 +106,18 @@ describe('DpopStorage', () => {
   });
 
   describe('setNonce()', () => {
+    const owner = 'somebody';
+
     beforeEach(() => {
       storage['save'] = jest.fn();
     });
 
-    beforeEach(() => storage.setNonce(TEST_DPOP_NONCE));
+    beforeEach(() => storage.setNonce(TEST_DPOP_NONCE, owner));
 
     it('saves nonce properly', () =>
       expect(storage['save']).toHaveBeenCalledWith(
         'nonce',
-        TEST_CLIENT_ID,
+        storage['buildKey'](owner),
         TEST_DPOP_NONCE
       ));
   });
@@ -130,7 +132,7 @@ describe('DpopStorage', () => {
     it('saves key pair properly', () =>
       expect(storage['save']).toHaveBeenCalledWith(
         'keypair',
-        TEST_CLIENT_ID,
+        storage['buildKey'](),
         TEST_DPOP_KEYPAIR
       ));
   });
@@ -147,14 +149,19 @@ describe('DpopStorage', () => {
   });
 
   describe('findNonce()', () => {
+    const owner = 'somebody';
+
     beforeEach(() => {
       storage['find'] = jest.fn();
     });
 
-    beforeEach(() => storage.findNonce());
+    beforeEach(() => storage.findNonce(owner));
 
     it('delegates to find() properly', () =>
-      expect(storage['find']).toHaveBeenCalledWith('nonce', TEST_CLIENT_ID));
+      expect(storage['find']).toHaveBeenCalledWith(
+        'nonce',
+        storage['buildKey'](owner)
+      ));
   });
 
   describe('findKeyPair()', () => {
@@ -165,50 +172,70 @@ describe('DpopStorage', () => {
     beforeEach(() => storage.findKeyPair());
 
     it('delegates to find() properly', () =>
-      expect(storage['find']).toHaveBeenCalledWith('keypair', TEST_CLIENT_ID));
+      expect(storage['find']).toHaveBeenCalledWith(
+        'keypair',
+        storage['buildKey']()
+      ));
   });
 
   describe('clearNonces()', () => {
     beforeEach(() => {
-      storage['clear'] = jest.fn();
+      storage['deleteByClientId'] = jest.fn();
     });
 
     beforeEach(() => storage.clearNonces());
 
-    it('delegates to clear() properly', () =>
-      expect(storage['clear']).toHaveBeenCalledWith('nonce', TEST_CLIENT_ID));
+    it('delegates to deleteByClientId() properly', () =>
+      expect(storage['deleteByClientId']).toHaveBeenCalledWith(
+        'nonce',
+        TEST_CLIENT_ID
+      ));
   });
 
   describe('clearKeyPairs()', () => {
     beforeEach(() => {
-      storage['clear'] = jest.fn();
+      storage['deleteByClientId'] = jest.fn();
     });
 
     beforeEach(() => storage.clearKeyPairs());
 
     it('delegates to clear() properly', () =>
-      expect(storage['clear']).toHaveBeenCalledWith('keypair', TEST_CLIENT_ID));
+      expect(storage['deleteByClientId']).toHaveBeenCalledWith(
+        'keypair',
+        TEST_CLIENT_ID
+      ));
   });
 
-  describe('clear()', () => {
+  describe('deleteByClientId()', () => {
     const table = 'nonce';
-    const key = 'some-key';
-    const value = Math.random().toString();
+    const clientId = 'foobar';
+    const nonce = Math.random().toString();
 
-    let beforeClear: unknown;
-    let afterClear: unknown;
+    let beforeClear: IDBValidKey[] | undefined;
+    let afterClear: IDBValidKey[] | undefined;
 
     beforeEach(async () => {
-      await storage['save'](table, key, value);
-      beforeClear = await storage['find'](table, key);
+      await storage['save'](table, `${clientId}::aaa`, nonce);
+      await storage['save'](table, `${clientId}aaa`, nonce);
+      await storage['save'](table, clientId, nonce);
+      beforeClear = await storage['executeDbRequest'](
+        table,
+        'readonly',
+        table => table.getAllKeys()
+      );
 
-      await storage['clear'](table, key);
-      afterClear = await storage['find'](table, key);
+      await storage['deleteByClientId'](table, clientId);
+      afterClear = await storage['executeDbRequest'](table, 'readonly', table =>
+        table.getAllKeys()
+      );
     });
 
-    it('clears as expected', () => {
-      expect(beforeClear).not.toBeUndefined();
-      expect(afterClear).toBeUndefined();
+    it('deletes as expected', () => {
+      expect(beforeClear?.length).toBe(3);
+      expect(afterClear?.length).toBe(2);
+      expect(afterClear).toEqual(
+        expect.arrayContaining([`${clientId}aaa`, clientId])
+      );
     });
   });
 });
