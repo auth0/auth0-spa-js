@@ -3,8 +3,9 @@ import { UseDpopNonceError } from '../errors';
 import { Dpop } from './dpop';
 import { DPOP_NONCE_HEADER } from './utils';
 
-type HeadersWithGetter = { get(name: string): string | null | undefined };
-type Headers = Record<string, string | null | undefined> | HeadersWithGetter;
+type GetterHeaders = Pick<Headers, 'get'>;
+type PlainHeaders = Record<string, string>;
+type AnyHeaders = GetterHeaders | PlainHeaders;
 
 /**
  * `Auth0Client` instance that the `accessToken` function will receive as
@@ -18,52 +19,44 @@ type Auth0ClientSubset = Omit<
 >;
 
 type FetchFuncResponse<T> = {
-  status: number;
-  headers: Headers;
+  headers: AnyHeaders;
   output: T;
+  status: number;
 };
 
-type FetchFuncParams = {
-  method: string;
-  url: string;
-  body?: string;
-  accessToken: string;
-  request: Request;
-};
-
-export type FetchFunc<T> = (
-  params: FetchFuncParams
-) => Promise<FetchFuncResponse<T>>;
+export type FetchFunc<T> = (request: Request) => Promise<FetchFuncResponse<T>>;
 
 export type FetchConfig<T> = {
-  nonceId: string;
-  method: string;
-  url: string;
-  body?: string;
   accessToken?:
     | string
     | ((client: Auth0ClientSubset) => Promise<string> | string);
+  body?: string;
   fetch?: FetchFunc<T>;
+  headers?: PlainHeaders;
+  method: string;
+  nonceId: string;
+  timeout?: number;
+  url: string;
 };
 
 /**
  * Default DPoP fetch that uses the Fetch API. It does a very basic request
  * that expects a JSON response.
  */
-const DEFAULT_FETCH_FUNC: FetchFunc<any> = async ({ request }) => {
+const DEFAULT_FETCH_FUNC: FetchFunc<any> = async request => {
   const res = await fetch(request);
 
   return {
-    status: res.status,
     headers: res.headers,
-    output: await res.json()
+    output: res,
+    status: res.status
   };
 };
 
 export class DpopFetch<GlobalOutput> {
   protected readonly client: Auth0ClientSubset;
-  protected readonly dpop: Dpop;
   protected readonly config?: FetchConfig<GlobalOutput>;
+  protected readonly dpop: Dpop;
 
   constructor(
     client: Auth0ClientSubset,
@@ -71,8 +64,8 @@ export class DpopFetch<GlobalOutput> {
     config?: FetchConfig<GlobalOutput>
   ) {
     this.client = client;
-    this.dpop = dpop;
     this.config = config;
+    this.dpop = dpop;
   }
 
   protected async getFinalConfig<LocalOutput>(
@@ -105,21 +98,19 @@ export class DpopFetch<GlobalOutput> {
     };
   }
 
-  protected headersHaveGetter(headers: Headers): headers is HeadersWithGetter {
+  protected hasGetter(headers: AnyHeaders): headers is GetterHeaders {
     return typeof headers.get === 'function';
   }
 
-  protected getHeader(headers: Headers, name: string): string {
-    const value = this.headersHaveGetter(headers)
-      ? headers.get(name)
-      : headers[name];
+  protected getHeader(headers: AnyHeaders, name: string): string {
+    const value = this.hasGetter(headers) ? headers.get(name) : headers[name];
 
     return value || ''; // for type convenience
   }
 
   protected isNonceError(result: {
     status: number;
-    headers: Headers;
+    headers: AnyHeaders;
   }): boolean {
     if (result.status !== 401) {
       return false;
@@ -135,12 +126,14 @@ export class DpopFetch<GlobalOutput> {
     isRetry?: boolean
   ): Promise<GlobalOutput | LocalOutput> {
     const {
-      nonceId,
-      method,
-      url,
-      body,
       accessToken,
-      fetch: fetchFunc
+      body,
+      fetch: fetchFunc,
+      headers: initialHeaders,
+      method,
+      nonceId,
+      timeout,
+      url
     } = await this.getFinalConfig(localConfig);
 
     const nonce = await this.dpop.getNonce(nonceId);
@@ -152,22 +145,20 @@ export class DpopFetch<GlobalOutput> {
       nonce
     });
 
-    const request = new Request(url, {
-      method,
-      headers: {
-        authorization: `DPoP ${accessToken}`,
-        dpop: proof
-      },
-      body
+    const headers = new Headers({
+      ...initialHeaders,
+      authorization: `DPoP ${accessToken}`,
+      dpop: proof
     });
 
-    const result = await fetchFunc({
+    const request = new Request(url, {
       method,
-      url,
+      headers,
       body,
-      accessToken,
-      request
+      signal: timeout ? AbortSignal.timeout(timeout) : undefined
     });
+
+    const result = await fetchFunc(request);
 
     const newNonce = this.getHeader(result.headers, DPOP_NONCE_HEADER);
 

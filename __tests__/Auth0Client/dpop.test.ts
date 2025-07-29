@@ -69,7 +69,7 @@ describe('Auth0Client', () => {
       expect(auth0['_assertDpop']).toHaveBeenCalled());
 
     it('delegates into Dpop.getNonce()', () => {
-      expect(dpop.setNonce).toHaveBeenCalledWith(id);
+      expect(dpop.getNonce).toHaveBeenCalledWith(id);
       expect(output).toBe(TEST_DPOP_NONCE);
     });
   });
@@ -84,7 +84,7 @@ describe('Auth0Client', () => {
       jest.spyOn(dpop, 'setNonce').mockResolvedValue();
     });
 
-    beforeEach(() => auth0.setDpopNonce(TEST_DPOP_NONCE));
+    beforeEach(() => auth0.setDpopNonce(TEST_DPOP_NONCE, id));
 
     it('asserts DPoP is enabled', () =>
       expect(auth0['_assertDpop']).toHaveBeenCalled());
