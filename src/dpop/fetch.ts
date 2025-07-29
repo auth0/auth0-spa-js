@@ -40,7 +40,7 @@ export type FetchConfig<T> = {
   method: string;
   url: string;
   body?: string;
-  accessToken:
+  accessToken?:
     | string
     | ((client: Auth0ClientSubset) => Promise<string> | string);
   fetch?: FetchFunc<T>;
@@ -94,7 +94,9 @@ export class DpopFetch<GlobalOutput> {
     const finalAccessToken =
       typeof finalConfig.accessToken === 'string'
         ? finalConfig.accessToken
-        : await finalConfig.accessToken(this.client);
+        : await (finalConfig.accessToken
+            ? finalConfig.accessToken(this.client)
+            : this.client.getTokenSilently());
 
     return {
       ...finalConfig,
