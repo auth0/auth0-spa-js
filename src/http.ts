@@ -113,13 +113,14 @@ export async function getJSON<T>(
   options: FetchOptions,
   worker?: Worker,
   useFormData?: boolean,
-  dpop?: Pick<Dpop, 'generateProof' | 'setNonce'>,
+  dpop?: Pick<Dpop, 'generateProof' | 'getNonce' | 'setNonce'>,
   isDpopRetry?: boolean
 ): Promise<T> {
   if (dpop) {
     const dpopProof = await dpop.generateProof({
       url,
-      method: options.method || 'GET'
+      method: options.method || 'GET',
+      nonce: await dpop.getNonce()
     });
 
     options.headers = { ...options.headers, dpop: dpopProof };

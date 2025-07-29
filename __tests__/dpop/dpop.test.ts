@@ -113,74 +113,36 @@ describe('Dpop', () => {
     const url = 'https://example.com';
     const method = 'POST';
 
-    describe('not passing a nonce', () => {
-      const { dpop, storage } = newTestDpop();
+    const { dpop } = newTestDpop();
 
-      beforeEach(() => {
-        storage.findNonce = () => Promise.resolve(TEST_DPOP_NONCE);
-        dpop['getOrGenerateKeyPair'] = () => Promise.resolve(TEST_DPOP_KEYPAIR);
-        jest
-          .spyOn(dpopUtils, 'generateProof')
-          .mockResolvedValue(TEST_DPOP_PROOF);
-      });
+    const fakeNonce = 'this-is-my-fake-nonce';
 
-      let output: string;
-
-      beforeEach(async () => {
-        output = await dpop.generateProof({
-          url,
-          method,
-          accessToken: TEST_ACCESS_TOKEN
-        });
-      });
-
-      it('delegates to generateProof() properly', () =>
-        expect(dpopUtils.generateProof).toHaveBeenCalledWith({
-          keyPair: TEST_DPOP_KEYPAIR,
-          url,
-          method,
-          nonce: TEST_DPOP_NONCE,
-          accessToken: TEST_ACCESS_TOKEN
-        }));
-
-      it('returns as expected', () => expect(output).toBe(TEST_DPOP_PROOF));
+    beforeEach(() => {
+      dpop['getOrGenerateKeyPair'] = () => Promise.resolve(TEST_DPOP_KEYPAIR);
+      jest.spyOn(dpopUtils, 'generateProof').mockResolvedValue(TEST_DPOP_PROOF);
     });
 
-    describe('passing a specific nonce', () => {
-      const { dpop, storage } = newTestDpop();
+    let output: string;
 
-      const fakeNonce = 'this-is-my-fake-nonce';
-
-      beforeEach(() => {
-        storage.findNonce = () => Promise.reject(new Error('not to be used!'));
-        dpop['getOrGenerateKeyPair'] = () => Promise.resolve(TEST_DPOP_KEYPAIR);
-        jest
-          .spyOn(dpopUtils, 'generateProof')
-          .mockResolvedValue(TEST_DPOP_PROOF);
+    beforeEach(async () => {
+      output = await dpop.generateProof({
+        url,
+        method,
+        nonce: fakeNonce,
+        accessToken: TEST_ACCESS_TOKEN
       });
-
-      let output: string;
-
-      beforeEach(async () => {
-        output = await dpop.generateProof({
-          url,
-          method,
-          nonce: fakeNonce,
-          accessToken: TEST_ACCESS_TOKEN
-        });
-      });
-
-      it('delegates to generateProof() properly', () =>
-        expect(dpopUtils.generateProof).toHaveBeenCalledWith({
-          keyPair: TEST_DPOP_KEYPAIR,
-          url,
-          method,
-          nonce: fakeNonce,
-          accessToken: TEST_ACCESS_TOKEN
-        }));
-
-      it('returns as expected', () => expect(output).toBe(TEST_DPOP_PROOF));
     });
+
+    it('delegates to generateProof() properly', () =>
+      expect(dpopUtils.generateProof).toHaveBeenCalledWith({
+        keyPair: TEST_DPOP_KEYPAIR,
+        url,
+        method,
+        nonce: fakeNonce,
+        accessToken: TEST_ACCESS_TOKEN
+      }));
+
+    it('returns as expected', () => expect(output).toBe(TEST_DPOP_PROOF));
   });
 
   describe('calculateThumbprint()', () => {

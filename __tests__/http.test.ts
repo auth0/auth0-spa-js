@@ -5,7 +5,12 @@ import {
 } from '../src/errors';
 import { switchFetch, getJSON } from '../src/http';
 import { expect } from '@jest/globals';
-import { TEST_AUDIENCE, TEST_CLIENT_ID, TEST_SCOPES } from './constants';
+import {
+  TEST_AUDIENCE,
+  TEST_CLIENT_ID,
+  TEST_DPOP_NONCE,
+  TEST_SCOPES
+} from './constants';
 import { Dpop } from '../src/dpop/dpop';
 
 jest.mock('../src/worker/token.worker');
@@ -80,6 +85,7 @@ describe('getJson', () => {
 
     const fakeDpopProof = 'abc.xyz.123';
 
+    dpop.getNonce = () => Promise.resolve(TEST_DPOP_NONCE);
     dpop.generateProof = () => Promise.resolve(fakeDpopProof);
 
     mockUnfetch.mockResolvedValueOnce({
@@ -128,6 +134,7 @@ describe('getJson', () => {
 
     jest.spyOn(dpop, 'generateProof').mockResolvedValueOnce('unused');
     jest.spyOn(dpop, 'setNonce').mockResolvedValueOnce();
+    dpop.getNonce = () => Promise.resolve(TEST_DPOP_NONCE);
 
     const fakeDpopNonce = 'abcdef123456';
 
@@ -156,6 +163,7 @@ describe('getJson', () => {
 
     jest.spyOn(dpop, 'generateProof').mockResolvedValueOnce('unused');
     jest.spyOn(dpop, 'setNonce').mockResolvedValueOnce();
+    dpop.getNonce = () => Promise.resolve(TEST_DPOP_NONCE);
 
     mockUnfetch.mockResolvedValueOnce({
       ok: true,
@@ -182,6 +190,7 @@ describe('getJson', () => {
 
     jest.spyOn(dpop, 'generateProof').mockResolvedValue('unused');
     jest.spyOn(dpop, 'setNonce').mockResolvedValue();
+    dpop.getNonce = () => Promise.resolve(TEST_DPOP_NONCE);
 
     // always reject
     mockUnfetch.mockResolvedValue({
@@ -215,6 +224,7 @@ describe('getJson', () => {
 
     jest.spyOn(dpop, 'generateProof').mockResolvedValue('unused');
     jest.spyOn(dpop, 'setNonce').mockResolvedValue();
+    dpop.getNonce = () => Promise.resolve(TEST_DPOP_NONCE);
 
     mockUnfetch
       // reject first try and respond with a new nonce

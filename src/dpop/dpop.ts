@@ -33,19 +33,11 @@ export class Dpop {
     nonce?: string;
     accessToken?: string;
   }): Promise<string> {
-    const { url, method, accessToken } = params;
-
-    const [nonce, keyPair] = await Promise.all([
-      params.nonce ? params.nonce : this.storage.findNonce(),
-      this.getOrGenerateKeyPair()
-    ]);
+    const keyPair = await this.getOrGenerateKeyPair();
 
     return dpopUtils.generateProof({
       keyPair,
-      url,
-      method,
-      nonce,
-      accessToken
+      ...params
     });
   }
 

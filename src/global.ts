@@ -537,7 +537,7 @@ export interface TokenEndpointOptions {
   timeout?: number;
   auth0Client: any;
   useFormData?: boolean;
-  dpop?: Pick<Dpop, 'generateProof' | 'setNonce'>;
+  dpop?: Pick<Dpop, 'generateProof' | 'getNonce' | 'setNonce'>;
   [key: string]: any;
 }
 
