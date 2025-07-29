@@ -1254,22 +1254,30 @@ export class Auth0Client<DpopFetchOutput = unknown> {
    * be populated until after the first response from the server.
    *
    * It requires enabling the {@link Auth0ClientOptions.useDpop} option.
+   *
+   * @param id The identifier of a nonce: if absent, it will get the nonce
+   *           used for requests to Auth0. Otherwise, it will be used to
+   *           select a specific non-Auth0 nonce.
    */
-  public async getDpopNonce(): Promise<string | undefined> {
+  public async getDpopNonce(id?: string): Promise<string | undefined> {
     this._assertDpop(this.dpop);
 
-    return this.dpop.getNonce();
+    return this.dpop.getNonce(id);
   }
 
   /**
    * Gets the current DPoP nonce used for making requests to Auth0.
    *
    * It requires enabling the {@link Auth0ClientOptions.useDpop} option.
+   *
+   * @param id The identifier of a nonce: if absent, it will set the nonce
+   *           used for requests to Auth0. Otherwise, it will be used to
+   *           select a specific non-Auth0 nonce.
    */
-  public async setDpopNonce(nonce: string): Promise<void> {
+  public async setDpopNonce(nonce: string, id?: string): Promise<void> {
     this._assertDpop(this.dpop);
 
-    return this.dpop.setNonce(nonce);
+    return this.dpop.setNonce(nonce, id);
   }
 
   /**

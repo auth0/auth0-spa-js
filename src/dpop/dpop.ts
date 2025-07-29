@@ -8,12 +8,12 @@ export class Dpop {
     this.storage = new DpopStorage(clientId);
   }
 
-  public getNonce(owner?: string): Promise<string | undefined> {
-    return this.storage.findNonce(owner);
+  public getNonce(id?: string): Promise<string | undefined> {
+    return this.storage.findNonce(id);
   }
 
-  public setNonce(nonce: string, owner?: string): Promise<void> {
-    return this.storage.setNonce(nonce, owner);
+  public setNonce(nonce: string, id?: string): Promise<void> {
+    return this.storage.setNonce(nonce, id);
   }
 
   protected async getOrGenerateKeyPair(): Promise<dpopUtils.KeyPair> {

@@ -7,7 +7,7 @@ const TABLES = {
   KEYPAIR: 'keypair'
 } as const;
 
-const DEFAULT_OWNER = 'auth0';
+const AUTH0_NONCE_ID = 'auth0';
 
 type Table = (typeof TABLES)[keyof typeof TABLES];
 
@@ -61,16 +61,16 @@ export class DpopStorage {
     });
   }
 
-  protected buildKey(owner?: string): string {
-    const finalOwner = owner
-      ? `_${owner}` // prefix to avoid collisions
-      : DEFAULT_OWNER;
+  protected buildKey(id?: string): string {
+    const finalId = id
+      ? `_${id}` // prefix to avoid collisions
+      : AUTH0_NONCE_ID;
 
-    return `${this.clientId}::${finalOwner}`;
+    return `${this.clientId}::${finalId}`;
   }
 
-  public setNonce(nonce: string, owner?: string): Promise<void> {
-    return this.save(TABLES.NONCE, this.buildKey(owner), nonce);
+  public setNonce(nonce: string, id?: string): Promise<void> {
+    return this.save(TABLES.NONCE, this.buildKey(id), nonce);
   }
 
   public setKeyPair(keyPair: KeyPair): Promise<void> {
@@ -87,8 +87,8 @@ export class DpopStorage {
     );
   }
 
-  public findNonce(owner?: string): Promise<string | undefined> {
-    return this.find(TABLES.NONCE, this.buildKey(owner));
+  public findNonce(id?: string): Promise<string | undefined> {
+    return this.find(TABLES.NONCE, this.buildKey(id));
   }
 
   public findKeyPair(): Promise<KeyPair | undefined> {

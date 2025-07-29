@@ -36,7 +36,7 @@ export type FetchFunc<T> = (
 ) => Promise<FetchFuncResponse<T>>;
 
 export type FetchConfig<T> = {
-  name: string;
+  nonceId: string;
   method: string;
   url: string;
   body?: string;
@@ -133,7 +133,7 @@ export class DpopFetch<GlobalOutput> {
     isRetry?: boolean
   ): Promise<GlobalOutput | LocalOutput> {
     const {
-      name,
+      nonceId,
       method,
       url,
       body,
@@ -141,7 +141,7 @@ export class DpopFetch<GlobalOutput> {
       fetch: fetchFunc
     } = await this.getFinalConfig(localConfig);
 
-    const nonce = await this.dpop.getNonce(name);
+    const nonce = await this.dpop.getNonce(nonceId);
 
     const proof = await this.dpop.generateProof({
       method,
@@ -170,7 +170,7 @@ export class DpopFetch<GlobalOutput> {
     const newNonce = this.getHeader(result.headers, DPOP_NONCE_HEADER);
 
     if (newNonce) {
-      await this.dpop.setNonce(newNonce, name);
+      await this.dpop.setNonce(newNonce, nonceId);
     }
 
     if (!this.isNonceError(result)) {

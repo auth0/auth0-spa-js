@@ -106,18 +106,18 @@ describe('DpopStorage', () => {
   });
 
   describe('setNonce()', () => {
-    const owner = 'somebody';
+    const id = 'my_custom_api';
 
     beforeEach(() => {
       storage['save'] = jest.fn();
     });
 
-    beforeEach(() => storage.setNonce(TEST_DPOP_NONCE, owner));
+    beforeEach(() => storage.setNonce(TEST_DPOP_NONCE, id));
 
     it('saves nonce properly', () =>
       expect(storage['save']).toHaveBeenCalledWith(
         'nonce',
-        storage['buildKey'](owner),
+        storage['buildKey'](id),
         TEST_DPOP_NONCE
       ));
   });
@@ -149,18 +149,18 @@ describe('DpopStorage', () => {
   });
 
   describe('findNonce()', () => {
-    const owner = 'somebody';
+    const id = 'my_custom_api';
 
     beforeEach(() => {
       storage['find'] = jest.fn();
     });
 
-    beforeEach(() => storage.findNonce(owner));
+    beforeEach(() => storage.findNonce(id));
 
     it('delegates to find() properly', () =>
       expect(storage['find']).toHaveBeenCalledWith(
         'nonce',
-        storage['buildKey'](owner)
+        storage['buildKey'](id)
       ));
   });
 

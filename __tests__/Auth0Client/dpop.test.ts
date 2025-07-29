@@ -50,6 +50,7 @@ describe('Auth0Client', () => {
   });
 
   describe('getDpopNonce()', () => {
+    const id = 'my_custom_api';
     const auth0 = newTestAuth0Client({ useDpop: true });
     const dpop = auth0['dpop']!;
 
@@ -61,16 +62,20 @@ describe('Auth0Client', () => {
     let output: unknown;
 
     beforeEach(async () => {
-      output = await auth0.getDpopNonce();
+      output = await auth0.getDpopNonce(id);
     });
 
     it('asserts DPoP is enabled', () =>
       expect(auth0['_assertDpop']).toHaveBeenCalled());
 
-    it('returns the nonce', () => expect(output).toBe(TEST_DPOP_NONCE));
+    it('delegates into Dpop.getNonce()', () => {
+      expect(dpop.setNonce).toHaveBeenCalledWith(id);
+      expect(output).toBe(TEST_DPOP_NONCE);
+    });
   });
 
   describe('setDpopNonce()', () => {
+    const id = 'my_custom_api';
     const auth0 = newTestAuth0Client({ useDpop: true });
     const dpop = auth0['dpop']!;
 
@@ -85,7 +90,7 @@ describe('Auth0Client', () => {
       expect(auth0['_assertDpop']).toHaveBeenCalled());
 
     it('delegates into Dpop.setNonce()', () =>
-      expect(dpop.setNonce).toHaveBeenCalledWith(TEST_DPOP_NONCE));
+      expect(dpop.setNonce).toHaveBeenCalledWith(TEST_DPOP_NONCE, id));
   });
 
   describe('generateDpopProof()', () => {
