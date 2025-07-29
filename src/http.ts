@@ -195,24 +195,22 @@ export async function getJSON<T>(
      * throw the error as is.
      */
     if (error === 'use_dpop_nonce') {
-      if (!dpop || !newDpopNonce) {
+      if (!dpop || !newDpopNonce || isDpopRetry) {
         throw new UseDpopNonceError(newDpopNonce);
       }
 
-      if (!isDpopRetry) {
-        // repeat the call but with isDpopRetry=true to avoid any more retries
-        return getJSON(
-          url,
-          timeout,
-          audience,
-          scope,
-          options,
-          worker,
-          useFormData,
-          dpop,
-          true // !
-        );
-      }
+      // repeat the call but with isDpopRetry=true to avoid any more retries
+      return getJSON(
+        url,
+        timeout,
+        audience,
+        scope,
+        options,
+        worker,
+        useFormData,
+        dpop,
+        true // !
+      );
     }
 
     throw new GenericError(error || 'request_error', errorMessage);
