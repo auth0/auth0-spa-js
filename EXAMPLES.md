@@ -5,6 +5,7 @@
 - [Refresh Tokens](#refresh-tokens)
 - [Data Caching Options](#creating-a-custom-cache)
 - [Organizations](#organizations)
+- [Device-bound tokens with DPoP](#device-bound-tokens-with-dpop)
 
 ## Logging Out
 
@@ -317,5 +318,215 @@ async function safeTokenExchange() {
 }
 ```
 
-[Token Exchange Documentation](https://auth0.com/docs/authenticate/login/token-exchange)  
+[Token Exchange Documentation](https://auth0.com/docs/authenticate/login/token-exchange)
 [RFC 8693 Spec](https://tools.ietf.org/html/rfc8693)
+
+## Device-bound tokens with DPoP
+
+**Demonstrating Proof-of-Possession** –or just **DPoP**– is an OAuth 2.0 extension defined in [RFC9449](https://datatracker.ietf.org/doc/html/rfc9449).
+
+It defines a mechanism for securely binding tokens to a specific device by means of cryptographic signatures. Without it, **a token leak caused by XSS or other vulnerability could result in an attacker impersonating the real user.**
+
+In order to support DPoP in `auth0-spa-js`, we require some APIs found in modern browsers:
+
+- [Crypto API](https://developer.mozilla.org/en-US/docs/Web/API/Crypto): it allows to create and use cryptographic keys that will be used for creating the proofs (i.e. signatures) used in DPoP.
+
+- [IndexedDB](https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API): it allows to use cryptographic keys [without giving access to the private material](https://developer.mozilla.org/en-US/docs/Web/API/SubtleCrypto#storing_keys).
+
+The following OAuth 2.0 flows are currently supported by `auth0-spa-js`:
+
+- [Authorization Code Flow](https://auth0.com/docs/get-started/authentication-and-authorization-flow/authorization-code-flow) (`authorization_code`).
+
+- [Refresh Token Flow](https://auth0.com/docs/secure/tokens/refresh-tokens) (`refresh_token`).
+
+- [Custom Token Exchange Flow](https://auth0.com/docs/authenticate/custom-token-exchange) (`urn:ietf:params:oauth:grant-type:token-exchange`).
+
+Currently, only the `ES256` algorithm is supported.
+
+### Enabling DPoP
+
+Currently, DPoP is disabled by default. To enable it, set the `useDpop` option to `true` when creating the SDK instance. For example:
+
+```js
+const client = await createAuth0Client({
+  domain: '<AUTH0_DOMAIN>',
+  clientId: '<AUTH0_CLIENT_ID>',
+  useDpop: true,
+  authorizationParams: {
+    redirect_uri: '<MY_CALLBACK_URL>'
+  }
+});
+```
+
+After enabling DPoP, supported OAuth 2.0 flows in Auth0 will start transparently issuing tokens that will be cryptographically bound to the current browser.
+
+Note that a DPoP token will have to be sent to a resource server with an `Authorization: DPoP <token>` header instead of `Authorization: Bearer <token>` as usual.
+
+If you're using both types at the same time, you can use the `detailedResponse` option in `getTokenSilently()` to get access to the `token_type` property and know what kind of token you got:
+
+```js
+const headers = {
+  Authorization: `${token.token_type} ${token.access_token}`
+};
+```
+
+If all your clients are already using DPoP, you may want to increase security and make Auth0 reject non-DPoP interactions by enabling the "Require Token Sender-Constraining" option in your Auth0's application settings. Check [the docs](https://auth0.com/docs/get-started/applications/configure-sender-constraining) for details.
+
+### Clearing DPoP data
+
+When using DPoP some temporary data is stored in the user's browser. When you log the user out with `client.logout()`, it will be deleted.
+
+### Using DPoP in your own requests
+
+Enabling `useDpop` **protects every internal request that the SDK sends to Auth0** (i.e. the authorization server).
+
+However, if you want to use a DPoP access token to authenticate against a custom API (i.e. a resource server), some extra work is required. The `Auth0Client` class provides some low-level methods that will give the pieces you need:
+
+- `getDpopNonce()`
+- `setDpopNonce()`
+- `generateDpopProof()`
+
+However, due to the nature of how DPoP works, **this is not a trivial task**:
+
+- When a nonce is missing or expired, the request might need to be retried.
+- Received nonces must be stored and managed.
+- DPoP headers must be generated and included in every request, and regenerated with retries.
+
+Because of this, we recommend you to use the provided `fetchWithDpop()` method, **which will do all this work for you.**
+
+#### Simple request example
+
+If you don't have special requirements and you just want to do a simple request, you can treat `fetchWithDpop()` as a wrapper over the Fetch API `fetch()` method, like so:
+
+```js
+const response = await client.fetchWithDpop({
+  // Used to identify nonces belonging to this request.
+  nonceId: 'my_api_request',
+
+  // Basic parameters for the request.
+  method: 'POST',
+  url: 'https://api.example.com/v1/user',
+  body: JSON.stringify({ name: 'John Doe' }),
+
+  // Include your own headers - DPoP headers will be appended at the end.
+  headers: { 'user-agent': 'My Simple Client 1.0' },
+
+  // In milliseconds. Optional.
+  timeout: 5000
+});
+
+// `response` is now a standard Fetch API `Response` object.
+const json = await response.json();
+console.log(json);
+```
+
+Note that this method will do the following for you transparently:
+
+- Use `getTokenSilently()` to get the access token to use in the request.
+- Generate and include DPoP headers where needed.
+- Store and update any DPoP nonces.
+- Handle retries caused by an expired nonce.
+
+#### Advanced request example
+
+If you need something more complex than the above example, you can provide a custom implementation in the `fetch` property.
+
+This implementation **must** return 3 things:
+
+1. The response status code as a number.
+2. The response headers – as a plain object or as a Fetch API's `Headers`-like interface.
+3. A free-form output value that you want to return to the caller.
+
+Your implementation will be called with a plain object containing every piece you might need to make the request on your own.
+
+##### With 3rd party libraries (axios, etc)
+
+```js
+const response = await client.fetchWithDpop({
+  name: 'my_api_request',
+
+  method: 'POST',
+  url: 'https://api.example.com/v1/user',
+  body: JSON.stringify({ name: 'John Doe' }),
+  timeout: 5000,
+
+  fetch(params) {
+    const response = await axios(params);
+
+    return {
+      status: response.status,
+      headers: response.headers,
+      output: response, // or whatever you need at the output
+    };
+  },
+});
+
+console.log(response.status);
+console.log(response.headers);
+console.log(response.data);
+```
+
+##### With Fetch API
+
+```js
+const response = await client.fetchWithDpop({
+  nonceId: 'my_api_request',
+
+  method: 'POST',
+  url: 'https://api.example.com/v1/user',
+  body: JSON.stringify({ name: 'John Doe' }),
+  timeout: 5000,
+
+  fetch(params) {
+    const response = await fetch(params.url, {
+      ...params,
+
+        // Unfortunately, Fetch API doesn't support timeouts so you have
+        // to manually create an `AbortSignal` if you need a timeout.
+        signal: params.timeout
+          ? AbortSignal.timeout(params.timeout)
+          : undefined,
+      });
+
+    return {
+      status: response.status,
+      headers: response.headers,
+      output: response // or whatever you need at the output
+    };
+  },
+});
+
+console.log(response.status);
+console.log(response.headers);
+console.log(response.body);
+```
+
+#### Passing an access token
+
+The `fetchWithDpop()` method assumes that you're using the SDK to get the access token to include in the request. This means that it will call `getTokenSilently()` internally unless instructed otherwise.
+
+However, if you happen to have an access token at hand before calling `fetchWithDpop()` or you need to pass specific parameters to `getTokenSilently()`, you can use the `accessToken` property:
+
+```js
+const response = await client.fetchWithDpop({
+  // ...
+
+  // You can provide a simple string...
+  accessToken: '<SOME_ACCESS_TOKEN>'
+
+  // ... or you can pass a function (async or not) that returns a string.
+  accessToken: (client) => {
+    return client.getTokenSilently({
+      authorizationParams: { foo: 'bar' },
+    });
+  },
+});
+```
+
+#### A note on instance-level vs. call-level configuration
+
+If you are doing just one kind of request, it might be useful to pass a default configuration for `fetchWithDpop()` in the `dpopFetchConfig` option in the `Auth0Client` constructor.
+
+But you can also pass the configuration directly to each call to the `fetchWithDpop()` method, which will override any class-level configuration that you might have.
+
+Both approaches are valid and will behave identically.
