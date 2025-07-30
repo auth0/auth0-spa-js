@@ -94,6 +94,7 @@ import {
 } from './Auth0Client.utils';
 import { CustomTokenExchangeOptions } from './TokenExchange';
 
+
 /**
  * @ignore
  */
@@ -403,7 +404,8 @@ export class Auth0Client {
       },
       {
         nonceIn: params.nonce,
-        organization
+        organization,
+        scope: params.scope
       }
     );
   }
@@ -534,7 +536,11 @@ export class Auth0Client {
         code: code as string,
         ...(redirect_uri ? { redirect_uri } : {})
       },
-      { nonceIn, organization }
+      { 
+        nonceIn, 
+        organization,
+        scope: transaction.scope
+      }
     );
 
     return {
@@ -926,7 +932,8 @@ export class Auth0Client {
         },
         {
           nonceIn,
-          organization: params.organization
+          organization: params.organization,
+          scope
         }
       );
 
@@ -988,9 +995,12 @@ export class Auth0Client {
       const tokenResult = await this._requestToken({
         ...options.authorizationParams,
         grant_type: 'refresh_token',
-        refresh_token: cache && cache.refresh_token,
+        refresh_token: cache?.refresh_token,
         redirect_uri,
+        cacheEntry: cache as CacheEntry,
         ...(timeout && { timeout })
+      }, {
+        scope: options.authorizationParams.scope
       });
 
       return {
@@ -1112,7 +1122,11 @@ export class Auth0Client {
       | TokenExchangeRequestOptions,
     additionalParameters?: RequestTokenAdditionalParameters
   ) {
-    const { nonceIn, organization } = additionalParameters || {};
+    const { nonceIn, organization, scope: requestedScope } = additionalParameters || {};
+    
+    // Extract cacheEntry for our internal use but don't send it to the server
+    const { cacheEntry, ...requestOptions } = options as any;
+    
     const authResult = await oauthToken(
       {
         baseUrl: this.domainUrl,
@@ -1120,7 +1134,7 @@ export class Auth0Client {
         auth0Client: this.options.auth0Client,
         useFormData: this.options.useFormData,
         timeout: this.httpTimeoutMs,
-        ...options
+        ...requestOptions
       },
       this.worker
     );
@@ -1130,11 +1144,23 @@ export class Auth0Client {
       nonceIn,
       organization
     );
+    const scope = getUniqueScopes(
+      requestedScope || cacheEntry?.scope || this.scope
+    );
+
+    // Handle refresh token rotation: if we received a new refresh token and we're using
+    // refresh tokens, invalidate all cache entries that might contain old refresh tokens
+    if (authResult.refresh_token && cacheEntry?.refresh_token) {
+      // Only invalidate if we got a different refresh token (rotation occurred)
+      if (authResult.refresh_token !== cacheEntry.refresh_token) {
+        await this._invalidateOldRefreshTokenEntries(cacheEntry.refresh_token);
+      }
+    }
 
     await this._saveEntryInCache({
       ...authResult,
       decodedToken,
-      scope: options.scope,
+      scope: scope,
       audience: options.audience || 'default',
       ...(authResult.scope ? { oauthTokenScope: authResult.scope } : null),
       client_id: this.options.clientId
@@ -1150,66 +1176,101 @@ export class Auth0Client {
     return { ...authResult, decodedToken };
   }
 
-  /*
-  Custom Token Exchange
-  * **Implementation Notes:**
-  * - Ensure that the `subject_token` provided has been securely obtained and is valid according
-  *   to your external identity provider's policies before invoking this function.
-  * - The function leverages internal helper methods:
-  *   - `validateTokenType` confirms that the `subject_token_type` is supported.
-  *   - `getUniqueScopes` merges and de-duplicates scopes between the provided options and
-  *     the instance's default scopes.
-  *   - `_requestToken` performs the actual HTTP request to the token endpoint.
-  */
+  /**
+   * Invalidates all cache entries that contain the specified old refresh token.
+   * This is critical for refresh token rotation to prevent using rotated tokens.
+   */
+  private async _invalidateOldRefreshTokenEntries(oldRefreshToken: string): Promise<void> {
+    const allKeys = await this.cacheManager['getCacheKeys']();
+    if (!allKeys) return;
+
+    // Filter keys to only those belonging to this client
+    const clientKeys = allKeys.filter(key => key.includes(this.options.clientId));
+
+    // Check each cache entry for the old refresh token
+    for (const key of clientKeys) {
+      try {
+        const entry = await this.cacheManager['cache'].get(key);
+        // Type guard: check if this is a WrappedCacheEntry (not a KeyManifestEntry)
+        if (entry && 'body' in entry && entry.body?.refresh_token === oldRefreshToken) {
+          // Remove the refresh token from this entry to prevent its use
+          entry.body.refresh_token = undefined;
+          await this.cacheManager['cache'].set(key, entry);
+        }
+      } catch (e) {
+        // Continue processing other entries if one fails
+        console.warn('Failed to check/update cache entry during refresh token invalidation:', e);
+      }
+    }
+  }
 
   /**
-   * Exchanges an external subject token for an Auth0 token via a token exchange request.
-   *
-   * @param {CustomTokenExchangeOptions} options - The options required to perform the token exchange.
-   *
-   * @returns {Promise<TokenEndpointResponse>} A promise that resolves to the token endpoint response,
-   * which contains the issued Auth0 tokens.
+   * Performs a token exchange request using the provided external token to obtain Auth0 tokens.
    *
    * This method implements the token exchange grant as specified in RFC 8693 by first validating
    * the provided subject token type and then constructing a token request to the /oauth/token endpoint.
    * The request includes the following parameters:
-   *
    * - `grant_type`: Hard-coded to "urn:ietf:params:oauth:grant-type:token-exchange".
    * - `subject_token`: The external token provided via the options.
    * - `subject_token_type`: The type of the external token (validated by this function).
    * - `scope`: A unique set of scopes, generated by merging the scopes supplied in the options
-   *            with the SDK’s default scopes.
+   *      with the SDK's default scopes.
    * - `audience`: The target audience from the options, with fallback to the SDK's authorization configuration.
    *
    * **Example Usage:**
-   *
-   * ```
+   * ```typescript
    * // Define the token exchange options
    * const options: CustomTokenExchangeOptions = {
    *   subject_token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6Ikp...',
    *   subject_token_type: 'urn:acme:legacy-system-token',
-   *   scope: "openid profile"
+   *   audience: 'https://api.acme.com/v1',
+   *   scope: 'openid profile read:data'
    * };
    *
-   * // Exchange the external token for Auth0 tokens
    * try {
-   *   const tokenResponse = await instance.exchangeToken(options);
-   *   // Use tokenResponse.access_token, tokenResponse.id_token, etc.
+   *   const tokenResponse = await auth0.exchangeToken(options);
+   *   console.log('Access Token:', tokenResponse.access_token);
+   *   console.log('ID Token:', tokenResponse.id_token);
    * } catch (error) {
-   *   // Handle token exchange error
+   *   console.error('Token exchange failed:', error);
    * }
    * ```
+   *
+   * @param options The options required to perform the token exchange.
+   * @returns A promise that resolves to the token endpoint response,
+   * which contains the issued Auth0 tokens.
    */
-  async exchangeToken(
-    options: CustomTokenExchangeOptions
-  ): Promise<TokenEndpointResponse> {
-    return this._requestToken({
+  public async exchangeToken(options: CustomTokenExchangeOptions): Promise<TokenEndpointResponse> {
+    const { subject_token, subject_token_type, audience, scope, ...additionalParameters } = options;
+    
+    // Validate the subject token type to prevent misuse of reserved namespaces
+    // Only block specific Auth0 reserved namespaces, not all IETF namespaces
+    if (subject_token_type.startsWith('https://auth0.com/') ||
+        subject_token_type.startsWith('urn:auth0:')) {
+      throw new Error(`Invalid subject_token_type: Reserved namespace not allowed: ${subject_token_type}`);
+    }
+
+    const finalAudience = audience || this.options.authorizationParams?.audience;
+    const finalScope = getUniqueScopes(this.scope, scope);
+
+    const tokenResult = await this._requestToken({
       grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
-      subject_token: options.subject_token,
-      subject_token_type: options.subject_token_type,
-      scope: getUniqueScopes(options.scope, this.scope),
-      audience: options.audience || this.options.authorizationParams.audience
+      subject_token,
+      subject_token_type,
+      audience: finalAudience,
+      scope: finalScope,
+      ...additionalParameters
+    }, {
+      scope: finalScope
     });
+
+    return {
+      id_token: tokenResult.id_token,
+      access_token: tokenResult.access_token,
+      refresh_token: tokenResult.refresh_token,
+      expires_in: tokenResult.expires_in,
+      scope: tokenResult.scope
+    };
   }
 }
 
@@ -1229,6 +1290,7 @@ interface PKCERequestTokenOptions extends BaseRequestTokenOptions {
 interface RefreshTokenRequestTokenOptions extends BaseRequestTokenOptions {
   grant_type: 'refresh_token';
   refresh_token?: string;
+  cacheEntry?: CacheEntry;
 }
 
 interface TokenExchangeRequestOptions extends BaseRequestTokenOptions {
@@ -1242,4 +1304,5 @@ interface TokenExchangeRequestOptions extends BaseRequestTokenOptions {
 interface RequestTokenAdditionalParameters {
   nonceIn?: string;
   organization?: string;
+  scope?: string;
 }
