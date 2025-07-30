@@ -1181,26 +1181,27 @@ export class Auth0Client {
    * This is critical for refresh token rotation to prevent using rotated tokens.
    */
   private async _invalidateOldRefreshTokenEntries(oldRefreshToken: string): Promise<void> {
-    const allKeys = await this.cacheManager['getCacheKeys']();
-    if (!allKeys) return;
-
-    // Filter keys to only those belonging to this client
-    const clientKeys = allKeys.filter(key => key.includes(this.options.clientId));
-
-    // Check each cache entry for the old refresh token
-    for (const key of clientKeys) {
-      try {
-        const entry = await this.cacheManager['cache'].get(key);
-        // Type guard: check if this is a WrappedCacheEntry (not a KeyManifestEntry)
-        if (entry && 'body' in entry && entry.body?.refresh_token === oldRefreshToken) {
-          // Remove the refresh token from this entry to prevent its use
-          entry.body.refresh_token = undefined;
-          await this.cacheManager['cache'].set(key, entry);
-        }
-      } catch (e) {
-        // Continue processing other entries if one fails
-        console.warn('Failed to check/update cache entry during refresh token invalidation:', e);
+    try {
+      const updatedCount = await this.cacheManager.updateEntriesWhere({
+        clientId: this.options.clientId,
+        shouldUpdate: (entry) => entry.body?.refresh_token === oldRefreshToken,
+        updateEntry: (entry) => ({
+          ...entry,
+          body: {
+            ...entry.body,
+            refresh_token: undefined
+          }
+        })
+      });
+      
+      // Log for debugging/monitoring purposes
+      if (updatedCount > 0) {
+        console.debug(`Invalidated refresh tokens in ${updatedCount} cache entries`);
       }
+    } catch (e) {
+      // Log the error but don't throw - this is a security cleanup operation
+      // and shouldn't break the main token refresh flow
+      console.warn('Failed to invalidate old refresh token entries:', e);
     }
   }
 

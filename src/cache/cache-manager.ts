@@ -15,11 +15,11 @@ import {
 const DEFAULT_EXPIRY_ADJUSTMENT_SECONDS = 0;
 
 export class CacheManager {
-  private nowProvider: () => number | Promise<number>;
+  private readonly nowProvider: () => number | Promise<number>;
 
   constructor(
-    private cache: ICache,
-    private keyManifest?: CacheKeyManifest,
+    private readonly cache: ICache,
+    private readonly keyManifest?: CacheKeyManifest,
     nowProvider?: () => number | Promise<number>
   ) {
     this.nowProvider = nowProvider || DEFAULT_NOW_PROVIDER;
@@ -143,6 +143,58 @@ export class CacheManager {
     await this.keyManifest?.clear();
   }
 
+  /**
+   * Updates cache entries for a client based on a condition
+   * @param options Configuration object for the update operation
+   * @returns Number of entries updated
+   */
+  async updateEntriesWhere(options: {
+    clientId: string;
+    shouldUpdate: (entry: WrappedCacheEntry) => boolean;
+    updateEntry: (entry: WrappedCacheEntry) => WrappedCacheEntry | null;
+  }): Promise<number> {
+    const { clientId, shouldUpdate, updateEntry } = options;
+    
+    const allKeys = await this.getCacheKeys();
+    if (!allKeys) return 0;
+
+    // Filter keys to only those belonging to this client
+    const clientKeys = allKeys.filter(key => {
+      try {
+        return CacheKey.fromKey(key).clientId === clientId;
+      } catch {
+        // Fallback to string matching for keys that can't be parsed
+        return key.includes(`::${clientId}::`);
+      }
+    });
+
+    let updatedCount = 0;
+    for (const key of clientKeys) {
+      try {
+        const entry = await this.cache.get<WrappedCacheEntry>(key);
+
+        if (entry && ('body' in entry && 'expiresAt' in entry) && shouldUpdate(entry)) {
+          const updatedEntry = updateEntry(entry);
+          
+          if (updatedEntry === null) {
+            // Remove the entry
+            await this.cache.remove(key);
+            await this.keyManifest?.remove(key);
+          } else {
+            // Update the entry
+            await this.cache.set(key, updatedEntry);
+          }
+          updatedCount++;
+        }
+      } catch {
+        // Continue processing other entries if one fails
+        continue;
+      }
+    }
+
+    return updatedCount;
+  }
+
   private async wrapCacheEntry(entry: CacheEntry): Promise<WrappedCacheEntry> {
     const now = await this.nowProvider();
     const expiresInTime = Math.floor(now / 1000) + entry.expires_in;
@@ -189,7 +241,7 @@ export class CacheManager {
   private matchExistingCacheKey(keyToMatch: CacheKey, allKeys: Array<string>) {
     return allKeys.filter(key => {
       const cacheKey = CacheKey.fromKey(key);
-      const scopeSet = new Set(cacheKey.scope && cacheKey.scope.split(' '));
+      const scopeSet = new Set(cacheKey.scope?.split(' '));
       const scopesToMatch = keyToMatch.scope?.split(' ') || [];
 
       const hasAllScopes =
