@@ -1241,36 +1241,16 @@ export class Auth0Client {
    * which contains the issued Auth0 tokens.
    */
   public async exchangeToken(options: CustomTokenExchangeOptions): Promise<TokenEndpointResponse> {
-    const { subject_token, subject_token_type, audience, scope, ...additionalParameters } = options;
-    
-    // Validate the subject token type to prevent misuse of reserved namespaces
-    // Only block specific Auth0 reserved namespaces, not all IETF namespaces
-    if (subject_token_type.startsWith('https://auth0.com/') ||
-        subject_token_type.startsWith('urn:auth0:')) {
-      throw new Error(`Invalid subject_token_type: Reserved namespace not allowed: ${subject_token_type}`);
-    }
-
-    const finalAudience = audience || this.options.authorizationParams?.audience;
-    const finalScope = getUniqueScopes(this.scope, scope);
-
-    const tokenResult = await this._requestToken({
+    const finalScope = getUniqueScopes(this.scope, options.scope);
+    return this._requestToken({
       grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
-      subject_token,
-      subject_token_type,
-      audience: finalAudience,
+      subject_token: options.subject_token,
+      subject_token_type: options.subject_token_type,
       scope: finalScope,
-      ...additionalParameters
+      audience: options.audience || this.options.authorizationParams.audience
     }, {
       scope: finalScope
     });
-
-    return {
-      id_token: tokenResult.id_token,
-      access_token: tokenResult.access_token,
-      refresh_token: tokenResult.refresh_token,
-      expires_in: tokenResult.expires_in,
-      scope: tokenResult.scope
-    };
   }
 }
 
