@@ -1194,10 +1194,6 @@ export class Auth0Client {
         })
       });
       
-      // Log for debugging/monitoring purposes
-      if (updatedCount > 0) {
-        console.debug(`Invalidated refresh tokens in ${updatedCount} cache entries`);
-      }
     } catch (e) {
       // Log the error but don't throw - this is a security cleanup operation
       // and shouldn't break the main token refresh flow
