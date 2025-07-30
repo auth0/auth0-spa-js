@@ -1182,7 +1182,7 @@ export class Auth0Client {
    */
   private async _invalidateOldRefreshTokenEntries(oldRefreshToken: string): Promise<void> {
     try {
-      const updatedCount = await this.cacheManager.updateEntriesWhere({
+      await this.cacheManager.updateEntriesWhere({
         clientId: this.options.clientId,
         shouldUpdate: (entry) => entry.body?.refresh_token === oldRefreshToken,
         updateEntry: (entry) => ({
