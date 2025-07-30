@@ -94,7 +94,7 @@ import {
 } from './Auth0Client.utils';
 import { CustomTokenExchangeOptions } from './TokenExchange';
 import { Dpop } from './dpop/dpop';
-import { DpopFetch, FetchConfig } from './dpop/fetch';
+import { DpopFetch, FetchInitialParams } from './dpop/fetch';
 
 /**
  * @ignore
@@ -233,7 +233,7 @@ export class Auth0Client<DpopFetchOutput = unknown> {
       : undefined;
 
     this.dpopFetch = this.dpop
-      ? new DpopFetch(this, this.dpop, this.options.dpopFetchConfig)
+      ? new DpopFetch(this, this.dpop, this.options.dpopFetchParams)
       : undefined;
 
     this.domainUrl = getDomain(this.options.domain);
@@ -1308,21 +1308,23 @@ export class Auth0Client<DpopFetchOutput = unknown> {
    *
    * The configuration accepts the following:
    *
-   * - `name`: arbitrary string to link internal state to this specific request type. Example: `my_custom_request`. Mandatory.
-   * - `method`: HTTP method for the request. Example: `POST`. Mandatory.
-   * - `url`: target URL for the HTTP request. Example: `https://api.example.com/v1/foo`. Mandatory.
-   * - `body`: stringified body for the HTTP request, if any. Example: `{ "foo": "bar" }`. Optional.
    * - `accessToken`: string or method that returns the access token to use in this request. Example: `(client) => client.getTokenSilently()`. Mandatory.
-   * - `fetch`: if you have specific needs that a simple Fetch API call doesn't cover (alternative HTTP clients, a proxy, etc), you can provide your own implementation. It will receive all the pieces needed to put a request together, plus a pre-filled `Request` object (from the Fetch API) that you can modify and use if needed. The output of this implementation needs to contain the `status` code and the `headers` of the response plus any arbitrary `output` you might want to get as the return value of the call.
+   * - `body`: serialized body for the HTTP request, if any. Example: `{ "foo": "bar" }`. Optional.
+   * - `fetch`: if you have specific needs that a simple Fetch API call doesn't cover (alternative HTTP clients, a proxy, etc), you can provide your own implementation. It will receive all the pieces needed to put a request together, plus a pre-filled `Request` object (from the Fetch API) that you can modify and use if needed. The output of this implementation needs to contain the `status` code and the `headers` of the response plus any arbitrary `output` you might want to get as the return value of the call. Optional.
+   * - `headers`: object with the headers you want to send in the request. DPoP headers will be appended to these. Optional.
+   * - `nonceId`: arbitrary string to link internal state to this specific request type. Example: `my_custom_request`. Mandatory.
+   * - `method`: HTTP method for the request. Example: `POST`. Optional (default `GET`).
+   * - `timeout`: number of milliseconds that the request can last. Optional.
+   * - `url`: target URL for the HTTP request. Example: `https://api.example.com/v1/foo`. Mandatory.
    *
-   * Check the examples for details.
+   * Check the docs for examples.
    */
   public fetchWithDpop(
-    config?: FetchConfig<DpopFetchOutput>
+    params?: FetchInitialParams<DpopFetchOutput>
   ): Promise<DpopFetchOutput> {
     this._assertDpop(this.dpopFetch);
 
-    return this.dpopFetch.fetch(config);
+    return this.dpopFetch.fetch(params);
   }
 }
 

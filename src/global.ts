@@ -1,6 +1,6 @@
 import { ICache } from './cache';
 import type { Dpop } from './dpop/dpop';
-import type { FetchConfig } from './dpop/fetch';
+import type { FetchInitialParams } from './dpop/fetch';
 
 export interface AuthorizationParams {
   /**
@@ -121,7 +121,7 @@ interface BaseLoginOptions {
   authorizationParams?: AuthorizationParams;
 }
 
-export interface Auth0ClientOptions<DpopFetchOutput = any>
+export interface Auth0ClientOptions<DpopFetchOutput = unknown>
   extends BaseLoginOptions {
   /**
    * Your Auth0 account domain such as `'example.auth0.com'`,
@@ -292,7 +292,7 @@ export interface Auth0ClientOptions<DpopFetchOutput = any>
    *
    * It requires enabling the {@link Auth0ClientOptions.useDpop} option.
    */
-  dpopFetchConfig?: FetchConfig<DpopFetchOutput>;
+  dpopFetchParams?: FetchInitialParams<DpopFetchOutput>;
 }
 
 /**

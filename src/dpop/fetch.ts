@@ -24,26 +24,48 @@ type FetchFuncResponse<T> = {
   status: number;
 };
 
-export type FetchFunc<T> = (request: Request) => Promise<FetchFuncResponse<T>>;
-
-export type FetchConfig<T> = {
+export type FetchInitialParams<T> = {
   accessToken?:
     | string
     | ((client: Auth0ClientSubset) => Promise<string> | string);
   fetch?: FetchFunc<T>;
   nonceId: string;
-  request: RequestInit & {
-    url: string;
-    timeout?: number;
-  };
-};
+  timeout?: number;
+  url: string;
+} & Pick<RequestInit, 'body' | 'method' | 'headers'>;
+
+type FetchFinalParams = {
+  accessToken: string;
+  timeout?: number;
+  url: string;
+} & Pick<RequestInit, 'body' | 'method' | 'headers'>;
+
+type FetchFunc<T> = (params: FetchFinalParams) => Promise<FetchFuncResponse<T>>;
 
 /**
  * Default DPoP fetch that uses the Fetch API. It does a very basic request
  * that expects a JSON response.
  */
-const DEFAULT_FETCH_FUNC: FetchFunc<any> = async request => {
-  const res = await fetch(request);
+const DEFAULT_FETCH_FUNC: FetchFunc<any> = async params => {
+  const res = await fetch(
+    new Request(params.url, {
+      ...params,
+
+      /**
+       * In order to support a request timeout, we would ideally ask the developer
+       * to pass an `AbortSignal.timeout()` in the initial config. However,very
+       * counterintuitively, that would start counting time *since its creation*
+       * and not since `fetch()` starts using it.
+       *
+       * This means that if the developer sets up their request when instantiating
+       * `Auth0Client` and enough time passes until they call `fetchWithDpop()`, the
+       * request will timeout immediately.
+       *
+       * So we have to create our own signal here from the `timeout` setting.
+       */
+      signal: params.timeout ? AbortSignal.timeout(params.timeout) : undefined
+    })
+  );
 
   return {
     headers: res.headers,
@@ -54,46 +76,47 @@ const DEFAULT_FETCH_FUNC: FetchFunc<any> = async request => {
 
 export class DpopFetch<GlobalOutput> {
   protected readonly client: Auth0ClientSubset;
-  protected readonly config?: FetchConfig<GlobalOutput>;
+  protected readonly params?: FetchInitialParams<GlobalOutput>;
   protected readonly dpop: Dpop;
 
   constructor(
     client: Auth0ClientSubset,
     dpop: Dpop,
-    config?: FetchConfig<GlobalOutput>
+    params?: FetchInitialParams<GlobalOutput>
   ) {
     this.client = client;
-    this.config = config;
     this.dpop = dpop;
+    this.params = params;
   }
 
-  protected async getFinalConfig<LocalOutput>(
-    localConfig: FetchConfig<LocalOutput> | undefined
+  protected async getFinalParams<LocalOutput>(
+    localParams: FetchInitialParams<LocalOutput> | undefined
   ): Promise<
-    Omit<FetchConfig<GlobalOutput | LocalOutput>, 'accessToken' | 'fetch'> &
-      Required<Pick<FetchConfig<GlobalOutput | LocalOutput>, 'fetch'>> & {
-        accessToken: string;
-      }
+    Omit<FetchInitialParams<GlobalOutput | LocalOutput>, 'accessToken'> &
+      Required<
+        Pick<FetchInitialParams<GlobalOutput | LocalOutput>, 'fetch' | 'method'>
+      > & { accessToken: string }
   > {
-    const finalConfig = localConfig || this.config;
+    const finalParams = localParams || this.params;
 
-    if (!finalConfig) {
+    if (!finalParams) {
       throw new Error(
-        'DPoP fetch config must exist in the SDK options or passed to fetchWithDpop().'
+        'DPoP fetch params must be present in the SDK options or passed to fetchWithDpop().'
       );
     }
 
     const finalAccessToken =
-      typeof finalConfig.accessToken === 'string'
-        ? finalConfig.accessToken
-        : await (finalConfig.accessToken
-            ? finalConfig.accessToken(this.client)
+      typeof finalParams.accessToken === 'string'
+        ? finalParams.accessToken
+        : await (finalParams.accessToken
+            ? finalParams.accessToken(this.client)
             : this.client.getTokenSilently());
 
     return {
-      ...finalConfig,
+      ...finalParams,
       accessToken: finalAccessToken,
-      fetch: finalConfig.fetch || DEFAULT_FETCH_FUNC
+      method: finalParams.method || 'GET',
+      fetch: finalParams.fetch || DEFAULT_FETCH_FUNC
     };
   }
 
@@ -121,53 +144,43 @@ export class DpopFetch<GlobalOutput> {
   }
 
   public async fetch<LocalOutput>(
-    localConfig?: FetchConfig<LocalOutput>,
+    localParams?: FetchInitialParams<LocalOutput>,
     isRetry?: boolean
   ): Promise<GlobalOutput | LocalOutput> {
     const {
       accessToken,
+      body,
       fetch: fetchFunc,
+      headers: initialHeaders,
+      method,
       nonceId,
-      request: initialRequest
-    } = await this.getFinalConfig(localConfig);
+      timeout,
+      url
+    } = await this.getFinalParams(localParams);
 
     const nonce = await this.dpop.getNonce(nonceId);
 
     const proof = await this.dpop.generateProof({
-      method: initialRequest.method || 'GET',
-      url: initialRequest.url,
       accessToken,
-      nonce
+      method,
+      nonce,
+      url
     });
 
     const headers = new Headers({
-      ...initialRequest.headers,
+      ...initialHeaders,
       authorization: `DPoP ${accessToken}`,
       dpop: proof
     });
 
-    const result = await fetchFunc(
-      new Request(initialRequest.url, {
-        ...initialRequest,
-        headers,
-
-        /**
-         * In order to support a request timeout, we would ideally ask the developer
-         * to pass an `AbortSignal.timeout()` in `initialRequest.signal`. However,
-         * very counterintuitively, that would start counting time *since its creation*
-         * and not since `fetch()` starts using it.
-         *
-         * This means that if the developer sets up their request when instantiating
-         * `Auth0Client` and enough time passes until they call `fetchWithDpop()`, the
-         * request will timeout immediately.
-         *
-         * So we have to create our own signal here from the `timeout` setting.
-         */
-        signal: initialRequest.timeout
-          ? AbortSignal.timeout(initialRequest.timeout)
-          : undefined
-      })
-    );
+    const result = await fetchFunc({
+      accessToken,
+      body,
+      headers,
+      method,
+      timeout,
+      url
+    });
 
     const newNonce = this.getHeader(result.headers, DPOP_NONCE_HEADER);
 
@@ -183,6 +196,6 @@ export class DpopFetch<GlobalOutput> {
       throw new UseDpopNonceError(newNonce);
     }
 
-    return this.fetch(localConfig, true); // retry exactly once
+    return this.fetch(localParams, true); // retry exactly once
   }
 }
