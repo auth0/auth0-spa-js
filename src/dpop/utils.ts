@@ -20,11 +20,11 @@ type GenerateProofParams = {
   accessToken?: string;
 };
 
-export async function generateKeyPair(): Promise<KeyPair> {
+export function generateKeyPair(): Promise<KeyPair> {
   return dpopLib.generateKeyPair(KEY_PAIR_ALGORITHM, { extractable: false });
 }
 
-export async function calculateThumbprint(
+export function calculateThumbprint(
   keyPair: Pick<KeyPair, 'publicKey'>
 ): Promise<string> {
   return dpopLib.calculateThumbprint(keyPair.publicKey);
@@ -43,7 +43,7 @@ function normalizeUrl(url: string): string {
   return parsedUrl.href;
 }
 
-export async function generateProof({
+export function generateProof({
   keyPair,
   url,
   method,

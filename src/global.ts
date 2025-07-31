@@ -120,8 +120,7 @@ interface BaseLoginOptions {
   authorizationParams?: AuthorizationParams;
 }
 
-export interface Auth0ClientOptions<DpopFetchOutput = unknown>
-  extends BaseLoginOptions {
+export interface Auth0ClientOptions extends BaseLoginOptions {
   /**
    * Your Auth0 account domain such as `'example.auth0.com'`,
    * `'example.eu.auth0.com'` or , `'example.mycompany.com'`

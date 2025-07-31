@@ -113,7 +113,7 @@ const lock = new Lock();
 /**
  * Auth0 SDK for Single Page Applications using [Authorization Code Grant Flow with PKCE](https://auth0.com/docs/api-auth/tutorials/authorization-code-grant-pkce).
  */
-export class Auth0Client<DpopFetchOutput = unknown> {
+export class Auth0Client {
   private readonly transactionManager: TransactionManager;
   private readonly cacheManager: CacheManager;
   private readonly domainUrl: string;
@@ -126,16 +126,14 @@ export class Auth0Client<DpopFetchOutput = unknown> {
   private readonly isAuthenticatedCookieName: string;
   private readonly nowProvider: () => number | Promise<number>;
   private readonly httpTimeoutMs: number;
-  private readonly options: Auth0ClientOptions<DpopFetchOutput> & {
+  private readonly options: Auth0ClientOptions & {
     authorizationParams: AuthorizationParams;
   };
   private readonly userCache: ICache = new InMemoryCache().enclosedCache;
 
   private worker?: Worker;
 
-  private readonly defaultOptions: Partial<
-    Auth0ClientOptions<DpopFetchOutput>
-  > = {
+  private readonly defaultOptions: Partial<Auth0ClientOptions> = {
     authorizationParams: {
       scope: DEFAULT_SCOPE
     },
@@ -143,7 +141,7 @@ export class Auth0Client<DpopFetchOutput = unknown> {
     useFormData: true
   };
 
-  constructor(options: Auth0ClientOptions<DpopFetchOutput>) {
+  constructor(options: Auth0ClientOptions) {
     this.options = {
       ...this.defaultOptions,
       ...options,
@@ -1251,7 +1249,7 @@ export class Auth0Client<DpopFetchOutput = unknown> {
    *           used for requests to Auth0. Otherwise, it will be used to
    *           select a specific non-Auth0 nonce.
    */
-  public async getDpopNonce(id?: string): Promise<string | undefined> {
+  public getDpopNonce(id?: string): Promise<string | undefined> {
     this._assertDpop(this.dpop);
 
     return this.dpop.getNonce(id);
@@ -1266,7 +1264,7 @@ export class Auth0Client<DpopFetchOutput = unknown> {
    *           used for requests to Auth0. Otherwise, it will be used to
    *           select a specific non-Auth0 nonce.
    */
-  public async setDpopNonce(nonce: string, id?: string): Promise<void> {
+  public setDpopNonce(nonce: string, id?: string): Promise<void> {
     this._assertDpop(this.dpop);
 
     return this.dpop.setNonce(nonce, id);

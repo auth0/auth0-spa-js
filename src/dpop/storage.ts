@@ -117,21 +117,18 @@ export class DpopStorage {
       );
   }
 
-  protected async deleteByClientId(
-    table: Table,
-    clientId: string
-  ): Promise<void> {
+  protected deleteByClientId(table: Table, clientId: string): Promise<void> {
     return this.deleteBy(
       table,
       k => typeof k === 'string' && k.startsWith(`${clientId}::`)
     );
   }
 
-  public async clearNonces(): Promise<void> {
+  public clearNonces(): Promise<void> {
     return this.deleteByClientId(TABLES.NONCE, this.clientId);
   }
 
-  public async clearKeyPairs(): Promise<void> {
+  public clearKeyPairs(): Promise<void> {
     return this.deleteByClientId(TABLES.KEYPAIR, this.clientId);
   }
 }
