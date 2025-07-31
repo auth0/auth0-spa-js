@@ -1,5 +1,5 @@
 import version from '../src/version';
-import { DEFAULT_SCOPE } from '../src/constants';
+import { DEFAULT_SCOPE, DEFAULT_FETCH_TIMEOUT_MS } from '../src/constants';
 
 export const TEST_AUTH0_CLIENT_QUERY_STRING = `&auth0Client=${encodeURIComponent(
   btoa(
@@ -21,6 +21,7 @@ export const TEST_STATE = 'MTIz';
 export const TEST_NONCE = 'MTIz';
 export const TEST_CODE = 'my_code';
 export const TEST_SCOPES = DEFAULT_SCOPE;
+export const TEST_FETCH_TIMEOUT_MS = DEFAULT_FETCH_TIMEOUT_MS;
 export const TEST_CODE_CHALLENGE = 'TEST_CODE_CHALLENGE';
 export const TEST_CODE_VERIFIER = '123';
 export const GET_TOKEN_SILENTLY_LOCK_KEY = 'auth0.lock.getTokenSilently';
