@@ -19,7 +19,8 @@ import {
   TEST_ID_TOKEN,
   TEST_REDIRECT_URI,
   TEST_REFRESH_TOKEN,
-  TEST_STATE
+  TEST_STATE,
+  TEST_TOKEN_TYPE
 } from '../constants';
 import { expect } from '@jest/globals';
 import { patchOpenUrlWithOnRedirect } from '../../src/Auth0Client.utils';
@@ -104,10 +105,15 @@ export const assertUrlEquals = (
   }
 };
 
-export const fetchResponse = (ok, json) =>
+export const fetchResponse = (
+  ok: boolean,
+  json: unknown,
+  headers: Record<string, string> = {}
+) =>
   Promise.resolve({
     ok,
-    json: () => Promise.resolve(json)
+    json: () => Promise.resolve(json),
+    headers: new Headers(headers)
   });
 
 export const setupFn = (mockVerify: jest.Mock) => {
@@ -238,6 +244,7 @@ export const loginWithRedirectFn = (mockWindow, mockFetch) => {
             id_token: TEST_ID_TOKEN,
             refresh_token: TEST_REFRESH_TOKEN,
             access_token: TEST_ACCESS_TOKEN,
+            token_type: TEST_TOKEN_TYPE,
             expires_in: 86400
           },
           token.response
@@ -340,6 +347,7 @@ export const loginWithPopupFn = (mockWindow, mockFetch) => {
             id_token: TEST_ID_TOKEN,
             refresh_token: TEST_REFRESH_TOKEN,
             access_token: TEST_ACCESS_TOKEN,
+            token_type: TEST_TOKEN_TYPE,
             expires_in: 86400
           },
           token.response
@@ -357,6 +365,7 @@ export const checkSessionFn = mockFetch => {
         id_token: TEST_ID_TOKEN,
         refresh_token: TEST_REFRESH_TOKEN,
         access_token: TEST_ACCESS_TOKEN,
+        token_type: TEST_TOKEN_TYPE,
         expires_in: 86400
       })
     );
@@ -402,6 +411,7 @@ export const getTokenSilentlyFn = (mockWindow, mockFetch) => {
             id_token: TEST_ID_TOKEN,
             refresh_token: TEST_REFRESH_TOKEN,
             access_token: TEST_ACCESS_TOKEN,
+            token_type: TEST_TOKEN_TYPE,
             expires_in: 86400
           },
           token.response

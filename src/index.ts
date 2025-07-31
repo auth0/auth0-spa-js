@@ -29,7 +29,8 @@ export {
   PopupTimeoutError,
   PopupCancelledError,
   MfaRequiredError,
-  MissingRefreshTokenError
+  MissingRefreshTokenError,
+  UseDpopNonceError
 } from './errors';
 
 export {
