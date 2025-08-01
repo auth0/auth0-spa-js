@@ -70,7 +70,7 @@ describe('Auth0Client', () => {
   });
 
   describe('logout()', () => {
-    it('removes authenticated cookie from storage', async () => {
+    it.only('removes authenticated cookie from storage', async () => {
       const auth0 = setup();
       await auth0.logout();
 

@@ -526,6 +526,10 @@ export class Auth0Client {
     const nonceIn = transaction.nonce;
     const redirect_uri = transaction.redirect_uri;
 
+    // In case logout wasn't called, clear storage before getting the new
+    // access token to ensure there are no cached tokens for old sessions
+    await this._clearStorage();
+
     await this._requestToken(
       {
         audience: transaction.audience,
@@ -835,10 +839,22 @@ export class Auth0Client {
   public async logout(options: LogoutOptions = {}): Promise<void> {
     const { openUrl, ...logoutOptions } = patchOpenUrlWithOnRedirect(options);
 
-    if (options.clientId === null) {
+    await this._clearStorage(options.clientId);
+
+    const url = this._buildLogoutUrl(logoutOptions);
+
+    if (openUrl) {
+      await openUrl(url);
+    } else if (openUrl !== false) {
+      window.location.assign(url);
+    }
+  }
+
+  private async _clearStorage(clientId?: string | null) {
+    if (clientId === null) {
       await this.cacheManager.clear();
     } else {
-      await this.cacheManager.clear(options.clientId || this.options.clientId);
+      await this.cacheManager.clear(clientId || this.options.clientId);
     }
 
     this.cookieStorage.remove(this.orgHintCookieName, {
@@ -848,14 +864,6 @@ export class Auth0Client {
       cookieDomain: this.options.cookieDomain
     });
     this.userCache.remove(CACHE_KEY_ID_TOKEN_SUFFIX);
-
-    const url = this._buildLogoutUrl(logoutOptions);
-
-    if (openUrl) {
-      await openUrl(url);
-    } else if (openUrl !== false) {
-      window.location.assign(url);
-    }
   }
 
   private async _getTokenFromIFrame(
