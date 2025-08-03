@@ -245,10 +245,20 @@ const auth0 = await createAuth0Client({
 // Exchange external token for Auth0 tokens
 async function performTokenExchange() {
   try {
+    // Option 1: Use client's default audience
     const tokenResponse = await auth0.exchangeToken({
       subject_token: 'EXTERNAL_PROVIDER_TOKEN',
       subject_token_type: 'urn:example:external-token',
       scope: 'openid profile email'
+      // audience will default to audience from client config
+    });
+
+    // Option 2: Specify custom audience for this token exchange
+    const customTokenResponse = await auth0.exchangeToken({
+      subject_token: 'EXTERNAL_PROVIDER_TOKEN',
+      subject_token_type: 'urn:example:external-token',
+      audience: 'https://different-api.example.com',
+      scope: 'openid profile read:records'
     });
 
     console.log('Received tokens:', tokenResponse);
