@@ -94,6 +94,11 @@ import {
 } from './Auth0Client.utils';
 import { CustomTokenExchangeOptions } from './TokenExchange';
 import { Dpop } from './dpop/dpop';
+import {
+  Fetcher,
+  type FetchFuncResponse,
+  type FetchInitialParams
+} from './fetcher';
 
 /**
  * @ignore
@@ -113,7 +118,7 @@ const lock = new Lock();
 /**
  * Auth0 SDK for Single Page Applications using [Authorization Code Grant Flow with PKCE](https://auth0.com/docs/api-auth/tutorials/authorization-code-grant-pkce).
  */
-export class Auth0Client {
+export class Auth0Client<FetchOutput = unknown> {
   private readonly transactionManager: TransactionManager;
   private readonly cacheManager: CacheManager;
   private readonly domainUrl: string;
@@ -126,14 +131,15 @@ export class Auth0Client {
   private readonly isAuthenticatedCookieName: string;
   private readonly nowProvider: () => number | Promise<number>;
   private readonly httpTimeoutMs: number;
-  private readonly options: Auth0ClientOptions & {
+  private readonly options: Auth0ClientOptions<FetchOutput> & {
     authorizationParams: AuthorizationParams;
   };
   private readonly userCache: ICache = new InMemoryCache().enclosedCache;
 
+  private fetcher?: Fetcher<FetchOutput>;
   private worker?: Worker;
 
-  private readonly defaultOptions: Partial<Auth0ClientOptions> = {
+  private readonly defaultOptions: Partial<Auth0ClientOptions<FetchOutput>> = {
     authorizationParams: {
       scope: DEFAULT_SCOPE
     },
@@ -141,7 +147,7 @@ export class Auth0Client {
     useFormData: true
   };
 
-  constructor(options: Auth0ClientOptions) {
+  constructor(options: Auth0ClientOptions<FetchOutput>) {
     this.options = {
       ...this.defaultOptions,
       ...options,
@@ -1285,6 +1291,20 @@ export class Auth0Client {
     this._assertDpop(this.dpop);
 
     return this.dpop.generateProof(params);
+  }
+
+  public fetchWithAuth<FetchOutputOverride = FetchOutput>(
+    params?: FetchInitialParams<FetchOutputOverride>
+  ): Promise<FetchFuncResponse<FetchOutputOverride>> {
+    if (!this.fetcher) {
+      this.fetcher = new Fetcher({
+        client: this,
+        dpop: this.dpop,
+        options: this.options
+      });
+    }
+
+    return this.fetcher.fetch(params);
   }
 }
 
