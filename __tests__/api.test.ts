@@ -4,7 +4,7 @@ import {
 } from '../src/constants';
 
 import version from '../src/version';
-import { oauthToken } from '../src/api';
+import { oauthToken, revokeToken } from '../src/api';
 
 // @ts-ignore
 import Worker from '../src/worker/token.worker';
@@ -328,5 +328,206 @@ describe('oauthToken', () => {
     expect(result.access_token).toBe('access-token');
     expect(mockFetch).toHaveBeenCalledTimes(2);
     expect(abortController.abort).toHaveBeenCalled();
+  });
+});
+
+describe('revokeToken', () => {
+  let abortController;
+
+  beforeEach(() => {
+    const http = require('../src/http');
+
+    // Set up an AbortController that we can test has been called in the event of a timeout
+    abortController = new AbortController();
+    jest.spyOn(abortController, 'abort');
+    http.createAbortController = jest.fn(() => abortController);
+  });
+
+  afterEach(() => {
+    jest.resetAllMocks();
+  });
+
+  it('calls oauth/revoke with the correct url and parameters', async () => {
+    mockFetch.mockReturnValue(
+      new Promise(res => res({ ok: true, text: () => Promise.resolve('') }))
+    );
+
+    await revokeToken({
+      baseUrl: 'https://test.com',
+      clientId: 'client_idIn',
+      refreshToken: 'refresh_token_value',
+      auth0Client: DEFAULT_AUTH0_CLIENT
+    });
+
+    expect(mockFetch).toBeCalledWith('https://test.com/oauth/revoke', {
+      body: '{"client_id":"client_idIn","token":"refresh_token_value"}',
+      headers: {
+        'Content-Type': 'application/json',
+        'Auth0-Client': btoa(JSON.stringify(DEFAULT_AUTH0_CLIENT))
+      },
+      method: 'POST',
+      signal: abortController.signal
+    });
+  });
+
+  it('calls oauth/revoke with form data when useFormData is true', async () => {
+    mockFetch.mockReturnValue(
+      new Promise(res => res({ ok: true, text: () => Promise.resolve('') }))
+    );
+
+    await revokeToken({
+      baseUrl: 'https://test.com',
+      clientId: 'client_idIn',
+      refreshToken: 'refresh_token_value',
+      useFormData: true,
+      auth0Client: DEFAULT_AUTH0_CLIENT
+    });
+
+    expect(mockFetch).toBeCalledWith('https://test.com/oauth/revoke', {
+      body: 'client_id=client_idIn&token=refresh_token_value',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Auth0-Client': btoa(JSON.stringify(DEFAULT_AUTH0_CLIENT))
+      },
+      method: 'POST',
+      signal: abortController.signal
+    });
+  });
+
+  it('throws an error when refresh_token is missing', async () => {
+    await expect(
+      revokeToken({
+        baseUrl: 'https://test.com',
+        clientId: 'client_idIn',
+        refreshToken: '',
+        auth0Client: DEFAULT_AUTH0_CLIENT
+      })
+    ).rejects.toThrow('refresh_token is required for revocation');
+  });
+
+  it('throws an error when client_id is missing', async () => {
+    await expect(
+      revokeToken({
+        baseUrl: 'https://test.com',
+        refreshToken: 'refresh_token_value',
+        auth0Client: DEFAULT_AUTH0_CLIENT
+      } as any)
+    ).rejects.toThrow('client_id is required for revocation');
+  });
+
+  it('handles error response with error description', async () => {
+    const errorResponse = {
+      error: 'invalid_token',
+      error_description: 'The token is invalid'
+    };
+
+    mockFetch.mockReturnValue(
+      new Promise(res =>
+        res({
+          ok: false,
+          status: 400,
+          text: () => Promise.resolve(JSON.stringify(errorResponse))
+        })
+      )
+    );
+
+    await expect(
+      revokeToken({
+        baseUrl: 'https://test.com',
+        clientId: 'client_idIn',
+        refreshToken: 'invalid_token',
+        auth0Client: DEFAULT_AUTH0_CLIENT
+      })
+    ).rejects.toThrow('The token is invalid');
+  });
+
+  it('handles error response without error description', async () => {
+    mockFetch.mockReturnValue(
+      new Promise(res =>
+        res({
+          ok: false,
+          status: 500,
+          text: () => Promise.resolve('')
+        })
+      )
+    );
+
+    await expect(
+      revokeToken({
+        baseUrl: 'https://test.com',
+        clientId: 'client_idIn',
+        refreshToken: 'refresh_token_value',
+        auth0Client: DEFAULT_AUTH0_CLIENT
+      })
+    ).rejects.toThrow('HTTP error 500. Unable to revoke token');
+  });
+
+  it('handles malformed error response', async () => {
+    mockFetch.mockReturnValue(
+      new Promise(res =>
+        res({
+          ok: false,
+          status: 400,
+          text: () => Promise.resolve('invalid json')
+        })
+      )
+    );
+
+    await expect(
+      revokeToken({
+        baseUrl: 'https://test.com',
+        clientId: 'client_idIn',
+        refreshToken: 'refresh_token_value',
+        auth0Client: DEFAULT_AUTH0_CLIENT
+      })
+    ).rejects.toThrow('HTTP error 400. Unable to revoke token');
+  });
+
+  it('surfaces a timeout error when the fetch times out', async () => {
+    const createPromise = () =>
+      new Promise((resolve, _) => {
+        setTimeout(
+          () =>
+            resolve({
+              ok: true,
+              text: () => Promise.resolve('')
+            }),
+          500
+        );
+      });
+
+    mockFetch.mockReturnValue(createPromise());
+
+    await expect(
+      revokeToken({
+        baseUrl: 'https://test.com',
+        clientId: 'client_idIn',
+        refreshToken: 'refresh_token_value',
+        timeout: 100,
+        auth0Client: DEFAULT_AUTH0_CLIENT
+      })
+    ).rejects.toThrow("Timeout when executing 'fetch'");
+
+    expect(abortController.abort).toHaveBeenCalled();
+  });
+
+  it('succeeds with empty response body', async () => {
+    mockFetch.mockReturnValue(
+      new Promise(res =>
+        res({
+          ok: true,
+          text: () => Promise.resolve('')
+        })
+      )
+    );
+
+    await expect(
+      revokeToken({
+        baseUrl: 'https://test.com',
+        clientId: 'client_idIn',
+        refreshToken: 'refresh_token_value',
+        auth0Client: DEFAULT_AUTH0_CLIENT
+      })
+    ).resolves.toBeUndefined();
   });
 });
