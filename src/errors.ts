@@ -85,7 +85,7 @@ export class MfaRequiredError extends GenericError {
  * Error thrown when there is no refresh token to use
  */
 export class MissingRefreshTokenError extends GenericError {
-  constructor(public audience: string, public scope: string) {
+  constructor(public audience?: string, public scope?: string) {
     super(
       'missing_refresh_token',
       `Missing Refresh Token (audience: '${valueOrEmptyString(audience, [
@@ -102,6 +102,6 @@ export class MissingRefreshTokenError extends GenericError {
  * @param exclude An array of values that should result in an empty string.
  * @returns The value, or an empty string when falsy or included in the exclude argument.
  */
-function valueOrEmptyString(value: string, exclude: string[] = []) {
+function valueOrEmptyString(value?: string, exclude: string[] = []) {
   return value && !exclude.includes(value) ? value : '';
 }
