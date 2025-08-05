@@ -82,7 +82,7 @@ If the fallback mechanism fails, a `login_required` error will be thrown and cou
 
 ### Using Multi-Resource Refresh Tokens
 
-Refresh tokens from one API can be used to request new access tokens from another API. [Read more about how MRRT works for browser-based applications](https://auth0.com/docs/secure/tokens/refresh-tokens/multi-resource-refresh-token) to help you decide wether or not you need to use this funcfionality.
+Refresh tokens from one API can be used to request new access tokens for another API. [Read more about how MRRT works for browser-based applications](https://auth0.com/docs/secure/tokens/refresh-tokens/multi-resource-refresh-token) to help you decide wether or not you need to use this funcfionality.
 
 To enable the use of MRRT, set the `useMrrt` option to `true`, and as well enable the use of refresh tokens:
 
