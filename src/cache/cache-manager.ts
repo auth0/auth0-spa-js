@@ -163,8 +163,7 @@ export class CacheManager {
       try {
         return CacheKey.fromKey(key).clientId === clientId;
       } catch {
-        // Fallback to string matching for keys that can't be parsed
-        return key.includes(`::${clientId}::`);
+        return false;
       }
     });
 
