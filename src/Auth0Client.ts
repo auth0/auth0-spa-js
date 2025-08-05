@@ -1184,7 +1184,9 @@ export class Auth0Client {
     try {
       await this.cacheManager.updateEntriesWhere({
         clientId: this.options.clientId,
+        // Find all cache entries that contain the old (rotated) refresh token
         shouldUpdate: (entry) => entry.body?.refresh_token === oldRefreshToken,
+        // Set refresh_token to undefined to invalidate old tokens and prevent reuse
         updateEntry: (entry) => ({
           ...entry,
           body: {

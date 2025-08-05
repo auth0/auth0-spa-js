@@ -173,6 +173,8 @@ export class CacheManager {
         const entry = await this.cache.get<WrappedCacheEntry>(key);
 
         if (entry && ('body' in entry && 'expiresAt' in entry) && shouldUpdate(entry)) {
+          // Apply transformation logic to the cache entry (e.g., invalidate refresh_token, modify expiration, etc.)
+          // Returns null to delete the entry, or a modified WrappedCacheEntry to update it
           const updatedEntry = updateEntry(entry);
           
           if (updatedEntry === null) {
