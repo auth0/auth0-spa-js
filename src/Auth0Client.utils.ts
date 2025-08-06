@@ -6,6 +6,7 @@ import {
   LogoutOptions
 } from './global';
 import { getUniqueScopes } from './scope';
+import { urlDecodeB64 } from './utils';
 
 /**
  * @ignore
@@ -73,6 +74,23 @@ export const getAuthorizeParams = (
     code_challenge,
     code_challenge_method: 'S256'
   };
+};
+
+/**
+ * @ignore
+ */
+export const checkScopesInToken = (token: string, requiredScope: string): boolean => {
+  if (!requiredScope) return true;
+  try {
+    const payload = JSON.parse(urlDecodeB64(token.split('.')[1]));
+    const tokenScopes = (payload.scope || '').split(' ').filter(Boolean);
+    const requiredScopes = requiredScope.split(' ').filter(Boolean);
+
+    return requiredScopes.every(scope => tokenScopes.includes(scope));
+  } catch (error) {
+    console.warn("Error validating scopes in token:", error);
+    return false;
+  }
 };
 
 /**
