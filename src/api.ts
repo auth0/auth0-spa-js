@@ -11,6 +11,7 @@ export async function oauthToken(
     scope,
     auth0Client,
     useFormData,
+    useMrrt,
     ...options
   }: TokenEndpointOptions,
   worker?: Worker
@@ -21,7 +22,8 @@ export async function oauthToken(
   const allParams = {
     ...options,
     ...(isTokenExchange && audience && { audience }),
-    ...(isTokenExchange && scope && { scope })
+    ...(isTokenExchange && scope && { scope }),
+    ...(options.grant_type === 'refresh_token' && useMrrt && { audience, scope })
   };
 
   const body = useFormData
@@ -46,6 +48,7 @@ export async function oauthToken(
       }
     },
     worker,
-    useFormData
+    useFormData,
+    useMrrt,
   );
 }

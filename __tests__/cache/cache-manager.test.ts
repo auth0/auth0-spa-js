@@ -237,7 +237,65 @@ cacheFactories.forEach(cacheFactory => {
       expect(cacheSpy).toHaveBeenCalledWith(defaultKey.toKey());
     });
 
+
     describe('when refresh tokens are used', () => {
+      describe('when no matching key has been found and the useMrrt is true', () => {
+        it('should return undefined when no entry has a refresh_token', async () => {
+          const data = {
+            ...defaultData,
+            decodedToken: {
+              claims: {
+                __raw: TEST_ID_TOKEN,
+                name: 'Test',
+                exp: nowSeconds() + dayInSeconds * 2
+              },
+              user: { name: 'Test' }
+            }
+          };
+
+          await manager.set(data);
+
+          const keySecondAudience = new CacheKey({
+            clientId: TEST_CLIENT_ID,
+            audience: 'my_second_audience',
+            scope: 'scope_1 scope_2',
+          });
+
+          const result = await manager.get(keySecondAudience, undefined, true);
+
+          expect(result).not.toBeDefined();
+        });
+
+        it('should return entry.body with a refresh_token if it exist one in the cache', async () => {
+          const data = {
+            ...defaultData,
+            refresh_token: TEST_REFRESH_TOKEN,
+            decodedToken: {
+              claims: {
+                __raw: TEST_ID_TOKEN,
+                name: 'Test',
+                exp: nowSeconds() + dayInSeconds * 2
+              },
+              user: { name: 'Test' }
+            }
+          };
+
+          await manager.set(data);
+
+          const keySecondAudience = new CacheKey({
+            clientId: TEST_CLIENT_ID,
+            audience: 'my_second_audience',
+            scope: 'scope_1 scope_2',
+          });
+
+          const result = await manager.get(keySecondAudience, undefined, true);
+
+          expect(result).toStrictEqual({
+            refresh_token: TEST_REFRESH_TOKEN,
+          });
+        });
+      });
+
       it('strips everything except the refresh token when expiry has been reached', async () => {
         const now = Date.now();
         const realDateNow = Date.now.bind(global.Date);

@@ -771,7 +771,9 @@ export class Auth0Client {
         scope: localOptions.authorizationParams.scope,
         audience: localOptions.authorizationParams.audience || 'default',
         clientId: this.options.clientId
-      })
+      }),
+      undefined,
+      this.options.useMrrt
     );
 
     return cache!.access_token;
@@ -956,7 +958,9 @@ export class Auth0Client {
         scope: options.authorizationParams.scope,
         audience: options.authorizationParams.audience || 'default',
         clientId: this.options.clientId
-      })
+      }),
+      undefined,
+      this.options.useMrrt
     );
 
     // If you don't have a refresh token in memory
@@ -992,6 +996,15 @@ export class Auth0Client {
         redirect_uri,
         ...(timeout && { timeout })
       });
+
+      // If is refreshed with MRRT, we update all entries that have the old 
+      // refresh_token with the new one if the server responded with one
+      if (tokenResult.refresh_token && this.options.useMrrt && cache?.refresh_token) {
+        await this.cacheManager.updateEntry(
+          cache.refresh_token,
+          tokenResult.refresh_token
+        );
+      }
 
       return {
         ...tokenResult,
@@ -1076,7 +1089,8 @@ export class Auth0Client {
         audience,
         clientId
       }),
-      60 // get a new token if within 60 seconds of expiring
+      60, // get a new token if within 60 seconds of expiring
+      this.options.useMrrt,
     );
 
     if (entry && entry.access_token) {
@@ -1120,6 +1134,7 @@ export class Auth0Client {
         auth0Client: this.options.auth0Client,
         useFormData: this.options.useFormData,
         timeout: this.httpTimeoutMs,
+        useMrrt: this.options.useMrrt,
         ...options
       },
       this.worker

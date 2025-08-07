@@ -54,7 +54,8 @@ const fetchWithWorker = async (
   fetchOptions: FetchOptions,
   timeout: number,
   worker: Worker,
-  useFormData?: boolean
+  useFormData?: boolean,
+  useMrrt?: boolean
 ) => {
   return sendMessage(
     {
@@ -65,7 +66,8 @@ const fetchWithWorker = async (
       timeout,
       fetchUrl,
       fetchOptions,
-      useFormData
+      useFormData,
+      useMrrt
     },
     worker
   );
@@ -78,7 +80,8 @@ export const switchFetch = async (
   fetchOptions: FetchOptions,
   worker?: Worker,
   useFormData?: boolean,
-  timeout = DEFAULT_FETCH_TIMEOUT_MS
+  timeout = DEFAULT_FETCH_TIMEOUT_MS,
+  useMrrt?: boolean,
 ): Promise<any> => {
   if (worker) {
     return fetchWithWorker(
@@ -88,7 +91,8 @@ export const switchFetch = async (
       fetchOptions,
       timeout,
       worker,
-      useFormData
+      useFormData,
+      useMrrt
     );
   } else {
     return fetchWithoutWorker(fetchUrl, fetchOptions, timeout);
@@ -102,7 +106,8 @@ export async function getJSON<T>(
   scope: string,
   options: FetchOptions,
   worker?: Worker,
-  useFormData?: boolean
+  useFormData?: boolean,
+  useMrrt?: boolean
 ): Promise<T> {
   let fetchError: null | Error = null;
   let response: any;
@@ -116,7 +121,8 @@ export async function getJSON<T>(
         options,
         worker,
         useFormData,
-        timeout
+        timeout,
+        useMrrt,
       );
       fetchError = null;
       break;
