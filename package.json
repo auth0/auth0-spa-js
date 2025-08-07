@@ -7,14 +7,30 @@
   "main": "dist/lib/auth0-spa-js.cjs.js",
   "types": "dist/typings/index.d.ts",
   "module": "dist/auth0-spa-js.production.esm.js",
+  "ccu": {
+    "name": "auth0-spa-js",
+    "cdn": "https://cdn.auth0.com",
+    "bucket": "assets.us.auth0.com",
+    "localPath": "dist",
+    "mainBundleFile": "auth0-spa-js.production.js",
+    "digest": {
+      "hashes": [
+        "sha384"
+      ],
+      "extensions": [
+        ".js"
+      ]
+    }
+  },
   "scripts": {
     "dev": "rimraf dist && rollup -c --watch",
     "start": "npm run dev",
     "docs": "typedoc --options ./typedoc.js src",
     "build": "rimraf dist && rollup -m -c --environment NODE_ENV:production && npm run test:es-check",
     "build:stats": "rimraf dist && rollup -m -c --environment NODE_ENV:production --environment WITH_STATS:true && npm run test:es-check && open bundle-stats/index.html",
+    "lint": "eslint --ext .jsx,.js src/",
     "lint:security": "eslint ./src --ext ts --no-eslintrc --config ./.eslintrc.security",
-    "test": "jest --coverage --silent",
+    "test": "jest --coverage --runInBand",
     "test:watch": "jest --coverage --watch",
     "test:debug": "node --inspect node_modules/.bin/jest --runInBand",
     "test:open:integration": "cypress open",
@@ -98,21 +114,6 @@
     "Single Page Application authentication",
     "SPA authentication"
   ],
-  "ccu": {
-    "name": "auth0-spa-js",
-    "cdn": "https://cdn.auth0.com",
-    "mainBundleFile": "auth0-spa-js.production.js",
-    "bucket": "assets.us.auth0.com",
-    "localPath": "dist",
-    "digest": {
-      "hashes": [
-        "sha384"
-      ],
-      "extensions": [
-        ".js"
-      ]
-    }
-  },
   "husky": {
     "hooks": {
       "pre-commit": "pretty-quick --staged"

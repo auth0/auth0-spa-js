@@ -1,5 +1,4 @@
-@Library('k8sAgents') agentLibrary
-@Library('auth0') _
+@Library('auth0-pipeline') _
 
 pipeline {
   agent {
@@ -17,11 +16,11 @@ pipeline {
   }
 
   stages {
-    stage('Build') {
+    stage('Install & Build') {
       steps {
         sshagent(['auth0extensions-ssh-key']) {
-          sh 'npm ci'
-          sh 'npm run build'
+          sh 'make install'
+          sh 'make build'
         }
       }
     }
@@ -29,7 +28,7 @@ pipeline {
       steps {
         script {
           try {
-            sh 'npm run test'
+            sh 'make test'
             githubNotify context: 'jenkinsfile/auth0/tests', description: 'Tests passed', status: 'SUCCESS'
           } catch (error) {
             githubNotify context: 'jenkinsfile/auth0/tests', description: 'Tests failed', status: 'FAILURE'
@@ -39,16 +38,14 @@ pipeline {
       }
     }
     stage('Publish to CDN') {
-      when { 
-        anyOf { 
+      when {
+        anyOf {
           branch 'beta'
           branch 'main'
-        } 
+        }
       }
       steps {
-        sshagent(['auth0extensions-ssh-key']) {
-          sh 'npm run publish:cdn'
-        }
+        CdnPublish()
       }
     }
   }
