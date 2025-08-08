@@ -4,7 +4,7 @@ import { verify } from '../../src/jwt';
 import * as scope from '../../src/scope';
 import * as utils from '../../src/utils';
 
-import { loginWithPopupFn, loginWithRedirectFn, setupFn } from './helpers';
+import { setupFn } from './helpers';
 
 import { checkScopesInToken } from '../../src/Auth0Client.utils';
 import { TEST_ACCESS_TOKEN, TEST_CODE_CHALLENGE } from '../constants';
