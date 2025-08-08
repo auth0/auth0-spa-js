@@ -90,7 +90,8 @@ import {
   getAuthorizeParams,
   GET_TOKEN_SILENTLY_LOCK_KEY,
   OLD_IS_AUTHENTICATED_COOKIE_NAME,
-  patchOpenUrlWithOnRedirect
+  patchOpenUrlWithOnRedirect,
+  checkScopesInToken
 } from './Auth0Client.utils';
 import { CustomTokenExchangeOptions } from './TokenExchange';
 
@@ -789,6 +790,33 @@ export class Auth0Client {
   public async isAuthenticated() {
     const user = await this.getUser();
     return !!user;
+  }
+
+  /**
+   * Checks if the user is authorized to access a specific resource.
+   * 
+   * Returns `true` if the user is authenticated and has the required scopes.
+   * @param options 
+   */
+  public async isAuthorized(options: { audience?: string, scope?: string, redirectTo?: string }): Promise<boolean> {
+    const { audience, scope, redirectTo } = options;
+    const isAuthenticated = await this.isAuthenticated();
+
+    if (!isAuthenticated) {
+      await this.loginWithRedirect({
+        authorizationParams: { audience, scope },
+        appState: { targetUrl: redirectTo || window.location.pathname }
+      });
+
+      return false;
+    }
+
+    try {
+      const token = await this.getTokenSilently({ authorizationParams: { audience, scope } });
+      return scope ? checkScopesInToken(token, scope) : true;
+    } catch (err) {
+      return false;
+    }
   }
 
   /**
