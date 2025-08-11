@@ -1291,14 +1291,22 @@ export class Auth0Client {
     return this.dpop.generateProof(params);
   }
 
-  public getOptions(): Auth0ClientOptions {
-    return this.options;
-  }
-
   public createFetcher<TOutput extends CustomFetchMinimalOutput = Response>(
     config: FetcherConfig<TOutput> = {}
   ): Fetcher<TOutput> {
-    return new Fetcher(this, config);
+    if (!config.dpopNonceId) {
+      throw new TypeError(
+        'When `useDpop` is enabled, `dpopNonceId` must be set when calling `createFetcher()`.'
+      );
+    }
+
+    return new Fetcher(config, {
+      isDpopEnabled: () => !!this.options.useDpop,
+      getAccessToken: () => this.getTokenSilently(),
+      getDpopNonce: () => this.getDpopNonce(config.dpopNonceId),
+      setDpopNonce: nonce => this.setDpopNonce(nonce),
+      generateDpopProof: params => this.generateDpopProof(params)
+    });
   }
 }
 
