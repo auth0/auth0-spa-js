@@ -96,8 +96,8 @@ import { CustomTokenExchangeOptions } from './TokenExchange';
 import { Dpop } from './dpop/dpop';
 import {
   Fetcher,
-  type FetchFuncResponse,
-  type FetchInitialParams
+  type FetcherConfig,
+  type CustomFetchMinimalOutput
 } from './fetcher';
 
 /**
@@ -118,7 +118,7 @@ const lock = new Lock();
 /**
  * Auth0 SDK for Single Page Applications using [Authorization Code Grant Flow with PKCE](https://auth0.com/docs/api-auth/tutorials/authorization-code-grant-pkce).
  */
-export class Auth0Client<FetchOutput = unknown> {
+export class Auth0Client {
   private readonly transactionManager: TransactionManager;
   private readonly cacheManager: CacheManager;
   private readonly domainUrl: string;
@@ -131,15 +131,13 @@ export class Auth0Client<FetchOutput = unknown> {
   private readonly isAuthenticatedCookieName: string;
   private readonly nowProvider: () => number | Promise<number>;
   private readonly httpTimeoutMs: number;
-  private readonly options: Auth0ClientOptions<FetchOutput> & {
+  private readonly options: Auth0ClientOptions & {
     authorizationParams: AuthorizationParams;
   };
   private readonly userCache: ICache = new InMemoryCache().enclosedCache;
 
-  private fetcher?: Fetcher<FetchOutput>;
   private worker?: Worker;
-
-  private readonly defaultOptions: Partial<Auth0ClientOptions<FetchOutput>> = {
+  private readonly defaultOptions: Partial<Auth0ClientOptions> = {
     authorizationParams: {
       scope: DEFAULT_SCOPE
     },
@@ -147,7 +145,7 @@ export class Auth0Client<FetchOutput = unknown> {
     useFormData: true
   };
 
-  constructor(options: Auth0ClientOptions<FetchOutput>) {
+  constructor(options: Auth0ClientOptions) {
     this.options = {
       ...this.defaultOptions,
       ...options,
@@ -1293,18 +1291,14 @@ export class Auth0Client<FetchOutput = unknown> {
     return this.dpop.generateProof(params);
   }
 
-  public fetchWithAuth<FetchOutputOverride = FetchOutput>(
-    params?: FetchInitialParams<FetchOutputOverride>
-  ): Promise<FetchFuncResponse<FetchOutputOverride>> {
-    if (!this.fetcher) {
-      this.fetcher = new Fetcher({
-        client: this,
-        dpop: this.dpop,
-        options: this.options
-      });
-    }
+  public getOptions(): Auth0ClientOptions {
+    return this.options;
+  }
 
-    return this.fetcher.fetch(params);
+  public createFetcher<TOutput extends CustomFetchMinimalOutput = Response>(
+    config: FetcherConfig<TOutput> = {}
+  ): Fetcher<TOutput> {
+    return new Fetcher(this, config);
   }
 }
 

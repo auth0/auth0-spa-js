@@ -1,79 +1,52 @@
 import type { Auth0Client } from './Auth0Client';
-import type { MaybePromise } from './cache';
-import { Dpop } from './dpop/dpop';
 import { DPOP_NONCE_HEADER } from './dpop/utils';
 import { UseDpopNonceError } from './errors';
-import type { Auth0ClientOptions } from './global';
-import { fromEntries } from './utils';
 
-type PlainHeaders = Record<string, string>;
+type ResponseHeaders =
+  | Record<string, string | null | undefined>
+  | [string, string][]
+  | { get(name: string): string | null | undefined };
 
-type Auth0ClientOptionsSubset<T> = Pick<
-  Auth0ClientOptions<T>,
-  'useDpop' | 'fetchParams'
->;
-
-export type FetchFuncResponse<T> = {
-  headers: PlainHeaders;
-  output: T;
+export type CustomFetchMinimalOutput = {
   status: number;
+  headers: ResponseHeaders;
 };
 
-type FetchFunc<T> = (params: FetchFinalParams) => Promise<FetchFuncResponse<T>>;
-type AccessTokenFunc = (client: Auth0Client) => MaybePromise<string>;
+export type CustomFetchImpl<TOutput extends CustomFetchMinimalOutput> = (
+  req: Request
+) => Promise<TOutput>;
 
-export type FetchInitialParams<T> = {
-  accessToken?: string | AccessTokenFunc;
+type AccessTokenFactory = () => Promise<string>;
+
+export type FetcherConfig<TOutput extends CustomFetchMinimalOutput> = {
+  accessTokenFactory?: AccessTokenFactory;
   baseUrl?: string;
-  body?: string;
-  fetch?: FetchFunc<T>;
-  headers?: PlainHeaders;
-  method?: string;
+  fetch?: CustomFetchImpl<TOutput>;
   dpopNonceId?: string;
-  timeoutMs?: number;
-  url?: string;
 };
 
-export type FetchFinalParams = {
-  accessToken: string;
-  body?: string;
-  client: Auth0Client;
-  headers: PlainHeaders;
-  method: string;
-  dpopNonceId?: string;
-  timeoutMs?: number;
-  url: string;
+type FetchWithAuthCallbacks<TOutput> = {
+  onUseDpopNonceError?(): Promise<TOutput>;
 };
 
-const DEFAULT_FETCH_FUNC: FetchFunc<any> = async params => {
-  const res = await fetch(
-    new Request(params.url, {
-      ...params,
-      headers: new Headers(params.headers),
-      signal: params.timeoutMs
-        ? AbortSignal.timeout(params.timeoutMs)
-        : undefined
-    })
-  );
-
-  return {
-    headers: fromEntries(res.headers),
-    output: res,
-    status: res.status
-  };
-};
-
-export class Fetcher<DefaultOutput> {
+export class Fetcher<TOutput extends CustomFetchMinimalOutput> {
   protected readonly client: Auth0Client;
-  protected readonly options: Auth0ClientOptionsSubset<DefaultOutput>;
+  protected readonly config: Omit<FetcherConfig<TOutput>, 'fetch'> &
+    Required<Pick<FetcherConfig<TOutput>, 'fetch'>>;
 
-  constructor(params: {
-    client: Auth0Client;
-    dpop?: Dpop;
-    options: Auth0ClientOptionsSubset<DefaultOutput>;
-  }) {
-    this.client = params.client;
-    this.options = params.options;
+  constructor(client: Auth0Client, config: FetcherConfig<TOutput>) {
+    this.client = client;
+
+    if (this.client.getOptions().useDpop && !config.dpopNonceId) {
+      throw new TypeError(
+        'When `useDpop` is enabled, `dpopNonceId` must be set when calling `buildFetcher()`.'
+      );
+    }
+
+    this.config = {
+      ...config,
+      fetch: config.fetch || (window.fetch.bind(window) as () => Promise<any>)
+    };
   }
 
   protected isAbsoluteUrl(url: string): boolean {
@@ -81,170 +54,159 @@ export class Fetcher<DefaultOutput> {
     return /^(https?:)?\/\//i.test(url);
   }
 
-  protected getFinalUrl({
-    baseUrl,
-    url
-  }: Pick<FetchInitialParams<unknown>, 'baseUrl' | 'url'>): string {
-    if (url && this.isAbsoluteUrl(url)) {
-      return url;
-    }
+  protected buildUrl(
+    baseUrl: string | undefined,
+    url: string | undefined
+  ): string {
+    if (url) {
+      if (this.isAbsoluteUrl(url)) {
+        return url;
+      }
 
-    if (baseUrl && url) {
-      return `${baseUrl.replace(/\/?\/$/, '')}/${url.replace(/^\/+/, '')}`;
+      if (baseUrl) {
+        return `${baseUrl.replace(/\/?\/$/, '')}/${url.replace(/^\/+/, '')}`;
+      }
     }
 
     throw new Error('`url` must be absolute or `baseUrl` non-empty.');
   }
 
-  protected getFinalAccessToken({
-    accessToken
-  }: Pick<FetchInitialParams<unknown>, 'accessToken'>): MaybePromise<string> {
-    if (!accessToken) {
-      return this.client.getTokenSilently();
-    }
-
-    return typeof accessToken === 'string'
-      ? accessToken
-      : accessToken(this.client);
+  protected getAccessToken(): Promise<string> {
+    return this.config.accessTokenFactory
+      ? this.config.accessTokenFactory()
+      : this.client.getTokenSilently();
   }
 
-  protected async getFinalHeaders({
-    accessToken,
-    headers,
-    method,
-    dpopNonceId,
-    url
-  }: Pick<
-    FetchFinalParams,
-    'accessToken' | 'method' | 'dpopNonceId' | 'url'
-  > & {
-    accessToken: string;
-    headers?: PlainHeaders;
-    method: string;
-  }): Promise<PlainHeaders> {
-    const finalHeaders: PlainHeaders = {
-      ...headers,
-      authorization: `${
-        this.options.useDpop ? 'DPoP' : 'Bearer'
-      } ${accessToken}`
-    };
+  protected buildBaseRequest(
+    info: RequestInfo | URL,
+    init: RequestInit | undefined
+  ): Request {
+    // In the native `fetch()` behavior, `init` can override `info` and the result
+    // is the merge of both. So let's replicate that behavior by passing those into
+    // a fresh `Request` object.
+    const request = new Request(info, init);
 
-    if (this.options.useDpop) {
-      finalHeaders['dpop'] = await this.client.generateDpopProof({
-        accessToken,
-        method,
-        nonce: dpopNonceId
-          ? await this.client.getDpopNonce(dpopNonceId)
-          : undefined,
-        url
-      });
+    // No `baseUrl` config, use whatever the URL the `Request` came with.
+    if (!this.config.baseUrl) {
+      return request;
     }
 
-    return finalHeaders;
+    return new Request(
+      this.buildUrl(this.config.baseUrl, request.url),
+      request
+    );
   }
 
-  protected getMergedInitialParams<Output>(
-    initialParams: FetchInitialParams<Output> | undefined
-  ): FetchInitialParams<DefaultOutput | Output> {
-    const defaultInitialParams = this.options.fetchParams;
+  protected async setAuthorizationHeaders(
+    request: Request,
+    accessToken: string
+  ): Promise<void> {
+    request.headers.set(
+      'authorization',
+      `${this.config.dpopNonceId ? 'DPoP' : 'Bearer'} ${accessToken}`
+    );
+  }
 
-    if (!defaultInitialParams && !initialParams) {
-      throw new Error(
-        'Fetcher params must be present in the SDK options or passed to fetchWithAuth().'
-      );
+  protected async setDpopProofHeaders(
+    request: Request,
+    accessToken: string
+  ): Promise<void> {
+    if (!this.config.dpopNonceId) {
+      return;
     }
 
-    return { ...defaultInitialParams, ...initialParams };
-  }
+    const dpopNonce = await this.client.getDpopNonce(this.config.dpopNonceId);
 
-  protected async getFinalParams(
-    initialParams: FetchInitialParams<unknown>
-  ): Promise<FetchFinalParams> {
-    const method = initialParams.method || 'GET';
-    const accessToken = await this.getFinalAccessToken(initialParams);
-    const url = this.getFinalUrl(initialParams);
-
-    const headers = await this.getFinalHeaders({
-      ...initialParams,
+    const dpopProof = await this.client.generateDpopProof({
       accessToken,
-      method,
-      url
+      method: request.method,
+      nonce: dpopNonce,
+      url: request.url
     });
 
-    return {
-      ...initialParams,
-      accessToken,
-      client: this.client,
-      headers,
-      method,
-      url
-    };
+    request.headers.set('dpop', dpopProof);
   }
 
-  protected isNonceError(result: {
-    status: number;
-    headers: PlainHeaders;
-  }): boolean {
-    if (result.status !== 401) {
+  protected async setupRequest(request: Request) {
+    const accessToken = await this.getAccessToken();
+
+    this.setAuthorizationHeaders(request, accessToken);
+
+    await this.setDpopProofHeaders(request, accessToken);
+  }
+
+  protected getHeader(headers: ResponseHeaders, name: string): string {
+    if (Array.isArray(headers)) {
+      return new Headers(headers).get(name) || '';
+    }
+
+    if (typeof headers.get === 'function') {
+      return headers.get(name) || '';
+    }
+
+    return (headers as Record<string, string | null | undefined>)[name] || '';
+  }
+
+  protected isUseDpopNonceError(response: TOutput): boolean {
+    if (response.status !== 401) {
       return false;
     }
 
-    const wwwAuthHeader = result.headers['www-authenticate'];
+    const wwwAuthHeader = this.getHeader(response.headers, 'www-authenticate');
 
-    return wwwAuthHeader ? wwwAuthHeader.includes('use_dpop_nonce') : false;
+    return wwwAuthHeader.includes('use_dpop_nonce');
   }
 
-  protected async handleResponse<Output>({
-    fetchForDpopRetry: fetchForRetry,
-    finalParams,
-    response
-  }: {
-    fetchForDpopRetry: FetchFunc<Output> | undefined;
-    finalParams: FetchFinalParams;
-    response: FetchFuncResponse<Output>;
-  }): Promise<FetchFuncResponse<Output>> {
-    // non-DPoP responses are simply returned untouched
-    if (!this.options.useDpop) {
+  protected async handleResponse(
+    response: TOutput,
+    callbacks?: FetchWithAuthCallbacks<TOutput>
+  ): Promise<TOutput> {
+    const newDpopNonce = this.getHeader(response.headers, DPOP_NONCE_HEADER);
+
+    if (newDpopNonce) {
+      await this.client.setDpopNonce(newDpopNonce, this.config.dpopNonceId);
+    }
+
+    if (!this.isUseDpopNonceError(response)) {
       return response;
     }
 
-    const newNonce = response.headers[DPOP_NONCE_HEADER];
-
-    if (newNonce) {
-      await this.client.setDpopNonce(newNonce, finalParams.dpopNonceId);
+    // After a `use_dpop_nonce` error, if we didn't get a new DPoP nonce or we
+    // did but it still got rejected for the same reason, we have to give up.
+    if (!newDpopNonce || !callbacks?.onUseDpopNonceError) {
+      throw new UseDpopNonceError(newDpopNonce);
     }
 
-    if (!this.isNonceError(response)) {
-      return response;
-    }
-
-    if (!newNonce || !fetchForRetry) {
-      throw new UseDpopNonceError(newNonce);
-    }
-
-    const newResponse = await fetchForRetry(finalParams);
-
-    return this.handleResponse({
-      fetchForDpopRetry: undefined, // retry exactly once
-      finalParams,
-      response: newResponse
-    });
+    return callbacks.onUseDpopNonceError();
   }
 
-  public async fetch<Output = DefaultOutput>(
-    initialParams?: FetchInitialParams<Output>
-  ): Promise<FetchFuncResponse<Output>> {
-    const mergedInitialParams = this.getMergedInitialParams(initialParams);
-    const finalParams = await this.getFinalParams(mergedInitialParams);
+  protected async internalFetchWithAuth(
+    info: RequestInfo | URL,
+    init: RequestInit | undefined,
+    callbacks?: FetchWithAuthCallbacks<TOutput>
+  ): Promise<TOutput> {
+    const request = this.buildBaseRequest(info, init);
 
-    const finalFetch = mergedInitialParams.fetch || DEFAULT_FETCH_FUNC;
+    await this.setupRequest(request);
+    console.log({ request });
+    const response = await this.config.fetch(request);
 
-    const response = await finalFetch(finalParams);
+    return this.handleResponse(response, callbacks);
+  }
 
-    return this.handleResponse({
-      finalParams,
-      fetchForDpopRetry: finalFetch,
-      response
-    });
+  public fetchWithAuth(
+    info: RequestInfo | URL,
+    init?: RequestInit
+  ): Promise<TOutput> {
+    const callbacks: FetchWithAuthCallbacks<TOutput> = {
+      onUseDpopNonceError: () =>
+        this.internalFetchWithAuth(info, init, {
+          ...callbacks,
+          // Retry on a `use_dpop_nonce` error, but just once.
+          onUseDpopNonceError: undefined
+        })
+    };
+
+    return this.internalFetchWithAuth(info, init, callbacks);
   }
 }
