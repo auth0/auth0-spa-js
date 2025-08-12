@@ -1294,7 +1294,7 @@ export class Auth0Client {
   public createFetcher<TOutput extends CustomFetchMinimalOutput = Response>(
     config: FetcherConfig<TOutput> = {}
   ): Fetcher<TOutput> {
-    if (!config.dpopNonceId) {
+    if (this.options.useDpop && !config.dpopNonceId) {
       throw new TypeError(
         'When `useDpop` is enabled, `dpopNonceId` must be set when calling `createFetcher()`.'
       );
