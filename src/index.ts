@@ -46,3 +46,5 @@ export {
   CacheKey,
   CacheKeyData
 } from './cache';
+
+export { type FetcherConfig } from './fetcher';
