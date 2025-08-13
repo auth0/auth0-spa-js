@@ -508,18 +508,35 @@ describe('Fetcher', () => {
       const info = 'https://example.com';
       const init = { method: 'PATCH' };
 
-      fetcher['internalFetchWithAuth'] = jest
-        .fn(fetcher['internalFetchWithAuth'])
-        .mockImplementation((_info, _init, callbacks) =>
-          callbacks && callbacks.onUseDpopNonceError
-            ? callbacks.onUseDpopNonceError()
-            : Promise.resolve(new Response())
-        );
+      const firstResponse = new Response('first');
+      const secondResponse = new Response('second');
 
-      beforeEach(() => fetcher.fetchWithAuth(info, init));
+      beforeEach(() => {
+        fetcher['internalFetchWithAuth'] = jest
+          .fn(fetcher['internalFetchWithAuth'])
+          .mockImplementationOnce((_info, _init, callbacks) =>
+            callbacks.onUseDpopNonceError
+              ? callbacks.onUseDpopNonceError()
+              : Promise.resolve(firstResponse)
+          )
+          .mockImplementationOnce((_info, _init, callbacks) =>
+            callbacks.onUseDpopNonceError
+              ? callbacks.onUseDpopNonceError()
+              : Promise.resolve(secondResponse)
+          );
+      });
+
+      let output: Response;
+
+      beforeEach(async () => {
+        output = await fetcher.fetchWithAuth(info, init);
+      });
 
       it('retries exactly once', () =>
         expect(fetcher['internalFetchWithAuth']).toHaveBeenCalledTimes(2));
+
+      it('returns the second response', () =>
+        expect(output).toBe(secondResponse));
     });
   });
 });
