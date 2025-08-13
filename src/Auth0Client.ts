@@ -1249,9 +1249,10 @@ export class Auth0Client {
    *
    * It requires enabling the {@link Auth0ClientOptions.useDpop} option.
    *
-   * @param id The identifier of a nonce: if absent, it will get the nonce
-   *           used for requests to Auth0. Otherwise, it will be used to
-   *           select a specific non-Auth0 nonce.
+   * @param nonce The nonce value.
+   * @param id    The identifier of a nonce: if absent, it will get the nonce
+   *              used for requests to Auth0. Otherwise, it will be used to
+   *              select a specific non-Auth0 nonce.
    */
   public getDpopNonce(id?: string): Promise<string | undefined> {
     this._assertDpop(this.dpop);
@@ -1264,9 +1265,10 @@ export class Auth0Client {
    *
    * It requires enabling the {@link Auth0ClientOptions.useDpop} option.
    *
-   * @param id The identifier of a nonce: if absent, it will set the nonce
-   *           used for requests to Auth0. Otherwise, it will be used to
-   *           select a specific non-Auth0 nonce.
+   * @param nonce The nonce value.
+   * @param id    The identifier of a nonce: if absent, it will set the nonce
+   *              used for requests to Auth0. Otherwise, it will be used to
+   *              select a specific non-Auth0 nonce.
    */
   public setDpopNonce(nonce: string, id?: string): Promise<void> {
     this._assertDpop(this.dpop);
