@@ -16,7 +16,7 @@ import {
   parseNumber
 } from './utils';
 
-import { oauthToken } from './api';
+import { oauthToken, revokeToken } from './api';
 
 import { getUniqueScopes } from './scope';
 
@@ -854,6 +854,82 @@ export class Auth0Client {
       await openUrl(url);
     } else if (openUrl !== false) {
       window.location.assign(url);
+    }
+  }
+
+  /**
+   * ```js
+   * await auth0.revoke();
+   * ```
+   *
+   * Revokes the refresh token using the `/oauth/revoke` endpoint.
+   * This will invalidate the refresh token so that it can no longer be used
+   * to obtain new tokens.
+   *
+   * If `useRefreshTokens` is disabled, this method does nothing.
+   * The refresh token is automatically retrieved from the cache based on the
+   * provided authorization parameters.
+   *
+   * @param options - Optional authorization parameters to specify which token to revoke
+   */
+  public async revoke(
+    options: { authorizationParams?: AuthorizationParams } = {}
+  ): Promise<void> {
+    // If refresh tokens are not enabled, do nothing
+    if (!this.options.useRefreshTokens) {
+      return;
+    }
+
+    const localOptions = {
+      authorizationParams: {
+        ...this.options.authorizationParams,
+        ...options.authorizationParams,
+        scope: getUniqueScopes(this.scope, options.authorizationParams?.scope)
+      }
+    };
+
+    // Get refresh token from cache
+    const cache = await this.cacheManager.get(
+      new CacheKey({
+        scope: localOptions.authorizationParams.scope,
+        audience: localOptions.authorizationParams.audience || 'default',
+        clientId: this.options.clientId
+      })
+    );
+
+    const refreshToken = cache?.refresh_token;
+
+    // If we don't have a refresh token, there's nothing to revoke
+    if (!refreshToken) {
+      return;
+    }
+
+    // Call the revoke API
+    await revokeToken({
+      baseUrl: this.domainUrl,
+      timeout: this.httpTimeoutMs,
+      auth0Client: this.options.auth0Client,
+      useFormData: this.options.useFormData,
+      clientId: this.options.clientId,
+      refreshToken
+    });
+
+    // After successful revocation, update the specific cache entry to null the refresh token
+    if (
+      cache &&
+      cache.access_token &&
+      cache.expires_in &&
+      cache.audience &&
+      cache.scope &&
+      cache.client_id
+    ) {
+      const updatedCache: CacheEntry = {
+        ...(cache as CacheEntry),
+        refresh_token: undefined
+      };
+
+      // Update only the specific cache entry with the nulled refresh token
+      await this.cacheManager.set(updatedCache);
     }
   }
 
