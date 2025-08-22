@@ -2,7 +2,8 @@ import { decode, verify } from '../src/jwt';
 import IDTokenVerifier from 'idtoken-verifier';
 import jwt from 'jsonwebtoken';
 import { generateKeyPairSync } from 'crypto';
-import { expect } from '@jest/globals';
+// Using built-in Jest types rather than @jest/globals
+// import { expect } from '@jest/globals';
 
 const verifyOptions = {
   iss: 'https://brucke.auth0.com/',
@@ -120,7 +121,7 @@ describe('jwt', () => {
   it('verifies correctly', async () => {
     const id_token = await createJWT();
 
-    const { encoded, header, claims } = verify({
+    const { encoded, header, claims } = await verify({
       ...verifyOptions,
       id_token
     });
@@ -461,5 +462,181 @@ describe('jwt', () => {
     ).toThrow(
       'Organization Name (org_name) claim mismatch in the ID token; expected "my-org", found "my-other-org"'
     );
+  });
+
+  describe('signature validation', () => {
+    const mockFetch = <jest.Mock>fetch;
+    
+    beforeEach(() => {
+      (<any>global).fetch = mockFetch;
+      mockFetch.mockClear();
+    });
+
+    afterEach(() => {
+      mockFetch.mockReset();
+    });
+
+    it('should skip signature validation when validateSignature is false', async () => {
+      const id_token = await createJWT(DEFAULT_PAYLOAD);
+      
+      const result = await verify({ 
+        ...verifyOptions, 
+        id_token, 
+        validateSignature: false 
+      });
+      
+      expect(result.claims.payload).toBe(true);
+      expect(mockFetch).not.toHaveBeenCalled();
+    });
+
+    it('should skip signature validation when validateSignature is undefined', async () => {
+      const id_token = await createJWT(DEFAULT_PAYLOAD);
+      
+      const result = await verify({ 
+        ...verifyOptions, 
+        id_token 
+      });
+      
+      expect(result.claims.payload).toBe(true);
+      expect(mockFetch).not.toHaveBeenCalled();
+    });
+
+    it('should perform signature validation when validateSignature is true', async () => {
+      // Mock JWKS response
+      const mockJWKS = {
+        keys: [
+          {
+            kty: 'RSA',
+            kid: 'NEVBNUNBOTgxRkE5NkQzQzc4OTBEMEFFRDQ5N0Q2Qjk0RkQ1MjFGMQ',
+            use: 'sig',
+            alg: 'RS256',
+            n: 'test-n',
+            e: 'AQAB'
+          }
+        ]
+      };
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve(mockJWKS),
+      });
+
+      // Mock crypto operations
+      const mockCryptoKey = { type: 'public' };
+      const mockImportKey = jest.fn().mockResolvedValue(mockCryptoKey);
+      const mockVerify = jest.fn().mockResolvedValue(true);
+      
+      Object.defineProperty(window, 'crypto', {
+        value: {
+          subtle: {
+            importKey: mockImportKey,
+            verify: mockVerify
+          },
+        },
+        configurable: true
+      });
+
+      const id_token = await createJWT(DEFAULT_PAYLOAD);
+      
+      const result = await verify({ 
+        ...verifyOptions, 
+        id_token, 
+        validateSignature: true 
+      });
+      
+      expect(result.claims.payload).toBe(true);
+      expect(mockFetch).toHaveBeenCalledWith(
+        'https://brucke.auth0.com/.well-known/jwks.json'
+      );
+      expect(mockImportKey).toHaveBeenCalled();
+      expect(mockVerify).toHaveBeenCalled();
+    });
+
+    it('should throw error when JWKS fetch fails', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 404,
+        statusText: 'Not Found',
+      });
+
+      const id_token = await createJWT(DEFAULT_PAYLOAD);
+      
+      await expect(verify({ 
+        ...verifyOptions, 
+        id_token, 
+        validateSignature: true 
+      })).rejects.toThrow('Signature verification failed: Failed to fetch JWKS from https://brucke.auth0.com/.well-known/jwks.json: 404 Not Found');
+    });
+
+    it('should throw error when key ID not found in JWKS', async () => {
+      const mockJWKS = {
+        keys: [
+          {
+            kty: 'RSA',
+            kid: 'different-kid',
+            use: 'sig',
+            alg: 'RS256',
+            n: 'test-n',
+            e: 'AQAB'
+          }
+        ]
+      };
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve(mockJWKS),
+      });
+
+      const id_token = await createJWT(DEFAULT_PAYLOAD);
+      
+      await expect(verify({ 
+        ...verifyOptions, 
+        id_token, 
+        validateSignature: true 
+      })).rejects.toThrow('Signature verification failed: No matching key found for kid: NEVBNUNBOTgxRkE5NkQzQzc4OTBEMEFFRDQ5N0Q2Qjk0RkQ1MjFGMQ');
+    });
+
+    it('should throw error when signature verification fails', async () => {
+      const mockJWKS = {
+        keys: [
+          {
+            kty: 'RSA',
+            kid: 'NEVBNUNBOTgxRkE5NkQzQzc4OTBEMEFFRDQ5N0Q2Qjk0RkQ1MjFGMQ',
+            use: 'sig',
+            alg: 'RS256',
+            n: 'test-n',
+            e: 'AQAB'
+          }
+        ]
+      };
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve(mockJWKS),
+      });
+
+      // Mock crypto operations to return false (invalid signature)
+      const mockCryptoKey = { type: 'public' };
+      const mockImportKey = jest.fn().mockResolvedValue(mockCryptoKey);
+      const mockVerify = jest.fn().mockResolvedValue(false);
+      
+      Object.defineProperty(window, 'crypto', {
+        value: {
+          subtle: {
+            importKey: mockImportKey,
+            verify: mockVerify
+          },
+        },
+        configurable: true
+      });
+
+      const id_token = await createJWT(DEFAULT_PAYLOAD);
+      
+      await expect(verify({ 
+        ...verifyOptions, 
+        id_token, 
+        validateSignature: true 
+      })).rejects.toThrow('JWT signature verification failed');
+    });
   });
 });

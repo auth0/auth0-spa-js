@@ -98,7 +98,7 @@ import { CustomTokenExchangeOptions } from './TokenExchange';
  * @ignore
  */
 type GetTokenSilentlyResult = TokenEndpointResponse & {
-  decodedToken: ReturnType<typeof verifyIdToken>;
+  decodedToken: Awaited<ReturnType<typeof verifyIdToken>>;
   scope: string;
   oauthTokenScope?: string;
   audience: string;
@@ -266,7 +266,8 @@ export class Auth0Client {
       organization,
       leeway: this.options.leeway,
       max_age: parseNumber(this.options.authorizationParams.max_age),
-      now
+      now,
+      validateSignature: this.options.idTokenSignatureValidation
     });
   }
 

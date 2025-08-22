@@ -6,10 +6,17 @@ export const singlePromise = <T>(
 ): Promise<T> => {
   let promise: null | Promise<T> = singlePromiseMap[key];
   if (!promise) {
-    promise = cb().finally(() => {
-      delete singlePromiseMap[key];
-      promise = null;
-    });
+    const basePromise = cb();
+    promise = basePromise.then(
+      (result) => {
+        delete singlePromiseMap[key];
+        return result;
+      },
+      (error) => {
+        delete singlePromiseMap[key];
+        throw error;
+      }
+    );
     singlePromiseMap[key] = promise;
   }
   return promise;

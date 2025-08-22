@@ -1,4 +1,4 @@
-import { urlDecodeB64 } from './utils';
+import { urlDecodeB64, fetchJWKS, findJWKByKid, jwkToCryptoKey, getCrypto } from './utils';
 import { IdToken, JWTVerifyOptions } from './global';
 
 const isNumber = (n: any) => typeof n === 'number';
@@ -48,7 +48,7 @@ export const decode = (token: string) => {
   const user: any = {};
   Object.keys(payloadJSON).forEach(k => {
     claims[k] = payloadJSON[k];
-    if (!idTokendecoded.includes(k)) {
+    if (idTokendecoded.indexOf(k) === -1) {
       user[k] = payloadJSON[k];
     }
   });
@@ -60,7 +60,7 @@ export const decode = (token: string) => {
   };
 };
 
-export const verify = (options: JWTVerifyOptions) => {
+export const verify = async (options: JWTVerifyOptions) => {
   if (!options.id_token) {
     throw new Error('ID token is required but missing');
   }
@@ -89,6 +89,14 @@ export const verify = (options: JWTVerifyOptions) => {
     throw new Error(
       `Signature algorithm of "${decoded.header.alg}" is not supported. Expected the ID token to be signed with "RS256".`
     );
+  }
+
+  // Perform signature verification if requested
+  if (options.validateSignature === true) {
+    const isSignatureValid = await verifySignature(options.id_token, options.iss);
+    if (!isSignatureValid) {
+      throw new Error('JWT signature verification failed');
+    }
   }
 
   if (
@@ -222,4 +230,74 @@ export const verify = (options: JWTVerifyOptions) => {
   }
 
   return decoded;
+};
+
+/**
+ * Verifies the signature of a JWT token using JWKS
+ * @param token The JWT token string
+ * @param issuer The token issuer URL
+ * @returns Promise<boolean> True if signature is valid
+ */
+const verifySignature = async (token: string, issuer: string): Promise<boolean> => {
+  try {
+    const parts = token.split('.');
+    if (parts.length !== 3) {
+      throw new Error('Invalid JWT format');
+    }
+    
+    const [headerB64, payloadB64, signatureB64] = parts;
+    const header = JSON.parse(urlDecodeB64(headerB64));
+    
+    // Check if we have a key ID
+    if (!header.kid) {
+      throw new Error('JWT header missing key ID (kid)');
+    }
+    
+    // Check algorithm
+    if (['RS256', 'RS384', 'RS512'].indexOf(header.alg) === -1) {
+      throw new Error(`Unsupported signature algorithm: ${header.alg}`);
+    }
+    
+    // Fetch JWKS
+    const jwks = await fetchJWKS(issuer);
+    
+    // Find the key
+    const jwk = findJWKByKid(jwks, header.kid);
+    if (!jwk) {
+      throw new Error(`No matching key found for kid: ${header.kid}`);
+    }
+    
+    // Convert JWK to CryptoKey
+    const cryptoKey = await jwkToCryptoKey(jwk);
+    
+    // Prepare signature verification
+    const signatureData = `${headerB64}.${payloadB64}`;
+    const signatureBytes = Uint8Array.from(
+      atob(signatureB64.replace(/-/g, '+').replace(/_/g, '/')), 
+      c => c.charCodeAt(0)
+    );
+    
+    // Determine hash algorithm based on JWT algorithm
+    let hashAlgorithm = 'SHA-256';
+    if (header.alg === 'RS384') {
+      hashAlgorithm = 'SHA-384';
+    } else if (header.alg === 'RS512') {
+      hashAlgorithm = 'SHA-512';
+    }
+    
+    // Verify signature
+    const isValid = await getCrypto().subtle.verify(
+      {
+        name: 'RSASSA-PKCS1-v1_5',
+        hash: { name: hashAlgorithm }
+      },
+      cryptoKey,
+      signatureBytes,
+      new TextEncoder().encode(signatureData)
+    );
+    
+    return isValid;
+  } catch (error) {
+    throw new Error(`Signature verification failed: ${error.message}`);
+  }
 };

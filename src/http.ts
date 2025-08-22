@@ -30,10 +30,10 @@ const fetchWithoutWorker = async (
   const controller = createAbortController();
   fetchOptions.signal = controller.signal;
 
-  let timeoutId: NodeJS.Timeout;
+  let timeoutId: any;
 
   // The promise will resolve with one of these two promises (the fetch or the timeout), whichever completes first.
-  return Promise.race([
+  const racePromise = Promise.race([
     dofetch(fetchUrl, fetchOptions),
 
     new Promise((_, reject) => {
@@ -42,9 +42,19 @@ const fetchWithoutWorker = async (
         reject(new Error("Timeout when executing 'fetch'"));
       }, timeout);
     })
-  ]).finally(() => {
-    clearTimeout(timeoutId);
-  });
+  ]);
+
+  // Handle cleanup manually since .finally() is not available in ES2017
+  return racePromise.then(
+    (result) => {
+      clearTimeout(timeoutId);
+      return result;
+    },
+    (error) => {
+      clearTimeout(timeoutId);
+      throw error;
+    }
+  );
 };
 
 const fetchWithWorker = async (

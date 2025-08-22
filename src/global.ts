@@ -271,6 +271,20 @@ export interface Auth0ClientOptions extends BaseLoginOptions {
    * **Note**: The worker is only used when `useRefreshTokens: true`, `cacheLocation: 'memory'`, and the `cache` is not custom.
    */
   workerUrl?: string;
+
+  /**
+   * If `true`, the SDK will verify ID token signatures using the JSON Web Key Set (JWKS) from the authorization server.
+   * This provides additional security by cryptographically validating that tokens were signed by the expected issuer.
+   * 
+   * Per OpenID Connect Core 1.0 specification section 3.1.3.7, signature validation MAY be used when tokens are
+   * received via direct communication over TLS (which is the case for SPA flows using the authorization code flow).
+   * 
+   * The default is `false` to maintain backward compatibility and because TLS provides transport-level security.
+   * 
+   * **Note**: When enabled, the SDK will fetch the JWKS from `https://{domain}/.well-known/jwks.json` and cache it.
+   * This may result in an additional HTTP request during the first token validation.
+   */
+  idTokenSignatureValidation?: boolean;
 }
 
 /**
@@ -559,6 +573,28 @@ export interface RefreshTokenOptions extends TokenEndpointOptions {
 /**
  * @ignore
  */
+export interface JWK {
+  kty: string;
+  use?: string;
+  alg?: string;
+  kid?: string;
+  n?: string;
+  e?: string;
+  x5c?: string[];
+  x5t?: string;
+  'x5t#S256'?: string;
+}
+
+/**
+ * @ignore
+ */
+export interface JWKS {
+  keys: JWK[];
+}
+
+/**
+ * @ignore
+ */
 export interface JWTVerifyOptions {
   iss: string;
   aud: string;
@@ -568,6 +604,7 @@ export interface JWTVerifyOptions {
   max_age?: number;
   organization?: string;
   now?: number;
+  validateSignature?: boolean;
 }
 
 export interface IdToken {
