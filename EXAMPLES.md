@@ -366,10 +366,10 @@ After enabling DPoP, **every new session using a supported OAuth 2.0 flow in Aut
 >
 > You decide how to handle this transition. For example, you might require users to log in again the next time they use your application.
 
-> [!IMPORTANT]
+> [!NOTE]
 > Using DPoP requires storing some temporary data in the user's browser. When you log the user out with `client.logout()`, this data is deleted.
 
-> [!IMPORTANT]
+> [!TIP]
 > If all your clients are already using DPoP, you may want to increase security by making Auth0 reject any non-DPoP interactions. See [the docs on Sender Constraining](https://auth0.com/docs/secure/sender-constraining/configure-sender-constraining) for details.
 
 ### Using DPoP in your own requests

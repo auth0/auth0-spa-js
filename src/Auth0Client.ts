@@ -1293,6 +1293,14 @@ export class Auth0Client {
     return this.dpop.generateProof(params);
   }
 
+  /**
+   * Returns a new `Fetcher` class that will contain a `fetchWithAuth()` method.
+   * This is a drop-in replacement for the Fetch API's `fetch()` method, but will
+   * handle certain authentication logic for you, like building the proper auth
+   * headers or managing DPoP nonces and retries automatically.
+   * 
+   * Check the `EXAMPLES.md` file for a deeper look into this method.
+   */
   public createFetcher<TOutput extends CustomFetchMinimalOutput = Response>(
     config: FetcherConfig<TOutput> = {}
   ): Fetcher<TOutput> {
