@@ -47,7 +47,7 @@ export class DpopStorage {
     table: string,
     mode: IDBTransactionMode,
     requestFactory: (table: IDBObjectStore) => IDBRequest<T>
-  ): Promise<T | undefined> {
+  ): Promise<T> {
     const db = await this.getDbHandle();
 
     const txn = db.transaction(table, mode);
