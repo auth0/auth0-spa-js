@@ -21,7 +21,7 @@ export class Dpop {
 
     if (!keyPair) {
       keyPair = await dpopUtils.generateKeyPair();
-      this.storage.setKeyPair(keyPair);
+      await this.storage.setKeyPair(keyPair);
     }
 
     return keyPair;

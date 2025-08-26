@@ -1261,7 +1261,7 @@ export class Auth0Client {
   }
 
   /**
-   * Gets the current DPoP nonce used for making requests to Auth0.
+   * Sets the current DPoP nonce used for making requests to Auth0.
    *
    * It requires enabling the {@link Auth0ClientOptions.useDpop} option.
    *
