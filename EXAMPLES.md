@@ -500,7 +500,7 @@ To work around this, you can pass a thin wrapper over the native `fetch()` so th
 
 ```js
 const fetcher = client.createFetcher({
-  fetch: (request) => signal: AbortSignal.timeout(2000),
+  fetch: request => fetch(request, { signal: AbortSignal.timeout(2000) })
 });
 
 await fetcher.fetchWithAuth('https://api.example.com/foo');
