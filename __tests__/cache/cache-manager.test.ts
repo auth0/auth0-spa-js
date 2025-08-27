@@ -292,11 +292,13 @@ cacheFactories.forEach(cacheFactory => {
 
           expect(result).toStrictEqual({
             refresh_token: TEST_REFRESH_TOKEN,
+            oldAudience: data.audience,
+            oldScopes: data.scope,
           });
         });
       });
 
-      it('strips everything except the refresh token when expiry has been reached', async () => {
+      it('strips everything except the refresh token and audience when expiry has been reached', async () => {
         const now = Date.now();
         const realDateNow = Date.now.bind(global.Date);
 
@@ -325,7 +327,9 @@ cacheFactories.forEach(cacheFactory => {
         global.Date.now = dateNowStub;
 
         expect(await manager.get(cacheKey)).toStrictEqual({
-          refresh_token: TEST_REFRESH_TOKEN
+          refresh_token: TEST_REFRESH_TOKEN,
+          oldAudience: data.audience,
+          oldScopes: data.scope
         });
 
         global.Date.now = realDateNow;

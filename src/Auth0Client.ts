@@ -90,7 +90,8 @@ import {
   getAuthorizeParams,
   GET_TOKEN_SILENTLY_LOCK_KEY,
   OLD_IS_AUTHENTICATED_COOKIE_NAME,
-  patchOpenUrlWithOnRedirect
+  patchOpenUrlWithOnRedirect,
+  getScopeToRequest
 } from './Auth0Client.utils';
 import { CustomTokenExchangeOptions } from './TokenExchange';
 
@@ -310,8 +311,8 @@ export class Auth0Client {
       nonce,
       code_challenge,
       authorizationParams.redirect_uri ||
-        this.options.authorizationParams.redirect_uri ||
-        fallbackRedirectUri,
+      this.options.authorizationParams.redirect_uri ||
+      fallbackRedirectUri,
       authorizeOptions?.response_mode
     );
 
@@ -988,6 +989,13 @@ export class Auth0Client {
         ? options.timeoutInSeconds * 1000
         : null;
 
+    const scopesToRequest = getScopeToRequest(
+      this.options.useMrrt,
+      options.authorizationParams,
+      cache?.oldAudience,
+      cache?.oldScopes,
+    );
+
     try {
       const tokenResult = await this._requestToken({
         ...options.authorizationParams,
@@ -995,7 +1003,11 @@ export class Auth0Client {
         refresh_token: cache && cache.refresh_token,
         redirect_uri,
         ...(timeout && { timeout })
-      });
+      },
+        {
+          scopesToRequest,
+        }
+      );
 
       // If is refreshed with MRRT, we update all entries that have the old 
       // refresh_token with the new one if the server responded with one
@@ -1126,7 +1138,7 @@ export class Auth0Client {
       | TokenExchangeRequestOptions,
     additionalParameters?: RequestTokenAdditionalParameters
   ) {
-    const { nonceIn, organization } = additionalParameters || {};
+    const { nonceIn, organization, scopesToRequest } = additionalParameters || {};
     const authResult = await oauthToken(
       {
         baseUrl: this.domainUrl,
@@ -1135,7 +1147,8 @@ export class Auth0Client {
         useFormData: this.options.useFormData,
         timeout: this.httpTimeoutMs,
         useMrrt: this.options.useMrrt,
-        ...options
+        ...options,
+        scope: scopesToRequest || options.scope,
       },
       this.worker
     );
@@ -1257,4 +1270,5 @@ interface TokenExchangeRequestOptions extends BaseRequestTokenOptions {
 interface RequestTokenAdditionalParameters {
   nonceIn?: string;
   organization?: string;
+  scopesToRequest?: string;
 }

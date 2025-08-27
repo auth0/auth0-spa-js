@@ -115,12 +115,21 @@ export class CacheManager {
   }
 
   private async modifiedCachedEntry(wrappedEntry: WrappedCacheEntry, cacheKey: CacheKey): Promise<Partial<CacheEntry>> {
+    // We need to keep audience and scope in order to check them later when doing refresh
+    // using MRRT. See getScopeToRequest method.
     wrappedEntry.body = {
-      refresh_token: wrappedEntry.body.refresh_token
+      refresh_token: wrappedEntry.body.refresh_token,
+      audience: wrappedEntry.body.audience,
+      scope: wrappedEntry.body.scope,
     };
 
     await this.cache.set(cacheKey.toKey(), wrappedEntry);
-    return wrappedEntry.body;
+
+    return {
+      refresh_token: wrappedEntry.body.refresh_token,
+      oldAudience: wrappedEntry.body.audience,
+      oldScopes: wrappedEntry.body.scope,
+    };
   }
 
   async set(entry: CacheEntry): Promise<void> {

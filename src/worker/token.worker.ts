@@ -6,7 +6,9 @@ let refreshTokens: Record<string, string> = {};
 
 const cacheKey = (audience: string, scope: string) => `${audience}|${scope}`;
 
-const getRefreshToken = (audience: string, scope: string) =>
+const cacheKeyContainsAudience = (audience: string, cacheKey: string) => cacheKey.startsWith(`${audience}|`);
+
+const getRefreshToken = (audience: string, scope: string): string | undefined =>
   refreshTokens[cacheKey(audience, scope)];
 
 const setRefreshToken = (
@@ -32,6 +34,29 @@ const formDataToObject = (formData: string): Record<string, any> => {
   return parsedQuery;
 };
 
+const updateRefreshTokens = (oldRefreshToken: string | undefined, newRefreshToken: string): void => {
+  Object.entries(refreshTokens).forEach(([key, token]) => {
+    if (token === oldRefreshToken) {
+      refreshTokens[key] = newRefreshToken;
+    }
+  });
+}
+
+const checkDownscoping = (scope: string, audience: string): boolean => {
+  const findCoincidence = Object.keys(refreshTokens).find((key) => {
+    if (key !== 'latest_refresh_token') {
+      const isSameAudience = cacheKeyContainsAudience(audience, key);
+      const scopesKey = key.split('|')[1].split(" ");
+      const requestedScopes = scope.split(" ");
+      const scopesAreIncluded = requestedScopes.every((key) => scopesKey.includes(key));
+
+      return isSameAudience && scopesAreIncluded;
+    }
+  })
+
+  return findCoincidence ? true : false;
+}
+
 const messageHandler = async ({
   data: { timeout, auth, fetchUrl, fetchOptions, useFormData, useMrrt },
   ports: [port]
@@ -39,6 +64,7 @@ const messageHandler = async ({
   let json: {
     refresh_token?: string;
   };
+  let refreshToken: string | undefined;
 
   const { audience, scope } = auth || {};
 
@@ -48,13 +74,20 @@ const messageHandler = async ({
       : JSON.parse(fetchOptions.body as string);
 
     if (!body.refresh_token && body.grant_type === 'refresh_token') {
-      let refreshToken = getRefreshToken(audience, scope);
+      refreshToken = getRefreshToken(audience, scope);
 
       // When we don't have any refresh_token that matches the audience and scopes
       // stored, and useMrrt is configured to true, we will use the last refresh_token
       // returned by the server to do a refresh
+      // We will avoid doing MRRT if we were to downscope while doing refresh in the same audience
       if (!refreshToken && useMrrt) {
-        refreshToken = refreshTokens["latest_refresh_token"];
+        const latestRefreshToken = refreshTokens["latest_refresh_token"];
+
+        const isDownscoping = checkDownscoping(scope, audience)
+
+        if (latestRefreshToken && !isDownscoping) {
+          refreshToken = latestRefreshToken;
+        }
       }
 
       if (!refreshToken) {
@@ -113,6 +146,11 @@ const messageHandler = async ({
       // to be used when refreshing tokens with MRRT
       if (useMrrt && audience !== "default") {
         refreshTokens["latest_refresh_token"] = json.refresh_token;
+
+        // To avoid having some refresh_token that has already been used
+        // we will update those inside the list with the new one obtained
+        // by the server
+        updateRefreshTokens(refreshToken, json.refresh_token);
       }
 
       setRefreshToken(json.refresh_token, audience, scope);

@@ -19,11 +19,14 @@ export async function oauthToken(
   const isTokenExchange =
     options.grant_type === 'urn:ietf:params:oauth:grant-type:token-exchange';
 
+  const refreshWithMrrt =
+    options.grant_type === 'refresh_token' && useMrrt;
+
   const allParams = {
     ...options,
     ...(isTokenExchange && audience && { audience }),
     ...(isTokenExchange && scope && { scope }),
-    ...(options.grant_type === 'refresh_token' && useMrrt && { audience, scope })
+    ...(refreshWithMrrt && { audience, scope })
   };
 
   const body = useFormData
