@@ -82,7 +82,7 @@ export class DpopStorage {
     key: IDBValidKey,
     obj: unknown
   ): Promise<void> {
-    await this.executeDbRequest(table, 'readwrite', table =>
+    return void this.executeDbRequest(table, 'readwrite', table =>
       table.put(obj, key)
     );
   }
