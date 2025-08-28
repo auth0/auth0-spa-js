@@ -83,7 +83,7 @@ const messageHandler = async ({
       if (!refreshToken && useMrrt) {
         const latestRefreshToken = refreshTokens["latest_refresh_token"];
 
-        const isDownscoping = checkDownscoping(scope, audience)
+        const isDownscoping = checkDownscoping(scope, audience);
 
         if (latestRefreshToken && !isDownscoping) {
           refreshToken = latestRefreshToken;
