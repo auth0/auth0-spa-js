@@ -93,6 +93,7 @@ import {
   patchOpenUrlWithOnRedirect
 } from './Auth0Client.utils';
 import { CustomTokenExchangeOptions } from './TokenExchange';
+import { Dpop } from './dpop/dpop';
 
 /**
  * @ignore
@@ -119,6 +120,7 @@ export class Auth0Client {
   private readonly tokenIssuer: string;
   private readonly scope: string;
   private readonly cookieStorage: ClientStorage;
+  private readonly dpop: Dpop | undefined;
   private readonly sessionCheckExpiryDays: number;
   private readonly orgHintCookieName: string;
   private readonly isAuthenticatedCookieName: string;
@@ -222,6 +224,10 @@ export class Auth0Client {
       this.nowProvider
     );
 
+    this.dpop = this.options.useDpop
+      ? new Dpop(this.options.clientId)
+      : undefined;
+
     this.domainUrl = getDomain(this.options.domain);
     this.tokenIssuer = getTokenIssuer(this.options.issuer, this.domainUrl);
 
@@ -301,6 +307,7 @@ export class Auth0Client {
     const code_verifier = createRandomString();
     const code_challengeBuffer = await sha256(code_verifier);
     const code_challenge = bufferToBase64UrlEncoded(code_challengeBuffer);
+    const thumbprint = await this.dpop?.calculateThumbprint();
 
     const params = getAuthorizeParams(
       this.options,
@@ -312,7 +319,8 @@ export class Auth0Client {
       authorizationParams.redirect_uri ||
         this.options.authorizationParams.redirect_uri ||
         fallbackRedirectUri,
-      authorizeOptions?.response_mode
+      authorizeOptions?.response_mode,
+      thumbprint
     );
 
     const url = this._authorizeUrl(params);
@@ -716,11 +724,17 @@ export class Auth0Client {
           ? await this._getTokenUsingRefreshToken(getTokenOptions)
           : await this._getTokenFromIFrame(getTokenOptions);
 
-        const { id_token, access_token, oauthTokenScope, expires_in } =
-          authResult;
+        const {
+          id_token,
+          token_type,
+          access_token,
+          oauthTokenScope,
+          expires_in
+        } = authResult;
 
         return {
           id_token,
+          token_type,
           access_token,
           ...(oauthTokenScope ? { scope: oauthTokenScope } : null),
           expires_in
@@ -847,6 +861,8 @@ export class Auth0Client {
       cookieDomain: this.options.cookieDomain
     });
     this.userCache.remove(CACHE_KEY_ID_TOKEN_SUFFIX);
+
+    await this.dpop?.clear();
 
     const url = this._buildLogoutUrl(logoutOptions);
 
@@ -1080,11 +1096,13 @@ export class Auth0Client {
     );
 
     if (entry && entry.access_token) {
-      const { access_token, oauthTokenScope, expires_in } = entry as CacheEntry;
+      const { token_type, access_token, oauthTokenScope, expires_in } =
+        entry as CacheEntry;
       const cache = await this._getIdTokenFromCache();
       return (
         cache && {
           id_token: cache.id_token,
+          token_type: token_type ? token_type : 'Bearer',
           access_token,
           ...(oauthTokenScope ? { scope: oauthTokenScope } : null),
           expires_in
@@ -1120,6 +1138,7 @@ export class Auth0Client {
         auth0Client: this.options.auth0Client,
         useFormData: this.options.useFormData,
         timeout: this.httpTimeoutMs,
+        dpop: this.dpop,
         ...options
       },
       this.worker
@@ -1210,6 +1229,64 @@ export class Auth0Client {
       scope: getUniqueScopes(options.scope, this.scope),
       audience: options.audience || this.options.authorizationParams.audience
     });
+  }
+
+  protected _assertDpop(dpop: Dpop | undefined): asserts dpop is Dpop {
+    if (!dpop) {
+      throw new Error('`useDpop` option must be enabled before using DPoP.');
+    }
+  }
+
+  /**
+   * Returns the current DPoP nonce used for making requests to Auth0.
+   *
+   * It can return `undefined` because when starting fresh it will not
+   * be populated until after the first response from the server.
+   *
+   * It requires enabling the {@link Auth0ClientOptions.useDpop} option.
+   *
+   * @param nonce The nonce value.
+   * @param id    The identifier of a nonce: if absent, it will get the nonce
+   *              used for requests to Auth0. Otherwise, it will be used to
+   *              select a specific non-Auth0 nonce.
+   */
+  public getDpopNonce(id?: string): Promise<string | undefined> {
+    this._assertDpop(this.dpop);
+
+    return this.dpop.getNonce(id);
+  }
+
+  /**
+   * Sets the current DPoP nonce used for making requests to Auth0.
+   *
+   * It requires enabling the {@link Auth0ClientOptions.useDpop} option.
+   *
+   * @param nonce The nonce value.
+   * @param id    The identifier of a nonce: if absent, it will set the nonce
+   *              used for requests to Auth0. Otherwise, it will be used to
+   *              select a specific non-Auth0 nonce.
+   */
+  public setDpopNonce(nonce: string, id?: string): Promise<void> {
+    this._assertDpop(this.dpop);
+
+    return this.dpop.setNonce(nonce, id);
+  }
+
+  /**
+   * Returns a string to be used to demonstrate possession of the private
+   * key used to cryptographically bind access tokens with DPoP.
+   *
+   * It requires enabling the {@link Auth0ClientOptions.useDpop} option.
+   */
+  public generateDpopProof(params: {
+    url: string;
+    method: string;
+    nonce?: string;
+    accessToken: string;
+  }): Promise<string> {
+    this._assertDpop(this.dpop);
+
+    return this.dpop.generateProof(params);
   }
 }
 

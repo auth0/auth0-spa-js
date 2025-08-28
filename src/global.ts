@@ -1,4 +1,5 @@
 import { ICache } from './cache';
+import type { Dpop } from './dpop/dpop';
 
 export interface AuthorizationParams {
   /**
@@ -271,6 +272,15 @@ export interface Auth0ClientOptions extends BaseLoginOptions {
    * **Note**: The worker is only used when `useRefreshTokens: true`, `cacheLocation: 'memory'`, and the `cache` is not custom.
    */
   workerUrl?: string;
+
+  /**
+   * If `true`, DPoP (OAuth 2.0 Demonstrating Proof of Possession, RFC9449)
+   * will be used to cryptographically bind tokens to this specific browser
+   * so they can't be used from a different device in case of a leak.
+   *
+   * The default setting is `false`.
+   */
+  useDpop?: boolean;
 }
 
 /**
@@ -527,11 +537,13 @@ export interface TokenEndpointOptions {
   timeout?: number;
   auth0Client: any;
   useFormData?: boolean;
+  dpop?: Pick<Dpop, 'generateProof' | 'getNonce' | 'setNonce'>;
   [key: string]: any;
 }
 
 export type TokenEndpointResponse = {
   id_token: string;
+  token_type: string;
   access_token: string;
   refresh_token?: string;
   expires_in: number;
@@ -645,6 +657,15 @@ export type FetchOptions = {
   credentials?: 'include' | 'omit';
   body?: string;
   signal?: AbortSignal;
+};
+
+/**
+ * @ignore
+ */
+export type FetchResponse = {
+  ok: boolean;
+  headers: Record<string, string | undefined>;
+  json: any;
 };
 
 export type GetTokenSilentlyVerboseResponse = Omit<
