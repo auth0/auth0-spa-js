@@ -90,7 +90,8 @@ import {
   getAuthorizeParams,
   GET_TOKEN_SILENTLY_LOCK_KEY,
   OLD_IS_AUTHENTICATED_COOKIE_NAME,
-  patchOpenUrlWithOnRedirect
+  patchOpenUrlWithOnRedirect,
+  getScopeToRequest
 } from './Auth0Client.utils';
 import { CustomTokenExchangeOptions } from './TokenExchange';
 
@@ -310,8 +311,8 @@ export class Auth0Client {
       nonce,
       code_challenge,
       authorizationParams.redirect_uri ||
-        this.options.authorizationParams.redirect_uri ||
-        fallbackRedirectUri,
+      this.options.authorizationParams.redirect_uri ||
+      fallbackRedirectUri,
       authorizeOptions?.response_mode
     );
 
@@ -771,7 +772,9 @@ export class Auth0Client {
         scope: localOptions.authorizationParams.scope,
         audience: localOptions.authorizationParams.audience || 'default',
         clientId: this.options.clientId
-      })
+      }),
+      undefined,
+      this.options.useMrrt
     );
 
     return cache!.access_token;
@@ -956,7 +959,9 @@ export class Auth0Client {
         scope: options.authorizationParams.scope,
         audience: options.authorizationParams.audience || 'default',
         clientId: this.options.clientId
-      })
+      }),
+      undefined,
+      this.options.useMrrt
     );
 
     // If you don't have a refresh token in memory
@@ -984,6 +989,13 @@ export class Auth0Client {
         ? options.timeoutInSeconds * 1000
         : null;
 
+    const scopesToRequest = getScopeToRequest(
+      this.options.useMrrt,
+      options.authorizationParams,
+      cache?.oldAudience,
+      cache?.oldScopes,
+    );
+
     try {
       const tokenResult = await this._requestToken({
         ...options.authorizationParams,
@@ -991,7 +1003,20 @@ export class Auth0Client {
         refresh_token: cache && cache.refresh_token,
         redirect_uri,
         ...(timeout && { timeout })
-      });
+      },
+        {
+          scopesToRequest,
+        }
+      );
+
+      // If is refreshed with MRRT, we update all entries that have the old 
+      // refresh_token with the new one if the server responded with one
+      if (tokenResult.refresh_token && this.options.useMrrt && cache?.refresh_token) {
+        await this.cacheManager.updateEntry(
+          cache.refresh_token,
+          tokenResult.refresh_token
+        );
+      }
 
       return {
         ...tokenResult,
@@ -1076,7 +1101,8 @@ export class Auth0Client {
         audience,
         clientId
       }),
-      60 // get a new token if within 60 seconds of expiring
+      60, // get a new token if within 60 seconds of expiring
+      this.options.useMrrt,
     );
 
     if (entry && entry.access_token) {
@@ -1112,7 +1138,7 @@ export class Auth0Client {
       | TokenExchangeRequestOptions,
     additionalParameters?: RequestTokenAdditionalParameters
   ) {
-    const { nonceIn, organization } = additionalParameters || {};
+    const { nonceIn, organization, scopesToRequest } = additionalParameters || {};
     const authResult = await oauthToken(
       {
         baseUrl: this.domainUrl,
@@ -1120,7 +1146,9 @@ export class Auth0Client {
         auth0Client: this.options.auth0Client,
         useFormData: this.options.useFormData,
         timeout: this.httpTimeoutMs,
-        ...options
+        useMrrt: this.options.useMrrt,
+        ...options,
+        scope: scopesToRequest || options.scope,
       },
       this.worker
     );
@@ -1242,4 +1270,5 @@ interface TokenExchangeRequestOptions extends BaseRequestTokenOptions {
 interface RequestTokenAdditionalParameters {
   nonceIn?: string;
   organization?: string;
+  scopesToRequest?: string;
 }
