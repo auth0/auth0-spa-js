@@ -94,6 +94,11 @@ import {
 } from './Auth0Client.utils';
 import { CustomTokenExchangeOptions } from './TokenExchange';
 import { Dpop } from './dpop/dpop';
+import {
+  Fetcher,
+  type FetcherConfig,
+  type CustomFetchMinimalOutput
+} from './fetcher';
 
 /**
  * @ignore
@@ -132,7 +137,6 @@ export class Auth0Client {
   private readonly userCache: ICache = new InMemoryCache().enclosedCache;
 
   private worker?: Worker;
-
   private readonly defaultOptions: Partial<Auth0ClientOptions> = {
     authorizationParams: {
       scope: DEFAULT_SCOPE
@@ -1287,6 +1291,32 @@ export class Auth0Client {
     this._assertDpop(this.dpop);
 
     return this.dpop.generateProof(params);
+  }
+
+  /**
+   * Returns a new `Fetcher` class that will contain a `fetchWithAuth()` method.
+   * This is a drop-in replacement for the Fetch API's `fetch()` method, but will
+   * handle certain authentication logic for you, like building the proper auth
+   * headers or managing DPoP nonces and retries automatically.
+   * 
+   * Check the `EXAMPLES.md` file for a deeper look into this method.
+   */
+  public createFetcher<TOutput extends CustomFetchMinimalOutput = Response>(
+    config: FetcherConfig<TOutput> = {}
+  ): Fetcher<TOutput> {
+    if (this.options.useDpop && !config.dpopNonceId) {
+      throw new TypeError(
+        'When `useDpop` is enabled, `dpopNonceId` must be set when calling `createFetcher()`.'
+      );
+    }
+
+    return new Fetcher(config, {
+      isDpopEnabled: () => !!this.options.useDpop,
+      getAccessToken: () => this.getTokenSilently(),
+      getDpopNonce: () => this.getDpopNonce(config.dpopNonceId),
+      setDpopNonce: nonce => this.setDpopNonce(nonce),
+      generateDpopProof: params => this.generateDpopProof(params)
+    });
   }
 }
 
