@@ -3,7 +3,7 @@
   "compilerOptions": {
     "noImplicitAny": false,
     "target": "es6",
-
+    "allowJs": true,
     "noImplicitThis": false,
     "alwaysStrict": false,
     "strictBindCallApply": false,

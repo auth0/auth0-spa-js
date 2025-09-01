@@ -356,3 +356,18 @@ export const jwkToCryptoKey = async (jwk: JWK): Promise<CryptoKey> => {
     throw new Error(`Failed to convert JWK to CryptoKey: ${error.message}`);
   }
 };
+
+/**
+ * Ponyfill for `Object.fromEntries()`, which is not available until ES2020.
+ *
+ * When the target of this project reaches ES2020, this can be removed.
+ */
+export const fromEntries = <T = any>(
+  iterable: Iterable<[PropertyKey, T]>
+): Record<PropertyKey, T> => {
+  return [...iterable].reduce((obj, [key, val]) => {
+    obj[key] = val;
+
+    return obj;
+  }, {} as Record<PropertyKey, T>);
+};

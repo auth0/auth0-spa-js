@@ -1,5 +1,6 @@
 import { MissingRefreshTokenError } from '../errors';
-import { createQueryParams } from '../utils';
+import { FetchResponse } from '../global';
+import { createQueryParams, fromEntries } from '../utils';
 import { WorkerRefreshTokenMessage } from './worker.types';
 
 let refreshTokens: Record<string, string> = {};
@@ -19,7 +20,7 @@ const deleteRefreshToken = (audience: string, scope: string) =>
   delete refreshTokens[cacheKey(audience, scope)];
 
 const wait = (time: number) =>
-  new Promise(resolve => setTimeout(resolve, time));
+  new Promise<void>(resolve => setTimeout(resolve, time));
 
 const formDataToObject = (formData: string): Record<string, any> => {
   const queryParams = new URLSearchParams(formData);
@@ -36,6 +37,8 @@ const messageHandler = async ({
   data: { timeout, auth, fetchUrl, fetchOptions, useFormData },
   ports: [port]
 }: MessageEvent<WorkerRefreshTokenMessage>) => {
+  let headers: FetchResponse['headers'] = {};
+
   let json: {
     refresh_token?: string;
   };
@@ -72,7 +75,7 @@ const messageHandler = async ({
       fetchOptions.signal = abortController.signal;
     }
 
-    let response: any;
+    let response: void | Response;
 
     try {
       response = await Promise.race([
@@ -99,6 +102,7 @@ const messageHandler = async ({
       return;
     }
 
+    headers = fromEntries(response.headers);
     json = await response.json();
 
     if (json.refresh_token) {
@@ -110,7 +114,8 @@ const messageHandler = async ({
 
     port.postMessage({
       ok: response.ok,
-      json
+      json,
+      headers
     });
   } catch (error) {
     port.postMessage({
@@ -118,7 +123,8 @@ const messageHandler = async ({
       json: {
         error: error.error,
         error_description: error.message
-      }
+      },
+      headers
     });
   }
 };

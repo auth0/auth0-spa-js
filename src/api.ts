@@ -1,5 +1,6 @@
 import { TokenEndpointOptions, TokenEndpointResponse } from './global';
 import { DEFAULT_AUTH0_CLIENT } from './constants';
+import * as dpopUtils from './dpop/utils';
 import { getJSON } from './http';
 import { createQueryParams } from './utils';
 
@@ -11,6 +12,7 @@ export async function oauthToken(
     scope,
     auth0Client,
     useFormData,
+    dpop,
     ...options
   }: TokenEndpointOptions,
   worker?: Worker
@@ -27,6 +29,8 @@ export async function oauthToken(
   const body = useFormData
     ? createQueryParams(allParams)
     : JSON.stringify(allParams);
+
+  const isDpopSupported = dpopUtils.isGrantTypeSupported(options.grant_type);
 
   return await getJSON<TokenEndpointResponse>(
     `${baseUrl}/oauth/token`,
@@ -46,6 +50,7 @@ export async function oauthToken(
       }
     },
     worker,
-    useFormData
+    useFormData,
+    isDpopSupported ? dpop : undefined
   );
 }
