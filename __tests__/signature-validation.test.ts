@@ -1,4 +1,4 @@
-import { fetchJWKS, findJWKByKid, jwkToCryptoKey } from '../src/utils';
+import { fetchJWKS, findJWKByKid, jwkToCryptoKey, clearJWKSCache } from '../src/utils';
 import { JWKS, JWK } from '../src/global';
 
 // Mock crypto for testing
@@ -11,6 +11,10 @@ Object.defineProperty(window, 'crypto', {
 });
 
 describe('Signature Validation Utils', () => {
+  beforeEach(() => {
+    clearJWKSCache();
+  });
+
   afterEach(() => {
     jest.clearAllMocks();
   });

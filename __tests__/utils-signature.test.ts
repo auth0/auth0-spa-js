@@ -1,4 +1,4 @@
-import { fetchJWKS, findJWKByKid } from '../src/utils';
+import { fetchJWKS, findJWKByKid, clearJWKSCache } from '../src/utils';
 import { expect } from '@jest/globals';
 
 // Test utility functions in isolation first
@@ -6,6 +6,7 @@ describe('Signature validation utils', () => {
   const mockFetch = <jest.Mock>fetch;
   
   beforeEach(() => {
+    clearJWKSCache();
     (<any>global).fetch = mockFetch;
     mockFetch.mockClear();
   });

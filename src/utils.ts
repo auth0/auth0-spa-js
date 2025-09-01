@@ -252,6 +252,13 @@ const jwksCache = new Map<string, { jwks: JWKS; expiresAt: number }>();
 const JWKS_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
 /**
+ * Clear the JWKS cache - used for testing
+ */
+export const clearJWKSCache = () => {
+  jwksCache.clear();
+};
+
+/**
  * Fetches JWKS from the issuer's well-known endpoint with caching
  * @param issuer The token issuer URL
  * @returns Promise<JWKS> The JSON Web Key Set
