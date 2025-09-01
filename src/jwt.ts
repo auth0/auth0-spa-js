@@ -48,7 +48,7 @@ export const decode = (token: string) => {
   const user: any = {};
   Object.keys(payloadJSON).forEach(k => {
     claims[k] = payloadJSON[k];
-    if (idTokendecoded.indexOf(k) === -1) {
+    if (!idTokendecoded.includes(k)) {
       user[k] = payloadJSON[k];
     }
   });
@@ -254,7 +254,7 @@ const verifySignature = async (token: string, issuer: string): Promise<boolean> 
     }
     
     // Check algorithm
-    if (['RS256', 'RS384', 'RS512'].indexOf(header.alg) === -1) {
+    if (!['RS256', 'RS384', 'RS512'].includes(header.alg)) {
       throw new Error(`Unsupported signature algorithm: ${header.alg}`);
     }
     

@@ -324,7 +324,7 @@ export const jwkToCryptoKey = async (jwk: JWK): Promise<CryptoKey> => {
   }
   
   // Validate algorithm if present
-  if (jwk.alg && ['RS256', 'RS384', 'RS512'].indexOf(jwk.alg) === -1) {
+  if (jwk.alg && !['RS256', 'RS384', 'RS512'].includes(jwk.alg)) {
     throw new Error(`Unsupported algorithm: ${jwk.alg}. Only RSA signature algorithms are supported.`);
   }
   

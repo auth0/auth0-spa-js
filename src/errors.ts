@@ -114,5 +114,5 @@ export class UseDpopNonceError extends GenericError {
  * @returns The value, or an empty string when falsy or included in the exclude argument.
  */
 function valueOrEmptyString(value: string, exclude: string[] = []) {
-  return value && exclude.indexOf(value) === -1 ? value : '';
+  return value && !exclude.includes(value) ? value : '';
 }
