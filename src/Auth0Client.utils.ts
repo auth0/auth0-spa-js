@@ -57,7 +57,8 @@ export const getAuthorizeParams = (
   nonce: string,
   code_challenge: string,
   redirect_uri: string | undefined,
-  response_mode: string | undefined
+  response_mode: string | undefined,
+  thumbprint: string | undefined
 ): AuthorizeOptions => {
   return {
     client_id: clientOptions.clientId,
@@ -71,7 +72,8 @@ export const getAuthorizeParams = (
     redirect_uri:
       redirect_uri || clientOptions.authorizationParams.redirect_uri,
     code_challenge,
-    code_challenge_method: 'S256'
+    code_challenge_method: 'S256',
+    dpop_jkt: thumbprint
   };
 };
 

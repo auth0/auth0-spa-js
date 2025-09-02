@@ -39,7 +39,8 @@ describe('token worker', () => {
     mockFetch.mockReturnValue(
       Promise.resolve({
         ok: true,
-        json: () => ({ foo: 'bar', refresh_token: 'baz' })
+        json: () => ({ foo: 'bar', refresh_token: 'baz' }),
+        headers: new Headers()
       })
     );
 
@@ -62,7 +63,8 @@ describe('token worker', () => {
     mockFetch.mockReturnValue(
       Promise.resolve({
         ok: true,
-        json: () => ({ refresh_token: 'foo' })
+        json: () => ({ refresh_token: 'foo' }),
+        headers: new Headers()
       })
     );
     await messageHandlerAsync({
@@ -106,7 +108,8 @@ describe('token worker', () => {
     mockFetch.mockReturnValue(
       Promise.resolve({
         ok: true,
-        json: () => ({ foo: 'bar', refresh_token: 'baz' })
+        json: () => ({ foo: 'bar', refresh_token: 'baz' }),
+        headers: new Headers()
       })
     );
 
@@ -131,7 +134,8 @@ describe('token worker', () => {
     mockFetch.mockReturnValue(
       Promise.resolve({
         ok: true,
-        json: () => ({ refresh_token: 'foo' })
+        json: () => ({ refresh_token: 'foo' }),
+        headers: new Headers()
       })
     );
     await messageHandlerAsync({
@@ -248,13 +252,15 @@ describe('token worker', () => {
       .mockReturnValueOnce(
         Promise.resolve({
           ok: true,
-          json: () => ({ refresh_token: 'foo' })
+          json: () => ({ refresh_token: 'foo' }),
+          headers: new Headers()
         })
       )
       .mockReturnValue(
         Promise.resolve({
           ok: true,
-          json: () => ({})
+          json: () => ({}),
+          headers: new Headers()
         })
       );
 
@@ -319,7 +325,8 @@ describe('token worker', () => {
       mockFetch.mockReturnValue(
         Promise.resolve({
           ok: true,
-          json: () => ({ refresh_token: 'foo' })
+          json: () => ({ refresh_token: 'foo' }),
+          headers: new Headers(),
         })
       );
 
