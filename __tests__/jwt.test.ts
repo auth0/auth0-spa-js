@@ -1,5 +1,4 @@
 import { decode, verify } from '../src/jwt';
-import { getCrypto } from '../src/utils';
 import IDTokenVerifier from 'idtoken-verifier';
 import jwt from 'jsonwebtoken';
 import { generateKeyPairSync } from 'crypto';

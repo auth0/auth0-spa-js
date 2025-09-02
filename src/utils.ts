@@ -1,9 +1,7 @@
 import { AuthenticationResult, PopupConfigOptions } from './global';
-import { CacheManager } from './cache';
 
 import {
   DEFAULT_AUTHORIZE_TIMEOUT_IN_SECONDS,
-  DEFAULT_SILENT_TOKEN_RETRY_COUNT,
   CLEANUP_IFRAME_TIMEOUT_IN_SECONDS
 } from './constants';
 
@@ -155,7 +153,6 @@ export const createRandomString = () => {
 };
 
 export const encode = (value: string) => btoa(value);
-export const decode = (value: string) => atob(value);
 
 const stripUndefined = (params: any) => {
   return Object.keys(params)

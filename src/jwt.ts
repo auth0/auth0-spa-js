@@ -1,4 +1,4 @@
-import { urlDecodeB64, getCrypto } from './utils';
+import { urlDecodeB64 } from './utils';
 import { IdToken, JWTVerifyOptions } from './global';
 import { createRemoteJWKSet, jwtVerify } from 'jose';
 
