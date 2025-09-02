@@ -1,5 +1,6 @@
-import { urlDecodeB64, fetchJWKS, findJWKByKid, jwkToCryptoKey, getCrypto } from './utils';
+import { urlDecodeB64, getCrypto } from './utils';
 import { IdToken, JWTVerifyOptions } from './global';
+import { createRemoteJWKSet, jwtVerify } from 'jose';
 
 const isNumber = (n: any) => typeof n === 'number';
 
@@ -233,71 +234,28 @@ export const verify = async (options: JWTVerifyOptions) => {
 };
 
 /**
- * Verifies the signature of a JWT token using JWKS
+ * Verifies the signature of a JWT token using jose library
  * @param token The JWT token string
  * @param issuer The token issuer URL
  * @returns Promise<boolean> True if signature is valid
  */
 const verifySignature = async (token: string, issuer: string): Promise<boolean> => {
   try {
-    const parts = token.split('.');
-    if (parts.length !== 3) {
-      throw new Error('Invalid JWT format');
-    }
+    // Construct JWKS URL from issuer
+    const jwksUrl = `${issuer.replace(/\/$/, '')}/.well-known/jwks.json`;
     
-    const [headerB64, payloadB64, signatureB64] = parts;
-    const header = JSON.parse(urlDecodeB64(headerB64));
+    // Create remote JWK set
+    const JWKS = createRemoteJWKSet(new URL(jwksUrl));
     
-    // Check if we have a key ID
-    if (!header.kid) {
-      throw new Error('JWT header missing key ID (kid)');
-    }
+    // Verify the JWT using jose
+    await jwtVerify(token, JWKS, {
+      issuer: issuer,
+      algorithms: ['RS256', 'RS384', 'RS512']
+    });
     
-    // Check algorithm
-    if (!['RS256', 'RS384', 'RS512'].includes(header.alg)) {
-      throw new Error(`Unsupported signature algorithm: ${header.alg}`);
-    }
-    
-    // Fetch JWKS
-    const jwks = await fetchJWKS(issuer);
-    
-    // Find the key
-    const jwk = findJWKByKid(jwks, header.kid);
-    if (!jwk) {
-      throw new Error(`No matching key found for kid: ${header.kid}`);
-    }
-    
-    // Convert JWK to CryptoKey
-    const cryptoKey = await jwkToCryptoKey(jwk);
-    
-    // Prepare signature verification
-    const signatureData = `${headerB64}.${payloadB64}`;
-    const signatureBytes = Uint8Array.from(
-      atob(signatureB64.replace(/-/g, '+').replace(/_/g, '/')), 
-      c => c.charCodeAt(0)
-    );
-    
-    // Determine hash algorithm based on JWT algorithm
-    let hashAlgorithm = 'SHA-256';
-    if (header.alg === 'RS384') {
-      hashAlgorithm = 'SHA-384';
-    } else if (header.alg === 'RS512') {
-      hashAlgorithm = 'SHA-512';
-    }
-    
-    // Verify signature
-    const isValid = await getCrypto().subtle.verify(
-      {
-        name: 'RSASSA-PKCS1-v1_5',
-        hash: { name: hashAlgorithm }
-      },
-      cryptoKey,
-      signatureBytes,
-      new TextEncoder().encode(signatureData)
-    );
-    
-    return isValid;
+    return true;
   } catch (error) {
+    // jose throws specific errors for different failure modes
     throw new Error(`Signature verification failed: ${error.message}`);
   }
 };

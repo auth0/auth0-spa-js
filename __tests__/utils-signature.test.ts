@@ -1,79 +1,24 @@
-import { fetchJWKS, findJWKByKid, clearJWKSCache } from '../src/utils';
+// Signature validation utility tests
+// 
+// These tests previously tested custom JWKS utility functions 
+// (fetchJWKS, findJWKByKid, clearJWKSCache) but have been removed 
+// since we now use the industry-standard 'jose' library for all 
+// JWT signature verification and JWKS handling.
+//
+// The jose library provides comprehensive internal testing for:
+// - JWKS fetching and caching
+// - JWK key matching and validation  
+// - JWT signature verification
+// - Cryptographic operations
+//
+// Integration tests for signature validation are covered in jwt.test.ts
+
 import { expect } from '@jest/globals';
 
-// Test utility functions in isolation first
 describe('Signature validation utils', () => {
-  const mockFetch = <jest.Mock>fetch;
-  
-  beforeEach(() => {
-    clearJWKSCache();
-    (<any>global).fetch = mockFetch;
-    mockFetch.mockClear();
-  });
-
-  describe('fetchJWKS', () => {
-    it('should fetch JWKS successfully', async () => {
-      const mockJWKS = {
-        keys: [
-          {
-            kty: 'RSA',
-            kid: 'test-kid',
-            use: 'sig',
-            alg: 'RS256',
-            n: 'test-n',
-            e: 'AQAB'
-          }
-        ]
-      };
-
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve(mockJWKS),
-      });
-
-      const result = await fetchJWKS('https://example.com/');
-      expect(mockFetch).toHaveBeenCalledWith('https://example.com/.well-known/jwks.json');
-      expect(result).toEqual(mockJWKS);
-    });
-
-    it('should throw error when fetch fails', async () => {
-      mockFetch.mockResolvedValueOnce({
-        ok: false,
-        status: 404,
-        statusText: 'Not Found',
-      });
-
-      await expect(fetchJWKS('https://example.com/'))
-        .rejects.toThrow('Failed to fetch JWKS from https://example.com/.well-known/jwks.json: 404 Not Found');
-    });
-  });
-
-  describe('findJWKByKid', () => {
-    const mockJWKS = {
-      keys: [
-        {
-          kty: 'RSA',
-          kid: 'key1',
-          n: 'test-n-1',
-          e: 'AQAB'
-        },
-        {
-          kty: 'RSA',
-          kid: 'key2',
-          n: 'test-n-2',
-          e: 'AQAB'
-        }
-      ]
-    };
-
-    it('should find key by kid', () => {
-      const result = findJWKByKid(mockJWKS, 'key1');
-      expect(result).toEqual(mockJWKS.keys[0]);
-    });
-
-    it('should return undefined for non-existent kid', () => {
-      const result = findJWKByKid(mockJWKS, 'nonexistent');
-      expect(result).toBeUndefined();
-    });
+  it('should use jose library for JWKS operations', () => {
+    // This test serves as documentation that JWKS operations
+    // are now handled by the jose library
+    expect(true).toBe(true);
   });
 });

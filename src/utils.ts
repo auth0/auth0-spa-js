@@ -1,7 +1,9 @@
-import { AuthenticationResult, PopupConfigOptions, JWKS, JWK } from './global';
+import { AuthenticationResult, PopupConfigOptions } from './global';
+import { CacheManager } from './cache';
 
 import {
   DEFAULT_AUTHORIZE_TIMEOUT_IN_SECONDS,
+  DEFAULT_SILENT_TOKEN_RETRY_COUNT,
   CLEANUP_IFRAME_TIMEOUT_IN_SECONDS
 } from './constants';
 
@@ -245,116 +247,6 @@ export const parseNumber = (value: any): number | undefined => {
     return value;
   }
   return parseInt(value, 10) || undefined;
-};
-
-// JWKS cache with simple time-based expiration
-const jwksCache = new Map<string, { jwks: JWKS; expiresAt: number }>();
-const JWKS_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
-
-/**
- * Clear the JWKS cache - used for testing
- */
-export const clearJWKSCache = () => {
-  jwksCache.clear();
-};
-
-/**
- * Fetches JWKS from the issuer's well-known endpoint with caching
- * @param issuer The token issuer URL
- * @returns Promise<JWKS> The JSON Web Key Set
- */
-export const fetchJWKS = async (issuer: string): Promise<JWKS> => {
-  const now = Date.now();
-  const cached = jwksCache.get(issuer);
-  
-  if (cached && now < cached.expiresAt) {
-    return cached.jwks;
-  }
-
-  // Construct JWKS URL from issuer
-  const jwksUrl = `${issuer.replace(/\/$/, '')}/.well-known/jwks.json`;
-  
-  try {
-    const response = await fetch(jwksUrl);
-    if (!response.ok) {
-      throw new Error(`Failed to fetch JWKS from ${jwksUrl}: ${response.status} ${response.statusText}`);
-    }
-    
-    const jwks: JWKS = await response.json();
-    
-    // Validate JWKS structure
-    if (!jwks || !Array.isArray(jwks.keys)) {
-      throw new Error(`Invalid JWKS response from ${jwksUrl}: missing or invalid keys array`);
-    }
-    
-    // Cache the JWKS
-    jwksCache.set(issuer, {
-      jwks,
-      expiresAt: now + JWKS_CACHE_TTL
-    });
-    
-    return jwks;
-  } catch (error) {
-    throw new Error(`Failed to fetch JWKS from ${jwksUrl}: ${error.message}`);
-  }
-};
-
-/**
- * Finds a JWK by key ID from a JWKS
- * @param jwks The JSON Web Key Set
- * @param kid The key ID to find
- * @returns JWK | undefined The matching key or undefined if not found
- */
-export const findJWKByKid = (jwks: JWKS, kid: string): JWK | undefined => {
-  return jwks.keys.find(key => key.kid === kid);
-};
-
-/**
- * Converts a JWK RSA public key to a CryptoKey for signature verification
- * @param jwk The JSON Web Key
- * @returns Promise<CryptoKey> The CryptoKey for verification
- */
-export const jwkToCryptoKey = async (jwk: JWK): Promise<CryptoKey> => {
-  if (jwk.kty !== 'RSA') {
-    throw new Error(`Unsupported key type: ${jwk.kty}. Only RSA keys are supported.`);
-  }
-  
-  if (!jwk.n || !jwk.e) {
-    throw new Error('Invalid RSA JWK: missing n or e parameter');
-  }
-  
-  // Validate algorithm if present
-  if (jwk.alg && !['RS256', 'RS384', 'RS512'].includes(jwk.alg)) {
-    throw new Error(`Unsupported algorithm: ${jwk.alg}. Only RSA signature algorithms are supported.`);
-  }
-  
-  try {
-    // Convert base64url encoded n and e to ArrayBuffer
-    const nBuffer = Uint8Array.from(atob(jwk.n.replace(/-/g, '+').replace(/_/g, '/')), c => c.charCodeAt(0));
-    const eBuffer = Uint8Array.from(atob(jwk.e.replace(/-/g, '+').replace(/_/g, '/')), c => c.charCodeAt(0));
-    
-    // Import the key for verification
-    const cryptoKey = await getCrypto().subtle.importKey(
-      'jwk',
-      {
-        kty: 'RSA',
-        n: jwk.n,
-        e: jwk.e,
-        alg: jwk.alg || 'RS256',
-        use: 'sig'
-      },
-      {
-        name: 'RSASSA-PKCS1-v1_5',
-        hash: { name: 'SHA-256' }
-      },
-      false,
-      ['verify']
-    );
-    
-    return cryptoKey;
-  } catch (error) {
-    throw new Error(`Failed to convert JWK to CryptoKey: ${error.message}`);
-  }
 };
 
 /**
