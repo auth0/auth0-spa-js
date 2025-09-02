@@ -340,10 +340,11 @@ describe('oauthToken', () => {
       client_id: TEST_CLIENT_ID,
       grant_type: 'authorization_code',
       auth0Client: {},
+      useMrrt: false,
       dpop
     });
 
-    expect(jest.mocked(http.getJSON).mock.calls[0][7]).toBe(dpop);
+    expect(jest.mocked(http.getJSON).mock.calls[0][8]).toBe(dpop);
   });
 
   it('does not pass the dpop handle when unsupported', async () => {
