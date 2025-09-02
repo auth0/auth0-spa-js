@@ -1,5 +1,6 @@
 import { urlDecodeB64 } from './utils';
 import { IdToken, JWTVerifyOptions } from './global';
+import { createRemoteJWKSet, jwtVerify } from 'jose';
 
 const isNumber = (n: any) => typeof n === 'number';
 
@@ -60,7 +61,7 @@ export const decode = (token: string) => {
   };
 };
 
-export const verify = (options: JWTVerifyOptions) => {
+export const verify = async (options: JWTVerifyOptions) => {
   if (!options.id_token) {
     throw new Error('ID token is required but missing');
   }
@@ -89,6 +90,14 @@ export const verify = (options: JWTVerifyOptions) => {
     throw new Error(
       `Signature algorithm of "${decoded.header.alg}" is not supported. Expected the ID token to be signed with "RS256".`
     );
+  }
+
+  // Perform signature verification if requested
+  if (options.validateSignature === true) {
+    const isSignatureValid = await verifySignature(options.id_token, options.iss);
+    if (!isSignatureValid) {
+      throw new Error('JWT signature verification failed');
+    }
   }
 
   if (
@@ -222,4 +231,31 @@ export const verify = (options: JWTVerifyOptions) => {
   }
 
   return decoded;
+};
+
+/**
+ * Verifies the signature of a JWT token using jose library
+ * @param token The JWT token string
+ * @param issuer The token issuer URL
+ * @returns Promise<boolean> True if signature is valid
+ */
+const verifySignature = async (token: string, issuer: string): Promise<boolean> => {
+  try {
+    // Construct JWKS URL from issuer
+    const jwksUrl = `${issuer.replace(/\/$/, '')}/.well-known/jwks.json`;
+    
+    // Create remote JWK set
+    const JWKS = createRemoteJWKSet(new URL(jwksUrl));
+    
+    // Verify the JWT using jose
+    await jwtVerify(token, JWKS, {
+      issuer: issuer,
+      algorithms: ['RS256', 'RS384', 'RS512']
+    });
+    
+    return true;
+  } catch (error) {
+    // jose throws specific errors for different failure modes
+    throw new Error(`Signature verification failed: ${error.message}`);
+  }
 };

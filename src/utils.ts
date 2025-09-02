@@ -153,7 +153,6 @@ export const createRandomString = () => {
 };
 
 export const encode = (value: string) => btoa(value);
-export const decode = (value: string) => atob(value);
 
 const stripUndefined = (params: any) => {
   return Object.keys(params)

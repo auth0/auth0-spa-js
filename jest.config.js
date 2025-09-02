@@ -17,7 +17,7 @@ module.exports = {
   ],
   coverageReporters: ['lcov', 'text', 'text-summary'],
   preset: 'ts-jest/presets/js-with-ts',
-  transformIgnorePatterns: ['node_modules\/(?!(dpop)\/)'],
+  transformIgnorePatterns: ['node_modules\/(?!(dpop|jose)\/)'],
   setupFiles: ['jest-localstorage-mock', './jest.setup.js'],
   globals: {
     'ts-jest': {

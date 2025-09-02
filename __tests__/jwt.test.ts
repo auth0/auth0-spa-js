@@ -2,7 +2,8 @@ import { decode, verify } from '../src/jwt';
 import IDTokenVerifier from 'idtoken-verifier';
 import jwt from 'jsonwebtoken';
 import { generateKeyPairSync } from 'crypto';
-import { expect } from '@jest/globals';
+// Using built-in Jest types rather than @jest/globals
+// import { expect } from '@jest/globals';
 
 const verifyOptions = {
   iss: 'https://brucke.auth0.com/',
@@ -120,7 +121,7 @@ describe('jwt', () => {
   it('verifies correctly', async () => {
     const id_token = await createJWT();
 
-    const { encoded, header, claims } = verify({
+    const { encoded, header, claims } = await verify({
       ...verifyOptions,
       id_token
     });
@@ -143,7 +144,7 @@ describe('jwt', () => {
       audience: ['item 1', verifyOptions.aud]
     });
 
-    const { encoded, header, claims } = verify({
+    const { encoded, header, claims } = await verify({
       ...verifyOptions,
       id_token
     });
@@ -157,7 +158,7 @@ describe('jwt', () => {
 
     const id_token = await createJWT({ ...DEFAULT_PAYLOAD, org_id });
 
-    const { encoded, header, claims } = verify({
+    const { encoded, header, claims } = await verify({
       ...verifyOptions,
       id_token,
       organization: org_id
@@ -173,7 +174,7 @@ describe('jwt', () => {
 
     const id_token = await createJWT({ ...DEFAULT_PAYLOAD, org_name });
 
-    const { encoded, header, claims } = verify({
+    const { encoded, header, claims } = await verify({
       ...verifyOptions,
       id_token,
       organization: org_name
@@ -189,7 +190,7 @@ describe('jwt', () => {
 
     const id_token = await createJWT({ ...DEFAULT_PAYLOAD, org_name });
 
-    const { encoded, header, claims } = verify({
+    const { encoded, header, claims } = await verify({
       ...verifyOptions,
       id_token,
       organization: 'My-org'
@@ -205,7 +206,7 @@ describe('jwt', () => {
 
     const id_token = await createJWT({ ...DEFAULT_PAYLOAD, org_name });
 
-    const { encoded, header, claims } = verify({
+    const { encoded, header, claims } = await verify({
       ...verifyOptions,
       id_token,
       organization: '  my-org  '
@@ -217,7 +218,7 @@ describe('jwt', () => {
   });
 
   it('validates id_token is present', async () => {
-    expect(() => verify({ ...verifyOptions, id_token: '' })).toThrow(
+    await expect(verify({ ...verifyOptions, id_token: '' })).rejects.toThrow(
       'ID token is required but missing'
     );
   });
@@ -227,32 +228,32 @@ describe('jwt', () => {
       algorithm: 'HS256'
     });
 
-    expect(() => verify({ ...verifyOptions, id_token })).toThrow(
+    await expect(verify({ ...verifyOptions, id_token })).rejects.toThrow(
       `Signature algorithm of "HS256" is not supported. Expected the ID token to be signed with "RS256".`
     );
   });
 
   it('validates issuer is present', async () => {
     const id_token = await createJWT(DEFAULT_PAYLOAD, { issuer: '' });
-    expect(() => verify({ ...verifyOptions, id_token })).toThrow(
+    await expect(verify({ ...verifyOptions, id_token })).rejects.toThrow(
       'Issuer (iss) claim must be a string present in the ID token'
     );
   });
   it('validates issuer', async () => {
     const id_token = await createJWT();
-    expect(() => verify({ ...verifyOptions, id_token, iss: 'wrong' })).toThrow(
+    await expect(verify({ ...verifyOptions, id_token, iss: 'wrong' })).rejects.toThrow(
       `Issuer (iss) claim mismatch in the ID token; expected "wrong", found "${verifyOptions.iss}"`
     );
   });
   it('validates `sub` is present', async () => {
     const id_token = await createJWT({ ...DEFAULT_PAYLOAD, sub: undefined });
-    expect(() => verify({ ...verifyOptions, id_token })).toThrow(
+    await expect(verify({ ...verifyOptions, id_token })).rejects.toThrow(
       'Subject (sub) claim must be a string present in the ID token'
     );
   });
   it('validates aud is present', async () => {
     const id_token = await createJWT(DEFAULT_PAYLOAD, { audience: '' });
-    expect(() => verify({ ...verifyOptions, id_token })).toThrow(
+    await expect(verify({ ...verifyOptions, id_token })).rejects.toThrow(
       'Audience (aud) claim must be a string or array of strings present in the ID token'
     );
   });
@@ -260,13 +261,13 @@ describe('jwt', () => {
     const id_token = await createJWT(DEFAULT_PAYLOAD, {
       audience: ['client_id']
     });
-    expect(() => verify({ ...verifyOptions, id_token, aud: 'wrong' })).toThrow(
+    await expect(verify({ ...verifyOptions, id_token, aud: 'wrong' })).rejects.toThrow(
       `Audience (aud) claim mismatch in the ID token; expected "wrong" but was not one of "client_id"`
     );
   });
   it('validates audience with `aud` is a string', async () => {
     const id_token = await createJWT();
-    expect(() => verify({ ...verifyOptions, id_token, aud: 'wrong' })).toThrow(
+    await expect(verify({ ...verifyOptions, id_token, aud: 'wrong' })).rejects.toThrow(
       `Audience (aud) claim mismatch in the ID token; expected "wrong" but found "${verifyOptions.aud}"`
     );
   });
@@ -274,7 +275,7 @@ describe('jwt', () => {
     const id_token = await createJWT(DEFAULT_PAYLOAD, {
       expiresIn: '-1h'
     });
-    expect(() => verify({ ...verifyOptions, id_token })).toThrow(
+    await expect(verify({ ...verifyOptions, id_token })).rejects.toThrow(
       `Expiration Time (exp) claim error in the ID token`
     );
   });
@@ -282,41 +283,41 @@ describe('jwt', () => {
     const id_token = await createJWT(DEFAULT_PAYLOAD, {
       expiresIn: '-1h'
     });
-    expect(() =>
+    await expect(
       verify({ ...verifyOptions, id_token, now: Date.now() - 3600 * 1000 })
-    ).not.toThrow();
+    ).resolves.not.toThrow();
   });
   it('validates nbf', async () => {
     const id_token = await createJWT(DEFAULT_PAYLOAD, {
       notBefore: '1h'
     });
-    expect(() => verify({ ...verifyOptions, id_token })).toThrow(
+    await expect(verify({ ...verifyOptions, id_token })).rejects.toThrow(
       `Not Before time (nbf) claim in the ID token indicates that this token can't be used just yet.`
     );
   });
   it('validates iat is present', async () => {
     const id_token = await createJWT(DEFAULT_PAYLOAD, { noTimestamp: true });
-    expect(() => verify({ ...verifyOptions, id_token })).toThrow(
+    await expect(verify({ ...verifyOptions, id_token })).rejects.toThrow(
       'Issued At (iat) claim must be a number present in the ID token'
     );
   });
   it('does not validate nonce is present when options.nonce is undefined', async () => {
     const id_token = await createJWT({ ...DEFAULT_PAYLOAD, nonce: undefined });
-    expect(() =>
+    await expect(
       verify({ ...verifyOptions, nonce: undefined, id_token })
-    ).not.toThrow();
+    ).resolves.not.toThrow();
   });
   it('validates nonce is present', async () => {
     const id_token = await createJWT({ ...DEFAULT_PAYLOAD, nonce: undefined });
-    expect(() => verify({ ...verifyOptions, id_token })).toThrow(
+    await expect(verify({ ...verifyOptions, id_token })).rejects.toThrow(
       'Nonce (nonce) claim must be a string present in the ID token'
     );
   });
   it('validates nonce', async () => {
     const id_token = await createJWT();
-    expect(() =>
+    await expect(
       verify({ ...verifyOptions, id_token, nonce: 'wrong' })
-    ).toThrow(
+    ).rejects.toThrow(
       `Nonce (nonce) claim mismatch in the ID token; expected "wrong", found "${verifyOptions.nonce}"`
     );
   });
@@ -324,17 +325,17 @@ describe('jwt', () => {
     const id_token = await createJWT(DEFAULT_PAYLOAD, {
       audience: 'aud'
     });
-    expect(() =>
+    await expect(
       verify({ ...verifyOptions, id_token, aud: 'aud' })
-    ).not.toThrow();
+    ).resolves.not.toThrow();
   });
   it('does not validate azp is present when `aud` is an array with a single item', async () => {
     const id_token = await createJWT(DEFAULT_PAYLOAD, {
       audience: ['item 1']
     });
-    expect(() =>
+    await expect(
       verify({ ...verifyOptions, id_token, aud: 'item 1' })
-    ).not.toThrow();
+    ).resolves.not.toThrow();
   });
   it('validates azp is present when `aud` is an array with more than one item', async () => {
     const id_token = await createJWT(
@@ -343,9 +344,9 @@ describe('jwt', () => {
         audience: ['item 1', 'other_value']
       }
     );
-    expect(() =>
+    await expect(
       verify({ ...verifyOptions, id_token, aud: 'other_value' })
-    ).toThrow(
+    ).rejects.toThrow(
       'Authorized Party (azp) claim must be a string present in the ID token when Audience (aud) claim has multiple values'
     );
   });
@@ -356,16 +357,16 @@ describe('jwt', () => {
         audience: ['item 1', 'other_value']
       }
     );
-    expect(() =>
+    await expect(
       verify({ ...verifyOptions, id_token, aud: 'other_value' })
-    ).toThrow(
+    ).rejects.toThrow(
       `Authorized Party (azp) claim mismatch in the ID token; expected "other_value", found "not_the_client_id"`
     );
   });
   it('validate auth_time is present when max_age is provided', async () => {
     const id_token = await createJWT({ ...DEFAULT_PAYLOAD });
 
-    expect(() => verify({ ...verifyOptions, id_token, max_age: 123 })).toThrow(
+    await expect(verify({ ...verifyOptions, id_token, max_age: 123 })).rejects.toThrow(
       'Authentication Time (auth_time) claim must be a number present in the ID token when Max Age (max_age) is specified'
     );
   });
@@ -384,9 +385,9 @@ describe('jwt', () => {
       auth_time: authTime
     });
 
-    expect(() =>
+    await expect(
       verify({ ...verifyOptions, id_token, max_age: maxAge, leeway })
-    ).toThrow(
+    ).rejects.toThrow(
       `Authentication Time (auth_time) claim in the ID token indicates that too much time has passed since the last end-user authentication. Current time (${new Date(
         now
       )}) is after last auth at ${authTimeDateCorrected}`
@@ -406,7 +407,7 @@ describe('jwt', () => {
       auth_time: authTime
     });
 
-    expect(() =>
+    await expect(
       verify({
         ...verifyOptions,
         id_token,
@@ -414,15 +415,15 @@ describe('jwt', () => {
         leeway,
         now: Math.floor(yesterday.getTime())
       })
-    ).not.toThrow();
+    ).resolves.not.toThrow();
   });
 
   it('validate org_id is present when organization id is provided', async () => {
     const id_token = await createJWT({ ...DEFAULT_PAYLOAD });
 
-    expect(() =>
+    await expect(
       verify({ ...verifyOptions, id_token, organization: 'org_123' })
-    ).toThrow(
+    ).rejects.toThrow(
       'Organization ID (org_id) claim must be a string present in the ID token'
     );
   });
@@ -433,9 +434,9 @@ describe('jwt', () => {
       org_id: 'test_org_456'
     });
 
-    expect(() =>
+    await expect(
       verify({ ...verifyOptions, id_token, organization: 'org_123' })
-    ).toThrow(
+    ).rejects.toThrow(
       'Organization ID (org_id) claim mismatch in the ID token; expected "org_123", found "test_org_456"'
     );
   });
@@ -443,9 +444,9 @@ describe('jwt', () => {
   it('validate org_name is present when organization name is provided', async () => {
     const id_token = await createJWT({ ...DEFAULT_PAYLOAD });
 
-    expect(() =>
+    await expect(
       verify({ ...verifyOptions, id_token, organization: 'my-org' })
-    ).toThrow(
+    ).rejects.toThrow(
       'Organization Name (org_name) claim must be a string present in the ID token'
     );
   });
@@ -456,10 +457,49 @@ describe('jwt', () => {
       org_name: 'my-other-org'
     });
 
-    expect(() =>
+    await expect(
       verify({ ...verifyOptions, id_token, organization: 'my-org' })
-    ).toThrow(
+    ).rejects.toThrow(
       'Organization Name (org_name) claim mismatch in the ID token; expected "my-org", found "my-other-org"'
     );
+  });
+
+  describe('signature validation', () => {
+    it('should skip signature validation when validateSignature is false', async () => {
+      const id_token = await createJWT(DEFAULT_PAYLOAD);
+      
+      const result = await verify({ 
+        ...verifyOptions, 
+        id_token, 
+        validateSignature: false 
+      });
+      
+      expect(result.claims.payload).toBe(true);
+    });
+
+    it('should skip signature validation when validateSignature is undefined', async () => {
+      const id_token = await createJWT(DEFAULT_PAYLOAD);
+      
+      const result = await verify({ 
+        ...verifyOptions, 
+        id_token 
+      });
+      
+      expect(result.claims.payload).toBe(true);
+    });
+
+    // Note: Real signature validation tests would require setting up a proper JWKS endpoint
+    // or mocking the jose library. For now, we test that the code path is reached.
+    it('should attempt signature validation when validateSignature is true', async () => {
+      const id_token = await createJWT(DEFAULT_PAYLOAD);
+      
+      // This will fail since we don't have a real JWKS endpoint, but we test that
+      // the validation is attempted (as opposed to being skipped)
+      await expect(verify({ 
+        ...verifyOptions, 
+        id_token, 
+        validateSignature: true 
+      })).rejects.toThrow('Signature verification failed');
+    });
   });
 });
