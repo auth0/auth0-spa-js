@@ -99,6 +99,17 @@ export const patchOpenUrlWithOnRedirect = <
 
 /**
  * @ignore
+ * 
+ * Checks if all scopes are included inside other array of scopes
+ */
+export const allScopesAreIncluded = (scopesToCheck?: string, scopesContainer?: string): boolean => {
+  const oldScopes = scopesContainer?.split(" ") || [];
+  const newScopes = scopesToCheck?.split(" ") || [];
+  return newScopes.every((scope) => oldScopes.includes(scope));
+}
+
+/**
+ * @ignore
  *
  * For backward compatibility we are going to check if we are going to downscope while doing a refresh request
  * while MRRT is allowed. If the audience is the same for the refresh_token we are going to use and it has
@@ -122,10 +133,32 @@ export const getScopeToRequest = (
 
     const oldScopes = oldScope.split(" ");
     const newScopes = authorizationParams.scope?.split(" ") || [];
-    const newScopesAreIncluded = newScopes.every((scope) => oldScope.includes(scope));
+    const newScopesAreIncluded = newScopes.every((scope) => oldScopes.includes(scope));
 
     return oldScopes.length >= newScopes.length && newScopesAreIncluded ? oldScope : authorizationParams.scope;
   }
 
   return authorizationParams.scope;
+}
+
+/**
+ * @ignore
+ * 
+ * Checks if the refresh request has been done using MRRT
+ * @param oldAudience Audience from the refresh token used to refresh
+ * @param oldScope Scopes from the refresh token used to refresh
+ * @param requestAudience Audience sent to the server
+ * @param requestScope Scopes sent to the server
+ */
+export const isRefreshWithMrrt = (
+  oldAudience: string | undefined,
+  oldScope: string | undefined,
+  requestAudience: string | undefined,
+  requestScope: string,
+): boolean => {
+  if (oldAudience !== requestAudience) {
+    return true;
+  }
+
+  return !allScopesAreIncluded(requestScope, oldScope);
 }

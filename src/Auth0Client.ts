@@ -91,7 +91,9 @@ import {
   GET_TOKEN_SILENTLY_LOCK_KEY,
   OLD_IS_AUTHENTICATED_COOKIE_NAME,
   patchOpenUrlWithOnRedirect,
-  getScopeToRequest
+  getScopeToRequest,
+  allScopesAreIncluded,
+  isRefreshWithMrrt
 } from './Auth0Client.utils';
 import { CustomTokenExchangeOptions } from './TokenExchange';
 import { Dpop } from './dpop/dpop';
@@ -1012,8 +1014,8 @@ export class Auth0Client {
     const scopesToRequest = getScopeToRequest(
       this.options.useMrrt,
       options.authorizationParams,
-      cache?.oldAudience,
-      cache?.oldScopes,
+      cache?.oldAudience || cache?.audience,
+      cache?.oldScopes || cache?.scope,
     );
 
     try {
@@ -1028,6 +1030,37 @@ export class Auth0Client {
           scopesToRequest,
         }
       );
+
+      // Some scopes requested to the server might not be inside the refresh policies
+      // In order to return a token with all requested scopes when using MRRT we should
+      // check if all scopes are returned. If not, we will try to use an iframe to request
+      // a token.
+      if (this.options.useMrrt) {
+        const isRefreshMrrt = isRefreshWithMrrt(
+          cache?.oldAudience || cache?.audience,
+          cache?.oldScopes || cache?.scope,
+          options.authorizationParams.audience,
+          options.authorizationParams.scope,
+        );
+
+        if (isRefreshMrrt) {
+          const tokenHasAllScopes = allScopesAreIncluded(
+            scopesToRequest,
+            tokenResult.scope,
+          );
+
+          if (!tokenHasAllScopes) {
+            if (this.options.useRefreshTokensFallback) {
+              return await this._getTokenFromIFrame(options);
+            }
+
+            throw new MissingRefreshTokenError(
+              options.authorizationParams.audience || 'default',
+              options.authorizationParams.scope,
+            );
+          }
+        }
+      }
 
       // If is refreshed with MRRT, we update all entries that have the old 
       // refresh_token with the new one if the server responded with one
