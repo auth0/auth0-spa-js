@@ -292,8 +292,8 @@ cacheFactories.forEach(cacheFactory => {
 
           expect(result).toStrictEqual({
             refresh_token: TEST_REFRESH_TOKEN,
-            oldAudience: data.audience,
-            oldScopes: data.scope,
+            audience: data.audience,
+            scope: data.scope,
           });
         });
       });
@@ -328,8 +328,8 @@ cacheFactories.forEach(cacheFactory => {
 
         expect(await manager.get(cacheKey)).toStrictEqual({
           refresh_token: TEST_REFRESH_TOKEN,
-          oldAudience: data.audience,
-          oldScopes: data.scope
+          audience: data.audience,
+          scope: data.scope
         });
 
         global.Date.now = realDateNow;

@@ -1014,8 +1014,8 @@ export class Auth0Client {
     const scopesToRequest = getScopeToRequest(
       this.options.useMrrt,
       options.authorizationParams,
-      cache?.oldAudience || cache?.audience,
-      cache?.oldScopes || cache?.scope,
+      cache?.audience,
+      cache?.scope,
     );
 
     try {
@@ -1031,14 +1031,23 @@ export class Auth0Client {
         }
       );
 
+      // If is refreshed with MRRT, we update all entries that have the old 
+      // refresh_token with the new one if the server responded with one
+      if (tokenResult.refresh_token && this.options.useMrrt && cache?.refresh_token) {
+        await this.cacheManager.updateEntry(
+          cache.refresh_token,
+          tokenResult.refresh_token
+        );
+      }
+
       // Some scopes requested to the server might not be inside the refresh policies
       // In order to return a token with all requested scopes when using MRRT we should
       // check if all scopes are returned. If not, we will try to use an iframe to request
       // a token.
       if (this.options.useMrrt) {
         const isRefreshMrrt = isRefreshWithMrrt(
-          cache?.oldAudience || cache?.audience,
-          cache?.oldScopes || cache?.scope,
+          cache?.audience,
+          cache?.scope,
           options.authorizationParams.audience,
           options.authorizationParams.scope,
         );
@@ -1060,15 +1069,6 @@ export class Auth0Client {
             );
           }
         }
-      }
-
-      // If is refreshed with MRRT, we update all entries that have the old 
-      // refresh_token with the new one if the server responded with one
-      if (tokenResult.refresh_token && this.options.useMrrt && cache?.refresh_token) {
-        await this.cacheManager.updateEntry(
-          cache.refresh_token,
-          tokenResult.refresh_token
-        );
       }
 
       return {

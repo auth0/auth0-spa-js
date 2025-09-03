@@ -102,10 +102,10 @@ export const patchOpenUrlWithOnRedirect = <
  * 
  * Checks if all scopes are included inside other array of scopes
  */
-export const allScopesAreIncluded = (scopesToCheck?: string, scopesContainer?: string): boolean => {
-  const oldScopes = scopesContainer?.split(" ") || [];
-  const newScopes = scopesToCheck?.split(" ") || [];
-  return newScopes.every((scope) => oldScopes.includes(scope));
+export const allScopesAreIncluded = (scopesGroupA?: string, scopesGroupB?: string): boolean => {
+  const groupB = scopesGroupB?.split(" ") || [];
+  const groupA = scopesGroupA?.split(" ") || [];
+  return groupA.every((scope) => groupB.includes(scope));
 }
 
 /**

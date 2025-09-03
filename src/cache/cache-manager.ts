@@ -127,8 +127,8 @@ export class CacheManager {
 
     return {
       refresh_token: wrappedEntry.body.refresh_token,
-      oldAudience: wrappedEntry.body.audience,
-      oldScopes: wrappedEntry.body.scope,
+      audience: wrappedEntry.body.audience,
+      scope: wrappedEntry.body.scope,
     };
   }
 
