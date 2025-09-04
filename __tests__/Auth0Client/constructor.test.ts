@@ -10,7 +10,11 @@ import { assertUrlEquals, loginWithRedirectFn, setupFn } from './helpers';
 
 import { TEST_CLIENT_ID, TEST_CODE_CHALLENGE, TEST_DOMAIN } from '../constants';
 import { ICache } from '../../src/cache';
+<<<<<<< Updated upstream
 import * as DpopModule from '../../src/dpop/dpop';
+=======
+import { DEFAULT_AUDIENCE } from '../../src/constants';
+>>>>>>> Stashed changes
 
 jest.mock('es-cookie');
 jest.mock('../../src/jwt');
@@ -84,9 +88,9 @@ describe('Auth0Client', () => {
         }
       });
 
-      expect((<any>auth0).scope).toBe(
-        'openid profile email test-scope offline_access'
-      );
+      expect((<any>auth0).scope).toMatchObject({
+        [DEFAULT_AUDIENCE]: 'openid profile email test-scope offline_access'
+      });
     });
 
     it('ensures the openid scope is defined when customizing default scopes', () => {
@@ -96,7 +100,7 @@ describe('Auth0Client', () => {
         }
       });
 
-      expect((<any>auth0).scope).toBe('openid test-scope');
+      expect((<any>auth0).scope).toMatchObject({ [DEFAULT_AUDIENCE]: 'openid test-scope' });
     });
 
     it('allows an empty custom default scope', () => {
@@ -106,7 +110,7 @@ describe('Auth0Client', () => {
         }
       });
 
-      expect((<any>auth0).scope).toBe('openid');
+      expect((<any>auth0).scope).toMatchObject({ [DEFAULT_AUDIENCE]: 'openid' });
     });
 
     it('should create issuer from domain', () => {

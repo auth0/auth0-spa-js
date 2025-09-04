@@ -3,9 +3,10 @@ import {
   Auth0ClientOptions,
   AuthorizationParams,
   AuthorizeOptions,
+  ClientAuthorizationParams,
   LogoutOptions
 } from './global';
-import { getUniqueScopes } from './scope';
+import { scopesToRequest } from './scope';
 
 /**
  * @ignore
@@ -49,10 +50,10 @@ export const cacheFactory = (location: string) => {
  */
 export const getAuthorizeParams = (
   clientOptions: Auth0ClientOptions & {
-    authorizationParams: AuthorizationParams;
+    authorizationParams: ClientAuthorizationParams;
   },
-  scope: string,
-  authorizationParams: AuthorizationParams,
+  scope: Record<string, string>,
+  authorizationParams: AuthorizationParams & { scope?: string },
   state: string,
   nonce: string,
   code_challenge: string,
@@ -64,7 +65,7 @@ export const getAuthorizeParams = (
     client_id: clientOptions.clientId,
     ...clientOptions.authorizationParams,
     ...authorizationParams,
-    scope: getUniqueScopes(scope, authorizationParams.scope),
+    scope: scopesToRequest(scope, authorizationParams.scope, authorizationParams.audience),
     response_type: 'code',
     response_mode: response_mode || 'query',
     state,

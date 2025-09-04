@@ -34,6 +34,7 @@ import {
   TEST_STATE
 } from '../constants';
 import version from '../../src/version';
+import { DEFAULT_AUDIENCE } from '../../src/constants';
 
 jest.mock('../../src/jwt');
 jest.mock('../../src/worker/token.worker');
@@ -311,7 +312,7 @@ describe('Auth0Client', () => {
         authorizationParams: {
           audience: 'test_audience'
         },
-        openUrl: async () => {}
+        openUrl: async () => { }
       });
 
       expect(window.location.assign).not.toHaveBeenCalled();
@@ -557,7 +558,7 @@ describe('Auth0Client', () => {
           client_id: TEST_CLIENT_ID,
           access_token: TEST_ACCESS_TOKEN,
           expires_in: 86400,
-          audience: 'default',
+          audience: DEFAULT_AUDIENCE,
           scope: TEST_SCOPES
         })
       );

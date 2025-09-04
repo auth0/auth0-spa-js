@@ -1,6 +1,10 @@
 import { TokenEndpointOptions, TokenEndpointResponse } from './global';
+<<<<<<< Updated upstream
 import { DEFAULT_AUTH0_CLIENT } from './constants';
 import * as dpopUtils from './dpop/utils';
+=======
+import { DEFAULT_AUDIENCE, DEFAULT_AUTH0_CLIENT } from './constants';
+>>>>>>> Stashed changes
 import { getJSON } from './http';
 import { createQueryParams } from './utils';
 
@@ -35,7 +39,7 @@ export async function oauthToken(
   return await getJSON<TokenEndpointResponse>(
     `${baseUrl}/oauth/token`,
     timeout,
-    audience || 'default',
+    audience || DEFAULT_AUDIENCE,
     scope,
     {
       method: 'POST',
