@@ -15,6 +15,14 @@ export const GET_TOKEN_SILENTLY_LOCK_KEY = 'auth0.lock.getTokenSilently';
 /**
  * @ignore
  */
+export const buildGetTokenSilentlyLockKey = (
+  clientId: string,
+  audience: string
+) => `${GET_TOKEN_SILENTLY_LOCK_KEY}.${clientId}.${audience}`;
+
+/**
+ * @ignore
+ */
 export const buildOrganizationHintCookieName = (clientId: string) =>
   `auth0.${clientId}.organization_hint`;
 
