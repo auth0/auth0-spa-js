@@ -124,7 +124,9 @@ export const runPopup = (config: PopupConfigOptions) => {
       clearTimeout(timeoutId);
       clearInterval(popupTimer);
       window.removeEventListener('message', popupEventListener, false);
-      config.popup.close();
+      if (!config.suppressPopupClose) {
+        config.popup.close();
+      }
 
       if (e.data.response.error) {
         return reject(GenericError.fromPayload(e.data.response));
