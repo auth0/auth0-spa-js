@@ -15,6 +15,8 @@ import {
   stripAuth0Client
 } from '../src/utils';
 
+import { buildGetTokenSilentlyLockKey } from '../src/Auth0Client.utils';
+
 import { DEFAULT_AUTHORIZE_TIMEOUT_IN_SECONDS } from '../src/constants';
 import { expect } from '@jest/globals';
 
@@ -586,5 +588,47 @@ describe('utils', () => {
         version: 2
       });
     });
+});
+
+describe('buildGetTokenSilentlyLockKey', () => {
+  it('should build lock key with client ID and audience', () => {
+    const result = buildGetTokenSilentlyLockKey(
+      'test-client-id',
+      'test-audience'
+    );
+    expect(result).toBe(
+      'auth0.lock.getTokenSilently.test-client-id.test-audience'
+    );
+  });
+
+  it('should build lock key with default audience when none provided', () => {
+    const result = buildGetTokenSilentlyLockKey('test-client-id', 'default');
+    expect(result).toBe('auth0.lock.getTokenSilently.test-client-id.default');
+  });
+
+  it('should handle special characters in client ID and audience', () => {
+    const result = buildGetTokenSilentlyLockKey(
+      'client-with-special@chars',
+      'audience/with/slashes'
+    );
+    expect(result).toBe(
+      'auth0.lock.getTokenSilently.client-with-special@chars.audience/with/slashes'
+    );
+  });
+
+  it('should create different keys for different client IDs', () => {
+    const result1 = buildGetTokenSilentlyLockKey('client1', 'audience');
+    const result2 = buildGetTokenSilentlyLockKey('client2', 'audience');
+    expect(result1).not.toBe(result2);
+    expect(result1).toBe('auth0.lock.getTokenSilently.client1.audience');
+    expect(result2).toBe('auth0.lock.getTokenSilently.client2.audience');
+  });
+
+  it('should create different keys for different audiences', () => {
+    const result1 = buildGetTokenSilentlyLockKey('client', 'audience1');
+    const result2 = buildGetTokenSilentlyLockKey('client', 'audience2');
+    expect(result1).not.toBe(result2);
+    expect(result1).toBe('auth0.lock.getTokenSilently.client.audience1');
+    expect(result2).toBe('auth0.lock.getTokenSilently.client.audience2');
   });
 });
