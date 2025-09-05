@@ -73,6 +73,7 @@ export interface IdTokenEntry {
 
 export type CacheEntry = {
   id_token?: string;
+  token_type?: string;
   access_token: string;
   expires_in: number;
   decodedToken?: DecodedToken;

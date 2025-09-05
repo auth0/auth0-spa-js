@@ -92,6 +92,13 @@ import {
   OLD_IS_AUTHENTICATED_COOKIE_NAME,
   patchOpenUrlWithOnRedirect
 } from './Auth0Client.utils';
+import { CustomTokenExchangeOptions } from './TokenExchange';
+import { Dpop } from './dpop/dpop';
+import {
+  Fetcher,
+  type FetcherConfig,
+  type CustomFetchMinimalOutput
+} from './fetcher';
 
 /**
  * @ignore
@@ -118,6 +125,7 @@ export class Auth0Client {
   private readonly tokenIssuer: string;
   private readonly scope: string;
   private readonly cookieStorage: ClientStorage;
+  private readonly dpop: Dpop | undefined;
   private readonly sessionCheckExpiryDays: number;
   private readonly orgHintCookieName: string;
   private readonly isAuthenticatedCookieName: string;
@@ -129,7 +137,6 @@ export class Auth0Client {
   private readonly userCache: ICache = new InMemoryCache().enclosedCache;
 
   private worker?: Worker;
-
   private readonly defaultOptions: Partial<Auth0ClientOptions> = {
     authorizationParams: {
       scope: DEFAULT_SCOPE
@@ -221,6 +228,10 @@ export class Auth0Client {
       this.nowProvider
     );
 
+    this.dpop = this.options.useDpop
+      ? new Dpop(this.options.clientId)
+      : undefined;
+
     this.domainUrl = getDomain(this.options.domain);
     this.tokenIssuer = getTokenIssuer(this.options.issuer, this.domainUrl);
 
@@ -300,6 +311,7 @@ export class Auth0Client {
     const code_verifier = createRandomString();
     const code_challengeBuffer = await sha256(code_verifier);
     const code_challenge = bufferToBase64UrlEncoded(code_challengeBuffer);
+    const thumbprint = await this.dpop?.calculateThumbprint();
 
     const params = getAuthorizeParams(
       this.options,
@@ -311,7 +323,8 @@ export class Auth0Client {
       authorizationParams.redirect_uri ||
         this.options.authorizationParams.redirect_uri ||
         fallbackRedirectUri,
-      authorizeOptions?.response_mode
+      authorizeOptions?.response_mode,
+      thumbprint
     );
 
     const url = this._authorizeUrl(params);
@@ -715,11 +728,17 @@ export class Auth0Client {
           ? await this._getTokenUsingRefreshToken(getTokenOptions)
           : await this._getTokenFromIFrame(getTokenOptions);
 
-        const { id_token, access_token, oauthTokenScope, expires_in } =
-          authResult;
+        const {
+          id_token,
+          token_type,
+          access_token,
+          oauthTokenScope,
+          expires_in
+        } = authResult;
 
         return {
           id_token,
+          token_type,
           access_token,
           ...(oauthTokenScope ? { scope: oauthTokenScope } : null),
           expires_in
@@ -847,6 +866,8 @@ export class Auth0Client {
     });
     this.userCache.remove(CACHE_KEY_ID_TOKEN_SUFFIX);
 
+    await this.dpop?.clear();
+
     const url = this._buildLogoutUrl(logoutOptions);
 
     if (openUrl) {
@@ -900,7 +921,15 @@ export class Auth0Client {
       const authorizeTimeout =
         options.timeoutInSeconds || this.options.authorizeTimeoutInSeconds;
 
-      const codeResult = await runIframe(url, this.domainUrl, authorizeTimeout);
+      // Extract origin from domainUrl, fallback to domainUrl if URL parsing fails
+      let eventOrigin: string;
+      try {
+        eventOrigin = new URL(this.domainUrl).origin;
+      } catch {
+        eventOrigin = this.domainUrl;
+      }
+
+      const codeResult = await runIframe(url, eventOrigin, authorizeTimeout);
 
       if (stateIn !== codeResult.state) {
         throw new GenericError('state_mismatch', 'Invalid state');
@@ -1071,11 +1100,13 @@ export class Auth0Client {
     );
 
     if (entry && entry.access_token) {
-      const { access_token, oauthTokenScope, expires_in } = entry as CacheEntry;
+      const { token_type, access_token, oauthTokenScope, expires_in } =
+        entry as CacheEntry;
       const cache = await this._getIdTokenFromCache();
       return (
         cache && {
           id_token: cache.id_token,
+          token_type: token_type ? token_type : 'Bearer',
           access_token,
           ...(oauthTokenScope ? { scope: oauthTokenScope } : null),
           expires_in
@@ -1097,7 +1128,10 @@ export class Auth0Client {
   };
 
   private async _requestToken(
-    options: PKCERequestTokenOptions | RefreshTokenRequestTokenOptions,
+    options:
+      | PKCERequestTokenOptions
+      | RefreshTokenRequestTokenOptions
+      | TokenExchangeRequestOptions,
     additionalParameters?: RequestTokenAdditionalParameters
   ) {
     const { nonceIn, organization } = additionalParameters || {};
@@ -1108,6 +1142,7 @@ export class Auth0Client {
         auth0Client: this.options.auth0Client,
         useFormData: this.options.useFormData,
         timeout: this.httpTimeoutMs,
+        dpop: this.dpop,
         ...options
       },
       this.worker
@@ -1137,6 +1172,152 @@ export class Auth0Client {
 
     return { ...authResult, decodedToken };
   }
+
+  /*
+  Custom Token Exchange
+  * **Implementation Notes:**
+  * - Ensure that the `subject_token` provided has been securely obtained and is valid according
+  *   to your external identity provider's policies before invoking this function.
+  * - The function leverages internal helper methods:
+  *   - `validateTokenType` confirms that the `subject_token_type` is supported.
+  *   - `getUniqueScopes` merges and de-duplicates scopes between the provided options and
+  *     the instance's default scopes.
+  *   - `_requestToken` performs the actual HTTP request to the token endpoint.
+  */
+
+  /**
+   * Exchanges an external subject token for an Auth0 token via a token exchange request.
+   *
+   * @param {CustomTokenExchangeOptions} options - The options required to perform the token exchange.
+   *
+   * @returns {Promise<TokenEndpointResponse>} A promise that resolves to the token endpoint response,
+   * which contains the issued Auth0 tokens.
+   *
+   * This method implements the token exchange grant as specified in RFC 8693 by first validating
+   * the provided subject token type and then constructing a token request to the /oauth/token endpoint.
+   * The request includes the following parameters:
+   *
+   * - `grant_type`: Hard-coded to "urn:ietf:params:oauth:grant-type:token-exchange".
+   * - `subject_token`: The external token provided via the options.
+   * - `subject_token_type`: The type of the external token (validated by this function).
+   * - `scope`: A unique set of scopes, generated by merging the scopes supplied in the options
+   *            with the SDK’s default scopes.
+   * - `audience`: The target audience from the options, with fallback to the SDK's authorization configuration.
+   *
+   * **Example Usage:**
+   *
+   * ```
+   * // Define the token exchange options
+   * const options: CustomTokenExchangeOptions = {
+   *   subject_token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6Ikp...',
+   *   subject_token_type: 'urn:acme:legacy-system-token',
+   *   scope: "openid profile"
+   * };
+   *
+   * // Exchange the external token for Auth0 tokens
+   * try {
+   *   const tokenResponse = await instance.exchangeToken(options);
+   *   // Use tokenResponse.access_token, tokenResponse.id_token, etc.
+   * } catch (error) {
+   *   // Handle token exchange error
+   * }
+   * ```
+   */
+  async exchangeToken(
+    options: CustomTokenExchangeOptions
+  ): Promise<TokenEndpointResponse> {
+    return this._requestToken({
+      grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
+      subject_token: options.subject_token,
+      subject_token_type: options.subject_token_type,
+      scope: getUniqueScopes(options.scope, this.scope),
+      audience: options.audience || this.options.authorizationParams.audience
+    });
+  }
+
+  protected _assertDpop(dpop: Dpop | undefined): asserts dpop is Dpop {
+    if (!dpop) {
+      throw new Error('`useDpop` option must be enabled before using DPoP.');
+    }
+  }
+
+  /**
+   * Returns the current DPoP nonce used for making requests to Auth0.
+   *
+   * It can return `undefined` because when starting fresh it will not
+   * be populated until after the first response from the server.
+   *
+   * It requires enabling the {@link Auth0ClientOptions.useDpop} option.
+   *
+   * @param nonce The nonce value.
+   * @param id    The identifier of a nonce: if absent, it will get the nonce
+   *              used for requests to Auth0. Otherwise, it will be used to
+   *              select a specific non-Auth0 nonce.
+   */
+  public getDpopNonce(id?: string): Promise<string | undefined> {
+    this._assertDpop(this.dpop);
+
+    return this.dpop.getNonce(id);
+  }
+
+  /**
+   * Sets the current DPoP nonce used for making requests to Auth0.
+   *
+   * It requires enabling the {@link Auth0ClientOptions.useDpop} option.
+   *
+   * @param nonce The nonce value.
+   * @param id    The identifier of a nonce: if absent, it will set the nonce
+   *              used for requests to Auth0. Otherwise, it will be used to
+   *              select a specific non-Auth0 nonce.
+   */
+  public setDpopNonce(nonce: string, id?: string): Promise<void> {
+    this._assertDpop(this.dpop);
+
+    return this.dpop.setNonce(nonce, id);
+  }
+
+  /**
+   * Returns a string to be used to demonstrate possession of the private
+   * key used to cryptographically bind access tokens with DPoP.
+   *
+   * It requires enabling the {@link Auth0ClientOptions.useDpop} option.
+   */
+  public generateDpopProof(params: {
+    url: string;
+    method: string;
+    nonce?: string;
+    accessToken: string;
+  }): Promise<string> {
+    this._assertDpop(this.dpop);
+
+    return this.dpop.generateProof(params);
+  }
+
+  /**
+   * Returns a new `Fetcher` class that will contain a `fetchWithAuth()` method.
+   * This is a drop-in replacement for the Fetch API's `fetch()` method, but will
+   * handle certain authentication logic for you, like building the proper auth
+   * headers or managing DPoP nonces and retries automatically.
+   * 
+   * Check the `EXAMPLES.md` file for a deeper look into this method.
+   */
+  public createFetcher<TOutput extends CustomFetchMinimalOutput = Response>(
+    config: FetcherConfig<TOutput> = {}
+  ): Fetcher<TOutput> {
+    if (this.options.useDpop && !config.dpopNonceId) {
+      throw new TypeError(
+        'When `useDpop` is enabled, `dpopNonceId` must be set when calling `createFetcher()`.'
+      );
+    }
+
+    return new Fetcher(config, {
+      isDpopEnabled: () => !!this.options.useDpop,
+      getAccessToken: () => this.getTokenSilently(),
+      getDpopNonce: () => this.getDpopNonce(config.dpopNonceId),
+      setDpopNonce: nonce => this.setDpopNonce(nonce),
+      generateDpopProof: params => this.generateDpopProof(params)
+    });
+  }
 }
 
 interface BaseRequestTokenOptions {
@@ -1155,6 +1336,14 @@ interface PKCERequestTokenOptions extends BaseRequestTokenOptions {
 interface RefreshTokenRequestTokenOptions extends BaseRequestTokenOptions {
   grant_type: 'refresh_token';
   refresh_token?: string;
+}
+
+interface TokenExchangeRequestOptions extends BaseRequestTokenOptions {
+  grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange';
+  subject_token: string;
+  subject_token_type: string;
+  actor_token?: string;
+  actor_token_type?: string;
 }
 
 interface RequestTokenAdditionalParameters {
