@@ -102,6 +102,7 @@ describe('getJson', () => {
       {},
       undefined,
       undefined,
+      undefined,
       dpop
     );
 
@@ -152,6 +153,7 @@ describe('getJson', () => {
       {},
       undefined,
       undefined,
+      undefined,
       dpop
     );
 
@@ -177,6 +179,7 @@ describe('getJson', () => {
       TEST_AUDIENCE,
       TEST_SCOPES,
       {},
+      undefined,
       undefined,
       undefined,
       dpop
@@ -208,6 +211,7 @@ describe('getJson', () => {
         TEST_AUDIENCE,
         TEST_SCOPES,
         {},
+        undefined,
         undefined,
         undefined,
         dpop
@@ -252,9 +256,10 @@ describe('getJson', () => {
         {},
         undefined,
         undefined,
+        undefined,
         dpop
       );
-    } catch (err) {}
+    } catch (err) { }
 
     expect(output).not.toBeUndefined();
   });
