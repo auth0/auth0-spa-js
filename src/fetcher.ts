@@ -140,7 +140,13 @@ export class Fetcher<TOutput extends CustomFetchMinimalOutput> {
   }
 
   protected async prepareRequest(request: Request) {
-    const accessToken = await this.getAccessToken();
+    // When the request already has an `Authorization` header,
+    // we will extract the token from it and use that instead of retrieving a new token.
+    // This can be both `bearer [Token]` and `dpop [Token]`,
+    // the fetcher will ensure it ends up being `dpop [Token]` and adds the corresponding DPoP Proof
+    const authorizationHeader = request.headers.get('authorization');
+    const accessToken =
+      authorizationHeader?.split(' ')[1] || (await this.getAccessToken());
 
     this.setAuthorizationHeader(request, accessToken);
 

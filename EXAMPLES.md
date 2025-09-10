@@ -541,3 +541,37 @@ client.createFetcher({
     })
 });
 ```
+
+##### Using existing authorization headers
+
+If your request already contains an `Authorization` header, the fetcher will automatically detect it and use the token from that header instead of calling `getAccessToken()`. This is useful when you already have a token from another source or need to pass a specific token for the request.
+
+```js
+const fetcher = client.createFetcher();
+
+// The fetcher will extract 'my-existing-token' from the Authorization header
+await fetcher.fetchWithAuth('https://api.example.com/foo', {
+  method: 'GET',
+  headers: {
+    Authorization: 'Bearer my-existing-token',
+    'user-agent': 'My Client 1.0'
+  }
+});
+```
+
+The fetcher supports both `Bearer` and `DPoP` token types in the `Authorization` header, and will ensure both end up being converted to the `DPoP` type:
+
+```js
+// Using a Bearer token - will be converted to DPoP if DPoP is enabled
+await fetcher.fetchWithAuth('https://api.example.com/foo', {
+  headers: { Authorization: 'Bearer existing-bearer-token' }
+});
+
+// Using a DPoP token - will be used as-is with proper DPoP proof generation
+await fetcher.fetchWithAuth('https://api.example.com/foo', {
+  headers: { Authorization: 'DPoP existing-dpop-token' }
+});
+```
+
+> [!NOTE]
+> When an authorization header is present, the fetcher will extract the token from it and ensure proper DPoP handling. This means Bearer tokens will be automatically converted to DPoP tokens with the appropriate cryptographic proof headers.

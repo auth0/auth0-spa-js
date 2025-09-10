@@ -242,6 +242,7 @@ describe('Fetcher', () => {
   });
 
   describe('prepareRequest()', () => {
+    describe('when request has no authorization header', () => {
     const fetcher = newTestFetcher({});
     const request = new Request('https://example.com');
 
@@ -264,6 +265,40 @@ describe('Fetcher', () => {
         request,
         TEST_ACCESS_TOKEN
       ));
+    });
+
+    describe('when request already has authorization header', () => {
+      const existingToken = 'existing-token-123';
+      const fetcher = newTestFetcher({});
+      const request = new Request('https://example.com', {
+        headers: { authorization: `Bearer ${existingToken}` }
+      });
+
+      beforeEach(() => {
+        fetcher['getAccessToken'] = jest
+          .fn()
+          .mockResolvedValue(TEST_ACCESS_TOKEN);
+        fetcher['setAuthorizationHeader'] = jest.fn();
+        fetcher['setDpopProofHeader'] = jest.fn();
+      });
+
+      beforeEach(() => fetcher['prepareRequest'](request));
+
+      it('does not call getAccessToken', () =>
+        expect(fetcher['getAccessToken']).not.toHaveBeenCalled());
+
+      it('calls setAuthorizationHeader with existing token', () =>
+        expect(fetcher['setAuthorizationHeader']).toHaveBeenCalledWith(
+          request,
+          existingToken
+        ));
+
+      it('calls setDpopProofHeader with existing token', () =>
+        expect(fetcher['setDpopProofHeader']).toHaveBeenCalledWith(
+          request,
+          existingToken
+        ));
+    });
   });
 
   describe('getHeader()', () => {
