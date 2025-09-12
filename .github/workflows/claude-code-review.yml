@@ -10,4 +10,9 @@ on:
 
 jobs:
   claude-review:
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: write
+      id-tokens: write
     uses: auth0/auth0-ai-pr-analyzer-gh-action/.github/workflows/claude-code-review.yml@main
