@@ -96,3 +96,69 @@ export const patchOpenUrlWithOnRedirect = <
 
   return result as T;
 };
+
+/**
+ * @ignore
+ * 
+ * Checks if all scopes are included inside other array of scopes
+ */
+export const allScopesAreIncluded = (scopeToInclude?: string, scopes?: string): boolean => {
+  const scopeGroup = scopes?.split(" ") || [];
+  const scopesToInclude = scopeToInclude?.split(" ") || [];
+  return scopesToInclude.every((key) => scopeGroup.includes(key));
+}
+
+/**
+ * @ignore
+ *
+ * For backward compatibility we are going to check if we are going to downscope while doing a refresh request
+ * while MRRT is allowed. If the audience is the same for the refresh_token we are going to use and it has
+ * lower scopes than the ones originally in the token, we are going to return the scopes that were stored
+ * with the refresh_token in the tokenset.
+ * @param useMrrt Setting that the user can activate to use MRRT in their requests
+ * @param authorizationParams Contains the audience and scope that the user requested to obtain a token
+ * @param oldAudience Audience stored with the refresh_token wich we are going to use in the request
+ * @param oldScope Scope stored with the refresh_token wich we are going to use in the request
+ */
+export const getScopeToRequest = (
+  useMrrt: boolean | undefined,
+  authorizationParams: { audience?: string, scope: string },
+  oldAudience?: string,
+  oldScope?: string
+): string => {
+  if (useMrrt && oldAudience && oldScope) {
+    if (authorizationParams.audience !== oldAudience) {
+      return authorizationParams.scope;
+    }
+
+    const oldScopes = oldScope.split(" ");
+    const newScopes = authorizationParams.scope?.split(" ") || [];
+    const newScopesAreIncluded = newScopes.every((scope) => oldScopes.includes(scope));
+
+    return oldScopes.length >= newScopes.length && newScopesAreIncluded ? oldScope : authorizationParams.scope;
+  }
+
+  return authorizationParams.scope;
+}
+
+/**
+ * @ignore
+ * 
+ * Checks if the refresh request has been done using MRRT
+ * @param oldAudience Audience from the refresh token used to refresh
+ * @param oldScope Scopes from the refresh token used to refresh
+ * @param requestAudience Audience sent to the server
+ * @param requestScope Scopes sent to the server
+ */
+export const isRefreshWithMrrt = (
+  oldAudience: string | undefined,
+  oldScope: string | undefined,
+  requestAudience: string | undefined,
+  requestScope: string,
+): boolean => {
+  if (oldAudience !== requestAudience) {
+    return true;
+  }
+
+  return !allScopesAreIncluded(requestScope, oldScope);
+}

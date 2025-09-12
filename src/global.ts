@@ -273,6 +273,12 @@ export interface Auth0ClientOptions extends BaseLoginOptions {
    */
   workerUrl?: string;
 
+
+  /**
+   * If `true`, the SDK will allow the refreshing of tokens using MRRT
+   */
+  useMrrt?: boolean;
+
   /**
    * If `true`, DPoP (OAuth 2.0 Demonstrating Proof of Possession, RFC9449)
    * will be used to cryptographically bind tokens to this specific browser
@@ -354,7 +360,7 @@ export interface RedirectLoginResult<TAppState = any> {
   appState?: TAppState;
 }
 
-export interface PopupLoginOptions extends BaseLoginOptions {}
+export interface PopupLoginOptions extends BaseLoginOptions { }
 
 export interface PopupConfigOptions {
   /**
