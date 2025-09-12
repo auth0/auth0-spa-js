@@ -485,7 +485,10 @@ describe('Fetcher', () => {
       });
 
       it('request is prepared', () =>
-        expect(fetcher['prepareRequest']).toHaveBeenCalledWith(request));
+        expect(fetcher['prepareRequest']).toHaveBeenCalledWith(
+          request,
+          undefined
+        ));
 
       it('calls fetch() properly', () =>
         expect(fetcher['config']['fetch']).toHaveBeenCalledWith(request));
@@ -537,6 +540,43 @@ describe('Fetcher', () => {
 
       it('returns the second response', () =>
         expect(output).toBe(secondResponse));
+    });
+
+    describe('when scope and audience is passed', () => {
+      const existingToken = 'existing-token-123';
+      const getAccessTokenMock = jest.fn().mockResolvedValue(TEST_ACCESS_TOKEN);
+      const fetcher = newTestFetcher({
+        getAccessToken: getAccessTokenMock
+      });
+      const request = new Request('https://example.com', {
+        headers: { authorization: `Bearer ${existingToken}` }
+      });
+
+      beforeEach(() => {
+        fetcher['setAuthorizationHeader'] = jest.fn();
+        fetcher['setDpopProofHeader'] = jest.fn();
+      });
+
+      beforeEach(() =>
+        fetcher.fetchWithAuth(request, undefined, {
+          scope: ['<scope>'],
+          audience: '<audience>'
+        })
+      );
+
+      it('does call getAccessToken', async () => {
+        await fetcher.fetchWithAuth(request, undefined, {
+          scope: ['<scope>'],
+          audience: '<audience>'
+        });
+
+        expect(getAccessTokenMock).toHaveBeenCalledWith(
+          expect.objectContaining({
+            scope: ['<scope>'],
+            audience: '<audience>'
+          })
+        );
+      });
     });
   });
 });
