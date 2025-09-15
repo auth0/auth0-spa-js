@@ -1,5 +1,18 @@
 # Change Log
 
+## [v2.4.1](https://github.com/auth0/auth0-spa-js/tree/v2.4.1) (2025-09-10)
+[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.4.0...v2.4.1)
+
+**Fixed**
+- fix: move runtime dependencies from devDependencies to dependencies [\#1411](https://github.com/auth0/auth0-spa-js/pull/1411) ([gyaneshgouraw-okta](https://github.com/gyaneshgouraw-okta))
+
+## [v2.4.0](https://github.com/auth0/auth0-spa-js/tree/v2.4.0) (2025-09-08)
+[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.3.0...v2.4.0)
+
+**Added**
+- Add HTTP fetcher for DPoP [\#1400](https://github.com/auth0/auth0-spa-js/pull/1400) ([martinml](https://github.com/martinml))
+- Add support for DPoP [\#1388](https://github.com/auth0/auth0-spa-js/pull/1388) ([martinml](https://github.com/martinml))
+
 ## [v2.3.0](https://github.com/auth0/auth0-spa-js/tree/v2.3.0) (2025-07-16)
 [Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.2.0...v2.3.0)
 

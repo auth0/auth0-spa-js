@@ -10,7 +10,8 @@ import {
   runIframe,
   urlDecodeB64,
   getCrypto,
-  validateCrypto
+  validateCrypto,
+  fromEntries
 } from '../src/utils';
 
 import { DEFAULT_AUTHORIZE_TIMEOUT_IN_SECONDS } from '../src/constants';
@@ -492,5 +493,21 @@ describe('utils', () => {
       auth0-spa-js must run on a secure origin. See https://github.com/auth0/auth0-spa-js/blob/main/FAQ.md#why-do-i-get-auth0-spa-js-must-run-on-a-secure-origin for more information.
     `);
     });
+  });
+
+  describe('fromEntries', () => {
+    const data = { a: 'b', c: 'd' };
+    const iterable = new Headers(data);
+
+    let output: Record<string, string>;
+
+    beforeEach(() => {
+      output = fromEntries(iterable);
+    });
+
+    it(
+      'converts an iterable into a POJO',
+      () => expect(output).toEqual(data),
+    );
   });
 });
