@@ -10,6 +10,7 @@ import { assertUrlEquals, loginWithRedirectFn, setupFn } from './helpers';
 
 import { TEST_CLIENT_ID, TEST_CODE_CHALLENGE, TEST_DOMAIN } from '../constants';
 import { ICache } from '../../src/cache';
+import * as DpopModule from '../../src/dpop/dpop';
 
 jest.mock('es-cookie');
 jest.mock('../../src/jwt');
@@ -65,6 +66,7 @@ describe('Auth0Client', () => {
     mockWindow.Worker = {};
     jest.spyOn(scope, 'getUniqueScopes');
     sessionStorage.clear();
+    jest.spyOn(DpopModule, 'Dpop').mockReturnThis();
   });
 
   afterEach(() => {
@@ -166,6 +168,19 @@ describe('Auth0Client', () => {
       await loginWithRedirectFn(mockWindow, mockFetch)(auth0);
 
       expect(mockCache.set).toHaveBeenCalled();
+    });
+
+    it('does not create DPoP handler when is disabled', () => {
+      const auth0 = setup({ useDpop: false });
+
+      expect(auth0['dpop']).toBeUndefined();
+    });
+
+    it('creates a DPoP handler when enabled', () => {
+      const auth0 = setup({ useDpop: true });
+
+      expect(auth0['dpop']).not.toBeUndefined();
+      expect(DpopModule.Dpop).toHaveBeenCalledWith(TEST_CLIENT_ID);
     });
   });
 });

@@ -1,5 +1,6 @@
 import version from '../src/version';
 import { DEFAULT_SCOPE } from '../src/constants';
+import type * as dpopUtils from '../src/dpop/utils';
 
 export const TEST_AUTH0_CLIENT_QUERY_STRING = `&auth0Client=${encodeURIComponent(
   btoa(
@@ -17,6 +18,7 @@ export const TEST_AUDIENCE = 'my_audience';
 export const TEST_ID_TOKEN = 'my_id_token';
 export const TEST_ACCESS_TOKEN = 'my_access_token';
 export const TEST_REFRESH_TOKEN = 'my_refresh_token';
+export const TEST_TOKEN_TYPE = 'Bearer';
 export const TEST_STATE = 'MTIz';
 export const TEST_NONCE = 'MTIz';
 export const TEST_CODE = 'my_code';
@@ -33,6 +35,12 @@ export const TEST_USER_ID = 'user-id';
 export const TEST_USER_EMAIL = 'user@email.com';
 export const TEST_APP_STATE = { bestPet: 'dog' };
 export const TEST_ORG_ID = 'org_id_123';
+export const TEST_DPOP_NONCE = 'dpop_nonce_abc123';
+export const TEST_DPOP_KEYPAIR = {
+  publicKey: { type: 'public' },
+  privateKey: { type: 'private' }
+} as dpopUtils.KeyPair;
+export const TEST_DPOP_PROOF = 'dpop.proof.abc123';
 
 export const nowSeconds = () => Math.floor(Date.now() / 1000);
 export const dayInSeconds = 86400;

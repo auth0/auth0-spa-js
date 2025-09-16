@@ -1,5 +1,6 @@
 import { TokenEndpointOptions, TokenEndpointResponse } from './global';
 import { DEFAULT_AUTH0_CLIENT } from './constants';
+import * as dpopUtils from './dpop/utils';
 import { getJSON } from './http';
 import { createQueryParams } from './utils';
 
@@ -11,13 +12,25 @@ export async function oauthToken(
     scope,
     auth0Client,
     useFormData,
+    dpop,
     ...options
   }: TokenEndpointOptions,
   worker?: Worker
 ) {
+  const isTokenExchange =
+    options.grant_type === 'urn:ietf:params:oauth:grant-type:token-exchange';
+
+  const allParams = {
+    ...options,
+    ...(isTokenExchange && audience && { audience }),
+    ...(isTokenExchange && scope && { scope })
+  };
+
   const body = useFormData
-    ? createQueryParams(options)
-    : JSON.stringify(options);
+    ? createQueryParams(allParams)
+    : JSON.stringify(allParams);
+
+  const isDpopSupported = dpopUtils.isGrantTypeSupported(options.grant_type);
 
   return await getJSON<TokenEndpointResponse>(
     `${baseUrl}/oauth/token`,
@@ -37,6 +50,7 @@ export async function oauthToken(
       }
     },
     worker,
-    useFormData
+    useFormData,
+    isDpopSupported ? dpop : undefined
   );
 }

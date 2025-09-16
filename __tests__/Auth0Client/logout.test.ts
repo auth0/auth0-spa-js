@@ -209,6 +209,19 @@ describe('Auth0Client', () => {
       );
     });
 
+    it('clears DPoP handler when present', async () => {
+      const auth0 = setup({ useDpop: true });
+      const dpop = auth0['dpop']!;
+
+      jest
+        .spyOn(dpop, 'clear')
+        .mockResolvedValue();
+
+      await auth0.logout();
+
+      expect(dpop.clear).toHaveBeenCalled();
+    });
+
     it('skips `window.location.assign` when `options.onRedirect` is provided', async () => {
       const auth0 = setup();
       const onRedirect = jest.fn();
