@@ -71,6 +71,7 @@ export class CacheManager {
     cacheKey: CacheKey,
     expiryAdjustmentSeconds = DEFAULT_EXPIRY_ADJUSTMENT_SECONDS,
     useMrrt = false,
+    cacheMode?: string
   ): Promise<Partial<CacheEntry> | undefined> {
     let wrappedEntry = await this.cache.get<WrappedCacheEntry>(
       cacheKey.toKey()
@@ -87,7 +88,10 @@ export class CacheManager {
         wrappedEntry = await this.cache.get<WrappedCacheEntry>(matchedKey);
       }
 
-      if (!matchedKey && useMrrt) {
+      // To refresh using MRRT we need to send a request to the server
+      // If cacheMode is 'cache-only', this will make us unable to call the server
+      // so it won't be needed to find a valid refresh token
+      if (!matchedKey && useMrrt && cacheMode !== 'cache-only') {
         return this.getEntryWithRefreshToken(cacheKey, keys);
       }
     }

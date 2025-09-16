@@ -692,7 +692,8 @@ export class Auth0Client {
       const entry = await this._getEntryFromCache({
         scope: getTokenOptions.authorizationParams.scope,
         audience: getTokenOptions.authorizationParams.audience || 'default',
-        clientId: this.options.clientId
+        clientId: this.options.clientId,
+        cacheMode,
       });
 
       if (entry) {
@@ -1142,11 +1143,13 @@ export class Auth0Client {
   private async _getEntryFromCache({
     scope,
     audience,
-    clientId
+    clientId,
+    cacheMode,
   }: {
     scope: string;
     audience: string;
     clientId: string;
+    cacheMode?: string;
   }): Promise<undefined | GetTokenSilentlyVerboseResponse> {
     const entry = await this.cacheManager.get(
       new CacheKey({
@@ -1156,6 +1159,7 @@ export class Auth0Client {
       }),
       60, // get a new token if within 60 seconds of expiring
       this.options.useMrrt,
+      cacheMode,
     );
 
     if (entry && entry.access_token) {
