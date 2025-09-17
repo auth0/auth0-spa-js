@@ -116,6 +116,22 @@ type GetTokenSilentlyResult = TokenEndpointResponse & {
 const lock = new Lock();
 
 /**
+ * The interface used to define a plugin for the Auth0Client.
+ */
+export interface Auth0ClientPlugin<TAuth0ClientExtension extends {}> {
+  /**
+   * The name of the plugin.
+   */
+  name: string;
+
+  /**
+   * Installs the plugin and returns the methods to add to the Auth0Client instance.
+   * @param client The Auth0Client instance to extend.
+   */
+  install(client: Auth0Client): TAuth0ClientExtension;
+}
+
+/**
  * Auth0 SDK for Single Page Applications using [Authorization Code Grant Flow with PKCE](https://auth0.com/docs/api-auth/tutorials/authorization-code-grant-pkce).
  */
 export class Auth0Client {
@@ -1291,6 +1307,30 @@ export class Auth0Client {
     this._assertDpop(this.dpop);
 
     return this.dpop.generateProof(params);
+  }
+
+  /**
+   * Extends the Auth0Client instance with the provided plugin.
+   * @param plugin The plugin to install.
+   * @returns The extended Auth0Client instance.
+   */
+  public installPlugin<TAuth0ClientExtension extends {}>(
+    plugin: Auth0ClientPlugin<TAuth0ClientExtension>
+  ): this & TAuth0ClientExtension {
+    const methods = plugin.install(this);
+    for (const key of Object.keys(methods)) {
+      // We should not allow overriding existing properties and methods of the Auth0Client instance
+      if (key in this) {
+        throw new Error(
+          `The plugin is trying to override the existing property "${key}" of Auth0Client.`
+        );
+      }
+
+      // @ts-ignore
+      this[key] = methods[key];
+    }
+
+    return this as this & TAuth0ClientExtension;
   }
 
   /**
