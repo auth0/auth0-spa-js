@@ -10,11 +10,8 @@ import { assertUrlEquals, loginWithRedirectFn, setupFn } from './helpers';
 
 import { TEST_CLIENT_ID, TEST_CODE_CHALLENGE, TEST_DOMAIN } from '../constants';
 import { ICache } from '../../src/cache';
-<<<<<<< Updated upstream
 import * as DpopModule from '../../src/dpop/dpop';
-=======
 import { DEFAULT_AUDIENCE } from '../../src/constants';
->>>>>>> Stashed changes
 
 jest.mock('es-cookie');
 jest.mock('../../src/jwt');

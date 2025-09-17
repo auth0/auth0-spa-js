@@ -1,10 +1,6 @@
 import { TokenEndpointOptions, TokenEndpointResponse } from './global';
-<<<<<<< Updated upstream
-import { DEFAULT_AUTH0_CLIENT } from './constants';
+import { DEFAULT_AUTH0_CLIENT, DEFAULT_AUDIENCE } from './constants';
 import * as dpopUtils from './dpop/utils';
-=======
-import { DEFAULT_AUDIENCE, DEFAULT_AUTH0_CLIENT } from './constants';
->>>>>>> Stashed changes
 import { getJSON } from './http';
 import { createQueryParams } from './utils';
 
