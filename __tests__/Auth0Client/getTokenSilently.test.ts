@@ -49,6 +49,7 @@ import {
   INVALID_REFRESH_TOKEN_ERROR_MESSAGE
 } from '../../src/constants';
 import { GenericError } from '../../src/errors';
+import { buildGetTokenSilentlyLockKey } from '../../src/Auth0Client.utils';
 
 jest.mock('es-cookie');
 jest.mock('../../src/jwt');
@@ -1481,10 +1482,12 @@ describe('Auth0Client', () => {
       await getTokenSilently(auth0);
 
       expect(acquireLockSpy).toHaveBeenCalledWith(
-        GET_TOKEN_SILENTLY_LOCK_KEY,
+        buildGetTokenSilentlyLockKey('auth0_client_id', 'default'),
         5000
       );
-      expect(releaseLockSpy).toHaveBeenCalledWith(GET_TOKEN_SILENTLY_LOCK_KEY);
+      expect(releaseLockSpy).toHaveBeenCalledWith(
+        buildGetTokenSilentlyLockKey('auth0_client_id', 'default')
+      );
     });
 
     it('should add and remove a pagehide handler', async () => {
@@ -1519,7 +1522,7 @@ describe('Auth0Client', () => {
         if (event === 'pagehide') {
           handler();
           expect(releaseLockSpy).toHaveBeenCalledWith(
-            GET_TOKEN_SILENTLY_LOCK_KEY
+            buildGetTokenSilentlyLockKey('auth0_client_id', 'default')
           );
         }
       });
@@ -1596,6 +1599,285 @@ describe('Auth0Client', () => {
         'HTTP error. Unable to fetch https://auth0_domain/oauth/token'
       );
       expect(releaseLockSpy).toHaveBeenCalled();
+    });
+
+    describe('multiple lock tracking', () => {
+      it('should track multiple concurrent locks with different audiences', async () => {
+        const auth0 = setup();
+
+        jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
+          access_token: TEST_ACCESS_TOKEN,
+          state: TEST_STATE,
+          code: TEST_CODE
+        });
+
+        // Start two concurrent requests with different audiences
+        await Promise.all([
+          getTokenSilently(auth0, {
+            authorizationParams: { audience: 'audience1' }
+          }),
+          getTokenSilently(auth0, {
+            authorizationParams: { audience: 'audience2' }
+          })
+        ]);
+
+        // Should have acquired different lock keys
+        expect(acquireLockSpy).toHaveBeenCalledWith(
+          `auth0.lock.getTokenSilently.${TEST_CLIENT_ID}.audience1`,
+          5000
+        );
+        expect(acquireLockSpy).toHaveBeenCalledWith(
+          `auth0.lock.getTokenSilently.${TEST_CLIENT_ID}.audience2`,
+          5000
+        );
+
+        // Both locks should be released
+        expect(releaseLockSpy).toHaveBeenCalledWith(
+          `auth0.lock.getTokenSilently.${TEST_CLIENT_ID}.audience1`
+        );
+        expect(releaseLockSpy).toHaveBeenCalledWith(
+          `auth0.lock.getTokenSilently.${TEST_CLIENT_ID}.audience2`
+        );
+      });
+
+      it('should use dynamic lock keys based on client ID and audience', async () => {
+        const auth0 = setup();
+
+        jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
+          access_token: TEST_ACCESS_TOKEN,
+          state: TEST_STATE
+        });
+
+        mockFetch.mockResolvedValue(
+          fetchResponse(true, {
+            id_token: TEST_ID_TOKEN,
+            refresh_token: TEST_REFRESH_TOKEN,
+            access_token: TEST_ACCESS_TOKEN,
+            expires_in: 86400
+          })
+        );
+
+        await getTokenSilently(auth0, {
+          authorizationParams: { audience: 'custom-audience' }
+        });
+
+        expect(acquireLockSpy).toHaveBeenCalledWith(
+          `auth0.lock.getTokenSilently.${TEST_CLIENT_ID}.custom-audience`,
+          5000
+        );
+
+        expect(releaseLockSpy).toHaveBeenCalledWith(
+          `auth0.lock.getTokenSilently.${TEST_CLIENT_ID}.custom-audience`
+        );
+      });
+
+      it('should use default audience when none specified', async () => {
+        const auth0 = setup();
+
+        jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
+          access_token: TEST_ACCESS_TOKEN,
+          state: TEST_STATE
+        });
+
+        await getTokenSilently(auth0);
+
+        expect(acquireLockSpy).toHaveBeenCalledWith(
+          `auth0.lock.getTokenSilently.${TEST_CLIENT_ID}.default`,
+          5000
+        );
+
+        expect(releaseLockSpy).toHaveBeenCalledWith(
+          `auth0.lock.getTokenSilently.${TEST_CLIENT_ID}.default`
+        );
+      });
+
+      it('should add pagehide event listener only on first lock acquisition', async () => {
+        const auth0 = setup();
+
+        // Ensure to delay the resolution here to allow both requests to start
+        // and ensure the second one attempts to acquire the lock before the first one releases it.
+        jest.spyOn(<any>utils, 'runIframe').mockReturnValue(
+          new Promise(resolve => {
+            setTimeout(
+              () =>
+                resolve({
+                  access_token: TEST_ACCESS_TOKEN,
+                  state: TEST_STATE,
+                  code: TEST_CODE
+                }),
+              100
+            );
+          })
+        );
+
+        await Promise.all([
+          getTokenSilently(auth0, {
+            authorizationParams: { audience: 'audience1' }
+          }),
+          getTokenSilently(auth0, {
+            authorizationParams: { audience: 'audience2' }
+          })
+        ]);
+
+        expect(mockWindow.addEventListener).toHaveBeenCalledTimes(1);
+      });
+
+      it('should remove pagehide event listener only when all locks are released', async () => {
+        const auth0 = setup();
+        let pagehideHandler: (() => void) | undefined;
+
+        jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
+          access_token: TEST_ACCESS_TOKEN,
+          state: TEST_STATE
+        });
+
+        // Capture the pagehide handler
+        mockWindow.addEventListener.mockImplementation((event, handler) => {
+          if (event === 'pagehide') {
+            pagehideHandler = handler as () => void;
+          }
+        });
+
+        // Start two requests but let them finish
+        await getTokenSilently(auth0, {
+          authorizationParams: { audience: 'audience1' }
+        });
+
+        // Clear the mock to track subsequent calls
+        mockWindow.removeEventListener.mockClear();
+
+        await getTokenSilently(auth0, {
+          authorizationParams: { audience: 'audience2' }
+        });
+
+        // Event listener should only be removed once, after the last lock
+        expect(mockWindow.removeEventListener).toHaveBeenCalledTimes(1);
+        expect(mockWindow.removeEventListener).toHaveBeenCalledWith(
+          'pagehide',
+          pagehideHandler
+        );
+      });
+
+      it('should release all active locks on page hide', async () => {
+        const auth0 = setup();
+        let pagehideHandler: (() => void) | undefined;
+
+        // Mock long-running requests to simulate concurrent operations
+        const runIframeSpy = jest.spyOn(<any>utils, 'runIframe');
+
+        // As we want to manually control when the promise resolves, we need to
+        // create the promises ourselves and capture their resolve functions
+        let resolveFirstRequest: ((value: any) => void) | undefined;
+        let resolveSecondRequest: ((value: any) => void) | undefined;
+
+        // We know we will call the iframe twice, so set up two implementations
+        runIframeSpy
+          .mockImplementationOnce(() => {
+            return new Promise(resolve => {
+              resolveFirstRequest = resolve;
+            });
+          })
+          .mockImplementationOnce(() => {
+            return new Promise(resolve => {
+              resolveSecondRequest = resolve;
+            });
+          });
+
+        // Capture the pagehide handler to be able to trigger it in the test
+        mockWindow.addEventListener.mockImplementation((event, handler) => {
+          if (event === 'pagehide') {
+            pagehideHandler = handler as () => void;
+          }
+        });
+
+        // Start two concurrent requests
+        const promise1 = getTokenSilently(auth0, {
+          authorizationParams: { audience: 'audience1' }
+        });
+
+        const promise2 = getTokenSilently(auth0, {
+          authorizationParams: { audience: 'audience2' }
+        });
+
+        // Wait a bit to ensure both requests have acquired their locks
+        // and that the pagehide handler has been registered
+        await new Promise(resolve => setTimeout(resolve, 100));
+
+        // Trigger page hide while both requests are in progress
+        pagehideHandler!();
+
+        // Wait a bit to ensure both locks have been released
+        await new Promise(resolve => setTimeout(resolve, 100));
+
+        // Both locks should be released immediately
+        expect(releaseLockSpy).toHaveBeenCalledWith(
+          `auth0.lock.getTokenSilently.${TEST_CLIENT_ID}.audience1`
+        );
+        expect(releaseLockSpy).toHaveBeenCalledWith(
+          `auth0.lock.getTokenSilently.${TEST_CLIENT_ID}.audience2`
+        );
+
+        expect(releaseLockSpy).toHaveBeenCalledTimes(2);
+
+        // Now resolve the pending requests
+        resolveFirstRequest!({
+          access_token: TEST_ACCESS_TOKEN,
+          state: TEST_STATE
+        });
+
+        resolveSecondRequest!({
+          access_token: TEST_ACCESS_TOKEN,
+          state: TEST_STATE
+        });
+
+        // Await on the original promises to ensure no unhandled rejections
+        await Promise.all([promise1, promise2]);
+      });
+
+      it('should handle errors in concurrent requests without affecting other locks', async () => {
+        const auth0 = setup();
+
+        jest
+          .spyOn(<any>utils, 'runIframe')
+          .mockResolvedValueOnce({
+            access_token: TEST_ACCESS_TOKEN,
+            state: TEST_STATE
+          })
+          .mockRejectedValueOnce(new Error('Network error'));
+
+        // Mock one successful and one failing request
+
+        const promise1 = getTokenSilently(auth0, {
+          authorizationParams: { audience: 'audience1' }
+        });
+
+        await new Promise(resolve => setTimeout(resolve, 50));
+
+        const promise2 = getTokenSilently(auth0, {
+          authorizationParams: { audience: 'audience2' }
+        });
+
+        const [result1, result2] = await Promise.allSettled([
+          promise1,
+          promise2
+        ]);
+
+        // First should succeed, second should fail
+        expect(result1.status).toEqual('fulfilled');
+        expect((result1 as PromiseFulfilledResult<string>).value).toEqual(
+          TEST_ACCESS_TOKEN
+        );
+
+        expect(result2.status).toEqual('rejected');
+
+        // Both locks should be released despite the error
+        expect(releaseLockSpy).toHaveBeenCalledWith(
+          `auth0.lock.getTokenSilently.${TEST_CLIENT_ID}.audience1`
+        );
+        expect(releaseLockSpy).toHaveBeenCalledWith(
+          `auth0.lock.getTokenSilently.${TEST_CLIENT_ID}.audience2`
+        );
+      });
     });
 
     it('sends custom options through to the token endpoint when using an iframe when not using useFormData', async () => {
