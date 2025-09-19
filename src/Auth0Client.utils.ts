@@ -117,25 +117,25 @@ export const allScopesAreIncluded = (scopeToInclude?: string, scopes?: string): 
  * with the refresh_token in the tokenset.
  * @param useMrrt Setting that the user can activate to use MRRT in their requests
  * @param authorizationParams Contains the audience and scope that the user requested to obtain a token
- * @param oldAudience Audience stored with the refresh_token wich we are going to use in the request
- * @param oldScope Scope stored with the refresh_token wich we are going to use in the request
+ * @param cachedAudience Audience stored with the refresh_token wich we are going to use in the request
+ * @param cachedScope Scope stored with the refresh_token wich we are going to use in the request
  */
 export const getScopeToRequest = (
   useMrrt: boolean | undefined,
   authorizationParams: { audience?: string, scope: string },
-  oldAudience?: string,
-  oldScope?: string
+  cachedAudience?: string,
+  cachedScope?: string
 ): string => {
-  if (useMrrt && oldAudience && oldScope) {
-    if (authorizationParams.audience !== oldAudience) {
+  if (useMrrt && cachedAudience && cachedScope) {
+    if (authorizationParams.audience !== cachedAudience) {
       return authorizationParams.scope;
     }
 
-    const oldScopes = oldScope.split(" ");
+    const cachedScopes = cachedScope.split(" ");
     const newScopes = authorizationParams.scope?.split(" ") || [];
-    const newScopesAreIncluded = newScopes.every((scope) => oldScopes.includes(scope));
+    const newScopesAreIncluded = newScopes.every((scope) => cachedScopes.includes(scope));
 
-    return oldScopes.length >= newScopes.length && newScopesAreIncluded ? oldScope : authorizationParams.scope;
+    return cachedScopes.length >= newScopes.length && newScopesAreIncluded ? cachedScope : authorizationParams.scope;
   }
 
   return authorizationParams.scope;
@@ -145,20 +145,20 @@ export const getScopeToRequest = (
  * @ignore
  * 
  * Checks if the refresh request has been done using MRRT
- * @param oldAudience Audience from the refresh token used to refresh
- * @param oldScope Scopes from the refresh token used to refresh
+ * @param cachedAudience Audience from the refresh token used to refresh
+ * @param cachedScope Scopes from the refresh token used to refresh
  * @param requestAudience Audience sent to the server
  * @param requestScope Scopes sent to the server
  */
 export const isRefreshWithMrrt = (
-  oldAudience: string | undefined,
-  oldScope: string | undefined,
+  cachedAudience: string | undefined,
+  cachedScope: string | undefined,
   requestAudience: string | undefined,
   requestScope: string,
 ): boolean => {
-  if (oldAudience !== requestAudience) {
+  if (cachedAudience !== requestAudience) {
     return true;
   }
 
-  return !allScopesAreIncluded(requestScope, oldScope);
+  return !allScopesAreIncluded(requestScope, cachedScope);
 }
