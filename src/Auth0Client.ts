@@ -1363,7 +1363,7 @@ export class Auth0Client {
    * This is a drop-in replacement for the Fetch API's `fetch()` method, but will
    * handle certain authentication logic for you, like building the proper auth
    * headers or managing DPoP nonces and retries automatically.
-   * 
+   *
    * Check the `EXAMPLES.md` file for a deeper look into this method.
    */
   public createFetcher<TOutput extends CustomFetchMinimalOutput = Response>(
@@ -1377,7 +1377,13 @@ export class Auth0Client {
 
     return new Fetcher(config, {
       isDpopEnabled: () => !!this.options.useDpop,
-      getAccessToken: () => this.getTokenSilently(),
+      getAccessToken: authParams =>
+        this.getTokenSilently({
+          authorizationParams: {
+            scope: authParams?.scope?.join(' '),
+            audience: authParams?.audience
+          }
+        }),
       getDpopNonce: () => this.getDpopNonce(config.dpopNonceId),
       setDpopNonce: nonce => this.setDpopNonce(nonce),
       generateDpopProof: params => this.generateDpopProof(params)

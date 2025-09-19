@@ -15,7 +15,12 @@ export type CustomFetchImpl<TOutput extends CustomFetchMinimalOutput> = (
   req: Request
 ) => Promise<TOutput>;
 
-type AccessTokenFactory = () => Promise<string>;
+export type AuthParams = {
+  scope?: string[];
+  audience?: string;
+};
+
+type AccessTokenFactory = (authParams?: AuthParams) => Promise<string>;
 
 export type FetcherConfig<TOutput extends CustomFetchMinimalOutput> = {
   getAccessToken?: AccessTokenFactory;
@@ -26,7 +31,7 @@ export type FetcherConfig<TOutput extends CustomFetchMinimalOutput> = {
 
 export type FetcherHooks = {
   isDpopEnabled: () => boolean;
-  getAccessToken: () => Promise<string>;
+  getAccessToken: AccessTokenFactory;
   getDpopNonce: () => Promise<string | undefined>;
   setDpopNonce: (nonce: string) => Promise<void>;
   generateDpopProof: (params: {
@@ -83,10 +88,10 @@ export class Fetcher<TOutput extends CustomFetchMinimalOutput> {
     throw new TypeError('`url` must be absolute or `baseUrl` non-empty.');
   }
 
-  protected getAccessToken(): Promise<string> {
+  protected getAccessToken(authParams?: AuthParams): Promise<string> {
     return this.config.getAccessToken
-      ? this.config.getAccessToken()
-      : this.hooks.getAccessToken();
+      ? this.config.getAccessToken(authParams)
+      : this.hooks.getAccessToken(authParams);
   }
 
   protected buildBaseRequest(
@@ -139,8 +144,8 @@ export class Fetcher<TOutput extends CustomFetchMinimalOutput> {
     request.headers.set('dpop', dpopProof);
   }
 
-  protected async prepareRequest(request: Request) {
-    const accessToken = await this.getAccessToken();
+  protected async prepareRequest(request: Request, authParams?: AuthParams) {
+    const accessToken = await this.getAccessToken(authParams);
 
     this.setAuthorizationHeader(request, accessToken);
 
@@ -195,11 +200,12 @@ export class Fetcher<TOutput extends CustomFetchMinimalOutput> {
   protected async internalFetchWithAuth(
     info: RequestInfo | URL,
     init: RequestInit | undefined,
-    callbacks: FetchWithAuthCallbacks<TOutput>
+    callbacks: FetchWithAuthCallbacks<TOutput>,
+    authParams?: AuthParams
   ): Promise<TOutput> {
     const request = this.buildBaseRequest(info, init);
 
-    await this.prepareRequest(request);
+    await this.prepareRequest(request, authParams);
 
     const response = await this.config.fetch(request);
 
@@ -208,17 +214,23 @@ export class Fetcher<TOutput extends CustomFetchMinimalOutput> {
 
   public fetchWithAuth(
     info: RequestInfo | URL,
-    init?: RequestInit
+    init?: RequestInit,
+    authParams?: AuthParams
   ): Promise<TOutput> {
     const callbacks: FetchWithAuthCallbacks<TOutput> = {
       onUseDpopNonceError: () =>
-        this.internalFetchWithAuth(info, init, {
-          ...callbacks,
-          // Retry on a `use_dpop_nonce` error, but just once.
-          onUseDpopNonceError: undefined
-        })
+        this.internalFetchWithAuth(
+          info,
+          init,
+          {
+            ...callbacks,
+            // Retry on a `use_dpop_nonce` error, but just once.
+            onUseDpopNonceError: undefined
+          },
+          authParams
+        )
     };
 
-    return this.internalFetchWithAuth(info, init, callbacks);
+    return this.internalFetchWithAuth(info, init, callbacks, authParams);
   }
 }
