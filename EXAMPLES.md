@@ -81,6 +81,28 @@ If the fallback mechanism fails, a `login_required` error will be thrown and cou
 
 **Note**: This fallback mechanism does still require access to the Auth0 session cookie, so if third-party cookies are being blocked then this fallback will not work and the user must re-authenticate in order to get a new refresh token.
 
+### Using Multi-Resource Refresh Tokens
+
+Refresh tokens from one API can be used to request new access tokens for another API. [Read more about how MRRT works for browser-based applications](https://auth0.com/docs/secure/tokens/refresh-tokens/multi-resource-refresh-token) to help you decide wether or not you need to use this funcfionality.
+
+To enable the use of MRRT, set the `useMrrt` option to `true`, and as well enable the use of refresh tokens:
+
+```js
+await createAuth0Client({
+  domain: '<AUTH0_DOMAIN>',
+  clientId: '<AUTH0_CLIENT_ID>',
+  useRefreshTokens: true,
+  useMrrt: true,
+  authorizationParams: {
+    redirect_uri: '<MY_CALLBACK_URL>'
+  }
+});
+```
+
+Using this setting will make the SDK able to reuse the refresh token not only for APIs requested at login, but also for additional APIs allowed in the MRRT policy.
+
+**Note**: This configuration option requires the refresh token policies of your application [to be configured](https://auth0.com/docs/secure/tokens/refresh-tokens/multi-resource-refresh-token/configure-and-implement-multi-resource-refresh-token).
+
 ## Data caching options
 
 The SDK can be configured to cache ID tokens and access tokens either in memory or in local storage. The default is in memory. This setting can be controlled using the `cacheLocation` option when creating the Auth0 client.
