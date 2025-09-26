@@ -24,6 +24,7 @@ export const parseAuthenticationResult = (
   return {
     state: searchParams.get('state')!,
     code: searchParams.get('code') || undefined,
+    connect_code: searchParams.get('connect_code') || undefined,
     error: searchParams.get('error') || undefined,
     error_description: searchParams.get('error_description') || undefined
   };
