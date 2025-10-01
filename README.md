@@ -29,7 +29,7 @@ npm install @auth0/auth0-spa-js
 From the CDN:
 
 ```html
-<script src="https://cdn.auth0.com/js/auth0-spa-js/2.4/auth0-spa-js.production.js"></script>
+<script src="https://cdn.auth0.com/js/auth0-spa-js/2.5/auth0-spa-js.production.js"></script>
 ```
 
 ### Configure Auth0
