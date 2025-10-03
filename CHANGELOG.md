@@ -1,5 +1,12 @@
 # Change Log
 
+## [v2.5.0](https://github.com/auth0/auth0-spa-js/tree/v2.5.0) (2025-10-01)
+[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.4.1...v2.5.0)
+
+**Added**
+- Add Support for Multi-Resource Refresh Tokens (MRRT) [\#1386](https://github.com/auth0/auth0-spa-js/pull/1386) ([aridibag](https://github.com/aridibag))
+- Make Fetcher to be Scope- and Audience-Aware [\#1414](https://github.com/auth0/auth0-spa-js/pull/1414) ([frederikprijck](https://github.com/frederikprijck))
+
 ## [v2.4.1](https://github.com/auth0/auth0-spa-js/tree/v2.4.1) (2025-09-10)
 [Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.4.0...v2.4.1)
 
