@@ -114,10 +114,10 @@ export class Fetcher<TOutput extends CustomFetchMinimalOutput> {
     );
   }
 
-  protected async setAuthorizationHeader(
+  protected setAuthorizationHeader(
     request: Request,
     accessToken: string
-  ): Promise<void> {
+  ): void {
     request.headers.set(
       'authorization',
       `${this.config.dpopNonceId ? 'DPoP' : 'Bearer'} ${accessToken}`
