@@ -1878,6 +1878,179 @@ describe('Auth0Client', () => {
           `auth0.lock.getTokenSilently.${TEST_CLIENT_ID}.audience2`
         );
       });
+
+      it('should allow simultaneous calls with different audiences to make separate HTTP calls', async () => {
+        const auth0 = setup();
+
+        let iframeCallCount = 0;
+        let fetchCallCount = 0;
+
+        // Mock runIframe to return a unique token/code for each call
+        jest.spyOn(<any>utils, 'runIframe').mockImplementation(() => {
+          iframeCallCount++;
+          return Promise.resolve({
+            access_token: `access_token_${iframeCallCount}`,
+            state: TEST_STATE,
+            code: `code_${iframeCallCount}`
+          });
+        });
+
+        // Mock fetch to return a unique token for each call
+        mockFetch.mockImplementation(() => {
+          fetchCallCount++;
+          return Promise.resolve({
+            ok: true,
+            json: () =>
+              Promise.resolve({
+                id_token: TEST_ID_TOKEN,
+                refresh_token: TEST_REFRESH_TOKEN,
+                access_token: `access_token_${fetchCallCount}`,
+                expires_in: 86400
+              }),
+            headers: new Headers()
+          });
+        });
+
+        // Make two simultaneous calls with different audiences
+        const [token1, token2] = await Promise.all([
+          auth0.getTokenSilently({
+            authorizationParams: { audience: 'api1' }
+          }),
+          auth0.getTokenSilently({
+            authorizationParams: { audience: 'api2' }
+          })
+        ]);
+
+        // Both should result in their own HTTP calls
+        expect(mockFetch).toHaveBeenCalledTimes(2);
+        expect(utils.runIframe).toHaveBeenCalledTimes(2);
+
+        // Verify each call got a different token
+        expect(token1).not.toEqual(token2);
+        expect(token1).toMatch(/^access_token_\d+$/);
+        expect(token2).toMatch(/^access_token_\d+$/);
+      });
+
+      it('should allow simultaneous calls with the same audience to make only one HTTP call', async () => {
+        const auth0 = setup();
+
+        let iframeCallCount = 0;
+        let fetchCallCount = 0;
+
+        // Mock runIframe to return a unique token/code for each call
+        jest.spyOn(<any>utils, 'runIframe').mockImplementation(() => {
+          iframeCallCount++;
+          return Promise.resolve({
+            access_token: `access_token_${iframeCallCount}`,
+            state: TEST_STATE,
+            code: `code_${iframeCallCount}`
+          });
+        });
+
+        // Mock fetch to return a unique token for each call
+        mockFetch.mockImplementation(() => {
+          fetchCallCount++;
+          return Promise.resolve({
+            ok: true,
+            json: () =>
+              Promise.resolve({
+                id_token: TEST_ID_TOKEN,
+                refresh_token: TEST_REFRESH_TOKEN,
+                access_token: `access_token_${fetchCallCount}`,
+                expires_in: 86400
+              }),
+            headers: new Headers()
+          });
+        });
+
+        // Make two simultaneous calls with the same audience
+        const [token1, token2] = await Promise.all([
+          auth0.getTokenSilently({
+            authorizationParams: { audience: 'api1' }
+          }),
+          auth0.getTokenSilently({
+            authorizationParams: { audience: 'api1' }
+          })
+        ]);
+
+        // Both should return the same token (from the single shared call)
+        expect(token1).toEqual(token2);
+        expect(token1).toMatch(/^access_token_\d+$/);
+
+        // Should only result in one HTTP call due to lock
+        expect(mockFetch).toHaveBeenCalledTimes(1);
+        expect(utils.runIframe).toHaveBeenCalledTimes(1);
+      });
+
+      it('should release lock correctly and allow subsequent calls to make new HTTP requests', async () => {
+        const auth0 = setup();
+
+        let iframeCallCount = 0;
+        let fetchCallCount = 0;
+
+        // Mock runIframe to return a unique token/code for each call
+        jest.spyOn(<any>utils, 'runIframe').mockImplementation(() => {
+          iframeCallCount++;
+          return Promise.resolve({
+            access_token: `access_token_${iframeCallCount}`,
+            state: TEST_STATE,
+            code: `code_${iframeCallCount}`
+          });
+        });
+
+        // Mock fetch to return a unique token for each call
+        mockFetch.mockImplementation(() => {
+          fetchCallCount++;
+          return Promise.resolve({
+            ok: true,
+            json: () =>
+              Promise.resolve({
+                id_token: TEST_ID_TOKEN,
+                refresh_token: TEST_REFRESH_TOKEN,
+                access_token: `access_token_${fetchCallCount}`,
+                expires_in: 86400
+              }),
+            headers: new Headers()
+          });
+        });
+
+        // Make first simultaneous calls
+        const [token1, token2] = await Promise.all([
+          auth0.getTokenSilently({
+            authorizationParams: { audience: 'api1' },
+            cacheMode: 'off'
+          }),
+          auth0.getTokenSilently({
+            authorizationParams: { audience: 'api1' },
+            cacheMode: 'off'
+          })
+        ]);
+
+        // Both should return the same token due to locking
+        expect(token1).toEqual(token2);
+        expect(token1).toMatch(/^access_token_\d+$/);
+        expect(mockFetch).toHaveBeenCalledTimes(1);
+        expect(utils.runIframe).toHaveBeenCalledTimes(1);
+
+        // Make subsequent simultaneous calls - should get a different token since lock was released
+        const [token3, token4] = await Promise.all([
+          auth0.getTokenSilently({
+            authorizationParams: { audience: 'api1' },
+            cacheMode: 'off'
+          }),
+          auth0.getTokenSilently({
+            authorizationParams: { audience: 'api1' },
+            cacheMode: 'off'
+          })
+        ]);
+
+        // Both should return the same token (but different from first pair)
+        expect(token3).toEqual(token4);
+        expect(token3).not.toEqual(token1);
+        expect(token3).toMatch(/^access_token_\d+$/);
+        expect(mockFetch).toHaveBeenCalledTimes(2);
+        expect(utils.runIframe).toHaveBeenCalledTimes(2);
+      });
     });
 
     it('sends custom options through to the token endpoint when using an iframe when not using useFormData', async () => {
