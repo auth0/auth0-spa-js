@@ -13,6 +13,7 @@ yarn.lock
 .DS_Store
 release-tmp*
 bundle-stats
+.npmrc
 
 # BrowserStack
 log/

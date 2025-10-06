@@ -90,7 +90,10 @@ import {
   getAuthorizeParams,
   buildGetTokenSilentlyLockKey,
   OLD_IS_AUTHENTICATED_COOKIE_NAME,
-  patchOpenUrlWithOnRedirect
+  patchOpenUrlWithOnRedirect,
+  getScopeToRequest,
+  allScopesAreIncluded,
+  isRefreshWithMrrt
 } from './Auth0Client.utils';
 import { CustomTokenExchangeOptions } from './TokenExchange';
 import { Dpop } from './dpop/dpop';
@@ -323,8 +326,8 @@ export class Auth0Client {
       nonce,
       code_challenge,
       authorizationParams.redirect_uri ||
-        this.options.authorizationParams.redirect_uri ||
-        fallbackRedirectUri,
+      this.options.authorizationParams.redirect_uri ||
+      fallbackRedirectUri,
       authorizeOptions?.response_mode,
       thumbprint
     );
@@ -598,7 +601,7 @@ export class Auth0Client {
 
     try {
       await this.getTokenSilently(options);
-    } catch (_) {}
+    } catch (_) { }
   }
 
   /**
@@ -691,7 +694,8 @@ export class Auth0Client {
       const entry = await this._getEntryFromCache({
         scope: getTokenOptions.authorizationParams.scope,
         audience: getTokenOptions.authorizationParams.audience || 'default',
-        clientId: this.options.clientId
+        clientId: this.options.clientId,
+        cacheMode,
       });
 
       if (entry) {
@@ -800,7 +804,9 @@ export class Auth0Client {
         scope: localOptions.authorizationParams.scope,
         audience: localOptions.authorizationParams.audience || 'default',
         clientId: this.options.clientId
-      })
+      }),
+      undefined,
+      this.options.useMrrt
     );
 
     return cache!.access_token;
@@ -987,7 +993,9 @@ export class Auth0Client {
         scope: options.authorizationParams.scope,
         audience: options.authorizationParams.audience || 'default',
         clientId: this.options.clientId
-      })
+      }),
+      undefined,
+      this.options.useMrrt
     );
 
     // If you don't have a refresh token in memory
@@ -1015,6 +1023,13 @@ export class Auth0Client {
         ? options.timeoutInSeconds * 1000
         : null;
 
+    const scopesToRequest = getScopeToRequest(
+      this.options.useMrrt,
+      options.authorizationParams,
+      cache?.audience,
+      cache?.scope,
+    );
+
     try {
       const tokenResult = await this._requestToken({
         ...options.authorizationParams,
@@ -1022,7 +1037,51 @@ export class Auth0Client {
         refresh_token: cache && cache.refresh_token,
         redirect_uri,
         ...(timeout && { timeout })
-      });
+      },
+        {
+          scopesToRequest,
+        }
+      );
+
+      // If is refreshed with MRRT, we update all entries that have the old 
+      // refresh_token with the new one if the server responded with one
+      if (tokenResult.refresh_token && this.options.useMrrt && cache?.refresh_token) {
+        await this.cacheManager.updateEntry(
+          cache.refresh_token,
+          tokenResult.refresh_token
+        );
+      }
+
+      // Some scopes requested to the server might not be inside the refresh policies
+      // In order to return a token with all requested scopes when using MRRT we should
+      // check if all scopes are returned. If not, we will try to use an iframe to request
+      // a token.
+      if (this.options.useMrrt) {
+        const isRefreshMrrt = isRefreshWithMrrt(
+          cache?.audience,
+          cache?.scope,
+          options.authorizationParams.audience,
+          options.authorizationParams.scope,
+        );
+
+        if (isRefreshMrrt) {
+          const tokenHasAllScopes = allScopesAreIncluded(
+            scopesToRequest,
+            tokenResult.scope,
+          );
+
+          if (!tokenHasAllScopes) {
+            if (this.options.useRefreshTokensFallback) {
+              return await this._getTokenFromIFrame(options);
+            }
+
+            throw new MissingRefreshTokenError(
+              options.authorizationParams.audience || 'default',
+              options.authorizationParams.scope,
+            );
+          }
+        }
+      }
 
       return {
         ...tokenResult,
@@ -1095,11 +1154,13 @@ export class Auth0Client {
   private async _getEntryFromCache({
     scope,
     audience,
-    clientId
+    clientId,
+    cacheMode,
   }: {
     scope: string;
     audience: string;
     clientId: string;
+    cacheMode?: string;
   }): Promise<undefined | GetTokenSilentlyVerboseResponse> {
     const entry = await this.cacheManager.get(
       new CacheKey({
@@ -1107,7 +1168,9 @@ export class Auth0Client {
         audience,
         clientId
       }),
-      60 // get a new token if within 60 seconds of expiring
+      60, // get a new token if within 60 seconds of expiring
+      this.options.useMrrt,
+      cacheMode,
     );
 
     if (entry && entry.access_token) {
@@ -1150,7 +1213,7 @@ export class Auth0Client {
       | TokenExchangeRequestOptions,
     additionalParameters?: RequestTokenAdditionalParameters
   ) {
-    const { nonceIn, organization } = additionalParameters || {};
+    const { nonceIn, organization, scopesToRequest } = additionalParameters || {};
     const authResult = await oauthToken(
       {
         baseUrl: this.domainUrl,
@@ -1158,8 +1221,10 @@ export class Auth0Client {
         auth0Client: this.options.auth0Client,
         useFormData: this.options.useFormData,
         timeout: this.httpTimeoutMs,
+        useMrrt: this.options.useMrrt,
         dpop: this.dpop,
-        ...options
+        ...options,
+        scope: scopesToRequest || options.scope,
       },
       this.worker
     );
@@ -1328,7 +1393,13 @@ export class Auth0Client {
 
     return new Fetcher(config, {
       isDpopEnabled: () => !!this.options.useDpop,
-      getAccessToken: () => this.getTokenSilently(),
+      getAccessToken: authParams =>
+        this.getTokenSilently({
+          authorizationParams: {
+            scope: authParams?.scope?.join(' '),
+            audience: authParams?.audience
+          }
+        }),
       getDpopNonce: () => this.getDpopNonce(config.dpopNonceId),
       setDpopNonce: nonce => this.setDpopNonce(nonce),
       generateDpopProof: params => this.generateDpopProof(params)
@@ -1365,4 +1436,5 @@ interface TokenExchangeRequestOptions extends BaseRequestTokenOptions {
 interface RequestTokenAdditionalParameters {
   nonceIn?: string;
   organization?: string;
+  scopesToRequest?: string;
 }
