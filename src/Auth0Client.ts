@@ -1385,7 +1385,7 @@ export class Auth0Client {
           }
         }),
       getDpopNonce: () => this.getDpopNonce(config.dpopNonceId),
-      setDpopNonce: nonce => this.setDpopNonce(nonce),
+      setDpopNonce: nonce => this.setDpopNonce(nonce, config.dpopNonceId),
       generateDpopProof: params => this.generateDpopProof(params)
     });
   }
