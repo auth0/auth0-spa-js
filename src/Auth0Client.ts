@@ -1563,7 +1563,7 @@ export class Auth0Client {
       redirect_uri: redirectUri,
       appState,
       connection,
-      response_type: 'connect_code'
+      response_type: ResponseType.ConnectCode
     });
 
     const url = new URL(connect_uri);
