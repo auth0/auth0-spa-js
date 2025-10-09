@@ -97,11 +97,9 @@ import {
 } from './Auth0Client.utils';
 import { CustomTokenExchangeOptions } from './TokenExchange';
 import { Dpop } from './dpop/dpop';
-import {
-  Fetcher,
-  type FetcherConfig,
-  type CustomFetchMinimalOutput
-} from './fetcher';
+import { type FetcherConfig } from './fetcher';
+
+import { Fetcher } from '@auth0/auth0-fetch-with-auth';
 
 /**
  * @ignore
@@ -324,8 +322,8 @@ export class Auth0Client {
       nonce,
       code_challenge,
       authorizationParams.redirect_uri ||
-      this.options.authorizationParams.redirect_uri ||
-      fallbackRedirectUri,
+        this.options.authorizationParams.redirect_uri ||
+        fallbackRedirectUri,
       authorizeOptions?.response_mode,
       thumbprint
     );
@@ -599,7 +597,7 @@ export class Auth0Client {
 
     try {
       await this.getTokenSilently(options);
-    } catch (_) { }
+    } catch (_) {}
   }
 
   /**
@@ -693,7 +691,7 @@ export class Auth0Client {
         scope: getTokenOptions.authorizationParams.scope,
         audience: getTokenOptions.authorizationParams.audience || 'default',
         clientId: this.options.clientId,
-        cacheMode,
+        cacheMode
       });
 
       if (entry) {
@@ -1016,25 +1014,30 @@ export class Auth0Client {
       this.options.useMrrt,
       options.authorizationParams,
       cache?.audience,
-      cache?.scope,
+      cache?.scope
     );
 
     try {
-      const tokenResult = await this._requestToken({
-        ...options.authorizationParams,
-        grant_type: 'refresh_token',
-        refresh_token: cache && cache.refresh_token,
-        redirect_uri,
-        ...(timeout && { timeout })
-      },
+      const tokenResult = await this._requestToken(
         {
-          scopesToRequest,
+          ...options.authorizationParams,
+          grant_type: 'refresh_token',
+          refresh_token: cache && cache.refresh_token,
+          redirect_uri,
+          ...(timeout && { timeout })
+        },
+        {
+          scopesToRequest
         }
       );
 
-      // If is refreshed with MRRT, we update all entries that have the old 
+      // If is refreshed with MRRT, we update all entries that have the old
       // refresh_token with the new one if the server responded with one
-      if (tokenResult.refresh_token && this.options.useMrrt && cache?.refresh_token) {
+      if (
+        tokenResult.refresh_token &&
+        this.options.useMrrt &&
+        cache?.refresh_token
+      ) {
         await this.cacheManager.updateEntry(
           cache.refresh_token,
           tokenResult.refresh_token
@@ -1050,13 +1053,13 @@ export class Auth0Client {
           cache?.audience,
           cache?.scope,
           options.authorizationParams.audience,
-          options.authorizationParams.scope,
+          options.authorizationParams.scope
         );
 
         if (isRefreshMrrt) {
           const tokenHasAllScopes = allScopesAreIncluded(
             scopesToRequest,
-            tokenResult.scope,
+            tokenResult.scope
           );
 
           if (!tokenHasAllScopes) {
@@ -1066,7 +1069,7 @@ export class Auth0Client {
 
             throw new MissingRefreshTokenError(
               options.authorizationParams.audience || 'default',
-              options.authorizationParams.scope,
+              options.authorizationParams.scope
             );
           }
         }
@@ -1144,7 +1147,7 @@ export class Auth0Client {
     scope,
     audience,
     clientId,
-    cacheMode,
+    cacheMode
   }: {
     scope: string;
     audience: string;
@@ -1159,7 +1162,7 @@ export class Auth0Client {
       }),
       60, // get a new token if within 60 seconds of expiring
       this.options.useMrrt,
-      cacheMode,
+      cacheMode
     );
 
     if (entry && entry.access_token) {
@@ -1197,7 +1200,8 @@ export class Auth0Client {
       | TokenExchangeRequestOptions,
     additionalParameters?: RequestTokenAdditionalParameters
   ) {
-    const { nonceIn, organization, scopesToRequest } = additionalParameters || {};
+    const { nonceIn, organization, scopesToRequest } =
+      additionalParameters || {};
     const authResult = await oauthToken(
       {
         baseUrl: this.domainUrl,
@@ -1208,7 +1212,7 @@ export class Auth0Client {
         useMrrt: this.options.useMrrt,
         dpop: this.dpop,
         ...options,
-        scope: scopesToRequest || options.scope,
+        scope: scopesToRequest || options.scope
       },
       this.worker
     );
@@ -1366,7 +1370,7 @@ export class Auth0Client {
    *
    * Check the `EXAMPLES.md` file for a deeper look into this method.
    */
-  public createFetcher<TOutput extends CustomFetchMinimalOutput = Response>(
+  public createFetcher<TOutput extends Response = Response>(
     config: FetcherConfig<TOutput> = {}
   ): Fetcher<TOutput> {
     if (this.options.useDpop && !config.dpopNonceId) {
@@ -1375,18 +1379,22 @@ export class Auth0Client {
       );
     }
 
-    return new Fetcher(config, {
-      isDpopEnabled: () => !!this.options.useDpop,
-      getAccessToken: authParams =>
-        this.getTokenSilently({
-          authorizationParams: {
-            scope: authParams?.scope?.join(' '),
-            audience: authParams?.audience
-          }
-        }),
-      getDpopNonce: () => this.getDpopNonce(config.dpopNonceId),
-      setDpopNonce: nonce => this.setDpopNonce(nonce, config.dpopNonceId),
-      generateDpopProof: params => this.generateDpopProof(params)
+    return new Fetcher<TOutput>({
+      tokenProvider: authParams =>
+        config.getAccessToken
+          ? config.getAccessToken(authParams)
+          : this.getTokenSilently({
+              authorizationParams: {
+                scope: authParams?.scope?.join(' '),
+                audience: authParams?.audience
+              }
+            }),
+      fetch: config.fetch,
+      dpopProvider: {
+        getNonce: () => this.getDpopNonce(config.dpopNonceId),
+        setNonce: nonce => this.setDpopNonce(nonce, config.dpopNonceId),
+        generateProof: params => this.generateDpopProof(params)
+      }
     });
   }
 }
