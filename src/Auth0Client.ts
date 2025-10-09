@@ -1380,6 +1380,7 @@ export class Auth0Client {
     }
 
     return new Fetcher<TOutput>({
+      baseUrl: config.baseUrl,
       tokenProvider: authParams =>
         config.getAccessToken
           ? config.getAccessToken(authParams)
