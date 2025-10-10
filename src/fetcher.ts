@@ -94,6 +94,18 @@ export class Fetcher<TOutput extends CustomFetchMinimalOutput> {
       : this.hooks.getAccessToken(authParams);
   }
 
+  protected extractUrl(info: RequestInfo | URL): string {
+    if (typeof info === 'string') {
+      return info;
+    }
+
+    if (info instanceof URL) {
+      return info.href;
+    }
+
+    return info.url;
+  }
+
   protected buildBaseRequest(
     info: RequestInfo | URL,
     init: RequestInit | undefined
@@ -101,17 +113,22 @@ export class Fetcher<TOutput extends CustomFetchMinimalOutput> {
     // In the native `fetch()` behavior, `init` can override `info` and the result
     // is the merge of both. So let's replicate that behavior by passing those into
     // a fresh `Request` object.
-    const request = new Request(info, init);
 
-    // No `baseUrl` config, use whatever the URL the `Request` came with.
+    // No `baseUrl`? We can use `info` and `init` as is.
     if (!this.config.baseUrl) {
-      return request;
+      return new Request(info, init);
     }
 
-    return new Request(
-      this.buildUrl(this.config.baseUrl, request.url),
-      request
-    );
+    // But if `baseUrl` is present, first we have to build the final URL...
+    const finalUrl = this.buildUrl(this.config.baseUrl, this.extractUrl(info));
+
+    // ... and then overwrite `info`'s URL with it, making sure we keep any other
+    // properties that might be there already (headers, etc).
+    const finalInfo = info instanceof Request
+      ? new Request(finalUrl, info)
+      : finalUrl;
+
+    return new Request(finalInfo, init);
   }
 
   protected setAuthorizationHeader(

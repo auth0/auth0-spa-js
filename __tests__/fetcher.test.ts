@@ -127,17 +127,43 @@ describe('Fetcher', () => {
     });
   });
 
+  describe('extractUrl()', () => {
+    const url = 'https://example.com/';
+    const fetcher = newTestFetcher({});
+
+    describe('string', () => {
+      it(
+        'returns as expected',
+        () => expect(fetcher['extractUrl'](url)).toBe(url),
+      );
+    });
+
+    describe('URL', () => {
+      it(
+        'returns as expected',
+        () => expect(fetcher['extractUrl'](new URL(url))).toBe(url),
+      );
+    });
+
+    describe('Request', () => {
+      it(
+        'returns as expected',
+        () => expect(fetcher['extractUrl'](new Request(url))).toBe(url),
+      );
+    });
+  });
+
   describe('buildBaseRequest()', () => {
+    const init = { headers: { test: 'from init' } };
+
     describe('no baseUrl', () => {
       const info = new Request('https://example.com', {
         headers: { test: 'from info' }
       });
 
-      const init = { headers: { test: 'from init' } };
-
       const fetcher = newTestFetcher({ baseUrl: undefined });
 
-      it('init overrides info', () =>
+      it('init is properly merged', () =>
         expect(
           fetcher['buildBaseRequest'](info, init).headers.get('test')
         ).toBe(init.headers['test']));
@@ -147,23 +173,37 @@ describe('Fetcher', () => {
     });
 
     describe('otherwise', () => {
-      const info = new Request('/something.html', {
-        headers: { test: 'from info' }
-      });
-
-      const init = { headers: { test: 'from init' } };
-
       const fetcher = newTestFetcher({ baseUrl: 'https://base.example.com/' });
 
-      it('init overrides info', () =>
-        expect(
-          fetcher['buildBaseRequest'](info, init).headers.get('test')
-        ).toBe(init.headers['test']));
+      describe('info is Request', () => {
+        const info = new Request('/something.html', {
+          headers: { test: 'from info' }
+        });
 
-      it('urls are combined', () =>
-        expect(fetcher['buildBaseRequest'](info, init).url).toBe(
-          'https://base.example.com/something.html'
-        ));
+        it('init is properly merged', () =>
+          expect(
+            fetcher['buildBaseRequest'](info, init).headers.get('test')
+          ).toBe(init.headers['test']));
+
+        it('urls are combined', () =>
+          expect(fetcher['buildBaseRequest'](info, init).url).toBe(
+            'https://base.example.com/something.html'
+          ));
+      });
+
+      describe('otherwise', () => {
+        const info = '/something.html';
+
+        it('init is properly merged', () =>
+          expect(
+            fetcher['buildBaseRequest'](info, init).headers.get('test')
+          ).toBe(init.headers['test']));
+
+        it('urls are combined', () =>
+          expect(fetcher['buildBaseRequest'](info, init).url).toBe(
+            'https://base.example.com/something.html'
+          ));
+      });
     });
   });
 
