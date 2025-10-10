@@ -1358,6 +1358,23 @@ export class Auth0Client {
   }
 
   /**
+   * Returns a string to be used to demonstrate possession of the private
+   * key used to cryptographically bind access tokens with DPoP.
+   *
+   * It requires enabling the {@link Auth0ClientOptions.useDpop} option.
+   */
+  public generateDpopProof(params: {
+    url: string;
+    method: string;
+    nonce?: string;
+    accessToken: string;
+  }): Promise<string> {
+    this._assertDpop(this.dpop);
+
+    return this.dpop.generateProof(params);
+  }
+
+  /**
    * Returns a new `Fetcher` class that will contain a `fetchWithAuth()` method.
    * This is a drop-in replacement for the Fetch API's `fetch()` method, but will
    * handle certain authentication logic for you, like building the proper auth
