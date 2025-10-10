@@ -1,5 +1,15 @@
 # Change Log
 
+## [v2.6.0](https://github.com/auth0/auth0-spa-js/tree/v2.6.0) (2025-10-10)
+[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.5.0...v2.6.0)
+
+**Added**
+- Add support for connected accounts [\#1422](https://github.com/auth0/auth0-spa-js/pull/1422) ([adamjmcgrath](https://github.com/adamjmcgrath))
+
+**Fixed**
+- Fetcher should set DPoP nonce with nonce id [\#1431](https://github.com/auth0/auth0-spa-js/pull/1431) ([adamjmcgrath](https://github.com/adamjmcgrath))
+- fix: do not mark setAuthorizationHeader as async [\#1428](https://github.com/auth0/auth0-spa-js/pull/1428) ([frederikprijck](https://github.com/frederikprijck))
+
 ## [v2.5.0](https://github.com/auth0/auth0-spa-js/tree/v2.5.0) (2025-10-01)
 [Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.4.1...v2.5.0)
 
