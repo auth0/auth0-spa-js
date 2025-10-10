@@ -100,6 +100,7 @@ import { Dpop } from './dpop/dpop';
 import { type FetcherConfig } from './fetcher';
 
 import { Fetcher } from '@auth0/auth0-fetch-with-auth';
+import { KeyPair } from './dpop/utils';
 
 /**
  * @ignore
@@ -1346,20 +1347,14 @@ export class Auth0Client {
   }
 
   /**
-   * Returns a string to be used to demonstrate possession of the private
-   * key used to cryptographically bind access tokens with DPoP.
+   * Returns the current DPoP key pair, generating it if necessary.
    *
    * It requires enabling the {@link Auth0ClientOptions.useDpop} option.
    */
-  public generateDpopProof(params: {
-    url: string;
-    method: string;
-    nonce?: string;
-    accessToken: string;
-  }): Promise<string> {
+  public getOrGenerateKeyPair(): Promise<KeyPair> {
     this._assertDpop(this.dpop);
 
-    return this.dpop.generateProof(params);
+    return this.dpop.getOrGenerateKeyPair();
   }
 
   /**
@@ -1381,6 +1376,7 @@ export class Auth0Client {
 
     return new Fetcher<TOutput>({
       baseUrl: config.baseUrl,
+      fetch: config.fetch,
       tokenProvider: authParams =>
         config.getAccessToken
           ? config.getAccessToken(authParams)
@@ -1390,11 +1386,10 @@ export class Auth0Client {
                 audience: authParams?.audience
               }
             }),
-      fetch: config.fetch,
       dpopProvider: {
         getNonce: () => this.getDpopNonce(config.dpopNonceId),
         setNonce: nonce => this.setDpopNonce(nonce, config.dpopNonceId),
-        generateProof: params => this.generateDpopProof(params)
+        getPrivateKeyPair: () => this.getOrGenerateKeyPair()
       }
     });
   }

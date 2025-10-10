@@ -16,7 +16,7 @@ export class Dpop {
     return this.storage.setNonce(nonce, id);
   }
 
-  protected async getOrGenerateKeyPair(): Promise<dpopUtils.KeyPair> {
+  public async getOrGenerateKeyPair(): Promise<dpopUtils.KeyPair> {
     let keyPair = await this.storage.findKeyPair();
 
     if (!keyPair) {
