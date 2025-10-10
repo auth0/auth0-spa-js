@@ -31,10 +31,11 @@ import {
   DecodedToken
 } from './cache';
 
-import { TransactionManager } from './transaction-manager';
+import { ConnectAccountTransaction, LoginTransaction, TransactionManager } from './transaction-manager';
 import { verify as verifyIdToken } from './jwt';
 import {
   AuthenticationError,
+  ConnectError,
   GenericError,
   MissingRefreshTokenError,
   TimeoutError
@@ -76,7 +77,11 @@ import {
   User,
   IdToken,
   GetTokenSilentlyVerboseResponse,
-  TokenEndpointResponse
+  TokenEndpointResponse,
+  AuthenticationResult,
+  ConnectAccountRedirectResult,
+  RedirectConnectAccountOptions,
+  ResponseType
 } from './global';
 
 // @ts-ignore
@@ -102,6 +107,7 @@ import {
   type FetcherConfig,
   type CustomFetchMinimalOutput
 } from './fetcher';
+import { MyAccountApiClient } from './MyAccountApiClient';
 
 /**
  * @ignore
@@ -138,6 +144,7 @@ export class Auth0Client {
     authorizationParams: AuthorizationParams;
   };
   private readonly userCache: ICache = new InMemoryCache().enclosedCache;
+  private readonly myAccountApi: MyAccountApiClient;
 
   private worker?: Worker;
   private readonly defaultOptions: Partial<Auth0ClientOptions> = {
@@ -237,6 +244,22 @@ export class Auth0Client {
 
     this.domainUrl = getDomain(this.options.domain);
     this.tokenIssuer = getTokenIssuer(this.options.issuer, this.domainUrl);
+
+    const myAccountApiIdentifier = `${this.domainUrl}/me/`;
+    const myAccountFetcher = this.createFetcher({
+      ...(this.options.useDpop && { dpopNonceId: '__auth0_my_account_api__' }),
+      getAccessToken: () =>
+        this.getTokenSilently({
+          authorizationParams: {
+            scope: 'create:me:connected_accounts',
+            audience: myAccountApiIdentifier
+          }
+        })
+    });
+    this.myAccountApi = new MyAccountApiClient(
+      myAccountFetcher,
+      myAccountApiIdentifier
+    );
 
     // Don't use web workers unless using refresh tokens in memory
     if (
@@ -477,9 +500,10 @@ export class Auth0Client {
       urlOptions.authorizationParams || {}
     );
 
-    this.transactionManager.create({
+    this.transactionManager.create<LoginTransaction>({
       ...transaction,
       appState,
+      response_type: ResponseType.Code,
       ...(organization && { organization })
     });
 
@@ -500,24 +524,56 @@ export class Auth0Client {
    */
   public async handleRedirectCallback<TAppState = any>(
     url: string = window.location.href
-  ): Promise<RedirectLoginResult<TAppState>> {
+  ): Promise<
+    RedirectLoginResult<TAppState> | ConnectAccountRedirectResult<TAppState>
+  > {
     const queryStringFragments = url.split('?').slice(1);
 
     if (queryStringFragments.length === 0) {
       throw new Error('There are no query params available for parsing.');
     }
 
-    const { state, code, error, error_description } = parseAuthenticationResult(
-      queryStringFragments.join('')
-    );
-
-    const transaction = this.transactionManager.get();
+    const transaction = this.transactionManager.get<
+      LoginTransaction | ConnectAccountTransaction
+    >();
 
     if (!transaction) {
       throw new GenericError('missing_transaction', 'Invalid state');
     }
 
     this.transactionManager.remove();
+
+    const authenticationResult = parseAuthenticationResult(
+      queryStringFragments.join('')
+    );
+
+    if (transaction.response_type === ResponseType.ConnectCode) {
+      return this._handleConnectAccountRedirectCallback<TAppState>(
+        authenticationResult,
+        transaction
+      );
+    }
+    return this._handleLoginRedirectCallback<TAppState>(
+      authenticationResult,
+      transaction
+    );
+  }
+
+  /**
+   * Handles the redirect callback from the login flow.
+   *
+   * @template AppState - The application state persisted from the /authorize redirect.
+   * @param {string} authenticationResult - The parsed authentication result from the URL.
+   * @param {string} transaction - The login transaction.
+   *
+   * @returns {RedirectLoginResult} Resolves with the persisted app state.
+   * @throws {GenericError | Error} If the transaction is missing, invalid, or the code exchange fails.
+   */
+  private async _handleLoginRedirectCallback<TAppState>(
+    authenticationResult: AuthenticationResult,
+    transaction: LoginTransaction
+  ): Promise<RedirectLoginResult<TAppState>> {
+    const { code, state, error, error_description } = authenticationResult;
 
     if (error) {
       throw new AuthenticationError(
@@ -553,7 +609,63 @@ export class Auth0Client {
     );
 
     return {
-      appState: transaction.appState
+      appState: transaction.appState,
+      response_type: ResponseType.Code
+    };
+  }
+
+  /**
+   * Handles the redirect callback from the connect account flow.
+   * This works the same as the redirect from the login flow expect it verifies the `connect_code`
+   * with the My Account API rather than the `code` with the Authorization Server.
+   *
+   * @template AppState - The application state persisted from the connect redirect.
+   * @param {string} connectResult - The parsed connect accounts result from the URL.
+   * @param {string} transaction - The login transaction.
+   * @returns {Promise<ConnectAccountRedirectResult>} The result of the My Account API, including any persisted app state.
+   * @throws {GenericError | MyAccountApiError} If the transaction is missing, invalid, or an error is returned from the My Account API.
+   */
+  private async _handleConnectAccountRedirectCallback<TAppState>(
+    connectResult: AuthenticationResult,
+    transaction: ConnectAccountTransaction
+  ): Promise<ConnectAccountRedirectResult<TAppState>> {
+    const { connect_code, state, error, error_description } = connectResult;
+
+    if (error) {
+      throw new ConnectError(
+        error,
+        error_description || error,
+        transaction.connection,
+        state,
+        transaction.appState
+      );
+    }
+
+    if (!connect_code) {
+      throw new GenericError('missing_connect_code', 'Missing connect code');
+    }
+
+    if (
+      !transaction.code_verifier ||
+      !transaction.state ||
+      !transaction.auth_session ||
+      !transaction.redirect_uri ||
+      transaction.state !== state
+    ) {
+      throw new GenericError('state_mismatch', 'Invalid state');
+    }
+
+    const data = await this.myAccountApi.completeAccount({
+      auth_session: transaction.auth_session,
+      connect_code,
+      redirect_uri: transaction.redirect_uri,
+      code_verifier: transaction.code_verifier
+    });
+
+    return {
+      ...data,
+      appState: transaction.appState,
+      response_type: ResponseType.ConnectCode,
     };
   }
 
@@ -1032,7 +1144,7 @@ export class Auth0Client {
         }
       );
 
-      // If is refreshed with MRRT, we update all entries that have the old 
+      // If is refreshed with MRRT, we update all entries that have the old
       // refresh_token with the new one if the server responded with one
       if (tokenResult.refresh_token && this.options.useMrrt && cache?.refresh_token) {
         await this.cacheManager.updateEntry(
@@ -1388,6 +1500,79 @@ export class Auth0Client {
       setDpopNonce: nonce => this.setDpopNonce(nonce, config.dpopNonceId),
       generateDpopProof: params => this.generateDpopProof(params)
     });
+  }
+
+  /**
+   * Initiates a redirect to connect the user's account with a specified connection.
+   * This method generates PKCE parameters, creates a transaction, and redirects to the /connect endpoint.
+   *
+   * @template TAppState - The application state to persist through the transaction.
+   * @param {RedirectConnectAccountOptions<TAppState>} options - Options for the connect account redirect flow.
+   * @param   {string} options.connection - The name of the connection to link (e.g. 'google-oauth2').
+   * @param   {AuthorizationParams} [options.authorization_params] - Additional authorization parameters for the request to the upstream IdP.
+   * @param   {string} [options.redirectUri] - The URI to redirect back to after connecting the account.
+   * @param   {TAppState} [options.appState] - Application state to persist through the transaction.
+   * @param   {(url: string) => Promise<void>} [options.openUrl] - Custom function to open the URL.
+   *
+   * @returns {Promise<void>} Resolves when the redirect is initiated.
+   * @throws {MyAccountApiError} If the connect request to the My Account API fails.
+   */
+  public async connectAccountWithRedirect<TAppState = any>(
+    options: RedirectConnectAccountOptions<TAppState>
+  ) {
+    if (!this.options.useDpop) {
+      throw new Error('`useDpop` option must be enabled before using connectAccountWithRedirect.');
+    }
+
+    if (!this.options.useMrrt) {
+      throw new Error('`useMrrt` option must be enabled before using connectAccountWithRedirect.');
+    }
+
+    const {
+      openUrl,
+      appState,
+      connection,
+      authorization_params,
+      redirectUri = this.options.authorizationParams.redirect_uri ||
+        window.location.origin
+    } = options;
+
+    if (!connection) {
+      throw new Error('connection is required');
+    }
+
+    const state = encode(createRandomString());
+    const code_verifier = createRandomString();
+    const code_challengeBuffer = await sha256(code_verifier);
+    const code_challenge = bufferToBase64UrlEncoded(code_challengeBuffer);
+
+    const { connect_uri, connect_params, auth_session } =
+      await this.myAccountApi.connectAccount({
+        connection,
+        redirect_uri: redirectUri,
+        state,
+        code_challenge,
+        code_challenge_method: 'S256',
+        authorization_params
+      });
+
+    this.transactionManager.create<ConnectAccountTransaction>({
+      state,
+      code_verifier,
+      auth_session,
+      redirect_uri: redirectUri,
+      appState,
+      connection,
+      response_type: ResponseType.ConnectCode
+    });
+
+    const url = new URL(connect_uri);
+    url.searchParams.set('ticket', connect_params.ticket);
+    if (openUrl) {
+      await openUrl(url.toString());
+    } else {
+      window.location.assign(url);
+    }
   }
 }
 
