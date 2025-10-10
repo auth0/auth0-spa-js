@@ -36,6 +36,24 @@ export class AuthenticationError extends GenericError {
 }
 
 /**
+ * Thrown when handling the redirect callback for the connect flow fails, will be one of Auth0's
+ * Authentication API's Standard Error Responses: https://auth0.com/docs/api/authentication?javascript#standard-error-responses
+ */
+export class ConnectError extends GenericError {
+  constructor(
+    error: string,
+    error_description: string,
+    public connection: string,
+    public state: string,
+    public appState: any = null
+  ) {
+    super(error, error_description);
+    //https://github.com/Microsoft/TypeScript-wiki/blob/master/Breaking-Changes.md#extending-built-ins-like-error-array-and-map-may-no-longer-work
+    Object.setPrototypeOf(this, ConnectError.prototype);
+  }
+}
+
+/**
  * Thrown when silent auth times out (usually due to a configuration issue) or
  * when network requests to the Auth server timeout.
  */
