@@ -38,6 +38,7 @@ import {
   ConnectError,
   GenericError,
   MissingRefreshTokenError,
+  MissingScopesError,
   TimeoutError
 } from './errors';
 
@@ -98,7 +99,8 @@ import {
   patchOpenUrlWithOnRedirect,
   getScopeToRequest,
   allScopesAreIncluded,
-  isRefreshWithMrrt
+  isRefreshWithMrrt,
+  getMissingScopes
 } from './Auth0Client.utils';
 import { CustomTokenExchangeOptions } from './TokenExchange';
 import { Dpop } from './dpop/dpop';
@@ -1176,9 +1178,14 @@ export class Auth0Client {
               return await this._getTokenFromIFrame(options);
             }
 
-            throw new MissingRefreshTokenError(
+            const missingScopes = getMissingScopes(
+              scopesToRequest,
+              tokenResult.scope,
+            );
+
+            throw new MissingScopesError(
               options.authorizationParams.audience || 'default',
-              options.authorizationParams.scope,
+              missingScopes,
             );
           }
         }
@@ -1534,7 +1541,7 @@ export class Auth0Client {
       connection,
       authorization_params,
       redirectUri = this.options.authorizationParams.redirect_uri ||
-        window.location.origin
+      window.location.origin
     } = options;
 
     if (!connection) {
