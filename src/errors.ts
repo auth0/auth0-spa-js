@@ -115,6 +115,21 @@ export class MissingRefreshTokenError extends GenericError {
 }
 
 /**
+ * Error thrown when there are missing scopes after refreshing a token
+ */
+export class MissingScopesError extends GenericError {
+  constructor(public audience: string, public scope: string) {
+    super(
+      'missing_scopes',
+      `Missing requested scopes after refresh (audience: '${valueOrEmptyString(audience, [
+        'default'
+      ])}', missing scope: '${valueOrEmptyString(scope)}')`
+    );
+    Object.setPrototypeOf(this, MissingScopesError.prototype);
+  }
+}
+
+/**
  * Error thrown when the wrong DPoP nonce is used and a potential subsequent retry wasn't able to fix it.
  */
 export class UseDpopNonceError extends GenericError {
