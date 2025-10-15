@@ -428,7 +428,6 @@ describe('token worker', () => {
         }
       });
 
-      console.log('mockFetch.mock.calls', mockFetch.mock.calls)
       expect(JSON.parse(mockFetch.mock.calls[2][1].body)).toEqual({
         grant_type: 'refresh_token',
         refresh_token: 'foo'
