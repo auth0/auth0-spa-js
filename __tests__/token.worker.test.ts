@@ -366,4 +366,73 @@ describe('token worker', () => {
       });
     });
   });
+
+  describe("useMrrt with default audience", () => {
+    beforeEach(() => {
+      originalFetch = window.fetch;
+      // The web worker uses native fetch.
+      window.fetch = mockFetch;
+
+      const { messageHandler } = require('../src/worker/token.worker');
+
+      messageHandlerAsync = opts =>
+        new Promise(resolve =>
+          messageHandler({ data: { ...opts, useMrrt: true, auth: { audience: 'default', scope: 'scope1' } }, ports: [{ postMessage: resolve }] })
+        );
+
+      secondMessageHandlerAsync = opts =>
+        new Promise(resolve =>
+          messageHandler({ data: { ...opts, useMrrt: true, auth: { audience: 'audience2', scope: 'scope2' } }, ports: [{ postMessage: resolve }] })
+        );
+    });
+
+    it('when is default audience we store its refresh token as latest_refresh_token and uses it for the second audience', async () => {
+      mockFetch.mockReturnValue(
+        Promise.resolve({
+          ok: true,
+          json: () => ({ refresh_token: 'foo' }),
+          headers: new Headers(),
+        })
+      );
+
+      await messageHandlerAsync({
+        fetchUrl: '/foo',
+        fetchOptions: {
+          method: 'POST',
+          body: JSON.stringify({
+            grant_type: 'authorization_code'
+          })
+        },
+      });
+
+      await messageHandlerAsync({
+        fetchUrl: '/foo',
+        fetchOptions: {
+          method: 'POST',
+          body: JSON.stringify({
+            grant_type: 'refresh_token'
+          })
+        },
+        auth: {
+          audience: "default",
+        },
+      });
+
+      await secondMessageHandlerAsync({
+        fetchUrl: '/foo',
+        fetchOptions: {
+          method: 'POST',
+          body: JSON.stringify({
+            grant_type: 'refresh_token'
+          })
+        }
+      });
+
+      console.log('mockFetch.mock.calls', mockFetch.mock.calls)
+      expect(JSON.parse(mockFetch.mock.calls[2][1].body)).toEqual({
+        grant_type: 'refresh_token',
+        refresh_token: 'foo'
+      });
+    });
+  });
 });
