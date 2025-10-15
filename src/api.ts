@@ -2,7 +2,7 @@ import { TokenEndpointOptions, TokenEndpointResponse } from './global';
 import { DEFAULT_AUTH0_CLIENT } from './constants';
 import * as dpopUtils from './dpop/utils';
 import { getJSON } from './http';
-import { createQueryParams } from './utils';
+import { createQueryParams, stripAuth0Client } from './utils';
 
 export async function oauthToken(
   {
@@ -21,8 +21,7 @@ export async function oauthToken(
   const isTokenExchange =
     options.grant_type === 'urn:ietf:params:oauth:grant-type:token-exchange';
 
-  const refreshWithMrrt =
-    options.grant_type === 'refresh_token' && useMrrt;
+  const refreshWithMrrt = options.grant_type === 'refresh_token' && useMrrt;
 
   const allParams = {
     ...options,
@@ -50,7 +49,7 @@ export async function oauthToken(
           ? 'application/x-www-form-urlencoded'
           : 'application/json',
         'Auth0-Client': btoa(
-          JSON.stringify(auth0Client || DEFAULT_AUTH0_CLIENT)
+          JSON.stringify(stripAuth0Client(auth0Client || DEFAULT_AUTH0_CLIENT))
         )
       }
     },
