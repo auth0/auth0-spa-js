@@ -37,6 +37,7 @@ import {
   AuthenticationError,
   ConnectError,
   GenericError,
+  MfaRequiredError,
   MissingRefreshTokenError,
   TimeoutError
 } from './errors';
@@ -156,6 +157,7 @@ export class Auth0Client {
   };
 
   constructor(options: Auth0ClientOptions) {
+    console.log("[debug] spa sdk loaded");
     this.options = {
       ...this.defaultOptions,
       ...options,
@@ -430,7 +432,7 @@ export class Auth0Client {
       options.authorizationParams?.organization ||
       this.options.authorizationParams.organization;
 
-    await this._requestToken(
+    const tokenResult = await this._requestToken(
       {
         audience: params.audience,
         scope: params.scope,
@@ -444,6 +446,14 @@ export class Auth0Client {
         organization
       }
     );
+    if (this.options.mfaHandler) {
+      return {
+        ...tokenResult,
+        scope: params.scope,
+        oauthTokenScope: tokenResult.scope,
+        audience: params.audience,
+      };
+    }
   }
 
   /**
@@ -1203,6 +1213,19 @@ export class Auth0Client {
       ) {
         return await this._getTokenFromIFrame(options);
       }
+      console.log("[debug] mfa error encountered, scope", options.authorizationParams.scope, "audience", options.authorizationParams.audience)
+      if (e instanceof MfaRequiredError) {
+        console.log("inside")
+        const tokenResult = await this._handleMfaRequired(e, options.authorizationParams.scope, options.authorizationParams.audience);
+        console.log("tokenResult", tokenResult)
+        //@ts-ignore
+        return {
+          ...tokenResult,
+          scope: options.authorizationParams.scope,
+          oauthTokenScope: tokenResult?.scope,
+          audience: options.authorizationParams.audience || 'default'
+        };
+      }
 
       throw e;
     }
@@ -1534,7 +1557,7 @@ export class Auth0Client {
       connection,
       authorization_params,
       redirectUri = this.options.authorizationParams.redirect_uri ||
-        window.location.origin
+      window.location.origin
     } = options;
 
     if (!connection) {
@@ -1572,6 +1595,41 @@ export class Auth0Client {
       await openUrl(url.toString());
     } else {
       window.location.assign(url);
+    }
+  }
+
+  private async _handleMfaRequired(
+    error: MfaRequiredError,
+    scope: string,
+    audience?: string
+  ) {
+    if (!this.options.mfaHandler || this.options.mfaHandler === 'throw') {
+      throw error;
+    }
+
+    const authParams: AuthorizationParams = {
+      scope,
+      redirect_uri: window.location.origin,
+      ...(audience && audience !== 'default' && { audience }),
+    };
+
+    if (this.options.mfaHandler === 'redirect') {
+      await this.loginWithRedirect({ authorizationParams: authParams });
+      console.log("redirecting for mfa");
+      // This never returns as it redirects                                                                                  
+    } else if (this.options.mfaHandler === 'popup') {
+      console.log("inside popup mfa handler");
+      await this.loginWithPopup({ authorizationParams: authParams });
+      const cache = await this.cacheManager.get(
+        new CacheKey({
+          scope: scope,
+          audience: audience || 'default',
+          clientId: this.options.clientId
+        }),
+        undefined,
+        this.options.useMrrt
+      );
+      return { access_token: cache!.access_token, scope };
     }
   }
 }

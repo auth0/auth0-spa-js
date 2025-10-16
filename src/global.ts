@@ -288,6 +288,8 @@ export interface Auth0ClientOptions extends BaseLoginOptions {
    * The default setting is `false`.
    */
   useDpop?: boolean;
+  mfaHandler?: 'redirect' | 'popup' | 'throw';
+
 }
 
 /**
