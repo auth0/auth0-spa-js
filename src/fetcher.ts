@@ -20,7 +20,14 @@ export type AuthParams = {
   audience?: string;
 };
 
-type AccessTokenFactory = (authParams?: AuthParams) => Promise<string>;
+type AccessTokenResponse = {
+  accessToken: string;
+  tokenType: string;
+};
+type AccessTokenFactory = (
+  authParams?: AuthParams
+  // This change may be a breaking change, so we will need to see how to handle that
+) => Promise<AccessTokenResponse>;
 
 export type FetcherConfig<TOutput extends CustomFetchMinimalOutput> = {
   getAccessToken?: AccessTokenFactory;
@@ -88,7 +95,9 @@ export class Fetcher<TOutput extends CustomFetchMinimalOutput> {
     throw new TypeError('`url` must be absolute or `baseUrl` non-empty.');
   }
 
-  protected getAccessToken(authParams?: AuthParams): Promise<string> {
+  protected getAccessToken(
+    authParams?: AuthParams
+  ): Promise<AccessTokenResponse> {
     return this.config.getAccessToken
       ? this.config.getAccessToken(authParams)
       : this.hooks.getAccessToken(authParams);
@@ -124,20 +133,21 @@ export class Fetcher<TOutput extends CustomFetchMinimalOutput> {
 
     // ... and then overwrite `info`'s URL with it, making sure we keep any other
     // properties that might be there already (headers, etc).
-    const finalInfo = info instanceof Request
-      ? new Request(finalUrl, info)
-      : finalUrl;
+    const finalInfo =
+      info instanceof Request ? new Request(finalUrl, info) : finalUrl;
 
     return new Request(finalInfo, init);
   }
 
   protected setAuthorizationHeader(
     request: Request,
-    accessToken: string
+    accessToken: AccessTokenResponse
   ): void {
     request.headers.set(
       'authorization',
-      `${this.config.dpopNonceId ? 'DPoP' : 'Bearer'} ${accessToken}`
+      `${
+        accessToken.tokenType.toLowerCase() === 'dpop' ? 'DPoP' : 'Bearer'
+      } ${accessToken}`
     );
   }
 
@@ -149,6 +159,7 @@ export class Fetcher<TOutput extends CustomFetchMinimalOutput> {
       return;
     }
 
+    // TODO: I think we should always attach the proof, but we need to verify.
     const dpopNonce = await this.hooks.getDpopNonce();
 
     const dpopProof = await this.hooks.generateDpopProof({
@@ -162,11 +173,11 @@ export class Fetcher<TOutput extends CustomFetchMinimalOutput> {
   }
 
   protected async prepareRequest(request: Request, authParams?: AuthParams) {
-    const accessToken = await this.getAccessToken(authParams);
+    const accessTokenResult = await this.getAccessToken(authParams);
 
-    this.setAuthorizationHeader(request, accessToken);
+    this.setAuthorizationHeader(request, accessTokenResult);
 
-    await this.setDpopProofHeader(request, accessToken);
+    await this.setDpopProofHeader(request, accessTokenResult.accessToken);
   }
 
   protected getHeader(headers: ResponseHeaders, name: string): string {

@@ -31,7 +31,11 @@ import {
   DecodedToken
 } from './cache';
 
-import { ConnectAccountTransaction, LoginTransaction, TransactionManager } from './transaction-manager';
+import {
+  ConnectAccountTransaction,
+  LoginTransaction,
+  TransactionManager
+} from './transaction-manager';
 import { verify as verifyIdToken } from './jwt';
 import {
   AuthenticationError,
@@ -349,8 +353,8 @@ export class Auth0Client {
       nonce,
       code_challenge,
       authorizationParams.redirect_uri ||
-      this.options.authorizationParams.redirect_uri ||
-      fallbackRedirectUri,
+        this.options.authorizationParams.redirect_uri ||
+        fallbackRedirectUri,
       authorizeOptions?.response_mode,
       thumbprint
     );
@@ -667,7 +671,7 @@ export class Auth0Client {
     return {
       ...data,
       appState: transaction.appState,
-      response_type: ResponseType.ConnectCode,
+      response_type: ResponseType.ConnectCode
     };
   }
 
@@ -713,7 +717,7 @@ export class Auth0Client {
 
     try {
       await this.getTokenSilently(options);
-    } catch (_) { }
+    } catch (_) {}
   }
 
   /**
@@ -807,7 +811,7 @@ export class Auth0Client {
         scope: getTokenOptions.authorizationParams.scope,
         audience: getTokenOptions.authorizationParams.audience || 'default',
         clientId: this.options.clientId,
-        cacheMode,
+        cacheMode
       });
 
       if (entry) {
@@ -1130,25 +1134,30 @@ export class Auth0Client {
       this.options.useMrrt,
       options.authorizationParams,
       cache?.audience,
-      cache?.scope,
+      cache?.scope
     );
 
     try {
-      const tokenResult = await this._requestToken({
-        ...options.authorizationParams,
-        grant_type: 'refresh_token',
-        refresh_token: cache && cache.refresh_token,
-        redirect_uri,
-        ...(timeout && { timeout })
-      },
+      const tokenResult = await this._requestToken(
         {
-          scopesToRequest,
+          ...options.authorizationParams,
+          grant_type: 'refresh_token',
+          refresh_token: cache && cache.refresh_token,
+          redirect_uri,
+          ...(timeout && { timeout })
+        },
+        {
+          scopesToRequest
         }
       );
 
       // If is refreshed with MRRT, we update all entries that have the old
       // refresh_token with the new one if the server responded with one
-      if (tokenResult.refresh_token && this.options.useMrrt && cache?.refresh_token) {
+      if (
+        tokenResult.refresh_token &&
+        this.options.useMrrt &&
+        cache?.refresh_token
+      ) {
         await this.cacheManager.updateEntry(
           cache.refresh_token,
           tokenResult.refresh_token
@@ -1164,13 +1173,13 @@ export class Auth0Client {
           cache?.audience,
           cache?.scope,
           options.authorizationParams.audience,
-          options.authorizationParams.scope,
+          options.authorizationParams.scope
         );
 
         if (isRefreshMrrt) {
           const tokenHasAllScopes = allScopesAreIncluded(
             scopesToRequest,
-            tokenResult.scope,
+            tokenResult.scope
           );
 
           if (!tokenHasAllScopes) {
@@ -1180,12 +1189,12 @@ export class Auth0Client {
 
             const missingScopes = getMissingScopes(
               scopesToRequest,
-              tokenResult.scope,
+              tokenResult.scope
             );
 
             throw new MissingScopesError(
               options.authorizationParams.audience || 'default',
-              missingScopes,
+              missingScopes
             );
           }
         }
@@ -1263,7 +1272,7 @@ export class Auth0Client {
     scope,
     audience,
     clientId,
-    cacheMode,
+    cacheMode
   }: {
     scope: string;
     audience: string;
@@ -1278,7 +1287,7 @@ export class Auth0Client {
       }),
       60, // get a new token if within 60 seconds of expiring
       this.options.useMrrt,
-      cacheMode,
+      cacheMode
     );
 
     if (entry && entry.access_token) {
@@ -1316,7 +1325,8 @@ export class Auth0Client {
       | TokenExchangeRequestOptions,
     additionalParameters?: RequestTokenAdditionalParameters
   ) {
-    const { nonceIn, organization, scopesToRequest } = additionalParameters || {};
+    const { nonceIn, organization, scopesToRequest } =
+      additionalParameters || {};
     const authResult = await oauthToken(
       {
         baseUrl: this.domainUrl,
@@ -1327,7 +1337,7 @@ export class Auth0Client {
         useMrrt: this.options.useMrrt,
         dpop: this.dpop,
         ...options,
-        scope: scopesToRequest || options.scope,
+        scope: scopesToRequest || options.scope
       },
       this.worker
     );
@@ -1496,13 +1506,23 @@ export class Auth0Client {
 
     return new Fetcher(config, {
       isDpopEnabled: () => !!this.options.useDpop,
-      getAccessToken: authParams =>
-        this.getTokenSilently({
+      getAccessToken: async authParams => {
+        const result = await this.getTokenSilently({
+          // When we set this to true, we return the full response, which includes the tokenType
+          detailedResponse: true,
           authorizationParams: {
             scope: authParams?.scope?.join(' '),
             audience: authParams?.audience
           }
-        }),
+        });
+
+        return (
+          result && {
+            accessToken: result.access_token,
+            tokenType: result.token_type
+          }
+        );
+      },
       getDpopNonce: () => this.getDpopNonce(config.dpopNonceId),
       setDpopNonce: nonce => this.setDpopNonce(nonce, config.dpopNonceId),
       generateDpopProof: params => this.generateDpopProof(params)
@@ -1528,11 +1548,15 @@ export class Auth0Client {
     options: RedirectConnectAccountOptions<TAppState>
   ) {
     if (!this.options.useDpop) {
-      throw new Error('`useDpop` option must be enabled before using connectAccountWithRedirect.');
+      throw new Error(
+        '`useDpop` option must be enabled before using connectAccountWithRedirect.'
+      );
     }
 
     if (!this.options.useMrrt) {
-      throw new Error('`useMrrt` option must be enabled before using connectAccountWithRedirect.');
+      throw new Error(
+        '`useMrrt` option must be enabled before using connectAccountWithRedirect.'
+      );
     }
 
     const {
@@ -1541,7 +1565,7 @@ export class Auth0Client {
       connection,
       authorization_params,
       redirectUri = this.options.authorizationParams.redirect_uri ||
-      window.location.origin
+        window.location.origin
     } = options;
 
     if (!connection) {
