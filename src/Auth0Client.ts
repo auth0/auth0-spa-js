@@ -1523,14 +1523,6 @@ export class Auth0Client {
   public async connectAccountWithRedirect<TAppState = any>(
     options: RedirectConnectAccountOptions<TAppState>
   ) {
-    if (!this.options.useDpop) {
-      throw new Error('`useDpop` option must be enabled before using connectAccountWithRedirect.');
-    }
-
-    if (!this.options.useMrrt) {
-      throw new Error('`useMrrt` option must be enabled before using connectAccountWithRedirect.');
-    }
-
     const {
       openUrl,
       appState,

@@ -562,7 +562,7 @@ client.createFetcher({
         // etc.
       }
     }),
-  detailedResponse: true // If your API require a mix of DPoP and Bearer tokens the fetcher will need to know the token type
+  detailedResponse: true // If you need a mix of DPoP and Bearer tokens per fetcher, it will need to know the token type.
 });
 ```
 
