@@ -124,7 +124,7 @@ If you want to use a CDN bundle together with import maps, you will need to use 
 <script type="importmap">
   {
     "imports": {
-      "@auth0/auth0-spa-js": "https://www.unpkg.com/@auth0/auth0-spa-js@2.3.0/dist/auth0-spa-js.production.esm.js"
+      "@auth0/auth0-spa-js": "https://www.unpkg.com/@auth0/auth0-spa-js@2.6.0/dist/auth0-spa-js.production.esm.js"
     }
   }
 </script>
@@ -181,3 +181,22 @@ const client = new Auth0Client({
 ```
 
 In this case, the loading of the `Worker` would comply with a CSP that included `'self'`. You can follow similar steps if you'd prefer to copy the file to your own CDN instead.
+
+## Skip the Auth0 login page?
+
+When integrating with third party providers such as Google or Microsoft, being redirected to Auth0 before being redirected to the corresponding provider can be sub-optimal in terms of user-experience.
+If you only have a single connection enabled, or you know up front how the user wants to authenticate, you can set the `connection` parameter when calling `loginWithRedirect()` or `loginWithPopup()`:
+
+```
+loginWithRedirect({
+  // ...
+  authorizationParams: {
+    connection: 'connection_logical_identifier'
+  }
+})
+```
+
+Doing so for connections such as Google or Microsoft, would automatically redirect you to them instead of showing the Auth0 login page first.
+
+ℹ️ You can find the connection's logical identifier as the **connection name** in the connection settings in the Auth0 dashboard for your tenant.
+

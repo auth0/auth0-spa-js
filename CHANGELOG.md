@@ -1,5 +1,35 @@
 # Change Log
 
+## [v2.6.0](https://github.com/auth0/auth0-spa-js/tree/v2.6.0) (2025-10-10)
+[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.5.0...v2.6.0)
+
+**Added**
+- Add support for connected accounts [\#1422](https://github.com/auth0/auth0-spa-js/pull/1422) ([adamjmcgrath](https://github.com/adamjmcgrath))
+
+**Fixed**
+- Fetcher should set DPoP nonce with nonce id [\#1431](https://github.com/auth0/auth0-spa-js/pull/1431) ([adamjmcgrath](https://github.com/adamjmcgrath))
+- fix: do not mark setAuthorizationHeader as async [\#1428](https://github.com/auth0/auth0-spa-js/pull/1428) ([frederikprijck](https://github.com/frederikprijck))
+
+## [v2.5.0](https://github.com/auth0/auth0-spa-js/tree/v2.5.0) (2025-10-01)
+[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.4.1...v2.5.0)
+
+**Added**
+- Add Support for Multi-Resource Refresh Tokens (MRRT) [\#1386](https://github.com/auth0/auth0-spa-js/pull/1386) ([aridibag](https://github.com/aridibag))
+- Make Fetcher to be Scope- and Audience-Aware [\#1414](https://github.com/auth0/auth0-spa-js/pull/1414) ([frederikprijck](https://github.com/frederikprijck))
+
+## [v2.4.1](https://github.com/auth0/auth0-spa-js/tree/v2.4.1) (2025-09-10)
+[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.4.0...v2.4.1)
+
+**Fixed**
+- fix: move runtime dependencies from devDependencies to dependencies [\#1411](https://github.com/auth0/auth0-spa-js/pull/1411) ([gyaneshgouraw-okta](https://github.com/gyaneshgouraw-okta))
+
+## [v2.4.0](https://github.com/auth0/auth0-spa-js/tree/v2.4.0) (2025-09-08)
+[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.3.0...v2.4.0)
+
+**Added**
+- Add HTTP fetcher for DPoP [\#1400](https://github.com/auth0/auth0-spa-js/pull/1400) ([martinml](https://github.com/martinml))
+- Add support for DPoP [\#1388](https://github.com/auth0/auth0-spa-js/pull/1388) ([martinml](https://github.com/martinml))
+
 ## [v2.3.0](https://github.com/auth0/auth0-spa-js/tree/v2.3.0) (2025-07-16)
 [Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.2.0...v2.3.0)
 

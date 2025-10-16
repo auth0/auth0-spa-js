@@ -127,17 +127,43 @@ describe('Fetcher', () => {
     });
   });
 
+  describe('extractUrl()', () => {
+    const url = 'https://example.com/';
+    const fetcher = newTestFetcher({});
+
+    describe('string', () => {
+      it(
+        'returns as expected',
+        () => expect(fetcher['extractUrl'](url)).toBe(url),
+      );
+    });
+
+    describe('URL', () => {
+      it(
+        'returns as expected',
+        () => expect(fetcher['extractUrl'](new URL(url))).toBe(url),
+      );
+    });
+
+    describe('Request', () => {
+      it(
+        'returns as expected',
+        () => expect(fetcher['extractUrl'](new Request(url))).toBe(url),
+      );
+    });
+  });
+
   describe('buildBaseRequest()', () => {
+    const init = { headers: { test: 'from init' } };
+
     describe('no baseUrl', () => {
       const info = new Request('https://example.com', {
         headers: { test: 'from info' }
       });
 
-      const init = { headers: { test: 'from init' } };
-
       const fetcher = newTestFetcher({ baseUrl: undefined });
 
-      it('init overrides info', () =>
+      it('init is properly merged', () =>
         expect(
           fetcher['buildBaseRequest'](info, init).headers.get('test')
         ).toBe(init.headers['test']));
@@ -147,23 +173,37 @@ describe('Fetcher', () => {
     });
 
     describe('otherwise', () => {
-      const info = new Request('/something.html', {
-        headers: { test: 'from info' }
-      });
-
-      const init = { headers: { test: 'from init' } };
-
       const fetcher = newTestFetcher({ baseUrl: 'https://base.example.com/' });
 
-      it('init overrides info', () =>
-        expect(
-          fetcher['buildBaseRequest'](info, init).headers.get('test')
-        ).toBe(init.headers['test']));
+      describe('info is Request', () => {
+        const info = new Request('/something.html', {
+          headers: { test: 'from info' }
+        });
 
-      it('urls are combined', () =>
-        expect(fetcher['buildBaseRequest'](info, init).url).toBe(
-          'https://base.example.com/something.html'
-        ));
+        it('init is properly merged', () =>
+          expect(
+            fetcher['buildBaseRequest'](info, init).headers.get('test')
+          ).toBe(init.headers['test']));
+
+        it('urls are combined', () =>
+          expect(fetcher['buildBaseRequest'](info, init).url).toBe(
+            'https://base.example.com/something.html'
+          ));
+      });
+
+      describe('otherwise', () => {
+        const info = '/something.html';
+
+        it('init is properly merged', () =>
+          expect(
+            fetcher['buildBaseRequest'](info, init).headers.get('test')
+          ).toBe(init.headers['test']));
+
+        it('urls are combined', () =>
+          expect(fetcher['buildBaseRequest'](info, init).url).toBe(
+            'https://base.example.com/something.html'
+          ));
+      });
     });
   });
 
@@ -485,7 +525,10 @@ describe('Fetcher', () => {
       });
 
       it('request is prepared', () =>
-        expect(fetcher['prepareRequest']).toHaveBeenCalledWith(request));
+        expect(fetcher['prepareRequest']).toHaveBeenCalledWith(
+          request,
+          undefined
+        ));
 
       it('calls fetch() properly', () =>
         expect(fetcher['config']['fetch']).toHaveBeenCalledWith(request));
@@ -537,6 +580,43 @@ describe('Fetcher', () => {
 
       it('returns the second response', () =>
         expect(output).toBe(secondResponse));
+    });
+
+    describe('when scope and audience is passed', () => {
+      const existingToken = 'existing-token-123';
+      const getAccessTokenMock = jest.fn().mockResolvedValue(TEST_ACCESS_TOKEN);
+      const fetcher = newTestFetcher({
+        getAccessToken: getAccessTokenMock
+      });
+      const request = new Request('https://example.com', {
+        headers: { authorization: `Bearer ${existingToken}` }
+      });
+
+      beforeEach(() => {
+        fetcher['setAuthorizationHeader'] = jest.fn();
+        fetcher['setDpopProofHeader'] = jest.fn();
+      });
+
+      beforeEach(() =>
+        fetcher.fetchWithAuth(request, undefined, {
+          scope: ['<scope>'],
+          audience: '<audience>'
+        })
+      );
+
+      it('does call getAccessToken', async () => {
+        await fetcher.fetchWithAuth(request, undefined, {
+          scope: ['<scope>'],
+          audience: '<audience>'
+        });
+
+        expect(getAccessTokenMock).toHaveBeenCalledWith(
+          expect.objectContaining({
+            scope: ['<scope>'],
+            audience: '<audience>'
+          })
+        );
+      });
     });
   });
 });
