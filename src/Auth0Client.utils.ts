@@ -110,6 +110,20 @@ export const allScopesAreIncluded = (scopeToInclude?: string, scopes?: string): 
 
 /**
  * @ignore
+ * 
+ * Returns the scopes that are missing after a refresh
+ */
+export const getMissingScopes = (requestedScope?: string, respondedScope?: string): string => {
+  const requestedScopes = requestedScope?.split(" ") || [];
+  const respondedScopes = respondedScope?.split(" ") || [];
+
+  const missingScopes = requestedScopes.filter((scope) => respondedScopes.indexOf(scope) == -1);
+
+  return missingScopes.join(",");
+}
+
+/**
+ * @ignore
  *
  * For backward compatibility we are going to check if we are going to downscope while doing a refresh request
  * while MRRT is allowed. If the audience is the same for the refresh_token we are going to use and it has
