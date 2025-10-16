@@ -1,5 +1,6 @@
 import { DPOP_NONCE_HEADER } from './dpop/utils';
 import { UseDpopNonceError } from './errors';
+import { GetTokenSilentlyVerboseResponse } from './global';
 
 export type ResponseHeaders =
   | Record<string, string | null | undefined>
@@ -20,7 +21,12 @@ export type AuthParams = {
   audience?: string;
 };
 
-type AccessTokenFactory = (authParams?: AuthParams) => Promise<string>;
+type AccessTokenFactory = (authParams?: AuthParams) => Promise<string | GetTokenSilentlyVerboseResponse>;
+
+enum TokenType {
+  Bearer = 'Bearer',
+  DPoP = 'DPoP'
+}
 
 export type FetcherConfig<TOutput extends CustomFetchMinimalOutput> = {
   getAccessToken?: AccessTokenFactory;
@@ -88,7 +94,7 @@ export class Fetcher<TOutput extends CustomFetchMinimalOutput> {
     throw new TypeError('`url` must be absolute or `baseUrl` non-empty.');
   }
 
-  protected getAccessToken(authParams?: AuthParams): Promise<string> {
+  protected getAccessToken(authParams?: AuthParams): Promise<string | GetTokenSilentlyVerboseResponse> {
     return this.config.getAccessToken
       ? this.config.getAccessToken(authParams)
       : this.hooks.getAccessToken(authParams);
@@ -133,11 +139,12 @@ export class Fetcher<TOutput extends CustomFetchMinimalOutput> {
 
   protected setAuthorizationHeader(
     request: Request,
-    accessToken: string
+    accessToken: string,
+    tokenType: string = TokenType.Bearer
   ): void {
     request.headers.set(
       'authorization',
-      `${this.config.dpopNonceId ? 'DPoP' : 'Bearer'} ${accessToken}`
+      `${tokenType} ${accessToken}`
     );
   }
 
@@ -162,11 +169,22 @@ export class Fetcher<TOutput extends CustomFetchMinimalOutput> {
   }
 
   protected async prepareRequest(request: Request, authParams?: AuthParams) {
-    const accessToken = await this.getAccessToken(authParams);
+    const accessTokenResponse = await this.getAccessToken(authParams);
 
-    this.setAuthorizationHeader(request, accessToken);
+    let tokenType: string;
+    let accessToken: string;
+    if (typeof accessTokenResponse === 'string') {
+      tokenType = this.config.dpopNonceId ? TokenType.DPoP : TokenType.Bearer;
+      accessToken = accessTokenResponse;
+    } else {
+      tokenType = accessTokenResponse.token_type;
+      accessToken = accessTokenResponse.access_token;
+    }
 
-    await this.setDpopProofHeader(request, accessToken);
+    this.setAuthorizationHeader(request, accessToken, tokenType);
+    if (tokenType === TokenType.DPoP) {
+      await this.setDpopProofHeader(request, accessToken);
+    }
   }
 
   protected getHeader(headers: ResponseHeaders, name: string): string {

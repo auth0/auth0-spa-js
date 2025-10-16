@@ -6,6 +6,7 @@
 
 import { beforeEach, describe, expect } from '@jest/globals';
 import { UseDpopNonceError } from '../src/errors';
+import { GetTokenSilentlyVerboseResponse } from '../src/global';
 import {
   Fetcher,
   ResponseHeaders,
@@ -208,12 +209,12 @@ describe('Fetcher', () => {
   });
 
   describe('setAuthorizationHeader()', () => {
-    describe('dpopNonceId is present', () => {
+    describe('DPoP is passed', () => {
       const fetcher = newTestFetcher({ dpopNonceId: 'foo' });
       const request = new Request('https://example.com');
 
       beforeEach(() => {
-        fetcher['setAuthorizationHeader'](request, TEST_ACCESS_TOKEN);
+        fetcher['setAuthorizationHeader'](request, TEST_ACCESS_TOKEN, 'DPoP');
       });
 
       it('token is included as DPoP', () =>
@@ -281,7 +282,7 @@ describe('Fetcher', () => {
     });
   });
 
-  describe('prepareRequest()', () => {
+  describe('prepareRequest() with default bearer token', () => {
     const fetcher = newTestFetcher({});
     const request = new Request('https://example.com');
 
@@ -296,7 +297,34 @@ describe('Fetcher', () => {
     it('calls setAuthorizationHeader properly', () =>
       expect(fetcher['setAuthorizationHeader']).toHaveBeenCalledWith(
         request,
+        TEST_ACCESS_TOKEN,
+        'Bearer'
+      ));
+
+    it('calls setDpopProofHeader properly', () =>
+      expect(fetcher['setDpopProofHeader']).not.toHaveBeenCalledWith(
+        request,
         TEST_ACCESS_TOKEN
+      ));
+  });
+
+  describe('prepareRequest() with DPoP token', () => {
+    const fetcher = newTestFetcher({});
+    const request = new Request('https://example.com');
+
+    beforeEach(() => {
+      fetcher['getAccessToken'] = () => Promise.resolve({ access_token: TEST_ACCESS_TOKEN, token_type: 'DPoP' } as GetTokenSilentlyVerboseResponse);
+      fetcher['setAuthorizationHeader'] = jest.fn();
+      fetcher['setDpopProofHeader'] = jest.fn();
+    });
+
+    beforeEach(() => fetcher['prepareRequest'](request));
+
+    it('calls setAuthorizationHeader properly', () =>
+      expect(fetcher['setAuthorizationHeader']).toHaveBeenCalledWith(
+        request,
+        TEST_ACCESS_TOKEN,
+        'DPoP'
       ));
 
     it('calls setDpopProofHeader properly', () =>
