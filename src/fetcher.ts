@@ -206,7 +206,7 @@ export class Fetcher<TOutput extends CustomFetchMinimalOutput> {
 
     const wwwAuthHeader = this.getHeader(response.headers, 'www-authenticate');
 
-    return wwwAuthHeader.includes('use_dpop_nonce');
+    return wwwAuthHeader.includes('invalid_dpop_nonce') || wwwAuthHeader.includes('use_dpop_nonce');
   }
 
   protected async handleResponse(
