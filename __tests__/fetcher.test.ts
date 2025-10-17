@@ -648,12 +648,26 @@ describe('Fetcher', () => {
     });
 
     describe('when DPoP is enabled', () => {
-      const getAccessTokenMock = jest.fn().mockResolvedValue({ access_token: TEST_ACCESS_TOKEN, token_type: 'Bearer' });
+      const getAccessTokenMock = jest.fn().mockResolvedValue({
+        access_token: TEST_ACCESS_TOKEN,
+        token_type: 'Bearer'
+      });
       const fetchStub = jest.fn().mockResolvedValue(new Response());
-      const fetcher = newTestFetcher({
-        getAccessToken: getAccessTokenMock,
-        dpopNonceId: 'foo', // Added DpoP nonce ID to enable DPoP, but still uses Bearer token
-        fetch: fetchStub
+      const fetcher = newTestFetcher(
+        {
+          getAccessToken: getAccessTokenMock,
+          dpopNonceId: 'foo', // Added DpoP nonce ID to enable DPoP, but still uses Bearer token
+          fetch: fetchStub
+        },
+        {
+          getDpopNonce: jest.fn().mockResolvedValue(TEST_DPOP_NONCE),
+          generateDpopProof: jest.fn().mockResolvedValue(TEST_DPOP_PROOF)
+        }
+      );
+
+      beforeEach(() => {
+        fetchStub.mockClear();
+        getAccessTokenMock.mockClear();
       });
 
       it('should honor bearer token type', async () => {
@@ -663,7 +677,31 @@ describe('Fetcher', () => {
         expect(headers.get('authorization')).toMatch(/^Bearer /);
         expect(headers.get('DPoP')).toBeNull();
       });
+
+      it('should pick up dpop once the token is bound', async () => {
+        getAccessTokenMock.mockResolvedValueOnce({
+          access_token: TEST_ACCESS_TOKEN,
+          token_type: 'Bearer'
+        });
+        getAccessTokenMock.mockResolvedValueOnce({
+          access_token: TEST_ACCESS_TOKEN,
+          token_type: 'DPoP'
+        });
+
+        // First fetch with Bearer token
+        await fetcher.fetchWithAuth('https://example.com');
+
+        const headers = fetchStub.mock.calls[0][0].headers;
+        expect(headers.get('authorization')).toMatch(/^Bearer /);
+        expect(headers.get('DPoP')).toBeNull();
+
+        // Now fetch again, should be DPoP this time as the token is bound
+        await fetcher.fetchWithAuth('https://example.com');
+
+        const headers2 = fetchStub.mock.calls[1][0].headers;
+        expect(headers2.get('authorization')).toMatch(/^DPoP /);
+        expect(headers2.get('DPoP')).not.toBeNull();
+      });
     });
   });
-
 });
