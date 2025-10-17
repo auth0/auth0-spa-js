@@ -670,7 +670,7 @@ const query = new URLSearchParams(window.location.search);
 if ((query.has('connect_code') || query.has('error')) && query.has('state')) {
   const result = await auth0.handleRedirectCallback();
   if (result.connection) {
-    console.log(`You are connected to ${result.connection}!`);
+    console.log(`You are connected to ${result.connection}!`)
   }
 }
 ```

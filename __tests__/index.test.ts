@@ -88,10 +88,10 @@ const setup = async (
 
   const auth0 = callConstructor
     ? await createAuth0Client({
-      domain: TEST_DOMAIN,
-      clientId: TEST_CLIENT_ID,
-      ...clientOptions
-    })
+        domain: TEST_DOMAIN,
+        clientId: TEST_CLIENT_ID,
+        ...clientOptions
+      })
     : undefined;
 
   const transactionManager =

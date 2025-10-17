@@ -183,5 +183,24 @@ describe('Auth0Client', () => {
       expect(auth0['dpop']).not.toBeUndefined();
       expect(DpopModule.Dpop).toHaveBeenCalledWith(TEST_CLIENT_ID);
     });
+
+    it('allows an object as scope', () => {
+      const auth0 = setup({
+        useRefreshTokens: true,
+        authorizationParams: {
+          scope: {
+            test1: 'profile email test-scope1',
+            test2: 'profile email test-scope2'
+          }
+        }
+      });
+
+      console.log('auth0', (<any>auth0).scope)
+
+      expect((<any>auth0).scope).toMatchObject({
+        test1: 'openid profile email test-scope1 offline_access',
+        test2: 'openid profile email test-scope2 offline_access',
+      });
+    })
   });
 });
