@@ -646,5 +646,24 @@ describe('Fetcher', () => {
         );
       });
     });
+
+    describe('when DPoP is enabled', () => {
+      const getAccessTokenMock = jest.fn().mockResolvedValue({ access_token: TEST_ACCESS_TOKEN, token_type: 'Bearer' });
+      const fetchStub = jest.fn().mockResolvedValue(new Response());
+      const fetcher = newTestFetcher({
+        getAccessToken: getAccessTokenMock,
+        dpopNonceId: 'foo', // Added DpoP nonce ID to enable DPoP, but still uses Bearer token
+        fetch: fetchStub
+      });
+
+      it('should honor bearer token type', async () => {
+        await fetcher.fetchWithAuth('https://example.com');
+
+        const headers = fetchStub.mock.calls[0][0].headers;
+        expect(headers.get('authorization')).toMatch(/^Bearer /);
+        expect(headers.get('DPoP')).toBeNull();
+      });
+    });
   });
+
 });
