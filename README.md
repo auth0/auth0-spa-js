@@ -2,6 +2,7 @@
 
 ![Release](https://img.shields.io/npm/v/@auth0/auth0-spa-js)
 [![Codecov](https://img.shields.io/codecov/c/github/auth0/auth0-spa-js)](https://codecov.io/gh/auth0/auth0-spa-js)
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/auth0/auth0-spa-js)
 ![Downloads](https://img.shields.io/npm/dw/@auth0/auth0-spa-js)
 [![License](https://img.shields.io/:license-mit-blue.svg?style=flat)](https://opensource.org/licenses/MIT)
 ![CircleCI](https://img.shields.io/circleci/build/github/auth0/auth0-spa-js)
