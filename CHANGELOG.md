@@ -1,5 +1,16 @@
 # Change Log
 
+## [v2.7.0](https://github.com/auth0/auth0-spa-js/tree/v2.7.0) (2025-10-17)
+[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.6.0...v2.7.0)
+
+**Added**
+- [ESD-52771] Support mix of DPoP and Bearer in the fetcher [\#1442](https://github.com/auth0/auth0-spa-js/pull/1442) ([adamjmcgrath](https://github.com/adamjmcgrath))
+
+**Fixed**
+- Fix MRRT with default audience in worker [\#1439](https://github.com/auth0/auth0-spa-js/pull/1439) ([aridibag](https://github.com/aridibag))
+- Fetcher: fix incorrect URL building when `baseUrl` is present [\#1435](https://github.com/auth0/auth0-spa-js/pull/1435) ([martinml](https://github.com/martinml))
+- Change error message when there are missing scopes after a refresh with MRRT [\#1440](https://github.com/auth0/auth0-spa-js/pull/1440) ([aridibag](https://github.com/aridibag))
+
 ## [v2.6.0](https://github.com/auth0/auth0-spa-js/tree/v2.6.0) (2025-10-10)
 [Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.5.0...v2.6.0)
 
