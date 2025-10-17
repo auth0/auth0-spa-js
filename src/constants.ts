@@ -60,3 +60,5 @@ export const DEFAULT_AUTH0_CLIENT = {
 };
 
 export const DEFAULT_NOW_PROVIDER = () => Date.now();
+
+export const DEFAULT_AUDIENCE = 'default';
