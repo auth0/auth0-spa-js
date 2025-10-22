@@ -898,7 +898,7 @@ export class Auth0Client {
         scope: scopesToRequest(
           this.scope,
           options.authorizationParams?.scope,
-          options.authorizationParams?.audience || this.options.authorizationParams.audience
+          options.authorizationParams?.audience || this.options.authorizationParams?.audience
         )
       }
     };
@@ -1243,7 +1243,7 @@ export class Auth0Client {
   }
 
   private async _getIdTokenFromCache() {
-    const audience = this.options.authorizationParams.audience || DEFAULT_AUDIENCE;
+    const audience = this.options.authorizationParams?.audience || DEFAULT_AUDIENCE;
     const scope = this.scope[audience];
 
     const cache = await this.cacheManager.getIdToken(
@@ -1426,9 +1426,9 @@ export class Auth0Client {
       scope: scopesToRequest(
         this.scope,
         options.scope,
-        options.audience || this.options.authorizationParams.audience
+        options.audience || this.options.authorizationParams?.audience
       ),
-      audience: options.audience || this.options.authorizationParams.audience
+      audience: options.audience || this.options.authorizationParams?.audience
     });
   }
 
