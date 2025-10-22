@@ -80,11 +80,11 @@ import {
   IdToken,
   GetTokenSilentlyVerboseResponse,
   TokenEndpointResponse,
-  ClientAuthorizationParams,
   AuthenticationResult,
   ConnectAccountRedirectResult,
   RedirectConnectAccountOptions,
-  ResponseType
+  ResponseType,
+  Auth0ClientConstructorOptions
 } from './global';
 
 // @ts-ignore
@@ -144,9 +144,7 @@ export class Auth0Client {
   private readonly isAuthenticatedCookieName: string;
   private readonly nowProvider: () => number | Promise<number>;
   private readonly httpTimeoutMs: number;
-  private readonly options: Auth0ClientOptions & {
-    authorizationParams: ClientAuthorizationParams;
-  };
+  private readonly options: Auth0ClientConstructorOptions;
   private readonly userCache: ICache = new InMemoryCache().enclosedCache;
   private readonly myAccountApi: MyAccountApiClient;
 
@@ -159,7 +157,7 @@ export class Auth0Client {
     useFormData: true
   };
 
-  constructor(options: Auth0ClientOptions) {
+  constructor(options: Auth0ClientConstructorOptions) {
     this.options = {
       ...this.defaultOptions,
       ...options,
@@ -221,7 +219,7 @@ export class Auth0Client {
     // 2. Include the scopes provided in `authorizationParams. This defaults to `profile email`
     // 3. Add `offline_access` if `useRefreshTokens` is enabled
     this.scope = injectDefaultScopes(
-      this.options.authorizationParams.scope,
+      this.options.authorizationParams?.scope,
       'openid',
       this.options.useRefreshTokens ? 'offline_access' : ''
     );
@@ -786,7 +784,7 @@ export class Auth0Client {
         scope: scopesToRequest(
           this.scope,
           options.authorizationParams?.scope,
-          options.authorizationParams?.audience || this.options.authorizationParams.audience,
+          options.authorizationParams?.audience || this.options.authorizationParams?.audience,
         )
       }
     };
