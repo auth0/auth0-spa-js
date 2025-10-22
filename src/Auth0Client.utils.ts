@@ -1,8 +1,9 @@
 import { ICache, InMemoryCache, LocalStorageCache } from './cache';
 import {
-  Auth0ClientConstructorOptions,
+  Auth0ClientOptions,
   AuthorizationParams,
   AuthorizeOptions,
+  ClientAuthorizationParams,
   LogoutOptions
 } from './global';
 import { scopesToRequest } from './scope';
@@ -48,7 +49,9 @@ export const cacheFactory = (location: string) => {
  * @ignore
  */
 export const getAuthorizeParams = (
-  clientOptions: Auth0ClientConstructorOptions,
+  clientOptions: Auth0ClientOptions & {
+    authorizationParams: ClientAuthorizationParams;
+  },
   scope: Record<string, string>,
   authorizationParams: AuthorizationParams & { scope?: string },
   state: string,

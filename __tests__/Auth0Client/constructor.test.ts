@@ -199,6 +199,6 @@ describe('Auth0Client', () => {
         test1: 'openid profile email test-scope1 offline_access',
         test2: 'openid profile email test-scope2 offline_access',
       });
-    })
+    });
   });
 });
