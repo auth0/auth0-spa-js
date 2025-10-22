@@ -11,7 +11,8 @@ import {
   urlDecodeB64,
   getCrypto,
   validateCrypto,
-  fromEntries
+  fromEntries,
+  stripAuth0Client
 } from '../src/utils';
 
 import { DEFAULT_AUTHORIZE_TIMEOUT_IN_SECONDS } from '../src/constants';
@@ -505,9 +506,85 @@ describe('utils', () => {
       output = fromEntries(iterable);
     });
 
-    it(
-      'converts an iterable into a POJO',
-      () => expect(output).toEqual(data),
-    );
+    it('converts an iterable into a POJO', () => expect(output).toEqual(data));
+  });
+
+  describe('stripAuth0Client', () => {
+    it("should remove any property that isn't name, version or env", () => {
+      const auth0Client = {
+        name: 'test',
+        version: '1.0.0',
+        env: {
+          node: 'v12.0.0'
+        },
+        users: ['user1', 'user2'],
+        other: 'other'
+      };
+
+      const result = stripAuth0Client(auth0Client);
+
+      expect(result).not.toHaveProperty('users');
+      expect(result).not.toHaveProperty('other');
+      expect(result).toEqual({
+        name: 'test',
+        version: '1.0.0',
+        env: {
+          node: 'v12.0.0'
+        }
+      });
+    });
+
+    it('should remove name when not string', () => {
+      const auth0Client = {
+        name: 1,
+        version: '1.0.0',
+        env: {
+          node: 'v12.0.0'
+        }
+      };
+
+      const result = stripAuth0Client(auth0Client);
+      expect(result).not.toHaveProperty('name');
+      expect(result).toEqual({
+        version: '1.0.0',
+        env: {
+          node: 'v12.0.0'
+        }
+      });
+    });
+
+    it('should remove version when not string or number', () => {
+      const auth0Client = {
+        name: 'test',
+        version: true,
+        env: {
+          node: 'v12.0.0'
+        }
+      };
+
+      const result = stripAuth0Client(auth0Client);
+      expect(result).not.toHaveProperty('version');
+      expect(result).toEqual({
+        name: 'test',
+        env: {
+          node: 'v12.0.0'
+        }
+      });
+    });
+
+    it('should remove env when not object', () => {
+      const auth0Client = {
+        name: 'test',
+        version: 2,
+        env: 123
+      };
+
+      const result = stripAuth0Client(auth0Client);
+      expect(result).not.toHaveProperty('env');
+      expect(result).toEqual({
+        name: 'test',
+        version: 2
+      });
+    });
   });
 });

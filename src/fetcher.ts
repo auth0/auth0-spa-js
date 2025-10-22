@@ -1,5 +1,6 @@
 import { DPOP_NONCE_HEADER } from './dpop/utils';
 import { UseDpopNonceError } from './errors';
+import { GetTokenSilentlyVerboseResponse } from './global';
 
 export type ResponseHeaders =
   | Record<string, string | null | undefined>
@@ -15,7 +16,17 @@ export type CustomFetchImpl<TOutput extends CustomFetchMinimalOutput> = (
   req: Request
 ) => Promise<TOutput>;
 
-type AccessTokenFactory = () => Promise<string>;
+export type AuthParams = {
+  scope?: string[];
+  audience?: string;
+};
+
+type AccessTokenFactory = (authParams?: AuthParams) => Promise<string | GetTokenSilentlyVerboseResponse>;
+
+enum TokenType {
+  Bearer = 'Bearer',
+  DPoP = 'DPoP'
+}
 
 export type FetcherConfig<TOutput extends CustomFetchMinimalOutput> = {
   getAccessToken?: AccessTokenFactory;
@@ -26,7 +37,7 @@ export type FetcherConfig<TOutput extends CustomFetchMinimalOutput> = {
 
 export type FetcherHooks = {
   isDpopEnabled: () => boolean;
-  getAccessToken: () => Promise<string>;
+  getAccessToken: AccessTokenFactory;
   getDpopNonce: () => Promise<string | undefined>;
   setDpopNonce: (nonce: string) => Promise<void>;
   generateDpopProof: (params: {
@@ -83,10 +94,22 @@ export class Fetcher<TOutput extends CustomFetchMinimalOutput> {
     throw new TypeError('`url` must be absolute or `baseUrl` non-empty.');
   }
 
-  protected getAccessToken(): Promise<string> {
+  protected getAccessToken(authParams?: AuthParams): Promise<string | GetTokenSilentlyVerboseResponse> {
     return this.config.getAccessToken
-      ? this.config.getAccessToken()
-      : this.hooks.getAccessToken();
+      ? this.config.getAccessToken(authParams)
+      : this.hooks.getAccessToken(authParams);
+  }
+
+  protected extractUrl(info: RequestInfo | URL): string {
+    if (typeof info === 'string') {
+      return info;
+    }
+
+    if (info instanceof URL) {
+      return info.href;
+    }
+
+    return info.url;
   }
 
   protected buildBaseRequest(
@@ -96,26 +119,32 @@ export class Fetcher<TOutput extends CustomFetchMinimalOutput> {
     // In the native `fetch()` behavior, `init` can override `info` and the result
     // is the merge of both. So let's replicate that behavior by passing those into
     // a fresh `Request` object.
-    const request = new Request(info, init);
 
-    // No `baseUrl` config, use whatever the URL the `Request` came with.
+    // No `baseUrl`? We can use `info` and `init` as is.
     if (!this.config.baseUrl) {
-      return request;
+      return new Request(info, init);
     }
 
-    return new Request(
-      this.buildUrl(this.config.baseUrl, request.url),
-      request
-    );
+    // But if `baseUrl` is present, first we have to build the final URL...
+    const finalUrl = this.buildUrl(this.config.baseUrl, this.extractUrl(info));
+
+    // ... and then overwrite `info`'s URL with it, making sure we keep any other
+    // properties that might be there already (headers, etc).
+    const finalInfo = info instanceof Request
+      ? new Request(finalUrl, info)
+      : finalUrl;
+
+    return new Request(finalInfo, init);
   }
 
-  protected async setAuthorizationHeader(
+  protected setAuthorizationHeader(
     request: Request,
-    accessToken: string
-  ): Promise<void> {
+    accessToken: string,
+    tokenType: string = TokenType.Bearer
+  ): void {
     request.headers.set(
       'authorization',
-      `${this.config.dpopNonceId ? 'DPoP' : 'Bearer'} ${accessToken}`
+      `${tokenType} ${accessToken}`
     );
   }
 
@@ -139,12 +168,23 @@ export class Fetcher<TOutput extends CustomFetchMinimalOutput> {
     request.headers.set('dpop', dpopProof);
   }
 
-  protected async prepareRequest(request: Request) {
-    const accessToken = await this.getAccessToken();
+  protected async prepareRequest(request: Request, authParams?: AuthParams) {
+    const accessTokenResponse = await this.getAccessToken(authParams);
 
-    this.setAuthorizationHeader(request, accessToken);
+    let tokenType: string;
+    let accessToken: string;
+    if (typeof accessTokenResponse === 'string') {
+      tokenType = this.config.dpopNonceId ? TokenType.DPoP : TokenType.Bearer;
+      accessToken = accessTokenResponse;
+    } else {
+      tokenType = accessTokenResponse.token_type;
+      accessToken = accessTokenResponse.access_token;
+    }
 
-    await this.setDpopProofHeader(request, accessToken);
+    this.setAuthorizationHeader(request, accessToken, tokenType);
+    if (tokenType === TokenType.DPoP) {
+      await this.setDpopProofHeader(request, accessToken);
+    }
   }
 
   protected getHeader(headers: ResponseHeaders, name: string): string {
@@ -166,7 +206,7 @@ export class Fetcher<TOutput extends CustomFetchMinimalOutput> {
 
     const wwwAuthHeader = this.getHeader(response.headers, 'www-authenticate');
 
-    return wwwAuthHeader.includes('use_dpop_nonce');
+    return wwwAuthHeader.includes('invalid_dpop_nonce') || wwwAuthHeader.includes('use_dpop_nonce');
   }
 
   protected async handleResponse(
@@ -195,11 +235,12 @@ export class Fetcher<TOutput extends CustomFetchMinimalOutput> {
   protected async internalFetchWithAuth(
     info: RequestInfo | URL,
     init: RequestInit | undefined,
-    callbacks: FetchWithAuthCallbacks<TOutput>
+    callbacks: FetchWithAuthCallbacks<TOutput>,
+    authParams?: AuthParams
   ): Promise<TOutput> {
     const request = this.buildBaseRequest(info, init);
 
-    await this.prepareRequest(request);
+    await this.prepareRequest(request, authParams);
 
     const response = await this.config.fetch(request);
 
@@ -208,17 +249,23 @@ export class Fetcher<TOutput extends CustomFetchMinimalOutput> {
 
   public fetchWithAuth(
     info: RequestInfo | URL,
-    init?: RequestInit
+    init?: RequestInit,
+    authParams?: AuthParams
   ): Promise<TOutput> {
     const callbacks: FetchWithAuthCallbacks<TOutput> = {
       onUseDpopNonceError: () =>
-        this.internalFetchWithAuth(info, init, {
-          ...callbacks,
-          // Retry on a `use_dpop_nonce` error, but just once.
-          onUseDpopNonceError: undefined
-        })
+        this.internalFetchWithAuth(
+          info,
+          init,
+          {
+            ...callbacks,
+            // Retry on a `use_dpop_nonce` error, but just once.
+            onUseDpopNonceError: undefined
+          },
+          authParams
+        )
     };
 
-    return this.internalFetchWithAuth(info, init, callbacks);
+    return this.internalFetchWithAuth(info, init, callbacks, authParams);
   }
 }

@@ -69,7 +69,9 @@ export class CacheManager {
 
   async get(
     cacheKey: CacheKey,
-    expiryAdjustmentSeconds = DEFAULT_EXPIRY_ADJUSTMENT_SECONDS
+    expiryAdjustmentSeconds = DEFAULT_EXPIRY_ADJUSTMENT_SECONDS,
+    useMrrt = false,
+    cacheMode?: string
   ): Promise<Partial<CacheEntry> | undefined> {
     let wrappedEntry = await this.cache.get<WrappedCacheEntry>(
       cacheKey.toKey()
@@ -85,6 +87,13 @@ export class CacheManager {
       if (matchedKey) {
         wrappedEntry = await this.cache.get<WrappedCacheEntry>(matchedKey);
       }
+
+      // To refresh using MRRT we need to send a request to the server
+      // If cacheMode is 'cache-only', this will make us unable to call the server
+      // so it won't be needed to find a valid refresh token
+      if (!matchedKey && useMrrt && cacheMode !== 'cache-only') {
+        return this.getEntryWithRefreshToken(cacheKey, keys);
+      }
     }
 
     // If we still don't have an entry, exit.
@@ -97,12 +106,7 @@ export class CacheManager {
 
     if (wrappedEntry.expiresAt - expiryAdjustmentSeconds < nowSeconds) {
       if (wrappedEntry.body.refresh_token) {
-        wrappedEntry.body = {
-          refresh_token: wrappedEntry.body.refresh_token
-        };
-
-        await this.cache.set(cacheKey.toKey(), wrappedEntry);
-        return wrappedEntry.body;
+        return this.modifiedCachedEntry(wrappedEntry, cacheKey);
       }
 
       await this.cache.remove(cacheKey.toKey());
@@ -112,6 +116,24 @@ export class CacheManager {
     }
 
     return wrappedEntry.body;
+  }
+
+  private async modifiedCachedEntry(wrappedEntry: WrappedCacheEntry, cacheKey: CacheKey): Promise<Partial<CacheEntry>> {
+    // We need to keep audience and scope in order to check them later when doing refresh
+    // using MRRT. See getScopeToRequest method.
+    wrappedEntry.body = {
+      refresh_token: wrappedEntry.body.refresh_token,
+      audience: wrappedEntry.body.audience,
+      scope: wrappedEntry.body.scope,
+    };
+
+    await this.cache.set(cacheKey.toKey(), wrappedEntry);
+
+    return {
+      refresh_token: wrappedEntry.body.refresh_token,
+      audience: wrappedEntry.body.audience,
+      scope: wrappedEntry.body.scope,
+    };
   }
 
   async set(entry: CacheEntry): Promise<void> {
@@ -125,6 +147,20 @@ export class CacheManager {
 
     await this.cache.set(cacheKey.toKey(), wrappedEntry);
     await this.keyManifest?.add(cacheKey.toKey());
+  }
+
+  async remove(
+    client_id: string,
+    audience?: string,
+    scope?: string,
+  ): Promise<void> {
+    const cacheKey = new CacheKey({
+      clientId: client_id,
+      scope: scope,
+      audience: audience
+    });
+
+    await this.cache.remove(cacheKey.toKey());
   }
 
   async clear(clientId?: string): Promise<void> {
@@ -206,5 +242,58 @@ export class CacheManager {
         hasAllScopes
       );
     })[0];
+  }
+
+  /**
+   * Returns the first entry that contains a refresh_token that satisfies the following conditions
+   * The keys inside the cache are in the format {prefix}::{clientId}::{audience}::{scope}.
+   * - `prefix` is strict equal to Auth0's internally configured `keyPrefix`
+   * - `clientId` is strict equal to the `cacheKey.clientId`
+   * @param keyToMatch The provided cache key
+   * @param allKeys A list of existing cache keys
+   */
+  private async getEntryWithRefreshToken(keyToMatch: CacheKey, allKeys: Array<string>): Promise<Partial<CacheEntry> | undefined> {
+    for (const key of allKeys) {
+      const cacheKey = CacheKey.fromKey(key);
+
+      if (cacheKey.prefix === CACHE_KEY_PREFIX &&
+        cacheKey.clientId === keyToMatch.clientId) {
+        const cachedEntry = await this.cache.get<WrappedCacheEntry>(key);
+
+        if (cachedEntry?.body?.refresh_token) {
+          return this.modifiedCachedEntry(cachedEntry, keyToMatch);
+        }
+      }
+    }
+
+    return undefined;
+  }
+
+  /**
+   * Updates in the cache all entries that has a match with previous refresh_token with the
+   * new refresh_token obtained from the server
+   * @param oldRefreshToken Old refresh_token used on refresh
+   * @param newRefreshToken New refresh_token obtained from the server after refresh
+  */
+  async updateEntry(
+    oldRefreshToken: string,
+    newRefreshToken: string,
+  ): Promise<void> {
+    const allKeys = await this.getCacheKeys();
+
+    if (!allKeys) return;
+
+    for (const key of allKeys) {
+      const entry = await this.cache.get<WrappedCacheEntry>(key);
+
+      if (entry?.body?.refresh_token === oldRefreshToken) {
+        const cacheEntry = {
+          ...entry.body,
+          refresh_token: newRefreshToken,
+        } as CacheEntry;
+
+        await this.set(cacheEntry);
+      }
+    }
   }
 }

@@ -6,6 +6,7 @@
 
 import { beforeEach, describe, expect } from '@jest/globals';
 import { UseDpopNonceError } from '../src/errors';
+import { GetTokenSilentlyVerboseResponse } from '../src/global';
 import {
   Fetcher,
   ResponseHeaders,
@@ -127,17 +128,43 @@ describe('Fetcher', () => {
     });
   });
 
+  describe('extractUrl()', () => {
+    const url = 'https://example.com/';
+    const fetcher = newTestFetcher({});
+
+    describe('string', () => {
+      it(
+        'returns as expected',
+        () => expect(fetcher['extractUrl'](url)).toBe(url),
+      );
+    });
+
+    describe('URL', () => {
+      it(
+        'returns as expected',
+        () => expect(fetcher['extractUrl'](new URL(url))).toBe(url),
+      );
+    });
+
+    describe('Request', () => {
+      it(
+        'returns as expected',
+        () => expect(fetcher['extractUrl'](new Request(url))).toBe(url),
+      );
+    });
+  });
+
   describe('buildBaseRequest()', () => {
+    const init = { headers: { test: 'from init' } };
+
     describe('no baseUrl', () => {
       const info = new Request('https://example.com', {
         headers: { test: 'from info' }
       });
 
-      const init = { headers: { test: 'from init' } };
-
       const fetcher = newTestFetcher({ baseUrl: undefined });
 
-      it('init overrides info', () =>
+      it('init is properly merged', () =>
         expect(
           fetcher['buildBaseRequest'](info, init).headers.get('test')
         ).toBe(init.headers['test']));
@@ -147,33 +174,47 @@ describe('Fetcher', () => {
     });
 
     describe('otherwise', () => {
-      const info = new Request('/something.html', {
-        headers: { test: 'from info' }
-      });
-
-      const init = { headers: { test: 'from init' } };
-
       const fetcher = newTestFetcher({ baseUrl: 'https://base.example.com/' });
 
-      it('init overrides info', () =>
-        expect(
-          fetcher['buildBaseRequest'](info, init).headers.get('test')
-        ).toBe(init.headers['test']));
+      describe('info is Request', () => {
+        const info = new Request('/something.html', {
+          headers: { test: 'from info' }
+        });
 
-      it('urls are combined', () =>
-        expect(fetcher['buildBaseRequest'](info, init).url).toBe(
-          'https://base.example.com/something.html'
-        ));
+        it('init is properly merged', () =>
+          expect(
+            fetcher['buildBaseRequest'](info, init).headers.get('test')
+          ).toBe(init.headers['test']));
+
+        it('urls are combined', () =>
+          expect(fetcher['buildBaseRequest'](info, init).url).toBe(
+            'https://base.example.com/something.html'
+          ));
+      });
+
+      describe('otherwise', () => {
+        const info = '/something.html';
+
+        it('init is properly merged', () =>
+          expect(
+            fetcher['buildBaseRequest'](info, init).headers.get('test')
+          ).toBe(init.headers['test']));
+
+        it('urls are combined', () =>
+          expect(fetcher['buildBaseRequest'](info, init).url).toBe(
+            'https://base.example.com/something.html'
+          ));
+      });
     });
   });
 
   describe('setAuthorizationHeader()', () => {
-    describe('dpopNonceId is present', () => {
+    describe('DPoP is passed', () => {
       const fetcher = newTestFetcher({ dpopNonceId: 'foo' });
       const request = new Request('https://example.com');
 
       beforeEach(() => {
-        fetcher['setAuthorizationHeader'](request, TEST_ACCESS_TOKEN);
+        fetcher['setAuthorizationHeader'](request, TEST_ACCESS_TOKEN, 'DPoP');
       });
 
       it('token is included as DPoP', () =>
@@ -241,7 +282,7 @@ describe('Fetcher', () => {
     });
   });
 
-  describe('prepareRequest()', () => {
+  describe('prepareRequest() with default bearer token', () => {
     const fetcher = newTestFetcher({});
     const request = new Request('https://example.com');
 
@@ -256,7 +297,34 @@ describe('Fetcher', () => {
     it('calls setAuthorizationHeader properly', () =>
       expect(fetcher['setAuthorizationHeader']).toHaveBeenCalledWith(
         request,
+        TEST_ACCESS_TOKEN,
+        'Bearer'
+      ));
+
+    it('calls setDpopProofHeader properly', () =>
+      expect(fetcher['setDpopProofHeader']).not.toHaveBeenCalledWith(
+        request,
         TEST_ACCESS_TOKEN
+      ));
+  });
+
+  describe('prepareRequest() with DPoP token', () => {
+    const fetcher = newTestFetcher({});
+    const request = new Request('https://example.com');
+
+    beforeEach(() => {
+      fetcher['getAccessToken'] = () => Promise.resolve({ access_token: TEST_ACCESS_TOKEN, token_type: 'DPoP' } as GetTokenSilentlyVerboseResponse);
+      fetcher['setAuthorizationHeader'] = jest.fn();
+      fetcher['setDpopProofHeader'] = jest.fn();
+    });
+
+    beforeEach(() => fetcher['prepareRequest'](request));
+
+    it('calls setAuthorizationHeader properly', () =>
+      expect(fetcher['setAuthorizationHeader']).toHaveBeenCalledWith(
+        request,
+        TEST_ACCESS_TOKEN,
+        'DPoP'
       ));
 
     it('calls setDpopProofHeader properly', () =>
@@ -485,7 +553,10 @@ describe('Fetcher', () => {
       });
 
       it('request is prepared', () =>
-        expect(fetcher['prepareRequest']).toHaveBeenCalledWith(request));
+        expect(fetcher['prepareRequest']).toHaveBeenCalledWith(
+          request,
+          undefined
+        ));
 
       it('calls fetch() properly', () =>
         expect(fetcher['config']['fetch']).toHaveBeenCalledWith(request));
@@ -537,6 +608,100 @@ describe('Fetcher', () => {
 
       it('returns the second response', () =>
         expect(output).toBe(secondResponse));
+    });
+
+    describe('when scope and audience is passed', () => {
+      const existingToken = 'existing-token-123';
+      const getAccessTokenMock = jest.fn().mockResolvedValue(TEST_ACCESS_TOKEN);
+      const fetcher = newTestFetcher({
+        getAccessToken: getAccessTokenMock
+      });
+      const request = new Request('https://example.com', {
+        headers: { authorization: `Bearer ${existingToken}` }
+      });
+
+      beforeEach(() => {
+        fetcher['setAuthorizationHeader'] = jest.fn();
+        fetcher['setDpopProofHeader'] = jest.fn();
+      });
+
+      beforeEach(() =>
+        fetcher.fetchWithAuth(request, undefined, {
+          scope: ['<scope>'],
+          audience: '<audience>'
+        })
+      );
+
+      it('does call getAccessToken', async () => {
+        await fetcher.fetchWithAuth(request, undefined, {
+          scope: ['<scope>'],
+          audience: '<audience>'
+        });
+
+        expect(getAccessTokenMock).toHaveBeenCalledWith(
+          expect.objectContaining({
+            scope: ['<scope>'],
+            audience: '<audience>'
+          })
+        );
+      });
+    });
+
+    describe('when DPoP is enabled', () => {
+      const getAccessTokenMock = jest.fn().mockResolvedValue({
+        access_token: TEST_ACCESS_TOKEN,
+        token_type: 'Bearer'
+      });
+      const fetchStub = jest.fn().mockResolvedValue(new Response());
+      const fetcher = newTestFetcher(
+        {
+          getAccessToken: getAccessTokenMock,
+          dpopNonceId: 'foo', // Added DpoP nonce ID to enable DPoP, but still uses Bearer token
+          fetch: fetchStub
+        },
+        {
+          getDpopNonce: jest.fn().mockResolvedValue(TEST_DPOP_NONCE),
+          generateDpopProof: jest.fn().mockResolvedValue(TEST_DPOP_PROOF)
+        }
+      );
+
+      beforeEach(() => {
+        fetchStub.mockClear();
+        getAccessTokenMock.mockClear();
+      });
+
+      it('should honor bearer token type', async () => {
+        await fetcher.fetchWithAuth('https://example.com');
+
+        const headers = fetchStub.mock.calls[0][0].headers;
+        expect(headers.get('authorization')).toMatch(/^Bearer /);
+        expect(headers.get('DPoP')).toBeNull();
+      });
+
+      it('should pick up dpop once the token is bound', async () => {
+        getAccessTokenMock.mockResolvedValueOnce({
+          access_token: TEST_ACCESS_TOKEN,
+          token_type: 'Bearer'
+        });
+        getAccessTokenMock.mockResolvedValueOnce({
+          access_token: TEST_ACCESS_TOKEN,
+          token_type: 'DPoP'
+        });
+
+        // First fetch with Bearer token
+        await fetcher.fetchWithAuth('https://example.com');
+
+        const headers = fetchStub.mock.calls[0][0].headers;
+        expect(headers.get('authorization')).toMatch(/^Bearer /);
+        expect(headers.get('DPoP')).toBeNull();
+
+        // Now fetch again, should be DPoP this time as the token is bound
+        await fetcher.fetchWithAuth('https://example.com');
+
+        const headers2 = fetchStub.mock.calls[1][0].headers;
+        expect(headers2.get('authorization')).toMatch(/^DPoP /);
+        expect(headers2.get('DPoP')).not.toBeNull();
+      });
     });
   });
 });
