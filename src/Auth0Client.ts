@@ -1179,6 +1179,14 @@ export class Auth0Client {
               return await this._getTokenFromIFrame(options);
             }
 
+            // Before throwing MissingScopesError, we have to remove the previously created entry
+            // to avoid storing wrong data
+            await this.cacheManager.remove(
+              this.options.clientId,
+              options.authorizationParams.audience,
+              options.authorizationParams.scope,
+            );
+
             const missingScopes = getMissingScopes(
               scopesToRequest,
               tokenResult.scope,
