@@ -255,7 +255,8 @@ export class Auth0Client {
           authorizationParams: {
             scope: 'create:me:connected_accounts',
             audience: myAccountApiIdentifier
-          }
+          },
+          detailedResponse: true
         })
     });
     this.myAccountApi = new MyAccountApiClient(
@@ -1488,12 +1489,6 @@ export class Auth0Client {
   public createFetcher<TOutput extends CustomFetchMinimalOutput = Response>(
     config: FetcherConfig<TOutput> = {}
   ): Fetcher<TOutput> {
-    if (this.options.useDpop && !config.dpopNonceId) {
-      throw new TypeError(
-        'When `useDpop` is enabled, `dpopNonceId` must be set when calling `createFetcher()`.'
-      );
-    }
-
     return new Fetcher(config, {
       isDpopEnabled: () => !!this.options.useDpop,
       getAccessToken: authParams =>
@@ -1501,7 +1496,8 @@ export class Auth0Client {
           authorizationParams: {
             scope: authParams?.scope?.join(' '),
             audience: authParams?.audience
-          }
+          },
+          detailedResponse: true
         }),
       getDpopNonce: () => this.getDpopNonce(config.dpopNonceId),
       setDpopNonce: nonce => this.setDpopNonce(nonce, config.dpopNonceId),
@@ -1527,14 +1523,6 @@ export class Auth0Client {
   public async connectAccountWithRedirect<TAppState = any>(
     options: RedirectConnectAccountOptions<TAppState>
   ) {
-    if (!this.options.useDpop) {
-      throw new Error('`useDpop` option must be enabled before using connectAccountWithRedirect.');
-    }
-
-    if (!this.options.useMrrt) {
-      throw new Error('`useMrrt` option must be enabled before using connectAccountWithRedirect.');
-    }
-
     const {
       openUrl,
       appState,

@@ -130,19 +130,5 @@ describe('Auth0Client', () => {
         'API error'
       );
     });
-
-    it('should throw if useDpop is not enabled', async () => {
-      (client as any).options.useDpop = false;
-      (client as any).options.useMrrt = true;
-      await expect(client.connectAccountWithRedirect({ connection: 'github' }))
-        .rejects.toThrow('`useDpop` option must be enabled before using connectAccountWithRedirect.');
-    });
-
-    it('should throw if useMrrt is not enabled', async () => {
-      (client as any).options.useDpop = true;
-      (client as any).options.useMrrt = false;
-      await expect(client.connectAccountWithRedirect({ connection: 'github' }))
-        .rejects.toThrow('`useMrrt` option must be enabled before using connectAccountWithRedirect.');
-    });
   });
 });

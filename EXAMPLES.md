@@ -459,7 +459,7 @@ When using `fetchWithAuth()`, the following will be handled for you automaticall
 - Handle retries caused by a rejected nonce.
 
 > [!IMPORTANT]
-> If DPoP is enabled in the `client` instance, a `dpopNonceId` **must** be present in the `createFetcher()` parameters, since it’s used to keep track of the DPoP nonces for each request.
+> If your API requires DPoP, a `dpopNonceId` **must** be present in the `createFetcher()` parameters, since it’s used to keep track of the DPoP nonces for each request.
 
 #### Advanced usage
 
@@ -561,7 +561,8 @@ client.createFetcher({
         scope: '<SOME_SCOPE>'
         // etc.
       }
-    })
+    }),
+  detailedResponse: true // If you need a mix of DPoP and Bearer tokens per fetcher, it will need to know the token type.
 });
 ```
 
