@@ -96,7 +96,7 @@ import {
   buildOrganizationHintCookieName,
   cacheFactory,
   getAuthorizeParams,
-  GET_TOKEN_SILENTLY_LOCK_KEY,
+  buildGetTokenSilentlyLockKey,
   OLD_IS_AUTHENTICATED_COOKIE_NAME,
   patchOpenUrlWithOnRedirect,
   getScopeToRequest,
@@ -151,6 +151,8 @@ export class Auth0Client {
   private readonly myAccountApi: MyAccountApiClient;
 
   private worker?: Worker;
+  private readonly activeLockKeys: Set<string> = new Set();
+
   private readonly defaultOptions: Partial<Auth0ClientOptions> = {
     authorizationParams: {
       scope: DEFAULT_SCOPE
@@ -826,15 +828,20 @@ export class Auth0Client {
       return;
     }
 
-    if (
-      await retryPromise(
-        () => lock.acquireLock(GET_TOKEN_SILENTLY_LOCK_KEY, 5000),
-        10
-      )
-    ) {
-      try {
-        window.addEventListener('pagehide', this._releaseLockOnPageHide);
+    // Generate lock key based on client ID and audience for better isolation
+    const lockKey = buildGetTokenSilentlyLockKey(
+      this.options.clientId,
+      getTokenOptions.authorizationParams.audience || 'default'
+    );
 
+    if (await retryPromise(() => lock.acquireLock(lockKey, 5000), 10)) {
+      this.activeLockKeys.add(lockKey);
+
+      // Add event listener only if this is the first active lock
+      if (this.activeLockKeys.size === 1) {
+        window.addEventListener('pagehide', this._releaseLockOnPageHide);
+      }
+      try {
         // Check the cache a second time, because it may have been populated
         // by a previous call while this call was waiting to acquire the lock.
         if (cacheMode !== 'off') {
@@ -869,8 +876,12 @@ export class Auth0Client {
           expires_in
         };
       } finally {
-        await lock.releaseLock(GET_TOKEN_SILENTLY_LOCK_KEY);
-        window.removeEventListener('pagehide', this._releaseLockOnPageHide);
+        await lock.releaseLock(lockKey);
+        this.activeLockKeys.delete(lockKey);
+        // If we have no more locks, we can remove the event listener to clean up
+        if (this.activeLockKeys.size === 0) {
+          window.removeEventListener('pagehide', this._releaseLockOnPageHide);
+        }
       }
     } else {
       throw new TimeoutError();
@@ -1318,13 +1329,18 @@ export class Auth0Client {
   }
 
   /**
-   * Releases any lock acquired by the current page that's not released yet
+   * Releases any locks acquired by the current page that are not released yet
    *
    * Get's called on the `pagehide` event.
    * https://developer.mozilla.org/en-US/docs/Web/API/Window/pagehide_event
    */
   private _releaseLockOnPageHide = async () => {
-    await lock.releaseLock(GET_TOKEN_SILENTLY_LOCK_KEY);
+    // Release all active locks
+    const lockKeysToRelease = Array.from(this.activeLockKeys);
+    for (const lockKey of lockKeysToRelease) {
+      await lock.releaseLock(lockKey);
+    }
+    this.activeLockKeys.clear();
 
     window.removeEventListener('pagehide', this._releaseLockOnPageHide);
   };
