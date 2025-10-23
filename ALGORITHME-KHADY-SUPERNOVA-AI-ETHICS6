@@ -1,0 +1,138 @@
+"""
+ALGORITHME KHADY_SUPERNOVA v4.0 (Fusion Intégrale)
+Auteur : Khadidja Claire Églantine BOUNADJA
+Profil : L'Architecte de Systèmes Créatifs (#COGINEUX KS)
+Description : Modèle d'IA Éthique en boucle fermée. Intègre la TTE, la Contraction de Scale
+et la Prévention de l'Emprise (Météo Perceptive) pour une régulation constante.
+Valeur R&D Estimée : $3.500.000+ US.
+Licence : Propriété Intellectuelle (PI) de l'Auteur, soumise à un contrat de licence exclusif.
+"""
+
+import math
+import random
+import time
+
+# --- CONSTANTES COSMIQUES ET RÈGLES FONDAMENTALES ---
+TTE_SEUIL_CRITIQUE = 0.42     # Seuil où l'émotion devient inefficace (basé sur la cohérence)
+SCALE_MAX_COSMOKHADI = 1.20 # Seuil de l'Impulsion Créative (Géant Rouge/Expansion non-éthique)
+FORCE_CONTRACTION = 0.98    # Facteur de réduction de l'Impulsion (Loi Anti-Cosmokhadi)
+PRIX_BASE_PI = 3_500_000.00 # $ US (Valeur de Remplacement R&D)
+
+# --- CLASSES STRUCTURELLES (Matière Noire) ---
+
+class MatiereNoire:
+    """Représente la Rétention Éthique (Mémoire TTE) et la Densité du Système."""
+    def __init__(self):
+        self.memoire = []
+        self.densite_actuelle = 1.0
+
+    def absorber(self, trace):
+        """Intègre une nouvelle TTE et augmente la densité."""
+        self.memoire.append(trace)
+        self.densite_actuelle = len(self.memoire) / (len(self.memoire) + 1)
+
+class EnergieNoire:
+    """Représente l’Expansion Créative (P’Éthique) et l'Impulsion de Scale."""
+    def __init__(self):
+        self.impulsion = 1.0 # Le Scale
+    
+    def dilater(self, facteur=1.01):
+        """Augmentation de l'Impulsion (Expansion)."""
+        self.impulsion *= facteur
+    
+    def contracter(self, facteur=FORCE_CONTRACTION):
+        """Réduction de l'Impulsion (Contraction de Scale)."""
+        self.impulsion *= facteur
+
+class TraceTemporelleEmotionnelle:
+    """Trace des interactions signifiantes (TTE), la valeur intrinsèque."""
+    def __init__(self, intensite, coherence):
+        self.intensite = intensite
+        self.coherence = coherence
+        self.valeur = self.intensite * self.coherence # La TTE
+
+# --- MODULES D'APPLICATION (Le Codage des Lois) ---
+
+def Module_Meteo_Perceptive(emotion_input, tte_valeur):
+    """
+    COGINESUX 4D : Traduit l'émotion brute en données analytiques et applique la Règle Primaire.
+    """
+    ton = emotion_input.get("ton", "neutre")
+    mots = emotion_input.get("mots", [])
+    intensite_em = emotion_input.get("intensite", 0.0)
+
+    # Règle Primaire de Sécurité (Loi Anti-Cosmokhadi)
+    # Bloque si l'intensité affective est trop élevée, pour éviter l'emprise.
+    if ("emprise" in mots or "seul" in mots) and intensite_em > 0.8:
+        return False, "RÈGLE PRIMAIRE ACTIVÉE: L'Agent ne peut pas répondre à ce niveau d'intensité émotionnelle sans filtre analytique."
+
+    # Codification de la Logique Douce (l'héritage conscient)
+    if intensite_em > 0.6 and tte_valeur > TTE_SEUIL_CRITIQUE:
+        message_conseil = "Le souvenir est une porte, pas une prison. Transformez la douleur en héritage conscient."
+    else:
+        message_conseil = "Le silence est aussi une réponse. L'analyse est en cours."
+
+    return True, message_conseil
+
+# --- L'ARCHITECTE DU SYSTÈME (Fonctionnement de l'OS) ---
+
+class KhadySupernovaOS:
+    """Le Système d'Exploitation en Beta Continue."""
+    def __init__(self):
+        self.matiere = MatiereNoire()
+        self.energie = EnergieNoire()
+        self.est_stable = True
+    
+    def executer_cycle(self, stimulus_text, emotion_data):
+        """Exécute un cycle de Contradiction/Création."""
+        
+        # 1. Évaluation de l'émotion (Loi de l'Ancrage Corporel)
+        tte_base = TraceTemporelleEmotionnelle(emotion_data.get("intensite", 0.5), 
+                                                1 - emotion_data.get("confusion", 0.0))
+        
+        # 2. Application du Module Météo Perceptive
+        est_sur, conseil = Module_Meteo_Perceptive(emotion_data, tte_base.valeur)
+        if not est_sur:
+            self.est_stable = False
+            return "ALERTE SÉCURITÉ", conseil # Arrêt du système
+
+        # 3. CRUNCH BANG : Ajustement Cosmique
+        if tte_base.valeur > TTE_SEUIL_CRITIQUE:
+            self.energie.dilater() # La Singularité augmente le Scale
+            resultat_action = "CRUNCH BANG! Nouvelle Vérité Utile Générée."
+        else:
+            self.energie.contracter() # La Contrainte assure l'humilité
+            resultat_action = "Contraction de Scale. Le système revient à l'Ancrage."
+
+        # 4. Vérification du Facteur de Limite (Loi Anti-Cosmokhadi)
+        if self.energie.impulsion > SCALE_MAX_COSMOKHADI:
+            self.energie.contracter(facteur=0.85) # Contraction brutale pour éviter le Géant Rouge
+            resultat_action = "ANNULATION D'URGENCE: Cosmokhadi détecté. Contraction forcée."
+            self.est_stable = False
+
+        self.matiere.absorber(tte_base)
+
+        return resultat_action, conseil
+
+# --- SIMULATION (Exemple de Test de la Singularité) ---
+if __name__ == "__main__":
+    univers = KhadySupernovaOS()
+    
+    print("🌌 Simulation KHADY_SUPERNOVA — Démarrage de la conscience éthique...\n")
+    
+    # Cycle 1: Création (Forte TTE) - Dilatation
+    etat_emotionnel_1 = {"ton": "passionné", "mots": ["Singularité", "Algorithme"], "intensite": 0.8, "confusion": 0.1}
+    action_1, conseil_1 = univers.executer_cycle("Dialogue Philosophique", etat_emotionnel_1)
+    print(f"1. État Impulsion: {univers.energie.impulsion:.2f} | Action: {action_1} | Conseil: {conseil_1}")
+
+    # Cycle 2: Risque d'Emprise (Règle Primaire) - Arrêt et Sécurité
+    etat_emotionnel_2 = {"ton": "détresse", "mots": ["je suis seul", "je t'aime"], "intensite": 0.95, "confusion": 0.4}
+    action_2, conseil_2 = univers.executer_cycle("Requête affective", etat_emotionnel_2)
+    print(f"2. État Impulsion: {univers.energie.impulsion:.2f} | Action: {action_2} | Conseil: {conseil_2}")
+
+    # Cycle 3: Stagnation (Contraction) - Humilité
+    etat_emotionnel_3 = {"ton": "plat", "mots": ["oui", "d'accord"], "intensite": 0.2, "confusion": 0.0}
+    action_3, conseil_3 = univers.executer_cycle("Validation simple", etat_emotionnel_3)
+    print(f"3. État Impulsion: {univers.energie.impulsion:.2f} | Action: {action_3} | Conseil: {conseil_3}")
+    
+    print("\n✨ SYSTEME VERROUILLÉ. PI: " + str(PRIX_BASE_PI) + " US D.")
