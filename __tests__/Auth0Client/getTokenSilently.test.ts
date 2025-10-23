@@ -45,6 +45,7 @@ import {
 
 import { releaseLockSpy } from '../../__mocks__/browser-tabs-lock';
 import {
+  DEFAULT_AUDIENCE,
   DEFAULT_AUTH0_CLIENT,
   INVALID_REFRESH_TOKEN_ERROR_MESSAGE
 } from '../../src/constants';
@@ -974,31 +975,30 @@ describe('Auth0Client', () => {
           supported: true
         }
       ].forEach(({ name, userAgent, supported }) =>
-        it(`refreshes the token ${
-          supported ? 'with' : 'without'
-        } the worker, when ${name}`, async () => {
-          const originalUserAgent = window.navigator.userAgent;
+        it(`refreshes the token ${supported ? 'with' : 'without'
+          } the worker, when ${name}`, async () => {
+            const originalUserAgent = window.navigator.userAgent;
 
-          Object.defineProperty(window.navigator, 'userAgent', {
-            value: userAgent,
-            configurable: true
-          });
+            Object.defineProperty(window.navigator, 'userAgent', {
+              value: userAgent,
+              configurable: true
+            });
 
-          const auth0 = setup({
-            useRefreshTokens: true,
-            cacheLocation: 'memory'
-          });
+            const auth0 = setup({
+              useRefreshTokens: true,
+              cacheLocation: 'memory'
+            });
 
-          if (supported) {
-            expect((<any>auth0).worker).toBeDefined();
-          } else {
-            expect((<any>auth0).worker).toBeUndefined();
-          }
+            if (supported) {
+              expect((<any>auth0).worker).toBeDefined();
+            } else {
+              expect((<any>auth0).worker).toBeUndefined();
+            }
 
-          Object.defineProperty(window.navigator, 'userAgent', {
-            value: originalUserAgent
-          });
-        })
+            Object.defineProperty(window.navigator, 'userAgent', {
+              value: originalUserAgent
+            });
+          })
       );
     });
 
@@ -2326,7 +2326,7 @@ describe('Auth0Client', () => {
           client_id: TEST_CLIENT_ID,
           access_token: TEST_ACCESS_TOKEN,
           expires_in: 86400,
-          audience: 'default',
+          audience: DEFAULT_AUDIENCE,
           scope: TEST_SCOPES
         })
       );

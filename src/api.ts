@@ -1,5 +1,5 @@
 import { TokenEndpointOptions, TokenEndpointResponse } from './global';
-import { DEFAULT_AUTH0_CLIENT } from './constants';
+import { DEFAULT_AUTH0_CLIENT, DEFAULT_AUDIENCE } from './constants';
 import * as dpopUtils from './dpop/utils';
 import { getJSON } from './http';
 import { createQueryParams, stripAuth0Client } from './utils';
@@ -39,7 +39,7 @@ export async function oauthToken(
   return await getJSON<TokenEndpointResponse>(
     `${baseUrl}/oauth/token`,
     timeout,
-    audience || 'default',
+    audience || DEFAULT_AUDIENCE,
     scope,
     {
       method: 'POST',

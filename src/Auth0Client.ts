@@ -18,7 +18,7 @@ import {
 
 import { oauthToken } from './api';
 
-import { getUniqueScopes } from './scope';
+import { injectDefaultScopes, scopesToRequest } from './scope';
 
 import {
   InMemoryCache,
@@ -59,7 +59,8 @@ import {
   DEFAULT_AUTH0_CLIENT,
   INVALID_REFRESH_TOKEN_ERROR_MESSAGE,
   DEFAULT_NOW_PROVIDER,
-  DEFAULT_FETCH_TIMEOUT_MS
+  DEFAULT_FETCH_TIMEOUT_MS,
+  DEFAULT_AUDIENCE
 } from './constants';
 
 import {
@@ -82,7 +83,8 @@ import {
   AuthenticationResult,
   ConnectAccountRedirectResult,
   RedirectConnectAccountOptions,
-  ResponseType
+  ResponseType,
+  ClientAuthorizationParams,
 } from './global';
 
 // @ts-ignore
@@ -134,7 +136,7 @@ export class Auth0Client {
   private readonly cacheManager: CacheManager;
   private readonly domainUrl: string;
   private readonly tokenIssuer: string;
-  private readonly scope: string;
+  private readonly scope: Record<string, string>;
   private readonly cookieStorage: ClientStorage;
   private readonly dpop: Dpop | undefined;
   private readonly sessionCheckExpiryDays: number;
@@ -143,7 +145,7 @@ export class Auth0Client {
   private readonly nowProvider: () => number | Promise<number>;
   private readonly httpTimeoutMs: number;
   private readonly options: Auth0ClientOptions & {
-    authorizationParams: AuthorizationParams;
+    authorizationParams: ClientAuthorizationParams,
   };
   private readonly userCache: ICache = new InMemoryCache().enclosedCache;
   private readonly myAccountApi: MyAccountApiClient;
@@ -220,9 +222,9 @@ export class Auth0Client {
     // 1. Always include `openid`
     // 2. Include the scopes provided in `authorizationParams. This defaults to `profile email`
     // 3. Add `offline_access` if `useRefreshTokens` is enabled
-    this.scope = getUniqueScopes(
-      'openid',
+    this.scope = injectDefaultScopes(
       this.options.authorizationParams.scope,
+      'openid',
       this.options.useRefreshTokens ? 'offline_access' : ''
     );
 
@@ -364,7 +366,7 @@ export class Auth0Client {
       nonce,
       code_verifier,
       scope: params.scope,
-      audience: params.audience || 'default',
+      audience: params.audience || DEFAULT_AUDIENCE,
       redirect_uri: params.redirect_uri,
       state,
       url
@@ -784,7 +786,11 @@ export class Auth0Client {
       authorizationParams: {
         ...this.options.authorizationParams,
         ...options.authorizationParams,
-        scope: getUniqueScopes(this.scope, options.authorizationParams?.scope)
+        scope: scopesToRequest(
+          this.scope,
+          options.authorizationParams?.scope,
+          options.authorizationParams?.audience || this.options.authorizationParams.audience,
+        )
       }
     };
 
@@ -808,7 +814,7 @@ export class Auth0Client {
     if (cacheMode !== 'off') {
       const entry = await this._getEntryFromCache({
         scope: getTokenOptions.authorizationParams.scope,
-        audience: getTokenOptions.authorizationParams.audience || 'default',
+        audience: getTokenOptions.authorizationParams.audience || DEFAULT_AUDIENCE,
         clientId: this.options.clientId,
         cacheMode,
       });
@@ -841,7 +847,7 @@ export class Auth0Client {
         if (cacheMode !== 'off') {
           const entry = await this._getEntryFromCache({
             scope: getTokenOptions.authorizationParams.scope,
-            audience: getTokenOptions.authorizationParams.audience || 'default',
+            audience: getTokenOptions.authorizationParams.audience || DEFAULT_AUDIENCE,
             clientId: this.options.clientId
           });
 
@@ -903,7 +909,11 @@ export class Auth0Client {
       authorizationParams: {
         ...this.options.authorizationParams,
         ...options.authorizationParams,
-        scope: getUniqueScopes(this.scope, options.authorizationParams?.scope)
+        scope: scopesToRequest(
+          this.scope,
+          options.authorizationParams?.scope,
+          options.authorizationParams?.audience || this.options.authorizationParams.audience
+        )
       }
     };
 
@@ -917,7 +927,7 @@ export class Auth0Client {
     const cache = await this.cacheManager.get(
       new CacheKey({
         scope: localOptions.authorizationParams.scope,
-        audience: localOptions.authorizationParams.audience || 'default',
+        audience: localOptions.authorizationParams.audience || DEFAULT_AUDIENCE,
         clientId: this.options.clientId
       }),
       undefined,
@@ -1106,7 +1116,7 @@ export class Auth0Client {
     const cache = await this.cacheManager.get(
       new CacheKey({
         scope: options.authorizationParams.scope,
-        audience: options.authorizationParams.audience || 'default',
+        audience: options.authorizationParams.audience || DEFAULT_AUDIENCE,
         clientId: this.options.clientId
       }),
       undefined,
@@ -1123,7 +1133,7 @@ export class Auth0Client {
       }
 
       throw new MissingRefreshTokenError(
-        options.authorizationParams.audience || 'default',
+        options.authorizationParams.audience || DEFAULT_AUDIENCE,
         options.authorizationParams.scope
       );
     }
@@ -1215,7 +1225,7 @@ export class Auth0Client {
         ...tokenResult,
         scope: options.authorizationParams.scope,
         oauthTokenScope: tokenResult.scope,
-        audience: options.authorizationParams.audience || 'default'
+        audience: options.authorizationParams.audience || DEFAULT_AUDIENCE
       };
     } catch (e) {
       if (
@@ -1255,13 +1265,14 @@ export class Auth0Client {
   }
 
   private async _getIdTokenFromCache() {
-    const audience = this.options.authorizationParams.audience || 'default';
+    const audience = this.options.authorizationParams.audience || DEFAULT_AUDIENCE;
+    const scope = this.scope[audience];
 
     const cache = await this.cacheManager.getIdToken(
       new CacheKey({
         clientId: this.options.clientId,
         audience,
-        scope: this.scope
+        scope,
       })
     );
 
@@ -1367,7 +1378,7 @@ export class Auth0Client {
       ...authResult,
       decodedToken,
       scope: options.scope,
-      audience: options.audience || 'default',
+      audience: options.audience || DEFAULT_AUDIENCE,
       ...(authResult.scope ? { oauthTokenScope: authResult.scope } : null),
       client_id: this.options.clientId
     });
@@ -1439,7 +1450,11 @@ export class Auth0Client {
       grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
       subject_token: options.subject_token,
       subject_token_type: options.subject_token_type,
-      scope: getUniqueScopes(options.scope, this.scope),
+      scope: scopesToRequest(
+        this.scope,
+        options.scope,
+        options.audience || this.options.authorizationParams.audience
+      ),
       audience: options.audience || this.options.authorizationParams.audience
     });
   }
