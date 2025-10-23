@@ -1,5 +1,6 @@
 import { ICache } from './cache';
 import type { Dpop } from './dpop/dpop';
+import { CompleteResponse } from './MyAccountApiClient';
 
 export interface AuthorizationParams {
   /**
@@ -112,6 +113,10 @@ export interface AuthorizationParams {
   [key: string]: any;
 }
 
+export interface ClientAuthorizationParams extends Omit<AuthorizationParams, 'scope'> {
+  scope?: string | Record<string, string>
+};
+
 interface BaseLoginOptions {
   /**
    * URL parameters that will be sent back to the Authorization Server. This can be known parameters
@@ -120,7 +125,7 @@ interface BaseLoginOptions {
   authorizationParams?: AuthorizationParams;
 }
 
-export interface Auth0ClientOptions extends BaseLoginOptions {
+export interface Auth0ClientOptions {
   /**
    * Your Auth0 account domain such as `'example.auth0.com'`,
    * `'example.eu.auth0.com'` or , `'example.mycompany.com'`
@@ -265,13 +270,19 @@ export interface Auth0ClientOptions extends BaseLoginOptions {
 
   /**
    * If provided, the SDK will load the token worker from this URL instead of the integrated `blob`. An example of when this is useful is if you have strict
-   * Content-Security-Policy (CSP) and wish to avoid needing to set `worker-src: blob:`. We recommend either serving the worker, which you can find in the module 
-   * at `<module_path>/dist/auth0-spa-js.worker.production.js`, from the same host as your application or using the Auth0 CDN 
+   * Content-Security-Policy (CSP) and wish to avoid needing to set `worker-src: blob:`. We recommend either serving the worker, which you can find in the module
+   * at `<module_path>/dist/auth0-spa-js.worker.production.js`, from the same host as your application or using the Auth0 CDN
    * `https://cdn.auth0.com/js/auth0-spa-js/<version>/auth0-spa-js.worker.production.js`.
-   * 
+   *
    * **Note**: The worker is only used when `useRefreshTokens: true`, `cacheLocation: 'memory'`, and the `cache` is not custom.
    */
   workerUrl?: string;
+
+
+  /**
+   * If `true`, the SDK will allow the refreshing of tokens using MRRT
+   */
+  useMrrt?: boolean;
 
   /**
    * If `true`, DPoP (OAuth 2.0 Demonstrating Proof of Possession, RFC9449)
@@ -281,6 +292,12 @@ export interface Auth0ClientOptions extends BaseLoginOptions {
    * The default setting is `false`.
    */
   useDpop?: boolean;
+
+  /**
+   * URL parameters that will be sent back to the Authorization Server. This can be known parameters
+   * defined by Auth0 or custom parameters that you define.
+   */
+  authorizationParams?: ClientAuthorizationParams;
 }
 
 /**
@@ -347,14 +364,29 @@ export interface RedirectLoginOptions<TAppState = any>
   openUrl?: (url: string) => Promise<void> | void;
 }
 
+/**
+ * The types of responses expected from the authorization server.
+ * - `code`: used for the standard login flow.
+ * - `connect_code`: used for the connect account flow.
+ */
+export enum ResponseType {
+  Code = 'code',
+  ConnectCode = 'connect_code'
+}
+
 export interface RedirectLoginResult<TAppState = any> {
   /**
    * State stored when the redirect request was made
    */
   appState?: TAppState;
+
+  /**
+   * The type of response, for login it will be `code`
+   */
+  response_type: ResponseType.Code;
 }
 
-export interface PopupLoginOptions extends BaseLoginOptions {}
+export interface PopupLoginOptions extends BaseLoginOptions { }
 
 export interface PopupConfigOptions {
   /**
@@ -517,12 +549,98 @@ export interface LogoutOptions extends LogoutUrlOptions {
   openUrl?: false | ((url: string) => Promise<void> | void);
 }
 
+export interface RedirectConnectAccountOptions<TAppState = any> {
+  /**
+   * The name of the connection to link (e.g. 'google-oauth2').
+   */
+  connection: string;
+
+  /**
+   * Additional authorization parameters for the request.
+   *
+   * @example
+   * await auth0.connectAccountWithRedirect({
+   *   connection: 'google-oauth2',
+   *   authorization_params: {
+   *     scope: 'https://www.googleapis.com/auth/calendar'
+   *     access_type: 'offline'
+   *   }
+   * });
+   *
+   * @example
+   * await auth0.connectAccountWithRedirect({
+   *   connection: 'github',
+   *   authorization_params: {
+   *     scope: 'repo user',
+   *     audience: 'https://api.github.com'
+   *   }
+   * });
+   */
+  authorization_params?: AuthorizationParams;
+
+  /**
+   * The URI to redirect back to after connecting the account.
+   */
+  redirectUri?: string;
+
+  /**
+   * Optional application state to persist through the transaction.
+   *
+   * @example
+   * await auth0.connectAccountWithRedirect({
+   *   connection: 'google-oauth2',
+   *   appState: { returnTo: '/settings' }
+   * });
+   */
+  appState?: TAppState;
+
+  /**
+   * Optional function to handle the redirect URL.
+   *
+   * @example
+   * await auth0.connectAccountWithRedirect({
+   *   connection: 'google-oauth2',
+   *   openUrl: async (url) => { myBrowserApi.open(url); }
+   * });
+   */
+  openUrl?: (url: string) => Promise<void>;
+}
+
+/**
+ * The result returned after a successful account connection redirect.
+ *
+ * Combines the redirect login result (including any persisted app state)
+ * with the complete response from the My Account API.
+ *
+ * @template TAppState - The type of application state persisted through the transaction.
+ * @example
+ * const result = await auth0.connectAccountWithRedirect(options);
+ * console.log(result.appState); // Access persisted app state
+ * console.log(result.connection);   // The connection of the account you connected to.
+ * console.log(result.response_type === 'connect_code');   // The response type will be 'connect_code'
+ */
+export type ConnectAccountRedirectResult<TAppState = any> = CompleteResponse & {
+  /**
+   * State stored when the redirect request was made
+   */
+  appState?: TAppState;
+
+  /**
+   * The type of response, for connect account it will be `connect_code`
+   */
+  response_type: ResponseType.ConnectCode;
+};
+
 /**
  * @ignore
  */
 export interface AuthenticationResult {
   state: string;
   code?: string;
+  /**
+   * This is for the redirect from the connect account flow.
+   */
+  connect_code?: string;
   error?: string;
   error_description?: string;
 }

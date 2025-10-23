@@ -8,6 +8,7 @@ const mockFetch = <jest.Mock>window.fetch;
 describe('token worker', () => {
   let originalFetch;
   let messageHandlerAsync;
+  let secondMessageHandlerAsync;
 
   beforeEach(() => {
     originalFetch = window.fetch;
@@ -19,6 +20,11 @@ describe('token worker', () => {
     messageHandlerAsync = opts =>
       new Promise(resolve =>
         messageHandler({ data: opts, ports: [{ postMessage: resolve }] })
+      );
+
+    secondMessageHandlerAsync = opts =>
+      new Promise(resolve =>
+        messageHandler({ data: { ...opts, useMrrt: true, auth: { audience: 'example', scope: 'scope1' } }, ports: [{ postMessage: resolve }] })
       );
   });
 
@@ -294,5 +300,138 @@ describe('token worker', () => {
     expect(result.json.error_description).toContain(
       MISSING_REFRESH_TOKEN_ERROR_MESSAGE
     );
+  });
+
+  describe("useMrrt", () => {
+    beforeEach(() => {
+      originalFetch = window.fetch;
+      // The web worker uses native fetch.
+      window.fetch = mockFetch;
+
+      const { messageHandler } = require('../src/worker/token.worker');
+
+      messageHandlerAsync = opts =>
+        new Promise(resolve =>
+          messageHandler({ data: { ...opts, useMrrt: true, auth: { audience: 'audience1', scope: 'scope1' } }, ports: [{ postMessage: resolve }] })
+        );
+
+      secondMessageHandlerAsync = opts =>
+        new Promise(resolve =>
+          messageHandler({ data: { ...opts, useMrrt: true, auth: { audience: 'audience2', scope: 'scope2' } }, ports: [{ postMessage: resolve }] })
+        );
+    });
+
+    it('when useMrrt is configured it sets latest_refresh_token and uses it for the second audience', async () => {
+      mockFetch.mockReturnValue(
+        Promise.resolve({
+          ok: true,
+          json: () => ({ refresh_token: 'foo' }),
+          headers: new Headers(),
+        })
+      );
+
+      await messageHandlerAsync({
+        fetchUrl: '/foo',
+        fetchOptions: {
+          method: 'POST',
+          body: JSON.stringify({
+            grant_type: 'authorization_code'
+          })
+        }
+      });
+
+      await messageHandlerAsync({
+        fetchUrl: '/foo',
+        fetchOptions: {
+          method: 'POST',
+          body: JSON.stringify({
+            grant_type: 'refresh_token'
+          })
+        }
+      });
+
+      await secondMessageHandlerAsync({
+        fetchUrl: '/foo',
+        fetchOptions: {
+          method: 'POST',
+          body: JSON.stringify({
+            grant_type: 'refresh_token'
+          })
+        }
+      });
+
+      expect(JSON.parse(mockFetch.mock.calls[2][1].body)).toEqual({
+        grant_type: 'refresh_token',
+        refresh_token: 'foo'
+      });
+    });
+  });
+
+  describe("useMrrt with default audience", () => {
+    beforeEach(() => {
+      originalFetch = window.fetch;
+      // The web worker uses native fetch.
+      window.fetch = mockFetch;
+
+      const { messageHandler } = require('../src/worker/token.worker');
+
+      messageHandlerAsync = opts =>
+        new Promise(resolve =>
+          messageHandler({ data: { ...opts, useMrrt: true, auth: { audience: 'default', scope: 'scope1' } }, ports: [{ postMessage: resolve }] })
+        );
+
+      secondMessageHandlerAsync = opts =>
+        new Promise(resolve =>
+          messageHandler({ data: { ...opts, useMrrt: true, auth: { audience: 'audience2', scope: 'scope2' } }, ports: [{ postMessage: resolve }] })
+        );
+    });
+
+    it('when is default audience we store its refresh token as latest_refresh_token and uses it for the second audience', async () => {
+      mockFetch.mockReturnValue(
+        Promise.resolve({
+          ok: true,
+          json: () => ({ refresh_token: 'foo' }),
+          headers: new Headers(),
+        })
+      );
+
+      await messageHandlerAsync({
+        fetchUrl: '/foo',
+        fetchOptions: {
+          method: 'POST',
+          body: JSON.stringify({
+            grant_type: 'authorization_code'
+          })
+        },
+      });
+
+      await messageHandlerAsync({
+        fetchUrl: '/foo',
+        fetchOptions: {
+          method: 'POST',
+          body: JSON.stringify({
+            grant_type: 'refresh_token'
+          })
+        },
+        auth: {
+          audience: "default",
+        },
+      });
+
+      await secondMessageHandlerAsync({
+        fetchUrl: '/foo',
+        fetchOptions: {
+          method: 'POST',
+          body: JSON.stringify({
+            grant_type: 'refresh_token'
+          })
+        }
+      });
+
+      expect(JSON.parse(mockFetch.mock.calls[2][1].body)).toEqual({
+        grant_type: 'refresh_token',
+        refresh_token: 'foo'
+      });
+    });
   });
 });
