@@ -148,7 +148,7 @@ const messageHandler = async ({
     if (json.refresh_token) {
       // If useMrrt is configured to true we want to save the latest refresh_token
       // to be used when refreshing tokens with MRRT
-      if (useMrrt && audience !== "default") {
+      if (useMrrt) {
         refreshTokens["latest_refresh_token"] = json.refresh_token;
 
         // To avoid having some refresh_token that has already been used
