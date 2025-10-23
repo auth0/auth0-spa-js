@@ -113,6 +113,10 @@ export interface AuthorizationParams {
   [key: string]: any;
 }
 
+export interface ClientAuthorizationParams extends Omit<AuthorizationParams, 'scope'> {
+  scope?: string | Record<string, string>
+};
+
 interface BaseLoginOptions {
   /**
    * URL parameters that will be sent back to the Authorization Server. This can be known parameters
@@ -121,7 +125,7 @@ interface BaseLoginOptions {
   authorizationParams?: AuthorizationParams;
 }
 
-export interface Auth0ClientOptions extends BaseLoginOptions {
+export interface Auth0ClientOptions {
   /**
    * Your Auth0 account domain such as `'example.auth0.com'`,
    * `'example.eu.auth0.com'` or , `'example.mycompany.com'`
@@ -288,6 +292,12 @@ export interface Auth0ClientOptions extends BaseLoginOptions {
    * The default setting is `false`.
    */
   useDpop?: boolean;
+
+  /**
+   * URL parameters that will be sent back to the Authorization Server. This can be known parameters
+   * defined by Auth0 or custom parameters that you define.
+   */
+  authorizationParams?: ClientAuthorizationParams;
 }
 
 /**
