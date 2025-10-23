@@ -588,6 +588,7 @@ describe('utils', () => {
         version: 2
       });
     });
+  });
 });
 
 describe('buildGetTokenSilentlyLockKey', () => {
