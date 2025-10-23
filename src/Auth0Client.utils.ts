@@ -3,14 +3,23 @@ import {
   Auth0ClientOptions,
   AuthorizationParams,
   AuthorizeOptions,
+  ClientAuthorizationParams,
   LogoutOptions
 } from './global';
-import { getUniqueScopes } from './scope';
+import { scopesToRequest } from './scope';
 
 /**
  * @ignore
  */
 export const GET_TOKEN_SILENTLY_LOCK_KEY = 'auth0.lock.getTokenSilently';
+
+/**
+ * @ignore
+ */
+export const buildGetTokenSilentlyLockKey = (
+  clientId: string,
+  audience: string
+) => `${GET_TOKEN_SILENTLY_LOCK_KEY}.${clientId}.${audience}`;
 
 /**
  * @ignore
@@ -49,10 +58,10 @@ export const cacheFactory = (location: string) => {
  */
 export const getAuthorizeParams = (
   clientOptions: Auth0ClientOptions & {
-    authorizationParams: AuthorizationParams;
+    authorizationParams: ClientAuthorizationParams;
   },
-  scope: string,
-  authorizationParams: AuthorizationParams,
+  scope: Record<string, string>,
+  authorizationParams: AuthorizationParams & { scope?: string },
   state: string,
   nonce: string,
   code_challenge: string,
@@ -64,7 +73,7 @@ export const getAuthorizeParams = (
     client_id: clientOptions.clientId,
     ...clientOptions.authorizationParams,
     ...authorizationParams,
-    scope: getUniqueScopes(scope, authorizationParams.scope),
+    scope: scopesToRequest(scope, authorizationParams.scope, authorizationParams.audience),
     response_type: 'code',
     response_mode: response_mode || 'query',
     state,
@@ -106,6 +115,20 @@ export const allScopesAreIncluded = (scopeToInclude?: string, scopes?: string): 
   const scopeGroup = scopes?.split(" ") || [];
   const scopesToInclude = scopeToInclude?.split(" ") || [];
   return scopesToInclude.every((key) => scopeGroup.includes(key));
+}
+
+/**
+ * @ignore
+ * 
+ * Returns the scopes that are missing after a refresh
+ */
+export const getMissingScopes = (requestedScope?: string, respondedScope?: string): string => {
+  const requestedScopes = requestedScope?.split(" ") || [];
+  const respondedScopes = respondedScope?.split(" ") || [];
+
+  const missingScopes = requestedScopes.filter((scope) => respondedScopes.indexOf(scope) == -1);
+
+  return missingScopes.join(",");
 }
 
 /**

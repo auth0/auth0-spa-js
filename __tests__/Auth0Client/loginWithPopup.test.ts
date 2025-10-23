@@ -31,6 +31,7 @@ import {
 } from '../constants';
 
 import {
+  DEFAULT_AUDIENCE,
   DEFAULT_AUTH0_CLIENT,
   DEFAULT_POPUP_CONFIG_OPTIONS
 } from '../../src/constants';
@@ -598,7 +599,7 @@ describe('Auth0Client', () => {
           client_id: TEST_CLIENT_ID,
           access_token: TEST_ACCESS_TOKEN,
           expires_in: 86400,
-          audience: 'default',
+          audience: DEFAULT_AUDIENCE,
           scope: TEST_SCOPES
         })
       );

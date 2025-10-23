@@ -1,5 +1,26 @@
 # Change Log
 
+## [v2.7.0](https://github.com/auth0/auth0-spa-js/tree/v2.7.0) (2025-10-17)
+[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.6.0...v2.7.0)
+
+**Added**
+- Retry when DPoP nonce is expired [\#1445](https://github.com/auth0/auth0-spa-js/pull/1445) ([adamjmcgrath](https://github.com/adamjmcgrath))
+- [ESD-52771] Support mix of DPoP and Bearer in the fetcher [\#1442](https://github.com/auth0/auth0-spa-js/pull/1442) ([adamjmcgrath](https://github.com/adamjmcgrath))
+
+**Fixed**
+- Fix MRRT with default audience in worker [\#1439](https://github.com/auth0/auth0-spa-js/pull/1439) ([aridibag](https://github.com/aridibag))
+- Fetcher: fix incorrect URL building when `baseUrl` is present [\#1435](https://github.com/auth0/auth0-spa-js/pull/1435) ([martinml](https://github.com/martinml))
+
+## [v2.6.0](https://github.com/auth0/auth0-spa-js/tree/v2.6.0) (2025-10-10)
+[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.5.0...v2.6.0)
+
+**Added**
+- Add support for connected accounts [\#1422](https://github.com/auth0/auth0-spa-js/pull/1422) ([adamjmcgrath](https://github.com/adamjmcgrath))
+
+**Fixed**
+- Fetcher should set DPoP nonce with nonce id [\#1431](https://github.com/auth0/auth0-spa-js/pull/1431) ([adamjmcgrath](https://github.com/adamjmcgrath))
+- fix: do not mark setAuthorizationHeader as async [\#1428](https://github.com/auth0/auth0-spa-js/pull/1428) ([frederikprijck](https://github.com/frederikprijck))
+
 ## [v2.5.0](https://github.com/auth0/auth0-spa-js/tree/v2.5.0) (2025-10-01)
 [Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.4.1...v2.5.0)
 

@@ -149,6 +149,20 @@ export class CacheManager {
     await this.keyManifest?.add(cacheKey.toKey());
   }
 
+  async remove(
+    client_id: string,
+    audience?: string,
+    scope?: string,
+  ): Promise<void> {
+    const cacheKey = new CacheKey({
+      clientId: client_id,
+      scope: scope,
+      audience: audience
+    });
+
+    await this.cache.remove(cacheKey.toKey());
+  }
+
   async clear(clientId?: string): Promise<void> {
     const keys = await this.getCacheKeys();
 

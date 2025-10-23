@@ -6,6 +6,7 @@
 - [Data Caching Options](#creating-a-custom-cache)
 - [Organizations](#organizations)
 - [Device-bound tokens with DPoP](#device-bound-tokens-with-dpop)
+- [Connect Accounts for using Token Vault](#connect-accounts-for-using-token-vault)
 
 ## Logging Out
 
@@ -102,6 +103,41 @@ await createAuth0Client({
 Using this setting will make the SDK able to reuse the refresh token not only for APIs requested at login, but also for additional APIs allowed in the MRRT policy.
 
 **Note**: This configuration option requires the refresh token policies of your application [to be configured](https://auth0.com/docs/secure/tokens/refresh-tokens/multi-resource-refresh-token/configure-and-implement-multi-resource-refresh-token).
+
+##### Configuring Scopes Per Audience
+
+When working with multiple APIs, you can define different default scopes for each audience by passing an object instead of a string. This is particularly useful when different APIs require different default scopes:
+
+```js
+await createAuth0Client({
+  domain: '<AUTH0_DOMAIN>',
+  clientId: '<AUTH0_CLIENT_ID>',
+  useRefreshTokens: true,
+  useMrrt: true,
+  authorizationParams: {
+    redirect_uri: '<MY_CALLBACK_URL>',
+    audience: 'https://api.example.com', // Default audience
+    scope: {
+      'https://api.example.com':
+        'openid profile email offline_access read:products read:orders',
+      'https://analytics.example.com':
+        'openid profile email offline_access read:analytics write:analytics',
+      'https://admin.example.com':
+        'openid profile email offline_access read:admin write:admin delete:admin'
+    }
+  }
+});
+```
+
+**How it works:**
+
+- Each key in the `scope` object is an `audience` identifier
+- The corresponding value is the scope string for that audience
+- When calling `getAccessToken({ audience: "..." })`, the SDK automatically uses the configured scopes for that audience. When scopes are also passed in the method call, they will be merged with the default scopes for that audience.
+
+> [!NOTE]
+> This new option only works in the initialization of the client, it's not applicable to other runtime methods.
+> When using scope as an object, and no entry for the default audience is provided, the SDK will use the scopes of the `DEFAULT_AUDIENCE`. Those will be `openid, email, profile` and `offline_access` if `useRefreshTokens` is enabled.
 
 ## Data caching options
 
@@ -458,7 +494,7 @@ When using `fetchWithAuth()`, the following will be handled for you automaticall
 - Handle retries caused by a rejected nonce.
 
 > [!IMPORTANT]
-> If DPoP is enabled in the `client` instance, a `dpopNonceId` **must** be present in the `createFetcher()` parameters, since it’s used to keep track of the DPoP nonces for each request.
+> If your API requires DPoP, a `dpopNonceId` **must** be present in the `createFetcher()` parameters, since it’s used to keep track of the DPoP nonces for each request.
 
 #### Advanced usage
 
@@ -560,6 +596,85 @@ client.createFetcher({
         scope: '<SOME_SCOPE>'
         // etc.
       }
-    })
+    }),
+  detailedResponse: true // If you need a mix of DPoP and Bearer tokens per fetcher, it will need to know the token type.
 });
 ```
+
+## Connect Accounts for using Token Vault
+
+The Connect Accounts feature uses the Auth0 My Account API to allow users to link multiple third party accounts to a single Auth0 user profile.
+
+When using Connected Accounts, Auth0 acquires tokens from upstream Identity Providers (like Google) and stores them in a secure [Token Vault](https://auth0.com/docs/secure/tokens/token-vault). These tokens can then be used to access third-party APIs (like Google Calendar) on behalf of the user.
+
+The tokens in the Token Vault are then accessible to [Resource Servers](https://auth0.com/docs/get-started/apis) (APIs) configured in Auth0. The SPA application can then issue requests to the API, which can retrieve the tokens from the Token Vault and use them to access the third-party APIs.
+
+This is particularly useful for applications that require access to different resources on behalf of a user, like AI Agents.
+
+### Configure the SDK
+
+The SDK must be configured with an audience (an API Identifier) - this will be the resource server that uses the tokens from the Token Vault.
+
+The SDK must also be configured to use refresh tokens and MRRT ([Multiple Resource Refresh Tokens](https://auth0.com/docs/secure/tokens/refresh-tokens/multi-resource-refresh-token)) since we will use the refresh token grant to get Access Tokens for the My Account API in addition to the API we are calling.
+
+The My Account API requires DPoP tokens, so we also need to enable DPoP.
+
+```js
+const auth0 = new Auth0Client({
+  domain: '<AUTH0_DOMAIN>',
+  clientId: '<AUTH0_CLIENT_ID>',
+  useRefreshTokens: true,
+  useMrrt: true,
+  useDpop: true,
+  authorizationParams: {
+    redirect_uri: '<MY_CALLBACK_URL>'
+  }
+});
+```
+
+### Login to the application
+
+Use the login methods to authenticate to the application and get a refresh and access token for the API.
+
+```js
+// Login specifying any scopes for the Auth0 API
+await auth0.loginWithRedirect({
+  authorizationParams: {
+    audience: '<AUTH0 API IDENTIFIER>',
+    scope: 'openid profile email read:calendar'
+  }
+});
+
+// Handle redirect callback on login.
+const query = new URLSearchParams(window.location.search);
+if ((query.has('code') || query.has('error')) && query.has('state')) {
+  await auth0.handleRedirectCallback();
+  const user = await auth0.getUser();
+  console.log(user);
+}
+```
+
+### Connect to a third party account
+
+Use the new `connectAccountWithRedirect` method to redirect the user to the third party Identity Provider to connect their account.
+
+```js
+// Start the connect flow by redirecting to the thrid party API's login, defined as an Auth0 connection
+await auth0.connectAccountWithRedirect({
+  connection: '<CONNECTION eg, google-apps-connection>',
+  authorization_params: {
+    scope: '<SCOPE eg https://www.googleapis.com/auth/calendar.acls.readonly>'
+  }
+});
+
+// Handle redirect callback on connect. *Note* the `connect_code` param
+const query = new URLSearchParams(window.location.search);
+if ((query.has('connect_code') || query.has('error')) && query.has('state')) {
+  const result = await auth0.handleRedirectCallback();
+  if (result.connection) {
+    console.log(`You are connected to ${result.connection}!`);
+  }
+}
+```
+
+You can now [call the API](#calling-an-api) with your access token and the API can use [Access Token Exchange with Token Vault](https://auth0.com/docs/secure/tokens/token-vault/access-token-exchange-with-token-vault) to get tokens from the Token Vault to access third party APIs on behalf of the user.
