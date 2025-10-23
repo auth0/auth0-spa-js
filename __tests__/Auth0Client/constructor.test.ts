@@ -103,7 +103,7 @@ describe('Auth0Client', () => {
     it('allows an empty custom default scope', () => {
       const auth0 = setup({
         authorizationParams: {
-          scope: null
+          scope: undefined
         }
       });
 
