@@ -133,10 +133,11 @@ await createAuth0Client({
 
 - Each key in the `scope` object is an `audience` identifier
 - The corresponding value is the scope string for that audience
-- When calling `getAccessToken({ audience: "..." })`, the SDK automatically uses the configured scopes for that audience. When scopes are also passed in the method call, they are be merged with the default scopes for that audience.
+- When calling `getAccessToken({ audience: "..." })`, the SDK automatically uses the configured scopes for that audience. When scopes are also passed in the method call, they will be merged with the default scopes for that audience.
 
 > [!NOTE]
-> When using scope as an object, and no entry for the default audience is provided, the SDK will use the scopes of the `DEFAULT_AUDIENCE`. Those will be `openId, email, profile` and `offline_access` if `useRefreshTokens` is enabled.
+> This new option only works in the initialization of the client, it's not applicable to other runtime methods.
+> When using scope as an object, and no entry for the default audience is provided, the SDK will use the scopes of the `DEFAULT_AUDIENCE`. Those will be `openid, email, profile` and `offline_access` if `useRefreshTokens` is enabled.
 
 ## Data caching options
 
@@ -670,7 +671,7 @@ const query = new URLSearchParams(window.location.search);
 if ((query.has('connect_code') || query.has('error')) && query.has('state')) {
   const result = await auth0.handleRedirectCallback();
   if (result.connection) {
-    console.log(`You are connected to ${result.connection}!`)
+    console.log(`You are connected to ${result.connection}!`);
   }
 }
 ```

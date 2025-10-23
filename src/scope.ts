@@ -39,13 +39,11 @@ export const injectDefaultScopes = (authScopes: string | Record<string, string> 
     [DEFAULT_AUDIENCE]: getUniqueScopes(openIdScope, ...extraScopes),
   };
 
-  if (authScopes) {
-    Object.keys(authScopes).forEach((key) => {
-      const audienceScopes = authScopes[key];
+  Object.keys(authScopes).forEach((key) => {
+    const audienceScopes = authScopes[key];
 
-      requestedScopes[key] = getUniqueScopes(openIdScope, audienceScopes, ...extraScopes);
-    });
-  }
+    requestedScopes[key] = getUniqueScopes(openIdScope, audienceScopes, ...extraScopes);
+  });
 
   return requestedScopes;
 }
