@@ -1,6 +1,6 @@
 ![Auth0 SDK for Single Page Applications using Authorization Code Grant Flow with PKCE.](https://cdn.auth0.com/website/sdks/banners/spa-js-banner.png)
 
-![Release](https://img.shields.io/npm/v/@auth0/auth0-spa-js)
+[![npm version](https://img.shields.io/npm/v/@auth0/auth0-spa-js?style=flat-square&logo=npm&logoColor=CB3837)](https://www.npmjs.com/package/@auth0/auth0-spa-js)
 [![Codecov](https://img.shields.io/codecov/c/github/auth0/auth0-spa-js)](https://codecov.io/gh/auth0/auth0-spa-js)
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/auth0/auth0-spa-js)
 ![Downloads](https://img.shields.io/npm/dw/@auth0/auth0-spa-js)
