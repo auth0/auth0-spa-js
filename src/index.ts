@@ -53,3 +53,5 @@ export { type FetcherConfig } from './fetcher';
 export {
   MyAccountApiError
 } from './MyAccountApiClient';
+
+export { MfaApiClient } from './mfa';

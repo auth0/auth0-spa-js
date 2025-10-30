@@ -792,3 +792,22 @@ export type GetTokenSilentlyVerboseResponse = Omit<
   TokenEndpointResponse,
   'refresh_token'
 >;
+
+// MFA API types
+export type {
+  Authenticator,
+  AuthenticatorType,
+  OobChannel,
+  EnrollAuthenticatorParams,
+  EnrollOtpParams,
+  EnrollOobParams,
+  EnrollEmailParams,
+  EnrollmentResponse,
+  OtpEnrollmentResponse,
+  OobEnrollmentResponse,
+  EmailEnrollmentResponse,
+  ChallengeParams,
+  ChallengeResponse,
+  VerifyChallengeParams,
+  MfaGrantType
+} from './mfa/types';

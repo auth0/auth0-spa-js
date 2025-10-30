@@ -113,6 +113,7 @@ import {
   type CustomFetchMinimalOutput
 } from './fetcher';
 import { MyAccountApiClient } from './MyAccountApiClient';
+import { MfaApiClient } from './mfa';
 
 /**
  * @ignore
@@ -1565,6 +1566,38 @@ export class Auth0Client {
       setDpopNonce: nonce => this.setDpopNonce(nonce, config.dpopNonceId),
       generateDpopProof: params => this.generateDpopProof(params)
     });
+  }
+
+  /**
+   * Creates an MFA API client for managing multi-factor authentication
+   *
+   * The MFA token must have audience `https://{domain}/mfa/` and appropriate scopes:
+   * - `enroll` - For enrolling new authenticators and challenges
+   * - `read:authenticators` - For listing authenticators
+   * - `remove:authenticators` - For deleting authenticators
+   *
+   * @param mfaToken - Access token with MFA audience
+   * @returns MfaApiClient instance
+   *
+   * @example
+   * ```typescript
+   * // First, get MFA-scoped token
+   * const mfaToken = await auth0.getTokenSilently({
+   *   authorizationParams: {
+   *     audience: `https://${domain}/mfa/`,
+   *     scope: 'enroll read:authenticators remove:authenticators'
+   *   }
+   * });
+   *
+   * // Create MFA client
+   * const mfaClient = auth0.createMfaClient(mfaToken);
+   *
+   * // Use MFA methods
+   * const authenticators = await mfaClient.listAuthenticators();
+   * ```
+   */
+  public createMfaClient(mfaToken: string): MfaApiClient {
+    return new MfaApiClient(`${this.domainUrl}`, mfaToken);
   }
 
   /**
