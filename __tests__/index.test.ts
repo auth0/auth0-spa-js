@@ -25,6 +25,7 @@ import {
   TEST_USER_ID
 } from './constants';
 import { CookieStorage } from '../src/storage';
+import { DEFAULT_AUDIENCE } from '../src/constants';
 
 jest.mock('../src/worker/token.worker');
 
@@ -310,9 +311,9 @@ describe('Auth0', () => {
           ...options
         });
 
-        expect((<any>auth0).scope).toBe(
-          'openid profile email the-scope offline_access'
-        );
+        expect((<any>auth0).scope).toMatchObject({
+          [DEFAULT_AUDIENCE]: 'openid profile email the-scope offline_access'
+        });
 
         expect(auth0.getTokenSilently).toHaveBeenCalledWith(undefined);
       });

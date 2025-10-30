@@ -44,6 +44,37 @@ describe('Auth0Client', () => {
       const retry = (client as any).generateDpopProof.mock.calls[1][0];
       expect(retry.nonce).toBe('test-nonce');
     });
+
+    it('retries with expired dpop nonce', async () => {
+      const mockFetch = jest.fn();
+      mockFetch.mockImplementationOnce(async () => {
+          return {
+            status: 401,
+            headers: Object.entries({
+              'dpop-nonce': 'test-nonce',
+              'www-authenticate': `DPoP error="invalid_dpop_nonce" error_description="DPoP nonce is too old"`
+            })
+          };
+      });
+      mockFetch.mockImplementationOnce(async () => {
+        return {
+          status: 200,
+          headers: { get: () => undefined },
+        };
+      });
+      (client as any).generateDpopProof = jest.fn().mockReturnValue('proof');
+      const fetcher = client.createFetcher({
+        dpopNonceId: 'nonce-id',
+        getAccessToken: jest.fn().mockReturnValue('at'),
+        fetch: mockFetch,
+      });
+
+      await fetcher.fetchWithAuth('https://api.example.com/data');
+
+      const retry = (client as any).generateDpopProof.mock.calls[1][0];
+      expect(retry.nonce).toBe('test-nonce');
+    });
+
   });
 
 });

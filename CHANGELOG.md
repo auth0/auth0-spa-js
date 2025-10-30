@@ -1,5 +1,16 @@
 # Change Log
 
+## [v2.7.0](https://github.com/auth0/auth0-spa-js/tree/v2.7.0) (2025-10-17)
+[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.6.0...v2.7.0)
+
+**Added**
+- Retry when DPoP nonce is expired [\#1445](https://github.com/auth0/auth0-spa-js/pull/1445) ([adamjmcgrath](https://github.com/adamjmcgrath))
+- [ESD-52771] Support mix of DPoP and Bearer in the fetcher [\#1442](https://github.com/auth0/auth0-spa-js/pull/1442) ([adamjmcgrath](https://github.com/adamjmcgrath))
+
+**Fixed**
+- Fix MRRT with default audience in worker [\#1439](https://github.com/auth0/auth0-spa-js/pull/1439) ([aridibag](https://github.com/aridibag))
+- Fetcher: fix incorrect URL building when `baseUrl` is present [\#1435](https://github.com/auth0/auth0-spa-js/pull/1435) ([martinml](https://github.com/martinml))
+
 ## [v2.6.0](https://github.com/auth0/auth0-spa-js/tree/v2.6.0) (2025-10-10)
 [Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.5.0...v2.6.0)
 

@@ -162,6 +162,42 @@ const stripUndefined = (params: any) => {
     .reduce((acc, key) => ({ ...acc, [key]: params[key] }), {});
 };
 
+const ALLOWED_AUTH0CLIENT_PROPERTIES = [
+  {
+    key: 'name',
+    type: ['string']
+  },
+  {
+    key: 'version',
+    type: ['string', 'number']
+  },
+  {
+    key: 'env',
+    type: ['object']
+  }
+];
+
+/**
+ * Strips any property that is not present in ALLOWED_AUTH0CLIENT_PROPERTIES
+ * @param auth0Client - The full auth0Client object
+ * @returns The stripped auth0Client object
+ */
+export const stripAuth0Client = (auth0Client: any) => {
+  return Object.keys(auth0Client).reduce((acc: any, key: string) => {
+    const allowedProperty = ALLOWED_AUTH0CLIENT_PROPERTIES.find(
+      p => p.key === key
+    );
+    if (
+      allowedProperty &&
+      allowedProperty.type.includes(typeof auth0Client[key])
+    ) {
+      acc[key] = auth0Client[key];
+    }
+
+    return acc;
+  }, {});
+};
+
 export const createQueryParams = ({ clientId: client_id, ...params }: any) => {
   return new URLSearchParams(
     stripUndefined({ client_id, ...params })

@@ -18,7 +18,7 @@ import {
 
 import { oauthToken } from './api';
 
-import { getUniqueScopes } from './scope';
+import { injectDefaultScopes, scopesToRequest } from './scope';
 
 import {
   InMemoryCache,
@@ -39,6 +39,7 @@ import {
   GenericError,
   MfaRequiredError,
   MissingRefreshTokenError,
+  MissingScopesError,
   TimeoutError
 } from './errors';
 
@@ -59,7 +60,8 @@ import {
   DEFAULT_AUTH0_CLIENT,
   INVALID_REFRESH_TOKEN_ERROR_MESSAGE,
   DEFAULT_NOW_PROVIDER,
-  DEFAULT_FETCH_TIMEOUT_MS
+  DEFAULT_FETCH_TIMEOUT_MS,
+  DEFAULT_AUDIENCE
 } from './constants';
 
 import {
@@ -82,7 +84,8 @@ import {
   AuthenticationResult,
   ConnectAccountRedirectResult,
   RedirectConnectAccountOptions,
-  ResponseType
+  ResponseType,
+  ClientAuthorizationParams,
 } from './global';
 
 // @ts-ignore
@@ -94,12 +97,13 @@ import {
   buildOrganizationHintCookieName,
   cacheFactory,
   getAuthorizeParams,
-  GET_TOKEN_SILENTLY_LOCK_KEY,
+  buildGetTokenSilentlyLockKey,
   OLD_IS_AUTHENTICATED_COOKIE_NAME,
   patchOpenUrlWithOnRedirect,
   getScopeToRequest,
   allScopesAreIncluded,
-  isRefreshWithMrrt
+  isRefreshWithMrrt,
+  getMissingScopes
 } from './Auth0Client.utils';
 import { CustomTokenExchangeOptions } from './TokenExchange';
 import { Dpop } from './dpop/dpop';
@@ -133,7 +137,7 @@ export class Auth0Client {
   private readonly cacheManager: CacheManager;
   private readonly domainUrl: string;
   private readonly tokenIssuer: string;
-  private readonly scope: string;
+  private readonly scope: Record<string, string>;
   private readonly cookieStorage: ClientStorage;
   private readonly dpop: Dpop | undefined;
   private readonly sessionCheckExpiryDays: number;
@@ -142,12 +146,14 @@ export class Auth0Client {
   private readonly nowProvider: () => number | Promise<number>;
   private readonly httpTimeoutMs: number;
   private readonly options: Auth0ClientOptions & {
-    authorizationParams: AuthorizationParams;
+    authorizationParams: ClientAuthorizationParams,
   };
   private readonly userCache: ICache = new InMemoryCache().enclosedCache;
   private readonly myAccountApi: MyAccountApiClient;
 
   private worker?: Worker;
+  private readonly activeLockKeys: Set<string> = new Set();
+
   private readonly defaultOptions: Partial<Auth0ClientOptions> = {
     authorizationParams: {
       scope: DEFAULT_SCOPE
@@ -218,9 +224,9 @@ export class Auth0Client {
     // 1. Always include `openid`
     // 2. Include the scopes provided in `authorizationParams. This defaults to `profile email`
     // 3. Add `offline_access` if `useRefreshTokens` is enabled
-    this.scope = getUniqueScopes(
-      'openid',
+    this.scope = injectDefaultScopes(
       this.options.authorizationParams.scope,
+      'openid',
       this.options.useRefreshTokens ? 'offline_access' : ''
     );
 
@@ -255,7 +261,8 @@ export class Auth0Client {
           authorizationParams: {
             scope: 'create:me:connected_accounts',
             audience: myAccountApiIdentifier
-          }
+          },
+          detailedResponse: true
         })
     });
     this.myAccountApi = new MyAccountApiClient(
@@ -361,7 +368,7 @@ export class Auth0Client {
       nonce,
       code_verifier,
       scope: params.scope,
-      audience: params.audience || 'default',
+      audience: params.audience || DEFAULT_AUDIENCE,
       redirect_uri: params.redirect_uri,
       state,
       url
@@ -789,7 +796,11 @@ export class Auth0Client {
       authorizationParams: {
         ...this.options.authorizationParams,
         ...options.authorizationParams,
-        scope: getUniqueScopes(this.scope, options.authorizationParams?.scope)
+        scope: scopesToRequest(
+          this.scope,
+          options.authorizationParams?.scope,
+          options.authorizationParams?.audience || this.options.authorizationParams.audience,
+        )
       }
     };
 
@@ -813,7 +824,7 @@ export class Auth0Client {
     if (cacheMode !== 'off') {
       const entry = await this._getEntryFromCache({
         scope: getTokenOptions.authorizationParams.scope,
-        audience: getTokenOptions.authorizationParams.audience || 'default',
+        audience: getTokenOptions.authorizationParams.audience || DEFAULT_AUDIENCE,
         clientId: this.options.clientId,
         cacheMode,
       });
@@ -827,21 +838,26 @@ export class Auth0Client {
       return;
     }
 
-    if (
-      await retryPromise(
-        () => lock.acquireLock(GET_TOKEN_SILENTLY_LOCK_KEY, 5000),
-        10
-      )
-    ) {
-      try {
-        window.addEventListener('pagehide', this._releaseLockOnPageHide);
+    // Generate lock key based on client ID and audience for better isolation
+    const lockKey = buildGetTokenSilentlyLockKey(
+      this.options.clientId,
+      getTokenOptions.authorizationParams.audience || 'default'
+    );
 
+    if (await retryPromise(() => lock.acquireLock(lockKey, 5000), 10)) {
+      this.activeLockKeys.add(lockKey);
+
+      // Add event listener only if this is the first active lock
+      if (this.activeLockKeys.size === 1) {
+        window.addEventListener('pagehide', this._releaseLockOnPageHide);
+      }
+      try {
         // Check the cache a second time, because it may have been populated
         // by a previous call while this call was waiting to acquire the lock.
         if (cacheMode !== 'off') {
           const entry = await this._getEntryFromCache({
             scope: getTokenOptions.authorizationParams.scope,
-            audience: getTokenOptions.authorizationParams.audience || 'default',
+            audience: getTokenOptions.authorizationParams.audience || DEFAULT_AUDIENCE,
             clientId: this.options.clientId
           });
 
@@ -870,8 +886,12 @@ export class Auth0Client {
           expires_in
         };
       } finally {
-        await lock.releaseLock(GET_TOKEN_SILENTLY_LOCK_KEY);
-        window.removeEventListener('pagehide', this._releaseLockOnPageHide);
+        await lock.releaseLock(lockKey);
+        this.activeLockKeys.delete(lockKey);
+        // If we have no more locks, we can remove the event listener to clean up
+        if (this.activeLockKeys.size === 0) {
+          window.removeEventListener('pagehide', this._releaseLockOnPageHide);
+        }
       }
     } else {
       throw new TimeoutError();
@@ -899,7 +919,11 @@ export class Auth0Client {
       authorizationParams: {
         ...this.options.authorizationParams,
         ...options.authorizationParams,
-        scope: getUniqueScopes(this.scope, options.authorizationParams?.scope)
+        scope: scopesToRequest(
+          this.scope,
+          options.authorizationParams?.scope,
+          options.authorizationParams?.audience || this.options.authorizationParams.audience
+        )
       }
     };
 
@@ -913,7 +937,7 @@ export class Auth0Client {
     const cache = await this.cacheManager.get(
       new CacheKey({
         scope: localOptions.authorizationParams.scope,
-        audience: localOptions.authorizationParams.audience || 'default',
+        audience: localOptions.authorizationParams.audience || DEFAULT_AUDIENCE,
         clientId: this.options.clientId
       }),
       undefined,
@@ -1102,7 +1126,7 @@ export class Auth0Client {
     const cache = await this.cacheManager.get(
       new CacheKey({
         scope: options.authorizationParams.scope,
-        audience: options.authorizationParams.audience || 'default',
+        audience: options.authorizationParams.audience || DEFAULT_AUDIENCE,
         clientId: this.options.clientId
       }),
       undefined,
@@ -1119,7 +1143,7 @@ export class Auth0Client {
       }
 
       throw new MissingRefreshTokenError(
-        options.authorizationParams.audience || 'default',
+        options.authorizationParams.audience || DEFAULT_AUDIENCE,
         options.authorizationParams.scope
       );
     }
@@ -1186,9 +1210,22 @@ export class Auth0Client {
               return await this._getTokenFromIFrame(options);
             }
 
-            throw new MissingRefreshTokenError(
-              options.authorizationParams.audience || 'default',
+            // Before throwing MissingScopesError, we have to remove the previously created entry
+            // to avoid storing wrong data
+            await this.cacheManager.remove(
+              this.options.clientId,
+              options.authorizationParams.audience,
               options.authorizationParams.scope,
+            );
+
+            const missingScopes = getMissingScopes(
+              scopesToRequest,
+              tokenResult.scope,
+            );
+
+            throw new MissingScopesError(
+              options.authorizationParams.audience || 'default',
+              missingScopes,
             );
           }
         }
@@ -1198,7 +1235,7 @@ export class Auth0Client {
         ...tokenResult,
         scope: options.authorizationParams.scope,
         oauthTokenScope: tokenResult.scope,
-        audience: options.authorizationParams.audience || 'default'
+        audience: options.authorizationParams.audience || DEFAULT_AUDIENCE
       };
     } catch (e) {
       if (
@@ -1251,13 +1288,14 @@ export class Auth0Client {
   }
 
   private async _getIdTokenFromCache() {
-    const audience = this.options.authorizationParams.audience || 'default';
+    const audience = this.options.authorizationParams.audience || DEFAULT_AUDIENCE;
+    const scope = this.scope[audience];
 
     const cache = await this.cacheManager.getIdToken(
       new CacheKey({
         clientId: this.options.clientId,
         audience,
-        scope: this.scope
+        scope,
       })
     );
 
@@ -1314,13 +1352,18 @@ export class Auth0Client {
   }
 
   /**
-   * Releases any lock acquired by the current page that's not released yet
+   * Releases any locks acquired by the current page that are not released yet
    *
    * Get's called on the `pagehide` event.
    * https://developer.mozilla.org/en-US/docs/Web/API/Window/pagehide_event
    */
   private _releaseLockOnPageHide = async () => {
-    await lock.releaseLock(GET_TOKEN_SILENTLY_LOCK_KEY);
+    // Release all active locks
+    const lockKeysToRelease = Array.from(this.activeLockKeys);
+    for (const lockKey of lockKeysToRelease) {
+      await lock.releaseLock(lockKey);
+    }
+    this.activeLockKeys.clear();
 
     window.removeEventListener('pagehide', this._releaseLockOnPageHide);
   };
@@ -1358,7 +1401,7 @@ export class Auth0Client {
       ...authResult,
       decodedToken,
       scope: options.scope,
-      audience: options.audience || 'default',
+      audience: options.audience || DEFAULT_AUDIENCE,
       ...(authResult.scope ? { oauthTokenScope: authResult.scope } : null),
       client_id: this.options.clientId
     });
@@ -1430,7 +1473,11 @@ export class Auth0Client {
       grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
       subject_token: options.subject_token,
       subject_token_type: options.subject_token_type,
-      scope: getUniqueScopes(options.scope, this.scope),
+      scope: scopesToRequest(
+        this.scope,
+        options.scope,
+        options.audience || this.options.authorizationParams.audience
+      ),
       audience: options.audience || this.options.authorizationParams.audience
     });
   }
@@ -1504,12 +1551,6 @@ export class Auth0Client {
   public createFetcher<TOutput extends CustomFetchMinimalOutput = Response>(
     config: FetcherConfig<TOutput> = {}
   ): Fetcher<TOutput> {
-    if (this.options.useDpop && !config.dpopNonceId) {
-      throw new TypeError(
-        'When `useDpop` is enabled, `dpopNonceId` must be set when calling `createFetcher()`.'
-      );
-    }
-
     return new Fetcher(config, {
       isDpopEnabled: () => !!this.options.useDpop,
       getAccessToken: authParams =>
@@ -1517,7 +1558,8 @@ export class Auth0Client {
           authorizationParams: {
             scope: authParams?.scope?.join(' '),
             audience: authParams?.audience
-          }
+          },
+          detailedResponse: true
         }),
       getDpopNonce: () => this.getDpopNonce(config.dpopNonceId),
       setDpopNonce: nonce => this.setDpopNonce(nonce, config.dpopNonceId),
@@ -1543,14 +1585,6 @@ export class Auth0Client {
   public async connectAccountWithRedirect<TAppState = any>(
     options: RedirectConnectAccountOptions<TAppState>
   ) {
-    if (!this.options.useDpop) {
-      throw new Error('`useDpop` option must be enabled before using connectAccountWithRedirect.');
-    }
-
-    if (!this.options.useMrrt) {
-      throw new Error('`useMrrt` option must be enabled before using connectAccountWithRedirect.');
-    }
-
     const {
       openUrl,
       appState,

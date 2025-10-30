@@ -104,6 +104,41 @@ Using this setting will make the SDK able to reuse the refresh token not only fo
 
 **Note**: This configuration option requires the refresh token policies of your application [to be configured](https://auth0.com/docs/secure/tokens/refresh-tokens/multi-resource-refresh-token/configure-and-implement-multi-resource-refresh-token).
 
+##### Configuring Scopes Per Audience
+
+When working with multiple APIs, you can define different default scopes for each audience by passing an object instead of a string. This is particularly useful when different APIs require different default scopes:
+
+```js
+await createAuth0Client({
+  domain: '<AUTH0_DOMAIN>',
+  clientId: '<AUTH0_CLIENT_ID>',
+  useRefreshTokens: true,
+  useMrrt: true,
+  authorizationParams: {
+    redirect_uri: '<MY_CALLBACK_URL>',
+    audience: 'https://api.example.com', // Default audience
+    scope: {
+      'https://api.example.com':
+        'openid profile email offline_access read:products read:orders',
+      'https://analytics.example.com':
+        'openid profile email offline_access read:analytics write:analytics',
+      'https://admin.example.com':
+        'openid profile email offline_access read:admin write:admin delete:admin'
+    }
+  }
+});
+```
+
+**How it works:**
+
+- Each key in the `scope` object is an `audience` identifier
+- The corresponding value is the scope string for that audience
+- When calling `getAccessToken({ audience: "..." })`, the SDK automatically uses the configured scopes for that audience. When scopes are also passed in the method call, they will be merged with the default scopes for that audience.
+
+> [!NOTE]
+> This new option only works in the initialization of the client, it's not applicable to other runtime methods.
+> When using scope as an object, and no entry for the default audience is provided, the SDK will use the scopes of the `DEFAULT_AUDIENCE`. Those will be `openid, email, profile` and `offline_access` if `useRefreshTokens` is enabled.
+
 ## Data caching options
 
 The SDK can be configured to cache ID tokens and access tokens either in memory or in local storage. The default is in memory. This setting can be controlled using the `cacheLocation` option when creating the Auth0 client.
@@ -459,7 +494,7 @@ When using `fetchWithAuth()`, the following will be handled for you automaticall
 - Handle retries caused by a rejected nonce.
 
 > [!IMPORTANT]
-> If DPoP is enabled in the `client` instance, a `dpopNonceId` **must** be present in the `createFetcher()` parameters, since it’s used to keep track of the DPoP nonces for each request.
+> If your API requires DPoP, a `dpopNonceId` **must** be present in the `createFetcher()` parameters, since it’s used to keep track of the DPoP nonces for each request.
 
 #### Advanced usage
 
@@ -561,7 +596,8 @@ client.createFetcher({
         scope: '<SOME_SCOPE>'
         // etc.
       }
-    })
+    }),
+  detailedResponse: true // If you need a mix of DPoP and Bearer tokens per fetcher, it will need to know the token type.
 });
 ```
 
@@ -636,7 +672,7 @@ const query = new URLSearchParams(window.location.search);
 if ((query.has('connect_code') || query.has('error')) && query.has('state')) {
   const result = await auth0.handleRedirectCallback();
   if (result.connection) {
-    console.log(`You are connected to ${result.connection}!`)
+    console.log(`You are connected to ${result.connection}!`);
   }
 }
 ```
