@@ -31,7 +31,11 @@ import {
   DecodedToken
 } from './cache';
 
-import { ConnectAccountTransaction, LoginTransaction, TransactionManager } from './transaction-manager';
+import {
+  ConnectAccountTransaction,
+  LoginTransaction,
+  TransactionManager
+} from './transaction-manager';
 import { verify as verifyIdToken } from './jwt';
 import {
   AuthenticationError,
@@ -84,7 +88,7 @@ import {
   ConnectAccountRedirectResult,
   RedirectConnectAccountOptions,
   ResponseType,
-  ClientAuthorizationParams,
+  ClientAuthorizationParams
 } from './global';
 
 // @ts-ignore
@@ -145,7 +149,7 @@ export class Auth0Client {
   private readonly nowProvider: () => number | Promise<number>;
   private readonly httpTimeoutMs: number;
   private readonly options: Auth0ClientOptions & {
-    authorizationParams: ClientAuthorizationParams,
+    authorizationParams: ClientAuthorizationParams;
   };
   private readonly userCache: ICache = new InMemoryCache().enclosedCache;
   private readonly myAccountApi: MyAccountApiClient;
@@ -354,8 +358,8 @@ export class Auth0Client {
       nonce,
       code_challenge,
       authorizationParams.redirect_uri ||
-      this.options.authorizationParams.redirect_uri ||
-      fallbackRedirectUri,
+        this.options.authorizationParams.redirect_uri ||
+        fallbackRedirectUri,
       authorizeOptions?.response_mode,
       thumbprint
     );
@@ -448,7 +452,8 @@ export class Auth0Client {
       },
       {
         nonceIn: params.nonce,
-        organization
+        organization,
+        isLoginFlow: true
       }
     );
   }
@@ -612,7 +617,7 @@ export class Auth0Client {
         code: code as string,
         ...(redirect_uri ? { redirect_uri } : {})
       },
-      { nonceIn, organization }
+      { nonceIn, organization, isLoginFlow: true }
     );
 
     return {
@@ -672,7 +677,7 @@ export class Auth0Client {
     return {
       ...data,
       appState: transaction.appState,
-      response_type: ResponseType.ConnectCode,
+      response_type: ResponseType.ConnectCode
     };
   }
 
@@ -718,7 +723,7 @@ export class Auth0Client {
 
     try {
       await this.getTokenSilently(options);
-    } catch (_) { }
+    } catch (_) {}
   }
 
   /**
@@ -789,7 +794,8 @@ export class Auth0Client {
         scope: scopesToRequest(
           this.scope,
           options.authorizationParams?.scope,
-          options.authorizationParams?.audience || this.options.authorizationParams.audience,
+          options.authorizationParams?.audience ||
+            this.options.authorizationParams.audience
         )
       }
     };
@@ -814,9 +820,10 @@ export class Auth0Client {
     if (cacheMode !== 'off') {
       const entry = await this._getEntryFromCache({
         scope: getTokenOptions.authorizationParams.scope,
-        audience: getTokenOptions.authorizationParams.audience || DEFAULT_AUDIENCE,
+        audience:
+          getTokenOptions.authorizationParams.audience || DEFAULT_AUDIENCE,
         clientId: this.options.clientId,
-        cacheMode,
+        cacheMode
       });
 
       if (entry) {
@@ -847,7 +854,8 @@ export class Auth0Client {
         if (cacheMode !== 'off') {
           const entry = await this._getEntryFromCache({
             scope: getTokenOptions.authorizationParams.scope,
-            audience: getTokenOptions.authorizationParams.audience || DEFAULT_AUDIENCE,
+            audience:
+              getTokenOptions.authorizationParams.audience || DEFAULT_AUDIENCE,
             clientId: this.options.clientId
           });
 
@@ -912,7 +920,8 @@ export class Auth0Client {
         scope: scopesToRequest(
           this.scope,
           options.authorizationParams?.scope,
-          options.authorizationParams?.audience || this.options.authorizationParams.audience
+          options.authorizationParams?.audience ||
+            this.options.authorizationParams.audience
         )
       }
     };
@@ -994,21 +1003,7 @@ export class Auth0Client {
   public async logout(options: LogoutOptions = {}): Promise<void> {
     const { openUrl, ...logoutOptions } = patchOpenUrlWithOnRedirect(options);
 
-    if (options.clientId === null) {
-      await this.cacheManager.clear();
-    } else {
-      await this.cacheManager.clear(options.clientId || this.options.clientId);
-    }
-
-    this.cookieStorage.remove(this.orgHintCookieName, {
-      cookieDomain: this.options.cookieDomain
-    });
-    this.cookieStorage.remove(this.isAuthenticatedCookieName, {
-      cookieDomain: this.options.cookieDomain
-    });
-    this.userCache.remove(CACHE_KEY_ID_TOKEN_SUFFIX);
-
-    await this.dpop?.clear();
+    await this._clearAuthState(options.clientId);
 
     const url = this._buildLogoutUrl(logoutOptions);
 
@@ -1152,25 +1147,30 @@ export class Auth0Client {
       this.options.useMrrt,
       options.authorizationParams,
       cache?.audience,
-      cache?.scope,
+      cache?.scope
     );
 
     try {
-      const tokenResult = await this._requestToken({
-        ...options.authorizationParams,
-        grant_type: 'refresh_token',
-        refresh_token: cache && cache.refresh_token,
-        redirect_uri,
-        ...(timeout && { timeout })
-      },
+      const tokenResult = await this._requestToken(
         {
-          scopesToRequest,
+          ...options.authorizationParams,
+          grant_type: 'refresh_token',
+          refresh_token: cache && cache.refresh_token,
+          redirect_uri,
+          ...(timeout && { timeout })
+        },
+        {
+          scopesToRequest
         }
       );
 
       // If is refreshed with MRRT, we update all entries that have the old
       // refresh_token with the new one if the server responded with one
-      if (tokenResult.refresh_token && this.options.useMrrt && cache?.refresh_token) {
+      if (
+        tokenResult.refresh_token &&
+        this.options.useMrrt &&
+        cache?.refresh_token
+      ) {
         await this.cacheManager.updateEntry(
           cache.refresh_token,
           tokenResult.refresh_token
@@ -1186,13 +1186,13 @@ export class Auth0Client {
           cache?.audience,
           cache?.scope,
           options.authorizationParams.audience,
-          options.authorizationParams.scope,
+          options.authorizationParams.scope
         );
 
         if (isRefreshMrrt) {
           const tokenHasAllScopes = allScopesAreIncluded(
             scopesToRequest,
-            tokenResult.scope,
+            tokenResult.scope
           );
 
           if (!tokenHasAllScopes) {
@@ -1205,17 +1205,17 @@ export class Auth0Client {
             await this.cacheManager.remove(
               this.options.clientId,
               options.authorizationParams.audience,
-              options.authorizationParams.scope,
+              options.authorizationParams.scope
             );
 
             const missingScopes = getMissingScopes(
               scopesToRequest,
-              tokenResult.scope,
+              tokenResult.scope
             );
 
             throw new MissingScopesError(
               options.authorizationParams.audience || 'default',
-              missingScopes,
+              missingScopes
             );
           }
         }
@@ -1265,14 +1265,15 @@ export class Auth0Client {
   }
 
   private async _getIdTokenFromCache() {
-    const audience = this.options.authorizationParams.audience || DEFAULT_AUDIENCE;
+    const audience =
+      this.options.authorizationParams.audience || DEFAULT_AUDIENCE;
     const scope = this.scope[audience];
 
     const cache = await this.cacheManager.getIdToken(
       new CacheKey({
         clientId: this.options.clientId,
         audience,
-        scope,
+        scope
       })
     );
 
@@ -1294,7 +1295,7 @@ export class Auth0Client {
     scope,
     audience,
     clientId,
-    cacheMode,
+    cacheMode
   }: {
     scope: string;
     audience: string;
@@ -1309,7 +1310,7 @@ export class Auth0Client {
       }),
       60, // get a new token if within 60 seconds of expiring
       this.options.useMrrt,
-      cacheMode,
+      cacheMode
     );
 
     if (entry && entry.access_token) {
@@ -1326,6 +1327,32 @@ export class Auth0Client {
         }
       );
     }
+  }
+
+  private async _clearAuthState(clientId?: string | null): Promise<void> {
+    if (clientId === null) {
+      // Clear everything in cacheManager
+      await this.cacheManager.clear();
+    } else {
+      // Clear specific client cache
+      await this.cacheManager.clear(clientId ?? this.options.clientId);
+    }
+
+    // Remove cached ID token from in-memory userCache
+    this.userCache.remove(CACHE_KEY_ID_TOKEN_SUFFIX);
+
+    // Clear DPoP key if used
+    if (this.dpop) {
+      await this.dpop.clear();
+    }
+
+    // Remove cookies used for authentication
+    this.cookieStorage.remove(this.orgHintCookieName, {
+      cookieDomain: this.options.cookieDomain
+    });
+    this.cookieStorage.remove(this.isAuthenticatedCookieName, {
+      cookieDomain: this.options.cookieDomain
+    });
   }
 
   /**
@@ -1352,7 +1379,20 @@ export class Auth0Client {
       | TokenExchangeRequestOptions,
     additionalParameters?: RequestTokenAdditionalParameters
   ) {
-    const { nonceIn, organization, scopesToRequest } = additionalParameters || {};
+    const { nonceIn, organization, scopesToRequest, isLoginFlow } =
+      additionalParameters || {};
+
+    let prevSub: string | undefined;
+    try {
+      const previousEntry = await this._getIdTokenFromCache();
+      prevSub = previousEntry?.decodedToken?.claims?.sub;
+    } catch (err) {
+      console.warn(
+        '[auth0-spa-js] Unable to read previous user from cache before token request.',
+        err
+      );
+    }
+
     const authResult = await oauthToken(
       {
         baseUrl: this.domainUrl,
@@ -1363,7 +1403,7 @@ export class Auth0Client {
         useMrrt: this.options.useMrrt,
         dpop: this.dpop,
         ...options,
-        scope: scopesToRequest || options.scope,
+        scope: scopesToRequest || options.scope
       },
       this.worker
     );
@@ -1373,6 +1413,23 @@ export class Auth0Client {
       nonceIn,
       organization
     );
+
+    // Clear cached tokens if a different user logs in
+    try {
+      const newSub = decodedToken?.claims?.sub;
+
+      if (isLoginFlow && prevSub && newSub && prevSub !== newSub) {
+        console.warn(
+          '[auth0-spa-js] Detected login for a different user — clearing cache.'
+        );
+        await this._clearAuthState();
+      }
+    } catch (err) {
+      console.warn(
+        '[auth0-spa-js] Unable to verify previous user during cache check.',
+        err
+      );
+    }
 
     await this._saveEntryInCache({
       ...authResult,
@@ -1568,7 +1625,7 @@ export class Auth0Client {
       connection,
       authorization_params,
       redirectUri = this.options.authorizationParams.redirect_uri ||
-      window.location.origin
+        window.location.origin
     } = options;
 
     if (!connection) {
@@ -1640,4 +1697,5 @@ interface RequestTokenAdditionalParameters {
   nonceIn?: string;
   organization?: string;
   scopesToRequest?: string;
+  isLoginFlow?: boolean;
 }
