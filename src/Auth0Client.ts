@@ -452,7 +452,8 @@ export class Auth0Client {
       },
       {
         nonceIn: params.nonce,
-        organization
+        organization,
+        isLoginFlow: true
       }
     );
   }
@@ -616,7 +617,7 @@ export class Auth0Client {
         code: code as string,
         ...(redirect_uri ? { redirect_uri } : {})
       },
-      { nonceIn, organization }
+      { nonceIn, organization, isLoginFlow: true }
     );
 
     return {
@@ -1378,7 +1379,7 @@ export class Auth0Client {
       | TokenExchangeRequestOptions,
     additionalParameters?: RequestTokenAdditionalParameters
   ) {
-    const { nonceIn, organization, scopesToRequest } =
+    const { nonceIn, organization, scopesToRequest, isLoginFlow } =
       additionalParameters || {};
 
     let prevSub: string | undefined;
@@ -1417,7 +1418,7 @@ export class Auth0Client {
     try {
       const newSub = decodedToken?.claims?.sub;
 
-      if (prevSub && newSub && prevSub !== newSub) {
+      if (isLoginFlow && prevSub && newSub && prevSub !== newSub) {
         console.warn(
           '[auth0-spa-js] Detected login for a different user — clearing cache.'
         );
@@ -1696,4 +1697,5 @@ interface RequestTokenAdditionalParameters {
   nonceIn?: string;
   organization?: string;
   scopesToRequest?: string;
+  isLoginFlow?: boolean;
 }
