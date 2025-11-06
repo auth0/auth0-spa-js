@@ -661,5 +661,61 @@ describe('Auth0Client', () => {
         code_challenge_method: 'S256'
       });
     });
+
+    it('clears both cacheManager and userCache when a different user logs in', async () => {
+      const auth0 = setup({ useRefreshTokens: true });
+
+      // Spy on internal caches
+      const clearCacheSpy = jest.spyOn(auth0['cacheManager'], 'clear');
+      const removeUserCacheSpy = jest.spyOn(auth0['userCache'], 'remove');
+      const setIdTokenSpy = jest.spyOn(auth0['cacheManager'], 'setIdToken');
+
+      // ---- First login (User A) ----
+      mockVerify.mockReturnValueOnce({
+        claims: { sub: 'user_A', name: 'Alice' },
+        user: { sub: 'user_A', name: 'Alice' }
+      });
+
+      await loginWithRedirect(auth0);
+
+      // ✅ Verify User A’s token stored in cache
+      expect(setIdTokenSpy).toHaveBeenCalledWith(
+        TEST_CLIENT_ID,
+        expect.any(String),
+        expect.objectContaining({
+          claims: expect.objectContaining({ sub: 'user_A' })
+        })
+      );
+
+      // ✅ Verify User A data returned
+      const userA = await auth0.getUser();
+      expect(userA).toEqual({ sub: 'user_A', name: 'Alice' });
+
+      // ---- Second login (User B) ----
+      mockVerify.mockReturnValueOnce({
+        claims: { sub: 'user_B', name: 'Bob' },
+        user: { sub: 'user_B', name: 'Bob' }
+      });
+
+      await loginWithRedirect(auth0);
+
+      // ✅ Both caches cleared when user switched
+      expect(clearCacheSpy).toHaveBeenCalledWith(TEST_CLIENT_ID);
+      expect(removeUserCacheSpy).toHaveBeenCalled();
+
+      // ✅ New token set for User B
+      expect(setIdTokenSpy).toHaveBeenCalledWith(
+        TEST_CLIENT_ID,
+        expect.any(String),
+        expect.objectContaining({
+          claims: expect.objectContaining({ sub: 'user_B' })
+        })
+      );
+
+      // ✅ New user data is returned (and distinct from User A)
+      const userB = await auth0.getUser();
+      expect(userB).toEqual({ sub: 'user_B', name: 'Bob' });
+      expect(userB).not.toEqual(userA);
+    });
   });
 });
