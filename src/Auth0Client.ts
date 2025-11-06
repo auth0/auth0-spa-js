@@ -1380,6 +1380,18 @@ export class Auth0Client {
   ) {
     const { nonceIn, organization, scopesToRequest } =
       additionalParameters || {};
+
+    let prevSub: string | undefined;
+    try {
+      const previousEntry = await this._getIdTokenFromCache();
+      prevSub = previousEntry?.decodedToken?.claims?.sub;
+    } catch (err) {
+      console.warn(
+        '[auth0-spa-js] Unable to read previous user from cache before token request.',
+        err
+      );
+    }
+
     const authResult = await oauthToken(
       {
         baseUrl: this.domainUrl,
@@ -1403,8 +1415,6 @@ export class Auth0Client {
 
     // Clear cached tokens if a different user logs in
     try {
-      const previousEntry = await this._getIdTokenFromCache();
-      const prevSub = previousEntry?.decodedToken?.claims?.sub;
       const newSub = decodedToken?.claims?.sub;
 
       if (prevSub && newSub && prevSub !== newSub) {
