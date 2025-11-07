@@ -50,6 +50,6 @@ export {
 
 export { type FetcherConfig } from './fetcher';
 
-export {
-  MyAccountApiError
-} from './MyAccountApiClient';
+export { MyAccountApiError } from './MyAccountApiClient';
+
+export { CustomTokenExchangeOptions } from './TokenExchange';
