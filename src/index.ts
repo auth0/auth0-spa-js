@@ -55,3 +55,7 @@ export {
 } from './MyAccountApiClient';
 
 export { MfaApiClient } from './mfa';
+
+export {
+  CustomTokenExchangeOptions
+} from './TokenExchange';
