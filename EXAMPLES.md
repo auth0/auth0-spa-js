@@ -662,8 +662,9 @@ Use the new `connectAccountWithRedirect` method to redirect the user to the thir
 // Start the connect flow by redirecting to the thrid party API's login, defined as an Auth0 connection
 await auth0.connectAccountWithRedirect({
   connection: '<CONNECTION eg, google-apps-connection>',
-  authorization_params: {
-    scope: '<SCOPE eg https://www.googleapis.com/auth/calendar.acls.readonly>'
+  scopes: ['<SCOPE eg https://www.googleapis.com/auth/calendar.acls.readonly>'],
+  authorizationParams: {
+    // additional authorization params to forward to the authorization server
   }
 });
 
