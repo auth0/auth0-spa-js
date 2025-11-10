@@ -679,3 +679,6 @@ if ((query.has('connect_code') || query.has('error')) && query.has('state')) {
 ```
 
 You can now [call the API](#calling-an-api) with your access token and the API can use [Access Token Exchange with Token Vault](https://auth0.com/docs/secure/tokens/token-vault/access-token-exchange-with-token-vault) to get tokens from the Token Vault to access third party APIs on behalf of the user.
+
+> [!IMPORTANT]  
+> You must enable `Offline Access` from the Connection Permissions settings to be able to use the connection with Connected Accounts.

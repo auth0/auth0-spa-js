@@ -1547,6 +1547,8 @@ export class Auth0Client {
   /**
    * Initiates a redirect to connect the user's account with a specified connection.
    * This method generates PKCE parameters, creates a transaction, and redirects to the /connect endpoint.
+   * 
+   * You must enable `Offline Access` from the Connection Permissions settings to be able to use the connection with Connected Accounts.
    *
    * @template TAppState - The application state to persist through the transaction.
    * @param {RedirectConnectAccountOptions<TAppState>} options - Options for the connect account redirect flow.

@@ -555,7 +555,9 @@ export interface RedirectConnectAccountOptions<TAppState = any> {
    */
   connection: string;
 
-  /** Array of scopes to request from the Identity Provider during the connect account flow. */
+  /**
+   * Array of scopes to request from the Identity Provider during the connect account flow.
+   */
   scopes?: string[];
 
   /**
