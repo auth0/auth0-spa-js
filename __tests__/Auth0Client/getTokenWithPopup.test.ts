@@ -8,6 +8,7 @@ import * as scope from '../../src/scope';
 import {
   assertPostFn,
   fetchResponse,
+  setupFailingPopup,
   setupFn,
   setupMessageEventLister
 } from './helpers';
@@ -24,7 +25,7 @@ import {
   TEST_STATE
 } from '../constants';
 
-import { Auth0ClientOptions } from '../../src';
+import { Auth0ClientOptions, PopupOpenError } from '../../src';
 import { DEFAULT_AUTH0_CLIENT } from '../../src/constants';
 import { expect } from '@jest/globals';
 
@@ -214,5 +215,12 @@ describe('Auth0Client', () => {
 
       expect(config.popup.location.href).toMatch(/global-audience/);
     });
+
+    it('should fail if the popup cannot be opened', async () => {
+      const auth0 = setup();
+      setupFailingPopup(mockWindow);
+
+      await expect(auth0.getTokenWithPopup()).rejects.toThrow(PopupOpenError);
+    })
   });
 });
