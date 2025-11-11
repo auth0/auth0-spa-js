@@ -29,6 +29,7 @@ export {
   TimeoutError,
   PopupTimeoutError,
   PopupCancelledError,
+  PopupOpenError,
   MfaRequiredError,
   MissingRefreshTokenError,
   UseDpopNonceError
