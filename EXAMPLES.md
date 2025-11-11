@@ -662,8 +662,9 @@ Use the new `connectAccountWithRedirect` method to redirect the user to the thir
 // Start the connect flow by redirecting to the thrid party API's login, defined as an Auth0 connection
 await auth0.connectAccountWithRedirect({
   connection: '<CONNECTION eg, google-apps-connection>',
-  authorization_params: {
-    scope: '<SCOPE eg https://www.googleapis.com/auth/calendar.acls.readonly>'
+  scopes: ['<SCOPE eg https://www.googleapis.com/auth/calendar.acls.readonly>'],
+  authorizationParams: {
+    // additional authorization params to forward to the authorization server
   }
 });
 
@@ -678,3 +679,6 @@ if ((query.has('connect_code') || query.has('error')) && query.has('state')) {
 ```
 
 You can now [call the API](#calling-an-api) with your access token and the API can use [Access Token Exchange with Token Vault](https://auth0.com/docs/secure/tokens/token-vault/access-token-exchange-with-token-vault) to get tokens from the Token Vault to access third party APIs on behalf of the user.
+
+> [!IMPORTANT]  
+> You must enable `Offline Access` from the Connection Permissions settings to be able to use the connection with Connected Accounts.
