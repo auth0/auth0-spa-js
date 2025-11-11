@@ -50,6 +50,9 @@ describe('Auth0Client', () => {
       const options: RedirectConnectAccountOptions<any> = {
         connection: 'google-oauth2',
         scopes: ['profile', 'email'],
+        authorization_params: {
+          prompt: 'consent',
+        }
       };
 
       await client.connectAccountWithRedirect(options);
@@ -61,6 +64,9 @@ describe('Auth0Client', () => {
           state: expect.any(String),
           code_challenge: expect.any(String),
           code_challenge_method: 'S256',
+          authorization_params: {
+            prompt: 'consent',
+          }
         })
       );
     });

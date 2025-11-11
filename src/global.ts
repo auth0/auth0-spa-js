@@ -557,6 +557,12 @@ export interface RedirectConnectAccountOptions<TAppState = any> {
 
   /**
    * Array of scopes to request from the Identity Provider during the connect account flow.
+   * 
+   * @example
+   * await auth0.connectAccountWithRedirect({
+   *   connection: 'google-oauth2',
+   *   scopes: ['https://www.googleapis.com/auth/calendar']
+   * });
    */
   scopes?: string[];
 
@@ -565,17 +571,7 @@ export interface RedirectConnectAccountOptions<TAppState = any> {
    *
    * @example
    * await auth0.connectAccountWithRedirect({
-   *   connection: 'google-oauth2',
-   *   scopes: ['https://www.googleapis.com/auth/calendar'],
-   *   authorization_params: {
-   *     // additional authorization params to forward to the authorization server
-   *   }
-   * });
-   *
-   * @example
-   * await auth0.connectAccountWithRedirect({
    *   connection: 'github',
-   *   scopes: ['repo', 'user'],
    *   authorization_params: {
    *     audience: 'https://api.github.com'
    *   }
