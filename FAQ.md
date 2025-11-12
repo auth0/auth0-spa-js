@@ -2,6 +2,9 @@
 
 Below are a number of questions or issues that have arisen from using the SDK.
 
+
+
+
 ## Why is the user logged out when they refresh the page in their SPA?
 
 After logging in, if the page is refreshed and the user appears logged out, it usually means that the silent authentication step has failed to work.
