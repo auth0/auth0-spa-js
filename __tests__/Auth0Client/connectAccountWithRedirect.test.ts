@@ -49,7 +49,10 @@ describe('Auth0Client', () => {
     it('should call myAccountApi.connectAccount with correct params', async () => {
       const options: RedirectConnectAccountOptions<any> = {
         connection: 'google-oauth2',
-        authorization_params: { scope: 'profile email' }
+        scopes: ['profile', 'email'],
+        authorization_params: {
+          prompt: 'consent',
+        }
       };
 
       await client.connectAccountWithRedirect(options);
@@ -57,10 +60,13 @@ describe('Auth0Client', () => {
       expect(mockMyAccountApi.connectAccount).toHaveBeenCalledWith(
         expect.objectContaining({
           connection: 'google-oauth2',
-          authorization_params: { scope: 'profile email' },
+          scopes: ['profile', 'email'],
           state: expect.any(String),
           code_challenge: expect.any(String),
           code_challenge_method: 'S256',
+          authorization_params: {
+            prompt: 'consent',
+          }
         })
       );
     });
