@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Auth0 - Connected Accounts</title>
+  <meta charset="utf-8" />
+  <link
+    rel="stylesheet"
+    href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
+    integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh"
+    crossorigin="anonymous"
+  />
+  <script src="/auth0-spa-js.development.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+</head>
+<body class="bg-light">
+<div id="app" class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-md-8 col-lg-8">
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <h2 class="card-title text-center mb-4">Auth0 Connected Accounts</h2>
+          <form @submit.prevent="initClient" class="mb-3">
+            <div class="form-group">
+              <label for="domain">Domain</label>
+              <input id="domain" v-model="domain" required class="form-control" />
+              <small class="form-text text-muted">
+                Use a tenant that supports Connected Accounts.
+              </small>
+            </div>
+            <div class="form-group">
+              <label for="clientId">Client ID</label>
+              <input id="clientId" v-model="clientId" required class="form-control" />
+            </div>
+            <div class="form-group">
+              <label for="audience">Audience</label>
+              <input id="audience" v-model="audience" required class="form-control" />
+              <small class="form-text text-muted">
+                Example: <code>https://my-first-party-api.com</code>
+              </small>
+            </div>
+            <div class="form-group">
+              <label for="scopes">Scopes</label>
+              <input id="scopes" v-model="scopes" required class="form-control" />
+              <small class="form-text text-muted">
+                You need to request at least offline_access, e.g. <code>openid profile email offline_access</code>
+              </small>
+            </div>
+            <button type="submit" class="btn btn-primary btn-block">Init Auth0 Client</button>
+          </form>
+          <div class="card bg-light mb-3">
+            <div class="card-body">
+              <h5 class="card-title">Connect Account</h5>
+              <div class="form-group">
+                <label for="connection">Connection</label>
+                <input
+                  id="connection"
+                  v-model="connection"
+                  class="form-control"
+                  placeholder="e.g., google-oauth2"
+                />
+              </div>
+              <div class="form-group">
+                <label for="connectionScope">Scope</label>
+                <input
+                  id="connectionScope"
+                  v-model="connectionScope"
+                  class="form-control"
+                  placeholder="e.g., openid profile email"
+                />
+              </div>
+              <button
+                @click="connect(connection, connectionScope)"
+                :disabled="!auth0 || !connection"
+                class="btn btn-primary btn-block"
+              >
+                Connect Account
+              </button>
+            </div>
+          </div>
+          <div v-if="redirectResult" class="mt-3">
+            <h6>Redirect Callback Result:</h6>
+            <pre class="bg-white p-3 border rounded" style="max-height: 400px; overflow-y: auto;">{{ JSON.stringify(redirectResult, null, 2) }}</pre>
+          </div>
+          <button @click="showConnectionsAndConnectedAccounts" :disabled="!auth0" class="btn btn-success btn-block mb-3">
+            Show Connections and Connected Accounts
+          </button>
+          <div v-if="connections.length">
+            <h4 class="mb-3">Connections</h4>
+            <div class="table-responsive">
+              <table class="table table-bordered table-striped">
+                <thead class="thead-light">
+                <tr>
+                  <th>Name</th>
+                  <th>Type</th>
+                  <th>Scope</th>
+                  <th></th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr v-for="conn in connections" :key="conn.id">
+                  <td>{{ conn.name }}</td>
+                  <td>{{ conn.strategy }}</td>
+                  <td>{{ conn.scopes.join(',') }}</td>
+                  <td>
+                    <button
+                      class="btn btn-sm btn-outline-primary"
+                      @click="connect(conn.name, conn.scopes)"
+                    >
+                      Connect
+                    </button>
+                  </td>
+                </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div v-if="accounts.length">
+            <h4 class="mb-3">Connected Accounts</h4>
+            <div class="table-responsive">
+              <table class="table table-bordered table-striped">
+                <thead class="thead-light">
+                <tr>
+                  <th>Name</th>
+                  <th>Type</th>
+                  <th>Status</th>
+                  <th></th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr v-for="acc in accounts" :key="acc.id">
+                  <td>{{ acc.connection }}</td>
+                  <td>{{ acc.access_type }}</td>
+                  <td>{{ acc.scopes.join(',') }}</td>
+                  <td>
+                    <button
+                      class="btn btn-sm btn-outline-primary"
+                      @click="deleteAccount(acc.id)"
+                    >
+                      Delete
+                    </button>
+                  </td>
+                </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div v-if="error" class="alert alert-danger mt-3">{{ error }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+  window.app = new Vue({
+    el: '#app',
+    data() {
+      const settings = JSON.parse(localStorage.getItem('connected-accounts-settings') || '{}');
+      const manualSettings = JSON.parse(localStorage.getItem('manual-connect-settings') || '{}');
+      return {
+        domain: settings.domain,
+        clientId: settings.clientId,
+        audience: settings.audience,
+        scopes: settings.scopes,
+        connection: manualSettings.connection || '',
+        connectionScope: manualSettings.scope || '',
+        auth0: null,
+        myAccountApiIdentifier: null,
+        myAccountFetcher: null,
+        connections: [],
+        accounts: [],
+        redirectResult: null,
+        error: ''
+      };
+    },
+    methods: {
+      saveSettings() {
+        localStorage.setItem(
+          'connected-accounts-settings',
+          JSON.stringify({
+            domain: this.domain,
+            clientId: this.clientId,
+            audience: this.audience,
+            scopes: this.scopes,
+            connection: this.connection,
+            connectionScope: this.connectionScope
+          })
+        );
+      },
+      loadSettings() {
+        const settings = JSON.parse(localStorage.getItem('connected-accounts-settings') || '{}');
+        if (settings.domain) this.domain = settings.domain;
+        if (settings.clientId) this.clientId = settings.clientId;
+        if (settings.audience) this.audience = settings.audience;
+        if (settings.scopes) this.scopes = settings.scopes;
+        if (settings.connection) this.connection = settings.connection;
+        if (settings.connectionScope) this.connectionScope = settings.connectionScope;
+      },
+      async initClient() {
+        this.saveSettings();
+        this.auth0 = new auth0.Auth0Client({
+          domain: this.domain,
+          clientId: this.clientId,
+          useRefreshTokens: true,
+          cacheLocation: 'localstorage',
+          authorizationParams: {
+            redirect_uri: `${window.location.origin}/connect_accounts.html`,
+            audience: this.audience
+          },
+          useMrrt: true,
+          useDpop: true,
+        });
+        const authenticated = await this.auth0.isAuthenticated();
+        if (!authenticated) {
+          await this.auth0.loginWithPopup({ authorizationParams: { scopes: this.scopes } });
+        }
+        this.myAccountApiIdentifier = this.domain.startsWith('http') ? `${this.domain}/me/` : `https://${this.domain}/me/`;
+        this.myAccountFetcher = this.auth0.createFetcher({
+          dpopNonceId: 'my_account_api',
+          getAccessToken: () =>
+            this.auth0.getTokenSilently({
+              authorizationParams: {
+                scope: 'read:me:connected_accounts delete:me:connected_accounts',
+                audience: this.myAccountApiIdentifier
+              },
+              detailedResponse: true
+            })
+        });
+        this.error = '';
+        this.connections = [];
+        this.accounts = [];
+      },
+      async showConnectionsAndConnectedAccounts() {
+        this.connections = [];
+        this.accounts = [];
+        try {
+          const connectionsRes = await this.myAccountFetcher.fetchWithAuth(
+            `${this.myAccountApiIdentifier}v1/connected-accounts/connections`
+          );
+          const accountsRes = await this.myAccountFetcher.fetchWithAuth(
+            `${this.myAccountApiIdentifier}v1/connected-accounts/accounts`
+          );
+          if (!connectionsRes.ok || !accountsRes.ok) {
+            throw new Error(`Failed to fetch: ${
+              (!connectionsRes.ok ? `connections: ${connectionsRes.statusText || connectionsRes.status}` : '') +
+              (!connectionsRes.ok && !accountsRes.ok ? '; ' : '') +
+              (!accountsRes.ok ? `accounts: ${accountsRes.statusText || accountsRes.status}` : '')
+            }`);
+          }
+          const connectionsData = await connectionsRes.json();
+          this.connections = connectionsData.connections || connectionsData;
+          const accountsData = await accountsRes.json();
+          this.accounts = accountsData.accounts || accountsData;
+        } catch (e) {
+          this.error = e.message || e;
+        }
+      },
+      async connect(connection, scope) {
+        this.saveSettings();
+        try {
+          scope = Array.isArray(scope) ? scope.join(' ') : scope;
+          await this.auth0.connectAccountWithRedirect({ connection, authorization_params: { scope: scope } });
+        } catch (error) {
+          this.error = error.message || error;
+        }
+      },
+      async deleteAccount(id) {
+        const connectionsRes = await this.myAccountFetcher.fetchWithAuth(
+          `${this.myAccountApiIdentifier}v1/connected-accounts/accounts/${id}`,
+          { method: 'DELETE' }
+        );
+        if (connectionsRes.ok) {
+          await this.showConnectionsAndConnectedAccounts();
+        } else {
+          this.error = `Failed to delete account with id ${id}: ${connectionsRes.statusText || connectionsRes.status}`;
+        }
+      },
+    },
+    async mounted() {
+      this.loadSettings();
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.has('state')) {
+        await this.initClient();
+        try {
+          this.redirectResult = await this.auth0.handleRedirectCallback();
+        } catch (e) {
+          this.error = e.message || e;
+        } finally {
+          window.history.replaceState({}, document.title, window.location.pathname);
+        }
+      }
+    }
+  });
+</script>
+</body>
+</html>

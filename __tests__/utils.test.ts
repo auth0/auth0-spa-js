@@ -10,8 +10,12 @@ import {
   runIframe,
   urlDecodeB64,
   getCrypto,
-  validateCrypto
+  validateCrypto,
+  fromEntries,
+  stripAuth0Client
 } from '../src/utils';
+
+import { buildGetTokenSilentlyLockKey } from '../src/Auth0Client.utils';
 
 import { DEFAULT_AUTHORIZE_TIMEOUT_IN_SECONDS } from '../src/constants';
 import { expect } from '@jest/globals';
@@ -492,5 +496,140 @@ describe('utils', () => {
       auth0-spa-js must run on a secure origin. See https://github.com/auth0/auth0-spa-js/blob/main/FAQ.md#why-do-i-get-auth0-spa-js-must-run-on-a-secure-origin for more information.
     `);
     });
+  });
+
+  describe('fromEntries', () => {
+    const data = { a: 'b', c: 'd' };
+    const iterable = new Headers(data);
+
+    let output: Record<string, string>;
+
+    beforeEach(() => {
+      output = fromEntries(iterable);
+    });
+
+    it('converts an iterable into a POJO', () => expect(output).toEqual(data));
+  });
+
+  describe('stripAuth0Client', () => {
+    it("should remove any property that isn't name, version or env", () => {
+      const auth0Client = {
+        name: 'test',
+        version: '1.0.0',
+        env: {
+          node: 'v12.0.0'
+        },
+        users: ['user1', 'user2'],
+        other: 'other'
+      };
+
+      const result = stripAuth0Client(auth0Client);
+
+      expect(result).not.toHaveProperty('users');
+      expect(result).not.toHaveProperty('other');
+      expect(result).toEqual({
+        name: 'test',
+        version: '1.0.0',
+        env: {
+          node: 'v12.0.0'
+        }
+      });
+    });
+
+    it('should remove name when not string', () => {
+      const auth0Client = {
+        name: 1,
+        version: '1.0.0',
+        env: {
+          node: 'v12.0.0'
+        }
+      };
+
+      const result = stripAuth0Client(auth0Client);
+      expect(result).not.toHaveProperty('name');
+      expect(result).toEqual({
+        version: '1.0.0',
+        env: {
+          node: 'v12.0.0'
+        }
+      });
+    });
+
+    it('should remove version when not string or number', () => {
+      const auth0Client = {
+        name: 'test',
+        version: true,
+        env: {
+          node: 'v12.0.0'
+        }
+      };
+
+      const result = stripAuth0Client(auth0Client);
+      expect(result).not.toHaveProperty('version');
+      expect(result).toEqual({
+        name: 'test',
+        env: {
+          node: 'v12.0.0'
+        }
+      });
+    });
+
+    it('should remove env when not object', () => {
+      const auth0Client = {
+        name: 'test',
+        version: 2,
+        env: 123
+      };
+
+      const result = stripAuth0Client(auth0Client);
+      expect(result).not.toHaveProperty('env');
+      expect(result).toEqual({
+        name: 'test',
+        version: 2
+      });
+    });
+  });
+});
+
+describe('buildGetTokenSilentlyLockKey', () => {
+  it('should build lock key with client ID and audience', () => {
+    const result = buildGetTokenSilentlyLockKey(
+      'test-client-id',
+      'test-audience'
+    );
+    expect(result).toBe(
+      'auth0.lock.getTokenSilently.test-client-id.test-audience'
+    );
+  });
+
+  it('should build lock key with default audience when none provided', () => {
+    const result = buildGetTokenSilentlyLockKey('test-client-id', 'default');
+    expect(result).toBe('auth0.lock.getTokenSilently.test-client-id.default');
+  });
+
+  it('should handle special characters in client ID and audience', () => {
+    const result = buildGetTokenSilentlyLockKey(
+      'client-with-special@chars',
+      'audience/with/slashes'
+    );
+    expect(result).toBe(
+      'auth0.lock.getTokenSilently.client-with-special@chars.audience/with/slashes'
+    );
+  });
+
+  it('should create different keys for different client IDs', () => {
+    const result1 = buildGetTokenSilentlyLockKey('client1', 'audience');
+    const result2 = buildGetTokenSilentlyLockKey('client2', 'audience');
+    expect(result1).not.toBe(result2);
+    expect(result1).toBe('auth0.lock.getTokenSilently.client1.audience');
+    expect(result2).toBe('auth0.lock.getTokenSilently.client2.audience');
+  });
+
+  it('should create different keys for different audiences', () => {
+    const result1 = buildGetTokenSilentlyLockKey('client', 'audience1');
+    const result2 = buildGetTokenSilentlyLockKey('client', 'audience2');
+    expect(result1).not.toBe(result2);
+    expect(result1).toBe('auth0.lock.getTokenSilently.client.audience1');
+    expect(result2).toBe('auth0.lock.getTokenSilently.client.audience2');
   });
 });

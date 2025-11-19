@@ -1,5 +1,66 @@
 # Change Log
 
+## [v2.9.0](https://github.com/auth0/auth0-spa-js/tree/v2.9.0) (2025-11-17)
+[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.8.0...v2.9.0)
+
+**Added**
+- feat: add support `scopes` parameter for connected accounts [\#1458](https://github.com/auth0/auth0-spa-js/pull/1458) ([guabu](https://github.com/guabu))
+
+**Security**
+- security:  Upgrade component-cdn-uploader to v2.4.0 to address critical vulnerability of form-data package [\#1454](https://github.com/auth0/auth0-spa-js/pull/1454) ([ankita10119](https://github.com/ankita10119))
+
+## [v2.8.0](https://github.com/auth0/auth0-spa-js/tree/v2.8.0) (2025-10-27)
+[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.7.0...v2.8.0)
+
+**Added**
+- feat: ensure to only lock for the same audience and client_id [\#1408](https://github.com/auth0/auth0-spa-js/pull/1408) ([frederikprijck](https://github.com/frederikprijck))
+- Allow authorizationParameters.scope to accept an object [\#1446](https://github.com/auth0/auth0-spa-js/pull/1446) ([aridibag](https://github.com/aridibag))
+
+**Fixed**
+- fix: ensure to strip auth0Client [\#1438](https://github.com/auth0/auth0-spa-js/pull/1438) ([frederikprijck](https://github.com/frederikprijck))
+- Avoid saving token when MissingRefreshTokenError is thrown [\#1448](https://github.com/auth0/auth0-spa-js/pull/1448) ([aridibag](https://github.com/aridibag))
+
+## [v2.7.0](https://github.com/auth0/auth0-spa-js/tree/v2.7.0) (2025-10-17)
+[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.6.0...v2.7.0)
+
+**Added**
+- Retry when DPoP nonce is expired [\#1445](https://github.com/auth0/auth0-spa-js/pull/1445) ([adamjmcgrath](https://github.com/adamjmcgrath))
+- [ESD-52771] Support mix of DPoP and Bearer in the fetcher [\#1442](https://github.com/auth0/auth0-spa-js/pull/1442) ([adamjmcgrath](https://github.com/adamjmcgrath))
+
+**Fixed**
+- Fix MRRT with default audience in worker [\#1439](https://github.com/auth0/auth0-spa-js/pull/1439) ([aridibag](https://github.com/aridibag))
+- Fetcher: fix incorrect URL building when `baseUrl` is present [\#1435](https://github.com/auth0/auth0-spa-js/pull/1435) ([martinml](https://github.com/martinml))
+
+## [v2.6.0](https://github.com/auth0/auth0-spa-js/tree/v2.6.0) (2025-10-10)
+[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.5.0...v2.6.0)
+
+**Added**
+- Add support for connected accounts [\#1422](https://github.com/auth0/auth0-spa-js/pull/1422) ([adamjmcgrath](https://github.com/adamjmcgrath))
+
+**Fixed**
+- Fetcher should set DPoP nonce with nonce id [\#1431](https://github.com/auth0/auth0-spa-js/pull/1431) ([adamjmcgrath](https://github.com/adamjmcgrath))
+- fix: do not mark setAuthorizationHeader as async [\#1428](https://github.com/auth0/auth0-spa-js/pull/1428) ([frederikprijck](https://github.com/frederikprijck))
+
+## [v2.5.0](https://github.com/auth0/auth0-spa-js/tree/v2.5.0) (2025-10-01)
+[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.4.1...v2.5.0)
+
+**Added**
+- Add Support for Multi-Resource Refresh Tokens (MRRT) [\#1386](https://github.com/auth0/auth0-spa-js/pull/1386) ([aridibag](https://github.com/aridibag))
+- Make Fetcher to be Scope- and Audience-Aware [\#1414](https://github.com/auth0/auth0-spa-js/pull/1414) ([frederikprijck](https://github.com/frederikprijck))
+
+## [v2.4.1](https://github.com/auth0/auth0-spa-js/tree/v2.4.1) (2025-09-10)
+[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.4.0...v2.4.1)
+
+**Fixed**
+- fix: move runtime dependencies from devDependencies to dependencies [\#1411](https://github.com/auth0/auth0-spa-js/pull/1411) ([gyaneshgouraw-okta](https://github.com/gyaneshgouraw-okta))
+
+## [v2.4.0](https://github.com/auth0/auth0-spa-js/tree/v2.4.0) (2025-09-08)
+[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.3.0...v2.4.0)
+
+**Added**
+- Add HTTP fetcher for DPoP [\#1400](https://github.com/auth0/auth0-spa-js/pull/1400) ([martinml](https://github.com/martinml))
+- Add support for DPoP [\#1388](https://github.com/auth0/auth0-spa-js/pull/1388) ([martinml](https://github.com/martinml))
+
 ## [v2.3.0](https://github.com/auth0/auth0-spa-js/tree/v2.3.0) (2025-07-16)
 [Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.2.0...v2.3.0)
 

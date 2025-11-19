@@ -36,6 +36,24 @@ export class AuthenticationError extends GenericError {
 }
 
 /**
+ * Thrown when handling the redirect callback for the connect flow fails, will be one of Auth0's
+ * Authentication API's Standard Error Responses: https://auth0.com/docs/api/authentication?javascript#standard-error-responses
+ */
+export class ConnectError extends GenericError {
+  constructor(
+    error: string,
+    error_description: string,
+    public connection: string,
+    public state: string,
+    public appState: any = null
+  ) {
+    super(error, error_description);
+    //https://github.com/Microsoft/TypeScript-wiki/blob/master/Breaking-Changes.md#extending-built-ins-like-error-array-and-map-may-no-longer-work
+    Object.setPrototypeOf(this, ConnectError.prototype);
+  }
+}
+
+/**
  * Thrown when silent auth times out (usually due to a configuration issue) or
  * when network requests to the Auth server timeout.
  */
@@ -93,6 +111,32 @@ export class MissingRefreshTokenError extends GenericError {
       ])}', scope: '${valueOrEmptyString(scope)}')`
     );
     Object.setPrototypeOf(this, MissingRefreshTokenError.prototype);
+  }
+}
+
+/**
+ * Error thrown when there are missing scopes after refreshing a token
+ */
+export class MissingScopesError extends GenericError {
+  constructor(public audience: string, public scope: string) {
+    super(
+      'missing_scopes',
+      `Missing requested scopes after refresh (audience: '${valueOrEmptyString(audience, [
+        'default'
+      ])}', missing scope: '${valueOrEmptyString(scope)}')`
+    );
+    Object.setPrototypeOf(this, MissingScopesError.prototype);
+  }
+}
+
+/**
+ * Error thrown when the wrong DPoP nonce is used and a potential subsequent retry wasn't able to fix it.
+ */
+export class UseDpopNonceError extends GenericError {
+  constructor(public newDpopNonce: string | undefined) {
+    super('use_dpop_nonce', 'Server rejected DPoP proof: wrong nonce');
+
+    Object.setPrototypeOf(this, UseDpopNonceError.prototype);
   }
 }
 

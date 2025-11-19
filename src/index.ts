@@ -23,13 +23,15 @@ export async function createAuth0Client(options: Auth0ClientOptions) {
 export { Auth0Client };
 
 export {
+  ConnectError,
   GenericError,
   AuthenticationError,
   TimeoutError,
   PopupTimeoutError,
   PopupCancelledError,
   MfaRequiredError,
-  MissingRefreshTokenError
+  MissingRefreshTokenError,
+  UseDpopNonceError
 } from './errors';
 
 export {
@@ -45,3 +47,9 @@ export {
   CacheKey,
   CacheKeyData
 } from './cache';
+
+export { type FetcherConfig } from './fetcher';
+
+export { MyAccountApiError } from './MyAccountApiClient';
+
+export { CustomTokenExchangeOptions } from './TokenExchange';

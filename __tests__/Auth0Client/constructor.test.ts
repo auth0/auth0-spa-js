@@ -10,6 +10,8 @@ import { assertUrlEquals, loginWithRedirectFn, setupFn } from './helpers';
 
 import { TEST_CLIENT_ID, TEST_CODE_CHALLENGE, TEST_DOMAIN } from '../constants';
 import { ICache } from '../../src/cache';
+import * as DpopModule from '../../src/dpop/dpop';
+import { DEFAULT_AUDIENCE } from '../../src/constants';
 
 jest.mock('es-cookie');
 jest.mock('../../src/jwt');
@@ -65,6 +67,7 @@ describe('Auth0Client', () => {
     mockWindow.Worker = {};
     jest.spyOn(scope, 'getUniqueScopes');
     sessionStorage.clear();
+    jest.spyOn(DpopModule, 'Dpop').mockReturnThis();
   });
 
   afterEach(() => {
@@ -82,9 +85,9 @@ describe('Auth0Client', () => {
         }
       });
 
-      expect((<any>auth0).scope).toBe(
-        'openid profile email test-scope offline_access'
-      );
+      expect((<any>auth0).scope).toMatchObject({
+        [DEFAULT_AUDIENCE]: 'openid profile email test-scope offline_access'
+      });
     });
 
     it('ensures the openid scope is defined when customizing default scopes', () => {
@@ -94,17 +97,17 @@ describe('Auth0Client', () => {
         }
       });
 
-      expect((<any>auth0).scope).toBe('openid test-scope');
+      expect((<any>auth0).scope).toMatchObject({ [DEFAULT_AUDIENCE]: 'openid test-scope' });
     });
 
     it('allows an empty custom default scope', () => {
       const auth0 = setup({
         authorizationParams: {
-          scope: null
+          scope: undefined
         }
       });
 
-      expect((<any>auth0).scope).toBe('openid');
+      expect((<any>auth0).scope).toMatchObject({ [DEFAULT_AUDIENCE]: 'openid' });
     });
 
     it('should create issuer from domain', () => {
@@ -166,6 +169,36 @@ describe('Auth0Client', () => {
       await loginWithRedirectFn(mockWindow, mockFetch)(auth0);
 
       expect(mockCache.set).toHaveBeenCalled();
+    });
+
+    it('does not create DPoP handler when is disabled', () => {
+      const auth0 = setup({ useDpop: false });
+
+      expect(auth0['dpop']).toBeUndefined();
+    });
+
+    it('creates a DPoP handler when enabled', () => {
+      const auth0 = setup({ useDpop: true });
+
+      expect(auth0['dpop']).not.toBeUndefined();
+      expect(DpopModule.Dpop).toHaveBeenCalledWith(TEST_CLIENT_ID);
+    });
+
+    it('allows an object as scope', () => {
+      const auth0 = setup({
+        useRefreshTokens: true,
+        authorizationParams: {
+          scope: {
+            test1: 'profile email test-scope1',
+            test2: 'profile email test-scope2'
+          }
+        }
+      });
+
+      expect((<any>auth0).scope).toMatchObject({
+        test1: 'openid profile email test-scope1 offline_access',
+        test2: 'openid profile email test-scope2 offline_access',
+      });
     });
   });
 });

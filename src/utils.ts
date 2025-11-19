@@ -24,6 +24,7 @@ export const parseAuthenticationResult = (
   return {
     state: searchParams.get('state')!,
     code: searchParams.get('code') || undefined,
+    connect_code: searchParams.get('connect_code') || undefined,
     error: searchParams.get('error') || undefined,
     error_description: searchParams.get('error_description') || undefined
   };
@@ -161,6 +162,42 @@ const stripUndefined = (params: any) => {
     .reduce((acc, key) => ({ ...acc, [key]: params[key] }), {});
 };
 
+const ALLOWED_AUTH0CLIENT_PROPERTIES = [
+  {
+    key: 'name',
+    type: ['string']
+  },
+  {
+    key: 'version',
+    type: ['string', 'number']
+  },
+  {
+    key: 'env',
+    type: ['object']
+  }
+];
+
+/**
+ * Strips any property that is not present in ALLOWED_AUTH0CLIENT_PROPERTIES
+ * @param auth0Client - The full auth0Client object
+ * @returns The stripped auth0Client object
+ */
+export const stripAuth0Client = (auth0Client: any) => {
+  return Object.keys(auth0Client).reduce((acc: any, key: string) => {
+    const allowedProperty = ALLOWED_AUTH0CLIENT_PROPERTIES.find(
+      p => p.key === key
+    );
+    if (
+      allowedProperty &&
+      allowedProperty.type.includes(typeof auth0Client[key])
+    ) {
+      acc[key] = auth0Client[key];
+    }
+
+    return acc;
+  }, {});
+};
+
 export const createQueryParams = ({ clientId: client_id, ...params }: any) => {
   return new URLSearchParams(
     stripUndefined({ client_id, ...params })
@@ -245,4 +282,19 @@ export const parseNumber = (value: any): number | undefined => {
     return value;
   }
   return parseInt(value, 10) || undefined;
+};
+
+/**
+ * Ponyfill for `Object.fromEntries()`, which is not available until ES2020.
+ *
+ * When the target of this project reaches ES2020, this can be removed.
+ */
+export const fromEntries = <T = any>(
+  iterable: Iterable<[PropertyKey, T]>
+): Record<PropertyKey, T> => {
+  return [...iterable].reduce((obj, [key, val]) => {
+    obj[key] = val;
+
+    return obj;
+  }, {} as Record<PropertyKey, T>);
 };
