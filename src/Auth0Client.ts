@@ -1546,10 +1546,13 @@ export class Auth0Client {
   /**
    * Initiates a redirect to connect the user's account with a specified connection.
    * This method generates PKCE parameters, creates a transaction, and redirects to the /connect endpoint.
+   * 
+   * You must enable `Offline Access` from the Connection Permissions settings to be able to use the connection with Connected Accounts.
    *
    * @template TAppState - The application state to persist through the transaction.
    * @param {RedirectConnectAccountOptions<TAppState>} options - Options for the connect account redirect flow.
    * @param   {string} options.connection - The name of the connection to link (e.g. 'google-oauth2').
+   * @param   {string[]} [options.scopes] - Array of scopes to request from the Identity Provider during the connect account flow.
    * @param   {AuthorizationParams} [options.authorization_params] - Additional authorization parameters for the request to the upstream IdP.
    * @param   {string} [options.redirectUri] - The URI to redirect back to after connecting the account.
    * @param   {TAppState} [options.appState] - Application state to persist through the transaction.
@@ -1565,6 +1568,7 @@ export class Auth0Client {
       openUrl,
       appState,
       connection,
+      scopes,
       authorization_params,
       redirectUri = this.options.authorizationParams.redirect_uri ||
       window.location.origin
@@ -1582,6 +1586,7 @@ export class Auth0Client {
     const { connect_uri, connect_params, auth_session } =
       await this.myAccountApi.connectAccount({
         connection,
+        scopes,
         redirect_uri: redirectUri,
         state,
         code_challenge,
