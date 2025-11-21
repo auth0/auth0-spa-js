@@ -39,6 +39,7 @@ import {
   GenericError,
   MissingRefreshTokenError,
   MissingScopesError,
+  PopupOpenError,
   TimeoutError
 } from './errors';
 
@@ -407,9 +408,7 @@ export class Auth0Client {
       config.popup = openPopup('');
 
       if (!config.popup) {
-        throw new Error(
-          'Unable to open a popup for loginWithPopup - window.open returned `null`'
-        );
+        throw new PopupOpenError();
       }
     }
 
@@ -760,7 +759,7 @@ export class Auth0Client {
    *
    * If refresh tokens are used, the token endpoint is called directly with the
    * 'refresh_token' grant. If no refresh token is available to make this call,
-   * the SDK will only fall back to using an iframe to the '/authorize' URL if 
+   * the SDK will only fall back to using an iframe to the '/authorize' URL if
    * the `useRefreshTokensFallback` setting has been set to `true`. By default this
    * setting is `false`.
    *
