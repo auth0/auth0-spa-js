@@ -1,5 +1,11 @@
 # Change Log
 
+## [v2.9.1](https://github.com/auth0/auth0-spa-js/tree/v2.9.1) (2025-11-21)
+[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.9.0...v2.9.1)
+
+**Added**
+- Export type for Custom Token Exchange support [\#1461](https://github.com/auth0/auth0-spa-js/pull/1461) ([yogeshchoudhary147](https://github.com/yogeshchoudhary147))
+
 ## [v2.9.0](https://github.com/auth0/auth0-spa-js/tree/v2.9.0) (2025-11-17)
 [Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.8.0...v2.9.0)
 
