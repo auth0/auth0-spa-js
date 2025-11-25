@@ -298,6 +298,25 @@ export interface Auth0ClientOptions {
 
 
   /**
+   * The response mode to use for silent authentication flows.
+   *
+   * - `'web_message'`: Uses postMessage for communication (default, more secure)
+   * - `'query'`: Uses URL query parameter polling (fallback for restrictive environments)
+   *
+   * This option ONLY affects:
+   * - `getTokenSilently` when using iframe fallback
+   * - `checkSession` (which uses getTokenSilently internally)
+   *
+   * Other authentication methods are NOT affected:
+   * - `loginWithPopup`: Always uses 'web_message'
+   * - `loginWithRedirect`: Always uses 'query'
+   * - `getTokenWithPopup`: Always uses 'web_message'
+   *
+   * @default 'web_message'
+   */
+  silentAuthResponseMode?: 'web_message' | 'query';
+
+  /**
    * URL parameters that will be sent back to the Authorization Server. This can be known parameters
    * defined by Auth0 or custom parameters that you define.
   */

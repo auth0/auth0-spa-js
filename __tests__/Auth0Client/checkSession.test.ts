@@ -189,7 +189,9 @@ describe('Auth0Client', () => {
       expect(utils.runIframe).toHaveBeenCalledWith(
         expect.stringContaining(TEST_ORG_ID),
         `https://${TEST_DOMAIN}`,
-        undefined
+        undefined,
+        'web_message',
+        expect.any(String)
       );
     });
   });
