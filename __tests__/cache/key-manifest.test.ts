@@ -138,4 +138,23 @@ describe('CacheKeyManifest', () => {
     await manifest.remove(randomKey.toKey());
     expect((await manifest.get()).keys).toStrictEqual([key.toKey()]);
   });
+
+  it('should ignore scopes ordering while generating key', async () => {
+    
+    const SOME_SCOPES = 'scope1 scope2 scope3';
+    const key1 = new CacheKey({
+      clientId: TEST_CLIENT_ID,
+      audience: TEST_AUDIENCE,
+      scope: SOME_SCOPES
+    });
+
+    const SOME_SCOPES_REVERSED = 'scope3 scope2 scope1';
+
+    const key2 = new CacheKey({
+      clientId: TEST_CLIENT_ID,
+      audience: TEST_AUDIENCE,
+      scope: SOME_SCOPES_REVERSED
+    });
+    expect(key2.toKey()).toEqual(key1.toKey());
+  });
 });
