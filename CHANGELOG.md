@@ -1,5 +1,11 @@
 # Change Log
 
+## [v2.10.0](https://github.com/auth0/auth0-spa-js/tree/v2.10.0) (2025-12-03)
+[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.9.1...v2.10.0)
+
+**Added**
+- feat: Improve popup open error [\#1292](https://github.com/auth0/auth0-spa-js/pull/1292) ([ArthurKnoep](https://github.com/ArthurKnoep))
+
 ## [v2.9.1](https://github.com/auth0/auth0-spa-js/tree/v2.9.1) (2025-11-21)
 [Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.9.0...v2.9.1)
 
