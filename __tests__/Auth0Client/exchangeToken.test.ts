@@ -327,5 +327,113 @@ describe('Auth0Client', () => {
         'openid profile read:sensitive'
       );
     });
+
+    it('passes organization parameter to _requestToken when provided', async () => {
+      const auth0 = await localSetup({
+        clientId: 'test-client-id',
+        domain: 'test.auth0.com',
+        authorizationParams: {
+          audience: 'https://default-api.com',
+          scope: 'openid profile'
+        }
+      });
+
+      let capturedRequestOptions: any;
+      auth0['_requestToken'] = async function (requestOptions: any) {
+        capturedRequestOptions = requestOptions;
+        return {
+          decodedToken: {
+            encoded: {
+              header: 'fake_header',
+              payload: 'fake_payload',
+              signature: 'fake_signature'
+            },
+            header: {},
+            claims: {
+              __raw: 'fake_raw',
+              org_id: 'org_12345' // Organization ID in token claims
+            },
+            user: {}
+          },
+          id_token: 'fake_id_token',
+          access_token: 'fake_access_token',
+          token_type: 'Bearer',
+          expires_in: 3600,
+          scope: requestOptions.scope
+        };
+      };
+
+      const cteOptions: CustomTokenExchangeOptions = {
+        subject_token: 'external_token_value',
+        subject_token_type: 'urn:acme:legacy-system-token',
+        scope: 'openid profile email',
+        audience: 'https://api.custom.com',
+        organization: 'org_12345'
+      };
+
+      await auth0.exchangeToken(cteOptions);
+
+      expect(capturedRequestOptions).toEqual({
+        grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
+        subject_token: 'external_token_value',
+        subject_token_type: 'urn:acme:legacy-system-token',
+        scope: 'openid profile email',
+        audience: 'https://api.custom.com',
+        organization: 'org_12345'
+      });
+    });
+
+    it('does not pass organization parameter when not provided', async () => {
+      const auth0 = await localSetup({
+        clientId: 'test-client-id',
+        domain: 'test.auth0.com',
+        authorizationParams: {
+          audience: 'https://default-api.com',
+          scope: 'openid profile'
+        }
+      });
+
+      let capturedRequestOptions: any;
+      auth0['_requestToken'] = async function (requestOptions: any) {
+        capturedRequestOptions = requestOptions;
+        return {
+          decodedToken: {
+            encoded: {
+              header: 'fake_header',
+              payload: 'fake_payload',
+              signature: 'fake_signature'
+            },
+            header: {},
+            claims: { __raw: 'fake_raw' },
+            user: {}
+          },
+          id_token: 'fake_id_token',
+          access_token: 'fake_access_token',
+          token_type: 'Bearer',
+          expires_in: 3600,
+          scope: requestOptions.scope
+        };
+      };
+
+      const cteOptions: CustomTokenExchangeOptions = {
+        subject_token: 'external_token_value',
+        subject_token_type: 'urn:acme:legacy-system-token',
+        scope: 'openid profile email',
+        audience: 'https://api.custom.com'
+        // organization is not provided
+      };
+
+      await auth0.exchangeToken(cteOptions);
+
+      // organization should not be present in the request options
+      expect(capturedRequestOptions).toEqual({
+        grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
+        subject_token: 'external_token_value',
+        subject_token_type: 'urn:acme:legacy-system-token',
+        scope: 'openid profile email',
+        audience: 'https://api.custom.com'
+      });
+      expect(capturedRequestOptions.organization).toBeUndefined();
+    });
   });
 });
