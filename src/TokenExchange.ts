@@ -58,6 +58,13 @@ export type CustomTokenExchangeOptions = {
   scope?: string;
 
   /**
+   * ID or name of the organization to use when authenticating a user.
+   * When provided, the user will be authenticated using the organization context.
+   * The organization ID will be present in the access token payload.
+   */
+  organization?: string;
+
+  /**
    * Additional custom parameters for Auth0 Action processing
    *
    * @remarks
