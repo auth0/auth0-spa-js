@@ -1373,6 +1373,19 @@ export class Auth0Client {
       organization
     );
 
+    // When logging in with authorization_code, check if a different user is authenticating
+    // If so, clear the cache to prevent tokens from multiple users coexisting
+    if (options.grant_type === 'authorization_code') {
+      const existingIdToken = await this._getIdTokenFromCache();
+      
+      if (existingIdToken?.decodedToken?.claims?.sub && 
+          existingIdToken.decodedToken.claims.sub !== decodedToken.claims.sub) {
+        // Different user detected - clear cached tokens
+        await this.cacheManager.clear(this.options.clientId);
+        this.userCache.remove(CACHE_KEY_ID_TOKEN_SUFFIX);
+      }
+    }
+
     await this._saveEntryInCache({
       ...authResult,
       decodedToken,
