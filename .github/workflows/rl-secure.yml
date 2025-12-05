@@ -43,8 +43,10 @@ jobs:
           node: ${{ inputs.node-version }}
 
       - name: Create tgz build artifact
+        env:
+          ARTIFACT_NAME: ${{ inputs.artifact-name }}
         run: |
-          tar -czvf ${{ inputs.artifact-name }} *
+          tar -czvf "$ARTIFACT_NAME" *
 
       - id: get_version
         uses: ./.github/actions/get-version

@@ -41,14 +41,19 @@ runs:
 
     - name: Create application
       shell: bash
-      run: ${{ inputs.install }}
+      env:
+        INSTALL_CMD: ${{ inputs.install }}
+      run: $INSTALL_CMD
 
     - name: Install SDK
       shell: bash
+      env:
+        CONTENT_CMD: ${{ inputs.content }}
+        IMPORT_CMD: ${{ inputs.import }}
       run: |
         npm link '../'
-        ${{ inputs.content }}
-        ${{ inputs.import }}
+        $CONTENT_CMD
+        $IMPORT_CMD
       working-directory: my-app
 
     - name: Build application
