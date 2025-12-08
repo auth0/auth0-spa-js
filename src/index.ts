@@ -49,7 +49,11 @@ export {
   CacheKeyData
 } from './cache';
 
-export { type FetcherConfig } from './fetcher';
+export type {
+  FetcherConfig,
+  Fetcher,
+  CustomFetchMinimalOutput
+} from './fetcher';
 
 export { MyAccountApiError } from './MyAccountApiClient';
 
