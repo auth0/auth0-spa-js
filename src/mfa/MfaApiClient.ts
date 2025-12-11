@@ -1,3 +1,4 @@
+import { Auth0Client } from '../Auth0Client';
 import type { TokenEndpointResponse } from '../global';
 import type {
   Authenticator,
@@ -7,6 +8,7 @@ import type {
   ChallengeResponse,
   VerifyChallengeParams
 } from './types';
+import { MfaClient as Auth0AuthJsMfaClient } from '@auth0/auth0-auth-js';
 
 /**
  * Client for Auth0 MFA API operations
@@ -18,19 +20,40 @@ import type {
  * - Initiating MFA challenges
  * - Verifying MFA challenges
  *
+ * This is a wrapper around auth0-auth-js MfaClient that maintains
+ * backward compatibility with the existing spa-js API.
+ *
  * @example
  * ```typescript
- * const mfaClient = auth0.createMfaClient(mfaToken);
+ * const mfaClient = await auth0.createMfaClient(mfaToken);
  * const authenticators = await mfaClient.listAuthenticators();
  * ```
  */
 export class MfaApiClient {
+  private authJsMfaClient: Auth0AuthJsMfaClient;
   private baseUrl: string;
-  private mfaToken: string;
+  private mfatoken: string | null = null;
+  private auth0Client: Auth0Client;
+  private scope?: string;
+  private audience?: string;
 
-  constructor(baseUrl: string, mfaToken: string) {
-    this.baseUrl = baseUrl;
-    this.mfaToken = mfaToken;
+  /**
+   * @internal
+   * Do not instantiate directly. Use Auth0Client.createMfaClient() instead.
+   */
+  constructor(authJsMfaClient: Auth0AuthJsMfaClient, domain: string, auth0Client: Auth0Client) {
+    this.baseUrl = `https://${domain}`;
+    this.authJsMfaClient = authJsMfaClient;
+    this.auth0Client = auth0Client;
+  }
+
+  public setMfaToken(token: string) {
+     this.authJsMfaClient.setMfaToken(token);
+  }
+
+  public setMFAAuthDetails(scope: string, audience?: string) {
+    this.scope = scope;
+    this.audience = audience;
   }
 
   /**
@@ -48,27 +71,13 @@ export class MfaApiClient {
    * // [{ id: 'otp|dev_xxx', authenticator_type: 'otp', active: true }]
    * ```
    */
-  public async listAuthenticators(): Promise<Authenticator[]> {
-    const url = `${this.baseUrl}/mfa/authenticators`;
-
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: {
-        Authorization: `Bearer ${this.mfaToken}`,
-        'Content-Type': 'application/json'
-      }
-    });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(
-        error.error_description || 'Failed to list authenticators'
-      );
+  public async listAuthenticators(token: string): Promise<Authenticator[]> {
+    try {
+      return await this.authJsMfaClient.listAuthenticators();
+    } catch (error: any) {
+      // Map auth-js errors to generic Error for backward compatibility
+      throw new Error(error.message || 'Failed to list authenticators');
     }
-
-    const authenticators = await response.json();
-    // Filter out inactive authenticators as per Auth0 best practices
-    return authenticators;
   }
 
   /**
@@ -101,25 +110,11 @@ export class MfaApiClient {
   public async enrollAuthenticator(
     params: EnrollAuthenticatorParams
   ): Promise<EnrollmentResponse> {
-    const url = `${this.baseUrl}/mfa/associate`;
-
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${this.mfaToken}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(params)
-    });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(
-        error.error_description || 'Failed to enroll authenticator'
-      );
+    try {
+      return await this.authJsMfaClient.enrollAuthenticator(params);
+    } catch (error: any) {
+      throw new Error(error.message || 'Failed to enroll authenticator');
     }
-
-    return await response.json();
   }
 
   /**
@@ -141,24 +136,11 @@ export class MfaApiClient {
    * ```
    */
   public async deleteAuthenticator(authenticatorId: string): Promise<void> {
-    const url = `${this.baseUrl}/mfa/authenticators/${encodeURIComponent(authenticatorId)}`;
-
-    const response = await fetch(url, {
-      method: 'DELETE',
-      headers: {
-        Authorization: `Bearer ${this.mfaToken}`,
-        'Content-Type': 'application/json'
-      }
-    });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(
-        error.error_description || 'Failed to delete authenticator'
-      );
+    try {
+      await this.authJsMfaClient.deleteAuthenticator(authenticatorId);
+    } catch (error: any) {
+      throw new Error(error.message || 'Failed to delete authenticator');
     }
-
-    // Returns void on success (204 No Content)
   }
 
   /**
@@ -196,39 +178,24 @@ export class MfaApiClient {
   public async challengeAuthenticator(
     params: ChallengeParams
   ): Promise<ChallengeResponse> {
-    const url = `${this.baseUrl}/mfa/challenge`;
+    try {
+      // Strip mfa_token and client_id - auth-js stores these internally
+      const authJsParams: any = {
+        challenge_type: params.challenge_type
+      };
 
-    const body: any = {
-      mfa_token: params.mfa_token,
-      client_id: params.client_id,
-      challenge_type: params.challenge_type
-    };
+      if (params.authenticator_id) {
+        authJsParams.authenticator_id = params.authenticator_id;
+      }
 
-    if (params.authenticator_id) {
-      body.authenticator_id = params.authenticator_id;
+      if (params.oob_channel) {
+        authJsParams.oob_channel = params.oob_channel;
+      }
+
+      return await this.authJsMfaClient.challengeAuthenticator(authJsParams);
+    } catch (error: any) {
+      throw new Error(error.message || 'Failed to challenge authenticator');
     }
-
-    if (params.oob_channel) {
-      body.oob_channel = params.oob_channel;
-    }
-
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${this.mfaToken}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(body)
-    });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(
-        error.error_description || 'Failed to challenge authenticator'
-      );
-    }
-
-    return await response.json();
   }
 
   /**
@@ -266,8 +233,9 @@ export class MfaApiClient {
    */
   public async verifyChallenge(
     params: VerifyChallengeParams
-  ): Promise<TokenEndpointResponse> {
+  ) {
     const url = `${this.baseUrl}/oauth/token`;
+    this.authJsMfaClient;
 
     const body: any = {
       mfa_token: params.mfa_token,
@@ -288,22 +256,14 @@ export class MfaApiClient {
     }
 
     // This endpoint doesn't require Bearer auth, just the mfa_token in body
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(body)
+    return this.auth0Client.requestTokenForMfa({
+      grant_type: params.grant_type,
+      mfa_token: params.mfa_token,
+      scope: this.scope || 'openid profile email',
+      audience: this.audience || 'YOUR_DEFAULT_AUDIENCE',
+      otp: params.otp,
+      oob_code: params.oob_code,
+      binding_code: params.binding_code
     });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(
-        errorData.error_description ||
-        `MFA verification failed: ${errorData.error || 'Unknown error'}`
-      );
-    }
-
-    return await response.json();
   }
 }

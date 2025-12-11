@@ -115,6 +115,7 @@ import {
 } from './fetcher';
 import { MyAccountApiClient } from './MyAccountApiClient';
 import { MfaApiClient } from './mfa';
+import { AuthClient as Auth0AuthJsClient } from '@auth0/auth0-auth-js';
 
 /**
  * @ignore
@@ -152,6 +153,8 @@ export class Auth0Client {
   };
   private readonly userCache: ICache = new InMemoryCache().enclosedCache;
   private readonly myAccountApi: MyAccountApiClient;
+  private readonly authJsClient: Auth0AuthJsClient;
+  public readonly mfaClient: MfaApiClient;
 
   private worker?: Worker;
   private readonly activeLockKeys: Set<string> = new Set();
@@ -165,7 +168,7 @@ export class Auth0Client {
   };
 
   constructor(options: Auth0ClientOptions) {
-    console.log("[debug] spa sdk loaded");
+    console.log("%c >>> auth0-spa-js loaded <<<<<", "color: #00c853;");
     this.options = {
       ...this.defaultOptions,
       ...options,
@@ -271,6 +274,15 @@ export class Auth0Client {
       myAccountFetcher,
       myAccountApiIdentifier
     );
+
+    // Initialize auth-js client for MFA support
+    this.authJsClient = new Auth0AuthJsClient({
+      domain: this.options.domain,
+      clientId: this.options.clientId,
+    });
+
+    this.mfaClient = new MfaApiClient(this.authJsClient.mfa, this.options.domain, this);
+    
 
     // Don't use web workers unless using refresh tokens in memory
     if (
@@ -1572,37 +1584,6 @@ export class Auth0Client {
     });
   }
 
-  /**
-   * Creates an MFA API client for managing multi-factor authentication
-   *
-   * The MFA token must have audience `https://{domain}/mfa/` and appropriate scopes:
-   * - `enroll` - For enrolling new authenticators and challenges
-   * - `read:authenticators` - For listing authenticators
-   * - `remove:authenticators` - For deleting authenticators
-   *
-   * @param mfaToken - Access token with MFA audience
-   * @returns MfaApiClient instance
-   *
-   * @example
-   * ```typescript
-   * // First, get MFA-scoped token
-   * const mfaToken = await auth0.getTokenSilently({
-   *   authorizationParams: {
-   *     audience: `https://${domain}/mfa/`,
-   *     scope: 'enroll read:authenticators remove:authenticators'
-   *   }
-   * });
-   *
-   * // Create MFA client
-   * const mfaClient = auth0.createMfaClient(mfaToken);
-   *
-   * // Use MFA methods
-   * const authenticators = await mfaClient.listAuthenticators();
-   * ```
-   */
-  public createMfaClient(mfaToken: string): MfaApiClient {
-    return new MfaApiClient(`${this.domainUrl}`, mfaToken);
-  }
 
   /**
    * Initiates a redirect to connect the user's account with a specified connection.
@@ -1680,6 +1661,8 @@ export class Auth0Client {
     audience?: string
   ) {
     if (!this.options.mfaHandler || this.options.mfaHandler === 'throw') {
+      this.mfaClient.setMfaToken(error.mfa_token);
+      this.mfaClient.setMFAAuthDetails(scope, audience);
       throw error;
     }
 
@@ -1707,6 +1690,22 @@ export class Auth0Client {
       );
       return { access_token: cache!.access_token, scope };
     }
+  }
+
+  public async requestTokenForMfa(
+    options: {
+      grant_type: string;
+      mfa_token: string;
+      scope: string;
+      audience?: string;
+      otp?: string;
+      binding_code?: string;
+      oob_code?: string;
+      recovery_code?: string;
+    },
+    additionalParameters?: RequestTokenAdditionalParameters
+  ): Promise<TokenEndpointResponse> {
+    return this._requestToken(options as any, additionalParameters);
   }
 }
 
