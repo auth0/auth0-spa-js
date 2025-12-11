@@ -1,5 +1,11 @@
 # Change Log
 
+## [v2.11.0](https://github.com/auth0/auth0-spa-js/tree/v2.11.0) (2025-12-11)
+[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.10.0...v2.11.0)
+
+**Added**
+- feat: add organization parameter support to token exchange [\#1477](https://github.com/auth0/auth0-spa-js/pull/1477) ([yogeshchoudhary147](https://github.com/yogeshchoudhary147))
+
 ## [v2.10.0](https://github.com/auth0/auth0-spa-js/tree/v2.10.0) (2025-12-03)
 [Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.9.1...v2.10.0)
 
