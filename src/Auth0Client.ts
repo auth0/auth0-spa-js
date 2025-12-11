@@ -37,6 +37,7 @@ import {
   AuthenticationError,
   ConnectError,
   GenericError,
+  MfaRequiredError,
   MissingRefreshTokenError,
   MissingScopesError,
   PopupOpenError,
@@ -113,6 +114,8 @@ import {
   type CustomFetchMinimalOutput
 } from './fetcher';
 import { MyAccountApiClient } from './MyAccountApiClient';
+import { MfaApiClient } from './mfa';
+import { AuthClient as Auth0AuthJsClient } from '@auth0/auth0-auth-js';
 
 /**
  * @ignore
@@ -150,6 +153,8 @@ export class Auth0Client {
   };
   private readonly userCache: ICache = new InMemoryCache().enclosedCache;
   private readonly myAccountApi: MyAccountApiClient;
+  private readonly authJsClient: Auth0AuthJsClient;
+  public readonly mfaClient: MfaApiClient;
 
   private worker?: Worker;
   private readonly activeLockKeys: Set<string> = new Set();
@@ -163,6 +168,7 @@ export class Auth0Client {
   };
 
   constructor(options: Auth0ClientOptions) {
+    console.log("%c >>> auth0-spa-js loaded <<<<<", "color: #00c853;");
     this.options = {
       ...this.defaultOptions,
       ...options,
@@ -268,6 +274,15 @@ export class Auth0Client {
       myAccountFetcher,
       myAccountApiIdentifier
     );
+
+    // Initialize auth-js client for MFA support
+    this.authJsClient = new Auth0AuthJsClient({
+      domain: this.options.domain,
+      clientId: this.options.clientId,
+    });
+
+    this.mfaClient = new MfaApiClient(this.authJsClient.mfa, this);
+    
 
     // Don't use web workers unless using refresh tokens in memory
     if (
@@ -1239,6 +1254,10 @@ export class Auth0Client {
       ) {
         return await this._getTokenFromIFrame(options);
       }
+      if (e instanceof MfaRequiredError) {
+        this.mfaClient.setMfaToken(e.mfa_token);
+        this.mfaClient.setMFAAuthDetails(options.authorizationParams.scope, options.authorizationParams.audience);
+      }
 
       throw e;
     }
@@ -1548,6 +1567,7 @@ export class Auth0Client {
     });
   }
 
+
   /**
    * Initiates a redirect to connect the user's account with a specified connection.
    * This method generates PKCE parameters, creates a transaction, and redirects to the /connect endpoint.
@@ -1616,6 +1636,23 @@ export class Auth0Client {
     } else {
       window.location.assign(url);
     }
+  }
+
+
+  public async requestTokenForMfa(
+    options: {
+      grant_type: string;
+      mfa_token: string;
+      scope: string;
+      audience?: string;
+      otp?: string;
+      binding_code?: string;
+      oob_code?: string;
+      recovery_code?: string;
+    },
+    additionalParameters?: RequestTokenAdditionalParameters
+  ): Promise<TokenEndpointResponse> {
+    return this._requestToken(options as any, additionalParameters);
   }
 }
 

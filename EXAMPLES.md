@@ -7,6 +7,7 @@
 - [Organizations](#organizations)
 - [Device-bound tokens with DPoP](#device-bound-tokens-with-dpop)
 - [Connect Accounts for using Token Vault](#connect-accounts-for-using-token-vault)
+- [Multi-Factor Authentication (MFA)](#multi-factor-authentication-mfa)
 
 ## Logging Out
 
@@ -680,5 +681,99 @@ if ((query.has('connect_code') || query.has('error')) && query.has('state')) {
 
 You can now [call the API](#calling-an-api) with your access token and the API can use [Access Token Exchange with Token Vault](https://auth0.com/docs/secure/tokens/token-vault/access-token-exchange-with-token-vault) to get tokens from the Token Vault to access third party APIs on behalf of the user.
 
-> [!IMPORTANT]  
+> [!IMPORTANT]
 > You must enable `Offline Access` from the Connection Permissions settings to be able to use the connection with Connected Accounts.
+
+## Multi-Factor Authentication (MFA)
+
+The MFA API allows you to manage multi-factor authentication for users, including enrolling authenticators, initiating challenges, and verifying codes.
+
+### Listing Authenticators
+
+```js
+// List all enrolled authenticators for the current user
+const authenticators = await auth0.mfaClient.listAuthenticators();
+console.log(authenticators);
+// [{ id: 'otp|dev_xxx', authenticator_type: 'otp', active: true }]
+```
+
+### Enrolling OTP (Authenticator App)
+
+```js
+// Enroll OTP authenticator (Google Authenticator, Microsoft Authenticator, etc.)
+const enrollment = await auth0.mfaClient.enrollAuthenticator({
+  authenticator_types: ['otp']
+});
+
+// Display QR code to user
+console.log(enrollment.barcode_uri); // otpauth://totp/...
+console.log(enrollment.secret); // Base32 secret for manual entry
+```
+
+### Enrolling SMS
+
+```js
+// Enroll SMS authenticator
+const smsEnrollment = await auth0.mfaClient.enrollAuthenticator({
+  authenticator_types: ['oob'],
+  oob_channels: ['sms'],
+  phone_number: '+12025551234' // E.164 format
+});
+
+console.log(smsEnrollment.id);
+```
+
+### Challenge Authenticator
+
+```js
+// Initiate MFA challenge (sends SMS or prepares for OTP entry)
+const challenge = await auth0.mfaClient.challengeAuthenticator({
+  mfa_token: mfaTokenFromLogin,
+  client_id: '<AUTH0_CLIENT_ID>',
+  challenge_type: 'oob',
+  oob_channel: 'sms',
+  authenticator_id: 'sms|dev_xxx'
+});
+
+console.log(challenge.oob_code); // Save for verification
+```
+
+### Verify Challenge
+
+```js
+// Verify MFA challenge and get tokens
+const tokens = await auth0.mfaClient.verifyChallenge({
+  mfa_token: mfaTokenFromLogin,
+  client_id: '<AUTH0_CLIENT_ID>',
+  grant_type: 'http://auth0.com/oauth/grant-type/mfa-oob',
+  oob_code: challenge.oob_code,
+  binding_code: '123456' // Code user received via SMS
+});
+
+console.log(tokens.access_token);
+console.log(tokens.id_token);
+```
+
+### Deleting Authenticators
+
+```js
+// Delete an authenticator
+await auth0.mfaClient.deleteAuthenticator('otp|dev_xxx');
+```
+
+### Error Handling
+
+```js
+try {
+  await auth0.mfaClient.enrollAuthenticator({
+    authenticator_types: ['oob'],
+    oob_channels: ['sms'],
+    phone_number: 'invalid'
+  });
+} catch (error) {
+  if (error.error === 'invalid_phone_number') {
+    console.error('Invalid phone number format');
+  }
+  console.error(error.error_description);
+}
+```

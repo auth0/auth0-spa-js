@@ -1,5 +1,5 @@
-import resolve from 'rollup-plugin-node-resolve';
-import commonjs from 'rollup-plugin-commonjs';
+import resolve from '@rollup/plugin-node-resolve';
+import commonjs from '@rollup/plugin-commonjs';
 import typescript from 'rollup-plugin-typescript2';
 import { terser } from 'rollup-plugin-terser';
 import sourcemaps from 'rollup-plugin-sourcemaps';
@@ -54,10 +54,10 @@ const getPlugins = shouldMinify => {
     shouldMinify
       ? terser()
       : terser({
-          compress: false,
-          mangle: false,
-          format: { beautify: true }
-        }),
+        compress: false,
+        mangle: false,
+        format: { beautify: true }
+      }),
     sourcemaps()
   ];
 };
@@ -92,13 +92,13 @@ let bundles = [
     plugins: [
       ...getPlugins(false),
       !isProduction &&
-        dev({
-          dirs: ['dist', 'static'],
-          port: serverPort,
-          extend(app, modules) {
-            app.use(modules.mount(createApp({ port: serverPort })));
-          }
-        }),
+      dev({
+        dirs: ['dist', 'static'],
+        port: serverPort,
+        extend(app, modules) {
+          app.use(modules.mount(createApp({ port: serverPort })));
+        }
+      }),
       !isProduction && livereload()
     ],
     watch: {
