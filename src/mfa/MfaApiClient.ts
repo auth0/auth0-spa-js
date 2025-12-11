@@ -8,7 +8,19 @@ import type {
   ChallengeResponse,
   VerifyChallengeParams
 } from './types';
-import { MfaClient as Auth0AuthJsMfaClient } from '@auth0/auth0-auth-js';
+import {
+  MfaClient as Auth0AuthJsMfaClient,
+  MfaListAuthenticatorsError as Auth0JsMfaListAuthenticatorsError,
+  MfaEnrollmentError as Auth0JsMfaEnrollmentError,
+  MfaDeleteAuthenticatorError as Auth0JsMfaDeleteAuthenticatorError,
+  MfaChallengeError as Auth0JsMfaChallengeError
+} from '@auth0/auth0-auth-js';
+import {
+  MfaListAuthenticatorsError,
+  MfaEnrollmentError,
+  MfaDeleteAuthenticatorError,
+  MfaChallengeError
+} from './errors';
 
 /**
  * Client for Auth0 MFA API operations
@@ -31,8 +43,6 @@ import { MfaClient as Auth0AuthJsMfaClient } from '@auth0/auth0-auth-js';
  */
 export class MfaApiClient {
   private authJsMfaClient: Auth0AuthJsMfaClient;
-  private baseUrl: string;
-  private mfatoken: string | null = null;
   private auth0Client: Auth0Client;
   private scope?: string;
   private audience?: string;
@@ -41,8 +51,7 @@ export class MfaApiClient {
    * @internal
    * Do not instantiate directly. Use Auth0Client.createMfaClient() instead.
    */
-  constructor(authJsMfaClient: Auth0AuthJsMfaClient, domain: string, auth0Client: Auth0Client) {
-    this.baseUrl = `https://${domain}`;
+  constructor(authJsMfaClient: Auth0AuthJsMfaClient, auth0Client: Auth0Client) {
     this.authJsMfaClient = authJsMfaClient;
     this.auth0Client = auth0Client;
   }
@@ -62,7 +71,7 @@ export class MfaApiClient {
    * Requires MFA access token with 'read:authenticators' scope
    *
    * @returns Array of enrolled authenticators (filters out inactive ones)
-   * @throws {Error} If the request fails
+   * @throws {MfaListAuthenticatorsError} If the request fails
    *
    * @example
    * ```typescript
@@ -71,12 +80,14 @@ export class MfaApiClient {
    * // [{ id: 'otp|dev_xxx', authenticator_type: 'otp', active: true }]
    * ```
    */
-  public async listAuthenticators(token: string): Promise<Authenticator[]> {
+  public async listAuthenticators(): Promise<Authenticator[]> {
     try {
       return await this.authJsMfaClient.listAuthenticators();
     } catch (error: any) {
-      // Map auth-js errors to generic Error for backward compatibility
-      throw new Error(error.message || 'Failed to list authenticators');
+      if (error instanceof Auth0JsMfaListAuthenticatorsError) {
+        throw new MfaListAuthenticatorsError(error);
+      }
+      throw error;
     }
   }
 
@@ -87,7 +98,7 @@ export class MfaApiClient {
    *
    * @param params - Enrollment parameters (type-specific)
    * @returns Enrollment response with authenticator details
-   * @throws {Error} If enrollment fails
+   * @throws {MfaEnrollmentError} If enrollment fails
    *
    * @example OTP enrollment
    * ```typescript
@@ -113,7 +124,10 @@ export class MfaApiClient {
     try {
       return await this.authJsMfaClient.enrollAuthenticator(params);
     } catch (error: any) {
-      throw new Error(error.message || 'Failed to enroll authenticator');
+      if (error instanceof Auth0JsMfaEnrollmentError) {
+        throw new MfaEnrollmentError(error);
+      }
+      throw error;
     }
   }
 
@@ -128,7 +142,7 @@ export class MfaApiClient {
    * - Recovery codes cannot be deleted (regenerate instead)
    *
    * @param authenticatorId - ID of authenticator to delete (e.g., 'otp|dev_xxx')
-   * @throws {Error} If deletion fails or authenticator not found
+   * @throws {MfaDeleteAuthenticatorError} If deletion fails or authenticator not found
    *
    * @example
    * ```typescript
@@ -139,7 +153,10 @@ export class MfaApiClient {
     try {
       await this.authJsMfaClient.deleteAuthenticator(authenticatorId);
     } catch (error: any) {
-      throw new Error(error.message || 'Failed to delete authenticator');
+      if (error instanceof Auth0JsMfaDeleteAuthenticatorError) {
+        throw new MfaDeleteAuthenticatorError(error);
+      }
+      throw error;
     }
   }
 
@@ -150,7 +167,7 @@ export class MfaApiClient {
    *
    * @param params - Challenge parameters
    * @returns Challenge response with oob_code if applicable
-   * @throws {Error} If challenge initiation fails
+   * @throws {MfaChallengeError} If challenge initiation fails
    *
    * @example OTP challenge
    * ```typescript
@@ -194,7 +211,10 @@ export class MfaApiClient {
 
       return await this.authJsMfaClient.challengeAuthenticator(authJsParams);
     } catch (error: any) {
-      throw new Error(error.message || 'Failed to challenge authenticator');
+      if (error instanceof Auth0JsMfaChallengeError) {
+        throw new MfaChallengeError(error);
+      }
+      throw error;
     }
   }
 
@@ -234,9 +254,6 @@ export class MfaApiClient {
   public async verifyChallenge(
     params: VerifyChallengeParams
   ) {
-    const url = `${this.baseUrl}/oauth/token`;
-    this.authJsMfaClient;
-
     const body: any = {
       mfa_token: params.mfa_token,
       client_id: params.client_id,

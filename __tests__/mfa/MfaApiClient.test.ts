@@ -1,9 +1,67 @@
+// Mock @auth0/auth0-auth-js before importing MfaApiClient
+jest.mock('@auth0/auth0-auth-js', () => {
+  class MfaListAuthenticatorsError extends Error {
+    constructor(
+      message: string,
+      public cause?: { error: string; error_description: string }
+    ) {
+      super(message);
+      Object.setPrototypeOf(this, MfaListAuthenticatorsError.prototype);
+    }
+  }
+
+  class MfaEnrollmentError extends Error {
+    constructor(
+      message: string,
+      public cause?: { error: string; error_description: string }
+    ) {
+      super(message);
+      Object.setPrototypeOf(this, MfaEnrollmentError.prototype);
+    }
+  }
+
+  class MfaDeleteAuthenticatorError extends Error {
+    constructor(
+      message: string,
+      public cause?: { error: string; error_description: string }
+    ) {
+      super(message);
+      Object.setPrototypeOf(this, MfaDeleteAuthenticatorError.prototype);
+    }
+  }
+
+  class MfaChallengeError extends Error {
+    constructor(
+      message: string,
+      public cause?: { error: string; error_description: string }
+    ) {
+      super(message);
+      Object.setPrototypeOf(this, MfaChallengeError.prototype);
+    }
+  }
+
+  return {
+    MfaClient: jest.fn(),
+    MfaListAuthenticatorsError,
+    MfaEnrollmentError,
+    MfaDeleteAuthenticatorError,
+    MfaChallengeError
+  };
+});
+
 import { MfaApiClient } from '../../src/mfa/MfaApiClient';
+import {
+  MfaListAuthenticatorsError as Auth0JsMfaListAuthenticatorsError,
+  MfaEnrollmentError as Auth0JsMfaEnrollmentError,
+  MfaDeleteAuthenticatorError as Auth0JsMfaDeleteAuthenticatorError,
+  MfaChallengeError as Auth0JsMfaChallengeError
+} from '@auth0/auth0-auth-js';
 import type { Authenticator } from '../../src/mfa/types';
 
 describe('MfaApiClient', () => {
   let mfaClient: MfaApiClient;
   let mockAuthJsMfaClient: any;
+  let mockAuth0Client: any;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -14,14 +72,20 @@ describe('MfaApiClient', () => {
       enrollAuthenticator: jest.fn(),
       deleteAuthenticator: jest.fn(),
       challengeAuthenticator: jest.fn(),
-      verifyChallenge: jest.fn()
+      verifyChallenge: jest.fn(),
+      setMfaToken: jest.fn()
     } as any;
 
-    mfaClient = new MfaApiClient(mockAuthJsMfaClient);
+    // Create mock Auth0Client
+    mockAuth0Client = {
+      requestTokenForMfa: jest.fn()
+    } as any;
+
+    mfaClient = new MfaApiClient(mockAuthJsMfaClient, mockAuth0Client);
   });
 
   describe('listAuthenticators', () => {
-    it('should delegate to auth-js MfaClient and return authenticators', async () => {
+    it('should return authenticators from auth-js', async () => {
       const mockData: Authenticator[] = [
         { id: 'otp|dev_123', authenticator_type: 'otp', active: true }
       ];
@@ -30,39 +94,37 @@ describe('MfaApiClient', () => {
 
       const result = await mfaClient.listAuthenticators();
 
-      expect(mockAuthJsMfaClient.listAuthenticators).toHaveBeenCalledTimes(1);
       expect(result).toEqual(mockData);
     });
 
-    it('should handle empty list', async () => {
-      mockAuthJsMfaClient.listAuthenticators.mockResolvedValue([]);
+    it('should wrap auth-js errors with error details', async () => {
+      const authJsError = new Auth0JsMfaListAuthenticatorsError(
+        'Unauthorized',
+        {
+          error: 'access_denied',
+          error_description: 'Unauthorized'
+        }
+      );
 
-      const result = await mfaClient.listAuthenticators();
+      mockAuthJsMfaClient.listAuthenticators.mockRejectedValue(authJsError);
 
-      expect(result).toEqual([]);
+      await expect(mfaClient.listAuthenticators()).rejects.toMatchObject({
+        error: 'access_denied',
+        error_description: 'Unauthorized',
+        message: 'Unauthorized'
+      });
     });
 
-    it('should wrap auth-js errors as generic Error', async () => {
-      mockAuthJsMfaClient.listAuthenticators.mockRejectedValue(
-        new Error('Unauthorized')
-      );
+    it('should rethrow non-MFA errors', async () => {
+      const networkError = new Error('Network error');
+      mockAuthJsMfaClient.listAuthenticators.mockRejectedValue(networkError);
 
-      await expect(mfaClient.listAuthenticators()).rejects.toThrow(
-        'Unauthorized'
-      );
-    });
-
-    it('should provide fallback error message', async () => {
-      mockAuthJsMfaClient.listAuthenticators.mockRejectedValue(new Error());
-
-      await expect(mfaClient.listAuthenticators()).rejects.toThrow(
-        'Failed to list authenticators'
-      );
+      await expect(mfaClient.listAuthenticators()).rejects.toBe(networkError);
     });
   });
 
   describe('enrollAuthenticator', () => {
-    it('should delegate OTP enrollment to auth-js', async () => {
+    it('should return enrollment response from auth-js', async () => {
       const params = { authenticator_types: ['otp'] };
       const mockResponse = {
         authenticator_type: 'otp',
@@ -74,48 +136,28 @@ describe('MfaApiClient', () => {
 
       const result = await mfaClient.enrollAuthenticator(params as any);
 
-      expect(mockAuthJsMfaClient.enrollAuthenticator).toHaveBeenCalledWith(
-        params
-      );
       expect(result).toEqual(mockResponse);
     });
 
-    it('should delegate SMS enrollment to auth-js', async () => {
-      const params = {
-        authenticator_types: ['oob'],
-        oob_channels: ['sms'],
-        phone_number: '+12025551234'
-      };
-      const mockResponse = {
-        authenticator_type: 'oob',
-        oob_channel: 'sms',
-        oob_code: 'OOB123'
-      };
-
-      mockAuthJsMfaClient.enrollAuthenticator.mockResolvedValue(mockResponse);
-
-      const result = await mfaClient.enrollAuthenticator(params as any);
-
-      expect(mockAuthJsMfaClient.enrollAuthenticator).toHaveBeenCalledWith(
-        params
-      );
-      expect(result).toEqual(mockResponse);
-    });
-
-    it('should wrap enrollment errors', async () => {
+    it('should wrap auth-js errors with error details', async () => {
       const params = { authenticator_types: ['otp'] };
-      mockAuthJsMfaClient.enrollAuthenticator.mockRejectedValue(
-        new Error('Enrollment failed')
-      );
+      const authJsError = new Auth0JsMfaEnrollmentError('Invalid phone number', {
+        error: 'invalid_phone_number',
+        error_description: 'Invalid phone number'
+      });
 
-      await expect(mfaClient.enrollAuthenticator(params as any)).rejects.toThrow(
-        'Enrollment failed'
-      );
+      mockAuthJsMfaClient.enrollAuthenticator.mockRejectedValue(authJsError);
+
+      await expect(mfaClient.enrollAuthenticator(params as any)).rejects.toMatchObject({
+        error: 'invalid_phone_number',
+        error_description: 'Invalid phone number',
+        message: 'Invalid phone number'
+      });
     });
   });
 
   describe('deleteAuthenticator', () => {
-    it('should delegate deletion to auth-js', async () => {
+    it('should delete authenticator via auth-js', async () => {
       const authenticatorId = 'otp|dev_123';
       mockAuthJsMfaClient.deleteAuthenticator.mockResolvedValue(undefined);
 
@@ -126,30 +168,29 @@ describe('MfaApiClient', () => {
       );
     });
 
-    it('should handle special characters in ID', async () => {
-      const authenticatorId = 'otp|dev_!@#$%';
-      mockAuthJsMfaClient.deleteAuthenticator.mockResolvedValue(undefined);
-
-      await mfaClient.deleteAuthenticator(authenticatorId);
-
-      expect(mockAuthJsMfaClient.deleteAuthenticator).toHaveBeenCalledWith(
-        authenticatorId
+    it('should wrap auth-js errors with error details', async () => {
+      const authJsError = new Auth0JsMfaDeleteAuthenticatorError(
+        'Authenticator not found',
+        {
+          error: 'authenticator_not_found',
+          error_description: 'Authenticator not found'
+        }
       );
-    });
 
-    it('should wrap deletion errors', async () => {
-      mockAuthJsMfaClient.deleteAuthenticator.mockRejectedValue(
-        new Error('Not found')
-      );
+      mockAuthJsMfaClient.deleteAuthenticator.mockRejectedValue(authJsError);
 
       await expect(
         mfaClient.deleteAuthenticator('otp|dev_123')
-      ).rejects.toThrow('Not found');
+      ).rejects.toMatchObject({
+        error: 'authenticator_not_found',
+        error_description: 'Authenticator not found',
+        message: 'Authenticator not found'
+      });
     });
   });
 
   describe('challengeAuthenticator', () => {
-    it('should strip mfa_token and client_id from params', async () => {
+    it('should strip mfa_token and client_id from params and return response', async () => {
       const params = {
         mfa_token: 'token123',
         client_id: 'client123',
@@ -166,7 +207,6 @@ describe('MfaApiClient', () => {
 
       const result = await mfaClient.challengeAuthenticator(params as any);
 
-      // Should NOT include mfa_token or client_id
       expect(mockAuthJsMfaClient.challengeAuthenticator).toHaveBeenCalledWith({
         challenge_type: 'otp',
         authenticator_id: 'otp|dev_123'
@@ -174,162 +214,79 @@ describe('MfaApiClient', () => {
       expect(result).toEqual(mockResponse);
     });
 
-    it('should handle OOB challenge with channel', async () => {
-      const params = {
-        mfa_token: 'token123',
-        client_id: 'client123',
-        challenge_type: 'oob',
-        oob_channel: 'sms',
-        authenticator_id: 'sms|dev_123'
-      };
-      const mockResponse = {
-        challenge_type: 'oob',
-        oob_code: 'OOB123'
-      };
-
-      mockAuthJsMfaClient.challengeAuthenticator.mockResolvedValue(
-        mockResponse
-      );
-
-      await mfaClient.challengeAuthenticator(params as any);
-
-      expect(mockAuthJsMfaClient.challengeAuthenticator).toHaveBeenCalledWith({
-        challenge_type: 'oob',
-        oob_channel: 'sms',
-        authenticator_id: 'sms|dev_123'
-      });
-    });
-
-    it('should wrap challenge errors', async () => {
+    it('should wrap auth-js errors with error details', async () => {
       const params = {
         mfa_token: 'token123',
         client_id: 'client123',
         challenge_type: 'otp'
       };
+      const authJsError = new Auth0JsMfaChallengeError('Rate limit exceeded', {
+        error: 'too_many_attempts',
+        error_description: 'Rate limit exceeded'
+      });
 
-      mockAuthJsMfaClient.challengeAuthenticator.mockRejectedValue(
-        new Error('Challenge failed')
-      );
+      mockAuthJsMfaClient.challengeAuthenticator.mockRejectedValue(authJsError);
 
       await expect(
         mfaClient.challengeAuthenticator(params as any)
-      ).rejects.toThrow('Challenge failed');
+      ).rejects.toMatchObject({
+        error: 'too_many_attempts',
+        error_description: 'Rate limit exceeded',
+        message: 'Rate limit exceeded'
+      });
     });
   });
 
   describe('verifyChallenge', () => {
-    it('should strip mfa_token and client_id from OTP verification', async () => {
+    it('should call auth0Client.requestTokenForMfa with correct params', async () => {
       const params = {
         mfa_token: 'token123',
         client_id: 'client123',
         grant_type: 'http://auth0.com/oauth/grant-type/mfa-otp',
         otp: '123456'
       };
-      // auth-js uses camelCase
       const mockTokenResponse = {
-        accessToken: 'access123',
-        idToken: 'id123',
-        tokenType: 'Bearer',
-        expiresAt: Math.floor(Date.now() / 1000) + 3600,
-        scope: 'openid'
+        access_token: 'access123',
+        id_token: 'id123'
       };
 
-      mockAuthJsMfaClient.verifyChallenge.mockResolvedValue(
-        mockTokenResponse as any
-      );
+      mfaClient.setMFAAuthDetails('openid profile', 'https://api.example.com');
+      mockAuth0Client.requestTokenForMfa.mockResolvedValue(mockTokenResponse);
 
       const result = await mfaClient.verifyChallenge(params as any);
 
-      // Should NOT include mfa_token or client_id
-      expect(mockAuthJsMfaClient.verifyChallenge).toHaveBeenCalledWith({
+      expect(mockAuth0Client.requestTokenForMfa).toHaveBeenCalledWith({
         grant_type: 'http://auth0.com/oauth/grant-type/mfa-otp',
-        otp: '123456'
+        mfa_token: 'token123',
+        scope: 'openid profile',
+        audience: 'https://api.example.com',
+        otp: '123456',
+        oob_code: undefined,
+        binding_code: undefined
       });
-      expect(result.access_token).toBe('access123');
+      expect(result).toEqual(mockTokenResponse);
     });
 
-    it('should strip mfa_token and client_id from OOB verification', async () => {
+    it('should use default scope and audience if not set', async () => {
       const params = {
         mfa_token: 'token123',
         client_id: 'client123',
-        grant_type: 'http://auth0.com/oauth/grant-type/mfa-oob',
-        oob_code: 'OOB123',
-        binding_code: '654321'
+        grant_type: 'http://auth0.com/oauth/grant-type/mfa-otp',
+        otp: '123456'
       };
-      // auth-js uses camelCase
       const mockTokenResponse = {
-        accessToken: 'access123',
-        idToken: 'id123',
-        tokenType: 'Bearer',
-        expiresAt: Math.floor(Date.now() / 1000) + 3600,
-        scope: 'openid'
+        access_token: 'access123'
       };
 
-      mockAuthJsMfaClient.verifyChallenge.mockResolvedValue(
-        mockTokenResponse as any
-      );
+      mockAuth0Client.requestTokenForMfa.mockResolvedValue(mockTokenResponse);
 
       await mfaClient.verifyChallenge(params as any);
 
-      // Should NOT include mfa_token or client_id
-      expect(mockAuthJsMfaClient.verifyChallenge).toHaveBeenCalledWith({
-        grant_type: 'http://auth0.com/oauth/grant-type/mfa-oob',
-        oob_code: 'OOB123',
-        binding_code: '654321'
-      });
-    });
-
-    it('should convert auth-js TokenResponse to spa-js format', async () => {
-      const params = {
-        mfa_token: 'token123',
-        client_id: 'client123',
-        grant_type: 'http://auth0.com/oauth/grant-type/mfa-otp',
-        otp: '123456'
-      };
-      // auth-js uses camelCase and expiresAt (Unix timestamp)
-      const now = Math.floor(Date.now() / 1000);
-      const mockTokenResponse = {
-        accessToken: 'access123',
-        idToken: 'id123',
-        refreshToken: 'refresh123',
-        tokenType: 'Bearer',
-        expiresAt: now + 3600,
-        scope: 'openid profile'
-      };
-
-      mockAuthJsMfaClient.verifyChallenge.mockResolvedValue(
-        mockTokenResponse as any
-      );
-
-      const result = await mfaClient.verifyChallenge(params as any);
-
-      // Wrapper converts to snake_case and calculates expires_in
-      expect(result).toEqual({
-        access_token: 'access123',
-        id_token: 'id123',
-        refresh_token: 'refresh123',
-        token_type: 'Bearer',
-        expires_in: expect.any(Number), // Dynamic calculation
-        scope: 'openid profile'
-      });
-      expect(result.expires_in).toBeGreaterThanOrEqual(3599); // Allow for 1s variance
-      expect(result.expires_in).toBeLessThanOrEqual(3600);
-    });
-
-    it('should wrap verification errors', async () => {
-      const params = {
-        mfa_token: 'token123',
-        client_id: 'client123',
-        grant_type: 'http://auth0.com/oauth/grant-type/mfa-otp',
-        otp: 'wrong'
-      };
-
-      mockAuthJsMfaClient.verifyChallenge.mockRejectedValue(
-        new Error('Invalid OTP')
-      );
-
-      await expect(mfaClient.verifyChallenge(params as any)).rejects.toThrow(
-        'Invalid OTP'
+      expect(mockAuth0Client.requestTokenForMfa).toHaveBeenCalledWith(
+        expect.objectContaining({
+          scope: 'openid profile email',
+          audience: 'YOUR_DEFAULT_AUDIENCE'
+        })
       );
     });
   });

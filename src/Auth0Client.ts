@@ -281,7 +281,7 @@ export class Auth0Client {
       clientId: this.options.clientId,
     });
 
-    this.mfaClient = new MfaApiClient(this.authJsClient.mfa, this.options.domain, this);
+    this.mfaClient = new MfaApiClient(this.authJsClient.mfa, this);
     
 
     // Don't use web workers unless using refresh tokens in memory
