@@ -1459,7 +1459,7 @@ export class Auth0Client {
         options.audience || this.options.authorizationParams.audience
       ),
       audience: options.audience || this.options.authorizationParams.audience,
-      ...(options.organization && { organization: options.organization })
+      organization: options.organization || this.options.authorizationParams.organization
     });
   }
 
