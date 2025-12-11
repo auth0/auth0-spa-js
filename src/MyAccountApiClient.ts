@@ -4,12 +4,12 @@ import { Fetcher } from './fetcher';
 interface ConnectRequest {
   /** The name of the connection to link the account with (e.g., 'google-oauth2', 'facebook'). */
   connection: string;
+  /** Array of scopes to request from the Identity Provider during the connect account flow. */
+  scopes?: string[];
   /** The URI to redirect to after the connection process completes. */
   redirect_uri: string;
   /** An opaque value used to maintain state between the request and callback. */
   state?: string;
-  /** A string value used to associate a Client session with an ID Token, and to mitigate replay attacks. */
-  nonce?: string;
   /** The PKCE code challenge derived from the code verifier. */
   code_challenge?: string;
   /** The method used to derive the code challenge. Required when code_challenge is provided. */

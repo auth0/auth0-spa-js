@@ -84,6 +84,14 @@ export class PopupCancelledError extends GenericError {
   }
 }
 
+export class PopupOpenError extends GenericError {
+  constructor() {
+    super('popup_open', 'Unable to open a popup for loginWithPopup - window.open returned `null`');
+    //https://github.com/Microsoft/TypeScript-wiki/blob/master/Breaking-Changes.md#extending-built-ins-like-error-array-and-map-may-no-longer-work
+    Object.setPrototypeOf(this, PopupOpenError.prototype);
+  }
+}
+
 /**
  * Error thrown when the token exchange results in a `mfa_required` error
  */

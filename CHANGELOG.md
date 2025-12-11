@@ -1,5 +1,31 @@
 # Change Log
 
+## [v2.9.1](https://github.com/auth0/auth0-spa-js/tree/v2.9.1) (2025-11-21)
+[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.9.0...v2.9.1)
+
+**Added**
+- Export type for Custom Token Exchange support [\#1461](https://github.com/auth0/auth0-spa-js/pull/1461) ([yogeshchoudhary147](https://github.com/yogeshchoudhary147))
+
+## [v2.9.0](https://github.com/auth0/auth0-spa-js/tree/v2.9.0) (2025-11-17)
+[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.8.0...v2.9.0)
+
+**Added**
+- feat: add support `scopes` parameter for connected accounts [\#1458](https://github.com/auth0/auth0-spa-js/pull/1458) ([guabu](https://github.com/guabu))
+
+**Security**
+- security:  Upgrade component-cdn-uploader to v2.4.0 to address critical vulnerability of form-data package [\#1454](https://github.com/auth0/auth0-spa-js/pull/1454) ([ankita10119](https://github.com/ankita10119))
+
+## [v2.8.0](https://github.com/auth0/auth0-spa-js/tree/v2.8.0) (2025-10-27)
+[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.7.0...v2.8.0)
+
+**Added**
+- feat: ensure to only lock for the same audience and client_id [\#1408](https://github.com/auth0/auth0-spa-js/pull/1408) ([frederikprijck](https://github.com/frederikprijck))
+- Allow authorizationParameters.scope to accept an object [\#1446](https://github.com/auth0/auth0-spa-js/pull/1446) ([aridibag](https://github.com/aridibag))
+
+**Fixed**
+- fix: ensure to strip auth0Client [\#1438](https://github.com/auth0/auth0-spa-js/pull/1438) ([frederikprijck](https://github.com/frederikprijck))
+- Avoid saving token when MissingRefreshTokenError is thrown [\#1448](https://github.com/auth0/auth0-spa-js/pull/1448) ([aridibag](https://github.com/aridibag))
+
 ## [v2.7.0](https://github.com/auth0/auth0-spa-js/tree/v2.7.0) (2025-10-17)
 [Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.6.0...v2.7.0)
 
