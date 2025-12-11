@@ -299,7 +299,6 @@ export interface Auth0ClientOptions {
    * defined by Auth0 or custom parameters that you define.
   */
   authorizationParams?: ClientAuthorizationParams;
-  mfaHandler?: 'redirect' | 'popup' | 'throw';
 }
 
 /**
