@@ -24,7 +24,6 @@
   },
   "dependencies": {
     "@auth0/auth0-auth-js": "file:../auth0-auth-js/packages/auth0-auth-js",
-    "auth0-server-js": "github:auth0/auth0-auth-js",
     "browser-tabs-lock": "^1.2.15",
     "dpop": "^2.1.1",
     "es-cookie": "~1.3.2"
