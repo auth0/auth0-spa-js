@@ -1,0 +1,11 @@
+{
+  "editor.formatOnSave": true,
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/bower_components": true,
+    "**/dist": true,
+    "**/.rpt2_cache": true,
+    "**/docs": true
+  },
+  "typescript.tsdk": "node_modules/typescript/lib"
+}
