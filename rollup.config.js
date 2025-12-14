@@ -1,6 +1,7 @@
 import resolve from '@rollup/plugin-node-resolve';
 import commonjs from '@rollup/plugin-commonjs';
 import typescript from 'rollup-plugin-typescript2';
+import babel from '@rollup/plugin-babel';
 import { terser } from 'rollup-plugin-terser';
 import sourcemaps from 'rollup-plugin-sourcemaps';
 import livereload from 'rollup-plugin-livereload';
@@ -46,6 +47,11 @@ const getPlugins = shouldMinify => {
           lib: ['dom', 'es6']
         }
       }
+    }),
+    babel({
+      babelHelpers: 'bundled',
+      extensions: ['.js', '.ts'],
+      exclude: []
     }),
     replace({
       'process.env.NODE_ENV': `'${process.env.NODE_ENV}'`,
