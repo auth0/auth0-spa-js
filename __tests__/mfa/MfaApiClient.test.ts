@@ -89,15 +89,21 @@ describe('MfaApiClient', () => {
       const mockData: Authenticator[] = [
         { id: 'otp|dev_123', authenticator_type: 'otp', active: true }
       ];
+      const mfaToken = 'test-mfa-token';
 
+      mfaClient.setMfaToken(mfaToken);
       mockAuthJsMfaClient.listAuthenticators.mockResolvedValue(mockData);
 
       const result = await mfaClient.listAuthenticators();
 
+      expect(mockAuthJsMfaClient.listAuthenticators).toHaveBeenCalledWith({
+        mfaToken
+      });
       expect(result).toEqual(mockData);
     });
 
     it('should wrap auth-js errors with error details', async () => {
+      const mfaToken = 'test-mfa-token';
       const authJsError = new Auth0JsMfaListAuthenticatorsError(
         'Unauthorized',
         {
@@ -106,6 +112,7 @@ describe('MfaApiClient', () => {
         }
       );
 
+      mfaClient.setMfaToken(mfaToken);
       mockAuthJsMfaClient.listAuthenticators.mockRejectedValue(authJsError);
 
       await expect(mfaClient.listAuthenticators()).rejects.toMatchObject({
@@ -116,7 +123,10 @@ describe('MfaApiClient', () => {
     });
 
     it('should rethrow non-MFA errors', async () => {
+      const mfaToken = 'test-mfa-token';
       const networkError = new Error('Network error');
+
+      mfaClient.setMfaToken(mfaToken);
       mockAuthJsMfaClient.listAuthenticators.mockRejectedValue(networkError);
 
       await expect(mfaClient.listAuthenticators()).rejects.toBe(networkError);
@@ -125,6 +135,7 @@ describe('MfaApiClient', () => {
 
   describe('enrollAuthenticator', () => {
     it('should return enrollment response from auth-js', async () => {
+      const mfaToken = 'test-mfa-token';
       const params = { authenticator_types: ['otp'] };
       const mockResponse = {
         authenticator_type: 'otp',
@@ -132,20 +143,27 @@ describe('MfaApiClient', () => {
         barcode_uri: 'otpauth://...'
       };
 
+      mfaClient.setMfaToken(mfaToken);
       mockAuthJsMfaClient.enrollAuthenticator.mockResolvedValue(mockResponse);
 
       const result = await mfaClient.enrollAuthenticator(params as any);
 
+      expect(mockAuthJsMfaClient.enrollAuthenticator).toHaveBeenCalledWith({
+        ...params,
+        mfaToken
+      });
       expect(result).toEqual(mockResponse);
     });
 
     it('should wrap auth-js errors with error details', async () => {
+      const mfaToken = 'test-mfa-token';
       const params = { authenticator_types: ['otp'] };
       const authJsError = new Auth0JsMfaEnrollmentError('Invalid phone number', {
         error: 'invalid_phone_number',
         error_description: 'Invalid phone number'
       });
 
+      mfaClient.setMfaToken(mfaToken);
       mockAuthJsMfaClient.enrollAuthenticator.mockRejectedValue(authJsError);
 
       await expect(mfaClient.enrollAuthenticator(params as any)).rejects.toMatchObject({
@@ -158,17 +176,22 @@ describe('MfaApiClient', () => {
 
   describe('deleteAuthenticator', () => {
     it('should delete authenticator via auth-js', async () => {
+      const mfaToken = 'test-mfa-token';
       const authenticatorId = 'otp|dev_123';
+
+      mfaClient.setMfaToken(mfaToken);
       mockAuthJsMfaClient.deleteAuthenticator.mockResolvedValue(undefined);
 
       await mfaClient.deleteAuthenticator(authenticatorId);
 
-      expect(mockAuthJsMfaClient.deleteAuthenticator).toHaveBeenCalledWith(
-        authenticatorId
-      );
+      expect(mockAuthJsMfaClient.deleteAuthenticator).toHaveBeenCalledWith({
+        authenticatorId,
+        mfaToken
+      });
     });
 
     it('should wrap auth-js errors with error details', async () => {
+      const mfaToken = 'test-mfa-token';
       const authJsError = new Auth0JsMfaDeleteAuthenticatorError(
         'Authenticator not found',
         {
@@ -177,6 +200,7 @@ describe('MfaApiClient', () => {
         }
       );
 
+      mfaClient.setMfaToken(mfaToken);
       mockAuthJsMfaClient.deleteAuthenticator.mockRejectedValue(authJsError);
 
       await expect(
@@ -190,7 +214,8 @@ describe('MfaApiClient', () => {
   });
 
   describe('challengeAuthenticator', () => {
-    it('should strip mfa_token and client_id from params and return response', async () => {
+    it('should strip mfa_token and client_id from params and include stored mfaToken', async () => {
+      const mfaToken = 'test-mfa-token';
       const params = {
         mfa_token: 'token123',
         client_id: 'client123',
@@ -201,6 +226,7 @@ describe('MfaApiClient', () => {
         challenge_type: 'otp'
       };
 
+      mfaClient.setMfaToken(mfaToken);
       mockAuthJsMfaClient.challengeAuthenticator.mockResolvedValue(
         mockResponse
       );
@@ -209,12 +235,14 @@ describe('MfaApiClient', () => {
 
       expect(mockAuthJsMfaClient.challengeAuthenticator).toHaveBeenCalledWith({
         challenge_type: 'otp',
-        authenticator_id: 'otp|dev_123'
+        authenticator_id: 'otp|dev_123',
+        mfaToken
       });
       expect(result).toEqual(mockResponse);
     });
 
     it('should wrap auth-js errors with error details', async () => {
+      const mfaToken = 'test-mfa-token';
       const params = {
         mfa_token: 'token123',
         client_id: 'client123',
@@ -225,6 +253,7 @@ describe('MfaApiClient', () => {
         error_description: 'Rate limit exceeded'
       });
 
+      mfaClient.setMfaToken(mfaToken);
       mockAuthJsMfaClient.challengeAuthenticator.mockRejectedValue(authJsError);
 
       await expect(
@@ -239,8 +268,9 @@ describe('MfaApiClient', () => {
 
   describe('verifyChallenge', () => {
     it('should call auth0Client.requestTokenForMfa with correct params', async () => {
+      const mfaToken = 'token123';
       const params = {
-        mfa_token: 'token123',
+        mfa_token: mfaToken,
         client_id: 'client123',
         grant_type: 'http://auth0.com/oauth/grant-type/mfa-otp',
         otp: '123456'
@@ -250,6 +280,7 @@ describe('MfaApiClient', () => {
         id_token: 'id123'
       };
 
+      mfaClient.setMfaToken(mfaToken);
       mfaClient.setMFAAuthDetails('openid profile', 'https://api.example.com');
       mockAuth0Client.requestTokenForMfa.mockResolvedValue(mockTokenResponse);
 
@@ -257,7 +288,7 @@ describe('MfaApiClient', () => {
 
       expect(mockAuth0Client.requestTokenForMfa).toHaveBeenCalledWith({
         grant_type: 'http://auth0.com/oauth/grant-type/mfa-otp',
-        mfa_token: 'token123',
+        mfa_token: mfaToken,
         scope: 'openid profile',
         audience: 'https://api.example.com',
         otp: '123456',
@@ -267,26 +298,36 @@ describe('MfaApiClient', () => {
       expect(result).toEqual(mockTokenResponse);
     });
 
-    it('should use default scope and audience if not set', async () => {
+    it('should throw error if scope is not set', async () => {
+      const mfaToken = 'token123';
+      const params = {
+        mfa_token: mfaToken,
+        client_id: 'client123',
+        grant_type: 'http://auth0.com/oauth/grant-type/mfa-otp',
+        otp: '123456'
+      };
+
+      mfaClient.setMfaToken(mfaToken);
+      // Not calling setMFAAuthDetails
+
+      await expect(mfaClient.verifyChallenge(params as any)).rejects.toThrow(
+        'MFA scope is not set'
+      );
+    });
+
+    it('should throw error if mfaToken is not set', async () => {
       const params = {
         mfa_token: 'token123',
         client_id: 'client123',
         grant_type: 'http://auth0.com/oauth/grant-type/mfa-otp',
         otp: '123456'
       };
-      const mockTokenResponse = {
-        access_token: 'access123'
-      };
 
-      mockAuth0Client.requestTokenForMfa.mockResolvedValue(mockTokenResponse);
+      mfaClient.setMFAAuthDetails('openid profile', 'https://api.example.com');
+      // Not calling setMfaToken
 
-      await mfaClient.verifyChallenge(params as any);
-
-      expect(mockAuth0Client.requestTokenForMfa).toHaveBeenCalledWith(
-        expect.objectContaining({
-          scope: 'openid profile email',
-          audience: 'YOUR_DEFAULT_AUDIENCE'
-        })
+      await expect(mfaClient.verifyChallenge(params as any)).rejects.toThrow(
+        'MFA token is not set'
       );
     });
   });

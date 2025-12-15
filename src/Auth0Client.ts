@@ -168,7 +168,6 @@ export class Auth0Client {
   };
 
   constructor(options: Auth0ClientOptions) {
-    console.log("%c >>> auth0-spa-js loaded <<<<<", "color: #00c853;");
     this.options = {
       ...this.defaultOptions,
       ...options,
@@ -282,7 +281,7 @@ export class Auth0Client {
     });
 
     this.mfaClient = new MfaApiClient(this.authJsClient.mfa, this);
-    
+
 
     // Don't use web workers unless using refresh tokens in memory
     if (
@@ -1638,8 +1637,12 @@ export class Auth0Client {
     }
   }
 
-
-  public async requestTokenForMfa(
+  /**
+   * @internal
+   * Internal method used by MfaApiClient to exchange MFA tokens for access tokens.
+   * This method should not be called directly by applications.
+   */
+  public async _requestTokenForMfa(
     options: {
       grant_type: string;
       mfa_token: string;

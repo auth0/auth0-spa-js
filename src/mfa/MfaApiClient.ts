@@ -6,7 +6,8 @@ import type {
   EnrollmentResponse,
   ChallengeParams,
   ChallengeResponse,
-  VerifyChallengeParams
+  VerifyChallengeParams,
+  OobChannel
 } from './types';
 import {
   MfaClient as Auth0AuthJsMfaClient,
@@ -46,6 +47,7 @@ export class MfaApiClient {
   private auth0Client: Auth0Client;
   private scope?: string;
   private audience?: string;
+  private mfaToken: string = '';
 
   /**
    * @internal
@@ -56,10 +58,25 @@ export class MfaApiClient {
     this.auth0Client = auth0Client;
   }
 
+  /**
+   * @internal
+   * Sets the MFA token for subsequent MFA operations.
+   * This is automatically called by Auth0Client when an mfa_required error occurs.
+   *
+   * @param token - The MFA token from the mfa_required error response
+   */
   public setMfaToken(token: string) {
-     this.authJsMfaClient.setMfaToken(token);
+    this.mfaToken = token;
   }
 
+  /**
+   * @internal
+   * Stores authentication details (scope and audience) for MFA token verification.
+   * This is automatically called by Auth0Client when an mfa_required error occurs.
+   *
+   * @param scope - The OAuth scope to use for token verification
+   * @param audience - The API audience to use for token verification (optional)
+   */
   public setMFAAuthDetails(scope: string, audience?: string) {
     this.scope = scope;
     this.audience = audience;
@@ -82,8 +99,8 @@ export class MfaApiClient {
    */
   public async listAuthenticators(): Promise<Authenticator[]> {
     try {
-      return await this.authJsMfaClient.listAuthenticators();
-    } catch (error: any) {
+      return await this.authJsMfaClient.listAuthenticators({ mfaToken: this.mfaToken });
+    } catch (error: unknown) {
       if (error instanceof Auth0JsMfaListAuthenticatorsError) {
         throw new MfaListAuthenticatorsError(error);
       }
@@ -122,8 +139,8 @@ export class MfaApiClient {
     params: EnrollAuthenticatorParams
   ): Promise<EnrollmentResponse> {
     try {
-      return await this.authJsMfaClient.enrollAuthenticator(params);
-    } catch (error: any) {
+      return await this.authJsMfaClient.enrollAuthenticator({ ...params, mfaToken: this.mfaToken });
+    } catch (error: unknown) {
       if (error instanceof Auth0JsMfaEnrollmentError) {
         throw new MfaEnrollmentError(error);
       }
@@ -151,8 +168,8 @@ export class MfaApiClient {
    */
   public async deleteAuthenticator(authenticatorId: string): Promise<void> {
     try {
-      await this.authJsMfaClient.deleteAuthenticator(authenticatorId);
-    } catch (error: any) {
+      await this.authJsMfaClient.deleteAuthenticator({ authenticatorId, mfaToken: this.mfaToken });
+    } catch (error: unknown) {
       if (error instanceof Auth0JsMfaDeleteAuthenticatorError) {
         throw new MfaDeleteAuthenticatorError(error);
       }
@@ -196,9 +213,15 @@ export class MfaApiClient {
     params: ChallengeParams
   ): Promise<ChallengeResponse> {
     try {
-      // Strip mfa_token and client_id - auth-js stores these internally
-      const authJsParams: any = {
-        challenge_type: params.challenge_type
+      // Strip mfa_token and client_id - auth-js requires mfaToken as parameter
+      const authJsParams: {
+        challenge_type: 'otp' | 'oob';
+        authenticator_id?: string;
+        oob_channel?: OobChannel;
+        mfaToken: string;
+      } = {
+        challenge_type: params.challenge_type,
+        mfaToken: this.mfaToken
       };
 
       if (params.authenticator_id) {
@@ -210,7 +233,7 @@ export class MfaApiClient {
       }
 
       return await this.authJsMfaClient.challengeAuthenticator(authJsParams);
-    } catch (error: any) {
+    } catch (error: unknown) {
       if (error instanceof Auth0JsMfaChallengeError) {
         throw new MfaChallengeError(error);
       }
@@ -253,31 +276,24 @@ export class MfaApiClient {
    */
   public async verifyChallenge(
     params: VerifyChallengeParams
-  ) {
-    const body: any = {
-      mfa_token: params.mfa_token,
-      client_id: params.client_id,
-      grant_type: params.grant_type
-    };
+  ): Promise<TokenEndpointResponse> {
+    if (!this.scope || !this.audience || !this.mfaToken) {
+      const missing = [];
+      if (!this.scope) missing.push('scope');
+      if (!this.audience) missing.push('audience');
+      if (!this.mfaToken) missing.push('MFA token');
 
-    if (params.otp) {
-      body.otp = params.otp;
+      throw new Error(
+        `MFA client is not properly configured. Missing: ${missing.join(', ')}. ` +
+        'See documentation: https://github.com/auth0/auth0-spa-js/blob/main/EXAMPLES.md#multi-factor-authentication-mfa'
+      );
     }
 
-    if (params.oob_code) {
-      body.oob_code = params.oob_code;
-    }
-
-    if (params.binding_code) {
-      body.binding_code = params.binding_code;
-    }
-
-    // This endpoint doesn't require Bearer auth, just the mfa_token in body
-    return this.auth0Client.requestTokenForMfa({
+    return this.auth0Client._requestTokenForMfa({
       grant_type: params.grant_type,
-      mfa_token: params.mfa_token,
-      scope: this.scope || 'openid profile email',
-      audience: this.audience || 'YOUR_DEFAULT_AUDIENCE',
+      mfa_token: this.mfaToken,
+      scope: this.scope,
+      audience: this.audience,
       otp: params.otp,
       oob_code: params.oob_code,
       binding_code: params.binding_code
