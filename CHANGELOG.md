@@ -1,5 +1,18 @@
 # Change Log
 
+## [v2.12.0](https://github.com/auth0/auth0-spa-js/tree/v2.12.0) (2025-12-16)
+[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.11.0...v2.12.0)
+
+**Added**
+- build(deps): Bump codecov/codecov-action from 5.4.3 to 5.5.2 [\#1479](https://github.com/auth0/auth0-spa-js/pull/1479) ([dependabot[bot]](https://github.com/apps/dependabot))
+- build(deps-dev): Bump jws from 3.2.2 to 3.2.3 [\#1476](https://github.com/auth0/auth0-spa-js/pull/1476) ([dependabot[bot]](https://github.com/apps/dependabot))
+- build(deps-dev): Bump js-yaml from 3.14.1 to 3.14.2 [\#1464](https://github.com/auth0/auth0-spa-js/pull/1464) ([dependabot[bot]](https://github.com/apps/dependabot))
+- build(deps-dev): Bump browserstack-cypress-cli from 1.32.8 to 1.35.0 [\#1452](https://github.com/auth0/auth0-spa-js/pull/1452) ([dependabot[bot]](https://github.com/apps/dependabot))
+- build(deps-dev): Bump tslib from 2.6.2 to 2.8.1 [\#1451](https://github.com/auth0/auth0-spa-js/pull/1451) ([dependabot[bot]](https://github.com/apps/dependabot))
+- build(deps): Bump actions/cache from 4 to 5 [\#1483](https://github.com/auth0/auth0-spa-js/pull/1483) ([dependabot[bot]](https://github.com/apps/dependabot))
+- build(deps): Bump actions/checkout from 4 to 6 [\#1468](https://github.com/auth0/auth0-spa-js/pull/1468) ([dependabot[bot]](https://github.com/apps/dependabot))
+- build(deps): Bump actions/setup-node from 4 to 6 [\#1437](https://github.com/auth0/auth0-spa-js/pull/1437) ([dependabot[bot]](https://github.com/apps/dependabot))
+
 ## [v2.11.0](https://github.com/auth0/auth0-spa-js/tree/v2.11.0) (2025-12-11)
 [Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.10.0...v2.11.0)
 
