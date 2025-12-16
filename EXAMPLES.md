@@ -309,6 +309,7 @@ async function performTokenExchange() {
       subject_token: 'EXTERNAL_PROVIDER_TOKEN',
       subject_token_type: 'urn:example:external-token',
       scope: 'openid profile email'
+      organization: "org_abc123"
       // audience will default to audience from client config
     });
 
@@ -318,6 +319,7 @@ async function performTokenExchange() {
       subject_token_type: 'urn:example:external-token',
       audience: 'https://different-api.example.com',
       scope: 'openid profile read:records'
+      organization: "org_abc123"
     });
 
     console.log('Received tokens:', tokenResponse);
