@@ -228,10 +228,6 @@ export class MfaApiClient {
         authJsParams.authenticator_id = params.authenticator_id;
       }
 
-      if (params.oob_channel) {
-        authJsParams.oob_channel = params.oob_channel;
-      }
-
       return await this.authJsMfaClient.challengeAuthenticator(authJsParams);
     } catch (error: unknown) {
       if (error instanceof Auth0JsMfaChallengeError) {

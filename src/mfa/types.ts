@@ -50,8 +50,10 @@ export interface EnrollOobParams {
  * Parameters for enrolling an email authenticator
  */
 export interface EnrollEmailParams {
-  /** Must be ['email'] for email enrollment */
-  authenticator_types: ['email'];
+  /** Must be ['oob'] for email enrollment */
+  authenticator_types: ['oob'],
+  /** Must be ['email'] for email delivery */
+  oob_channels: ['email'],
   /** Email address (optional, uses user's email if not provided) */
   email?: string;
 }
@@ -128,8 +130,6 @@ export interface ChallengeParams {
   challenge_type: 'otp' | 'oob';
   /** Specific authenticator to challenge (optional) */
   authenticator_id?: string;
-  /** OOB channel to use if challenge_type is 'oob' */
-  oob_channel?: OobChannel;
 }
 
 /**

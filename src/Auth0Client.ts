@@ -1642,7 +1642,7 @@ export class Auth0Client {
    * Internal method used by MfaApiClient to exchange MFA tokens for access tokens.
    * This method should not be called directly by applications.
    */
-  public async _requestTokenForMfa(
+  async _requestTokenForMfa(
     options: {
       grant_type: string;
       mfa_token: string;
