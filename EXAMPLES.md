@@ -321,6 +321,14 @@ async function performTokenExchange() {
       scope: 'openid profile read:records'
     });
 
+    // Option 3: Exchange token within an organization context
+    const orgTokenResponse = await auth0.exchangeToken({
+      subject_token: 'EXTERNAL_PROVIDER_TOKEN',
+      subject_token_type: 'urn:example:external-token',
+      organization: '<MY_ORG_ID_OR_NAME>', // Organization ID or name
+      scope: 'openid profile email'
+    });
+
     console.log('Received tokens:', tokenResponse);
   } catch (error) {
     console.error('Exchange failed:', error);

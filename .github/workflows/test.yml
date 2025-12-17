@@ -36,7 +36,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Build package
         uses: ./.github/actions/build
@@ -44,7 +44,7 @@ jobs:
           node: ${{ env.NODE_VERSION }}
 
       - name: Save build artifacts
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v5
         with:
           path: .
           key: ${{ env.CACHE_KEY }}
@@ -57,16 +57,16 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
 
       - name: Restore build artifacts
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v5
         with:
           path: .
           key: ${{ env.CACHE_KEY }}
@@ -75,7 +75,7 @@ jobs:
         run: npm run test -- --maxWorkers=2
 
       - name: Upload coverage
-        uses: codecov/codecov-action@18283e04ce6e62d37312384ff67231eb8fd56d24 # pin@5.4.3
+        uses: codecov/codecov-action@671740ac38dd9b0130fbe1cec585b89eea48d3de # pin@5.5.2
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
   gatsby:
@@ -90,7 +90,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Run framework tests
         uses: ./.github/actions/framework
@@ -112,7 +112,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Run framework tests
         uses: ./.github/actions/framework
@@ -134,7 +134,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Run framework tests
         uses: ./.github/actions/framework
@@ -156,7 +156,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Run framework tests
         uses: ./.github/actions/framework
