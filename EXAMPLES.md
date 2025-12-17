@@ -693,8 +693,7 @@ The MFA API allows you to manage multi-factor authentication for users, includin
 ```js
 // List all enrolled authenticators for the current user
 const authenticators = await auth0.mfaClient.listAuthenticators();
-console.log(authenticators);
-// [{ id: 'otp|dev_xxx', authenticator_type: 'otp', active: true }]
+// Returns: [{ id: 'otp|dev_xxx', authenticator_type: 'otp', active: true }]
 ```
 
 ### Enrolling OTP (Authenticator App)
@@ -706,8 +705,8 @@ const enrollment = await auth0.mfaClient.enrollAuthenticator({
 });
 
 // Display QR code to user
-console.log(enrollment.barcode_uri); // otpauth://totp/...
-console.log(enrollment.secret); // Base32 secret for manual entry
+const qrCodeUri = enrollment.barcode_uri; // otpauth://totp/...
+const secret = enrollment.secret; // Base32 secret for manual entry
 ```
 
 ### Enrolling SMS
@@ -720,7 +719,7 @@ const smsEnrollment = await auth0.mfaClient.enrollAuthenticator({
   phone_number: '+12025551234' // E.164 format
 });
 
-console.log(smsEnrollment.id);
+const authenticatorId = smsEnrollment.id;
 ```
 
 ### Challenge Authenticator
@@ -735,7 +734,7 @@ const challenge = await auth0.mfaClient.challengeAuthenticator({
   authenticator_id: 'sms|dev_xxx'
 });
 
-console.log(challenge.oob_code); // Save for verification
+const oobCode = challenge.oob_code; // Save for verification
 ```
 
 ### Verify Challenge
@@ -750,15 +749,8 @@ const tokens = await auth0.mfaClient.verifyChallenge({
   binding_code: '123456' // Code user received via SMS
 });
 
-console.log(tokens.access_token);
-console.log(tokens.id_token);
-```
-
-### Deleting Authenticators
-
-```js
-// Delete an authenticator
-await auth0.mfaClient.deleteAuthenticator('otp|dev_xxx');
+const accessToken = tokens.access_token; // Use to call your API
+const idToken = tokens.id_token; // Contains user identity information
 ```
 
 ### Error Handling
@@ -772,8 +764,10 @@ try {
   });
 } catch (error) {
   if (error.error === 'invalid_phone_number') {
-    console.error('Invalid phone number format');
+    // Handle invalid phone number format
+    throw new Error('Invalid phone number format');
   }
-  console.error(error.error_description);
+  // Handle other errors
+  throw new Error(error.error_description);
 }
 ```

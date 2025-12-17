@@ -20,16 +20,6 @@ jest.mock('@auth0/auth0-auth-js', () => {
     }
   }
 
-  class MfaDeleteAuthenticatorError extends Error {
-    constructor(
-      message: string,
-      public cause?: { error: string; error_description: string }
-    ) {
-      super(message);
-      Object.setPrototypeOf(this, MfaDeleteAuthenticatorError.prototype);
-    }
-  }
-
   class MfaChallengeError extends Error {
     constructor(
       message: string,
@@ -44,7 +34,6 @@ jest.mock('@auth0/auth0-auth-js', () => {
     MfaClient: jest.fn(),
     MfaListAuthenticatorsError,
     MfaEnrollmentError,
-    MfaDeleteAuthenticatorError,
     MfaChallengeError
   };
 });
@@ -53,7 +42,6 @@ import { MfaApiClient } from '../../src/mfa/MfaApiClient';
 import {
   MfaListAuthenticatorsError as Auth0JsMfaListAuthenticatorsError,
   MfaEnrollmentError as Auth0JsMfaEnrollmentError,
-  MfaDeleteAuthenticatorError as Auth0JsMfaDeleteAuthenticatorError,
   MfaChallengeError as Auth0JsMfaChallengeError
 } from '@auth0/auth0-auth-js';
 import type { Authenticator } from '../../src/mfa/types';
@@ -70,7 +58,6 @@ describe('MfaApiClient', () => {
     mockAuthJsMfaClient = {
       listAuthenticators: jest.fn(),
       enrollAuthenticator: jest.fn(),
-      deleteAuthenticator: jest.fn(),
       challengeAuthenticator: jest.fn(),
       verifyChallenge: jest.fn(),
       setMfaToken: jest.fn()
@@ -170,45 +157,6 @@ describe('MfaApiClient', () => {
         error: 'invalid_phone_number',
         error_description: 'Invalid phone number',
         message: 'Invalid phone number'
-      });
-    });
-  });
-
-  describe('deleteAuthenticator', () => {
-    it('should delete authenticator via auth-js', async () => {
-      const mfaToken = 'test-mfa-token';
-      const authenticatorId = 'otp|dev_123';
-
-      mfaClient.setMfaToken(mfaToken);
-      mockAuthJsMfaClient.deleteAuthenticator.mockResolvedValue(undefined);
-
-      await mfaClient.deleteAuthenticator(authenticatorId);
-
-      expect(mockAuthJsMfaClient.deleteAuthenticator).toHaveBeenCalledWith({
-        authenticatorId,
-        mfaToken
-      });
-    });
-
-    it('should wrap auth-js errors with error details', async () => {
-      const mfaToken = 'test-mfa-token';
-      const authJsError = new Auth0JsMfaDeleteAuthenticatorError(
-        'Authenticator not found',
-        {
-          error: 'authenticator_not_found',
-          error_description: 'Authenticator not found'
-        }
-      );
-
-      mfaClient.setMfaToken(mfaToken);
-      mockAuthJsMfaClient.deleteAuthenticator.mockRejectedValue(authJsError);
-
-      await expect(
-        mfaClient.deleteAuthenticator('otp|dev_123')
-      ).rejects.toMatchObject({
-        error: 'authenticator_not_found',
-        error_description: 'Authenticator not found',
-        message: 'Authenticator not found'
       });
     });
   });

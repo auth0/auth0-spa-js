@@ -1,7 +1,6 @@
 import {
   MfaListAuthenticatorsError as Auth0JsMfaListAuthenticatorsError,
   MfaEnrollmentError as Auth0JsMfaEnrollmentError,
-  MfaDeleteAuthenticatorError as Auth0JsMfaDeleteAuthenticatorError,
   MfaChallengeError as Auth0JsMfaChallengeError,
   MfaApiErrorResponse
 } from '@auth0/auth0-auth-js';
@@ -69,32 +68,6 @@ export class MfaEnrollmentError extends MfaError {
     );
     //https://github.com/Microsoft/TypeScript-wiki/blob/master/Breaking-Changes.md#extending-built-ins-like-error-array-and-map-may-no-longer-work
     Object.setPrototypeOf(this, MfaEnrollmentError.prototype);
-  }
-}
-
-/**
- * Error thrown when deleting an MFA authenticator fails.
- *
- * @example
- * ```typescript
- * try {
- *   await mfaClient.deleteAuthenticator('otp|dev_123');
- * } catch (error) {
- *   if (error instanceof MfaDeleteAuthenticatorError) {
- *     console.log(error.error); // 'not_found'
- *     console.log(error.error_description); // 'Authenticator not found'
- *   }
- * }
- * ```
- */
-export class MfaDeleteAuthenticatorError extends MfaError {
-  constructor(originalError: Auth0JsMfaDeleteAuthenticatorError) {
-    super(
-      originalError.cause?.error || 'mfa_delete_authenticator_error',
-      originalError.message
-    );
-    //https://github.com/Microsoft/TypeScript-wiki/blob/master/Breaking-Changes.md#extending-built-ins-like-error-array-and-map-may-no-longer-work
-    Object.setPrototypeOf(this, MfaDeleteAuthenticatorError.prototype);
   }
 }
 

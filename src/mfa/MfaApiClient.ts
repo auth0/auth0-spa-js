@@ -13,13 +13,11 @@ import {
   MfaClient as Auth0AuthJsMfaClient,
   MfaListAuthenticatorsError as Auth0JsMfaListAuthenticatorsError,
   MfaEnrollmentError as Auth0JsMfaEnrollmentError,
-  MfaDeleteAuthenticatorError as Auth0JsMfaDeleteAuthenticatorError,
   MfaChallengeError as Auth0JsMfaChallengeError
 } from '@auth0/auth0-auth-js';
 import {
   MfaListAuthenticatorsError,
   MfaEnrollmentError,
-  MfaDeleteAuthenticatorError,
   MfaChallengeError
 } from './errors';
 
@@ -29,7 +27,6 @@ import {
  * Manages multi-factor authentication including:
  * - Listing enrolled authenticators
  * - Enrolling new authenticators (OTP, SMS, Voice, Push, Email)
- * - Deleting authenticators
  * - Initiating MFA challenges
  * - Verifying MFA challenges
  *
@@ -143,35 +140,6 @@ export class MfaApiClient {
     } catch (error: unknown) {
       if (error instanceof Auth0JsMfaEnrollmentError) {
         throw new MfaEnrollmentError(error);
-      }
-      throw error;
-    }
-  }
-
-  /**
-   * Deletes an enrolled MFA authenticator
-   *
-   * Requires MFA access token with 'remove:authenticators' scope
-   *
-   * Important behavioral notes:
-   * - Deleting push authenticator also deletes associated OTP enrollment
-   * - Deleting SMS also deletes voice (they are coupled)
-   * - Recovery codes cannot be deleted (regenerate instead)
-   *
-   * @param authenticatorId - ID of authenticator to delete (e.g., 'otp|dev_xxx')
-   * @throws {MfaDeleteAuthenticatorError} If deletion fails or authenticator not found
-   *
-   * @example
-   * ```typescript
-   * await mfaClient.deleteAuthenticator('otp|dev_IsBj5j3H12VAdOIj');
-   * ```
-   */
-  public async deleteAuthenticator(authenticatorId: string): Promise<void> {
-    try {
-      await this.authJsMfaClient.deleteAuthenticator({ authenticatorId, mfaToken: this.mfaToken });
-    } catch (error: unknown) {
-      if (error instanceof Auth0JsMfaDeleteAuthenticatorError) {
-        throw new MfaDeleteAuthenticatorError(error);
       }
       throw error;
     }

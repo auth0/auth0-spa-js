@@ -39,7 +39,6 @@ export {
   MfaError,
   MfaListAuthenticatorsError,
   MfaEnrollmentError,
-  MfaDeleteAuthenticatorError,
   MfaChallengeError
 } from './mfa/errors';
 
