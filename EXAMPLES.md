@@ -753,6 +753,23 @@ const accessToken = tokens.access_token; // Use to call your API
 const idToken = tokens.id_token; // Contains user identity information
 ```
 
+### Verify with Recovery Code
+
+Recovery codes can be used to complete MFA verification without initiating a challenge. Each recovery code can only be used once.
+
+```js
+// Verify directly with recovery code (no challenge needed)
+const tokens = await auth0.mfaClient.verifyChallenge({
+  mfa_token: mfaTokenFromLogin,
+  client_id: '<AUTH0_CLIENT_ID>',
+  grant_type: 'http://auth0.com/oauth/grant-type/mfa-recovery-code',
+  recovery_code: 'XXXX-XXXX-XXXX' // One of the recovery codes
+});
+
+const accessToken = tokens.access_token;
+const idToken = tokens.id_token;
+```
+
 ### Error Handling
 
 ```js

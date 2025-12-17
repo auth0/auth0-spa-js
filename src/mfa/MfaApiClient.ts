@@ -208,7 +208,7 @@ export class MfaApiClient {
   /**
    * Verifies an MFA challenge and completes authentication
    *
-   * @param params - Verification parameters with OTP or OOB code
+   * @param params - Verification parameters with OTP, OOB code, or recovery code
    * @returns Token response with access_token, id_token, refresh_token
    * @throws {Error} If verification fails (invalid code, expired, rate limited)
    *
@@ -237,6 +237,16 @@ export class MfaApiClient {
    *   binding_code: '123456' // Code user received via SMS
    * });
    * ```
+   *
+   * @example Recovery code verification (no challenge needed)
+   * ```typescript
+   * const tokens = await mfaClient.verifyChallenge({
+   *   mfa_token: mfaTokenFromLogin,
+   *   client_id: 'YOUR_CLIENT_ID',
+   *   grant_type: 'http://auth0.com/oauth/grant-type/mfa-recovery-code',
+   *   recovery_code: 'XXXX-XXXX-XXXX'
+   * });
+   * ```
    */
   public async verifyChallenge(
     params: VerifyChallengeParams
@@ -260,7 +270,8 @@ export class MfaApiClient {
       audience: this.audience,
       otp: params.otp,
       oob_code: params.oob_code,
-      binding_code: params.binding_code
+      binding_code: params.binding_code,
+      recovery_code: params.recovery_code
     });
   }
 }

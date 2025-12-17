@@ -94,8 +94,12 @@ export interface OobEnrollmentResponse {
   oob_code?: string;
   /** Binding method (e.g., 'prompt' for user code entry) */
   binding_method?: string;
+  /** Recovery codes (generated when enrolling first MFA factor) */
+  recovery_codes?: string[];
   /** Authenticator ID */
   id?: string;
+  /** URI for QR code (for Push/Guardian enrollment) */
+  barcode_uri?: string;
 }
 
 /**
@@ -106,6 +110,8 @@ export interface EmailEnrollmentResponse {
   authenticator_type: 'email';
   /** Email address enrolled */
   email: string;
+  /** Recovery codes (generated when enrolling first MFA factor) */
+  recovery_codes?: string[];
   /** Authenticator ID */
   id?: string;
 }
@@ -149,7 +155,8 @@ export interface ChallengeResponse {
  */
 export type MfaGrantType =
   | 'http://auth0.com/oauth/grant-type/mfa-otp'
-  | 'http://auth0.com/oauth/grant-type/mfa-oob';
+  | 'http://auth0.com/oauth/grant-type/mfa-oob'
+  | 'http://auth0.com/oauth/grant-type/mfa-recovery-code';
 
 /**
  * Parameters for verifying an MFA challenge
@@ -167,4 +174,6 @@ export interface VerifyChallengeParams {
   oob_code?: string;
   /** Binding code (for OOB challenges with binding) */
   binding_code?: string;
+  /** Recovery code (for recovery code verification) */
+  recovery_code?: string;
 }
