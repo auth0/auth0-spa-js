@@ -1255,7 +1255,7 @@ export class Auth0Client {
       }
       if (e instanceof MfaRequiredError) {
         this.mfaClient.setMfaToken(e.mfa_token);
-        this.mfaClient.setMFAAuthDetails(options.authorizationParams.scope, options.authorizationParams.audience);
+        this.mfaClient.setMFAAuthDetails(options.authorizationParams?.scope, options.authorizationParams?.audience);
       }
 
       throw e;
