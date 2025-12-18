@@ -65,7 +65,7 @@ describe('MfaApiClient', () => {
 
     // Create mock Auth0Client
     mockAuth0Client = {
-      requestTokenForMfa: jest.fn()
+      _requestTokenForMfa: jest.fn()
     } as any;
 
     mfaClient = new MfaApiClient(mockAuthJsMfaClient, mockAuth0Client);
@@ -230,11 +230,11 @@ describe('MfaApiClient', () => {
 
       mfaClient.setMfaToken(mfaToken);
       mfaClient.setMFAAuthDetails('openid profile', 'https://api.example.com');
-      mockAuth0Client.requestTokenForMfa.mockResolvedValue(mockTokenResponse);
+      mockAuth0Client._requestTokenForMfa.mockResolvedValue(mockTokenResponse);
 
       const result = await mfaClient.verifyChallenge(params as any);
 
-      expect(mockAuth0Client.requestTokenForMfa).toHaveBeenCalledWith({
+      expect(mockAuth0Client._requestTokenForMfa).toHaveBeenCalledWith({
         grant_type: 'http://auth0.com/oauth/grant-type/mfa-otp',
         mfa_token: mfaToken,
         scope: 'openid profile',
@@ -259,7 +259,7 @@ describe('MfaApiClient', () => {
       // Not calling setMFAAuthDetails
 
       await expect(mfaClient.verifyChallenge(params as any)).rejects.toThrow(
-        'MFA scope is not set'
+        'MFA client is not properly configured. Missing: scope, audience. See documentation: https://github.com/auth0/auth0-spa-js/blob/main/EXAMPLES.md#multi-factor-authentication-mfa'
       );
     });
 
@@ -275,7 +275,7 @@ describe('MfaApiClient', () => {
       // Not calling setMfaToken
 
       await expect(mfaClient.verifyChallenge(params as any)).rejects.toThrow(
-        'MFA token is not set'
+        "MFA client is not properly configured. Missing: MFA token. See documentation: https://github.com/auth0/auth0-spa-js/blob/main/EXAMPLES.md#multi-factor-authentication-mfa"
       );
     });
   });

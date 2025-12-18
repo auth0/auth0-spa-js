@@ -17,7 +17,8 @@ module.exports = {
   ],
   coverageReporters: ['lcov', 'text', 'text-summary'],
   preset: 'ts-jest/presets/js-with-ts',
-  transformIgnorePatterns: ['node_modules\/(?!(dpop)\/)'],
+  // Transform ES modules in node_modules that Jest can't parse by default
+  transformIgnorePatterns: ['node_modules\/(?!(dpop|@auth0\/auth0-auth-js|openid-client|oauth4webapi|jose)\/)'],
   setupFiles: ['jest-localstorage-mock', './jest.setup.js'],
   globals: {
     'ts-jest': {
