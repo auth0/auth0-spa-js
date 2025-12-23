@@ -15,14 +15,15 @@ on:
     secrets:
       github-token:
         required: true
-      npm-token:
-        required: true
 
 jobs:
   release:
     if: github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.pull_request.merged && startsWith(github.event.pull_request.head.ref, 'release/'))
     runs-on: ubuntu-latest
     environment: release
+    permissions:
+      contents: write
+      id-token: write
 
     steps:
       # Checkout the code
@@ -66,7 +67,6 @@ jobs:
           node-version: ${{ inputs.node-version }}
           require-build: ${{ inputs.require-build }}
           version: ${{ steps.get_version.outputs.version }}
-          npm-token: ${{ secrets.npm-token }}
           release-directory: ${{ inputs.release-directory }}
 
       # Create a release for the tag
