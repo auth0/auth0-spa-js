@@ -137,6 +137,7 @@ export const setupFn = (mockVerify: jest.Mock) => {
     mockVerify.mockReturnValue({
       claims: Object.assign(
         {
+          sub: 'me',
           exp: Date.now() / 1000 + 86400
         },
         claims
@@ -311,11 +312,9 @@ export const setupMessageEventLister = (
   });
 };
 
-export const setupFailingPopup = (
-  mockWindow: any
-) => {
+export const setupFailingPopup = (mockWindow: any) => {
   mockWindow.open.mockReturnValue(null);
-}
+};
 
 export const loginWithPopupFn = (mockWindow, mockFetch) => {
   return async (
