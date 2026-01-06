@@ -5,14 +5,14 @@ import babel from '@rollup/plugin-babel';
 import { terser } from 'rollup-plugin-terser';
 import sourcemaps from 'rollup-plugin-sourcemaps';
 import livereload from 'rollup-plugin-livereload';
-import visualizer from 'rollup-plugin-visualizer';
+import { visualizer } from 'rollup-plugin-visualizer';
 import webWorkerLoader from 'rollup-plugin-web-worker-loader';
 import replace from '@rollup/plugin-replace';
 import analyze from 'rollup-plugin-analyzer';
 import dev from 'rollup-plugin-dev';
-import { createApp } from './scripts/oidc-provider';
+import { createApp } from './scripts/oidc-provider.mjs';
 
-import pkg from './package.json';
+import pkg from './package.json' with { type: 'json' };
 
 const EXPORT_NAME = 'auth0';
 

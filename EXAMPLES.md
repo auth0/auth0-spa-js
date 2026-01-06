@@ -77,7 +77,7 @@ Using this setting will cause the SDK to automatically send the `offline_access`
 
 ### Refresh Token fallback
 
-In all cases where a refresh token is not available, the SDK falls back to the legacy technique of using a hidden iframe with `prompt=none` to try and get a new access token and refresh token. This scenario would occur for example if you are using the in-memory cache and you have refreshed the page. In this case, any refresh token that was stored previously would be lost.
+In all cases where a refresh token is not available, the SDK falls back to the standard technique of using a hidden iframe with `prompt=none` to try and get a new access token and refresh token. This scenario would occur for example if you are using the in-memory cache and you have refreshed the page. In this case, any refresh token that was stored previously would be lost.
 
 If the fallback mechanism fails, a `login_required` error will be thrown and could be handled in order to put the user back through the authentication process.
 

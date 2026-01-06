@@ -161,8 +161,11 @@ export interface Auth0ClientOptions {
   cache?: ICache;
 
   /**
-   * If true, refresh tokens are used to fetch new access tokens from the Auth0 server. If false, the legacy technique of using a hidden iframe and the `authorization_code` grant with `prompt=none` is used.
+   * If true, refresh tokens are used to fetch new access tokens from the Auth0 server. If false, the standard technique of using a hidden iframe and the `authorization_code` grant with `prompt=none` is used.
    * The default setting is `false`.
+   *
+   * Standard technique relies on cookies. Because browsers increasingly block third-party cookies, it requires a Custom Domain to function reliably. Refresh tokens serve as a fallback for environments where third-party cookies are blocked.
+   * Using a Custom Domain with this set to `false` is the most secure and recommended approach.
    *
    * **Note**: Use of refresh tokens must be enabled by an administrator on your Auth0 client application.
    */
