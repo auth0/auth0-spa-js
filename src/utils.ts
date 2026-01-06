@@ -30,10 +30,14 @@ export const parseAuthenticationResult = (
   };
 };
 
-export const runIframe = (
+/**
+ * Runs an iframe with web_message response mode (postMessage-based).
+ * @ignore
+ */
+const runIframeWithWebMessage = (
   authorizeUrl: string,
   eventOrigin: string,
-  timeoutInSeconds: number = DEFAULT_AUTHORIZE_TIMEOUT_IN_SECONDS
+  timeoutInSeconds: number
 ) => {
   return new Promise<AuthenticationResult>((res, rej) => {
     const iframe = window.document.createElement('iframe');
@@ -82,6 +86,104 @@ export const runIframe = (
     window.document.body.appendChild(iframe);
     iframe.setAttribute('src', authorizeUrl);
   });
+};
+
+/**
+ * Runs an iframe with query response mode (URL polling-based).
+ * @ignore
+ */
+const runIframeWithQueryMode = (
+  authorizeUrl: string,
+  redirectUri: string,
+  timeoutInSeconds: number
+) => {
+  return new Promise<AuthenticationResult>((res, rej) => {
+    const iframe = window.document.createElement('iframe');
+
+    iframe.setAttribute('width', '0');
+    iframe.setAttribute('height', '0');
+    iframe.style.display = 'none';
+
+    let urlCheckInterval: ReturnType<typeof setInterval> | null = null;
+
+    const removeIframe = () => {
+      if (window.document.body.contains(iframe)) {
+        window.document.body.removeChild(iframe);
+      }
+      if (urlCheckInterval) {
+        clearInterval(urlCheckInterval);
+        urlCheckInterval = null;
+      }
+    };
+
+    const timeoutSetTimeoutId = setTimeout(() => {
+      rej(new TimeoutError());
+      removeIframe();
+    }, timeoutInSeconds * 1000);
+
+    const checkIframeUrl = () => {
+      try {
+        const iframeLocation = iframe.contentWindow?.location.href;
+
+        // Check if iframe has navigated to redirect URI
+        if (iframeLocation && iframeLocation.startsWith(redirectUri)) {
+          // Extract query string
+          const url = new URL(iframeLocation);
+          const queryString = url.search.substring(1); // Remove leading '?'
+
+          if (queryString) {
+            // Parse using existing parseAuthenticationResult
+            const authResult = parseAuthenticationResult(queryString);
+
+            // Clear interval and timeout
+            clearTimeout(timeoutSetTimeoutId);
+            removeIframe();
+
+            // Resolve or reject based on result
+            if (authResult.error) {
+              rej(
+                GenericError.fromPayload(
+                  authResult as { error: string; error_description: string }
+                )
+              );
+            } else {
+              res(authResult);
+            }
+          }
+        }
+      } catch (e) {
+        // Silently ignore - iframe may not be loaded yet or cross-origin issue
+      }
+    };
+
+    // Poll every 100ms
+    urlCheckInterval = setInterval(checkIframeUrl, 100);
+
+    window.document.body.appendChild(iframe);
+    iframe.setAttribute('src', authorizeUrl);
+  });
+};
+
+/**
+ * Runs an iframe to perform silent authentication.
+ * Supports both 'web_message' (postMessage) and 'query' (URL polling) response modes.
+ */
+export const runIframe = (
+  authorizeUrl: string,
+  eventOrigin: string,
+  timeoutInSeconds: number = DEFAULT_AUTHORIZE_TIMEOUT_IN_SECONDS,
+  responseMode: string = 'web_message',
+  redirectUri?: string
+) => {
+  if (responseMode === 'query') {
+    if (!redirectUri) {
+      return Promise.reject(
+        new Error('redirect_uri is required for query response mode')
+      );
+    }
+    return runIframeWithQueryMode(authorizeUrl, redirectUri, timeoutInSeconds);
+  }
+  return runIframeWithWebMessage(authorizeUrl, eventOrigin, timeoutInSeconds);
 };
 
 export const openPopup = (url: string) => {
