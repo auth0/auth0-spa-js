@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Auth0 - MFA APIs Integration</title>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
+        integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous" />
+    <script src="/auth0-spa-js.development.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+</head>
+
+<body class="bg-light">
+    <div id="app" class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-md-8 col-lg-8">
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <h2 class="card-title text-center mb-4">Auth0 MFA APIs Integration</h2>
+
+                        <!-- Configuration Form -->
+                        <form @submit.prevent="initClient" class="mb-3" v-if="!isAuthenticated">
+                            <div class="form-group">
+                                <label for="domain">Domain</label>
+                                <input id="domain" v-model="domain" required class="form-control" />
+                                <small class="form-text text-muted">
+                                    Your Auth0 tenant domain (e.g., dev-xxx.us.auth0.com)
+                                </small>
+                            </div>
+                            <div class="form-group">
+                                <label for="clientId">Client ID</label>
+                                <input id="clientId" v-model="clientId" required class="form-control" />
+                            </div>
+                            <div class="form-group">
+                                <label for="audience">Audience</label>
+                                <input id="audience" v-model="audience" class="form-control" />
+                                <small class="form-text text-muted">
+                                    Optional API identifier (e.g., email-api)
+                                </small>
+                            </div>
+                            <div class="form-group">
+                                <label for="scopes">Scopes</label>
+                                <input id="scopes" v-model="scopes" class="form-control" />
+                                <small class="form-text text-muted">
+                                    Default: <code>openid profile email</code>
+                                </small>
+                            </div>
+                            <button type="submit" class="btn btn-primary btn-block">Login with Auth0</button>
+                        </form>
+
+                        <!-- User Profile Card -->
+                        <div v-if="isAuthenticated && user" class="card bg-light mb-3">
+                            <div class="card-body">
+                                <h5 class="card-title">Logged In</h5>
+                                <div class="d-flex align-items-center mb-3">
+                                    <img v-if="user.picture" :src="user.picture" class="rounded-circle mr-3" width="60"
+                                        height="60" />
+                                    <div>
+                                        <p class="mb-0"><strong>{{ user.name || user.email }}</strong></p>
+                                        <p class="mb-0 text-muted">{{ user.email }}</p>
+                                    </div>
+                                </div>
+                                <button @click="logout" class="btn btn-outline-secondary btn-sm">Logout</button>
+                                <button @click="resetMfaFlow" class="btn btn-outline-primary btn-sm ml-2">Reset</button>
+                            </div>
+                        </div>
+
+                        <!-- MFA Trigger Section -->
+                        <div v-if="isAuthenticated" class="mb-3">
+                            <button @click="triggerMFA" class="btn btn-success btn-block" :disabled="mfaToken">
+                                Get token silently (Trigger MFA)
+                            </button>
+                        </div>
+
+                        <!-- MFA Requirements Display -->
+                        <div v-if="mfaToken && mfaRequirements" class="alert alert-info mt-3">
+                            <h6>MFA Required</h6>
+                            <pre class="bg-white p-3 border rounded mb-0"
+                                style="max-height: 200px; overflow-y: auto;">{{ JSON.stringify(mfaRequirements, null, 2) }}</pre>
+                            <p class="mb-0 mt-2"><strong>MFA Token:</strong>
+                                <code>{{ mfaToken.substring(0, 20) }}...</code>
+                            </p>
+                        </div>
+
+                        <!-- Success Message -->
+                        <div v-if="successMessage" class="alert alert-success mt-3">
+                            <h6>{{ successMessage }}</h6>
+                            <div v-if="tokens" class="mt-2">
+                                <p class="mb-1"><strong>Access Token:</strong></p>
+                                <code class="d-block bg-white p-2 border rounded text-dark"
+                                    style="word-break: break-all;">{{ tokens.access_token.substring(0, 100) }}...</code>
+                                <p class="mb-1 mt-2"><strong>ID Token:</strong></p>
+                                <code class="d-block bg-white p-2 border rounded text-dark"
+                                    style="word-break: break-all;">{{ tokens.id_token ? tokens.id_token.substring(0, 100) + '...' : 'N/A' }}</code>
+                            </div>
+                        </div>
+
+                        <!-- Authenticators List -->
+                        <div v-if="mfaToken" class="card mb-3">
+                            <div class="card-body">
+                                <h5 class="card-title">Authenticators</h5>
+                                <div v-if="loadingAuthenticators" class="text-center py-3">
+                                    <div class="spinner-border spinner-border-sm" role="status">
+                                        <span class="sr-only">Loading...</span>
+                                    </div>
+                                    <p class="text-muted mt-2">Loading authenticators...</p>
+                                </div>
+                                <div v-else-if="authenticators.length">
+                                    <div class="table-responsive">
+                                        <table class="table table-sm table-bordered">
+                                            <thead class="thead-light">
+                                                <tr>
+                                                    <th>Type</th>
+                                                    <th>ID</th>
+                                                    <th>Active</th>
+                                                    <th>Name</th>
+                                                    <th>Action</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr v-for="auth in authenticators" :key="auth.id">
+                                                    <td><span class="badge badge-primary">{{ auth.authenticatorType
+                                                            }}</span></td>
+                                                    <td><code>{{ auth.id }}</code></td>
+                                                    <td>
+                                                        <span v-if="auth.active"
+                                                            class="badge badge-success">Active</span>
+                                                        <span v-else class="badge badge-secondary">Inactive</span>
+                                                    </td>
+                                                    <td>{{ auth.name || '-' }}</td>
+                                                    <td>
+                                                        <button @click="challenge(auth)" class="btn btn-sm btn-primary"
+                                                            :disabled="!auth.active">
+                                                            Verify
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                                <p v-else class="text-muted mb-0">No authenticators found.</p>
+                            </div>
+                        </div>
+
+                        <!-- Placeholder: Enrollment Form -->
+                        <div v-if="mfaToken" class="card mb-3">
+                            <div class="card-body">
+                                <h5 class="card-title">Enroll New Authenticator</h5>
+                                <p class="text-muted">Enrollment options will appear here...</p>
+                            </div>
+                        </div>
+
+                        <!-- Challenge/Verification Form -->
+                        <div v-if="selectedAuthenticator" class="card mb-3">
+                            <div class="card-body">
+                                <h5 class="card-title">Verify MFA Challenge</h5>
+                                <p class="mb-2">
+                                    <strong>Authenticator:</strong>
+                                    <span class="badge badge-primary">{{ selectedAuthenticator.authenticatorType
+                                        }}</span>
+                                    <code class="ml-2">{{ selectedAuthenticator.id }}</code>
+                                </p>
+
+                                <div v-if="loadingChallenge" class="text-center py-3">
+                                    <div class="spinner-border spinner-border-sm" role="status"></div>
+                                    <p class="text-muted mt-2">Initiating challenge...</p>
+                                </div>
+
+                                <div v-else-if="challengeData">
+                                    <div v-if="challengeData.oobCode" class="alert alert-info">
+                                        <p class="mb-0"><strong>OOB Code:</strong>
+                                            <code>{{ challengeData.oobCode }}</code>
+                                        </p>
+                                        <small>A code has been sent. Please check your device.</small>
+                                    </div>
+
+                                    <form @submit.prevent="verifyChallenge" class="mt-3">
+                                        <div class="form-group">
+                                            <label for="verificationCode">Enter Verification Code</label>
+                                            <input id="verificationCode" v-model="verificationCode" type="text"
+                                                class="form-control" placeholder="e.g., 123456" required
+                                                :disabled="loadingVerification" />
+                                        </div>
+                                        <button type="submit" class="btn btn-success btn-block"
+                                            :disabled="loadingVerification || !verificationCode">
+                                            <span v-if="loadingVerification">
+                                                <span class="spinner-border spinner-border-sm" role="status"></span>
+                                                Verifying...
+                                            </span>
+                                            <span v-else>Verify Code</span>
+                                        </button>
+                                        <button type="button" @click="cancelVerification"
+                                            class="btn btn-outline-secondary btn-block mt-2"
+                                            :disabled="loadingVerification">
+                                            Cancel
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Placeholder: Recovery Codes -->
+                        <div v-if="mfaToken" class="card mb-3">
+                            <div class="card-body">
+                                <h5 class="card-title">Recovery Codes</h5>
+                                <p class="text-muted">Recovery codes will appear here after enrollment...</p>
+                            </div>
+                        </div>
+
+                        <!-- Error Display -->
+                        <div v-if="error" class="alert alert-danger mt-3">{{ error }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Authentication Module, handles setup -->
+    <script>
+        const authModule = {
+            saveSettings() {
+                localStorage.setItem(
+                    'mfa-settings',
+                    JSON.stringify({
+                        domain: this.domain,
+                        clientId: this.clientId,
+                        audience: this.audience,
+                        scopes: this.scopes
+                    })
+                );
+            },
+
+            loadSettings() {
+                const settings = JSON.parse(localStorage.getItem('mfa-settings') || '{}');
+                if (settings.domain) this.domain = settings.domain;
+                if (settings.clientId) this.clientId = settings.clientId;
+                if (settings.audience) this.audience = settings.audience;
+                if (settings.scopes) this.scopes = settings.scopes;
+            },
+
+            createAuth0Client() {
+                return new auth0.Auth0Client({
+                    domain: this.domain,
+                    clientId: this.clientId,
+                    useRefreshTokens: true,
+                    cacheLocation: 'localstorage',
+                    authorizationParams: {
+                        redirect_uri: `${window.location.origin}/mfa_flow.html`,
+                        ...(this.audience && { audience: this.audience }),
+                        ...(this.scopes && { scope: this.scopes })
+                    }
+                });
+            },
+
+            async initClient() {
+                this.saveSettings();
+                this.error = '';
+
+                try {
+                    this.auth0 = this.createAuth0Client();
+                    this.isAuthenticated = await this.auth0.isAuthenticated();
+
+                    if (this.isAuthenticated) {
+                        this.user = await this.auth0.getUser();
+                    } else {
+                        await this.auth0.loginWithRedirect();
+                    }
+                } catch (e) {
+                    this.error = e.message || e;
+                }
+            },
+
+            async logout() {
+                if (this.auth0) {
+                    await this.auth0.logout({
+                        logoutParams: {
+                            returnTo: `${window.location.origin}/mfa_flow.html`
+                        }
+                    });
+                }
+            },
+
+            async handleRedirectCallback() {
+                const urlParams = new URLSearchParams(window.location.search);
+                if (urlParams.has('code') || urlParams.has('state')) {
+                    try {
+                        this.auth0 = this.createAuth0Client();
+                        await this.auth0.handleRedirectCallback();
+                        window.history.replaceState({}, document.title, window.location.pathname);
+
+                        this.isAuthenticated = await this.auth0.isAuthenticated();
+                        if (this.isAuthenticated) {
+                            this.user = await this.auth0.getUser();
+                        }
+                    } catch (e) {
+                        this.error = e.message || e;
+                    }
+                }
+            }
+        };
+    </script>
+
+    <!-- MFA Module, Handles MFA-specific APIs -->
+    <script>
+        const mfaModule = {
+            resetMfaFlow() {
+                this.error = '';
+                this.successMessage = '';
+                this.tokens = null;
+                this.mfaToken = null;
+                this.mfaRequirements = null;
+                this.authenticators = [];
+                this.selectedAuthenticator = null;
+                this.challengeData = null;
+                this.verificationCode = '';
+            },
+
+            async triggerMFA() {
+                this.error = '';
+                this.successMessage = '';
+                this.tokens = null;
+                this.mfaToken = null;
+                this.mfaRequirements = null;
+                this.authenticators = [];
+
+                try {
+                    await this.auth0.getTokenSilently({
+                        cacheMode: "off",
+                        authorizationParams: {
+                            ...(this.audience && { audience: this.audience })
+                        }
+                    });
+                } catch (e) {
+                    if (e.error === 'mfa_required') {
+                        this.mfaToken = e.mfa_token;
+                        this.mfaRequirements = e.mfa_requirements || {};
+                        await this.getAuthenticators();
+                    } else {
+                        this.error = e.message || e.error_description || e;
+                    }
+                }
+            },
+
+            async getAuthenticators() {
+                if (!this.mfaToken || !this.mfaRequirements.challenge) {
+                    return;
+                }
+
+                this.loadingAuthenticators = true;
+                this.error = '';
+
+                try {
+                    const challengeTypes = this.mfaRequirements.challenge.map(c => c.type);
+                    this.authenticators = await this.auth0.mfa.getAuthenticators({
+                        mfaToken: this.mfaToken,
+                        challengeType: challengeTypes
+                    });
+                } catch (e) {
+                    this.error = e.message || e.error_description || e;
+                } finally {
+                    this.loadingAuthenticators = false;
+                }
+            },
+
+            async challenge(authenticator) {
+                this.selectedAuthenticator = authenticator;
+                this.challengeData = null;
+                this.verificationCode = '';
+                this.error = '';
+                this.loadingChallenge = true;
+
+                try {
+                    const challengeType = this.getChallengeType(authenticator.authenticatorType);
+                    this.challengeData = await this.auth0.mfa.challenge({
+                        mfaToken: this.mfaToken,
+                        client_id: this.clientId,
+                        challengeType: challengeType,
+                        authenticatorId: authenticator.id
+                    });
+                } catch (e) {
+                    this.error = e.message || e.error_description || e;
+                    this.selectedAuthenticator = null;
+                } finally {
+                    this.loadingChallenge = false;
+                }
+            },
+
+            async verifyChallenge() {
+                this.error = '';
+                this.successMessage = '';
+                this.loadingVerification = true;
+
+                try {
+                    const grantType = this.getGrantType(this.selectedAuthenticator.authenticatorType);
+                    const verifyParams = {
+                        mfaToken: this.mfaToken,
+                        client_id: this.clientId,
+                        grant_type: grantType,
+                        [this.getCodeParamName(this.selectedAuthenticator.authenticatorType)]: this.verificationCode
+                    };
+
+                    if (this.challengeData.oobCode) {
+                        verifyParams.oobCode = this.challengeData.oobCode;
+                    }
+
+                    this.tokens = await this.auth0.mfa.verify(verifyParams);
+                    this.successMessage = 'MFA Verification Successful!';
+
+                    // Reset only the verification view
+                    this.selectedAuthenticator = null;
+                    this.challengeData = null;
+                    this.verificationCode = '';
+                } catch (e) {
+                    this.error = e.message || e.error_description || e;
+                } finally {
+                    this.loadingVerification = false;
+                }
+            },
+
+            cancelVerification() {
+                this.selectedAuthenticator = null;
+                this.challengeData = null;
+                this.verificationCode = '';
+                this.error = '';
+            },
+
+            // Helper functions
+            getChallengeType(authenticatorType) {
+                const typeMap = {
+                    'otp': 'otp',
+                    'oob': 'oob',
+                    'recovery-code': 'recovery-code'
+                };
+                return typeMap[authenticatorType] || authenticatorType;
+            },
+
+            getGrantType(authenticatorType) {
+                const grantMap = {
+                    'otp': 'http://auth0.com/oauth/grant-type/mfa-otp',
+                    'oob': 'http://auth0.com/oauth/grant-type/mfa-oob',
+                    'recovery-code': 'http://auth0.com/oauth/grant-type/mfa-recovery-code'
+                };
+                return grantMap[authenticatorType] || grantMap['otp'];
+            },
+
+            getCodeParamName(authenticatorType) {
+                const paramMap = {
+                    'otp': 'otp',
+                    'oob': 'bindingCode',
+                    'recovery-code': 'recoveryCode'
+                };
+                return paramMap[authenticatorType] || 'otp';
+            }
+        };
+    </script>
+
+    <!-- Vue App, combines authentication and MFA modules -->
+    <script>
+        window.app = new Vue({
+            el: '#app',
+            data() {
+                const settings = JSON.parse(localStorage.getItem('mfa-settings') || '{}');
+                return {
+                    // Configuration
+                    domain: settings.domain,
+                    clientId: settings.clientId,
+                    audience: settings.audience,
+                    scopes: settings.scopes,
+                    // Auth state
+                    auth0: null,
+                    isAuthenticated: false,
+                    user: null,
+                    // MFA state
+                    mfaToken: null,
+                    mfaRequirements: null,
+                    authenticators: [],
+                    selectedAuthenticator: null,
+                    challengeData: null,
+                    verificationCode: '',
+                    // UI state
+                    loadingAuthenticators: false,
+                    loadingChallenge: false,
+                    loadingVerification: false,
+                    successMessage: '',
+                    tokens: null,
+                    error: ''
+                };
+            },
+            methods: {
+                // Combine both modules
+                ...authModule,
+                ...mfaModule
+            },
+            async mounted() {
+                this.loadSettings();
+                await this.handleRedirectCallback();
+            }
+        });
+    </script>
+</body>
+
+</html>
