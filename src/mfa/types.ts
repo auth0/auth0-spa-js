@@ -5,15 +5,17 @@ export interface Authenticator {
   /** Unique identifier for the authenticator */
   id: string;
   /** Type of authenticator */
-  authenticator_type: AuthenticatorType;
+  authenticatorType: AuthenticatorType;
   /** Whether the authenticator is active */
   active: boolean;
   /** Optional friendly name */
   name?: string;
   /** ISO 8601 timestamp when created */
-  created_at?: string;
+  createdAt?: string;
   /** ISO 8601 timestamp of last authentication */
-  last_auth?: string;
+  lastAuth?: string;
+  /** Types of MFA challenges*/
+  type?: string;
 }
 
 /**
@@ -22,38 +24,74 @@ export interface Authenticator {
 export type AuthenticatorType = 'otp' | 'oob' | 'recovery-code' | 'email';
 
 /**
+ * Types of MFA challenges
+ */
+export type ChallengeType = 'otp' | 'phone' | 'recovery-code' | 'email' | 'push-notification' | 'totp';
+
+/**
  * Out-of-band delivery channels
  */
 export type OobChannel = 'sms' | 'voice' | 'auth0';
 
 /**
+ * Parameters for getting authenticators
+ */
+export interface GetAuthenticatorsParams {
+  /** MFA token from mfa_required error */
+  mfaToken: string;
+
+  /**
+   * Array of challenge types to filter authenticators.
+   * Use values from mfa_required error's mfa_requirements.challenge[].type
+   * 
+   * @example
+   * ```typescript
+   * const challengeTypes = error.mfa_requirements.challenge.map(c => c.type);
+   * const authenticators = await mfa.getAuthenticators({
+   *   mfaToken: error.mfa_token,
+   *   challengeType: challengeTypes
+   * });
+   * ```
+   */
+  challengeType: ChallengeType[];
+}
+
+/**
+ * Base parameters for all enrollment types
+ */
+export interface EnrollBaseParams {
+  /** MFA token from mfa_required error */
+  mfaToken: string;
+}
+
+/**
  * Parameters for enrolling an OTP authenticator (TOTP apps like Google Authenticator)
  */
-export interface EnrollOtpParams {
+export interface EnrollOtpParams extends EnrollBaseParams {
   /** Must be ['otp'] for OTP enrollment */
-  authenticator_types: ['otp'];
+  authenticatorTypes: ['otp'];
 }
 
 /**
  * Parameters for enrolling an out-of-band authenticator (SMS, Voice, Push)
  */
-export interface EnrollOobParams {
+export interface EnrollOobParams extends EnrollBaseParams {
   /** Must be ['oob'] for OOB enrollment */
-  authenticator_types: ['oob'];
+  authenticatorTypes: ['oob'];
   /** Delivery channels to enable */
-  oob_channels: OobChannel[];
+  oobChannels: OobChannel[];
   /** Phone number for SMS/Voice (E.164 format: +1234567890) */
-  phone_number?: string;
+  phoneNumber?: string;
 }
 
 /**
  * Parameters for enrolling an email authenticator
  */
-export interface EnrollEmailParams {
+export interface EnrollEmailParams extends EnrollBaseParams {
   /** Must be ['oob'] for email enrollment */
-  authenticator_types: ['oob'],
+  authenticatorTypes: ['oob'],
   /** Must be ['email'] for email delivery */
-  oob_channels: ['email'],
+  oobChannels: ['email'],
   /** Email address (optional, uses user's email if not provided) */
   email?: string;
 }
@@ -61,7 +99,7 @@ export interface EnrollEmailParams {
 /**
  * Union type for all enrollment parameter types
  */
-export type EnrollAuthenticatorParams =
+export type EnrollParams =
   | EnrollOtpParams
   | EnrollOobParams
   | EnrollEmailParams;
@@ -71,13 +109,13 @@ export type EnrollAuthenticatorParams =
  */
 export interface OtpEnrollmentResponse {
   /** Authenticator type */
-  authenticator_type: 'otp';
+  authenticatorType: 'otp';
   /** Base32-encoded secret for TOTP generation */
   secret: string;
   /** URI for generating QR code (otpauth://...) */
-  barcode_uri: string;
+  barcodeUri: string;
   /** Recovery codes for account recovery */
-  recovery_codes?: string[];
+  recoveryCodes?: string[];
   /** Authenticator ID */
   id?: string;
 }
@@ -87,19 +125,19 @@ export interface OtpEnrollmentResponse {
  */
 export interface OobEnrollmentResponse {
   /** Authenticator type */
-  authenticator_type: 'oob';
+  authenticatorType: 'oob';
   /** Delivery channel used */
-  oob_channel: OobChannel;
+  oobChannel: OobChannel;
   /** Out-of-band code for verification */
-  oob_code?: string;
+  oobCode?: string;
   /** Binding method (e.g., 'prompt' for user code entry) */
-  binding_method?: string;
+  bindingMethod?: string;
   /** Recovery codes (generated when enrolling first MFA factor) */
-  recovery_codes?: string[];
+  recoveryCodes?: string[];
   /** Authenticator ID */
   id?: string;
   /** URI for QR code (for Push/Guardian enrollment) */
-  barcode_uri?: string;
+  barcodeUri?: string;
 }
 
 /**
@@ -107,11 +145,11 @@ export interface OobEnrollmentResponse {
  */
 export interface EmailEnrollmentResponse {
   /** Authenticator type */
-  authenticator_type: 'email';
+  authenticatorType: 'email';
   /** Email address enrolled */
   email: string;
   /** Recovery codes (generated when enrolling first MFA factor) */
-  recovery_codes?: string[];
+  recoveryCodes?: string[];
   /** Authenticator ID */
   id?: string;
 }
@@ -127,15 +165,15 @@ export type EnrollmentResponse =
 /**
  * Parameters for initiating an MFA challenge
  */
-export interface ChallengeParams {
+export interface ChallengeAuthenticatorParams {
   /** MFA token from mfa_required error or MFA-scoped access token */
-  mfa_token: string;
+  mfaToken: string;
   /** Auth0 application client ID */
   client_id: string;
   /** Type of challenge to initiate */
-  challenge_type: 'otp' | 'oob';
+  challengeType: 'otp' | 'oob';
   /** Specific authenticator to challenge (optional) */
-  authenticator_id?: string;
+  authenticatorId?: string;
 }
 
 /**
@@ -143,11 +181,11 @@ export interface ChallengeParams {
  */
 export interface ChallengeResponse {
   /** Type of challenge created */
-  challenge_type: 'otp' | 'oob';
+  challengeType: 'otp' | 'oob';
   /** Out-of-band code (for OOB challenges) */
-  oob_code?: string;
+  oobCode?: string;
   /** Binding method for OOB (e.g., 'prompt') */
-  binding_method?: string;
+  bindingMethod?: string;
 }
 
 /**
@@ -161,9 +199,9 @@ export type MfaGrantType =
 /**
  * Parameters for verifying an MFA challenge
  */
-export interface VerifyChallengeParams {
+export interface VerifyParams {
   /** MFA token from challenge flow */
-  mfa_token: string;
+  mfaToken: string;
   /** Auth0 application client ID */
   client_id: string;
   /** Grant type based on challenge type */
@@ -171,9 +209,9 @@ export interface VerifyChallengeParams {
   /** One-time password (for OTP challenges) */
   otp?: string;
   /** Out-of-band code (for OOB challenges) */
-  oob_code?: string;
+  oobCode?: string;
   /** Binding code (for OOB challenges with binding) */
-  binding_code?: string;
+  bindingCode?: string;
   /** Recovery code (for recovery code verification) */
-  recovery_code?: string;
+  recoveryCode?: string;
 }

@@ -798,7 +798,8 @@ export type {
   Authenticator,
   AuthenticatorType,
   OobChannel,
-  EnrollAuthenticatorParams,
+  GetAuthenticatorsParams,
+  EnrollParams,
   EnrollOtpParams,
   EnrollOobParams,
   EnrollEmailParams,
@@ -806,8 +807,8 @@ export type {
   OtpEnrollmentResponse,
   OobEnrollmentResponse,
   EmailEnrollmentResponse,
-  ChallengeParams,
+  ChallengeAuthenticatorParams,
   ChallengeResponse,
-  VerifyChallengeParams,
+  VerifyParams,
   MfaGrantType
 } from './mfa/types';

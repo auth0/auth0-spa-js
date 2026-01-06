@@ -154,7 +154,7 @@ export class Auth0Client {
   private readonly userCache: ICache = new InMemoryCache().enclosedCache;
   private readonly myAccountApi: MyAccountApiClient;
   private readonly authJsClient: Auth0AuthJsClient;
-  public readonly mfaClient: MfaApiClient;
+  public readonly mfa: MfaApiClient;
 
   private worker?: Worker;
   private readonly activeLockKeys: Set<string> = new Set();
@@ -280,7 +280,7 @@ export class Auth0Client {
       clientId: this.options.clientId,
     });
 
-    this.mfaClient = new MfaApiClient(this.authJsClient.mfa, this);
+    this.mfa = new MfaApiClient(this.authJsClient.mfa, this);
 
 
     // Don't use web workers unless using refresh tokens in memory
@@ -1254,8 +1254,11 @@ export class Auth0Client {
         return await this._getTokenFromIFrame(options);
       }
       if (e instanceof MfaRequiredError) {
-        this.mfaClient.setMfaToken(e.mfa_token);
-        this.mfaClient.setMFAAuthDetails(options.authorizationParams?.scope, options.authorizationParams?.audience);
+        this.mfa.setMFAAuthDetails(
+          e.mfa_token,
+          options.authorizationParams?.scope,
+          options.authorizationParams?.audience
+        );
       }
 
       throw e;
@@ -1645,8 +1648,8 @@ export class Auth0Client {
   async _requestTokenForMfa(
     options: {
       grant_type: string;
-      mfa_token: string;
-      scope: string;
+      mfaToken: string;
+      scope?: string;
       audience?: string;
       otp?: string;
       binding_code?: string;
@@ -1655,7 +1658,9 @@ export class Auth0Client {
     },
     additionalParameters?: RequestTokenAdditionalParameters
   ): Promise<TokenEndpointResponse> {
-    return this._requestToken(options as any, additionalParameters);
+    // Need to add better typing here
+    const { mfaToken, ...restOptions } = options;
+    return this._requestToken({ ...restOptions, mfa_token: mfaToken } as any, additionalParameters);
   }
 }
 

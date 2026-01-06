@@ -1,9 +1,13 @@
 export { MfaApiClient } from './MfaApiClient';
+export { MfaContextManager } from './MfaContextManager';
+export type { MfaContext } from './MfaContextManager';
 export type {
   Authenticator,
   AuthenticatorType,
   OobChannel,
-  EnrollAuthenticatorParams,
+  GetAuthenticatorsParams,
+  EnrollBaseParams,
+  EnrollParams,
   EnrollOtpParams,
   EnrollOobParams,
   EnrollEmailParams,
@@ -11,8 +15,8 @@ export type {
   OtpEnrollmentResponse,
   OobEnrollmentResponse,
   EmailEnrollmentResponse,
-  ChallengeParams,
+  ChallengeAuthenticatorParams,
   ChallengeResponse,
-  VerifyChallengeParams,
+  VerifyParams,
   MfaGrantType
 } from './types';

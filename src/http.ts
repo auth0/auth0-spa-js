@@ -188,7 +188,7 @@ export async function getJSON<T>(
       error_description || `HTTP error. Unable to fetch ${url}`;
 
     if (error === 'mfa_required') {
-      throw new MfaRequiredError(error, errorMessage, data.mfa_token);
+      throw new MfaRequiredError(error, errorMessage, data.mfa_token, data.mfa_requirements);
     }
 
     if (error === 'missing_refresh_token') {

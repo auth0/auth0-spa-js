@@ -23,7 +23,7 @@ export class MfaError extends Error {
  * @example
  * ```typescript
  * try {
- *   const authenticators = await mfaClient.listAuthenticators();
+ *   const authenticators = await mfa.getAuthenticators();
  * } catch (error) {
  *   if (error instanceof MfaListAuthenticatorsError) {
  *     console.log(error.error); // 'access_denied'
@@ -33,11 +33,8 @@ export class MfaError extends Error {
  * ```
  */
 export class MfaListAuthenticatorsError extends MfaError {
-  constructor(originalError: Auth0JsMfaListAuthenticatorsError) {
-    super(
-      originalError.cause?.error || 'mfa_list_authenticators_error',
-      originalError.message
-    );
+  constructor(error: string, error_description: string) {
+    super(error, error_description);
     //https://github.com/Microsoft/TypeScript-wiki/blob/master/Breaking-Changes.md#extending-built-ins-like-error-array-and-map-may-no-longer-work
     Object.setPrototypeOf(this, MfaListAuthenticatorsError.prototype);
   }
@@ -49,7 +46,7 @@ export class MfaListAuthenticatorsError extends MfaError {
  * @example
  * ```typescript
  * try {
- *   const enrollment = await mfaClient.enrollAuthenticator({
+ *   const enrollment = await mfa.enroll({
  *     authenticator_types: ['otp']
  *   });
  * } catch (error) {
@@ -77,11 +74,11 @@ export class MfaEnrollmentError extends MfaError {
  * @example
  * ```typescript
  * try {
- *   const challenge = await mfaClient.challengeAuthenticator({
- *     mfa_token: mfaToken,
+ *   const challenge = await mfa.challenge({
+ *     mfaToken: mfaToken,
  *     client_id: 'YOUR_CLIENT_ID',
- *     challenge_type: 'otp',
- *     authenticator_id: 'otp|dev_123'
+ *     challengeType: 'otp',
+ *     authenticatorId: 'otp|dev_123'
  *   });
  * } catch (error) {
  *   if (error instanceof MfaChallengeError) {
