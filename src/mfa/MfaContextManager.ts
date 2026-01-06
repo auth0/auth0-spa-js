@@ -116,7 +116,7 @@ export class MfaContextManager {
     }
 
     /**
-     * Returns the number of stored contexts (for testing purposes)
+     * Returns the number of stored contexts
      */
     public get size(): number {
         return this.contexts.size;

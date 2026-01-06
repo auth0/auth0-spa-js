@@ -42,7 +42,7 @@ export {
   MfaChallengeError
 } from './mfa/errors';
 
-export type { MfaApiErrorResponse } from './mfa/errors';
+export { MfaApiClient } from './mfa';
 
 export {
   ICache,
