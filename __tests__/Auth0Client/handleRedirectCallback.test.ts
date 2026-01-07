@@ -622,4 +622,58 @@ describe('Auth0Client', () => {
       expect((client as any).transactionManager.remove).toHaveBeenCalled();
     });
   });
+
+  describe('handleRedirectCallback - user switching detection', () => {
+    it('should clear cache when different user logs in via redirect', async () => {
+      const auth0 = setup();
+
+      jest.spyOn(auth0['cacheManager'], 'clear');
+      jest.spyOn(auth0['userCache'], 'remove');
+
+      // First login as default user
+      await loginWithRedirect(auth0);
+
+      const cachedUser1 = await auth0.getUser();
+      expect(cachedUser1.sub).toBe('me');
+
+      // Configure mockVerify to return a different user for second login
+      mockVerify.mockReturnValueOnce({
+        claims: {
+          sub: 'user2',
+          name: 'User 2',
+          exp: Date.now() / 1000 + 86400
+        },
+        user: {
+          sub: 'user2',
+          name: 'User 2'
+        }
+      });
+
+      // Second login as different user
+      await loginWithRedirect(auth0);
+
+      // Verify cache was cleared
+      expect(auth0['cacheManager'].clear).toHaveBeenCalledWith(TEST_CLIENT_ID);
+      expect(auth0['userCache'].remove).toHaveBeenCalledWith('@@user@@');
+
+      // Verify new user is cached
+      const cachedUser2 = await auth0.getUser();
+      expect(cachedUser2.sub).toBe('user2');
+    });
+
+    it('should not clear cache when same user logs in again', async () => {
+      const auth0 = setup();
+
+      jest.spyOn(auth0['cacheManager'], 'clear');
+
+      // First login
+      await loginWithRedirect(auth0);
+
+      // Second login with same user
+      await loginWithRedirect(auth0);
+
+      // Verify cache was NOT cleared
+      expect(auth0['cacheManager'].clear).not.toHaveBeenCalled();
+    });
+  });
 });
