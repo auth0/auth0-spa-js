@@ -1,5 +1,11 @@
 # Change Log
 
+## [v2.11.1](https://github.com/auth0/auth0-spa-js/tree/v2.11.1) (2026-01-07)
+[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.11.0...v2.11.1)
+
+**Fixed**
+- fix: clear cache when different user logs in without logout [\#1456](https://github.com/auth0/auth0-spa-js/pull/1456) ([yogeshchoudhary147](https://github.com/yogeshchoudhary147))
+
 ## [v2.11.0](https://github.com/auth0/auth0-spa-js/tree/v2.11.0) (2025-12-11)
 [Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.10.0...v2.11.0)
 
