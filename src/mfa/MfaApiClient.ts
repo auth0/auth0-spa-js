@@ -220,7 +220,6 @@ export class MfaApiClient {
     params: ChallengeAuthenticatorParams
   ): Promise<ChallengeResponse> {
     try {
-      // Strip mfaToken and client_id - auth-js requires mfaToken as parameter
       const authJsParams: {
         challengeType: 'otp' | 'oob';
         authenticatorId?: string;
@@ -301,7 +300,6 @@ export class MfaApiClient {
     if (!context) {
       throw new Error(
         'MFA context not found for this MFA token. ' +
-        'The MFA token may have expired (10 minute TTL) or was never stored. ' +
         'Please retry the original request to get a new MFA token. ' +
         'See documentation: https://github.com/auth0/auth0-spa-js/blob/main/EXAMPLES.md#multi-factor-authentication-mfa'
       );

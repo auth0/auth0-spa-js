@@ -143,11 +143,184 @@
                             </div>
                         </div>
 
-                        <!-- Placeholder: Enrollment Form -->
-                        <div v-if="mfaToken" class="card mb-3">
+                        <!-- Enrollment Form -->
+                        <div v-if="mfaToken && hasEnrollmentOptions" class="card mb-3">
                             <div class="card-body">
                                 <h5 class="card-title">Enroll New Authenticator</h5>
-                                <p class="text-muted">Enrollment options will appear here...</p>
+
+                                <div v-if="!enrollmentType" class="list-group">
+                                    <p class="text-muted mb-3">Available enrollment options:</p>
+                                    <button v-for="option in enrollmentOptions" :key="option.type"
+                                        @click="selectEnrollmentType(option.type)"
+                                        class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                                        <span>
+                                            <strong>{{ option.label }}</strong>
+                                            <br>
+                                            <small class="text-muted">{{ option.description }}</small>
+                                        </span>
+                                        <span class="badge badge-primary badge-pill">Enroll</span>
+                                    </button>
+                                </div>
+
+                                <div v-else>
+                                    <!-- OTP Enrollment -->
+                                    <div v-if="enrollmentType === 'otp'">
+                                        <div v-if="loadingEnrollment" class="text-center py-3">
+                                            <div class="spinner-border spinner-border-sm" role="status"></div>
+                                            <p class="text-muted mt-2">Setting up authenticator...</p>
+                                        </div>
+
+                                        <div v-else-if="enrollmentData">
+                                            <div class="alert alert-info">
+                                                <p class="mb-2"><strong>Scan this QR code with your authenticator
+                                                        app:</strong></p>
+                                                <div class="text-center my-3">
+                                                    <img :src="enrollmentData.barcodeUri" alt="QR Code"
+                                                        class="img-fluid" style="max-width: 200px;" />
+                                                </div>
+                                                <p class="mb-1"><strong>Or enter this secret manually:</strong></p>
+                                                <code
+                                                    class="d-block bg-white p-2 border rounded">{{ enrollmentData.secret }}</code>
+                                            </div>
+
+                                            <form @submit.prevent="verifyEnrollment" class="mt-3">
+                                                <div class="form-group">
+                                                    <label for="enrollOtp">Enter code from authenticator app</label>
+                                                    <input id="enrollOtp" v-model="enrollmentVerificationCode"
+                                                        type="text" class="form-control" placeholder="123456" required
+                                                        :disabled="loadingEnrollmentVerification" />
+                                                </div>
+                                                <button type="submit" class="btn btn-success btn-block"
+                                                    :disabled="loadingEnrollmentVerification || !enrollmentVerificationCode">
+                                                    <span v-if="loadingEnrollmentVerification">
+                                                        <span class="spinner-border spinner-border-sm"
+                                                            role="status"></span>
+                                                        Verifying...
+                                                    </span>
+                                                    <span v-else>Complete Enrollment</span>
+                                                </button>
+                                                <button type="button" @click="cancelEnrollment"
+                                                    class="btn btn-outline-secondary btn-block mt-2"
+                                                    :disabled="loadingEnrollmentVerification">
+                                                    Cancel
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </div>
+
+                                    <!-- SMS/Voice Enrollment -->
+                                    <div v-else-if="enrollmentType === 'sms' || enrollmentType === 'voice'">
+                                        <form v-if="!enrollmentData" @submit.prevent="enrollOob" class="mt-3">
+                                            <div class="form-group">
+                                                <label for="phoneNumber">Phone Number (E.164 format)</label>
+                                                <input id="phoneNumber" v-model="phoneNumber" type="tel"
+                                                    class="form-control" placeholder="+12025551234" required
+                                                    :disabled="loadingEnrollment" />
+                                                <small class="form-text text-muted">Include country code (e.g., +1 for
+                                                    US)</small>
+                                            </div>
+                                            <button type="submit" class="btn btn-primary btn-block"
+                                                :disabled="loadingEnrollment || !phoneNumber">
+                                                <span v-if="loadingEnrollment">
+                                                    <span class="spinner-border spinner-border-sm" role="status"></span>
+                                                    Enrolling...
+                                                </span>
+                                                <span v-else>Send Code</span>
+                                            </button>
+                                            <button type="button" @click="cancelEnrollment"
+                                                class="btn btn-outline-secondary btn-block mt-2"
+                                                :disabled="loadingEnrollment">
+                                                Cancel
+                                            </button>
+                                        </form>
+
+                                        <div v-else>
+                                            <div class="alert alert-info">
+                                                <p class="mb-0">A verification code has been sent to <strong>{{
+                                                        phoneNumber }}</strong></p>
+                                            </div>
+
+                                            <form @submit.prevent="verifyEnrollment" class="mt-3">
+                                                <div class="form-group">
+                                                    <label for="enrollOobCode">Enter verification code</label>
+                                                    <input id="enrollOobCode" v-model="enrollmentVerificationCode"
+                                                        type="text" class="form-control" placeholder="123456" required
+                                                        :disabled="loadingEnrollmentVerification" />
+                                                </div>
+                                                <button type="submit" class="btn btn-success btn-block"
+                                                    :disabled="loadingEnrollmentVerification || !enrollmentVerificationCode">
+                                                    <span v-if="loadingEnrollmentVerification">
+                                                        <span class="spinner-border spinner-border-sm"
+                                                            role="status"></span>
+                                                        Verifying...
+                                                    </span>
+                                                    <span v-else>Complete Enrollment</span>
+                                                </button>
+                                                <button type="button" @click="cancelEnrollment"
+                                                    class="btn btn-outline-secondary btn-block mt-2"
+                                                    :disabled="loadingEnrollmentVerification">
+                                                    Cancel
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </div>
+
+                                    <!-- Email Enrollment -->
+                                    <div v-else-if="enrollmentType === 'email'">
+                                        <form v-if="!enrollmentData" @submit.prevent="enrollEmail" class="mt-3">
+                                            <div class="form-group">
+                                                <label for="emailAddress">Email Address</label>
+                                                <input id="emailAddress" v-model="emailAddress" type="email"
+                                                    class="form-control" placeholder="user@example.com"
+                                                    :disabled="loadingEnrollment" />
+                                                <small class="form-text text-muted">Leave empty to use your account
+                                                    email</small>
+                                            </div>
+                                            <button type="submit" class="btn btn-primary btn-block"
+                                                :disabled="loadingEnrollment">
+                                                <span v-if="loadingEnrollment">
+                                                    <span class="spinner-border spinner-border-sm" role="status"></span>
+                                                    Enrolling...
+                                                </span>
+                                                <span v-else>Send Code</span>
+                                            </button>
+                                            <button type="button" @click="cancelEnrollment"
+                                                class="btn btn-outline-secondary btn-block mt-2"
+                                                :disabled="loadingEnrollment">
+                                                Cancel
+                                            </button>
+                                        </form>
+
+                                        <div v-else>
+                                            <div class="alert alert-info">
+                                                <p class="mb-0">A verification code has been sent to your email</p>
+                                            </div>
+
+                                            <form @submit.prevent="verifyEnrollment" class="mt-3">
+                                                <div class="form-group">
+                                                    <label for="enrollEmailCode">Enter verification code</label>
+                                                    <input id="enrollEmailCode" v-model="enrollmentVerificationCode"
+                                                        type="text" class="form-control" placeholder="123456" required
+                                                        :disabled="loadingEnrollmentVerification" />
+                                                </div>
+                                                <button type="submit" class="btn btn-success btn-block"
+                                                    :disabled="loadingEnrollmentVerification || !enrollmentVerificationCode">
+                                                    <span v-if="loadingEnrollmentVerification">
+                                                        <span class="spinner-border spinner-border-sm"
+                                                            role="status"></span>
+                                                        Verifying...
+                                                    </span>
+                                                    <span v-else>Complete Enrollment</span>
+                                                </button>
+                                                <button type="button" @click="cancelEnrollment"
+                                                    class="btn btn-outline-secondary btn-block mt-2"
+                                                    :disabled="loadingEnrollmentVerification">
+                                                    Cancel
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
@@ -314,6 +487,11 @@
                 this.selectedAuthenticator = null;
                 this.challengeData = null;
                 this.verificationCode = '';
+                this.enrollmentType = null;
+                this.enrollmentData = null;
+                this.enrollmentVerificationCode = '';
+                this.phoneNumber = '';
+                this.emailAddress = '';
             },
 
             async triggerMFA() {
@@ -451,6 +629,131 @@
                     'recovery-code': 'recoveryCode'
                 };
                 return paramMap[authenticatorType] || 'otp';
+            },
+
+            // Enrollment methods
+            selectEnrollmentType(type) {
+                this.enrollmentType = type;
+                this.error = '';
+
+                // Auto-enroll for OTP (no additional input needed)
+                if (type === 'otp') {
+                    this.enrollOtp();
+                }
+            },
+
+            async enrollOtp() {
+                this.loadingEnrollment = true;
+                this.error = '';
+
+                try {
+                    this.enrollmentData = await this.auth0.mfa.enroll({
+                        mfaToken: this.mfaToken,
+                        authenticatorTypes: ['otp']
+                    });
+                } catch (e) {
+                    this.error = e.message || e.error_description || e;
+                    this.enrollmentType = null;
+                } finally {
+                    this.loadingEnrollment = false;
+                }
+            },
+
+            async enrollOob() {
+                this.loadingEnrollment = true;
+                this.error = '';
+
+                try {
+                    const channel = this.enrollmentType === 'sms' ? 'sms' : 'voice';
+                    this.enrollmentData = await this.auth0.mfa.enroll({
+                        mfaToken: this.mfaToken,
+                        authenticatorTypes: ['oob'],
+                        oobChannels: [channel],
+                        phoneNumber: this.phoneNumber
+                    });
+                } catch (e) {
+                    this.error = e.message || e.error_description || e;
+                    this.enrollmentType = null;
+                    this.phoneNumber = '';
+                } finally {
+                    this.loadingEnrollment = false;
+                }
+            },
+
+            async enrollEmail() {
+                this.loadingEnrollment = true;
+                this.error = '';
+
+                try {
+                    const params = {
+                        mfaToken: this.mfaToken,
+                        authenticatorTypes: ['oob'],
+                        oobChannels: ['email']
+                    };
+
+                    if (this.emailAddress) {
+                        params.email = this.emailAddress;
+                    }
+
+                    this.enrollmentData = await this.auth0.mfa.enroll(params);
+                } catch (e) {
+                    this.error = e.message || e.error_description || e;
+                    this.enrollmentType = null;
+                    this.emailAddress = '';
+                } finally {
+                    this.loadingEnrollment = false;
+                }
+            },
+
+            async verifyEnrollment() {
+                this.error = '';
+                this.successMessage = '';
+                this.loadingEnrollmentVerification = true;
+
+                try {
+                    const grantType = this.enrollmentType === 'otp'
+                        ? 'http://auth0.com/oauth/grant-type/mfa-otp'
+                        : 'http://auth0.com/oauth/grant-type/mfa-oob';
+
+                    const verifyParams = {
+                        mfaToken: this.mfaToken,
+                        client_id: this.clientId,
+                        grant_type: grantType
+                    };
+
+                    if (this.enrollmentType === 'otp') {
+                        verifyParams.otp = this.enrollmentVerificationCode;
+                    } else {
+                        verifyParams.oobCode = this.enrollmentData.oobCode;
+                        verifyParams.bindingCode = this.enrollmentVerificationCode;
+                    }
+
+                    this.tokens = await this.auth0.mfa.verify(verifyParams);
+                    this.successMessage = `${this.enrollmentType.toUpperCase()} Authenticator enrolled successfully!`;
+
+                    // Reset enrollment state
+                    this.enrollmentType = null;
+                    this.enrollmentData = null;
+                    this.enrollmentVerificationCode = '';
+                    this.phoneNumber = '';
+                    this.emailAddress = '';
+
+                    // Refresh authenticators list
+                    await this.getAuthenticators();
+                } catch (e) {
+                    this.error = e.message || e.error_description || e;
+                } finally {
+                    this.loadingEnrollmentVerification = false;
+                }
+            },
+
+            cancelEnrollment() {
+                this.enrollmentType = null;
+                this.enrollmentData = null;
+                this.enrollmentVerificationCode = '';
+                this.phoneNumber = '';
+                this.emailAddress = '';
+                this.error = '';
             }
         };
     </script>
@@ -478,14 +781,57 @@
                     selectedAuthenticator: null,
                     challengeData: null,
                     verificationCode: '',
+                    // Enrollment state
+                    enrollmentType: null,
+                    enrollmentData: null,
+                    enrollmentVerificationCode: '',
+                    phoneNumber: '',
+                    emailAddress: '',
                     // UI state
                     loadingAuthenticators: false,
                     loadingChallenge: false,
                     loadingVerification: false,
+                    loadingEnrollment: false,
+                    loadingEnrollmentVerification: false,
                     successMessage: '',
                     tokens: null,
                     error: ''
                 };
+            },
+            computed: {
+                hasEnrollmentOptions() {
+                    return this.mfaRequirements && this.mfaRequirements.enroll && this.mfaRequirements.enroll.length > 0;
+                },
+                enrollmentOptions() {
+                    if (!this.hasEnrollmentOptions) return [];
+
+                    const optionMap = {
+                        'otp': {
+                            type: 'otp',
+                            label: 'Authenticator App (OTP)',
+                            description: 'Use Google Authenticator, Okta Verify, or similar apps'
+                        },
+                        'oob': {
+                            type: 'sms',
+                            label: 'SMS',
+                            description: 'Receive codes via text message'
+                        },
+                        'phone': {
+                            type: 'sms',
+                            label: 'SMS',
+                            description: 'Receive codes via text message'
+                        },
+                        'email': {
+                            type: 'email',
+                            label: 'Email',
+                            description: 'Receive codes via email'
+                        }
+                    };
+
+                    return this.mfaRequirements.enroll
+                        .map(e => optionMap[e.type])
+                        .filter(Boolean);
+                }
             },
             methods: {
                 // Combine both modules

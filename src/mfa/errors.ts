@@ -1,5 +1,4 @@
 import {
-  MfaListAuthenticatorsError as Auth0JsMfaListAuthenticatorsError,
   MfaEnrollmentError as Auth0JsMfaEnrollmentError,
   MfaChallengeError as Auth0JsMfaChallengeError,
   MfaApiErrorResponse
