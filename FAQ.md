@@ -124,7 +124,7 @@ If you want to use a CDN bundle together with import maps, you will need to use 
 <script type="importmap">
   {
     "imports": {
-      "@auth0/auth0-spa-js": "https://www.unpkg.com/@auth0/auth0-spa-js@2.11.1/dist/auth0-spa-js.production.esm.js"
+      "@auth0/auth0-spa-js": "https://www.unpkg.com/@auth0/auth0-spa-js@2.11.0/dist/auth0-spa-js.production.esm.js"
     }
   }
 </script>
