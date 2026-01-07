@@ -816,18 +816,34 @@ const idToken = tokens.id_token;
 ### Error Handling
 
 ```js
+import { 
+  MfaEnrollmentError, 
+  MfaListAuthenticatorsError, 
+  MfaChallengeError 
+} from '@auth0/auth0-spa-js';
+
+// Each MFA operation has its own error type
 try {
-  await auth0.mfa.enroll({
-    authenticatorTypes: ['oob'],
-    oobChannels: ['sms'],
-    phoneNumber: 'invalid'
-  });
+  await auth0.mfa.getAuthenticators({ mfaToken, challengeType });
 } catch (error) {
-  if (error.error === 'invalid_phone_number') {
-    // Handle invalid phone number format
-    throw new Error('Invalid phone number format');
+  if (error instanceof MfaListAuthenticatorsError) {
+    console.error(error.error, error.error_description);
   }
-  // Handle other errors
-  throw new Error(error.error_description);
+}
+
+try {
+  await auth0.mfa.enroll({ mfaToken, authenticatorTypes: ['otp'] });
+} catch (error) {
+  if (error instanceof MfaEnrollmentError) {
+    console.error(error.error, error.error_description);
+  }
+}
+
+try {
+  await auth0.mfa.challenge({ mfaToken, challengeType: 'otp', authenticatorId });
+} catch (error) {
+  if (error instanceof MfaChallengeError) {
+    console.error(error.error, error.error_description);
+  }
 }
 ```
