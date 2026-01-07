@@ -5,7 +5,7 @@ inputs:
   node:
     description: The Node version to use
     required: false
-    default: 18
+    default: 22
 
 runs:
   using: composite
