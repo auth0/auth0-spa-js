@@ -404,6 +404,20 @@ export interface PopupConfigOptions {
    * security restrictions around when popups can be invoked (e.g. from a user click event)
    */
   popup?: any;
+
+  /**
+   * Controls when the popup window is closed during authentication.
+   *
+   * - `true` (default): Closes the popup immediately after receiving the authorization response
+   * - `false`: Keeps the popup open until after token exchange completes
+   *
+   * Setting this to `false` is useful when the popup closing would interrupt the authentication flow,
+   * such as in Chrome extensions where closing the popup too early can terminate the extension's 
+   * service worker before the token exchange completes.
+   *
+   * @default true
+   */
+  closePopup?: boolean;
 }
 
 export interface GetTokenSilentlyOptions {

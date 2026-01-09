@@ -429,6 +429,10 @@ export class Auth0Client {
     });
 
     if (params.state !== codeResult.state) {
+      // Always close popup on state mismatch error, regardless of closePopup setting
+      if (config.popup) {
+        config.popup.close();
+      }
       throw new GenericError('state_mismatch', 'Invalid state');
     }
 
@@ -436,20 +440,28 @@ export class Auth0Client {
       options.authorizationParams?.organization ||
       this.options.authorizationParams.organization;
 
-    await this._requestToken(
-      {
-        audience: params.audience,
-        scope: params.scope,
-        code_verifier: params.code_verifier,
-        grant_type: 'authorization_code',
-        code: codeResult.code as string,
-        redirect_uri: params.redirect_uri
-      },
-      {
-        nonceIn: params.nonce,
-        organization
+    try {
+      await this._requestToken(
+        {
+          audience: params.audience,
+          scope: params.scope,
+          code_verifier: params.code_verifier,
+          grant_type: 'authorization_code',
+          code: codeResult.code as string,
+          redirect_uri: params.redirect_uri
+        },
+        {
+          nonceIn: params.nonce,
+          organization
+        }
+      );
+    } finally {
+      // Close popup after token exchange completes if closePopup was set to false
+      // This ensures tokens are cached before the popup (and potentially the extension) closes
+      if (config.closePopup === false && config.popup) {
+        config.popup.close();
       }
-    );
+    }
   }
 
   /**

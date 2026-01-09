@@ -125,7 +125,12 @@ export const runPopup = (config: PopupConfigOptions) => {
       clearTimeout(timeoutId);
       clearInterval(popupTimer);
       window.removeEventListener('message', popupEventListener, false);
-      config.popup.close();
+
+      // Only close popup immediately if closePopup is not explicitly set to false
+      // When false, the popup will be closed after token exchange in Auth0Client
+      if (config.closePopup !== false) {
+        config.popup.close();
+      }
 
       if (e.data.response.error) {
         return reject(GenericError.fromPayload(e.data.response));
