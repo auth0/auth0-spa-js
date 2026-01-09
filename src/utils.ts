@@ -126,8 +126,7 @@ export const runPopup = (config: PopupConfigOptions) => {
       clearInterval(popupTimer);
       window.removeEventListener('message', popupEventListener, false);
 
-      // Only close popup immediately if closePopup is not explicitly set to false
-      // When false, the caller is responsible for closing the popup
+      // Close popup automatically unless closePopup is explicitly set to false
       if (config.closePopup !== false) {
         config.popup.close();
       }

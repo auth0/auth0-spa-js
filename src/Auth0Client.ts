@@ -429,10 +429,6 @@ export class Auth0Client {
     });
 
     if (params.state !== codeResult.state) {
-      // Always close popup on state mismatch error, regardless of closePopup setting
-      if (config.popup) {
-        config.popup.close();
-      }
       throw new GenericError('state_mismatch', 'Invalid state');
     }
 

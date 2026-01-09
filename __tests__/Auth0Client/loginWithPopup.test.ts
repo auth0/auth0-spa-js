@@ -811,36 +811,6 @@ describe('Auth0Client', () => {
       expect(popup.close).toHaveBeenCalled();
     });
 
-    it('should close popup on state mismatch error regardless of closePopup setting', async () => {
-      const auth0 = setup();
-      const popup = {
-        location: { href: '' },
-        close: jest.fn()
-      };
-
-      let error;
-      try {
-        await loginWithPopup(
-          auth0,
-          {},
-          { popup, closePopup: false },
-          {
-            authorize: {
-              response: {
-                state: 'other-state'
-              }
-            }
-          }
-        );
-      } catch (e) {
-        error = e;
-      }
-
-      expect(error).toBeDefined();
-      expect(error.message).toBe('Invalid state');
-      expect(popup.close).toHaveBeenCalled();
-    });
-
     it('should not close popup when closePopup is false', async () => {
       const auth0 = setup();
       const popup = {
