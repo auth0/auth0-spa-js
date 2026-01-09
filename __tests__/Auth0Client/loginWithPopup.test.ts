@@ -786,5 +786,113 @@ describe('Auth0Client', () => {
         false
       );
     });
+
+    it('should close popup immediately by default', async () => {
+      const auth0 = setup();
+      const popup = {
+        location: { href: '' },
+        close: jest.fn()
+      };
+
+      await loginWithPopup(auth0, {}, { popup });
+
+      expect(popup.close).toHaveBeenCalled();
+    });
+
+    it('should close popup immediately when closePopup is true', async () => {
+      const auth0 = setup();
+      const popup = {
+        location: { href: '' },
+        close: jest.fn()
+      };
+
+      await loginWithPopup(auth0, {}, { popup, closePopup: true });
+
+      expect(popup.close).toHaveBeenCalled();
+    });
+
+    it('should delay popup close when closePopup is false', async () => {
+      const auth0 = setup();
+      const popup = {
+        location: { href: '' },
+        close: jest.fn()
+      };
+
+      let tokenRequestMade = false;
+      mockFetch.mockImplementationOnce(() => {
+        tokenRequestMade = true;
+        // At this point during token exchange, popup should NOT be closed yet
+        expect(popup.close).not.toHaveBeenCalled();
+
+        return Promise.resolve({
+          ok: true,
+          json: () =>
+            Promise.resolve({
+              id_token: TEST_ID_TOKEN,
+              refresh_token: TEST_REFRESH_TOKEN,
+              access_token: TEST_ACCESS_TOKEN,
+              expires_in: 86400
+            })
+        });
+      });
+
+      await loginWithPopup(auth0, {}, { popup, closePopup: false });
+
+      expect(tokenRequestMade).toBe(true);
+      // Popup should be closed AFTER token exchange
+      expect(popup.close).toHaveBeenCalled();
+    });
+
+    it('should close popup on state mismatch error regardless of closePopup setting', async () => {
+      const auth0 = setup();
+      const popup = {
+        location: { href: '' },
+        close: jest.fn()
+      };
+
+      let error;
+      try {
+        await loginWithPopup(
+          auth0,
+          {},
+          { popup, closePopup: false },
+          {
+            authorize: {
+              response: {
+                state: 'other-state'
+              }
+            }
+          }
+        );
+      } catch (e) {
+        error = e;
+      }
+
+      expect(error).toBeDefined();
+      expect(error.message).toBe('Invalid state');
+      expect(popup.close).toHaveBeenCalled();
+    });
+
+    it('should close popup even if token exchange fails with closePopup false', async () => {
+      const auth0 = setup();
+      const popup = {
+        location: { href: '' },
+        close: jest.fn()
+      };
+
+      await expect(
+        loginWithPopup(
+          auth0,
+          {},
+          { popup, closePopup: false },
+          { token: { success: false } }
+        )
+      ).rejects.toThrowError(
+        'HTTP error. Unable to fetch https://auth0_domain/oauth/token'
+      );
+
+      // Popup should still be closed in finally block
+      expect(popup.close).toHaveBeenCalled();
+    });
   });
 });
