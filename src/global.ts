@@ -406,14 +406,14 @@ export interface PopupConfigOptions {
   popup?: any;
 
   /**
-   * Controls when the popup window is closed during authentication.
+   * Controls whether the SDK automatically closes the popup window.
    *
-   * - `true` (default): Closes the popup immediately after receiving the authorization response
-   * - `false`: Keeps the popup open until after token exchange completes
+   * - `true` (default): SDK closes the popup automatically after receiving the authorization response
+   * - `false`: SDK does not close the popup. The caller is responsible for closing it.
    *
-   * Setting this to `false` is useful when the popup closing would interrupt the authentication flow,
-   * such as in Chrome extensions where closing the popup too early can terminate the extension's 
-   * service worker before the token exchange completes.
+   * Setting this to `false` is useful when you need control over when the popup closes,
+   * such as in Chrome extensions where closing the popup too early can terminate the
+   * extension's service worker before authentication completes.
    *
    * @default true
    */

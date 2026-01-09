@@ -811,38 +811,6 @@ describe('Auth0Client', () => {
       expect(popup.close).toHaveBeenCalled();
     });
 
-    it('should delay popup close when closePopup is false', async () => {
-      const auth0 = setup();
-      const popup = {
-        location: { href: '' },
-        close: jest.fn()
-      };
-
-      let tokenRequestMade = false;
-      mockFetch.mockImplementationOnce(() => {
-        tokenRequestMade = true;
-        // At this point during token exchange, popup should NOT be closed yet
-        expect(popup.close).not.toHaveBeenCalled();
-
-        return Promise.resolve({
-          ok: true,
-          json: () =>
-            Promise.resolve({
-              id_token: TEST_ID_TOKEN,
-              refresh_token: TEST_REFRESH_TOKEN,
-              access_token: TEST_ACCESS_TOKEN,
-              expires_in: 86400
-            })
-        });
-      });
-
-      await loginWithPopup(auth0, {}, { popup, closePopup: false });
-
-      expect(tokenRequestMade).toBe(true);
-      // Popup should be closed AFTER token exchange
-      expect(popup.close).toHaveBeenCalled();
-    });
-
     it('should close popup on state mismatch error regardless of closePopup setting', async () => {
       const auth0 = setup();
       const popup = {
@@ -873,7 +841,21 @@ describe('Auth0Client', () => {
       expect(popup.close).toHaveBeenCalled();
     });
 
-    it('should close popup even if token exchange fails with closePopup false', async () => {
+    it('should not close popup when closePopup is false', async () => {
+      const auth0 = setup();
+      const popup = {
+        location: { href: '' },
+        close: jest.fn()
+      };
+
+      await loginWithPopup(auth0, {}, { popup, closePopup: false });
+
+      // SDK should NOT close the popup when closePopup is false
+      // User is responsible for closing it
+      expect(popup.close).not.toHaveBeenCalled();
+    });
+
+    it('should not close popup on token exchange failure when closePopup is false', async () => {
       const auth0 = setup();
       const popup = {
         location: { href: '' },
@@ -891,8 +873,9 @@ describe('Auth0Client', () => {
         'HTTP error. Unable to fetch https://auth0_domain/oauth/token'
       );
 
-      // Popup should still be closed in finally block
-      expect(popup.close).toHaveBeenCalled();
+      // SDK should NOT close popup even on failure when closePopup is false
+      // User is responsible for cleanup
+      expect(popup.close).not.toHaveBeenCalled();
     });
   });
 });

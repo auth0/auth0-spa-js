@@ -127,7 +127,7 @@ export const runPopup = (config: PopupConfigOptions) => {
       window.removeEventListener('message', popupEventListener, false);
 
       // Only close popup immediately if closePopup is not explicitly set to false
-      // When false, the popup will be closed after token exchange in Auth0Client
+      // When false, the caller is responsible for closing the popup
       if (config.closePopup !== false) {
         config.popup.close();
       }
