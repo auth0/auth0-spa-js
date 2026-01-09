@@ -36,6 +36,15 @@ export {
 } from './errors';
 
 export {
+  MfaError,
+  MfaListAuthenticatorsError,
+  MfaEnrollmentError,
+  MfaChallengeError
+} from './mfa/errors';
+
+export { MfaApiClient } from './mfa';
+
+export {
   ICache,
   LocalStorageCache,
   InMemoryCache,

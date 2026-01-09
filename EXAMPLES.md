@@ -7,6 +7,7 @@
 - [Organizations](#organizations)
 - [Device-bound tokens with DPoP](#device-bound-tokens-with-dpop)
 - [Connect Accounts for using Token Vault](#connect-accounts-for-using-token-vault)
+- [Multi-Factor Authentication (MFA)](#multi-factor-authentication-mfa)
 
 ## Logging Out
 
@@ -688,5 +689,161 @@ if ((query.has('connect_code') || query.has('error')) && query.has('state')) {
 
 You can now [call the API](#calling-an-api) with your access token and the API can use [Access Token Exchange with Token Vault](https://auth0.com/docs/secure/tokens/token-vault/access-token-exchange-with-token-vault) to get tokens from the Token Vault to access third party APIs on behalf of the user.
 
-> [!IMPORTANT]  
+> [!IMPORTANT]
 > You must enable `Offline Access` from the Connection Permissions settings to be able to use the connection with Connected Accounts.
+
+## Multi-Factor Authentication (MFA)
+
+The MFA API allows you to manage multi-factor authentication for users, including enrolling authenticators, initiating challenges, and verifying codes.
+
+### Getting Authenticators
+
+```js
+// Get all enrolled authenticators for the current user
+const authenticators = await auth0.mfa.getAuthenticators({ mfaToken: mfaToken });
+// Returns: [{ id: 'otp|dev_xxx', authenticatorType: 'otp', active: true }]
+```
+
+### Filtering Authenticators by Challenge Type
+
+When an `mfa_required` error occurs, you can filter authenticators to show only those that match the required challenge types:
+
+```js
+try {
+  await auth0.getTokenSilently();
+} catch (e) {
+  if (e instanceof MfaRequiredError) {
+    // MFA required error contains challenge types
+    // e.mfa_requirements = {
+    //   challenge: [
+    //     { type: 'phone' },
+    //     { type: 'email' }
+    //   ]
+    // }
+    
+    // Extract challenge types from the error
+    const challengeTypes = e.mfa_requirements.challenge.map(c => c.type);
+    // e.g., ['phone', 'email']
+    
+    // Get only authenticators matching those challenge types
+    const authenticators = await auth0.mfa.getAuthenticators({
+      mfaToken: e.mfa_token,
+      challengeType: challengeTypes
+    });
+    // Returns only phone (oob) and email authenticators
+    // e.g., [
+    //   { id: 'sms|dev_xxx', authenticatorType: 'oob', active: true },
+    //   { id: 'email|dev_yyy', authenticatorType: 'email', active: true }
+    // ]
+  }
+}
+```
+
+### Enrolling OTP (Authenticator App)
+
+```js
+// Enroll OTP authenticator (Google Authenticator, Microsoft Authenticator, etc.)
+const enrollment = await auth0.mfa.enroll({
+  authenticatorTypes: ['otp']
+});
+
+// Display QR code to user
+const qrCodeUri = enrollment.barcodeUri; // otpauth://totp/...
+const secret = enrollment.secret; // Base32 secret for manual entry
+```
+
+### Enrolling SMS
+
+```js
+// Enroll SMS authenticator
+const smsEnrollment = await auth0.mfa.enroll({
+  authenticatorTypes: ['oob'],
+  oobChannels: ['sms'],
+  phoneNumber: '+12025551234' // E.164 format
+});
+
+const authenticatorId = smsEnrollment.id;
+```
+
+### Challenge Authenticator
+
+```js
+// Initiate MFA challenge (sends SMS or prepares for OTP entry)
+const challenge = await auth0.mfa.challenge({
+  mfaToken: mfaTokenFromLogin,
+  client_id: '<AUTH0_CLIENT_ID>',
+  challengeType: 'oob',
+  oobChannel: 'sms',
+  authenticatorId: 'sms|dev_xxx'
+});
+
+const oobCode = challenge.oobCode; // Save for verification
+```
+
+### Verify Challenge
+
+```js
+// Verify MFA challenge and get tokens
+const tokens = await auth0.mfa.verify({
+  mfaToken: mfaTokenFromLogin,
+  client_id: '<AUTH0_CLIENT_ID>',
+  grant_type: 'http://auth0.com/oauth/grant-type/mfa-oob',
+  oobCode: challenge.oobCode,
+  bindingCode: '123456' // Code user received via SMS
+});
+
+const accessToken = tokens.access_token; // Use to call your API
+const idToken = tokens.id_token; // Contains user identity information
+```
+
+### Verify with Recovery Code
+
+Recovery codes can be used to complete MFA verification without initiating a challenge. Each recovery code can only be used once.
+
+```js
+// Verify directly with recovery code (no challenge needed)
+const tokens = await auth0.mfa.verify({
+  mfaToken: mfaTokenFromLogin,
+  client_id: '<AUTH0_CLIENT_ID>',
+  grant_type: 'http://auth0.com/oauth/grant-type/mfa-recovery-code',
+  recoveryCode: 'XXXX-XXXX-XXXX' // One of the recovery codes
+});
+
+const accessToken = tokens.access_token;
+const idToken = tokens.id_token;
+```
+
+### Error Handling
+
+```js
+import { 
+  MfaEnrollmentError, 
+  MfaListAuthenticatorsError, 
+  MfaChallengeError 
+} from '@auth0/auth0-spa-js';
+
+// Each MFA operation has its own error type
+try {
+  await auth0.mfa.getAuthenticators({ mfaToken, challengeType });
+} catch (error) {
+  if (error instanceof MfaListAuthenticatorsError) {
+    console.error(error.error, error.error_description);
+  }
+}
+
+try {
+  await auth0.mfa.enroll({ mfaToken, authenticatorTypes: ['otp'] });
+} catch (error) {
+  if (error instanceof MfaEnrollmentError) {
+    console.error(error.error, error.error_description);
+  }
+}
+
+try {
+  await auth0.mfa.challenge({ mfaToken, challengeType: 'otp', authenticatorId });
+} catch (error) {
+  if (error instanceof MfaChallengeError) {
+    console.error(error.error, error.error_description);
+  }
+}
+```
