@@ -20,7 +20,7 @@ export class CacheKey {
     public suffix?: string
   ) {
     this.clientId = data.clientId;
-    this.scope = data.scope;
+    this.scope = data.scope?.split(' ').filter(Boolean).sort().join(' ');
     this.audience = data.audience;
   }
 
