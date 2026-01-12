@@ -404,6 +404,30 @@ export interface PopupConfigOptions {
    * security restrictions around when popups can be invoked (e.g. from a user click event)
    */
   popup?: any;
+
+  /**
+   * Controls whether the SDK automatically closes the popup window.
+   *
+   * - `true` (default): SDK closes the popup automatically after receiving the authorization response
+   * - `false`: SDK does not close the popup. The caller is responsible for closing it, including on errors.
+   *
+   * Setting this to `false` is useful when you need full control over the popup lifecycle,
+   * such as in Chrome extensions where closing the popup too early can terminate the
+   * extension's service worker before authentication completes.
+   *
+   * When `closePopup: false`, you should close the popup in a try/finally block:
+   * ```
+   * const popup = window.open('', '_blank');
+   * try {
+   *   await auth0.loginWithPopup({}, { popup, closePopup: false });
+   * } finally {
+   *   popup.close();
+   * }
+   * ```
+   *
+   * @default true
+   */
+  closePopup?: boolean;
 }
 
 export interface GetTokenSilentlyOptions {
