@@ -1169,7 +1169,7 @@ export class Auth0Client {
 
       // If is refreshed with MRRT, we update all entries that have the old
       // refresh_token with the new one if the server responded with one
-      if (tokenResult.refresh_token && this.options.useMrrt && cache?.refresh_token) {
+      if (tokenResult.refresh_token && cache?.refresh_token) {
         await this.cacheManager.updateEntry(
           cache.refresh_token,
           tokenResult.refresh_token

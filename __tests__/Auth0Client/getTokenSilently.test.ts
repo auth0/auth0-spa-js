@@ -2931,5 +2931,103 @@ describe('Auth0Client', () => {
         })
       );
     });
+
+    it('updates refresh token in all cache entries when downscoping', async () => {
+      const auth0 = setup({
+        useRefreshTokens: true,
+        cacheLocation: 'localstorage'
+      });
+
+      expect((<any>auth0).worker).toBeUndefined();
+
+      // Step 1: Login with broad scopes
+      await loginWithRedirect(auth0, {
+        authorizationParams: {
+          scope: 'openid profile read:messages write:messages',
+          audience: 'https://api.example.com'
+        }
+      }, {
+        token: {
+          response: { expires_in: 50 } // Less than 60 second leeway, will be considered expired
+        }
+      });
+
+      // Cache now has:
+      // Key: ...::openid profile read:messages write:messages
+      // Value: { refresh_token: TEST_REFRESH_TOKEN (RT1), ... }
+
+      mockFetch.mockReset();
+
+      // Step 2: Downscope - request fewer scopes
+      mockFetch.mockResolvedValueOnce(
+        fetchResponse(true, {
+          access_token: 'downscoped_access_token',
+          refresh_token: 'new_refresh_token', // RT2 - different from RT1
+          id_token: TEST_ID_TOKEN,
+          expires_in: 50 // Short expiry to force refresh in step 3
+        })
+      );
+
+      await auth0.getTokenSilently({
+        authorizationParams: {
+          scope: 'openid read:messages', // Fewer scopes than login
+          audience: 'https://api.example.com'
+        },
+        cacheMode: 'off' // Force network call
+      });
+
+      // Step 3: Request original broad scopes again
+      mockFetch.mockResolvedValueOnce(
+        fetchResponse(true, {
+          access_token: 'final_access_token',
+          refresh_token: 'final_refresh_token',
+          id_token: TEST_ID_TOKEN,
+          expires_in: 86400
+        })
+      );
+
+      await auth0.getTokenSilently({
+        authorizationParams: {
+          scope: 'openid profile read:messages write:messages', // Back to broad scopes
+          audience: 'https://api.example.com'
+        },
+        cacheMode: 'off' // Force network call
+      });
+
+      // Should have made exactly 2 token refresh calls total (one in step 2, one in step 3)
+      expect(mockFetch).toHaveBeenCalledTimes(2);
+
+      // Verify Step 2 used RT1
+      assertPost(
+        'https://auth0_domain/oauth/token',
+        {
+          client_id: TEST_CLIENT_ID,
+          grant_type: 'refresh_token',
+          redirect_uri: TEST_REDIRECT_URI,
+          refresh_token: TEST_REFRESH_TOKEN // Step 2 uses RT1
+        },
+        {
+          'Auth0-Client': btoa(JSON.stringify(DEFAULT_AUTH0_CLIENT))
+        },
+        0,
+        false
+      );
+
+      // Verify Step 3 used RT2 (not RT1) - this proves the fix worked
+      assertPost(
+        'https://auth0_domain/oauth/token',
+        {
+          client_id: TEST_CLIENT_ID,
+          grant_type: 'refresh_token',
+          redirect_uri: TEST_REDIRECT_URI,
+          refresh_token: 'new_refresh_token' // Should use RT2, not TEST_REFRESH_TOKEN (RT1)
+        },
+        {
+          'Auth0-Client': btoa(JSON.stringify(DEFAULT_AUTH0_CLIENT))
+        },
+        1,
+        false
+      );
+    });
   });
 });
