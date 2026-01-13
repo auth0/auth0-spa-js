@@ -1851,56 +1851,34 @@ describe('Auth0Client', () => {
         await Promise.all([promise1, promise2]);
       });
 
-      // Skipped: With the global iframe lock, iframe requests are serialized
-      // This test expects parallel execution which we now prevent to fix state corruption
-      it.skip('should handle errors in concurrent requests without affecting other locks', async () => {
+      it('should handle errors and release locks properly', async () => {
         const auth0 = setup();
 
+        // Mock iframe to fail
         jest
           .spyOn(<any>utils, 'runIframe')
-          .mockResolvedValueOnce({
-            access_token: TEST_ACCESS_TOKEN,
-            state: TEST_STATE
+          .mockRejectedValue(new Error('Network error'));
+
+        // Attempt a request that will fail
+        await expect(
+          getTokenSilently(auth0, {
+            authorizationParams: { audience: 'test-audience' },
+            cacheMode: 'off'
           })
-          .mockRejectedValueOnce(new Error('Network error'));
+        ).rejects.toThrow('Network error');
 
-        // Mock one successful and one failing request
-
-        const promise1 = getTokenSilently(auth0, {
-          authorizationParams: { audience: 'audience1' }
-        });
-
-        await new Promise(resolve => setTimeout(resolve, 50));
-
-        const promise2 = getTokenSilently(auth0, {
-          authorizationParams: { audience: 'audience2' }
-        });
-
-        const [result1, result2] = await Promise.allSettled([
-          promise1,
-          promise2
-        ]);
-
-        // First should succeed, second should fail
-        expect(result1.status).toEqual('fulfilled');
-        expect((result1 as PromiseFulfilledResult<string>).value).toEqual(
-          TEST_ACCESS_TOKEN
-        );
-
-        expect(result2.status).toEqual('rejected');
-
-        // Both locks should be released despite the error
+        // Per-audience lock should be released despite the error
         expect(releaseLockSpy).toHaveBeenCalledWith(
-          `auth0.lock.getTokenSilently.${TEST_CLIENT_ID}.audience1`
+          `auth0.lock.getTokenSilently.${TEST_CLIENT_ID}.test-audience`
         );
+        
+        // Iframe lock should also be released
         expect(releaseLockSpy).toHaveBeenCalledWith(
-          `auth0.lock.getTokenSilently.${TEST_CLIENT_ID}.audience2`
+          buildIframeLockKey(TEST_CLIENT_ID)
         );
       });
 
-      // Skipped: With the global iframe lock, iframe requests are serialized
-      // This test expects parallel HTTP calls which we now prevent to fix state corruption  
-      it.skip('should allow simultaneous calls with different audiences to make separate HTTP calls', async () => {
+      it('should serialize iframe calls with different audiences while making separate HTTP calls', async () => {
         const auth0 = setup();
 
         let iframeCallCount = 0;
@@ -1942,20 +1920,23 @@ describe('Auth0Client', () => {
           })
         ]);
 
-        // Both should result in their own HTTP calls
+        // With iframe lock serialization, both should still result in separate HTTP calls
         expect(mockFetch).toHaveBeenCalledTimes(2);
         expect(utils.runIframe).toHaveBeenCalledTimes(2);
 
-        // Verify each call got a different token
+        // Verify each call got a different token (different audiences)
         expect(token1).not.toEqual(token2);
         expect(token1).toMatch(/^access_token_\d+$/);
         expect(token2).toMatch(/^access_token_\d+$/);
+        
+        // Verify iframe lock was used for both
+        expect(acquireLockSpy).toHaveBeenCalledWith(
+          buildIframeLockKey(TEST_CLIENT_ID),
+          5000
+        );
       });
 
-      // Skipped: With the global iframe lock, iframe requests are serialized  
-      // This test expects only one HTTP call for same audience, but with serialization
-      // each call is independent
-      it.skip('should allow simultaneous calls with the same audience to make only one HTTP call', async () => {
+      it('should allow simultaneous calls with the same audience to make only one HTTP call', async () => {
         const auth0 = setup();
 
         let iframeCallCount = 0;
@@ -1997,18 +1978,16 @@ describe('Auth0Client', () => {
           })
         ]);
 
-        // Both should return the same token (from the single shared call)
+        // Both should return the same token (per-audience lock prevents duplicate calls)
         expect(token1).toEqual(token2);
         expect(token1).toMatch(/^access_token_\d+$/);
 
-        // Should only result in one HTTP call due to lock
+        // Should only result in one HTTP call due to per-audience lock
         expect(mockFetch).toHaveBeenCalledTimes(1);
         expect(utils.runIframe).toHaveBeenCalledTimes(1);
       });
 
-      // Skipped: With the global iframe lock, iframe requests are serialized
-      // Lock release behavior is tested in other tests
-      it.skip('should release lock correctly and allow subsequent calls to make new HTTP requests', async () => {
+      it('should release lock correctly and allow subsequent calls to make new HTTP requests', async () => {
         const auth0 = setup();
 
         let iframeCallCount = 0;
