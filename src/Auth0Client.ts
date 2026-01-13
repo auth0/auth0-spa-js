@@ -1026,7 +1026,16 @@ export class Auth0Client {
   ): Promise<GetTokenSilentlyResult> {
     const iframeLockKey = buildIframeLockKey(this.options.clientId);
 
-    // Acquire global iframe lock to serialize iframe authorization flows
+    // Acquire global iframe lock to serialize iframe authorization flows.
+    // This is necessary because the SDK does not support multiple simultaneous transactions.
+    // Since https://github.com/auth0/auth0-spa-js/pull/1408, when calling
+    // `getTokenSilently()`, the global locking will lock per `audience` instead of locking
+    // only per `client_id`.
+    // This means that calls for different audiences would happen in parallel, which does
+    // not work when using silent authentication (prompt=none) from within the SDK, as that
+    // relies on the same transaction context as a top-level `loginWithRedirect`.
+    // To resolve that, we add a second-level locking that locks only the iframe calls in
+    // the same way as was done before https://github.com/auth0/auth0-spa-js/pull/1408.
     const lockAcquired = await retryPromise(
       () => lock.acquireLock(iframeLockKey, 5000),
       10

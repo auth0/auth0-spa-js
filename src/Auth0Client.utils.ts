@@ -16,6 +16,11 @@ export const GET_TOKEN_SILENTLY_LOCK_KEY = 'auth0.lock.getTokenSilently';
 /**
  * @ignore
  */
+export const GET_TOKEN_FROM_IFRAME_LOCK_KEY = 'auth0.lock.getTokenFromIFrame';
+
+/**
+ * @ignore
+ */
 export const buildGetTokenSilentlyLockKey = (
   clientId: string,
   audience: string
@@ -29,7 +34,7 @@ export const buildGetTokenSilentlyLockKey = (
  * each other's state in the Auth0 session.
  */
 export const buildIframeLockKey = (clientId: string) =>
-  `auth0.lock.iframe.${clientId}`;
+  `${GET_TOKEN_FROM_IFRAME_LOCK_KEY}.${clientId}`;
 
 /**
  * @ignore
