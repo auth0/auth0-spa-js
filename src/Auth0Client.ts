@@ -98,6 +98,7 @@ import {
   cacheFactory,
   getAuthorizeParams,
   buildGetTokenSilentlyLockKey,
+  buildIframeLockKey,
   OLD_IS_AUTHENTICATED_COOKIE_NAME,
   patchOpenUrlWithOnRedirect,
   getScopeToRequest,
@@ -1023,32 +1024,44 @@ export class Auth0Client {
       authorizationParams: AuthorizationParams & { scope: string };
     }
   ): Promise<GetTokenSilentlyResult> {
-    const params: AuthorizationParams & { scope: string } = {
-      ...options.authorizationParams,
-      prompt: 'none'
-    };
+    const iframeLockKey = buildIframeLockKey(this.options.clientId);
 
-    const orgHint = this.cookieStorage.get<string>(this.orgHintCookieName);
-
-    if (orgHint && !params.organization) {
-      params.organization = orgHint;
-    }
-
-    const {
-      url,
-      state: stateIn,
-      nonce: nonceIn,
-      code_verifier,
-      redirect_uri,
-      scope,
-      audience
-    } = await this._prepareAuthorizeUrl(
-      params,
-      { response_mode: 'web_message' },
-      window.location.origin
+    // Acquire global iframe lock to serialize iframe authorization flows
+    const lockAcquired = await retryPromise(
+      () => lock.acquireLock(iframeLockKey, 5000),
+      10
     );
 
+    if (!lockAcquired) {
+      throw new TimeoutError();
+    }
+
     try {
+      const params: AuthorizationParams & { scope: string } = {
+        ...options.authorizationParams,
+        prompt: 'none'
+      };
+
+      const orgHint = this.cookieStorage.get<string>(this.orgHintCookieName);
+
+      if (orgHint && !params.organization) {
+        params.organization = orgHint;
+      }
+
+      const {
+        url,
+        state: stateIn,
+        nonce: nonceIn,
+        code_verifier,
+        redirect_uri,
+        scope,
+        audience
+      } = await this._prepareAuthorizeUrl(
+        params,
+        { response_mode: 'web_message' },
+        window.location.origin
+      );
+
       // When a browser is running in a Cross-Origin Isolated context, using iframes is not possible.
       // It doesn't throw an error but times out instead, so we should exit early and inform the user about the reason.
       // https://developer.mozilla.org/en-US/docs/Web/API/crossOriginIsolated
@@ -1104,6 +1117,8 @@ export class Auth0Client {
         });
       }
       throw e;
+    } finally {
+      await lock.releaseLock(iframeLockKey);
     }
   }
 
