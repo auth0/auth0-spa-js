@@ -159,7 +159,8 @@ export class Auth0Client {
       scope: DEFAULT_SCOPE
     },
     useRefreshTokensFallback: false,
-    useFormData: true
+    useFormData: true,
+    silentAuthResponseMode: 'web_message'
   };
 
   constructor(options: Auth0ClientOptions) {
@@ -1044,7 +1045,7 @@ export class Auth0Client {
       audience
     } = await this._prepareAuthorizeUrl(
       params,
-      { response_mode: 'web_message' },
+      { response_mode: this.options.silentAuthResponseMode },
       window.location.origin
     );
 
@@ -1070,7 +1071,13 @@ export class Auth0Client {
         eventOrigin = this.domainUrl;
       }
 
-      const codeResult = await runIframe(url, eventOrigin, authorizeTimeout);
+      const codeResult = await runIframe(
+        url,
+        eventOrigin,
+        authorizeTimeout,
+        this.options.silentAuthResponseMode,
+        redirect_uri
+      );
 
       if (stateIn !== codeResult.state) {
         throw new GenericError('state_mismatch', 'Invalid state');
