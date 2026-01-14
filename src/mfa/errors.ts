@@ -1,18 +1,25 @@
-import {
-  MfaEnrollmentError as Auth0JsMfaEnrollmentError,
-  MfaChallengeError as Auth0JsMfaChallengeError,
-  MfaApiErrorResponse
-} from '@auth0/auth0-auth-js';
+import { MfaApiErrorResponse } from '@auth0/auth0-auth-js';
+import { GenericError } from '../errors';
 
 /**
  * Base class for MFA-related errors in auth0-spa-js.
- * Wraps errors from auth0-auth-js and preserves error details.
+ * Extends GenericError for unified error hierarchy across the SDK.
  */
-export class MfaError extends Error {
-  constructor(public error: string, public error_description: string) {
-    super(error_description);
+export class MfaError extends GenericError {
+  constructor(error: string, error_description: string) {
+    super(error, error_description);
     //https://github.com/Microsoft/TypeScript-wiki/blob/master/Breaking-Changes.md#extending-built-ins-like-error-array-and-map-may-no-longer-work
     Object.setPrototypeOf(this, MfaError.prototype);
+  }
+
+  static fromPayload({
+    error,
+    error_description
+  }: {
+    error: string;
+    error_description: string;
+  }) {
+    return new MfaError(error, error_description);
   }
 }
 
@@ -57,11 +64,8 @@ export class MfaListAuthenticatorsError extends MfaError {
  * ```
  */
 export class MfaEnrollmentError extends MfaError {
-  constructor(originalError: Auth0JsMfaEnrollmentError) {
-    super(
-      originalError.cause?.error || 'mfa_enrollment_error',
-      originalError.message
-    );
+  constructor(error: string, error_description: string) {
+    super(error, error_description);
     //https://github.com/Microsoft/TypeScript-wiki/blob/master/Breaking-Changes.md#extending-built-ins-like-error-array-and-map-may-no-longer-work
     Object.setPrototypeOf(this, MfaEnrollmentError.prototype);
   }
@@ -88,13 +92,37 @@ export class MfaEnrollmentError extends MfaError {
  * ```
  */
 export class MfaChallengeError extends MfaError {
-  constructor(originalError: Auth0JsMfaChallengeError) {
-    super(
-      originalError.cause?.error || 'mfa_challenge_error',
-      originalError.message
-    );
+  constructor(error: string, error_description: string) {
+    super(error, error_description);
     //https://github.com/Microsoft/TypeScript-wiki/blob/master/Breaking-Changes.md#extending-built-ins-like-error-array-and-map-may-no-longer-work
     Object.setPrototypeOf(this, MfaChallengeError.prototype);
+  }
+}
+
+/**
+ * Error thrown when verifying an MFA challenge fails.
+ *
+ * @example
+ * ```typescript
+ * try {
+ *   const tokens = await mfa.verify({
+ *     mfaToken: mfaToken,
+ *     grant_type: 'http://auth0.com/oauth/grant-type/mfa-otp',
+ *     otp: '123456'
+ *   });
+ * } catch (error) {
+ *   if (error instanceof MfaVerifyError) {
+ *     console.log(error.error); // 'invalid_otp' or 'context_not_found'
+ *     console.log(error.error_description); // Error details
+ *   }
+ * }
+ * ```
+ */
+export class MfaVerifyError extends MfaError {
+  constructor(error: string, error_description: string) {
+    super(error, error_description);
+    //https://github.com/Microsoft/TypeScript-wiki/blob/master/Breaking-Changes.md#extending-built-ins-like-error-array-and-map-may-no-longer-work
+    Object.setPrototypeOf(this, MfaVerifyError.prototype);
   }
 }
 

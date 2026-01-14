@@ -20,8 +20,10 @@ import {
 import {
   MfaListAuthenticatorsError,
   MfaEnrollmentError,
-  MfaChallengeError
+  MfaChallengeError,
+  MfaVerifyError
 } from './errors';
+import { GenericError } from '../errors';
 import { MfaContextManager } from './MfaContextManager';
 
 /**
@@ -178,7 +180,10 @@ export class MfaApiClient {
       return await this.authJsMfaClient.enrollAuthenticator({ ...enrollParams, mfaToken });
     } catch (error: unknown) {
       if (error instanceof Auth0JsMfaEnrollmentError) {
-        throw new MfaEnrollmentError(error);
+        throw new MfaEnrollmentError(
+          error.cause?.error || 'mfa_enrollment_error',
+          error.message
+        );
       }
       throw error;
     }
@@ -237,7 +242,10 @@ export class MfaApiClient {
       return await this.authJsMfaClient.challengeAuthenticator(authJsParams);
     } catch (error: unknown) {
       if (error instanceof Auth0JsMfaChallengeError) {
-        throw new MfaChallengeError(error);
+        throw new MfaChallengeError(
+          error.cause?.error || 'mfa_challenge_error',
+          error.message
+        );
       }
       throw error;
     }
@@ -298,30 +306,39 @@ export class MfaApiClient {
 
     // Use context values only (set when mfa_required error occurred)
     if (!context) {
-      throw new Error(
-        'MFA context not found for this MFA token. ' +
-        'Please retry the original request to get a new MFA token. ' +
-        'See documentation: https://github.com/auth0/auth0-spa-js/blob/main/EXAMPLES.md#multi-factor-authentication-mfa'
+      throw new MfaVerifyError(
+        'mfa_context_not_found',
+        'MFA context not found for this MFA token. Please retry the original request to get a new MFA token.'
       );
     }
 
     const scope = context.scope;
     const audience = context.audience;
 
-    const result = await this.auth0Client._requestTokenForMfa({
-      grant_type: params.grant_type,
-      mfaToken: params.mfaToken,
-      scope,
-      audience,
-      otp: params.otp,
-      oob_code: params.oobCode,
-      binding_code: params.bindingCode,
-      recovery_code: params.recoveryCode
-    });
+    try {
+      const result = await this.auth0Client._requestTokenForMfa({
+        grant_type: params.grant_type,
+        mfaToken: params.mfaToken,
+        scope,
+        audience,
+        otp: params.otp,
+        oob_code: params.oobCode,
+        binding_code: params.bindingCode,
+        recovery_code: params.recoveryCode
+      });
 
-    // Clean up context after successful verification
-    this.contextManager.remove(params.mfaToken);
+      // Clean up context after successful verification
+      this.contextManager.remove(params.mfaToken);
 
-    return result;
+      return result;
+    } catch (error: unknown) {
+      if (error instanceof GenericError) {
+        throw new MfaVerifyError(
+          error.error || 'mfa_verify_error',
+          error.error_description
+        );
+      }
+      throw error;
+    }
   }
 }

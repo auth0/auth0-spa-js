@@ -39,7 +39,8 @@ export {
   MfaError,
   MfaListAuthenticatorsError,
   MfaEnrollmentError,
-  MfaChallengeError
+  MfaChallengeError,
+  MfaVerifyError
 } from './mfa/errors';
 
 export { MfaApiClient } from './mfa';
