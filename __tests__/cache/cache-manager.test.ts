@@ -298,6 +298,39 @@ cacheFactories.forEach(cacheFactory => {
         });
       });
 
+      it('should return another cache entry with a refresh token if the requested key returns undefined', async() => {
+        const data = {
+          ...defaultData,
+          refresh_token: TEST_REFRESH_TOKEN,
+          decodedToken: {
+            claims: {
+              __raw: TEST_ID_TOKEN,
+              name: 'Test',
+              exp: nowSeconds() + dayInSeconds * 2
+            },
+            user: { name: 'Test' }
+          }
+        };
+
+        await manager.set(data);
+
+        const keySecondAudience = new CacheKey({
+          clientId: TEST_CLIENT_ID,
+          audience: 'my_second_audience',
+          scope: 'scope_1 scope_2',
+        });
+
+        await cache.set(keySecondAudience.toKey(), undefined);
+
+        const result = await manager.get(keySecondAudience, undefined, true);
+
+        expect(result).toStrictEqual({
+          refresh_token: TEST_REFRESH_TOKEN,
+          audience: data.audience,
+          scope: data.scope,
+        });
+      })
+
       it('strips everything except the refresh token and audience when expiry has been reached', async () => {
         const now = Date.now();
         const realDateNow = Date.now.bind(global.Date);
