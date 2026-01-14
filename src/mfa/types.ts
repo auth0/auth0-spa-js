@@ -19,9 +19,10 @@ export interface Authenticator {
 }
 
 /**
- * Supported authenticator types
+ * Supported authenticator types.
+ * Note: Email authenticators use 'oob' type with oobChannel: 'email'
  */
-export type AuthenticatorType = 'otp' | 'oob' | 'recovery-code' | 'email';
+export type AuthenticatorType = 'otp' | 'oob' | 'recovery-code';
 
 /**
  * Types of MFA challenges
@@ -29,9 +30,10 @@ export type AuthenticatorType = 'otp' | 'oob' | 'recovery-code' | 'email';
 export type ChallengeType = 'otp' | 'phone' | 'recovery-code' | 'email' | 'push-notification' | 'totp';
 
 /**
- * Out-of-band delivery channels
+ * Out-of-band delivery channels.
+ * Includes 'email' which is also delivered out-of-band.
  */
-export type OobChannel = 'sms' | 'voice' | 'auth0';
+export type OobChannel = 'sms' | 'voice' | 'auth0' | 'email';
 
 /**
  * Parameters for getting authenticators
@@ -140,19 +142,6 @@ export interface OobEnrollmentResponse {
   barcodeUri?: string;
 }
 
-/**
- * Response when enrolling an email authenticator
- */
-export interface EmailEnrollmentResponse {
-  /** Authenticator type */
-  authenticatorType: 'email';
-  /** Email address enrolled */
-  email: string;
-  /** Recovery codes (generated when enrolling first MFA factor) */
-  recoveryCodes?: string[];
-  /** Authenticator ID */
-  id?: string;
-}
 
 /**
  * Union type for all enrollment response types
@@ -160,7 +149,6 @@ export interface EmailEnrollmentResponse {
 export type EnrollmentResponse =
   | OtpEnrollmentResponse
   | OobEnrollmentResponse
-  | EmailEnrollmentResponse;
 
 /**
  * Parameters for initiating an MFA challenge
