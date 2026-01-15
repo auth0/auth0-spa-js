@@ -1036,98 +1036,93 @@ export class Auth0Client {
     // relies on the same transaction context as a top-level `loginWithRedirect`.
     // To resolve that, we add a second-level locking that locks only the iframe calls in
     // the same way as was done before https://github.com/auth0/auth0-spa-js/pull/1408.
-    const lockAcquired = await retryPromise(
-      () => lock.acquireLock(iframeLockKey, 5000),
-      10
-    );
-
-    if (!lockAcquired) {
-      throw new TimeoutError();
-    }
-
-    try {
-      const params: AuthorizationParams & { scope: string } = {
-        ...options.authorizationParams,
-        prompt: 'none'
-      };
-
-      const orgHint = this.cookieStorage.get<string>(this.orgHintCookieName);
-
-      if (orgHint && !params.organization) {
-        params.organization = orgHint;
-      }
-
-      const {
-        url,
-        state: stateIn,
-        nonce: nonceIn,
-        code_verifier,
-        redirect_uri,
-        scope,
-        audience
-      } = await this._prepareAuthorizeUrl(
-        params,
-        { response_mode: 'web_message' },
-        window.location.origin
-      );
-
-      // When a browser is running in a Cross-Origin Isolated context, using iframes is not possible.
-      // It doesn't throw an error but times out instead, so we should exit early and inform the user about the reason.
-      // https://developer.mozilla.org/en-US/docs/Web/API/crossOriginIsolated
-      if ((window as any).crossOriginIsolated) {
-        throw new GenericError(
-          'login_required',
-          'The application is running in a Cross-Origin Isolated context, silently retrieving a token without refresh token is not possible.'
-        );
-      }
-
-      const authorizeTimeout =
-        options.timeoutInSeconds || this.options.authorizeTimeoutInSeconds;
-
-      // Extract origin from domainUrl, fallback to domainUrl if URL parsing fails
-      let eventOrigin: string;
+    if (await retryPromise(() => lock.acquireLock(iframeLockKey, 5000), 10)) {
       try {
-        eventOrigin = new URL(this.domainUrl).origin;
-      } catch {
-        eventOrigin = this.domainUrl;
-      }
-
-      const codeResult = await runIframe(url, eventOrigin, authorizeTimeout);
-
-      if (stateIn !== codeResult.state) {
-        throw new GenericError('state_mismatch', 'Invalid state');
-      }
-
-      const tokenResult = await this._requestToken(
-        {
+        const params: AuthorizationParams & { scope: string } = {
           ...options.authorizationParams,
-          code_verifier,
-          code: codeResult.code as string,
-          grant_type: 'authorization_code',
-          redirect_uri,
-          timeout: options.authorizationParams.timeout || this.httpTimeoutMs
-        },
-        {
-          nonceIn,
-          organization: params.organization
-        }
-      );
+          prompt: 'none'
+        };
 
-      return {
-        ...tokenResult,
-        scope: scope,
-        oauthTokenScope: tokenResult.scope,
-        audience: audience
-      };
-    } catch (e) {
-      if (e.error === 'login_required') {
-        this.logout({
-          openUrl: false
-        });
+        const orgHint = this.cookieStorage.get<string>(this.orgHintCookieName);
+
+        if (orgHint && !params.organization) {
+          params.organization = orgHint;
+        }
+
+        const {
+          url,
+          state: stateIn,
+          nonce: nonceIn,
+          code_verifier,
+          redirect_uri,
+          scope,
+          audience
+        } = await this._prepareAuthorizeUrl(
+          params,
+          { response_mode: 'web_message' },
+          window.location.origin
+        );
+
+        // When a browser is running in a Cross-Origin Isolated context, using iframes is not possible.
+        // It doesn't throw an error but times out instead, so we should exit early and inform the user about the reason.
+        // https://developer.mozilla.org/en-US/docs/Web/API/crossOriginIsolated
+        if ((window as any).crossOriginIsolated) {
+          throw new GenericError(
+            'login_required',
+            'The application is running in a Cross-Origin Isolated context, silently retrieving a token without refresh token is not possible.'
+          );
+        }
+
+        const authorizeTimeout =
+          options.timeoutInSeconds || this.options.authorizeTimeoutInSeconds;
+
+        // Extract origin from domainUrl, fallback to domainUrl if URL parsing fails
+        let eventOrigin: string;
+        try {
+          eventOrigin = new URL(this.domainUrl).origin;
+        } catch {
+          eventOrigin = this.domainUrl;
+        }
+
+        const codeResult = await runIframe(url, eventOrigin, authorizeTimeout);
+
+        if (stateIn !== codeResult.state) {
+          throw new GenericError('state_mismatch', 'Invalid state');
+        }
+
+        const tokenResult = await this._requestToken(
+          {
+            ...options.authorizationParams,
+            code_verifier,
+            code: codeResult.code as string,
+            grant_type: 'authorization_code',
+            redirect_uri,
+            timeout: options.authorizationParams.timeout || this.httpTimeoutMs
+          },
+          {
+            nonceIn,
+            organization: params.organization
+          }
+        );
+
+        return {
+          ...tokenResult,
+          scope: scope,
+          oauthTokenScope: tokenResult.scope,
+          audience: audience
+        };
+      } catch (e) {
+        if (e.error === 'login_required') {
+          this.logout({
+            openUrl: false
+          });
+        }
+        throw e;
+      } finally {
+        await lock.releaseLock(iframeLockKey);
       }
-      throw e;
-    } finally {
-      await lock.releaseLock(iframeLockKey);
+    } else {
+      throw new TimeoutError();
     }
   }
 
