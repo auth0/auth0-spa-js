@@ -113,7 +113,7 @@ describe('MfaApiClient', () => {
       const mockData: Authenticator[] = [
         { id: 'otp|dev_123', authenticatorType: 'otp', active: true, type: 'otp' },
         { id: 'sms|dev_456', authenticatorType: 'oob', active: true, type: 'phone' },
-        { id: 'email|dev_789', authenticatorType: 'email', active: true, type: 'email' }
+        { id: 'email|dev_789', authenticatorType: 'oob', active: true, type: 'email' }
       ];
       const mfaToken = 'test-mfa-token';
 
@@ -132,7 +132,7 @@ describe('MfaApiClient', () => {
       const mockData: Authenticator[] = [
         { id: 'otp|dev_123', authenticatorType: 'otp', active: true, type: 'otp' },
         { id: 'sms|dev_456', authenticatorType: 'oob', active: true, type: 'phone' },
-        { id: 'email|dev_789', authenticatorType: 'email', active: true, type: 'email' },
+        { id: 'email|dev_789', authenticatorType: 'oob', active: true, type: 'email' },
         { id: 'recovery|dev_999', authenticatorType: 'recovery-code', active: true, type: 'recovery-code' }
       ];
       const mfaToken = 'test-mfa-token';
@@ -153,7 +153,7 @@ describe('MfaApiClient', () => {
     it('should return empty array when no authenticators match challenge types', async () => {
       const mockData: Authenticator[] = [
         { id: 'otp|dev_123', authenticatorType: 'otp', active: true, type: 'otp' },
-        { id: 'email|dev_789', authenticatorType: 'email', active: true, type: 'email' }
+        { id: 'email|dev_789', authenticatorType: 'oob', active: true, type: 'email' }
       ];
       const mfaToken = 'test-mfa-token';
 
@@ -172,7 +172,7 @@ describe('MfaApiClient', () => {
       const mockData: Authenticator[] = [
         { id: 'otp|dev_123', authenticatorType: 'otp', active: true, type: 'otp' },
         { id: 'sms|dev_456', authenticatorType: 'oob', active: true, type: 'phone' },
-        { id: 'email|dev_789', authenticatorType: 'email', active: true, type: 'email' }
+        { id: 'email|dev_789', authenticatorType: 'oob', active: true, type: 'email' }
       ];
       const mfaToken = 'test-mfa-token';
 
@@ -191,7 +191,7 @@ describe('MfaApiClient', () => {
       const mockData: Authenticator[] = [
         { id: 'otp|dev_123', authenticatorType: 'otp', active: true, type: 'totp' },
         { id: 'sms|dev_456', authenticatorType: 'oob', active: true, type: 'phone' },
-        { id: 'email|dev_789', authenticatorType: 'email', active: true, type: 'email' }
+        { id: 'email|dev_789', authenticatorType: 'oob', active: true, type: 'email' }
       ];
       const mfaToken = 'test-mfa-token';
 
@@ -210,7 +210,7 @@ describe('MfaApiClient', () => {
       const mockData: Authenticator[] = [
         { id: 'otp|dev_123', authenticatorType: 'otp', active: true, type: 'otp' },
         { id: 'push|dev_456', authenticatorType: 'oob', active: true, type: 'push-notification' },
-        { id: 'email|dev_789', authenticatorType: 'email', active: true, type: 'email' }
+        { id: 'email|dev_789', authenticatorType: 'oob', active: true, type: 'email' }
       ];
       const mfaToken = 'test-mfa-token';
 
