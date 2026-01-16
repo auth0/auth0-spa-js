@@ -1,5 +1,13 @@
 # Change Log
 
+## [v2.11.3](https://github.com/auth0/auth0-spa-js/tree/v2.11.3) (2026-01-16)
+[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.11.2...v2.11.3)
+
+**Fixed**
+- fix: add two-tier locking to prevent iframe race conditions causing "Invalid state" errors [\#1505](https://github.com/auth0/auth0-spa-js/pull/1505) ([yogeshchoudhary147](https://github.com/yogeshchoudhary147))
+- fix: handle undefined value when finding MRRT refresh token [\#1508](https://github.com/auth0/auth0-spa-js/pull/1508) ([mogzol](https://github.com/mogzol))
+- fix: update refresh token in all cache entries on rotation [\#1503](https://github.com/auth0/auth0-spa-js/pull/1503) ([gyaneshgouraw-okta](https://github.com/gyaneshgouraw-okta))
+
 ## [v2.11.2](https://github.com/auth0/auth0-spa-js/tree/v2.11.2) (2026-01-12)
 [Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.11.1...v2.11.2)
 
