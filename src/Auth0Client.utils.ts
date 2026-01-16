@@ -16,10 +16,25 @@ export const GET_TOKEN_SILENTLY_LOCK_KEY = 'auth0.lock.getTokenSilently';
 /**
  * @ignore
  */
+export const GET_TOKEN_FROM_IFRAME_LOCK_KEY = 'auth0.lock.getTokenFromIFrame';
+
+/**
+ * @ignore
+ */
 export const buildGetTokenSilentlyLockKey = (
   clientId: string,
   audience: string
 ) => `${GET_TOKEN_SILENTLY_LOCK_KEY}.${clientId}.${audience}`;
+
+/**
+ * @ignore
+ * Builds a global lock key for iframe-based authentication flows.
+ * This ensures only one iframe authorization request runs at a time per client,
+ * preventing "Invalid state" errors from concurrent iframe requests overwriting
+ * each other's state in the Auth0 session.
+ */
+export const buildIframeLockKey = (clientId: string) =>
+  `${GET_TOKEN_FROM_IFRAME_LOCK_KEY}.${clientId}`;
 
 /**
  * @ignore
