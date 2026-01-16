@@ -24,5 +24,8 @@ module.exports = {
   ],
   excludeExternals: false,
   excludePrivate: true,
-  hideGenerator: true
+  hideGenerator: true,
+  compilerOptions: {
+    skipLibCheck: true
+  }
 };
