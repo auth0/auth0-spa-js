@@ -36,29 +36,6 @@ export type ChallengeType = 'otp' | 'phone' | 'recovery-code' | 'email' | 'push-
 export type OobChannel = 'sms' | 'voice' | 'auth0' | 'email';
 
 /**
- * Parameters for getting authenticators
- */
-export interface GetAuthenticatorsParams {
-  /** MFA token from mfa_required error */
-  mfaToken: string;
-
-  /**
-   * Array of challenge types to filter authenticators.
-   * Use values from mfa_required error's mfa_requirements.challenge[].type
-   * 
-   * @example
-   * ```typescript
-   * const challengeTypes = error.mfa_requirements.challenge.map(c => c.type);
-   * const authenticators = await mfa.getAuthenticators({
-   *   mfaToken: error.mfa_token,
-   *   challengeType: challengeTypes
-   * });
-   * ```
-   */
-  challengeType: ChallengeType[];
-}
-
-/**
  * Base parameters for all enrollment types
  */
 export interface EnrollBaseParams {
@@ -202,4 +179,12 @@ export interface VerifyParams {
   bindingCode?: string;
   /** Recovery code (for recovery code verification) */
   recoveryCode?: string;
+}
+
+/**
+ * Enrollment factor returned by getEnrollmentFactors
+ */
+export interface EnrollmentFactor {
+  /** Type of enrollment factor available */
+  type: string;
 }

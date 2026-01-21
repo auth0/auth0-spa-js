@@ -169,7 +169,6 @@ export class Auth0Client {
   };
 
   constructor(options: Auth0ClientOptions) {
-    console.log('%c>>>>>> - Auth0Client.ts:172', 'color: green');
     this.options = {
       ...this.defaultOptions,
       ...options,
@@ -1276,7 +1275,8 @@ export class Auth0Client {
         this.mfa.setMFAAuthDetails(
           e.mfa_token,
           options.authorizationParams?.scope,
-          options.authorizationParams?.audience
+          options.authorizationParams?.audience,
+          e.mfa_requirements
         );
       }
 

@@ -1,3 +1,5 @@
+import { MfaRequirements } from '../errors';
+
 /**
  * Represents the stored context for an MFA flow
  */
@@ -6,6 +8,8 @@ export interface MfaContext {
     scope?: string;
     /** The API audience for the original token request */
     audience?: string;
+    /** MFA requirements from the mfa_required error (camelCase for TypeScript conventions) */
+    mfaRequirements?: MfaRequirements;
     /** Timestamp when the context was created */
     createdAt: number;
 }

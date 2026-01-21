@@ -127,6 +127,29 @@ export class MfaVerifyError extends MfaError {
 }
 
 /**
+ * Error thrown when getting enrollment factors fails.
+ *
+ * @example
+ * ```typescript
+ * try {
+ *   const factors = await mfa.getEnrollmentFactors(mfaToken);
+ * } catch (error) {
+ *   if (error instanceof MfaEnrollmentFactorsError) {
+ *     console.log(error.error); // 'mfa_context_not_found'
+ *     console.log(error.error_description); // 'MFA context not found...'
+ *   }
+ * }
+ * ```
+ */
+export class MfaEnrollmentFactorsError extends MfaError {
+  constructor(error: string, error_description: string) {
+    super(error, error_description);
+    //https://github.com/Microsoft/TypeScript-wiki/blob/master/Breaking-Changes.md#extending-built-ins-like-error-array-and-map-may-no-longer-work
+    Object.setPrototypeOf(this, MfaEnrollmentFactorsError.prototype);
+  }
+}
+
+/**
  * Re-export MfaApiErrorResponse type for convenience
  */
 export type { MfaApiErrorResponse };

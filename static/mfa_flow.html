@@ -144,7 +144,7 @@
                         </div>
 
                         <!-- Enrollment Form -->
-                        <div v-if="mfaToken && hasEnrollmentOptions" class="card mb-3">
+                        <div v-if="mfaToken" class="card mb-3">
                             <div class="card-body">
                                 <h5 class="card-title">Enroll New Authenticator</h5>
 
@@ -492,6 +492,8 @@
                 this.enrollmentVerificationCode = '';
                 this.phoneNumber = '';
                 this.emailAddress = '';
+                this.enrollmentFactors = [];
+                this.enrollmentOptions = [];
             },
 
             async triggerMFA() {
@@ -501,6 +503,8 @@
                 this.mfaToken = null;
                 this.mfaRequirements = null;
                 this.authenticators = [];
+                this.enrollmentFactors = [];
+                this.enrollmentOptions = [];
 
                 try {
                     await this.auth0.getTokenSilently({
@@ -513,15 +517,61 @@
                     if (e.error === 'mfa_required') {
                         this.mfaToken = e.mfa_token;
                         this.mfaRequirements = e.mfa_requirements || {};
+                        // SDK automatically stores context, now we can call simplified methods
                         await this.getAuthenticators();
+                        await this.getEnrollmentFactors();
                     } else {
                         this.error = e.message || e.error_description || e;
                     }
                 }
             },
 
+            async getEnrollmentFactors() {
+                if (!this.mfaToken) {
+                    return;
+                }
+
+                try {
+                    // SDK automatically retrieves enrollment factors from stored context
+                    this.enrollmentFactors = await this.auth0.mfa.getEnrollmentFactors(this.mfaToken);
+
+                    // Map to UI options
+                    const optionMap = {
+                        'otp': {
+                            type: 'otp',
+                            label: 'Authenticator App (OTP)',
+                            description: 'Use Google Authenticator, Okta Verify, or similar apps'
+                        },
+                        'oob': {
+                            type: 'sms',
+                            label: 'SMS',
+                            description: 'Receive codes via text message'
+                        },
+                        'phone': {
+                            type: 'sms',
+                            label: 'SMS',
+                            description: 'Receive codes via text message'
+                        },
+                        'email': {
+                            type: 'email',
+                            label: 'Email',
+                            description: 'Receive codes via email'
+                        }
+                    };
+
+                    this.enrollmentOptions = this.enrollmentFactors
+                        .map(e => optionMap[e.type])
+                        .filter(Boolean);
+                } catch (e) {
+                    // If context not found, it's okay - just no enrollment options
+                    console.warn('Could not get enrollment factors:', e.message);
+                    this.enrollmentFactors = [];
+                    this.enrollmentOptions = [];
+                }
+            },
+
             async getAuthenticators() {
-                if (!this.mfaToken || !this.mfaRequirements.challenge) {
+                if (!this.mfaToken) {
                     return;
                 }
 
@@ -529,11 +579,8 @@
                 this.error = '';
 
                 try {
-                    const challengeTypes = this.mfaRequirements.challenge.map(c => c.type);
-                    this.authenticators = await this.auth0.mfa.getAuthenticators({
-                        mfaToken: this.mfaToken,
-                        challengeType: challengeTypes
-                    });
+                    // SDK automatically filters by challenge types from context
+                    this.authenticators = await this.auth0.mfa.getAuthenticators(this.mfaToken);
                 } catch (e) {
                     this.error = e.message || e.error_description || e;
                 } finally {
@@ -738,8 +785,9 @@
                     this.phoneNumber = '';
                     this.emailAddress = '';
 
-                    // Refresh authenticators list
+                    // Refresh authenticators and enrollment factors
                     await this.getAuthenticators();
+                    await this.getEnrollmentFactors();
                 } catch (e) {
                     this.error = e.message || e.error_description || e;
                 } finally {
@@ -787,6 +835,8 @@
                     enrollmentVerificationCode: '',
                     phoneNumber: '',
                     emailAddress: '',
+                    enrollmentFactors: [],
+                    enrollmentOptions: [],
                     // UI state
                     loadingAuthenticators: false,
                     loadingChallenge: false,
@@ -800,37 +850,7 @@
             },
             computed: {
                 hasEnrollmentOptions() {
-                    return this.mfaRequirements && this.mfaRequirements.enroll && this.mfaRequirements.enroll.length > 0;
-                },
-                enrollmentOptions() {
-                    if (!this.hasEnrollmentOptions) return [];
-
-                    const optionMap = {
-                        'otp': {
-                            type: 'otp',
-                            label: 'Authenticator App (OTP)',
-                            description: 'Use Google Authenticator, Okta Verify, or similar apps'
-                        },
-                        'oob': {
-                            type: 'sms',
-                            label: 'SMS',
-                            description: 'Receive codes via text message'
-                        },
-                        'phone': {
-                            type: 'sms',
-                            label: 'SMS',
-                            description: 'Receive codes via text message'
-                        },
-                        'email': {
-                            type: 'email',
-                            label: 'Email',
-                            description: 'Receive codes via email'
-                        }
-                    };
-
-                    return this.mfaRequirements.enroll
-                        .map(e => optionMap[e.type])
-                        .filter(Boolean);
+                    return this.enrollmentFactors.length > 0;
                 }
             },
             methods: {

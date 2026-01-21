@@ -77,12 +77,14 @@ describe('MfaApiClient', () => {
       ];
       const mfaToken = 'test-mfa-token';
 
+      // Set up MFA context with challenge types
+      mfaClient.setMFAAuthDetails(mfaToken, 'openid profile', 'https://api.example.com', {
+        challenge: [{ type: 'otp' }]
+      });
+
       mockAuthJsMfaClient.listAuthenticators.mockResolvedValue(mockData);
 
-      const result = await mfaClient.getAuthenticators({
-        mfaToken: mfaToken,
-        challengeType: ['otp']
-      });
+      const result = await mfaClient.getAuthenticators(mfaToken);
 
       expect(mockAuthJsMfaClient.listAuthenticators).toHaveBeenCalledWith({
         mfaToken
@@ -90,22 +92,35 @@ describe('MfaApiClient', () => {
       expect(result).toEqual(mockData);
     });
 
-    it('should throw error when challengeType is not provided', async () => {
+    it('should throw error when context is not found', async () => {
       const mfaToken = 'test-mfa-token';
 
       await expect(
-        mfaClient.getAuthenticators({ mfaToken } as any)
+        mfaClient.getAuthenticators(mfaToken)
       ).rejects.toThrow('challengeType is required');
     });
 
-    it('should throw error when challengeType is empty array', async () => {
+    it('should throw error when context has no mfaRequirements', async () => {
       const mfaToken = 'test-mfa-token';
 
+      // Set up context without mfaRequirements
+      mfaClient.setMFAAuthDetails(mfaToken, 'openid profile', 'https://api.example.com');
+
       await expect(
-        mfaClient.getAuthenticators({
-          mfaToken,
-          challengeType: []
-        })
+        mfaClient.getAuthenticators(mfaToken)
+      ).rejects.toThrow('challengeType is required');
+    });
+
+    it('should throw error when context has empty challenge array', async () => {
+      const mfaToken = 'test-mfa-token';
+
+      // Set up context with empty challenge array
+      mfaClient.setMFAAuthDetails(mfaToken, 'openid profile', 'https://api.example.com', {
+        challenge: []
+      });
+
+      await expect(
+        mfaClient.getAuthenticators(mfaToken)
       ).rejects.toThrow('challengeType is required');
     });
 
@@ -117,12 +132,14 @@ describe('MfaApiClient', () => {
       ];
       const mfaToken = 'test-mfa-token';
 
+      // Set up MFA context with single challenge type
+      mfaClient.setMFAAuthDetails(mfaToken, 'openid profile', 'https://api.example.com', {
+        challenge: [{ type: 'otp' }]
+      });
+
       mockAuthJsMfaClient.listAuthenticators.mockResolvedValue(mockData);
 
-      const result = await mfaClient.getAuthenticators({
-        mfaToken,
-        challengeType: ['otp']
-      });
+      const result = await mfaClient.getAuthenticators(mfaToken);
 
       expect(result).toEqual([mockData[0]]);
       expect(result).toHaveLength(1);
@@ -137,12 +154,14 @@ describe('MfaApiClient', () => {
       ];
       const mfaToken = 'test-mfa-token';
 
+      // Set up MFA context with multiple challenge types
+      mfaClient.setMFAAuthDetails(mfaToken, 'openid profile', 'https://api.example.com', {
+        challenge: [{ type: 'phone' }, { type: 'email' }]
+      });
+
       mockAuthJsMfaClient.listAuthenticators.mockResolvedValue(mockData);
 
-      const result = await mfaClient.getAuthenticators({
-        mfaToken,
-        challengeType: ['phone', 'email']
-      });
+      const result = await mfaClient.getAuthenticators(mfaToken);
 
       expect(result).toEqual([mockData[1], mockData[2]]);
       expect(result).toHaveLength(2);
@@ -157,12 +176,14 @@ describe('MfaApiClient', () => {
       ];
       const mfaToken = 'test-mfa-token';
 
+      // Set up MFA context with challenge type that doesn't match any authenticators
+      mfaClient.setMFAAuthDetails(mfaToken, 'openid profile', 'https://api.example.com', {
+        challenge: [{ type: 'recovery-code' }]
+      });
+
       mockAuthJsMfaClient.listAuthenticators.mockResolvedValue(mockData);
 
-      const result = await mfaClient.getAuthenticators({
-        mfaToken,
-        challengeType: ['recovery-code']
-      });
+      const result = await mfaClient.getAuthenticators(mfaToken);
 
       expect(result).toEqual([]);
       expect(result).toHaveLength(0);
@@ -176,12 +197,14 @@ describe('MfaApiClient', () => {
       ];
       const mfaToken = 'test-mfa-token';
 
+      // Set up MFA context with phone challenge type
+      mfaClient.setMFAAuthDetails(mfaToken, 'openid profile', 'https://api.example.com', {
+        challenge: [{ type: 'phone' }]
+      });
+
       mockAuthJsMfaClient.listAuthenticators.mockResolvedValue(mockData);
 
-      const result = await mfaClient.getAuthenticators({
-        mfaToken,
-        challengeType: ['phone']
-      });
+      const result = await mfaClient.getAuthenticators(mfaToken);
 
       expect(result).toEqual([mockData[1]]);
       expect(result[0].type).toBe('phone');
@@ -195,12 +218,14 @@ describe('MfaApiClient', () => {
       ];
       const mfaToken = 'test-mfa-token';
 
+      // Set up MFA context with totp challenge type
+      mfaClient.setMFAAuthDetails(mfaToken, 'openid profile', 'https://api.example.com', {
+        challenge: [{ type: 'totp' }]
+      });
+
       mockAuthJsMfaClient.listAuthenticators.mockResolvedValue(mockData);
 
-      const result = await mfaClient.getAuthenticators({
-        mfaToken,
-        challengeType: ['totp']
-      });
+      const result = await mfaClient.getAuthenticators(mfaToken);
 
       expect(result).toEqual([mockData[0]]);
       expect(result[0].type).toBe('totp');
@@ -214,12 +239,14 @@ describe('MfaApiClient', () => {
       ];
       const mfaToken = 'test-mfa-token';
 
+      // Set up MFA context with push-notification challenge type
+      mfaClient.setMFAAuthDetails(mfaToken, 'openid profile', 'https://api.example.com', {
+        challenge: [{ type: 'push-notification' }]
+      });
+
       mockAuthJsMfaClient.listAuthenticators.mockResolvedValue(mockData);
 
-      const result = await mfaClient.getAuthenticators({
-        mfaToken,
-        challengeType: ['push-notification']
-      });
+      const result = await mfaClient.getAuthenticators(mfaToken);
 
       expect(result).toEqual([mockData[1]]);
       expect(result[0].type).toBe('push-notification');
@@ -235,12 +262,14 @@ describe('MfaApiClient', () => {
         }
       );
 
+      // Set up MFA context
+      mfaClient.setMFAAuthDetails(mfaToken, 'openid profile', 'https://api.example.com', {
+        challenge: [{ type: 'otp' }]
+      });
+
       mockAuthJsMfaClient.listAuthenticators.mockRejectedValue(authJsError);
 
-      await expect(mfaClient.getAuthenticators({
-        mfaToken: mfaToken,
-        challengeType: ['otp']
-      })).rejects.toMatchObject({
+      await expect(mfaClient.getAuthenticators(mfaToken)).rejects.toMatchObject({
         error: 'access_denied',
         error_description: 'Unauthorized',
         message: 'Unauthorized'
@@ -251,12 +280,14 @@ describe('MfaApiClient', () => {
       const mfaToken = 'test-mfa-token';
       const networkError = new Error('Network error');
 
+      // Set up MFA context
+      mfaClient.setMFAAuthDetails(mfaToken, 'openid profile', 'https://api.example.com', {
+        challenge: [{ type: 'otp' }]
+      });
+
       mockAuthJsMfaClient.listAuthenticators.mockRejectedValue(networkError);
 
-      await expect(mfaClient.getAuthenticators({
-        mfaToken: mfaToken,
-        challengeType: ['otp']
-      })).rejects.toBe(networkError);
+      await expect(mfaClient.getAuthenticators(mfaToken)).rejects.toBe(networkError);
     });
   });
 

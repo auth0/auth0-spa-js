@@ -2,14 +2,14 @@ import { Auth0Client } from '../Auth0Client';
 import type { TokenEndpointResponse } from '../global';
 import type {
   Authenticator,
-  GetAuthenticatorsParams,
   EnrollParams,
   EnrollmentResponse,
   ChallengeAuthenticatorParams,
   ChallengeResponse,
   VerifyParams,
   OobChannel,
-  ChallengeType
+  ChallengeType,
+  EnrollmentFactor
 } from './types';
 import {
   MfaClient as Auth0AuthJsMfaClient,
@@ -21,9 +21,10 @@ import {
   MfaListAuthenticatorsError,
   MfaEnrollmentError,
   MfaChallengeError,
-  MfaVerifyError
+  MfaVerifyError,
+  MfaEnrollmentFactorsError
 } from './errors';
-import { GenericError } from '../errors';
+import { GenericError, MfaRequirements } from '../errors';
 import { MfaContextManager } from './MfaContextManager';
 
 /**
@@ -71,7 +72,7 @@ export class MfaApiClient {
 
   /**
    * @internal
-   * Stores authentication details (scope and audience) for MFA token verification.
+   * Stores authentication details (scope, audience, and MFA requirements) for MFA token verification.
    * This is automatically called by Auth0Client when an mfa_required error occurs.
    *
    * The context is stored keyed by the MFA token, enabling concurrent MFA flows.
@@ -79,63 +80,69 @@ export class MfaApiClient {
    * @param mfaToken - The MFA token from the mfa_required error response
    * @param scope - The OAuth scope from the original request (optional)
    * @param audience - The API audience from the original request (optional)
+   * @param mfaRequirements - The MFA requirements from the mfa_required error (optional)
    */
-  public setMFAAuthDetails(mfaToken: string, scope?: string, audience?: string) {
-    this.contextManager.set(mfaToken, { scope, audience });
+  public setMFAAuthDetails(
+    mfaToken: string,
+    scope?: string,
+    audience?: string,
+    mfaRequirements?: MfaRequirements
+  ) {
+    this.contextManager.set(mfaToken, { scope, audience, mfaRequirements });
   }
 
   /**
-   * Gets enrolled MFA authenticators filtered by challenge type
+   * Gets enrolled MFA authenticators filtered by challenge types from context.
    *
-   * Requires MFA access token with 'read:authenticators' scope
+   * Challenge types are automatically resolved from the stored MFA context
+   * (set when mfa_required error occurred).
    *
-   * @param params - Parameters containing the MFA token and challenge types
-   * @param params.mfaToken - The MFA token from mfa_required error
-   * @param params.challengeType - Array of challenge types from mfa_required error's mfa_requirements.challenge[].type
-   * @returns Array of enrolled authenticators matching the specified challenge types
-   * @throws {MfaListAuthenticatorsError} If the request fails
-   * @throws {Error} If challengeType array is empty
+   * @param mfaToken - MFA token from mfa_required error
+   * @returns Array of enrolled authenticators matching the challenge types
+   * @throws {MfaListAuthenticatorsError} If the request fails or context not found
    *
-   * @example Filter by challenge types from mfa_required error
+   * @example Basic usage
    * ```typescript
    * try {
    *   await auth0.getTokenSilently();
    * } catch (e) {
    *   if (e instanceof MfaRequiredError) {
-   *     // Extract challenge types from error
-   *     const challengeTypes = e.mfa_requirements.challenge.map(c => c.type);
-   *     
-   *     // Get authenticators matching those challenge types
-   *     const authenticators = await auth0.mfa.getAuthenticators({
-   *       mfaToken: e.mfa_token,
-   *       challengeType: challengeTypes
-   *     });
+   *     // SDK automatically uses challenge types from error context
+   *     const authenticators = await auth0.mfa.getAuthenticators(e.mfa_token);
    *   }
    * }
    * ```
    */
-  public async getAuthenticators(params: GetAuthenticatorsParams): Promise<Authenticator[]> {
-    if (!params.challengeType || params.challengeType.length === 0) {
+  public async getAuthenticators(mfaToken: string): Promise<Authenticator[]> {
+    // Auto-resolve challenge types from stored context
+    const context = this.contextManager.get(mfaToken);
+
+    // Single validation check for context and challenge types
+    if (!context?.mfaRequirements?.challenge || context.mfaRequirements.challenge.length === 0) {
       throw new MfaListAuthenticatorsError(
         'invalid_request',
-        'challengeType is required and must contain at least one challenge type. '
+        'challengeType is required and must contain at least one challenge type, please check mfa_required error payload'
       );
     }
 
-    try {
-      const allAuthenticators = await this.authJsMfaClient.listAuthenticators({ mfaToken: params.mfaToken });
+    const challengeTypes = context.mfaRequirements.challenge.map(
+      c => c.type
+    ) as ChallengeType[];
 
-      // Filter authenticators by challenge type
+    try {
+      const allAuthenticators = await this.authJsMfaClient.listAuthenticators({
+        mfaToken
+      });
+
+      // Filter authenticators by challenge types from context
       return allAuthenticators.filter(auth => {
-        if (!auth.type) {
-          return false;
-        }
-        return params.challengeType.includes(auth.type as ChallengeType);
+        if (!auth.type) return false;
+        return challengeTypes.includes(auth.type as ChallengeType);
       });
     } catch (error: unknown) {
       if (error instanceof Auth0JsMfaListAuthenticatorsError) {
         throw new MfaListAuthenticatorsError(
-          error.cause?.error || 'mfa_list_authenticators_error',
+          error.cause?.error!,
           error.message
         );
       }
@@ -181,7 +188,7 @@ export class MfaApiClient {
     } catch (error: unknown) {
       if (error instanceof Auth0JsMfaEnrollmentError) {
         throw new MfaEnrollmentError(
-          error.cause?.error || 'mfa_enrollment_error',
+          error.cause?.error!,
           error.message
         );
       }
@@ -243,12 +250,74 @@ export class MfaApiClient {
     } catch (error: unknown) {
       if (error instanceof Auth0JsMfaChallengeError) {
         throw new MfaChallengeError(
-          error.cause?.error || 'mfa_challenge_error',
+          error.cause?.error!,
           error.message
         );
       }
       throw error;
     }
+  }
+
+  /**
+   * Gets available MFA enrollment factors from the stored context.
+   *
+   * This method exposes the enrollment options from the mfa_required error's
+   * mfaRequirements.enroll array, eliminating the need for manual parsing.
+   *
+   * @param mfaToken - MFA token from mfa_required error
+   * @returns Array of enrollment factors available for the user (empty array if no enrollment required)
+   * @throws {MfaEnrollmentFactorsError} If MFA context not found
+   *
+   * @example Basic usage
+   * ```typescript
+   * try {
+   *   await auth0.getTokenSilently();
+   * } catch (error) {
+   *   if (error.error === 'mfa_required') {
+   *     // Get enrollment options from SDK
+   *     const enrollOptions = await auth0.mfa.getEnrollmentFactors(error.mfa_token);
+   *     // [{ type: 'otp' }, { type: 'phone' }, { type: 'push-notification' }]
+   *
+   *     showEnrollmentOptions(enrollOptions);
+   *   }
+   * }
+   * ```
+   *
+   * @example Check if enrollment is required
+   * ```typescript
+   * try {
+   *   const factors = await auth0.mfa.getEnrollmentFactors(mfaToken);
+   *   if (factors.length > 0) {
+   *     // User needs to enroll in MFA
+   *     renderEnrollmentUI(factors);
+   *   } else {
+   *     // No enrollment required, proceed with challenge
+   *   }
+   * } catch (error) {
+   *   if (error instanceof MfaEnrollmentFactorsError) {
+   *     console.error('Context not found:', error.error_description);
+   *   }
+   * }
+   * ```
+   */
+  public async getEnrollmentFactors(
+    mfaToken: string
+  ): Promise<EnrollmentFactor[]> {
+    const context = this.contextManager.get(mfaToken);
+
+    if (!context || !context.mfaRequirements) {
+      throw new MfaEnrollmentFactorsError(
+        'mfa_context_not_found',
+        'MFA context not found for this MFA token. Please retry the original request to get a new MFA token.'
+      );
+    }
+
+    // Return empty array if no enrollment required (not an error case)
+    if (!context.mfaRequirements.enroll || context.mfaRequirements.enroll.length === 0) {
+      return [];
+    }
+
+    return context.mfaRequirements.enroll;
   }
 
   /**
@@ -334,7 +403,7 @@ export class MfaApiClient {
     } catch (error: unknown) {
       if (error instanceof GenericError) {
         throw new MfaVerifyError(
-          error.error || 'mfa_verify_error',
+          error.error,
           error.error_description
         );
       }

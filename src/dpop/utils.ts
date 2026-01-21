@@ -8,7 +8,9 @@ const SUPPORTED_GRANT_TYPES = [
   'authorization_code',
   'refresh_token',
   'urn:ietf:params:oauth:grant-type:token-exchange',
-  'http://auth0.com/oauth/grant-type/mfa-oob'
+  'http://auth0.com/oauth/grant-type/mfa-oob',
+  'http://auth0.com/oauth/grant-type/mfa-otp',
+  'http://auth0.com/oauth/grant-type/mfa-recovery-code'
 ];
 
 export type KeyPair = Readonly<dpopLib.KeyPair>;
