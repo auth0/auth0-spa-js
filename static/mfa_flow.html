@@ -373,11 +373,40 @@
                             </div>
                         </div>
 
-                        <!-- Placeholder: Recovery Codes -->
+                        <!-- Recovery Codes Section -->
                         <div v-if="mfaToken" class="card mb-3">
                             <div class="card-body">
                                 <h5 class="card-title">Recovery Codes</h5>
-                                <p class="text-muted">Recovery codes will appear here after enrollment...</p>
+
+                                <div>
+                                    <div class="alert alert-warning">
+                                        <strong>⚠️ Save these codes securely!</strong> Each code can only be used once.
+                                    </div>
+                                    <div class="bg-light p-3 border rounded mb-3">
+                                        <code v-for="(code, index) in recoveryCodes" :key="index"
+                                            class="d-block">{{ code }}</code>
+                                    </div>
+
+                                    <form @submit.prevent="verifyWithRecoveryCode" class="mt-3">
+                                        <div class="form-group">
+                                            <label for="recoveryCodeInput">Use a Recovery Code</label>
+                                            <input id="recoveryCodeInput" v-model="recoveryCodeInput" type="text"
+                                                class="form-control" placeholder="XXXX-XXXX-XXXX"
+                                                :disabled="loadingRecoveryVerification" />
+                                        </div>
+                                        <button type="submit" class="btn btn-primary btn-block"
+                                            :disabled="loadingRecoveryVerification || !recoveryCodeInput">
+                                            <span v-if="loadingRecoveryVerification">
+                                                <span class="spinner-border spinner-border-sm" role="status"></span>
+                                                Verifying...
+                                            </span>
+                                            <span v-else>Verify with Recovery Code</span>
+                                        </button>
+                                    </form>
+                                </div>
+
+                                <p v-else class="text-muted mb-0">Recovery codes will appear here after enrollment...
+                                </p>
                             </div>
                         </div>
 
@@ -494,6 +523,8 @@
                 this.emailAddress = '';
                 this.enrollmentFactors = [];
                 this.enrollmentOptions = [];
+                this.recoveryCodes = [];
+                this.recoveryCodeInput = '';
             },
 
             async triggerMFA() {
@@ -518,8 +549,11 @@
                         this.mfaToken = e.mfa_token;
                         this.mfaRequirements = e.mfa_requirements || {};
                         // SDK automatically stores context, now we can call simplified methods
-                        await this.getAuthenticators();
-                        await this.getEnrollmentFactors();
+                        if (this.mfaRequirements.challenge) {
+                            await this.getAuthenticators();
+                        } else {
+                            await this.getEnrollmentFactors();
+                        }
                     } else {
                         this.error = e.message || e.error_description || e;
                     }
@@ -582,6 +616,7 @@
                     // SDK automatically filters by challenge types from context
                     this.authenticators = await this.auth0.mfa.getAuthenticators(this.mfaToken);
                 } catch (e) {
+
                     this.error = e.message || e.error_description || e;
                 } finally {
                     this.loadingAuthenticators = false;
@@ -637,7 +672,14 @@
                     this.challengeData = null;
                     this.verificationCode = '';
                 } catch (e) {
-                    this.error = e.message || e.error_description || e;
+                    if (e.error === 'mfa_required') {
+                        this.mfaToken = e.mfa_token;
+                        this.mfaRequirements = e.mfa_requirements || {};
+                        this.error = '';
+                        await this.getAuthenticators();
+                    } else {
+                        this.error = e.message || e.error_description || e;
+                    }
                 } finally {
                     this.loadingVerification = false;
                 }
@@ -718,6 +760,11 @@
                         oobChannels: [channel],
                         phoneNumber: this.phoneNumber
                     });
+
+                    // Capture recovery codes if present
+                    if (this.enrollmentData && this.enrollmentData.recoveryCodes) {
+                        this.recoveryCodes = this.enrollmentData.recoveryCodes;
+                    }
                 } catch (e) {
                     this.error = e.message || e.error_description || e;
                     this.enrollmentType = null;
@@ -743,6 +790,11 @@
                     }
 
                     this.enrollmentData = await this.auth0.mfa.enroll(params);
+
+                    // Capture recovery codes if present
+                    if (this.enrollmentData && this.enrollmentData.recoveryCodes) {
+                        this.recoveryCodes = this.enrollmentData.recoveryCodes;
+                    }
                 } catch (e) {
                     this.error = e.message || e.error_description || e;
                     this.enrollmentType = null;
@@ -786,8 +838,12 @@
                     this.emailAddress = '';
 
                     // Refresh authenticators and enrollment factors
-                    await this.getAuthenticators();
-                    await this.getEnrollmentFactors();
+                    if (this.mfaRequirements.challenge) {
+                        await this.getAuthenticators();
+                    } else {
+                        await this.getEnrollmentFactors();
+                    }
+
                 } catch (e) {
                     this.error = e.message || e.error_description || e;
                 } finally {
@@ -802,6 +858,32 @@
                 this.phoneNumber = '';
                 this.emailAddress = '';
                 this.error = '';
+            },
+
+            async verifyWithRecoveryCode() {
+                this.error = '';
+                this.successMessage = '';
+                this.loadingRecoveryVerification = true;
+
+                try {
+                    const verifyParams = {
+                        mfaToken: this.mfaToken,
+                        client_id: this.clientId,
+                        grant_type: 'http://auth0.com/oauth/grant-type/mfa-recovery-code',
+                        recoveryCode: this.recoveryCodeInput
+                    };
+
+                    this.tokens = await this.auth0.mfa.verify(verifyParams);
+                    this.successMessage = 'MFA Verification with Recovery Code Successful!';
+
+                    // Clear recovery codes and input after successful verification
+                    this.recoveryCodes = [];
+                    this.recoveryCodeInput = '';
+                } catch (e) {
+                    this.error = e.message || e.error_description || e;
+                } finally {
+                    this.loadingRecoveryVerification = false;
+                }
             }
         };
     </script>
@@ -837,6 +919,10 @@
                     emailAddress: '',
                     enrollmentFactors: [],
                     enrollmentOptions: [],
+                    // Recovery codes state
+                    recoveryCodes: [],
+                    recoveryCodeInput: '',
+                    loadingRecoveryVerification: false,
                     // UI state
                     loadingAuthenticators: false,
                     loadingChallenge: false,

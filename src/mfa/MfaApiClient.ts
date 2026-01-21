@@ -24,7 +24,7 @@ import {
   MfaVerifyError,
   MfaEnrollmentFactorsError
 } from './errors';
-import { GenericError, MfaRequirements } from '../errors';
+import { GenericError, MfaRequirements, MfaRequiredError } from '../errors';
 import { MfaContextManager } from './MfaContextManager';
 
 /**
@@ -401,7 +401,14 @@ export class MfaApiClient {
 
       return result;
     } catch (error: unknown) {
-      if (error instanceof GenericError) {
+      if (error instanceof MfaRequiredError) {
+        this.setMFAAuthDetails(
+          error.mfa_token,
+          scope,
+          audience,
+          error.mfa_requirements
+        );
+      } else if (error instanceof MfaVerifyError) {
         throw new MfaVerifyError(
           error.error,
           error.error_description
