@@ -114,6 +114,7 @@ import {
   type CustomFetchMinimalOutput
 } from './fetcher';
 import { MyAccountApiClient } from './MyAccountApiClient';
+import { AuthClient as Auth0AuthJsClient } from '@auth0/auth0-auth-js'
 
 /**
  * @ignore
@@ -154,6 +155,7 @@ export class Auth0Client {
 
   private worker?: Worker;
   private readonly activeLockKeys: Set<string> = new Set();
+  private readonly authJsClient: Auth0AuthJsClient;
 
   private readonly defaultOptions: Partial<Auth0ClientOptions> = {
     authorizationParams: {
@@ -269,6 +271,12 @@ export class Auth0Client {
       myAccountFetcher,
       myAccountApiIdentifier
     );
+
+    // Initialize auth-js client foundational Oauth feature support
+    this.authJsClient = new Auth0AuthJsClient({
+      domain: this.options.domain,
+      clientId: this.options.clientId,
+    });
 
     // Don't use web workers unless using refresh tokens in memory
     if (
@@ -1396,9 +1404,9 @@ export class Auth0Client {
     // If so, clear the cache to prevent tokens from multiple users coexisting
     if (options.grant_type === 'authorization_code') {
       const existingIdToken = await this._getIdTokenFromCache();
-      
-      if (existingIdToken?.decodedToken?.claims?.sub && 
-          existingIdToken.decodedToken.claims.sub !== decodedToken.claims.sub) {
+
+      if (existingIdToken?.decodedToken?.claims?.sub &&
+        existingIdToken.decodedToken.claims.sub !== decodedToken.claims.sub) {
         // Different user detected - clear cached tokens
         await this.cacheManager.clear(this.options.clientId);
         this.userCache.remove(CACHE_KEY_ID_TOKEN_SUFFIX);
