@@ -7,9 +7,9 @@ module.exports = {
           'chrome >= 60',
           'safari >= 11',
           'firefox >= 55',
-          'edge >= 15',  
-          'ios >= 11',  
-          'android >= 67'  
+          'edge >= 15',
+          'ios >= 11',
+          'android >= 67'
         ]
       },
       useBuiltIns: false,

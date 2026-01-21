@@ -99,6 +99,7 @@ import {
   cacheFactory,
   getAuthorizeParams,
   buildGetTokenSilentlyLockKey,
+  buildIframeLockKey,
   OLD_IS_AUTHENTICATED_COOKIE_NAME,
   patchOpenUrlWithOnRedirect,
   getScopeToRequest,
@@ -153,11 +154,11 @@ export class Auth0Client {
   };
   private readonly userCache: ICache = new InMemoryCache().enclosedCache;
   private readonly myAccountApi: MyAccountApiClient;
-  private readonly authJsClient: Auth0AuthJsClient;
   public readonly mfa: MfaApiClient;
 
   private worker?: Worker;
   private readonly activeLockKeys: Set<string> = new Set();
+  private readonly authJsClient: Auth0AuthJsClient;
 
   private readonly defaultOptions: Partial<Auth0ClientOptions> = {
     authorizationParams: {
@@ -168,6 +169,7 @@ export class Auth0Client {
   };
 
   constructor(options: Auth0ClientOptions) {
+    console.log('%c>>>>>> - Auth0Client.ts:172', 'color: green');
     this.options = {
       ...this.defaultOptions,
       ...options,
@@ -274,12 +276,11 @@ export class Auth0Client {
       myAccountApiIdentifier
     );
 
-    // Initialize auth-js client for MFA support
+    // Initialize auth-js client foundational Oauth feature support
     this.authJsClient = new Auth0AuthJsClient({
       domain: this.options.domain,
       clientId: this.options.clientId,
     });
-
     this.mfa = new MfaApiClient(this.authJsClient.mfa, this);
 
 
@@ -1037,87 +1038,105 @@ export class Auth0Client {
       authorizationParams: AuthorizationParams & { scope: string };
     }
   ): Promise<GetTokenSilentlyResult> {
-    const params: AuthorizationParams & { scope: string } = {
-      ...options.authorizationParams,
-      prompt: 'none'
-    };
+    const iframeLockKey = buildIframeLockKey(this.options.clientId);
 
-    const orgHint = this.cookieStorage.get<string>(this.orgHintCookieName);
-
-    if (orgHint && !params.organization) {
-      params.organization = orgHint;
-    }
-
-    const {
-      url,
-      state: stateIn,
-      nonce: nonceIn,
-      code_verifier,
-      redirect_uri,
-      scope,
-      audience
-    } = await this._prepareAuthorizeUrl(
-      params,
-      { response_mode: 'web_message' },
-      window.location.origin
-    );
-
-    try {
-      // When a browser is running in a Cross-Origin Isolated context, using iframes is not possible.
-      // It doesn't throw an error but times out instead, so we should exit early and inform the user about the reason.
-      // https://developer.mozilla.org/en-US/docs/Web/API/crossOriginIsolated
-      if ((window as any).crossOriginIsolated) {
-        throw new GenericError(
-          'login_required',
-          'The application is running in a Cross-Origin Isolated context, silently retrieving a token without refresh token is not possible.'
-        );
-      }
-
-      const authorizeTimeout =
-        options.timeoutInSeconds || this.options.authorizeTimeoutInSeconds;
-
-      // Extract origin from domainUrl, fallback to domainUrl if URL parsing fails
-      let eventOrigin: string;
+    // Acquire global iframe lock to serialize iframe authorization flows.
+    // This is necessary because the SDK does not support multiple simultaneous transactions.
+    // Since https://github.com/auth0/auth0-spa-js/pull/1408, when calling
+    // `getTokenSilently()`, the global locking will lock per `audience` instead of locking
+    // only per `client_id`.
+    // This means that calls for different audiences would happen in parallel, which does
+    // not work when using silent authentication (prompt=none) from within the SDK, as that
+    // relies on the same transaction context as a top-level `loginWithRedirect`.
+    // To resolve that, we add a second-level locking that locks only the iframe calls in
+    // the same way as was done before https://github.com/auth0/auth0-spa-js/pull/1408.
+    if (await retryPromise(() => lock.acquireLock(iframeLockKey, 5000), 10)) {
       try {
-        eventOrigin = new URL(this.domainUrl).origin;
-      } catch {
-        eventOrigin = this.domainUrl;
-      }
-
-      const codeResult = await runIframe(url, eventOrigin, authorizeTimeout);
-
-      if (stateIn !== codeResult.state) {
-        throw new GenericError('state_mismatch', 'Invalid state');
-      }
-
-      const tokenResult = await this._requestToken(
-        {
+        const params: AuthorizationParams & { scope: string } = {
           ...options.authorizationParams,
-          code_verifier,
-          code: codeResult.code as string,
-          grant_type: 'authorization_code',
-          redirect_uri,
-          timeout: options.authorizationParams.timeout || this.httpTimeoutMs
-        },
-        {
-          nonceIn,
-          organization: params.organization
-        }
-      );
+          prompt: 'none'
+        };
 
-      return {
-        ...tokenResult,
-        scope: scope,
-        oauthTokenScope: tokenResult.scope,
-        audience: audience
-      };
-    } catch (e) {
-      if (e.error === 'login_required') {
-        this.logout({
-          openUrl: false
-        });
+        const orgHint = this.cookieStorage.get<string>(this.orgHintCookieName);
+
+        if (orgHint && !params.organization) {
+          params.organization = orgHint;
+        }
+
+        const {
+          url,
+          state: stateIn,
+          nonce: nonceIn,
+          code_verifier,
+          redirect_uri,
+          scope,
+          audience
+        } = await this._prepareAuthorizeUrl(
+          params,
+          { response_mode: 'web_message' },
+          window.location.origin
+        );
+
+        // When a browser is running in a Cross-Origin Isolated context, using iframes is not possible.
+        // It doesn't throw an error but times out instead, so we should exit early and inform the user about the reason.
+        // https://developer.mozilla.org/en-US/docs/Web/API/crossOriginIsolated
+        if ((window as any).crossOriginIsolated) {
+          throw new GenericError(
+            'login_required',
+            'The application is running in a Cross-Origin Isolated context, silently retrieving a token without refresh token is not possible.'
+          );
+        }
+
+        const authorizeTimeout =
+          options.timeoutInSeconds || this.options.authorizeTimeoutInSeconds;
+
+        // Extract origin from domainUrl, fallback to domainUrl if URL parsing fails
+        let eventOrigin: string;
+        try {
+          eventOrigin = new URL(this.domainUrl).origin;
+        } catch {
+          eventOrigin = this.domainUrl;
+        }
+
+        const codeResult = await runIframe(url, eventOrigin, authorizeTimeout);
+
+        if (stateIn !== codeResult.state) {
+          throw new GenericError('state_mismatch', 'Invalid state');
+        }
+
+        const tokenResult = await this._requestToken(
+          {
+            ...options.authorizationParams,
+            code_verifier,
+            code: codeResult.code as string,
+            grant_type: 'authorization_code',
+            redirect_uri,
+            timeout: options.authorizationParams.timeout || this.httpTimeoutMs
+          },
+          {
+            nonceIn,
+            organization: params.organization
+          }
+        );
+
+        return {
+          ...tokenResult,
+          scope: scope,
+          oauthTokenScope: tokenResult.scope,
+          audience: audience
+        };
+      } catch (e) {
+        if (e.error === 'login_required') {
+          this.logout({
+            openUrl: false
+          });
+        }
+        throw e;
+      } finally {
+        await lock.releaseLock(iframeLockKey);
       }
-      throw e;
+    } else {
+      throw new TimeoutError();
     }
   }
 
@@ -1398,9 +1417,9 @@ export class Auth0Client {
     // If so, clear the cache to prevent tokens from multiple users coexisting
     if (options.grant_type === 'authorization_code') {
       const existingIdToken = await this._getIdTokenFromCache();
-      
-      if (existingIdToken?.decodedToken?.claims?.sub && 
-          existingIdToken.decodedToken.claims.sub !== decodedToken.claims.sub) {
+
+      if (existingIdToken?.decodedToken?.claims?.sub &&
+        existingIdToken.decodedToken.claims.sub !== decodedToken.claims.sub) {
         // Different user detected - clear cached tokens
         await this.cacheManager.clear(this.options.clientId);
         this.userCache.remove(CACHE_KEY_ID_TOKEN_SUFFIX);

@@ -91,7 +91,7 @@ export class CacheManager {
       // To refresh using MRRT we need to send a request to the server
       // If cacheMode is 'cache-only', this will make us unable to call the server
       // so it won't be needed to find a valid refresh token
-      if (!matchedKey && useMrrt && cacheMode !== 'cache-only') {
+      if (!wrappedEntry && useMrrt && cacheMode !== 'cache-only') {
         return this.getEntryWithRefreshToken(cacheKey, keys);
       }
     }
