@@ -24,7 +24,7 @@ import {
   MfaVerifyError,
   MfaEnrollmentFactorsError
 } from './errors';
-import { GenericError, MfaRequirements, MfaRequiredError } from '../errors';
+import { MfaRequirements, MfaRequiredError } from '../errors';
 import { MfaContextManager } from './MfaContextManager';
 
 /**
