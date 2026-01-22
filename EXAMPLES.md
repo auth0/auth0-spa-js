@@ -7,6 +7,7 @@
 - [Organizations](#organizations)
 - [Device-bound tokens with DPoP](#device-bound-tokens-with-dpop)
 - [Connect Accounts for using Token Vault](#connect-accounts-for-using-token-vault)
+- [Multi-Factor Authentication (MFA)](#multi-factor-authentication-mfa)
 
 ## Logging Out
 
@@ -688,5 +689,336 @@ if ((query.has('connect_code') || query.has('error')) && query.has('state')) {
 
 You can now [call the API](#calling-an-api) with your access token and the API can use [Access Token Exchange with Token Vault](https://auth0.com/docs/secure/tokens/token-vault/access-token-exchange-with-token-vault) to get tokens from the Token Vault to access third party APIs on behalf of the user.
 
-> [!IMPORTANT]  
+> [!IMPORTANT]
 > You must enable `Offline Access` from the Connection Permissions settings to be able to use the connection with Connected Accounts.
+
+## Multi-Factor Authentication (MFA)
+
+The MFA API allows you to manage multi-factor authentication for users. The SDK automatically handles MFA context, eliminating the need for manual parsing of error payloads.
+
+> ** Working Demo:** See a complete MFA implementation in [static/mfa_flow.html](static/mfa_flow.html) that demonstrates enrollment, challenge, and verification flows.
+
+### How It Works
+
+When an `mfa_required` error occurs, the SDK automatically captures and stores:
+- Challenge types required
+- Enrollment factors available
+- Original scope and audience
+
+This context is then used internally when you call MFA methods, simplifying your code significantly.
+
+### Handling MFA Required Errors
+
+When MFA is required, the SDK automatically stores the context. You can then call MFA methods with just the token:
+
+```js
+try {
+  await auth0.getTokenSilently();
+} catch (error) {
+  if (error instanceof MfaRequiredError) {
+    // SDK automatically stored the MFA context
+
+    // Check if enrollment is required
+    const enrollmentFactors = await auth0.mfa.getEnrollmentFactors(error.mfa_token);
+
+    if (enrollmentFactors.length > 0) {
+      // User needs to enroll - show enrollment options
+      console.log('Available enrollment factors:', enrollmentFactors);
+      // [{ type: 'otp' }, { type: 'phone' }, { type: 'push-notification' }]
+    } else {
+      // User has enrolled authenticators - proceed with challenge
+      const authenticators = await auth0.mfa.getAuthenticators(error.mfa_token);
+      console.log('Available authenticators:', authenticators);
+      // [{ id: 'otp|dev_xxx', authenticatorType: 'otp', active: true }]
+    }
+  }
+}
+```
+
+### Getting Authenticators
+
+The SDK automatically filters authenticators based on challenge types from the MFA context:
+
+```js
+try {
+  await auth0.getTokenSilently();
+} catch (error) {
+  if (error instanceof MfaRequiredError) {
+    const authenticators = await auth0.mfa.getAuthenticators(error.mfa_token);
+    // SDK automatically filters by challenge types from the error
+    // Returns: [{ id: 'otp|dev_xxx', authenticatorType: 'otp', active: true }]
+
+    // Show authenticator picker to user
+    showAuthenticatorPicker(authenticators);
+  }
+}
+```
+
+### Getting Enrollment Factors
+
+Check what MFA factors are available for enrollment:
+
+```js
+try {
+  const factors = await auth0.mfa.getEnrollmentFactors(mfaToken);
+
+  if (factors.length > 0) {
+    // User needs to enroll in MFA
+    console.log('Available enrollment options:', factors);
+    // [{ type: 'otp' }, { type: 'phone' }]
+
+    // Show enrollment UI
+    showEnrollmentOptions(factors);
+  } else {
+    // No enrollment required
+    console.log('User already enrolled');
+  }
+} catch (error) {
+  if (error instanceof MfaEnrollmentFactorsError) {
+    console.error('Could not retrieve enrollment factors:', error.error_description);
+  }
+}
+```
+
+### Enrollment
+
+#### Enrolling OTP (Authenticator App)
+
+```js
+// Enroll OTP authenticator (Google Authenticator, Microsoft Authenticator, etc.)
+const enrollment = await auth0.mfa.enroll({
+  authenticatorTypes: ['otp']
+});
+
+// Display QR code to user
+const qrCodeUri = enrollment.barcodeUri; // otpauth://totp/...
+const secret = enrollment.secret; // Base32 secret for manual entry
+```
+
+#### Enrolling SMS
+
+```js
+// Enroll SMS authenticator
+const smsEnrollment = await auth0.mfa.enroll({
+  authenticatorTypes: ['oob'],
+  oobChannels: ['sms'],
+  phoneNumber: '+12025551234' // E.164 format
+});
+
+const authenticatorId = smsEnrollment.id;
+```
+
+### Challenge
+
+#### Challenge Authenticator
+
+```js
+// Initiate MFA challenge (sends SMS or prepares for OTP entry)
+const challenge = await auth0.mfa.challenge({
+  mfaToken: mfaToken,
+  client_id: 'YOUR_CLIENT_ID',
+  challengeType: 'oob',
+  authenticatorId: 'sms|dev_xxx'
+});
+
+const oobCode = challenge.oobCode; // Save for verification
+```
+
+### Verify
+
+#### Verify Challenge
+
+```js
+// Verify MFA challenge and get tokens
+const tokens = await auth0.mfa.verify({
+  mfaToken: mfaToken,
+  client_id: 'YOUR_CLIENT_ID',
+  grant_type: 'http://auth0.com/oauth/grant-type/mfa-oob',
+  oobCode: challenge.oobCode,
+  bindingCode: '123456' // Code user received via SMS
+});
+
+const accessToken = tokens.access_token; // Use to call your API
+const idToken = tokens.id_token; // Contains user identity information
+```
+
+#### Verify with OTP
+
+```js
+// Verify OTP code from authenticator app
+const tokens = await auth0.mfa.verify({
+  mfaToken: mfaToken,
+  client_id: 'YOUR_CLIENT_ID',
+  grant_type: 'http://auth0.com/oauth/grant-type/mfa-otp',
+  otp: '123456' // 6-digit code from authenticator app
+});
+
+const accessToken = tokens.access_token;
+const idToken = tokens.id_token;
+```
+
+#### Verify with Recovery Code
+
+Recovery codes can be used to complete MFA verification without initiating a challenge. Each recovery code can only be used once.
+
+```js
+// Verify directly with recovery code (no challenge needed)
+const tokens = await auth0.mfa.verify({
+  mfaToken: mfaToken,
+  client_id: 'YOUR_CLIENT_ID',
+  grant_type: 'http://auth0.com/oauth/grant-type/mfa-recovery-code',
+  recoveryCode: 'XXXX-XXXX-XXXX' // One of the recovery codes
+});
+
+const accessToken = tokens.access_token;
+const idToken = tokens.id_token;
+```
+
+### Complete MFA Flow Example
+
+Here's a complete example showing enrollment and challenge flows:
+
+```js
+async function handleMfaFlow() {
+  try {
+    // Try to get tokens
+    await auth0.getTokenSilently();
+  } catch (error) {
+    if (error instanceof MfaRequiredError) {
+      const mfaToken = error.mfa_token;
+
+      // Check if enrollment is needed
+      const enrollmentFactors = await auth0.mfa.getEnrollmentFactors(mfaToken);
+
+      if (enrollmentFactors.length > 0) {
+        // User needs to enroll
+        const selectedFactor = await showEnrollmentUI(enrollmentFactors);
+
+        // Enroll based on user selection
+        if (selectedFactor.type === 'otp') {
+          const enrollment = await auth0.mfa.enroll({
+            mfaToken: mfaToken,
+            authenticatorTypes: ['otp']
+          });
+          await showQRCode(enrollment.barcodeUri);
+
+          // User scans QR and enters code to verify enrollment
+          const verifyCode = await promptUserForCode();
+          const tokens = await auth0.mfa.verify({
+            mfaToken: mfaToken,
+            client_id: 'YOUR_CLIENT_ID',
+            grant_type: 'http://auth0.com/oauth/grant-type/mfa-otp',
+            otp: verifyCode
+          });
+
+          return tokens;
+        }
+      } else {
+        // User has authenticators - proceed with challenge
+        const authenticators = await auth0.mfa.getAuthenticators(mfaToken);
+        const selected = await showAuthenticatorPicker(authenticators);
+
+        // Initiate challenge
+        const challenge = await auth0.mfa.challenge({
+          mfaToken: mfaToken,
+          client_id: 'YOUR_CLIENT_ID',
+          challengeType: selected.type === 'otp' ? 'otp' : 'oob',
+          authenticatorId: selected.id
+        });
+
+        // Get code from user
+        const code = await promptUserForCode();
+
+        // Verify
+        const tokens = await auth0.mfa.verify({
+          mfaToken: mfaToken,
+          client_id: 'YOUR_CLIENT_ID',
+          grant_type: `http://auth0.com/oauth/grant-type/mfa-${selected.type === 'otp' ? 'otp' : 'oob'}`,
+          otp: selected.type === 'otp' ? code : undefined,
+          oobCode: selected.type !== 'otp' ? challenge.oobCode : undefined,
+          bindingCode: selected.type !== 'otp' ? code : undefined
+        });
+
+        return tokens;
+      }
+    }
+  }
+}
+```
+
+### Error Handling
+
+Each MFA operation has its own typed error for precise error handling:
+
+```js
+import {
+  MfaEnrollmentError,
+  MfaListAuthenticatorsError,
+  MfaChallengeError,
+  MfaVerifyError,
+  MfaEnrollmentFactorsError
+} from '@auth0/auth0-spa-js';
+
+// Get authenticators
+try {
+  const authenticators = await auth0.mfa.getAuthenticators(mfaToken);
+} catch (error) {
+  if (error instanceof MfaListAuthenticatorsError) {
+    console.error('Failed to get authenticators:', error.error_description);
+  }
+}
+
+// Get enrollment factors
+try {
+  const factors = await auth0.mfa.getEnrollmentFactors(mfaToken);
+} catch (error) {
+  if (error instanceof MfaEnrollmentFactorsError) {
+    console.error('Context not found:', error.error_description);
+    // MFA token may have expired - restart the flow
+  }
+}
+
+// Enroll authenticator
+try {
+  const enrollment = await auth0.mfa.enroll({
+    mfaToken,
+    authenticatorTypes: ['otp']
+  });
+} catch (error) {
+  if (error instanceof MfaEnrollmentError) {
+    console.error('Enrollment failed:', error.error_description);
+  }
+}
+
+// Challenge authenticator
+try {
+  const challenge = await auth0.mfa.challenge({
+    mfaToken,
+    client_id: 'YOUR_CLIENT_ID',
+    challengeType: 'otp',
+    authenticatorId
+  });
+} catch (error) {
+  if (error instanceof MfaChallengeError) {
+    console.error('Challenge failed:', error.error_description);
+  }
+}
+
+// Verify challenge
+try {
+  const tokens = await auth0.mfa.verify({
+    mfaToken,
+    client_id: 'YOUR_CLIENT_ID',
+    grant_type: 'http://auth0.com/oauth/grant-type/mfa-otp',
+    otp: '123456'
+  });
+} catch (error) {
+  if (error instanceof MfaVerifyError) {
+    if (error.error === 'invalid_otp') {
+      console.error('Invalid code entered');
+    } else if (error.error === 'expired_token') {
+      console.error('MFA token expired - restart flow');
+    }
+  }
+}
+```

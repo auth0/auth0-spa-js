@@ -1,4 +1,14 @@
 /**
+ * MFA requirements from an mfa_required error response
+ */
+export interface MfaRequirements {
+  /** Required enrollment types */
+  enroll?: Array<{ type: string }>;
+  /** Required challenge types */
+  challenge?: Array<{ type: string }>;
+}
+
+/**
  * Thrown when network requests to the Auth server fail.
  */
 export class GenericError extends Error {
@@ -99,7 +109,8 @@ export class MfaRequiredError extends GenericError {
   constructor(
     error: string,
     error_description: string,
-    public mfa_token: string
+    public mfa_token: string,
+    public mfa_requirements: MfaRequirements
   ) {
     super(error, error_description);
     //https://github.com/Microsoft/TypeScript-wiki/blob/master/Breaking-Changes.md#extending-built-ins-like-error-array-and-map-may-no-longer-work
