@@ -305,6 +305,23 @@ export interface Auth0ClientOptions {
 }
 
 /**
+ * Configuration details exposed by the Auth0Client after initialization.
+ *
+ * @category Main
+ */
+export interface ClientConfiguration {
+  /**
+   * The Auth0 domain that was configured
+   */
+  domain: string;
+
+  /**
+   * The Auth0 client ID that was configured
+   */
+  clientId: string;
+}
+
+/**
  * The possible locations where tokens can be stored
  */
 export type CacheLocation = 'memory' | 'localstorage';

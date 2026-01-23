@@ -7,6 +7,7 @@
 - [Organizations](#organizations)
 - [Device-bound tokens with DPoP](#device-bound-tokens-with-dpop)
 - [Connect Accounts for using Token Vault](#connect-accounts-for-using-token-vault)
+- [Accessing SDK Configuration](#accessing-sdk-configuration)
 - [Multi-Factor Authentication (MFA)](#multi-factor-authentication-mfa)
 
 ## Logging Out
@@ -692,11 +693,57 @@ You can now [call the API](#calling-an-api) with your access token and the API c
 > [!IMPORTANT]
 > You must enable `Offline Access` from the Connection Permissions settings to be able to use the connection with Connected Accounts.
 
+
+## Accessing SDK Configuration
+
+After initializing the Auth0Client, you can retrieve the configuration details:
+
+```js
+import { createAuth0Client } from '@auth0/auth0-spa-js';
+
+const auth0 = await createAuth0Client({
+  domain: 'YOUR_DOMAIN',
+  clientId: 'YOUR_CLIENT_ID'
+});
+
+// Get configuration
+const config = auth0.getConfiguration();
+console.log(config.domain, config.clientId);
+```
+
+This is useful when you need to:
+
+- Display the current domain to the user
+- Log configuration for debugging
+- Pass configuration to other services or analytics
+- Verify the SDK is configured correctly
+
 ## Multi-Factor Authentication (MFA)
 
 The MFA API allows you to manage multi-factor authentication for users. The SDK automatically handles MFA context, eliminating the need for manual parsing of error payloads.
+> [!TIP]
+> See a complete MFA implementation in [static/mfa_flow.html](static/mfa_flow.html) that demonstrates enrollment, challenge, and verification flows.
 
-> ** Working Demo:** See a complete MFA implementation in [static/mfa_flow.html](static/mfa_flow.html) that demonstrates enrollment, challenge, and verification flows.
+- [Handling MFA required errors](#handling-mfa-required-errors)
+- [Getting Authenticators](#getting-authenticators)
+- [Getting Enrollment Factors](#getting-enrollment-factors)
+- [Enrollment](#enrollment)
+  - [Enrolling OTP (Authenticator App)](#enrolling-otp-authenticator-app)
+  - [Enrolling SMS](#enrolling-sms)
+  - [Enrolling Email](#enrolling-email)
+  - [Enrolling Push Notification](#enrolling-push-notification)
+- [Challenge](#challenge)
+  - [Challenge with SMS](#challenge-with-sms)
+  - [Challenge with Email](#challenge-with-email)
+  - [Challenge with Push Notification](#challenge-with-push-notification)
+  - [Challenge with OTP](#challenge-with-otp)
+- [Verify](#verify)
+  - [Verify with OOB](#verify-with-oob)
+  - [Verify with OTP](#verify-with-otp)
+  - [Verify with Push Notification](#verify-with-push-notification)
+  - [Verify with Recovery Code](#verify-with-recovery-code)
+- [Complete MFA Flow Example](#complete-mfa-flow-example)
+- [Error Handling](#error-handling)
 
 ### How It Works
 
@@ -716,7 +763,6 @@ try {
   await auth0.getTokenSilently();
 } catch (error) {
   if (error instanceof MfaRequiredError) {
-    // SDK automatically stored the MFA context
 
     // Check if enrollment is required
     const enrollmentFactors = await auth0.mfa.getEnrollmentFactors(error.mfa_token);
@@ -724,12 +770,10 @@ try {
     if (enrollmentFactors.length > 0) {
       // User needs to enroll - show enrollment options
       console.log('Available enrollment factors:', enrollmentFactors);
-      // [{ type: 'otp' }, { type: 'phone' }, { type: 'push-notification' }]
     } else {
       // User has enrolled authenticators - proceed with challenge
       const authenticators = await auth0.mfa.getAuthenticators(error.mfa_token);
       console.log('Available authenticators:', authenticators);
-      // [{ id: 'otp|dev_xxx', authenticatorType: 'otp', active: true }]
     }
   }
 }
@@ -746,9 +790,6 @@ try {
   if (error instanceof MfaRequiredError) {
     const authenticators = await auth0.mfa.getAuthenticators(error.mfa_token);
     // SDK automatically filters by challenge types from the error
-    // Returns: [{ id: 'otp|dev_xxx', authenticatorType: 'otp', active: true }]
-
-    // Show authenticator picker to user
     showAuthenticatorPicker(authenticators);
   }
 }
@@ -763,14 +804,9 @@ try {
   const factors = await auth0.mfa.getEnrollmentFactors(mfaToken);
 
   if (factors.length > 0) {
-    // User needs to enroll in MFA
     console.log('Available enrollment options:', factors);
-    // [{ type: 'otp' }, { type: 'phone' }]
-
-    // Show enrollment UI
     showEnrollmentOptions(factors);
   } else {
-    // No enrollment required
     console.log('User already enrolled');
   }
 } catch (error) {
@@ -808,12 +844,43 @@ const smsEnrollment = await auth0.mfa.enroll({
 const authenticatorId = smsEnrollment.id;
 ```
 
-### Challenge
-
-#### Challenge Authenticator
+#### Enrolling Email
 
 ```js
-// Initiate MFA challenge (sends SMS or prepares for OTP entry)
+// Enroll Email authenticator
+const emailEnrollment = await auth0.mfa.enroll({
+  authenticatorTypes: ['oob'],
+  oobChannels: ['email'],
+  email: 'user@example.com' // Optional - uses user's primary email if not provided
+});
+
+
+// Use this code to complete enrollment verification
+```
+
+#### Enrolling Push Notification
+
+```js
+// Enroll Push Notification authenticator (Auth0 Guardian)
+const pushEnrollment = await auth0.mfa.enroll({
+  authenticatorTypes: ['oob'],
+  oobChannels: ['auth0']
+});
+
+// Display QR code for Guardian app enrollment
+const qrCodeUri = pushEnrollment.barcodeUri; // Scan with Auth0 Guardian app
+const oobCode = pushEnrollment.oobCode;
+
+// User scans QR code with Auth0 Guardian mobile app
+// Push notifications will be used for future MFA challenges
+```
+
+### Challenge
+
+#### Challenge with SMS
+
+```js
+// Initiate SMS challenge - sends code via text message
 const challenge = await auth0.mfa.challenge({
   mfaToken: mfaToken,
   client_id: 'YOUR_CLIENT_ID',
@@ -822,11 +889,58 @@ const challenge = await auth0.mfa.challenge({
 });
 
 const oobCode = challenge.oobCode; // Save for verification
+// User will receive SMS with verification code
+```
+
+#### Challenge with Email
+
+```js
+// Initiate Email challenge - sends code via email
+const challenge = await auth0.mfa.challenge({
+  mfaToken: mfaToken,
+  client_id: 'YOUR_CLIENT_ID',
+  challengeType: 'oob',
+  authenticatorId: 'email|dev_xxx'
+});
+
+const oobCode = challenge.oobCode; // Save for verification
+// User will receive email with verification code
+```
+
+#### Challenge with Push Notification
+
+```js
+// Initiate Push Notification challenge - sends push to Guardian app
+const challenge = await auth0.mfa.challenge({
+  mfaToken: mfaToken,
+  client_id: 'YOUR_CLIENT_ID',
+  challengeType: 'oob',
+  authenticatorId: 'push|dev_xxx'
+});
+
+const oobCode = challenge.oobCode; // Save for verification
+// User receives push notification on their Auth0 Guardian mobile app
+// They approve/deny the authentication request
+```
+
+#### Challenge with OTP
+
+```js
+// Initiate OTP challenge - prepares for TOTP code entry
+const challenge = await auth0.mfa.challenge({
+  mfaToken: mfaToken,
+  client_id: 'YOUR_CLIENT_ID',
+  challengeType: 'otp',
+  authenticatorId: 'otp|dev_xxx'
+});
+
+// No oobCode returned for OTP challenges
+// User opens their authenticator app and enters the current TOTP code
 ```
 
 ### Verify
 
-#### Verify Challenge
+#### Verify with OOB 
 
 ```js
 // Verify MFA challenge and get tokens
@@ -834,7 +948,7 @@ const tokens = await auth0.mfa.verify({
   mfaToken: mfaToken,
   client_id: 'YOUR_CLIENT_ID',
   grant_type: 'http://auth0.com/oauth/grant-type/mfa-oob',
-  oobCode: challenge.oobCode,
+  oobCode: <challenge.oobCode>,
   bindingCode: '123456' // Code user received via SMS
 });
 
@@ -857,12 +971,38 @@ const accessToken = tokens.access_token;
 const idToken = tokens.id_token;
 ```
 
+#### Verify with Push Notification
+
+```js
+// Challenge the push notification authenticator
+const challenge = await auth0.mfa.challenge({
+  mfaToken: mfaToken,
+  client_id: 'YOUR_CLIENT_ID',
+  challengeType: 'oob',
+  authenticatorId: 'push|dev_xxx' // Push authenticator ID
+});
+
+// User receives push notification on their mobile device
+// They approve the request in the Auth0 Guardian app
+
+// Poll or wait for user to approve, then verify
+const tokens = await auth0.mfa.verify({
+  mfaToken: mfaToken,
+  client_id: 'YOUR_CLIENT_ID',
+  grant_type: 'http://auth0.com/oauth/grant-type/mfa-oob',
+  oobCode: challenge.oobCode,
+  bindingCode: 'APPROVAL_CODE' // Code from Guardian app (if binding required)
+});
+
+const accessToken = tokens.access_token;
+const idToken = tokens.id_token;
+```
+
 #### Verify with Recovery Code
 
 Recovery codes can be used to complete MFA verification without initiating a challenge. Each recovery code can only be used once.
 
 ```js
-// Verify directly with recovery code (no challenge needed)
 const tokens = await auth0.mfa.verify({
   mfaToken: mfaToken,
   client_id: 'YOUR_CLIENT_ID',
@@ -881,7 +1021,6 @@ Here's a complete example showing enrollment and challenge flows:
 ```js
 async function handleMfaFlow() {
   try {
-    // Try to get tokens
     await auth0.getTokenSilently();
   } catch (error) {
     if (error instanceof MfaRequiredError) {
