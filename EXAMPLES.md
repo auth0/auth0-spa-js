@@ -7,6 +7,7 @@
 - [Organizations](#organizations)
 - [Device-bound tokens with DPoP](#device-bound-tokens-with-dpop)
 - [Connect Accounts for using Token Vault](#connect-accounts-for-using-token-vault)
+- [Accessing SDK Configuration](#accessing-sdk-configuration)
 
 ## Logging Out
 
@@ -690,3 +691,27 @@ You can now [call the API](#calling-an-api) with your access token and the API c
 
 > [!IMPORTANT]  
 > You must enable `Offline Access` from the Connection Permissions settings to be able to use the connection with Connected Accounts.
+
+## Accessing SDK Configuration
+
+After initializing the Auth0Client, you can retrieve the configuration details:
+
+```js
+import { createAuth0Client } from '@auth0/auth0-spa-js';
+
+const auth0 = await createAuth0Client({
+  domain: 'YOUR_DOMAIN',
+  clientId: 'YOUR_CLIENT_ID'
+});
+
+// Get configuration
+const config = auth0.getConfiguration();
+console.log(config.domain, config.clientId);
+```
+
+This is useful when you need to:
+
+- Display the current domain to the user
+- Log configuration for debugging
+- Pass configuration to other services or analytics
+- Verify the SDK is configured correctly

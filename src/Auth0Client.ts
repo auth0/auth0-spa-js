@@ -86,6 +86,7 @@ import {
   RedirectConnectAccountOptions,
   ResponseType,
   ClientAuthorizationParams,
+  ClientConfiguration
 } from './global';
 
 // @ts-ignore
@@ -291,6 +292,29 @@ export class Auth0Client {
         this.worker = new TokenWorker();
       }
     }
+  }
+
+  /**
+   * Returns a readonly copy of the initialization configuration.
+   *
+   * @returns An object containing domain and clientId
+   *
+   * @example
+   * ```typescript
+   * const auth0 = new Auth0Client({
+   *   domain: 'tenant.auth0.com',
+   *   clientId: 'abc123'
+   * });
+   *
+   * const config = auth0.getConfiguration();
+   * // { domain: 'tenant.auth0.com', clientId: 'abc123' }
+   * ```
+   */
+  public getConfiguration(): Readonly<ClientConfiguration> {
+    return Object.freeze({
+      domain: this.options.domain,
+      clientId: this.options.clientId
+    });
   }
 
   private _url(path: string) {
