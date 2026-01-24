@@ -149,6 +149,20 @@ export class UseDpopNonceError extends GenericError {
 }
 
 /**
+ * Error thrown when the auth0Client configuration object exceeds the maximum allowed size
+ * for the Auth0-Client HTTP header.
+ */
+export class Auth0ClientSizeError extends GenericError {
+  constructor(public actualSize: number, public maxSize: number) {
+    super(
+      'auth0_client_too_large',
+      `The auth0Client configuration is too large (${actualSize} bytes). The resulting Auth0-Client HTTP header would exceed the maximum size of ${maxSize} bytes. Please reduce the size of the 'env' object in your auth0Client configuration.`
+    );
+    Object.setPrototypeOf(this, Auth0ClientSizeError.prototype);
+  }
+}
+
+/**
  * Returns an empty string when value is falsy, or when it's value is included in the exclude argument.
  * @param value The value to check
  * @param exclude An array of values that should result in an empty string.

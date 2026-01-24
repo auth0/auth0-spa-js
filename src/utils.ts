@@ -9,7 +9,8 @@ import {
   PopupTimeoutError,
   TimeoutError,
   GenericError,
-  PopupCancelledError
+  PopupCancelledError,
+  Auth0ClientSizeError
 } from './errors';
 
 export const parseAuthenticationResult = (
@@ -200,6 +201,28 @@ export const stripAuth0Client = (auth0Client: any) => {
 
     return acc;
   }, {});
+};
+
+/**
+ * Maximum size in bytes for the JSON stringified auth0Client object before base64 encoding.
+ * This is set to 6KB to ensure the resulting base64-encoded Auth0-Client HTTP header
+ * stays well under the typical 8KB HTTP header size limit (base64 encoding increases size by ~33%).
+ */
+export const MAX_AUTH0_CLIENT_SIZE = 6144; // 6KB
+
+/**
+ * Validates that the auth0Client object, when JSON stringified, does not exceed
+ * the maximum allowed size to prevent HTTP header truncation issues.
+ * @param auth0Client - The auth0Client object to validate
+ * @throws {Auth0ClientSizeError} When the serialized auth0Client exceeds MAX_AUTH0_CLIENT_SIZE
+ */
+export const validateAuth0ClientSize = (auth0Client: any) => {
+  const jsonString = JSON.stringify(auth0Client);
+  const sizeInBytes = new Blob([jsonString]).size;
+
+  if (sizeInBytes > MAX_AUTH0_CLIENT_SIZE) {
+    throw new Auth0ClientSizeError(sizeInBytes, MAX_AUTH0_CLIENT_SIZE);
+  }
 };
 
 export const createQueryParams = ({ clientId: client_id, ...params }: any) => {

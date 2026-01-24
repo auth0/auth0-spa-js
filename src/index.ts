@@ -32,7 +32,8 @@ export {
   PopupOpenError,
   MfaRequiredError,
   MissingRefreshTokenError,
-  UseDpopNonceError
+  UseDpopNonceError,
+  Auth0ClientSizeError
 } from './errors';
 
 export {

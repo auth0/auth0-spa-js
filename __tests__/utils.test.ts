@@ -12,8 +12,12 @@ import {
   getCrypto,
   validateCrypto,
   fromEntries,
-  stripAuth0Client
+  stripAuth0Client,
+  validateAuth0ClientSize,
+  MAX_AUTH0_CLIENT_SIZE
 } from '../src/utils';
+
+import { Auth0ClientSizeError } from '../src/errors';
 
 import { buildGetTokenSilentlyLockKey } from '../src/Auth0Client.utils';
 
@@ -587,6 +591,114 @@ describe('utils', () => {
         name: 'test',
         version: 2
       });
+    });
+  });
+
+  describe('validateAuth0ClientSize', () => {
+    it('should not throw for a small auth0Client object', () => {
+      const auth0Client = {
+        name: 'test',
+        version: '1.0.0',
+        env: {
+          node: 'v12.0.0'
+        }
+      };
+
+      expect(() => validateAuth0ClientSize(auth0Client)).not.toThrow();
+    });
+
+    it('should not throw for an auth0Client at the maximum size', () => {
+      // Create an object that is close to but under the limit
+      const largeString = 'a'.repeat(MAX_AUTH0_CLIENT_SIZE - 100); // Leave room for JSON structure
+      const auth0Client = {
+        name: 'test',
+        version: '1.0.0',
+        env: {
+          data: largeString
+        }
+      };
+
+      // Verify it's close to but under the limit
+      const size = new Blob([JSON.stringify(auth0Client)]).size;
+      expect(size).toBeLessThanOrEqual(MAX_AUTH0_CLIENT_SIZE);
+      expect(() => validateAuth0ClientSize(auth0Client)).not.toThrow();
+    });
+
+    it('should throw Auth0ClientSizeError when auth0Client exceeds maximum size', () => {
+      // Create an object that exceeds the limit
+      const largeString = 'a'.repeat(MAX_AUTH0_CLIENT_SIZE);
+      const auth0Client = {
+        name: 'test',
+        version: '1.0.0',
+        env: {
+          data: largeString
+        }
+      };
+
+      expect(() => validateAuth0ClientSize(auth0Client)).toThrow(
+        Auth0ClientSizeError
+      );
+    });
+
+    it('should throw with correct error message and size information', () => {
+      // Create an object that exceeds the limit
+      const largeString = 'a'.repeat(MAX_AUTH0_CLIENT_SIZE);
+      const auth0Client = {
+        name: 'test',
+        version: '1.0.0',
+        env: {
+          data: largeString
+        }
+      };
+
+      try {
+        validateAuth0ClientSize(auth0Client);
+        fail('Expected Auth0ClientSizeError to be thrown');
+      } catch (error) {
+        expect(error).toBeInstanceOf(Auth0ClientSizeError);
+        const sizeError = error as Auth0ClientSizeError;
+        expect(sizeError.error).toBe('auth0_client_too_large');
+        expect(sizeError.actualSize).toBeGreaterThan(MAX_AUTH0_CLIENT_SIZE);
+        expect(sizeError.maxSize).toBe(MAX_AUTH0_CLIENT_SIZE);
+        expect(sizeError.error_description).toContain(
+          'auth0Client configuration is too large'
+        );
+        expect(sizeError.error_description).toContain(
+          String(MAX_AUTH0_CLIENT_SIZE)
+        );
+      }
+    });
+
+    it('should handle auth0Client with large nested env objects', () => {
+      const auth0Client = {
+        name: 'test',
+        version: '1.0.0',
+        env: {
+          framework: 'react',
+          frameworkVersion: '18.0.0',
+          platform: 'browser',
+          customData: {
+            key1: 'value1'.repeat(1000),
+            key2: 'value2'.repeat(1000),
+            key3: 'value3'.repeat(1000)
+          }
+        }
+      };
+
+      const size = new Blob([JSON.stringify(auth0Client)]).size;
+
+      if (size > MAX_AUTH0_CLIENT_SIZE) {
+        expect(() => validateAuth0ClientSize(auth0Client)).toThrow(
+          Auth0ClientSizeError
+        );
+      } else {
+        expect(() => validateAuth0ClientSize(auth0Client)).not.toThrow();
+      }
+    });
+
+    it('should handle empty auth0Client object', () => {
+      const auth0Client = {};
+      expect(() => validateAuth0ClientSize(auth0Client)).not.toThrow();
     });
   });
 });

@@ -13,7 +13,8 @@ import {
   openPopup,
   getDomain,
   getTokenIssuer,
-  parseNumber
+  parseNumber,
+  validateAuth0ClientSize
 } from './utils';
 
 import { oauthToken } from './api';
@@ -318,8 +319,10 @@ export class Auth0Client {
   }
 
   private _url(path: string) {
+    const auth0ClientObj = this.options.auth0Client || DEFAULT_AUTH0_CLIENT;
+    validateAuth0ClientSize(auth0ClientObj);
     const auth0Client = encodeURIComponent(
-      btoa(JSON.stringify(this.options.auth0Client || DEFAULT_AUTH0_CLIENT))
+      btoa(JSON.stringify(auth0ClientObj))
     );
     return `${this.domainUrl}${path}&auth0Client=${auth0Client}`;
   }

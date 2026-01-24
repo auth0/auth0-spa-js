@@ -7,6 +7,8 @@ import version from '../src/version';
 import { oauthToken } from '../src/api';
 import * as http from '../src/http';
 import * as dpopUtils from '../src/dpop/utils';
+import { Auth0ClientSizeError } from '../src/errors';
+import { MAX_AUTH0_CLIENT_SIZE } from '../src/utils';
 
 // @ts-ignore
 import Worker from '../src/worker/token.worker';
@@ -361,5 +363,109 @@ describe('oauthToken', () => {
     });
 
     expect(jest.mocked(http.getJSON).mock.calls[0][7]).toBeUndefined();
+  });
+
+  describe('auth0Client size validation', () => {
+    it('should not throw for a valid auth0Client', async () => {
+      mockFetch.mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({}),
+        headers: new Headers()
+      });
+
+      const auth0Client = {
+        name: 'test-sdk',
+        version: '1.0.0',
+        env: {
+          node: 'v12.0.0'
+        }
+      };
+
+      await expect(
+        oauthToken({
+          baseUrl: `https://${TEST_DOMAIN}`,
+          client_id: TEST_CLIENT_ID,
+          grant_type: 'authorization_code',
+          auth0Client
+        })
+      ).resolves.not.toThrow();
+    });
+
+    it('should throw Auth0ClientSizeError when auth0Client is too large', async () => {
+      // Create an oversized auth0Client
+      const largeString = 'a'.repeat(MAX_AUTH0_CLIENT_SIZE);
+      const auth0Client = {
+        name: 'test-sdk',
+        version: '1.0.0',
+        env: {
+          data: largeString
+        }
+      };
+
+      await expect(
+        oauthToken({
+          baseUrl: `https://${TEST_DOMAIN}`,
+          client_id: TEST_CLIENT_ID,
+          grant_type: 'authorization_code',
+          auth0Client
+        })
+      ).rejects.toThrow(Auth0ClientSizeError);
+    });
+
+    it('should validate auth0Client size before making the HTTP request', async () => {
+      const fetchSpy = jest.spyOn(global, 'fetch');
+
+      // Create an oversized auth0Client
+      const largeString = 'a'.repeat(MAX_AUTH0_CLIENT_SIZE);
+      const auth0Client = {
+        name: 'test-sdk',
+        version: '1.0.0',
+        env: {
+          data: largeString
+        }
+      };
+
+      try {
+        await oauthToken({
+          baseUrl: `https://${TEST_DOMAIN}`,
+          client_id: TEST_CLIENT_ID,
+          grant_type: 'authorization_code',
+          auth0Client
+        });
+        fail('Expected Auth0ClientSizeError to be thrown');
+      } catch (error) {
+        expect(error).toBeInstanceOf(Auth0ClientSizeError);
+        // Verify fetch was never called since validation failed first
+        expect(fetchSpy).not.toHaveBeenCalled();
+      }
+    });
+
+    it('should include size information in the error', async () => {
+      const largeString = 'a'.repeat(MAX_AUTH0_CLIENT_SIZE);
+      const auth0Client = {
+        name: 'test-sdk',
+        version: '1.0.0',
+        env: {
+          data: largeString
+        }
+      };
+
+      try {
+        await oauthToken({
+          baseUrl: `https://${TEST_DOMAIN}`,
+          client_id: TEST_CLIENT_ID,
+          grant_type: 'authorization_code',
+          auth0Client
+        });
+        fail('Expected Auth0ClientSizeError to be thrown');
+      } catch (error) {
+        const sizeError = error as Auth0ClientSizeError;
+        expect(sizeError.actualSize).toBeGreaterThan(MAX_AUTH0_CLIENT_SIZE);
+        expect(sizeError.maxSize).toBe(MAX_AUTH0_CLIENT_SIZE);
+        expect(sizeError.error_description).toContain(
+          'auth0Client configuration is too large'
+        );
+      }
+    });
   });
 });

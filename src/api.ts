@@ -2,7 +2,11 @@ import { TokenEndpointOptions, TokenEndpointResponse } from './global';
 import { DEFAULT_AUTH0_CLIENT, DEFAULT_AUDIENCE } from './constants';
 import * as dpopUtils from './dpop/utils';
 import { getJSON } from './http';
-import { createQueryParams, stripAuth0Client } from './utils';
+import {
+  createQueryParams,
+  stripAuth0Client,
+  validateAuth0ClientSize
+} from './utils';
 
 export async function oauthToken(
   {
@@ -36,6 +40,12 @@ export async function oauthToken(
 
   const isDpopSupported = dpopUtils.isGrantTypeSupported(options.grant_type);
 
+  // Strip and validate the auth0Client before encoding
+  const strippedAuth0Client = stripAuth0Client(
+    auth0Client || DEFAULT_AUTH0_CLIENT
+  );
+  validateAuth0ClientSize(strippedAuth0Client);
+
   return await getJSON<TokenEndpointResponse>(
     `${baseUrl}/oauth/token`,
     timeout,
@@ -48,9 +58,7 @@ export async function oauthToken(
         'Content-Type': useFormData
           ? 'application/x-www-form-urlencoded'
           : 'application/json',
-        'Auth0-Client': btoa(
-          JSON.stringify(stripAuth0Client(auth0Client || DEFAULT_AUTH0_CLIENT))
-        )
+        'Auth0-Client': btoa(JSON.stringify(strippedAuth0Client))
       }
     },
     worker,
