@@ -46,6 +46,17 @@ export {
 
 export { MfaApiClient } from './mfa';
 
+export type {
+  MfaFactorType,
+  EnrollParams,
+  EnrollOtpParams,
+  EnrollSmsParams,
+  EnrollVoiceParams,
+  EnrollEmailParams,
+  EnrollPushParams,
+  VerifyParams
+} from './mfa';
+
 export {
   ICache,
   LocalStorageCache,

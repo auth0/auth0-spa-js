@@ -745,6 +745,10 @@ The MFA API allows you to manage multi-factor authentication for users. The SDK 
 - [Complete MFA Flow Example](#complete-mfa-flow-example)
 - [Error Handling](#error-handling)
 
+### Setup
+
+Before using the MFA API, configure MFA in your [Auth0 Dashboard](https://manage.auth0.com) under **Security** > **Multi-factor Auth**. For detailed configuration, see the [Auth0 MFA documentation](https://auth0.com/docs/secure/multi-factor-authentication/customize-mfa/customize-mfa-enrollments-universal-login).
+
 ### How It Works
 
 When an `mfa_required` error occurs, the SDK automatically captures and stores:
@@ -818,12 +822,13 @@ try {
 
 ### Enrollment
 
-#### Enrolling OTP (Authenticator App)
+#### Enrolling OTP (Authenticator App) [auth0-docs](enrolment)
 
 ```js
 // Enroll OTP authenticator (Google Authenticator, Microsoft Authenticator, etc.)
 const enrollment = await auth0.mfa.enroll({
-  authenticatorTypes: ['otp']
+  mfaToken: mfaToken,
+  factorType: 'otp'
 });
 
 // Display QR code to user
@@ -836,12 +841,25 @@ const secret = enrollment.secret; // Base32 secret for manual entry
 ```js
 // Enroll SMS authenticator
 const smsEnrollment = await auth0.mfa.enroll({
-  authenticatorTypes: ['oob'],
-  oobChannels: ['sms'],
+  mfaToken: mfaToken,
+  factorType: 'sms',
   phoneNumber: '+12025551234' // E.164 format
 });
 
 const authenticatorId = smsEnrollment.id;
+```
+
+#### Enrolling Voice
+
+```js
+// Enroll Voice authenticator
+const voiceEnrollment = await auth0.mfa.enroll({
+  mfaToken: mfaToken,
+  factorType: 'voice',
+  phoneNumber: '+12025551234' // E.164 format
+});
+
+const authenticatorId = voiceEnrollment.id;
 ```
 
 #### Enrolling Email
@@ -849,11 +867,10 @@ const authenticatorId = smsEnrollment.id;
 ```js
 // Enroll Email authenticator
 const emailEnrollment = await auth0.mfa.enroll({
-  authenticatorTypes: ['oob'],
-  oobChannels: ['email'],
+  mfaToken: mfaToken,
+  factorType: 'email',
   email: 'user@example.com' // Optional - uses user's primary email if not provided
 });
-
 
 // Use this code to complete enrollment verification
 ```
@@ -863,8 +880,8 @@ const emailEnrollment = await auth0.mfa.enroll({
 ```js
 // Enroll Push Notification authenticator (Auth0 Guardian)
 const pushEnrollment = await auth0.mfa.enroll({
-  authenticatorTypes: ['oob'],
-  oobChannels: ['auth0']
+  mfaToken: mfaToken,
+  factorType: 'push'
 });
 
 // Display QR code for Guardian app enrollment
@@ -883,7 +900,6 @@ const oobCode = pushEnrollment.oobCode;
 // Initiate SMS challenge - sends code via text message
 const challenge = await auth0.mfa.challenge({
   mfaToken: mfaToken,
-  client_id: 'YOUR_CLIENT_ID',
   challengeType: 'oob',
   authenticatorId: 'sms|dev_xxx'
 });
@@ -898,7 +914,6 @@ const oobCode = challenge.oobCode; // Save for verification
 // Initiate Email challenge - sends code via email
 const challenge = await auth0.mfa.challenge({
   mfaToken: mfaToken,
-  client_id: 'YOUR_CLIENT_ID',
   challengeType: 'oob',
   authenticatorId: 'email|dev_xxx'
 });
@@ -913,7 +928,6 @@ const oobCode = challenge.oobCode; // Save for verification
 // Initiate Push Notification challenge - sends push to Guardian app
 const challenge = await auth0.mfa.challenge({
   mfaToken: mfaToken,
-  client_id: 'YOUR_CLIENT_ID',
   challengeType: 'oob',
   authenticatorId: 'push|dev_xxx'
 });
@@ -929,7 +943,6 @@ const oobCode = challenge.oobCode; // Save for verification
 // Initiate OTP challenge - prepares for TOTP code entry
 const challenge = await auth0.mfa.challenge({
   mfaToken: mfaToken,
-  client_id: 'YOUR_CLIENT_ID',
   challengeType: 'otp',
   authenticatorId: 'otp|dev_xxx'
 });
@@ -940,15 +953,13 @@ const challenge = await auth0.mfa.challenge({
 
 ### Verify
 
-#### Verify with OOB 
+#### Verify with OOB (SMS or email)
 
 ```js
 // Verify MFA challenge and get tokens
 const tokens = await auth0.mfa.verify({
   mfaToken: mfaToken,
-  client_id: 'YOUR_CLIENT_ID',
-  grant_type: 'http://auth0.com/oauth/grant-type/mfa-oob',
-  oobCode: <challenge.oobCode>,
+  oobCode: challenge.oobCode,
   bindingCode: '123456' // Code user received via SMS
 });
 
@@ -962,8 +973,6 @@ const idToken = tokens.id_token; // Contains user identity information
 // Verify OTP code from authenticator app
 const tokens = await auth0.mfa.verify({
   mfaToken: mfaToken,
-  client_id: 'YOUR_CLIENT_ID',
-  grant_type: 'http://auth0.com/oauth/grant-type/mfa-otp',
   otp: '123456' // 6-digit code from authenticator app
 });
 
@@ -977,7 +986,6 @@ const idToken = tokens.id_token;
 // Challenge the push notification authenticator
 const challenge = await auth0.mfa.challenge({
   mfaToken: mfaToken,
-  client_id: 'YOUR_CLIENT_ID',
   challengeType: 'oob',
   authenticatorId: 'push|dev_xxx' // Push authenticator ID
 });
@@ -988,8 +996,6 @@ const challenge = await auth0.mfa.challenge({
 // Poll or wait for user to approve, then verify
 const tokens = await auth0.mfa.verify({
   mfaToken: mfaToken,
-  client_id: 'YOUR_CLIENT_ID',
-  grant_type: 'http://auth0.com/oauth/grant-type/mfa-oob',
   oobCode: challenge.oobCode,
   bindingCode: 'APPROVAL_CODE' // Code from Guardian app (if binding required)
 });
@@ -1005,8 +1011,6 @@ Recovery codes can be used to complete MFA verification without initiating a cha
 ```js
 const tokens = await auth0.mfa.verify({
   mfaToken: mfaToken,
-  client_id: 'YOUR_CLIENT_ID',
-  grant_type: 'http://auth0.com/oauth/grant-type/mfa-recovery-code',
   recoveryCode: 'XXXX-XXXX-XXXX' // One of the recovery codes
 });
 
@@ -1037,7 +1041,7 @@ async function handleMfaFlow() {
         if (selectedFactor.type === 'otp') {
           const enrollment = await auth0.mfa.enroll({
             mfaToken: mfaToken,
-            authenticatorTypes: ['otp']
+            factorType: 'otp'
           });
           await showQRCode(enrollment.barcodeUri);
 
@@ -1045,8 +1049,6 @@ async function handleMfaFlow() {
           const verifyCode = await promptUserForCode();
           const tokens = await auth0.mfa.verify({
             mfaToken: mfaToken,
-            client_id: 'YOUR_CLIENT_ID',
-            grant_type: 'http://auth0.com/oauth/grant-type/mfa-otp',
             otp: verifyCode
           });
 
@@ -1060,7 +1062,6 @@ async function handleMfaFlow() {
         // Initiate challenge
         const challenge = await auth0.mfa.challenge({
           mfaToken: mfaToken,
-          client_id: 'YOUR_CLIENT_ID',
           challengeType: selected.type === 'otp' ? 'otp' : 'oob',
           authenticatorId: selected.id
         });
@@ -1071,8 +1072,6 @@ async function handleMfaFlow() {
         // Verify
         const tokens = await auth0.mfa.verify({
           mfaToken: mfaToken,
-          client_id: 'YOUR_CLIENT_ID',
-          grant_type: `http://auth0.com/oauth/grant-type/mfa-${selected.type === 'otp' ? 'otp' : 'oob'}`,
           otp: selected.type === 'otp' ? code : undefined,
           oobCode: selected.type !== 'otp' ? challenge.oobCode : undefined,
           bindingCode: selected.type !== 'otp' ? code : undefined
@@ -1121,7 +1120,7 @@ try {
 try {
   const enrollment = await auth0.mfa.enroll({
     mfaToken,
-    authenticatorTypes: ['otp']
+    factorType: 'otp'
   });
 } catch (error) {
   if (error instanceof MfaEnrollmentError) {
@@ -1133,7 +1132,6 @@ try {
 try {
   const challenge = await auth0.mfa.challenge({
     mfaToken,
-    client_id: 'YOUR_CLIENT_ID',
     challengeType: 'otp',
     authenticatorId
   });
@@ -1147,8 +1145,6 @@ try {
 try {
   const tokens = await auth0.mfa.verify({
     mfaToken,
-    client_id: 'YOUR_CLIENT_ID',
-    grant_type: 'http://auth0.com/oauth/grant-type/mfa-otp',
     otp: '123456'
   });
 } catch (error) {

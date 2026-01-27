@@ -634,7 +634,6 @@
                     const challengeType = this.getChallengeType(authenticator.authenticatorType);
                     this.challengeData = await this.auth0.mfa.challenge({
                         mfaToken: this.mfaToken,
-                        client_id: this.clientId,
                         challengeType: challengeType,
                         authenticatorId: authenticator.id
                     });
@@ -652,11 +651,9 @@
                 this.loadingVerification = true;
 
                 try {
-                    const grantType = this.getGrantType(this.selectedAuthenticator.authenticatorType);
+                    // Build verify params - grant_type is inferred automatically
                     const verifyParams = {
                         mfaToken: this.mfaToken,
-                        client_id: this.clientId,
-                        grant_type: grantType,
                         [this.getCodeParamName(this.selectedAuthenticator.authenticatorType)]: this.verificationCode
                     };
 
@@ -702,15 +699,6 @@
                 return typeMap[authenticatorType] || authenticatorType;
             },
 
-            getGrantType(authenticatorType) {
-                const grantMap = {
-                    'otp': 'http://auth0.com/oauth/grant-type/mfa-otp',
-                    'oob': 'http://auth0.com/oauth/grant-type/mfa-oob',
-                    'recovery-code': 'http://auth0.com/oauth/grant-type/mfa-recovery-code'
-                };
-                return grantMap[authenticatorType] || grantMap['otp'];
-            },
-
             getCodeParamName(authenticatorType) {
                 const paramMap = {
                     'otp': 'otp',
@@ -738,7 +726,7 @@
                 try {
                     this.enrollmentData = await this.auth0.mfa.enroll({
                         mfaToken: this.mfaToken,
-                        authenticatorTypes: ['otp']
+                        factorType: 'otp'
                     });
                 } catch (e) {
                     this.error = e.message || e.error_description || e;
@@ -753,11 +741,9 @@
                 this.error = '';
 
                 try {
-                    const channel = this.enrollmentType === 'sms' ? 'sms' : 'voice';
                     this.enrollmentData = await this.auth0.mfa.enroll({
                         mfaToken: this.mfaToken,
-                        authenticatorTypes: ['oob'],
-                        oobChannels: [channel],
+                        factorType: this.enrollmentType, // 'sms' or 'voice'
                         phoneNumber: this.phoneNumber
                     });
 
@@ -781,8 +767,7 @@
                 try {
                     const params = {
                         mfaToken: this.mfaToken,
-                        authenticatorTypes: ['oob'],
-                        oobChannels: ['email']
+                        factorType: 'email'
                     };
 
                     if (this.emailAddress) {
@@ -810,14 +795,9 @@
                 this.loadingEnrollmentVerification = true;
 
                 try {
-                    const grantType = this.enrollmentType === 'otp'
-                        ? 'http://auth0.com/oauth/grant-type/mfa-otp'
-                        : 'http://auth0.com/oauth/grant-type/mfa-oob';
-
+                    // Build verify params - grant_type is inferred automatically
                     const verifyParams = {
-                        mfaToken: this.mfaToken,
-                        client_id: this.clientId,
-                        grant_type: grantType
+                        mfaToken: this.mfaToken
                     };
 
                     if (this.enrollmentType === 'otp') {
@@ -866,10 +846,9 @@
                 this.loadingRecoveryVerification = true;
 
                 try {
+                    // grant_type is inferred from recoveryCode field
                     const verifyParams = {
                         mfaToken: this.mfaToken,
-                        client_id: this.clientId,
-                        grant_type: 'http://auth0.com/oauth/grant-type/mfa-recovery-code',
                         recoveryCode: this.recoveryCodeInput
                     };
 

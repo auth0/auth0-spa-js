@@ -11,6 +11,7 @@ import type {
   ChallengeType,
   EnrollmentFactor
 } from './types';
+import { getAuthJsEnrollParams, getGrantType } from './utils';
 import {
   MfaClient as Auth0AuthJsMfaClient,
   MfaListAuthenticatorsError as Auth0JsMfaListAuthenticatorsError,
@@ -155,7 +156,7 @@ export class MfaApiClient {
    *
    * Requires MFA access token with 'enroll' scope
    *
-   * @param params - Enrollment parameters including mfaToken (type-specific)
+   * @param params - Enrollment parameters including mfaToken and factorType
    * @returns Enrollment response with authenticator details
    * @throws {MfaEnrollmentError} If enrollment fails
    *
@@ -163,7 +164,7 @@ export class MfaApiClient {
    * ```typescript
    * const enrollment = await mfa.enroll({
    *   mfaToken: mfaToken,
-   *   authenticatorTypes: ['otp']
+   *   factorType: 'otp'
    * });
    * console.log(enrollment.secret); // Base32 secret
    * console.log(enrollment.barcodeUri); // QR code URI
@@ -173,8 +174,7 @@ export class MfaApiClient {
    * ```typescript
    * const enrollment = await mfa.enroll({
    *   mfaToken: mfaToken,
-   *   authenticatorTypes: ['oob'],
-   *   oobChannels: ['sms'],
+   *   factorType: 'sms',
    *   phoneNumber: '+12025551234'
    * });
    * ```
@@ -182,9 +182,11 @@ export class MfaApiClient {
   public async enroll(
     params: EnrollParams
   ): Promise<EnrollmentResponse> {
+    const authJsParams = getAuthJsEnrollParams(params);
+
     try {
-      const { mfaToken, ...enrollParams } = params;
-      return await this.authJsMfaClient.enrollAuthenticator({ ...enrollParams, mfaToken });
+      // Type assertion is safe here because getAuthJsEnrollParams ensures correct mapping
+      return await this.authJsMfaClient.enrollAuthenticator(authJsParams as any);
     } catch (error: unknown) {
       if (error instanceof Auth0JsMfaEnrollmentError) {
         throw new MfaEnrollmentError(
@@ -209,7 +211,6 @@ export class MfaApiClient {
    * ```typescript
    * const challenge = await mfa.challenge({
    *   mfaToken: mfaTokenFromLogin,
-   *   client_id: 'YOUR_CLIENT_ID',
    *   challengeType: 'otp',
    *   authenticatorId: 'otp|dev_xxx'
    * });
@@ -220,9 +221,7 @@ export class MfaApiClient {
    * ```typescript
    * const challenge = await mfa.challenge({
    *   mfaToken: mfaTokenFromLogin,
-   *   client_id: 'YOUR_CLIENT_ID',
    *   challengeType: 'oob',
-   *   oobChannel: 'sms',
    *   authenticatorId: 'sms|dev_xxx'
    * });
    * console.log(challenge.oobCode); // Use for verification
@@ -324,45 +323,41 @@ export class MfaApiClient {
    * Verifies an MFA challenge and completes authentication
    *
    * The scope and audience are retrieved from the stored context (set when the
-   * mfa_required error occurred).
+   * mfa_required error occurred). The grant_type is automatically inferred from
+   * which verification field is provided (otp, oobCode, or recoveryCode).
    *
    * @param params - Verification parameters with OTP, OOB code, or recovery code
    * @returns Token response with access_token, id_token, refresh_token
-   * @throws {Error} If verification fails (invalid code, expired, rate limited)
-   * @throws {Error} If MFA context not found
+   * @throws {MfaVerifyError} If verification fails (invalid code, expired, rate limited)
+   * @throws {MfaVerifyError} If MFA context not found
+   * @throws {MfaVerifyError} If grant_type cannot be inferred
    *
    * Rate limits:
    * - 10 verification attempts allowed
    * - Refreshes at 1 attempt per 6 minutes
    *
-   * @example OTP verification
+   * @example OTP verification (grant_type inferred from otp field)
    * ```typescript
    * const tokens = await mfa.verify({
    *   mfaToken: mfaTokenFromLogin,
-   *   client_id: 'YOUR_CLIENT_ID',
-   *   grant_type: 'http://auth0.com/oauth/grant-type/mfa-otp',
    *   otp: '123456'
    * });
    * console.log(tokens.access_token);
    * ```
    *
-   * @example OOB verification (SMS)
+   * @example OOB verification (grant_type inferred from oobCode field)
    * ```typescript
    * const tokens = await mfa.verify({
    *   mfaToken: mfaTokenFromLogin,
-   *   client_id: 'YOUR_CLIENT_ID',
-   *   grant_type: 'http://auth0.com/oauth/grant-type/mfa-oob',
    *   oobCode: challenge.oobCode,
    *   bindingCode: '123456' // Code user received via SMS
    * });
    * ```
    *
-   * @example Recovery code verification (no challenge needed)
+   * @example Recovery code verification (grant_type inferred from recoveryCode field)
    * ```typescript
    * const tokens = await mfa.verify({
    *   mfaToken: mfaTokenFromLogin,
-   *   client_id: 'YOUR_CLIENT_ID',
-   *   grant_type: 'http://auth0.com/oauth/grant-type/mfa-recovery-code',
    *   recoveryCode: 'XXXX-XXXX-XXXX'
    * });
    * ```
@@ -381,12 +376,22 @@ export class MfaApiClient {
       );
     }
 
+    // Get grant type from verification fields
+    const grantType = getGrantType(params);
+
+    if (!grantType) {
+      throw new MfaVerifyError(
+        'invalid_request',
+        'Unable to determine grant type. Provide one of: otp, oobCode, or recoveryCode.'
+      );
+    }
+
     const scope = context.scope;
     const audience = context.audience;
 
     try {
       const result = await this.auth0Client._requestTokenForMfa({
-        grant_type: params.grant_type,
+        grant_type: grantType,
         mfaToken: params.mfaToken,
         scope,
         audience,

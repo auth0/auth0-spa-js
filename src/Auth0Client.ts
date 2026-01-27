@@ -155,6 +155,16 @@ export class Auth0Client {
   };
   private readonly userCache: ICache = new InMemoryCache().enclosedCache;
   private readonly myAccountApi: MyAccountApiClient;
+
+  /**
+   * MFA API client for multi-factor authentication operations.
+   *
+   * Provides methods for:
+   * - Listing enrolled authenticators
+   * - Enrolling new authenticators (OTP, SMS, Voice, Push, Email)
+   * - Initiating MFA challenges
+   * - Verifying MFA challenges
+   */
   public readonly mfa: MfaApiClient;
 
   private worker?: Worker;

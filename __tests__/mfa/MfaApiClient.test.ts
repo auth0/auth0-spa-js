@@ -292,9 +292,9 @@ describe('MfaApiClient', () => {
   });
 
   describe('enroll', () => {
-    it('should return enrollment response from auth-js', async () => {
+    it('should convert OTP factorType and call auth-js', async () => {
       const mfaToken = 'test-mfa-token';
-      const params = { mfaToken: mfaToken, authenticatorTypes: ['otp'] as ['otp'] };
+      const params = { mfaToken: mfaToken, factorType: 'otp' as const };
       const mockResponse = {
         authenticatorType: 'otp',
         secret: 'SECRET123',
@@ -306,15 +306,114 @@ describe('MfaApiClient', () => {
       const result = await mfaClient.enroll(params);
 
       expect(mockAuthJsMfaClient.enrollAuthenticator).toHaveBeenCalledWith({
-        authenticatorTypes: ['otp'],
-        mfaToken
+        mfaToken,
+        authenticatorTypes: ['otp']
+      });
+      expect(result).toEqual(mockResponse);
+    });
+
+    it('should convert SMS factorType with phoneNumber', async () => {
+      const mfaToken = 'test-mfa-token';
+      const params = {
+        mfaToken: mfaToken,
+        factorType: 'sms' as const,
+        phoneNumber: '+12025551234'
+      };
+      const mockResponse = {
+        authenticatorType: 'oob',
+        oobChannel: 'sms',
+        oobCode: 'oob123'
+      };
+
+      mockAuthJsMfaClient.enrollAuthenticator.mockResolvedValue(mockResponse);
+
+      const result = await mfaClient.enroll(params);
+
+      expect(mockAuthJsMfaClient.enrollAuthenticator).toHaveBeenCalledWith({
+        mfaToken,
+        authenticatorTypes: ['oob'],
+        oobChannels: ['sms'],
+        phoneNumber: '+12025551234'
+      });
+      expect(result).toEqual(mockResponse);
+    });
+
+    it('should convert email factorType with optional email', async () => {
+      const mfaToken = 'test-mfa-token';
+      const params = {
+        mfaToken: mfaToken,
+        factorType: 'email' as const,
+        email: 'user@example.com'
+      };
+      const mockResponse = {
+        authenticatorType: 'oob',
+        oobChannel: 'email',
+        oobCode: 'oob123'
+      };
+
+      mockAuthJsMfaClient.enrollAuthenticator.mockResolvedValue(mockResponse);
+
+      const result = await mfaClient.enroll(params);
+
+      expect(mockAuthJsMfaClient.enrollAuthenticator).toHaveBeenCalledWith({
+        mfaToken,
+        authenticatorTypes: ['oob'],
+        oobChannels: ['email'],
+        email: 'user@example.com'
+      });
+      expect(result).toEqual(mockResponse);
+    });
+
+    it('should convert push factorType', async () => {
+      const mfaToken = 'test-mfa-token';
+      const params = { mfaToken: mfaToken, factorType: 'push' as const };
+      const mockResponse = {
+        authenticatorType: 'oob',
+        oobChannel: 'auth0',
+        barcodeUri: 'guardian://...'
+      };
+
+      mockAuthJsMfaClient.enrollAuthenticator.mockResolvedValue(mockResponse);
+
+      const result = await mfaClient.enroll(params);
+
+      expect(mockAuthJsMfaClient.enrollAuthenticator).toHaveBeenCalledWith({
+        mfaToken,
+        authenticatorTypes: ['oob'],
+        oobChannels: ['auth0']
+      });
+      expect(result).toEqual(mockResponse);
+    });
+
+    it('should convert voice factorType with phoneNumber', async () => {
+      const mfaToken = 'test-mfa-token';
+      const params = {
+        mfaToken: mfaToken,
+        factorType: 'voice' as const,
+        phoneNumber: '+12025551234'
+      };
+      const mockResponse = {
+        authenticatorType: 'oob',
+        oobChannel: 'voice',
+        oobCode: 'oob123'
+      };
+
+      mockAuthJsMfaClient.enrollAuthenticator.mockResolvedValue(mockResponse);
+
+      const result = await mfaClient.enroll(params);
+
+      expect(mockAuthJsMfaClient.enrollAuthenticator).toHaveBeenCalledWith({
+        mfaToken,
+        authenticatorTypes: ['oob'],
+        oobChannels: ['voice'],
+        phoneNumber: '+12025551234'
       });
       expect(result).toEqual(mockResponse);
     });
 
     it('should wrap auth-js errors with error details', async () => {
       const mfaToken = 'test-mfa-token';
-      const params = { mfaToken: mfaToken, authenticatorTypes: ['otp'] as ['otp'] };
+      const params = { mfaToken: mfaToken, factorType: 'otp' as const };
       const authJsError = new Auth0JsMfaEnrollmentError('Invalid phone number', {
         error: 'invalid_phone_number',
         error_description: 'Invalid phone number'
@@ -335,7 +434,6 @@ describe('MfaApiClient', () => {
       const mfaToken = 'test-mfa-token';
       const params = {
         mfaToken: mfaToken,
-        client_id: 'client123',
         challengeType: 'otp' as const,
         authenticatorId: 'otp|dev_123'
       };
@@ -361,7 +459,6 @@ describe('MfaApiClient', () => {
       const mfaToken = 'test-mfa-token';
       const params = {
         mfaToken: mfaToken,
-        client_id: 'client123',
         challengeType: 'otp' as const
       };
       const authJsError = new Auth0JsMfaChallengeError('Rate limit exceeded', {
@@ -381,12 +478,84 @@ describe('MfaApiClient', () => {
   });
 
   describe('verify', () => {
+    describe('grant_type inference', () => {
+      it('should infer OTP grant type from otp field', async () => {
+        const mfaToken = 'token123';
+        const mockTokenResponse = { access_token: 'access123', id_token: 'id123' };
+
+        mfaClient.setMFAAuthDetails(mfaToken, 'openid profile', 'https://api.example.com');
+        mockAuth0Client._requestTokenForMfa.mockResolvedValue(mockTokenResponse);
+
+        await mfaClient.verify({
+          mfaToken: mfaToken,
+          otp: '123456'
+        });
+
+        expect(mockAuth0Client._requestTokenForMfa).toHaveBeenCalledWith(
+          expect.objectContaining({
+            grant_type: 'http://auth0.com/oauth/grant-type/mfa-otp',
+            otp: '123456'
+          })
+        );
+      });
+
+      it('should infer OOB grant type from oobCode field', async () => {
+        const mfaToken = 'token123';
+        const mockTokenResponse = { access_token: 'access123', id_token: 'id123' };
+
+        mfaClient.setMFAAuthDetails(mfaToken, 'openid profile', 'https://api.example.com');
+        mockAuth0Client._requestTokenForMfa.mockResolvedValue(mockTokenResponse);
+
+        await mfaClient.verify({
+          mfaToken: mfaToken,
+          oobCode: 'oob-code-123',
+          bindingCode: '123456'
+        });
+
+        expect(mockAuth0Client._requestTokenForMfa).toHaveBeenCalledWith(
+          expect.objectContaining({
+            grant_type: 'http://auth0.com/oauth/grant-type/mfa-oob',
+            oob_code: 'oob-code-123',
+            binding_code: '123456'
+          })
+        );
+      });
+
+      it('should infer recovery code grant type from recoveryCode field', async () => {
+        const mfaToken = 'token123';
+        const mockTokenResponse = { access_token: 'access123', id_token: 'id123' };
+
+        mfaClient.setMFAAuthDetails(mfaToken, 'openid profile', 'https://api.example.com');
+        mockAuth0Client._requestTokenForMfa.mockResolvedValue(mockTokenResponse);
+
+        await mfaClient.verify({
+          mfaToken: mfaToken,
+          recoveryCode: 'XXXX-XXXX-XXXX'
+        });
+
+        expect(mockAuth0Client._requestTokenForMfa).toHaveBeenCalledWith(
+          expect.objectContaining({
+            grant_type: 'http://auth0.com/oauth/grant-type/mfa-recovery-code',
+            recovery_code: 'XXXX-XXXX-XXXX'
+          })
+        );
+      });
+
+      it('should throw error when no verification field provided', async () => {
+        const mfaToken = 'token123';
+
+        mfaClient.setMFAAuthDetails(mfaToken, 'openid profile', 'https://api.example.com');
+
+        await expect(
+          mfaClient.verify({ mfaToken: mfaToken })
+        ).rejects.toThrow('Unable to determine grant type');
+      });
+    });
+
     it('should call auth0Client.requestTokenForMfa with context from setMFAAuthDetails', async () => {
       const mfaToken = 'token123';
       const params = {
         mfaToken: mfaToken,
-        client_id: 'client123',
-        grant_type: 'http://auth0.com/oauth/grant-type/mfa-otp' as const,
         otp: '123456'
       };
       const mockTokenResponse = {
@@ -417,8 +586,6 @@ describe('MfaApiClient', () => {
       const mfaToken = 'token123';
       const params = {
         mfaToken: mfaToken,
-        client_id: 'client123',
-        grant_type: 'http://auth0.com/oauth/grant-type/mfa-otp' as const,
         otp: '123456'
       };
 
@@ -433,8 +600,6 @@ describe('MfaApiClient', () => {
       const mfaToken = 'token123';
       const params = {
         mfaToken: mfaToken,
-        client_id: 'client123',
-        grant_type: 'http://auth0.com/oauth/grant-type/mfa-otp' as const,
         otp: '123456'
       };
       const mockTokenResponse = {
@@ -469,8 +634,6 @@ describe('MfaApiClient', () => {
       // Verify flow 1
       await mfaClient.verify({
         mfaToken: mfaToken1,
-        client_id: 'client123',
-        grant_type: 'http://auth0.com/oauth/grant-type/mfa-otp',
         otp: '111111'
       });
 
@@ -485,8 +648,6 @@ describe('MfaApiClient', () => {
       // Verify flow 2 - should still have its context
       await mfaClient.verify({
         mfaToken: mfaToken2,
-        client_id: 'client123',
-        grant_type: 'http://auth0.com/oauth/grant-type/mfa-otp',
         otp: '222222'
       });
 
@@ -515,8 +676,6 @@ describe('MfaApiClient', () => {
       // Token1 should still work with its original context
       await mfaClient.verify({
         mfaToken: mfaToken1,
-        client_id: 'client123',
-        grant_type: 'http://auth0.com/oauth/grant-type/mfa-otp',
         otp: '111111'
       });
 

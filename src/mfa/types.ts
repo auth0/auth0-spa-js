@@ -1,3 +1,5 @@
+import { MfaGrantTypes } from './constants';
+
 /**
  * Represents an MFA authenticator enrolled by a user
  */
@@ -36,6 +38,11 @@ export type ChallengeType = 'otp' | 'phone' | 'recovery-code' | 'email' | 'push-
 export type OobChannel = 'sms' | 'voice' | 'auth0' | 'email';
 
 /**
+ * Supported MFA factors for enrollment
+ */
+export type MfaFactorType = 'otp' | 'sms' | 'email' | 'push' | 'voice';
+
+/**
  * Base parameters for all enrollment types
  */
 export interface EnrollBaseParams {
@@ -44,35 +51,49 @@ export interface EnrollBaseParams {
 }
 
 /**
- * Parameters for enrolling an OTP authenticator (TOTP apps like Google Authenticator)
+ * OTP (Time-based One-Time Password) enrollment parameters
  */
 export interface EnrollOtpParams extends EnrollBaseParams {
-  /** Must be ['otp'] for OTP enrollment */
-  authenticatorTypes: ['otp'];
+  /** The factor type for enrollment */
+  factorType: 'otp';
 }
 
 /**
- * Parameters for enrolling an out-of-band authenticator (SMS, Voice, Push)
+ * SMS enrollment parameters
  */
-export interface EnrollOobParams extends EnrollBaseParams {
-  /** Must be ['oob'] for OOB enrollment */
-  authenticatorTypes: ['oob'];
-  /** Delivery channels to enable */
-  oobChannels: OobChannel[];
-  /** Phone number for SMS/Voice (E.164 format: +1234567890) */
-  phoneNumber?: string;
+export interface EnrollSmsParams extends EnrollBaseParams {
+  /** The factor type for enrollment */
+  factorType: 'sms';
+  /** Phone number in E.164 format (required for SMS) */
+  phoneNumber: string;
 }
 
 /**
- * Parameters for enrolling an email authenticator
+ * Voice enrollment parameters
+ */
+export interface EnrollVoiceParams extends EnrollBaseParams {
+  /** The factor type for enrollment */
+  factorType: 'voice';
+  /** Phone number in E.164 format (required for voice) */
+  phoneNumber: string;
+}
+
+/**
+ * Email enrollment parameters
  */
 export interface EnrollEmailParams extends EnrollBaseParams {
-  /** Must be ['oob'] for email enrollment */
-  authenticatorTypes: ['oob'],
-  /** Must be ['email'] for email delivery */
-  oobChannels: ['email'],
+  /** The factor type for enrollment */
+  factorType: 'email';
   /** Email address (optional, uses user's email if not provided) */
   email?: string;
+}
+
+/**
+ * Push notification enrollment parameters
+ */
+export interface EnrollPushParams extends EnrollBaseParams {
+  /** The factor type for enrollment */
+  factorType: 'push';
 }
 
 /**
@@ -80,8 +101,10 @@ export interface EnrollEmailParams extends EnrollBaseParams {
  */
 export type EnrollParams =
   | EnrollOtpParams
-  | EnrollOobParams
-  | EnrollEmailParams;
+  | EnrollSmsParams
+  | EnrollVoiceParams
+  | EnrollEmailParams
+  | EnrollPushParams;
 
 /**
  * Response when enrolling an OTP authenticator
@@ -133,8 +156,6 @@ export type EnrollmentResponse =
 export interface ChallengeAuthenticatorParams {
   /** MFA token from mfa_required error or MFA-scoped access token */
   mfaToken: string;
-  /** Auth0 application client ID */
-  client_id: string;
   /** Type of challenge to initiate */
   challengeType: 'otp' | 'oob';
   /** Specific authenticator to challenge (optional) */
@@ -154,23 +175,21 @@ export interface ChallengeResponse {
 }
 
 /**
- * Grant types for MFA verification
+ * Grant types for MFA verification (derived from MfaGrantTypes constants)
  */
-export type MfaGrantType =
-  | 'http://auth0.com/oauth/grant-type/mfa-otp'
-  | 'http://auth0.com/oauth/grant-type/mfa-oob'
-  | 'http://auth0.com/oauth/grant-type/mfa-recovery-code';
+export type MfaGrantType = (typeof MfaGrantTypes)[keyof typeof MfaGrantTypes];
 
 /**
- * Parameters for verifying an MFA challenge
+ * Parameters for verifying an MFA challenge.
+ *
+ * The grant_type is automatically inferred from which verification field is provided:
+ * - `otp` field → MFA-OTP grant type
+ * - `oobCode` field → MFA-OOB grant type
+ * - `recoveryCode` field → MFA-RECOVERY-CODE grant type
  */
 export interface VerifyParams {
   /** MFA token from challenge flow */
   mfaToken: string;
-  /** Auth0 application client ID */
-  client_id: string;
-  /** Grant type based on challenge type */
-  grant_type: MfaGrantType;
   /** One-time password (for OTP challenges) */
   otp?: string;
   /** Out-of-band code (for OOB challenges) */

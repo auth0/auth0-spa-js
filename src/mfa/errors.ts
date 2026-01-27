@@ -79,7 +79,6 @@ export class MfaEnrollmentError extends MfaError {
  * try {
  *   const challenge = await mfa.challenge({
  *     mfaToken: mfaToken,
- *     client_id: 'YOUR_CLIENT_ID',
  *     challengeType: 'otp',
  *     authenticatorId: 'otp|dev_123'
  *   });
