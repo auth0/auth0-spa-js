@@ -1,5 +1,12 @@
 # Change Log
 
+## [v2.12.0](https://github.com/auth0/auth0-spa-js/tree/v2.12.0) (2026-01-27)
+[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.11.3...v2.12.0)
+
+**Added**
+- feat: add getConfiguration method to Auth0Client for retrieving SDK configuration [\#1513](https://github.com/auth0/auth0-spa-js/pull/1513) ([gyaneshgouraw-okta](https://github.com/gyaneshgouraw-okta))
+- feat:  Integrate Auth0 Auth.js client and update dependencies [\#1509](https://github.com/auth0/auth0-spa-js/pull/1509) ([gyaneshgouraw-okta](https://github.com/gyaneshgouraw-okta))
+
 ## [v2.11.3](https://github.com/auth0/auth0-spa-js/tree/v2.11.3) (2026-01-16)
 [Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.11.2...v2.11.3)
 
