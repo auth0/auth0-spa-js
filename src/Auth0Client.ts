@@ -13,7 +13,8 @@ import {
   openPopup,
   getDomain,
   getTokenIssuer,
-  parseNumber
+  parseNumber,
+  stripAuth0Client
 } from './utils';
 
 import { oauthToken } from './api';
@@ -333,8 +334,11 @@ export class Auth0Client {
   }
 
   private _url(path: string) {
+    const auth0ClientObj = this.options.auth0Client || DEFAULT_AUTH0_CLIENT;
+    // Strip env from auth0Client for /authorize to prevent query param truncation
+    const strippedAuth0Client = stripAuth0Client(auth0ClientObj, true);
     const auth0Client = encodeURIComponent(
-      btoa(JSON.stringify(this.options.auth0Client || DEFAULT_AUTH0_CLIENT))
+      btoa(JSON.stringify(strippedAuth0Client))
     );
     return `${this.domainUrl}${path}&auth0Client=${auth0Client}`;
   }

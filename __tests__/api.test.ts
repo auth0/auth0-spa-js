@@ -362,4 +362,113 @@ describe('oauthToken', () => {
 
     expect(jest.mocked(http.getJSON).mock.calls[0][7]).toBeUndefined();
   });
+
+  describe('auth0Client with env field', () => {
+    beforeEach(() => {
+      // Ensure http.getJSON is not mocked for these tests
+      jest.restoreAllMocks();
+      const httpModule = require('../src/http');
+      httpModule.createAbortController = jest.fn(() => abortController);
+    });
+
+    it('should include env field in Auth0-Client header for token endpoint', async () => {
+      mockFetch.mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({}),
+        headers: new Headers()
+      });
+
+      const auth0Client = {
+        name: 'test-sdk',
+        version: '1.0.0',
+        env: {
+          framework: 'angular',
+          frameworkVersion: '17.0.0'
+        }
+      };
+
+      await oauthToken({
+        baseUrl: `https://${TEST_DOMAIN}`,
+        client_id: TEST_CLIENT_ID,
+        grant_type: 'authorization_code',
+        auth0Client
+      });
+
+      // Verify that env field is included in the Auth0-Client header
+      expect(mockFetch).toHaveBeenCalledWith(
+        `https://${TEST_DOMAIN}/oauth/token`,
+        expect.objectContaining({
+          headers: expect.objectContaining({
+            'Auth0-Client': btoa(JSON.stringify(auth0Client))
+          })
+        })
+      );
+    });
+
+    it('should include env field in Auth0-Client header even with large env object', async () => {
+      mockFetch.mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({}),
+        headers: new Headers()
+      });
+
+      const auth0Client = {
+        name: 'auth0-spa-js',
+        version: '2.11.3',
+        env: {
+          framework: 'angular',
+          frameworkVersion: '17.0.0',
+          'angular/core': '17.0.0',
+          'angular/common': '17.0.0'
+        }
+      };
+
+      await oauthToken({
+        baseUrl: `https://${TEST_DOMAIN}`,
+        client_id: TEST_CLIENT_ID,
+        grant_type: 'authorization_code',
+        auth0Client
+      });
+
+      // Verify that env field is included in the Auth0-Client header
+      expect(mockFetch).toHaveBeenCalledWith(
+        `https://${TEST_DOMAIN}/oauth/token`,
+        expect.objectContaining({
+          headers: expect.objectContaining({
+            'Auth0-Client': btoa(JSON.stringify(auth0Client))
+          })
+        })
+      );
+    });
+
+    it('should handle auth0Client without env field', async () => {
+      mockFetch.mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({}),
+        headers: new Headers()
+      });
+
+      const auth0Client = {
+        name: 'test-sdk',
+        version: '1.0.0'
+      };
+
+      await oauthToken({
+        baseUrl: `https://${TEST_DOMAIN}`,
+        client_id: TEST_CLIENT_ID,
+        grant_type: 'authorization_code',
+        auth0Client
+      });
+
+      // Verify that the Auth0-Client header is set without env field
+      expect(mockFetch).toHaveBeenCalledWith(
+        `https://${TEST_DOMAIN}/oauth/token`,
+        expect.objectContaining({
+          headers: expect.objectContaining({
+            'Auth0-Client': btoa(JSON.stringify(auth0Client))
+          })
+        })
+      );
+    });
+  });
 });

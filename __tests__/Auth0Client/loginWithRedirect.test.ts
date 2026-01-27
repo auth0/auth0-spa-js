@@ -397,6 +397,29 @@ describe('Auth0Client', () => {
       );
     });
 
+    it('should exclude env field from auth0Client in authorize URL to prevent truncation', async () => {
+      const auth0Client = {
+        name: '__test_client__',
+        version: '0.0.0',
+        env: {
+          framework: 'angular',
+          frameworkVersion: '17.0.0'
+        }
+      };
+      const auth0 = setup({ auth0Client });
+
+      await loginWithRedirect(auth0);
+
+      // env should be stripped from the authorize URL
+      expectToHaveBeenCalledWithAuth0ClientParam(
+        mockWindow.location.assign,
+        {
+          name: '__test_client__',
+          version: '0.0.0'
+        }
+      );
+    });
+
     it('should log the user in with custom fragment', async () => {
       const auth0Client = { name: '__test_client__', version: '0.0.0' };
       const auth0 = setup({ auth0Client });

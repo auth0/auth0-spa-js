@@ -589,6 +589,93 @@ describe('utils', () => {
       });
     });
   });
+
+  describe('stripAuth0Client with excludeEnv parameter', () => {
+    it('should include env field when excludeEnv is false', () => {
+      const auth0Client = {
+        name: 'test',
+        version: '1.0.0',
+        env: {
+          node: 'v12.0.0'
+        }
+      };
+
+      const result = stripAuth0Client(auth0Client, false);
+      expect(result).toEqual({
+        name: 'test',
+        version: '1.0.0',
+        env: {
+          node: 'v12.0.0'
+        }
+      });
+    });
+
+    it('should include env field by default when excludeEnv is not provided', () => {
+      const auth0Client = {
+        name: 'test',
+        version: '1.0.0',
+        env: {
+          node: 'v12.0.0'
+        }
+      };
+
+      const result = stripAuth0Client(auth0Client);
+      expect(result).toEqual({
+        name: 'test',
+        version: '1.0.0',
+        env: {
+          node: 'v12.0.0'
+        }
+      });
+    });
+
+    it('should exclude env field when excludeEnv is true', () => {
+      const auth0Client = {
+        name: 'test',
+        version: '1.0.0',
+        env: {
+          node: 'v12.0.0'
+        }
+      };
+
+      const result = stripAuth0Client(auth0Client, true);
+      expect(result).toEqual({
+        name: 'test',
+        version: '1.0.0'
+      });
+    });
+
+    it('should exclude env field but keep other properties when excludeEnv is true', () => {
+      const auth0Client = {
+        name: 'auth0-spa-js',
+        version: '2.11.3',
+        env: {
+          framework: 'angular',
+          frameworkVersion: '17.0.0'
+        }
+      };
+
+      const result = stripAuth0Client(auth0Client, true);
+      expect(result).toEqual({
+        name: 'auth0-spa-js',
+        version: '2.11.3'
+      });
+      expect(result).not.toHaveProperty('env');
+    });
+
+    it('should handle auth0Client without env field', () => {
+      const auth0Client = {
+        name: 'test',
+        version: '1.0.0'
+      };
+
+      const result = stripAuth0Client(auth0Client, true);
+      expect(result).toEqual({
+        name: 'test',
+        version: '1.0.0'
+      });
+    });
+  });
 });
 
 describe('buildGetTokenSilentlyLockKey', () => {
