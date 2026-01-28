@@ -721,9 +721,11 @@ This is useful when you need to:
 ## Multi-Factor Authentication (MFA)
 
 The MFA API allows you to manage multi-factor authentication for users. The SDK automatically handles MFA context, eliminating the need for manual parsing of error payloads.
-> [!TIP]
-> See a complete MFA implementation in [static/mfa_flow.html](static/mfa_flow.html) that demonstrates enrollment, challenge, and verification flows.
+> [!NOTE]
+> Multi Factor Authentication support via SDKs is currently in Early Access. To request access to this feature, contact your Auth0 representative.
 
+
+- [Understanding the MFA Response](#understanding-the-mfa-response)
 - [Handling MFA required errors](#handling-mfa-required-errors)
 - [Getting Authenticators](#getting-authenticators)
 - [Getting Enrollment Factors](#getting-enrollment-factors)
@@ -749,14 +751,51 @@ The MFA API allows you to manage multi-factor authentication for users. The SDK 
 
 Before using the MFA API, configure MFA in your [Auth0 Dashboard](https://manage.auth0.com) under **Security** > **Multi-factor Auth**. For detailed configuration, see the [Auth0 MFA documentation](https://auth0.com/docs/secure/multi-factor-authentication/customize-mfa/customize-mfa-enrollments-universal-login).
 
-### How It Works
+#### Understanding the MFA Response
 
-When an `mfa_required` error occurs, the SDK automatically captures and stores:
-- Challenge types required
-- Enrollment factors available
-- Original scope and audience
+When MFA is required, the error payload contains an `mfa_requirements` object that indicates either a **challenge** flow (user has enrolled authenticators) or an **enroll** flow (user needs to set up MFA).
 
-This context is then used internally when you call MFA methods, simplifying your code significantly.
+**Challenge Flow Response** (user has existing authenticators):
+
+```json
+{
+  "error": "mfa_required",
+  "error_description": "Multifactor authentication required",
+  "mfa_token": "Fe26.2*...",
+  "mfa_requirements": {
+    "challenge": [
+      { "type": "otp" },
+      { "type": "email" }
+      ...
+    ]
+  }
+}
+```
+
+**Enroll Flow Response** (user needs to enroll an authenticator):
+
+```json
+{
+  "error": "mfa_required",
+  "error_description": "Multifactor authentication required",
+  "mfa_token": "Fe26.2*...",
+  "mfa_requirements": {
+    "enroll": [
+      { "type": "otp" },
+      { "type": "phone" },
+      { "type": "push-notification" }
+      ...
+    ]
+  }
+}
+```
+
+Based on the response:
+- **`mfa_requirements.challenge`**: User has enrolled authenticators → proceed with **List Authenticators → Challenge → Verify** flow
+- **`mfa_requirements.enroll`**: User needs to set up MFA → proceed with **Enroll → Verify** flow
+
+> [!NOTE]
+> The SDK handles this logic automatically. When you call `getEnrollmentFactors()` or `getAuthenticators()`, the SDK uses the stored context to return the appropriate data.
 
 ### Handling MFA Required Errors
 
@@ -846,7 +885,7 @@ const smsEnrollment = await auth0.mfa.enroll({
   phoneNumber: '+12025551234' // E.164 format
 });
 
-const authenticatorId = smsEnrollment.id;
+const oobCode = smsEnrollment.oobCode; // Use this code to complete enrollment verification;
 ```
 
 #### Enrolling Voice
@@ -859,7 +898,7 @@ const voiceEnrollment = await auth0.mfa.enroll({
   phoneNumber: '+12025551234' // E.164 format
 });
 
-const authenticatorId = voiceEnrollment.id;
+const oobCode = voiceEnrollment.oobCode; // Use this code to complete enrollment verification
 ```
 
 #### Enrolling Email
@@ -869,8 +908,10 @@ const authenticatorId = voiceEnrollment.id;
 const emailEnrollment = await auth0.mfa.enroll({
   mfaToken: mfaToken,
   factorType: 'email',
-  email: 'user@example.com' // Optional - uses user's primary email if not provided
+  email: 'user@example.com' 
 });
+
+const oobCode = voiceEnrollment.oobCode; // Use this code to complete enrollment verification
 
 // Use this code to complete enrollment verification
 ```
@@ -939,17 +980,8 @@ const oobCode = challenge.oobCode; // Save for verification
 
 #### Challenge with OTP
 
-```js
-// Initiate OTP challenge - prepares for TOTP code entry
-const challenge = await auth0.mfa.challenge({
-  mfaToken: mfaToken,
-  challengeType: 'otp',
-  authenticatorId: 'otp|dev_xxx'
-});
-
-// No oobCode returned for OTP challenges
-// User opens their authenticator app and enters the current TOTP code
-```
+> [!NOTE]
+> Once you have successfully enrolled an OTP factor, you do not need to explicitly call the challenge method to generate a code. The code is generated automatically by your authenticator app—simply open it and provide the displayed code in the verify call.
 
 ### Verify
 
@@ -1021,6 +1053,9 @@ const idToken = tokens.id_token;
 ### Complete MFA Flow Example
 
 Here's a complete example showing enrollment and challenge flows:
+
+> [!TIP]
+> See a complete MFA implementation in [static/mfa_flow.html](static/mfa_flow.html) that demonstrates enrollment, challenge, and verification flows.
 
 ```js
 async function handleMfaFlow() {
@@ -1157,3 +1192,6 @@ try {
   }
 }
 ```
+
+> [!NOTE]
+> You may also encounter an `MfaRequiredError` if you have multiple challenge factors configured.
