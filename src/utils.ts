@@ -184,10 +184,16 @@ const ALLOWED_AUTH0CLIENT_PROPERTIES = [
 /**
  * Strips any property that is not present in ALLOWED_AUTH0CLIENT_PROPERTIES
  * @param auth0Client - The full auth0Client object
+ * @param excludeEnv - If true, excludes the 'env' property from the result
  * @returns The stripped auth0Client object
  */
-export const stripAuth0Client = (auth0Client: any) => {
+export const stripAuth0Client = (auth0Client: any, excludeEnv = false) => {
   return Object.keys(auth0Client).reduce((acc: any, key: string) => {
+    // Exclude 'env' if requested (for /authorize query params to prevent truncation)
+    if (excludeEnv && key === 'env') {
+      return acc;
+    }
+
     const allowedProperty = ALLOWED_AUTH0CLIENT_PROPERTIES.find(
       p => p.key === key
     );
