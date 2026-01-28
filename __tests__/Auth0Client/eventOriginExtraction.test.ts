@@ -81,7 +81,9 @@ describe('Auth0Client - Event Origin Extraction', () => {
       expect(utils.runIframe).toHaveBeenCalledWith(
         expect.any(String), // authorize URL
         'https://example.auth0.com', // extracted origin
-        60 // timeout
+        60, // timeout
+        'web_message', // response_mode
+        expect.any(String) // redirect_uri
       );
     });
 
@@ -101,7 +103,9 @@ describe('Auth0Client - Event Origin Extraction', () => {
       expect(utils.runIframe).toHaveBeenCalledWith(
         expect.any(String),
         'https://example.auth0.com', // origin without path
-        60
+        60,
+        'web_message',
+        expect.any(String)
       );
     });
 
@@ -121,7 +125,9 @@ describe('Auth0Client - Event Origin Extraction', () => {
       expect(utils.runIframe).toHaveBeenCalledWith(
         expect.any(String),
         'https://localhost:3000',
-        60
+        60,
+        'web_message',
+        expect.any(String)
       );
     });
   });
@@ -143,7 +149,9 @@ describe('Auth0Client - Event Origin Extraction', () => {
       expect(utils.runIframe).toHaveBeenCalledWith(
         expect.any(String),
         'https://auth0_domain', // fallback to original domainUrl
-        60
+        60,
+        'web_message',
+        expect.any(String)
       );
     });
 
@@ -163,7 +171,9 @@ describe('Auth0Client - Event Origin Extraction', () => {
       expect(utils.runIframe).toHaveBeenCalledWith(
         expect.any(String),
         'https://not-a-valid-url', // fallback to original domainUrl
-        60
+        60,
+        'web_message',
+        expect.any(String)
       );
     });
   });
@@ -215,7 +225,9 @@ describe('Auth0Client - Event Origin Extraction', () => {
       expect(utils.runIframe).toHaveBeenCalledWith(
         expect.any(String),
         'https://example.auth0.com',
-        60
+        60,
+        'web_message',
+        expect.any(String)
       );
 
       // Verify that logout was called
@@ -249,7 +261,9 @@ describe('Auth0Client - Event Origin Extraction', () => {
       expect(utils.runIframe).toHaveBeenCalledWith(
         expect.any(String),
         'https://auth0_domain',
-        60
+        60,
+        'web_message',
+        expect.any(String)
       );
 
       // Verify that logout was called
