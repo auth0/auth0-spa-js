@@ -37,6 +37,7 @@ import {
   AuthenticationError,
   ConnectError,
   GenericError,
+  MfaRequiredError,
   MissingRefreshTokenError,
   MissingScopesError,
   PopupOpenError,
@@ -115,7 +116,8 @@ import {
   type CustomFetchMinimalOutput
 } from './fetcher';
 import { MyAccountApiClient } from './MyAccountApiClient';
-import { AuthClient as Auth0AuthJsClient } from '@auth0/auth0-auth-js'
+import { MfaApiClient } from './mfa';
+import { AuthClient as Auth0AuthJsClient } from '@auth0/auth0-auth-js';
 
 /**
  * @ignore
@@ -153,6 +155,17 @@ export class Auth0Client {
   };
   private readonly userCache: ICache = new InMemoryCache().enclosedCache;
   private readonly myAccountApi: MyAccountApiClient;
+
+  /**
+   * MFA API client for multi-factor authentication operations.
+   *
+   * Provides methods for:
+   * - Listing enrolled authenticators
+   * - Enrolling new authenticators (OTP, SMS, Voice, Push, Email)
+   * - Initiating MFA challenges
+   * - Verifying MFA challenges
+   */
+  public readonly mfa: MfaApiClient;
 
   private worker?: Worker;
   private readonly activeLockKeys: Set<string> = new Set();
@@ -278,6 +291,8 @@ export class Auth0Client {
       domain: this.options.domain,
       clientId: this.options.clientId,
     });
+    this.mfa = new MfaApiClient(this.authJsClient.mfa, this);
+
 
     // Don't use web workers unless using refresh tokens in memory
     if (
@@ -1290,6 +1305,14 @@ export class Auth0Client {
       ) {
         return await this._getTokenFromIFrame(options);
       }
+      if (e instanceof MfaRequiredError) {
+        this.mfa.setMFAAuthDetails(
+          e.mfa_token,
+          options.authorizationParams?.scope,
+          options.authorizationParams?.audience,
+          e.mfa_requirements
+        );
+      }
 
       throw e;
     }
@@ -1612,6 +1635,7 @@ export class Auth0Client {
     });
   }
 
+
   /**
    * Initiates a redirect to connect the user's account with a specified connection.
    * This method generates PKCE parameters, creates a transaction, and redirects to the /connect endpoint.
@@ -1680,6 +1704,29 @@ export class Auth0Client {
     } else {
       window.location.assign(url);
     }
+  }
+
+  /**
+   * @internal
+   * Internal method used by MfaApiClient to exchange MFA tokens for access tokens.
+   * This method should not be called directly by applications.
+   */
+  async _requestTokenForMfa(
+    options: {
+      grant_type: string;
+      mfaToken: string;
+      scope?: string;
+      audience?: string;
+      otp?: string;
+      binding_code?: string;
+      oob_code?: string;
+      recovery_code?: string;
+    },
+    additionalParameters?: RequestTokenAdditionalParameters
+  ): Promise<TokenEndpointResponse> {
+    // Need to add better typing here
+    const { mfaToken, ...restOptions } = options;
+    return this._requestToken({ ...restOptions, mfa_token: mfaToken } as any, additionalParameters);
   }
 }
 

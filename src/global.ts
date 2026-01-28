@@ -296,10 +296,11 @@ export interface Auth0ClientOptions {
    */
   useDpop?: boolean;
 
+
   /**
    * URL parameters that will be sent back to the Authorization Server. This can be known parameters
    * defined by Auth0 or custom parameters that you define.
-   */
+  */
   authorizationParams?: ClientAuthorizationParams;
 }
 
@@ -835,3 +836,25 @@ export type GetTokenSilentlyVerboseResponse = Omit<
   TokenEndpointResponse,
   'refresh_token'
 >;
+
+// MFA API types
+export type {
+  Authenticator,
+  AuthenticatorType,
+  OobChannel,
+  MfaFactorType,
+  EnrollParams,
+  EnrollOtpParams,
+  EnrollSmsParams,
+  EnrollVoiceParams,
+  EnrollEmailParams,
+  EnrollPushParams,
+  EnrollmentResponse,
+  OtpEnrollmentResponse,
+  OobEnrollmentResponse,
+  ChallengeAuthenticatorParams,
+  ChallengeResponse,
+  VerifyParams,
+  MfaGrantType,
+  EnrollmentFactor
+} from './mfa/types';
