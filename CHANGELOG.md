@@ -1,5 +1,14 @@
 # Change Log
 
+## [v2.13.0](https://github.com/auth0/auth0-spa-js/tree/v2.13.0) (2026-01-30)
+[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.12.0...v2.13.0)
+
+**Added**
+- feat: add Multi-Factor Authentication (MFA) API support (#1482) [\#1512](https://github.com/auth0/auth0-spa-js/pull/1512) ([gyaneshgouraw-okta](https://github.com/gyaneshgouraw-okta))
+
+**Fixed**
+- fix: exclude env from /authorize to prevent query param truncation [\#1516](https://github.com/auth0/auth0-spa-js/pull/1516) ([yogeshchoudhary147](https://github.com/yogeshchoudhary147))
+
 ## [v2.12.0](https://github.com/auth0/auth0-spa-js/tree/v2.12.0) (2026-01-27)
 [Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.11.3...v2.12.0)
 
