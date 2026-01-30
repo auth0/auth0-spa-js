@@ -1541,6 +1541,7 @@ export class Auth0Client {
     options: CustomTokenExchangeOptions
   ): Promise<TokenEndpointResponse> {
     return this._requestToken({
+      ...options,
       grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
       subject_token: options.subject_token,
       subject_token_type: options.subject_token_type,

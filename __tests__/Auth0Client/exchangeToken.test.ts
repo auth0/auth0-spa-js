@@ -549,5 +549,60 @@ describe('Auth0Client', () => {
         organization: 'org_override' // Should use provided, not global
       });
     });
+
+    it('includes custom parameters in the request', async () => {
+      const auth0 = await localSetup({
+        clientId: 'test-client-id',
+        domain: 'test.auth0.com',
+        authorizationParams: {
+          audience: 'https://default-api.com',
+          scope: 'openid profile'
+        }
+      });
+
+      let capturedRequestOptions: any;
+      auth0['_requestToken'] = async function (requestOptions: any) {
+        capturedRequestOptions = requestOptions;
+        return {
+          decodedToken: {
+            encoded: {
+              header: 'fake_header',
+              payload: 'fake_payload',
+              signature: 'fake_signature'
+            },
+            header: {},
+            claims: { __raw: 'fake_raw' },
+            user: {}
+          },
+          id_token: 'fake_id_token',
+          access_token: 'fake_access_token',
+          token_type: 'Bearer',
+          expires_in: 3600,
+          scope: requestOptions.scope
+        };
+      };
+
+      const cteOptions: CustomTokenExchangeOptions = {
+        subject_token: 'external_token_value',
+        subject_token_type: 'urn:acme:legacy-system-token',
+        scope: 'openid profile email',
+        audience: 'https://api.custom.com',
+        custom_parameter: 'session_context',
+        device_fingerprint: 'a3d8f7xyz123'
+      };
+
+      await auth0.exchangeToken(cteOptions);
+
+      // Custom parameters should be included in the request options
+      expect(capturedRequestOptions).toEqual({
+        grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
+        subject_token: 'external_token_value',
+        subject_token_type: 'urn:acme:legacy-system-token',
+        scope: 'openid profile email',
+        audience: 'https://api.custom.com',
+        custom_parameter: 'session_context',
+        device_fingerprint: 'a3d8f7xyz123'
+      });
+    });
   });
 });
