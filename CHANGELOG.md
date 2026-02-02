@@ -1,5 +1,11 @@
 # Change Log
 
+## [v2.13.1](https://github.com/auth0/auth0-spa-js/tree/v2.13.1) (2026-02-02)
+[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.13.0...v2.13.1)
+
+**Fixed**
+- fix: pass custom parameters to token exchange [\#1519](https://github.com/auth0/auth0-spa-js/pull/1519) ([popaulina](https://github.com/popaulina))
+
 ## [v2.13.0](https://github.com/auth0/auth0-spa-js/tree/v2.13.0) (2026-01-30)
 [Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.12.0...v2.13.0)
 
