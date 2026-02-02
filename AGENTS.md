@@ -1,7 +1,3 @@
-# CLAUDE.md
-
-This file provides guidance to Agents when working with code in this repository.
-
 ## Project Overview
 
 Auth0 SDK for Single Page Applications using Authorization Code Grant Flow with PKCE. This is a TypeScript library that provides authentication functionality for browser-based applications.
