@@ -47,7 +47,8 @@ import { releaseLockSpy } from '../../__mocks__/browser-tabs-lock';
 import {
   DEFAULT_AUDIENCE,
   DEFAULT_AUTH0_CLIENT,
-  INVALID_REFRESH_TOKEN_ERROR_MESSAGE
+  INVALID_REFRESH_TOKEN_ERROR_MESSAGE,
+  USER_BLOCKED_ERROR_MESSAGE
 } from '../../src/constants';
 import { GenericError } from '../../src/errors';
 import {
@@ -2638,6 +2639,73 @@ describe('Auth0Client', () => {
       await auth0.getTokenSilently({ cacheMode: 'off' });
 
       expect(utils['runIframe']).toHaveBeenCalled();
+    });
+
+    it('when using Refresh Tokens with fallback and user is blocked, should fallback to an iframe', async () => {
+      const auth0 = setup({
+        useRefreshTokens: true,
+        useRefreshTokensFallback: true
+      });
+
+      await loginWithRedirect(auth0);
+      mockFetch.mockReset();
+      mockFetch.mockImplementation(() =>
+        Promise.resolve({
+          ok: true,
+          json: () => ({
+            id_token: TEST_ID_TOKEN,
+            refresh_token: TEST_REFRESH_TOKEN,
+            access_token: TEST_ACCESS_TOKEN,
+            expires_in: 86400
+          }),
+          headers: new Headers()
+        })
+      );
+      // First request fails with user blocked error
+      mockFetch.mockImplementationOnce(() =>
+        Promise.resolve({
+          ok: false,
+          json: () => ({
+            error: 'invalid_grant',
+            error_description: USER_BLOCKED_ERROR_MESSAGE
+          }),
+          headers: new Headers()
+        })
+      );
+
+      jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
+        code: TEST_CODE,
+        state: TEST_STATE
+      });
+
+      await auth0.getTokenSilently({ cacheMode: 'off' });
+
+      expect(utils['runIframe']).toHaveBeenCalled();
+    });
+
+    it('when using Refresh Tokens without fallback and user is blocked, should throw error', async () => {
+      const auth0 = setup({
+        useRefreshTokens: true,
+        useRefreshTokensFallback: false
+      });
+
+      await loginWithRedirect(auth0);
+      mockFetch.mockReset();
+
+      mockFetch.mockImplementationOnce(() =>
+        Promise.resolve({
+          ok: false,
+          json: () => ({
+            error: 'invalid_grant',
+            error_description: USER_BLOCKED_ERROR_MESSAGE
+          }),
+          headers: new Headers()
+        })
+      );
+
+      await expect(
+        auth0.getTokenSilently({ cacheMode: 'off' })
+      ).rejects.toThrow(USER_BLOCKED_ERROR_MESSAGE);
     });
 
     it('when using Refresh Tokens and fallback fails, ensure the user is logged out', async () => {

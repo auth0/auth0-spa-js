@@ -61,6 +61,7 @@ import {
   DEFAULT_SESSION_CHECK_EXPIRY_DAYS,
   DEFAULT_AUTH0_CLIENT,
   INVALID_REFRESH_TOKEN_ERROR_MESSAGE,
+  USER_BLOCKED_ERROR_MESSAGE,
   DEFAULT_NOW_PROVIDER,
   DEFAULT_FETCH_TIMEOUT_MS,
   DEFAULT_AUDIENCE
@@ -1304,7 +1305,10 @@ export class Auth0Client {
           // A refresh token was found, but is it no longer valid
           // and useRefreshTokensFallback is explicitly enabled. Fallback to an iframe.
           (e.message &&
-            e.message.indexOf(INVALID_REFRESH_TOKEN_ERROR_MESSAGE) > -1)) &&
+            e.message.indexOf(INVALID_REFRESH_TOKEN_ERROR_MESSAGE) > -1) ||
+          // User is blocked, fallback to iframe to properly detect and logout
+          (e.message &&
+            e.message.indexOf(USER_BLOCKED_ERROR_MESSAGE) > -1)) &&
         this.options.useRefreshTokensFallback
       ) {
         return await this._getTokenFromIFrame(options);
