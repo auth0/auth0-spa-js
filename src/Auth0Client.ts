@@ -1298,21 +1298,25 @@ export class Auth0Client {
         audience: options.authorizationParams.audience || DEFAULT_AUDIENCE
       };
     } catch (e) {
-      if (
-        // The web worker didn't have a refresh token in memory so
-        // fallback to an iframe.
-        (e.message.indexOf(MISSING_REFRESH_TOKEN_ERROR_MESSAGE) > -1 ||
-          // A refresh token was found, but is it no longer valid
-          // and useRefreshTokensFallback is explicitly enabled. Fallback to an iframe.
-          (e.message &&
-            e.message.indexOf(INVALID_REFRESH_TOKEN_ERROR_MESSAGE) > -1) ||
-          // User is blocked, fallback to iframe to properly detect and logout
-          (e.message &&
-            e.message.indexOf(USER_BLOCKED_ERROR_MESSAGE) > -1)) &&
-        this.options.useRefreshTokensFallback
-      ) {
-        return await this._getTokenFromIFrame(options);
+      if (e.message) {
+        // Blocked users should be logged out immediately. No point attempting
+        // iframe fallback as the authorization server will reject the request.
+        if (e.message.includes(USER_BLOCKED_ERROR_MESSAGE)) {
+          await this.logout({ openUrl: false });
+          throw e;
+        }
+
+        // For missing or invalid refresh tokens, attempt iframe fallback if configured.
+        // The iframe may succeed if the user still has a valid session.
+        if (
+          (e.message.includes(MISSING_REFRESH_TOKEN_ERROR_MESSAGE) ||
+            e.message.includes(INVALID_REFRESH_TOKEN_ERROR_MESSAGE)) &&
+          this.options.useRefreshTokensFallback
+        ) {
+          return await this._getTokenFromIFrame(options);
+        }
       }
+
       if (e instanceof MfaRequiredError) {
         this.mfa.setMFAAuthDetails(
           e.mfa_token,

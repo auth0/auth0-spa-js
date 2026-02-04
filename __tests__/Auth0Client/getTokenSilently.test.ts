@@ -2641,7 +2641,7 @@ describe('Auth0Client', () => {
       expect(utils['runIframe']).toHaveBeenCalled();
     });
 
-    it('when using Refresh Tokens with fallback and user is blocked, should fallback to an iframe', async () => {
+    it('when using Refresh Tokens with fallback and user is blocked, should logout directly', async () => {
       const auth0 = setup({
         useRefreshTokens: true,
         useRefreshTokensFallback: true
@@ -2649,18 +2649,7 @@ describe('Auth0Client', () => {
 
       await loginWithRedirect(auth0);
       mockFetch.mockReset();
-      mockFetch.mockImplementation(() =>
-        Promise.resolve({
-          ok: true,
-          json: () => ({
-            id_token: TEST_ID_TOKEN,
-            refresh_token: TEST_REFRESH_TOKEN,
-            access_token: TEST_ACCESS_TOKEN,
-            expires_in: 86400
-          }),
-          headers: new Headers()
-        })
-      );
+
       // First request fails with user blocked error
       mockFetch.mockImplementationOnce(() =>
         Promise.resolve({
@@ -2673,17 +2662,16 @@ describe('Auth0Client', () => {
         })
       );
 
-      jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
-        code: TEST_CODE,
-        state: TEST_STATE
-      });
+      jest.spyOn(auth0, 'logout');
 
-      await auth0.getTokenSilently({ cacheMode: 'off' });
+      await expect(
+        auth0.getTokenSilently({ cacheMode: 'off' })
+      ).rejects.toThrow(USER_BLOCKED_ERROR_MESSAGE);
 
-      expect(utils['runIframe']).toHaveBeenCalled();
+      expect(auth0.logout).toHaveBeenCalledWith({ openUrl: false });
     });
 
-    it('when using Refresh Tokens without fallback and user is blocked, should throw error', async () => {
+    it('when using Refresh Tokens without fallback and user is blocked, should logout and throw error', async () => {
       const auth0 = setup({
         useRefreshTokens: true,
         useRefreshTokensFallback: false
@@ -2703,9 +2691,13 @@ describe('Auth0Client', () => {
         })
       );
 
+      jest.spyOn(auth0, 'logout');
+
       await expect(
         auth0.getTokenSilently({ cacheMode: 'off' })
       ).rejects.toThrow(USER_BLOCKED_ERROR_MESSAGE);
+
+      expect(auth0.logout).toHaveBeenCalledWith({ openUrl: false });
     });
 
     it('when using Refresh Tokens and fallback fails, ensure the user is logged out', async () => {
