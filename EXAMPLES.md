@@ -303,11 +303,11 @@ const auth0 = await createAuth0Client({
   }
 });
 
-// Exchange external token for Auth0 tokens
+// Exchange external token for Auth0 tokens and log user in
 async function performTokenExchange() {
   try {
     // Option 1: Use client's default audience
-    const tokenResponse = await auth0.exchangeToken({
+    const tokenResponse = await auth0.loginWithCustomTokenExchange({
       subject_token: 'EXTERNAL_PROVIDER_TOKEN',
       subject_token_type: 'urn:example:external-token',
       scope: 'openid profile email'
@@ -315,7 +315,7 @@ async function performTokenExchange() {
     });
 
     // Option 2: Specify custom audience for this token exchange
-    const customTokenResponse = await auth0.exchangeToken({
+    const customTokenResponse = await auth0.loginWithCustomTokenExchange({
       subject_token: 'EXTERNAL_PROVIDER_TOKEN',
       subject_token_type: 'urn:example:external-token',
       audience: 'https://different-api.example.com',
@@ -323,7 +323,7 @@ async function performTokenExchange() {
     });
 
     // Option 3: Exchange token within an organization context
-    const orgTokenResponse = await auth0.exchangeToken({
+    const orgTokenResponse = await auth0.loginWithCustomTokenExchange({
       subject_token: 'EXTERNAL_PROVIDER_TOKEN',
       subject_token_type: 'urn:example:external-token',
       organization: '<MY_ORG_ID_OR_NAME>', // Organization ID or name
@@ -331,10 +331,16 @@ async function performTokenExchange() {
     });
 
     console.log('Received tokens:', tokenResponse);
+
+    // User is now logged in - you can access user info
+    const user = await auth0.getUser();
+    console.log('Logged in user:', user);
   } catch (error) {
     console.error('Exchange failed:', error);
   }
 }
+
+// Note: exchangeToken() is deprecated - use loginWithCustomTokenExchange() instead
 ```
 
 ### Required Auth0 Configuration
@@ -367,7 +373,7 @@ urn:auth0:oauth2:grant-type:token-exchange
 ```js
 async function safeTokenExchange() {
   try {
-    return await auth0.exchangeToken(/* ... */);
+    return await auth0.loginWithCustomTokenExchange(/* ... */);
   } catch (error) {
     if (error.error === 'invalid_token') {
       // Handle token validation errors
