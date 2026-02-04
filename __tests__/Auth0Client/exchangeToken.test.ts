@@ -605,4 +605,184 @@ describe('Auth0Client', () => {
       });
     });
   });
+
+  describe('loginWithCustomTokenExchange()', () => {
+    const localSetup = async (clientOptions?: Partial<Auth0ClientOptions>) => {
+      const auth0 = setup(clientOptions);
+
+      setupMessageEventLister(mockWindow, { state: TEST_STATE });
+
+      mockFetch.mockResolvedValueOnce(
+        fetchResponse(true, {
+          id_token: TEST_ID_TOKEN,
+          refresh_token: TEST_REFRESH_TOKEN,
+          access_token: TEST_ACCESS_TOKEN,
+          expires_in: 86400
+        })
+      );
+
+      auth0['_requestToken'] = async function (requestOptions: any) {
+        return {
+          decodedToken: {
+            encoded: {
+              header: 'fake_header',
+              payload: 'fake_payload',
+              signature: 'fake_signature'
+            },
+            header: {},
+            claims: { __raw: 'fake_raw' },
+            user: {}
+          },
+          id_token: 'fake_id_token',
+          access_token: 'fake_access_token',
+          token_type: 'Bearer',
+          expires_in: 3600,
+          scope: requestOptions.scope
+        };
+      };
+
+      return auth0;
+    };
+
+    it('exchanges token and logs user in', async () => {
+      const auth0 = await localSetup();
+      const cteOptions: CustomTokenExchangeOptions = {
+        subject_token: 'external_token_value',
+        subject_token_type: 'urn:acme:legacy-system-token',
+        scope: 'openid profile email',
+        audience: 'https://api.test.com'
+      };
+
+      const result = await auth0.loginWithCustomTokenExchange(cteOptions);
+
+      expect(result.id_token).toEqual('fake_id_token');
+      expect(result.access_token).toEqual('fake_access_token');
+      expect(result.expires_in).toEqual(3600);
+      expect(typeof result.scope).toBe('string');
+    });
+
+    it('passes correct parameters to _requestToken', async () => {
+      const auth0 = await localSetup({
+        clientId: 'test-client-id',
+        domain: 'test.auth0.com',
+        authorizationParams: {
+          audience: 'https://default-api.com',
+          scope: 'openid profile'
+        }
+      });
+
+      let capturedRequestOptions: any;
+      auth0['_requestToken'] = async function (requestOptions: any) {
+        capturedRequestOptions = requestOptions;
+        return {
+          decodedToken: {
+            encoded: {
+              header: 'fake_header',
+              payload: 'fake_payload',
+              signature: 'fake_signature'
+            },
+            header: {},
+            claims: { __raw: 'fake_raw' },
+            user: {}
+          },
+          id_token: 'fake_id_token',
+          access_token: 'fake_access_token',
+          token_type: 'Bearer',
+          expires_in: 3600,
+          scope: requestOptions.scope
+        };
+      };
+
+      const cteOptions: CustomTokenExchangeOptions = {
+        subject_token: 'external_token_value',
+        subject_token_type: 'urn:acme:legacy-system-token',
+        scope: 'openid profile email read:records',
+        audience: 'https://api.custom.com'
+      };
+
+      await auth0.loginWithCustomTokenExchange(cteOptions);
+
+      expect(capturedRequestOptions).toEqual({
+        grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
+        subject_token: 'external_token_value',
+        subject_token_type: 'urn:acme:legacy-system-token',
+        scope: 'openid profile email read:records',
+        audience: 'https://api.custom.com'
+      });
+    });
+
+    it('works with organization parameter', async () => {
+      const auth0 = await localSetup();
+      let capturedRequestOptions: any;
+
+      auth0['_requestToken'] = async function (requestOptions: any) {
+        capturedRequestOptions = requestOptions;
+        return {
+          decodedToken: {
+            encoded: {
+              header: 'fake_header',
+              payload: 'fake_payload',
+              signature: 'fake_signature'
+            },
+            header: {},
+            claims: { __raw: 'fake_raw' },
+            user: {}
+          },
+          id_token: 'fake_id_token',
+          access_token: 'fake_access_token',
+          token_type: 'Bearer',
+          expires_in: 3600,
+          scope: requestOptions.scope
+        };
+      };
+
+      const cteOptions: CustomTokenExchangeOptions = {
+        subject_token: 'external_token_value',
+        subject_token_type: 'urn:acme:legacy-system-token',
+        scope: 'openid profile email',
+        audience: 'https://api.test.com',
+        organization: 'org_12345'
+      };
+
+      await auth0.loginWithCustomTokenExchange(cteOptions);
+
+      expect(capturedRequestOptions.organization).toEqual('org_12345');
+    });
+  });
+
+  describe('exchangeToken() deprecation', () => {
+    it('exchangeToken() calls loginWithCustomTokenExchange() internally', async () => {
+      const auth0 = await setup();
+      const spy = jest.spyOn(auth0, 'loginWithCustomTokenExchange');
+
+      auth0['_requestToken'] = async function () {
+        return {
+          decodedToken: {
+            encoded: {
+              header: 'fake_header',
+              payload: 'fake_payload',
+              signature: 'fake_signature'
+            },
+            header: {},
+            claims: { __raw: 'fake_raw' },
+            user: {}
+          },
+          id_token: 'fake_id_token',
+          access_token: 'fake_access_token',
+          token_type: 'Bearer',
+          expires_in: 3600,
+          scope: 'openid profile'
+        };
+      };
+
+      const options: CustomTokenExchangeOptions = {
+        subject_token: 'external_token',
+        subject_token_type: 'urn:acme:legacy-system-token'
+      };
+
+      await auth0.exchangeToken(options);
+
+      expect(spy).toHaveBeenCalledWith(options);
+    });
+  });
 });
