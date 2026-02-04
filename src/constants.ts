@@ -44,6 +44,11 @@ export const INVALID_REFRESH_TOKEN_ERROR_MESSAGE = 'invalid refresh token';
 /**
  * @ignore
  */
+export const USER_BLOCKED_ERROR_MESSAGE = 'user is blocked';
+
+/**
+ * @ignore
+ */
 export const DEFAULT_SCOPE = 'openid profile email';
 
 /**
