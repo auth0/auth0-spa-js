@@ -2477,7 +2477,9 @@ describe('Auth0Client', () => {
       expect(utils.runIframe).toHaveBeenCalledWith(
         expect.any(String),
         `https://${TEST_DOMAIN}`,
-        1
+        1,
+        'web_message',
+        expect.any(String)
       );
     });
 
@@ -2499,7 +2501,9 @@ describe('Auth0Client', () => {
       expect(utils.runIframe).toHaveBeenCalledWith(
         expect.stringContaining(TEST_ORG_ID),
         `https://${TEST_DOMAIN}`,
-        1
+        1,
+        'web_message',
+        expect.any(String)
       );
     });
 
@@ -2522,7 +2526,9 @@ describe('Auth0Client', () => {
       expect(utils.runIframe).toHaveBeenCalledWith(
         expect.stringContaining(TEST_ORG_ID),
         `https://${TEST_DOMAIN}`,
-        1
+        1,
+        'web_message',
+        expect.any(String)
       );
     });
 
@@ -2552,7 +2558,9 @@ describe('Auth0Client', () => {
       expect(utils.runIframe).toHaveBeenCalledWith(
         expect.stringContaining('another_test_org'),
         `https://${TEST_DOMAIN}`,
-        1
+        1,
+        'web_message',
+        expect.any(String)
       );
     });
 
@@ -2571,7 +2579,9 @@ describe('Auth0Client', () => {
       expect(utils.runIframe).toHaveBeenCalledWith(
         expect.any(String),
         `https://${TEST_DOMAIN}`,
-        1
+        1,
+        'web_message',
+        expect.any(String)
       );
     });
 
@@ -2590,7 +2600,9 @@ describe('Auth0Client', () => {
       expect(utils.runIframe).toHaveBeenCalledWith(
         expect.any(String),
         `https://${TEST_DOMAIN}`,
-        1
+        1,
+        'web_message',
+        expect.any(String)
       );
 
       expect((http.switchFetch as jest.Mock).mock.calls[0][6]).toEqual(20000);
@@ -3239,6 +3251,76 @@ describe('Auth0Client', () => {
       // Should acquire iframe lock when falling back to iframe
       expect(acquireLockSpy).toHaveBeenCalledWith(iframeLockKey, 5000);
       expect(releaseLockSpy).toHaveBeenCalledWith(iframeLockKey);
+    });
+  });
+
+  describe('silentAuthResponseMode configuration', () => {
+    it('should use web_message as default silentAuthResponseMode', async () => {
+      const auth0 = setup();
+
+      jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
+        code: TEST_CODE,
+        state: TEST_STATE
+      });
+
+      mockFetch.mockResolvedValueOnce(
+        fetchResponse(true, {
+          id_token: TEST_ID_TOKEN,
+          refresh_token: TEST_REFRESH_TOKEN,
+          access_token: TEST_ACCESS_TOKEN,
+          expires_in: 86400
+        })
+      );
+
+      await getTokenSilently(auth0, { cacheMode: 'off' });
+
+      expect(utils.runIframe).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.any(String),
+        undefined,
+        'web_message',
+        expect.any(String)
+      );
+
+      const [[url]] = (<jest.Mock>utils.runIframe).mock.calls;
+      assertUrlEquals(url, TEST_DOMAIN, '/authorize', {
+        response_mode: 'web_message'
+      }, false);
+    });
+
+    it('should use configured silentAuthResponseMode', async () => {
+      const auth0 = setup({
+        silentAuthResponseMode: 'query'
+      });
+
+      jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
+        code: TEST_CODE,
+        state: TEST_STATE
+      });
+
+      mockFetch.mockResolvedValueOnce(
+        fetchResponse(true, {
+          id_token: TEST_ID_TOKEN,
+          refresh_token: TEST_REFRESH_TOKEN,
+          access_token: TEST_ACCESS_TOKEN,
+          expires_in: 86400
+        })
+      );
+
+      await getTokenSilently(auth0, { cacheMode: 'off' });
+
+      expect(utils.runIframe).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.any(String),
+        undefined,
+        'query',
+        expect.any(String)
+      );
+
+      const [[url]] = (<jest.Mock>utils.runIframe).mock.calls;
+      assertUrlEquals(url, TEST_DOMAIN, '/authorize', {
+        response_mode: 'query'
+      }, false);
     });
   });
 });
