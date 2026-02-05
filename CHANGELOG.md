@@ -1,5 +1,14 @@
 # Change Log
 
+## [v2.14.0](https://github.com/auth0/auth0-spa-js/tree/v2.14.0) (2026-02-05)
+[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.13.1...v2.14.0)
+
+**Added**
+- feat: add loginWithCustomTokenExchange and deprecate exchangeToken [\#1526](https://github.com/auth0/auth0-spa-js/pull/1526) ([yogeshchoudhary147](https://github.com/yogeshchoudhary147))
+
+**Fixed**
+- fix: logout blocked users directly when using refresh tokens [\#1525](https://github.com/auth0/auth0-spa-js/pull/1525) ([yogeshchoudhary147](https://github.com/yogeshchoudhary147))
+
 ## [v2.13.1](https://github.com/auth0/auth0-spa-js/tree/v2.13.1) (2026-02-02)
 [Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.13.0...v2.13.1)
 
