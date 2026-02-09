@@ -1,5 +1,4 @@
 import { expect } from '@jest/globals';
-import * as esCookie from 'es-cookie';
 import { MessageChannel } from 'worker_threads';
 import * as http from '../../src/http';
 import { verify } from '../../src/jwt';
@@ -17,18 +16,14 @@ import {
 
 import {
   TEST_ACCESS_TOKEN,
-  TEST_CLIENT_ID,
   TEST_CODE_CHALLENGE,
-  TEST_DOMAIN,
   TEST_ID_TOKEN,
-  TEST_REDIRECT_URI,
   TEST_REFRESH_TOKEN,
   TEST_STATE,
   TEST_TOKEN_TYPE
 } from '../constants';
 
-import { DEFAULT_AUDIENCE } from '../../src/constants';
-import { GenericError, MfaRequiredError } from '../../src/errors';
+import { MfaRequiredError } from '../../src/errors';
 
 jest.mock('es-cookie');
 jest.mock('../../src/jwt');
