@@ -112,9 +112,7 @@ export class LegacyLockManager implements ILockManager {
 function isWebLocksSupported(): boolean {
   return (
     typeof navigator !== 'undefined' &&
-    'locks' in navigator &&
-    navigator.locks != null &&
-    typeof navigator.locks.request === 'function'
+    typeof navigator.locks?.request === 'function'
   );
 }
 
