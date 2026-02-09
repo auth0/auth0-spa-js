@@ -331,13 +331,13 @@ describe('lock', () => {
 
   describe('resetLockManager', () => {
     it('should reset singleton so next call creates new instance', () => {
-      const manager1 = getLockManager();
+      getLockManager();
       resetLockManager();
-      const manager2 = getLockManager();
+      const manager = getLockManager();
       
       // In the mocked environment, they might be the same mock,
       // but resetLockManager should have been called
-      expect(manager2).toBeDefined();
+      expect(manager).toBeDefined();
     });
   });
 });
