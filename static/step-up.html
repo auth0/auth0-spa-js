@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Auth0 - Step-Up Authentication</title>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
+        integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous" />
+    <script src="/auth0-spa-js.development.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+</head>
+
+<body class="bg-light">
+    <div id="app" class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <h2 class="card-title text-center mb-4">Step-Up Authentication</h2>
+                        <p class="text-center text-muted mb-4">
+                            Tests <code>interactiveErrorHandler: 'popup'</code> &mdash;
+                            on <code>mfa_required</code>, the SDK automatically opens a popup to complete MFA.
+                        </p>
+
+                        <!-- Configuration Form -->
+                        <form @submit.prevent="initClient" class="mb-3" v-if="!isAuthenticated">
+                            <div class="form-group">
+                                <label for="domain">Domain</label>
+                                <input id="domain" v-model="domain" required class="form-control" />
+                            </div>
+                            <div class="form-group">
+                                <label for="clientId">Client ID</label>
+                                <input id="clientId" v-model="clientId" required class="form-control" />
+                            </div>
+                            <div class="form-group">
+                                <label for="audience">Audience</label>
+                                <input id="audience" v-model="audience" class="form-control" />
+                                <small class="form-text text-muted">API identifier that requires step-up MFA</small>
+                            </div>
+                            <div class="form-group">
+                                <label for="scopes">Scopes</label>
+                                <input id="scopes" v-model="scopes" class="form-control" />
+                            </div>
+                            <button type="submit" class="btn btn-primary btn-block">Login with Auth0</button>
+                        </form>
+
+                        <!-- User Profile -->
+                        <div v-if="isAuthenticated && user" class="card bg-light mb-3">
+                            <div class="card-body d-flex align-items-center justify-content-between">
+                                <div class="d-flex align-items-center">
+                                    <img v-if="user.picture" :src="user.picture" class="rounded-circle mr-3" width="48"
+                                        height="48" />
+                                    <div>
+                                        <p class="mb-0"><strong>{{ user.name || user.email }}</strong></p>
+                                        <p class="mb-0 text-muted small">{{ user.email }}</p>
+                                    </div>
+                                </div>
+                                <button @click="logout" class="btn btn-outline-secondary btn-sm">Logout</button>
+                            </div>
+                        </div>
+
+                        <!-- Step-Up Action -->
+                        <div v-if="isAuthenticated" class="mb-3">
+                            <div class="row">
+                                <div class="col-md-6 mb-2">
+                                    <label for="stepUpAudience" class="small">Audience</label>
+                                    <input id="stepUpAudience" v-model="stepUpAudience" class="form-control" />
+                                </div>
+                                <div class="col-md-6 mb-2">
+                                    <label for="stepUpScope" class="small">Scope</label>
+                                    <input id="stepUpScope" v-model="stepUpScope" class="form-control" />
+                                </div>
+                            </div>
+                            <button @click="getTokenWithStepUp" class="btn btn-success btn-block" :disabled="loading">
+                                <span v-if="loading">
+                                    <span class="spinner-border spinner-border-sm" role="status"></span>
+                                    Requesting token...
+                                </span>
+                                <span v-else>Get Token Silently (triggers step-up if MFA required)</span>
+                            </button>
+                        </div>
+
+                        <!-- Success -->
+                        <div v-if="tokenResult" class="alert alert-success mt-3">
+                            <h6>Token received</h6>
+                            <p class="mb-1"><strong>Access Token:</strong></p>
+                            <code class="d-block bg-white p-2 border rounded text-dark"
+                                style="word-break: break-all;">{{ tokenResult.substring(0, 80) }}...</code>
+                        </div>
+
+                        <!-- Error -->
+                        <div v-if="error" class="alert alert-danger mt-3">
+                            <strong>Error:</strong> {{ error }}
+                        </div>
+
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        window.app = new Vue({
+            el: '#app',
+            data() {
+                var settings = JSON.parse(localStorage.getItem('step-up-settings') || '{}');
+                return {
+                    domain: settings.domain || '',
+                    clientId: settings.clientId || '',
+                    audience: settings.audience || '',
+                    scopes: settings.scopes || 'openid profile email',
+                    auth0: null,
+                    isAuthenticated: false,
+                    user: null,
+                    loading: false,
+                    tokenResult: null,
+                    error: '',
+                    stepUpAudience: 'api-1',
+                    stepUpScope: 'read'
+                };
+            },
+            methods: {
+                saveSettings() {
+                    localStorage.setItem('step-up-settings', JSON.stringify({
+                        domain: this.domain,
+                        clientId: this.clientId,
+                        audience: this.audience,
+                        scopes: this.scopes
+                    }));
+                },
+
+                createClient() {
+                    return new auth0.Auth0Client({
+                        domain: this.domain,
+                        clientId: this.clientId,
+                        useRefreshTokens: true,
+                        cacheLocation: 'localstorage',
+                        interactiveErrorHandler: 'popup',
+                        useMrrt: true,
+                        authorizationParams: {
+                            redirect_uri: window.location.origin + '/step-up.html',
+                            ...(this.audience && { audience: this.audience }),
+                            ...(this.scopes && { scope: this.scopes })
+                        }
+                    });
+                },
+
+                async initClient() {
+                    this.saveSettings();
+                    this.error = '';
+
+                    try {
+                        this.auth0 = this.createClient();
+                        this.isAuthenticated = await this.auth0.isAuthenticated();
+
+                        if (this.isAuthenticated) {
+                            this.user = await this.auth0.getUser();
+                        } else {
+                            await this.auth0.loginWithRedirect();
+                        }
+                    } catch (e) {
+                        this.error = e.message || e;
+                    }
+                },
+
+                async getTokenWithStepUp() {
+                    this.error = '';
+                    this.tokenResult = null;
+                    this.loading = true;
+
+                    try {
+                        var token = await this.auth0.getTokenSilently({
+                            cacheMode: 'off',
+                            authorizationParams: {
+                                ...(this.stepUpAudience && { audience: this.stepUpAudience }),
+                                ...(this.stepUpScope && { scope: this.stepUpScope })
+                            }
+                        });
+                        this.tokenResult = token;
+                    } catch (e) {
+                        this.error = e.message || e.error_description || e;
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+
+                async logout() {
+                    if (this.auth0) {
+                        await this.auth0.logout({
+                            logoutParams: {
+                                returnTo: window.location.origin + '/step-up.html'
+                            }
+                        });
+                    }
+                },
+
+                async handleRedirectCallback() {
+                    var params = new URLSearchParams(window.location.search);
+                    if (params.has('code') || params.has('state')) {
+                        try {
+                            this.auth0 = this.createClient();
+                            await this.auth0.handleRedirectCallback();
+                            window.history.replaceState({}, document.title, window.location.pathname);
+
+                            this.isAuthenticated = await this.auth0.isAuthenticated();
+                            if (this.isAuthenticated) {
+                                this.user = await this.auth0.getUser();
+                            }
+                        } catch (e) {
+                            this.error = e.message || e;
+                        }
+                    }
+                }
+            },
+            async mounted() {
+                var settings = JSON.parse(localStorage.getItem('step-up-settings') || '{}');
+                if (settings.domain) {
+                    await this.handleRedirectCallback();
+                    if (!this.auth0) {
+                        this.auth0 = this.createClient();
+                        this.isAuthenticated = await this.auth0.isAuthenticated();
+                        if (this.isAuthenticated) {
+                            this.user = await this.auth0.getUser();
+                        }
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+
+</html>

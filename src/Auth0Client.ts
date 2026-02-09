@@ -893,6 +893,7 @@ export class Auth0Client {
       if (this.activeLockKeys.size === 1) {
         window.addEventListener('pagehide', this._releaseLockOnPageHide);
       }
+
       try {
         // Check the cache a second time, because it may have been populated
         // by a previous call while this call was waiting to acquire the lock.
@@ -908,35 +909,97 @@ export class Auth0Client {
           }
         }
 
-        const authResult = this.options.useRefreshTokens
-          ? await this._getTokenUsingRefreshToken(getTokenOptions)
-          : await this._getTokenFromIFrame(getTokenOptions);
+        try {
+          const authResult = this.options.useRefreshTokens
+            ? await this._getTokenUsingRefreshToken(getTokenOptions)
+            : await this._getTokenFromIFrame(getTokenOptions);
 
-        const {
-          id_token,
-          token_type,
-          access_token,
-          oauthTokenScope,
-          expires_in
-        } = authResult;
+          const {
+            id_token,
+            token_type,
+            access_token,
+            oauthTokenScope,
+            expires_in
+          } = authResult;
 
-        return {
-          id_token,
-          token_type,
-          access_token,
-          ...(oauthTokenScope ? { scope: oauthTokenScope } : null),
-          expires_in
-        };
+          return {
+            id_token,
+            token_type,
+            access_token,
+            ...(oauthTokenScope ? { scope: oauthTokenScope } : null),
+            expires_in
+          };
+        } catch (error) {
+          if (this._isInteractiveError(error) && this.options.interactiveErrorHandler) {
+            // Release lock before interactive flow (popup may take minutes).
+            // The finally block will call releaseLock again, but that's a safe no-op.
+            await lock.releaseLock(lockKey);
+            this.activeLockKeys.delete(lockKey);
+            if (this.activeLockKeys.size === 0) {
+              window.removeEventListener('pagehide', this._releaseLockOnPageHide);
+            }
+
+            return await this._handleInteractiveErrorWithPopup(getTokenOptions);
+          }
+
+          throw error;
+        }
       } finally {
         await lock.releaseLock(lockKey);
         this.activeLockKeys.delete(lockKey);
-        // If we have no more locks, we can remove the event listener to clean up
         if (this.activeLockKeys.size === 0) {
           window.removeEventListener('pagehide', this._releaseLockOnPageHide);
         }
       }
     } else {
       throw new TimeoutError();
+    }
+  }
+
+  /**
+   * Checks if an error should be handled by the interactive error handler.
+   * Currently only handles mfa_required; extensible for future error types.
+   */
+  private _isInteractiveError(error: unknown): error is MfaRequiredError {
+    return error instanceof MfaRequiredError;
+  }
+
+  /**
+   * Handles MFA errors by opening a popup to complete authentication,
+   * then reads the resulting token from cache.
+   */
+  private async _handleInteractiveErrorWithPopup(
+    options: GetTokenSilentlyOptions & {
+      authorizationParams: AuthorizationParams & { scope: string };
+    }
+  ): Promise<GetTokenSilentlyVerboseResponse> {
+    try {
+      await this.loginWithPopup({
+        authorizationParams: options.authorizationParams
+      });
+
+      const entry = await this._getEntryFromCache({
+        scope: options.authorizationParams.scope,
+        audience:
+          options.authorizationParams.audience || DEFAULT_AUDIENCE,
+        clientId: this.options.clientId
+      });
+
+      if (!entry) {
+        throw new GenericError(
+          'interactive_handler_cache_miss',
+          'Token not found in cache after interactive authentication'
+        );
+      }
+
+      return entry;
+    } catch (error) {
+      // Expected errors (all GenericError subclasses):
+      // - PopupCancelledError: user closed the popup before completing login
+      // - PopupTimeoutError: popup did not complete within the allowed time
+      // - PopupOpenError: popup could not be opened (e.g. blocked by browser)
+      // - GenericError: authentication or cache miss errors
+      throw error;
     }
   }
 
