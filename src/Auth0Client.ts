@@ -1,5 +1,3 @@
-import Lock from 'browser-tabs-lock';
-
 import {
   createQueryParams,
   runPopup,
@@ -16,6 +14,8 @@ import {
   parseNumber,
   stripAuth0Client
 } from './utils';
+
+import { getLockManager, type ILockManager } from './lock';
 
 import { oauthToken } from './api';
 
@@ -132,16 +132,12 @@ type GetTokenSilentlyResult = TokenEndpointResponse & {
 };
 
 /**
- * @ignore
- */
-const lock = new Lock();
-
-/**
  * Auth0 SDK for Single Page Applications using [Authorization Code Grant Flow with PKCE](https://auth0.com/docs/api-auth/tutorials/authorization-code-grant-pkce).
  */
 export class Auth0Client {
   private readonly transactionManager: TransactionManager;
   private readonly cacheManager: CacheManager;
+  private readonly lockManager: ILockManager;
   private readonly domainUrl: string;
   private readonly tokenIssuer: string;
   private readonly scope: Record<string, string>;
@@ -170,7 +166,6 @@ export class Auth0Client {
   public readonly mfa: MfaApiClient;
 
   private worker?: Worker;
-  private readonly activeLockKeys: Set<string> = new Set();
   private readonly authJsClient: Auth0AuthJsClient;
 
   private readonly defaultOptions: Partial<Auth0ClientOptions> = {
@@ -192,6 +187,8 @@ export class Auth0Client {
     };
 
     typeof window !== 'undefined' && validateCrypto();
+
+    this.lockManager = getLockManager();
 
     if (options.cache && options.cacheLocation) {
       console.warn(
@@ -886,58 +883,37 @@ export class Auth0Client {
       getTokenOptions.authorizationParams.audience || 'default'
     );
 
-    if (await retryPromise(() => lock.acquireLock(lockKey, 5000), 10)) {
-      this.activeLockKeys.add(lockKey);
+    return await this.lockManager.acquireLock(lockKey, 5000, async () => {
+      // Check the cache a second time, because it may have been populated
+      // by a previous call while this call was waiting to acquire the lock.
+      if (cacheMode !== 'off') {
+        const entry = await this._getEntryFromCache({
+          scope: getTokenOptions.authorizationParams.scope,
+          audience:
+            getTokenOptions.authorizationParams.audience || DEFAULT_AUDIENCE,
+          clientId: this.options.clientId
+        });
 
-      // Add event listener only if this is the first active lock
-      if (this.activeLockKeys.size === 1) {
-        window.addEventListener('pagehide', this._releaseLockOnPageHide);
-      }
-      try {
-        // Check the cache a second time, because it may have been populated
-        // by a previous call while this call was waiting to acquire the lock.
-        if (cacheMode !== 'off') {
-          const entry = await this._getEntryFromCache({
-            scope: getTokenOptions.authorizationParams.scope,
-            audience: getTokenOptions.authorizationParams.audience || DEFAULT_AUDIENCE,
-            clientId: this.options.clientId
-          });
-
-          if (entry) {
-            return entry;
-          }
-        }
-
-        const authResult = this.options.useRefreshTokens
-          ? await this._getTokenUsingRefreshToken(getTokenOptions)
-          : await this._getTokenFromIFrame(getTokenOptions);
-
-        const {
-          id_token,
-          token_type,
-          access_token,
-          oauthTokenScope,
-          expires_in
-        } = authResult;
-
-        return {
-          id_token,
-          token_type,
-          access_token,
-          ...(oauthTokenScope ? { scope: oauthTokenScope } : null),
-          expires_in
-        };
-      } finally {
-        await lock.releaseLock(lockKey);
-        this.activeLockKeys.delete(lockKey);
-        // If we have no more locks, we can remove the event listener to clean up
-        if (this.activeLockKeys.size === 0) {
-          window.removeEventListener('pagehide', this._releaseLockOnPageHide);
+        if (entry) {
+          return entry;
         }
       }
-    } else {
-      throw new TimeoutError();
-    }
+
+      const authResult = this.options.useRefreshTokens
+        ? await this._getTokenUsingRefreshToken(getTokenOptions)
+        : await this._getTokenFromIFrame(getTokenOptions);
+
+      const { id_token, token_type, access_token, oauthTokenScope, expires_in } =
+        authResult;
+
+      return {
+        id_token,
+        token_type,
+        access_token,
+        ...(oauthTokenScope ? { scope: oauthTokenScope } : null),
+        expires_in
+      };
+    });
   }
 
   /**
@@ -1088,93 +1064,99 @@ export class Auth0Client {
     // relies on the same transaction context as a top-level `loginWithRedirect`.
     // To resolve that, we add a second-level locking that locks only the iframe calls in
     // the same way as was done before https://github.com/auth0/auth0-spa-js/pull/1408.
-    if (await retryPromise(() => lock.acquireLock(iframeLockKey, 5000), 10)) {
-      try {
-        const params: AuthorizationParams & { scope: string } = {
-          ...options.authorizationParams,
-          prompt: 'none'
-        };
-
-        const orgHint = this.cookieStorage.get<string>(this.orgHintCookieName);
-
-        if (orgHint && !params.organization) {
-          params.organization = orgHint;
-        }
-
-        const {
-          url,
-          state: stateIn,
-          nonce: nonceIn,
-          code_verifier,
-          redirect_uri,
-          scope,
-          audience
-        } = await this._prepareAuthorizeUrl(
-          params,
-          { response_mode: 'web_message' },
-          window.location.origin
-        );
-
-        // When a browser is running in a Cross-Origin Isolated context, using iframes is not possible.
-        // It doesn't throw an error but times out instead, so we should exit early and inform the user about the reason.
-        // https://developer.mozilla.org/en-US/docs/Web/API/crossOriginIsolated
-        if ((window as any).crossOriginIsolated) {
-          throw new GenericError(
-            'login_required',
-            'The application is running in a Cross-Origin Isolated context, silently retrieving a token without refresh token is not possible.'
-          );
-        }
-
-        const authorizeTimeout =
-          options.timeoutInSeconds || this.options.authorizeTimeoutInSeconds;
-
-        // Extract origin from domainUrl, fallback to domainUrl if URL parsing fails
-        let eventOrigin: string;
-        try {
-          eventOrigin = new URL(this.domainUrl).origin;
-        } catch {
-          eventOrigin = this.domainUrl;
-        }
-
-        const codeResult = await runIframe(url, eventOrigin, authorizeTimeout);
-
-        if (stateIn !== codeResult.state) {
-          throw new GenericError('state_mismatch', 'Invalid state');
-        }
-
-        const tokenResult = await this._requestToken(
-          {
+    try {
+      return await this.lockManager.acquireLock(
+        iframeLockKey,
+        5000,
+        async () => {
+          const params: AuthorizationParams & { scope: string } = {
             ...options.authorizationParams,
-            code_verifier,
-            code: codeResult.code as string,
-            grant_type: 'authorization_code',
-            redirect_uri,
-            timeout: options.authorizationParams.timeout || this.httpTimeoutMs
-          },
-          {
-            nonceIn,
-            organization: params.organization
-          }
-        );
+            prompt: 'none'
+          };
 
-        return {
-          ...tokenResult,
-          scope: scope,
-          oauthTokenScope: tokenResult.scope,
-          audience: audience
-        };
-      } catch (e) {
-        if (e.error === 'login_required') {
-          this.logout({
-            openUrl: false
-          });
+          const orgHint = this.cookieStorage.get<string>(
+            this.orgHintCookieName
+          );
+
+          if (orgHint && !params.organization) {
+            params.organization = orgHint;
+          }
+
+          const {
+            url,
+            state: stateIn,
+            nonce: nonceIn,
+            code_verifier,
+            redirect_uri,
+            scope,
+            audience
+          } = await this._prepareAuthorizeUrl(
+            params,
+            { response_mode: 'web_message' },
+            window.location.origin
+          );
+
+          // When a browser is running in a Cross-Origin Isolated context, using iframes is not possible.
+          // It doesn't throw an error but times out instead, so we should exit early and inform the user about the reason.
+          // https://developer.mozilla.org/en-US/docs/Web/API/crossOriginIsolated
+          if ((window as any).crossOriginIsolated) {
+            throw new GenericError(
+              'login_required',
+              'The application is running in a Cross-Origin Isolated context, silently retrieving a token without refresh token is not possible.'
+            );
+          }
+
+          const authorizeTimeout =
+            options.timeoutInSeconds || this.options.authorizeTimeoutInSeconds;
+
+          // Extract origin from domainUrl, fallback to domainUrl if URL parsing fails
+          let eventOrigin: string;
+          try {
+            eventOrigin = new URL(this.domainUrl).origin;
+          } catch {
+            eventOrigin = this.domainUrl;
+          }
+
+          const codeResult = await runIframe(
+            url,
+            eventOrigin,
+            authorizeTimeout
+          );
+
+          if (stateIn !== codeResult.state) {
+            throw new GenericError('state_mismatch', 'Invalid state');
+          }
+
+          const tokenResult = await this._requestToken(
+            {
+              ...options.authorizationParams,
+              code_verifier,
+              code: codeResult.code as string,
+              grant_type: 'authorization_code',
+              redirect_uri,
+              timeout: options.authorizationParams.timeout || this.httpTimeoutMs
+            },
+            {
+              nonceIn,
+              organization: params.organization
+            }
+          );
+
+          return {
+            ...tokenResult,
+            scope: scope,
+            oauthTokenScope: tokenResult.scope,
+            audience: audience
+          };
         }
-        throw e;
-      } finally {
-        await lock.releaseLock(iframeLockKey);
+      );
+    } catch (e) {
+      if (e.error === 'login_required') {
+        this.logout({
+          openUrl: false
+        });
       }
-    } else {
-      throw new TimeoutError();
+      throw e;
     }
   }
 
@@ -1412,23 +1394,6 @@ export class Auth0Client {
       );
     }
   }
-
-  /**
-   * Releases any locks acquired by the current page that are not released yet
-   *
-   * Get's called on the `pagehide` event.
-   * https://developer.mozilla.org/en-US/docs/Web/API/Window/pagehide_event
-   */
-  private _releaseLockOnPageHide = async () => {
-    // Release all active locks
-    const lockKeysToRelease = Array.from(this.activeLockKeys);
-    for (const lockKey of lockKeysToRelease) {
-      await lock.releaseLock(lockKey);
-    }
-    this.activeLockKeys.clear();
-
-    window.removeEventListener('pagehide', this._releaseLockOnPageHide);
-  };
 
   private async _requestToken(
     options:
