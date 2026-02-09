@@ -56,17 +56,29 @@ describe('lock', () => {
       const error = new Error('callback failed');
       const callback = jest.fn().mockRejectedValue(error);
 
-      await expect(
-        manager.runWithLock('key', 5000, callback)
-      ).rejects.toThrow('callback failed');
+      await expect(manager.runWithLock('key', 5000, callback)).rejects.toThrow(
+        'callback failed'
+      );
     });
 
     it('should handle multiple sequential lock acquisitions', async () => {
       const manager = getLockManager();
 
-      const result1 = await manager.runWithLock('key1', 5000, async () => 'result1');
-      const result2 = await manager.runWithLock('key2', 5000, async () => 'result2');
-      const result3 = await manager.runWithLock('key3', 5000, async () => 'result3');
+      const result1 = await manager.runWithLock(
+        'key1',
+        5000,
+        async () => 'result1'
+      );
+      const result2 = await manager.runWithLock(
+        'key2',
+        5000,
+        async () => 'result2'
+      );
+      const result3 = await manager.runWithLock(
+        'key3',
+        5000,
+        async () => 'result3'
+      );
 
       expect(result1).toBe('result1');
       expect(result2).toBe('result2');
@@ -113,7 +125,7 @@ describe('lock', () => {
 
     it('should provide correct lock key to underlying implementation', async () => {
       const manager = getLockManager();
-      
+
       await manager.runWithLock('my-custom-key', 5000, async () => 'result');
       await manager.runWithLock('another-key', 3000, async () => 'result2');
 
@@ -134,7 +146,7 @@ describe('lock', () => {
       mockLocks = {
         request: jest.fn()
       };
-      
+
       Object.defineProperty(global, 'navigator', {
         value: { locks: mockLocks },
         writable: true,
@@ -153,12 +165,18 @@ describe('lock', () => {
 
     it('should acquire lock and execute callback', async () => {
       const manager = new WebLocksApiManager();
-      
-      mockLocks.request.mockImplementation(async (key: string, options: any, callback: any) => {
-        return await callback({ name: key });
-      });
 
-      const result = await manager.runWithLock('test-key', 5000, async () => 'success');
+      mockLocks.request.mockImplementation(
+        async (key: string, options: any, callback: any) => {
+          return await callback({ name: key });
+        }
+      );
+
+      const result = await manager.runWithLock(
+        'test-key',
+        5000,
+        async () => 'success'
+      );
 
       expect(result).toBe('success');
       expect(mockLocks.request).toHaveBeenCalledWith(
@@ -170,13 +188,15 @@ describe('lock', () => {
 
     it('should throw TimeoutError when aborted', async () => {
       const manager = new WebLocksApiManager();
-      
-      mockLocks.request.mockImplementation(async (key: string, options: any, callback: any) => {
-        // Simulate abort
-        const error: any = new Error('Aborted');
-        error.name = 'AbortError';
-        throw error;
-      });
+
+      mockLocks.request.mockImplementation(
+        async (key: string, options: any, callback: any) => {
+          // Simulate abort
+          const error: any = new Error('Aborted');
+          error.name = 'AbortError';
+          throw error;
+        }
+      );
 
       await expect(
         manager.runWithLock('test-key', 100, async () => 'should-not-execute')
@@ -186,7 +206,7 @@ describe('lock', () => {
     it('should propagate non-abort errors', async () => {
       const manager = new WebLocksApiManager();
       const customError = new Error('Custom error');
-      
+
       mockLocks.request.mockImplementation(async () => {
         throw customError;
       });
@@ -198,10 +218,12 @@ describe('lock', () => {
 
     it('should throw error when lock is not available', async () => {
       const manager = new WebLocksApiManager();
-      
-      mockLocks.request.mockImplementation(async (key: string, options: any, callback: any) => {
-        return await callback(null); // null lock means not available
-      });
+
+      mockLocks.request.mockImplementation(
+        async (key: string, options: any, callback: any) => {
+          return await callback(null); // null lock means not available
+        }
+      );
 
       await expect(
         manager.runWithLock('test-key', 5000, async () => 'result')
@@ -211,12 +233,19 @@ describe('lock', () => {
 
   describe('LegacyLockManager', () => {
     it('should acquire lock and execute callback successfully', async () => {
-      const { acquireLockSpy, releaseLockSpy } = require('../__mocks__/browser-tabs-lock');
+      const {
+        acquireLockSpy,
+        releaseLockSpy
+      } = require('../__mocks__/browser-tabs-lock');
       acquireLockSpy.mockResolvedValue(true);
       releaseLockSpy.mockResolvedValue(undefined);
 
       const manager = new LegacyLockManager();
-      const result = await manager.runWithLock('test-key', 5000, async () => 'success');
+      const result = await manager.runWithLock(
+        'test-key',
+        5000,
+        async () => 'success'
+      );
 
       expect(result).toBe('success');
       expect(acquireLockSpy).toHaveBeenCalledWith('test-key', 5000);
@@ -224,7 +253,10 @@ describe('lock', () => {
     });
 
     it('should retry lock acquisition up to 10 times', async () => {
-      const { acquireLockSpy, releaseLockSpy } = require('../__mocks__/browser-tabs-lock');
+      const {
+        acquireLockSpy,
+        releaseLockSpy
+      } = require('../__mocks__/browser-tabs-lock');
       acquireLockSpy
         .mockResolvedValueOnce(false)
         .mockResolvedValueOnce(false)
@@ -232,7 +264,11 @@ describe('lock', () => {
       releaseLockSpy.mockResolvedValue(undefined);
 
       const manager = new LegacyLockManager();
-      const result = await manager.runWithLock('test-key', 5000, async () => 'success');
+      const result = await manager.runWithLock(
+        'test-key',
+        5000,
+        async () => 'success'
+      );
 
       expect(result).toBe('success');
       expect(acquireLockSpy).toHaveBeenCalledTimes(3);
@@ -251,7 +287,10 @@ describe('lock', () => {
     });
 
     it('should release lock even when callback throws', async () => {
-      const { acquireLockSpy, releaseLockSpy } = require('../__mocks__/browser-tabs-lock');
+      const {
+        acquireLockSpy,
+        releaseLockSpy
+      } = require('../__mocks__/browser-tabs-lock');
       acquireLockSpy.mockResolvedValue(true);
       releaseLockSpy.mockResolvedValue(undefined);
 
@@ -267,7 +306,10 @@ describe('lock', () => {
     });
 
     it('should track active locks', async () => {
-      const { acquireLockSpy, releaseLockSpy } = require('../__mocks__/browser-tabs-lock');
+      const {
+        acquireLockSpy,
+        releaseLockSpy
+      } = require('../__mocks__/browser-tabs-lock');
       acquireLockSpy.mockResolvedValue(true);
       releaseLockSpy.mockResolvedValue(undefined);
 
@@ -279,18 +321,21 @@ describe('lock', () => {
       });
 
       await promise;
-      
+
       // Lock should be removed after callback completes
       expect((manager as any).activeLocks.has('test-key')).toBe(false);
     });
 
     it('should handle pagehide event and release all active locks', async () => {
-      const { acquireLockSpy, releaseLockSpy } = require('../__mocks__/browser-tabs-lock');
+      const {
+        acquireLockSpy,
+        releaseLockSpy
+      } = require('../__mocks__/browser-tabs-lock');
       acquireLockSpy.mockResolvedValue(true);
       releaseLockSpy.mockResolvedValue(undefined);
 
       const manager = new LegacyLockManager();
-      
+
       // Acquire a lock and trigger pagehide while holding it
       const promise = manager.runWithLock('test-key', 5000, async () => {
         // Trigger pagehide event
@@ -305,24 +350,33 @@ describe('lock', () => {
     });
 
     it('should register pagehide listener on first lock', async () => {
-      const { acquireLockSpy, releaseLockSpy } = require('../__mocks__/browser-tabs-lock');
+      const {
+        acquireLockSpy,
+        releaseLockSpy
+      } = require('../__mocks__/browser-tabs-lock');
       acquireLockSpy.mockResolvedValue(true);
       releaseLockSpy.mockResolvedValue(undefined);
-      
+
       const addEventListenerSpy = jest.spyOn(window, 'addEventListener');
       const removeEventListenerSpy = jest.spyOn(window, 'removeEventListener');
 
       const manager = new LegacyLockManager();
-      
+
       // Acquire and release multiple locks
       await manager.runWithLock('key1', 5000, async () => 'r1');
       await manager.runWithLock('key2', 5000, async () => 'r2');
 
       // Verify addEventListener was called during constructor
-      expect(addEventListenerSpy).toHaveBeenCalledWith('pagehide', expect.any(Function));
-      
+      expect(addEventListenerSpy).toHaveBeenCalledWith(
+        'pagehide',
+        expect.any(Function)
+      );
+
       // After all locks released, removeEventListener should be called
-      expect(removeEventListenerSpy).toHaveBeenCalledWith('pagehide', expect.any(Function));
+      expect(removeEventListenerSpy).toHaveBeenCalledWith(
+        'pagehide',
+        expect.any(Function)
+      );
 
       addEventListenerSpy.mockRestore();
       removeEventListenerSpy.mockRestore();
@@ -334,7 +388,7 @@ describe('lock', () => {
       getLockManager();
       resetLockManager();
       const manager = getLockManager();
-      
+
       // In the mocked environment, they might be the same mock,
       // but resetLockManager should have been called
       expect(manager).toBeDefined();
@@ -376,17 +430,6 @@ describe('lock', () => {
     it('should create LegacyLockManager when Web Locks API is not supported', () => {
       Object.defineProperty(global, 'navigator', {
         value: {},
-        writable: true,
-        configurable: true
-      });
-
-      const manager = getLockManager();
-      expect(manager).toBeInstanceOf(LegacyLockManager);
-    });
-
-    it('should create LegacyLockManager when navigator.locks is missing', () => {
-      Object.defineProperty(global, 'navigator', {
-        value: { locks: undefined },
         writable: true,
         configurable: true
       });

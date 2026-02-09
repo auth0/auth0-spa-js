@@ -24,8 +24,6 @@ export const getLockManager = jest.fn().mockReturnValue({
   )
 });
 
-export const createLockManager = jest.fn().mockReturnValue(getLockManager());
-
 export const resetLockManager = jest.fn(() => {
   lockCalls.clear();
   mockRunWithLock.mockClear();
