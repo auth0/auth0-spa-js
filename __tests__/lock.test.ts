@@ -340,4 +340,70 @@ describe('lock', () => {
       expect(manager).toBeDefined();
     });
   });
+
+  describe('feature detection and creation', () => {
+    let originalNavigator: any;
+
+    beforeEach(() => {
+      originalNavigator = global.navigator;
+      resetLockManager();
+    });
+
+    afterEach(() => {
+      Object.defineProperty(global, 'navigator', {
+        value: originalNavigator,
+        writable: true,
+        configurable: true
+      });
+      resetLockManager();
+    });
+
+    it('should create WebLocksApiManager when Web Locks API is supported', () => {
+      Object.defineProperty(global, 'navigator', {
+        value: {
+          locks: {
+            request: jest.fn()
+          }
+        },
+        writable: true,
+        configurable: true
+      });
+
+      const manager = getLockManager();
+      expect(manager).toBeInstanceOf(WebLocksApiManager);
+    });
+
+    it('should create LegacyLockManager when Web Locks API is not supported', () => {
+      Object.defineProperty(global, 'navigator', {
+        value: {},
+        writable: true,
+        configurable: true
+      });
+
+      const manager = getLockManager();
+      expect(manager).toBeInstanceOf(LegacyLockManager);
+    });
+
+    it('should create LegacyLockManager when navigator.locks is missing', () => {
+      Object.defineProperty(global, 'navigator', {
+        value: { locks: undefined },
+        writable: true,
+        configurable: true
+      });
+
+      const manager = getLockManager();
+      expect(manager).toBeInstanceOf(LegacyLockManager);
+    });
+
+    it('should create LegacyLockManager when navigator.locks.request is not a function', () => {
+      Object.defineProperty(global, 'navigator', {
+        value: { locks: { request: null } },
+        writable: true,
+        configurable: true
+      });
+
+      const manager = getLockManager();
+      expect(manager).toBeInstanceOf(LegacyLockManager);
+    });
+  });
 });

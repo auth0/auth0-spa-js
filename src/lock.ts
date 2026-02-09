@@ -113,6 +113,7 @@ function isWebLocksSupported(): boolean {
   return (
     typeof navigator !== 'undefined' &&
     'locks' in navigator &&
+    navigator.locks != null &&
     typeof navigator.locks.request === 'function'
   );
 }
