@@ -54,7 +54,6 @@ const TEST_AUDIENCE = 'https://api.example.com';
 const setupPopupMock = (mockWin: any, response: any = {}) => {
   // Use mockImplementation (not Once) so it persists across multiple
   // addEventListener calls. Only the 'message' type triggers the callback.
-  const originalImpl = mockWin.addEventListener.getMockImplementation?.();
   mockWin.addEventListener.mockImplementation((type: string, cb: Function) => {
     if (type === 'message') {
       setTimeout(() => {
@@ -69,7 +68,7 @@ const setupPopupMock = (mockWin: any, response: any = {}) => {
   });
 
   mockWin.open.mockReturnValue({
-    close: () => {},
+    close: () => { },
     location: {
       href: ''
     }
