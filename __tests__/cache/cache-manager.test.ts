@@ -10,7 +10,8 @@ import {
   CacheKey,
   CACHE_KEY_PREFIX,
   DecodedToken,
-  ICache
+  ICache,
+  WrappedCacheEntry
 } from '../../src/cache/shared';
 
 import {
@@ -707,6 +708,204 @@ cacheFactories.forEach(cacheFactory => {
       expect(await manager.get(CacheKey.fromCacheEntry(entry3))).toStrictEqual(
         entry3
       );
+    });
+
+    describe('updateEntry', () => {
+      const OLD_REFRESH_TOKEN = 'old_refresh_token_abc';
+      const NEW_REFRESH_TOKEN = 'new_refresh_token_xyz';
+
+      it('should update refresh token in all matching cache entries', async () => {
+        // Setup: Create 3 entries with same refresh token
+        const entries = [
+          { ...defaultData, audience: 'https://api-a.com', refresh_token: OLD_REFRESH_TOKEN },
+          { ...defaultData, audience: 'https://api-b.com', refresh_token: OLD_REFRESH_TOKEN },
+          { ...defaultData, audience: 'https://api-c.com', refresh_token: OLD_REFRESH_TOKEN }
+        ];
+
+        for (const entry of entries) {
+          await manager.set(entry);
+        }
+
+        // Act
+        await manager.updateEntry(OLD_REFRESH_TOKEN, NEW_REFRESH_TOKEN);
+
+        // Assert: All entries have new refresh token
+        for (const entry of entries) {
+          const key = CacheKey.fromCacheEntry(entry);
+          const result = await manager.get(key);
+          expect(result?.refresh_token).toBe(NEW_REFRESH_TOKEN);
+        }
+      });
+
+      it('should preserve original expiresAt when updating refresh token (bug #1528)', async () => {
+        // This is the critical test for the bug fix
+        const now = Date.now();
+        const realDateNow = Date.now.bind(global.Date);
+
+        // Setup: Create entry at initial time
+        const entry = {
+          ...defaultData,
+          refresh_token: OLD_REFRESH_TOKEN,
+          expires_in: dayInSeconds // 24 hours
+        };
+
+        global.Date.now = jest.fn(() => now);
+        await manager.set(entry);
+
+        // Expected expiresAt: now + 24h
+        const expectedExpiresAt = Math.floor(now / 1000) + dayInSeconds;
+
+        // Advance time by 22 hours
+        const laterTime = now + (22 * 3600 * 1000);
+        global.Date.now = jest.fn(() => laterTime);
+
+        // Act: Update refresh token 22 hours later
+        await manager.updateEntry(OLD_REFRESH_TOKEN, NEW_REFRESH_TOKEN);
+
+        // Assert: Get raw cache entry to check expiresAt
+        const cacheKey = CacheKey.fromCacheEntry(entry).toKey();
+        const wrappedEntry = await cache.get<WrappedCacheEntry>(cacheKey);
+
+        // The bug would cause expiresAt to be recalculated as:
+        // laterTime + 24h = now + 46h (WRONG!)
+        // But the correct value should still be:
+        // now + 24h (original expiration)
+        expect(wrappedEntry!.expiresAt).toBe(expectedExpiresAt);
+        expect(wrappedEntry!.expiresAt).not.toBe(Math.floor(laterTime / 1000) + dayInSeconds);
+        expect(wrappedEntry!.body.refresh_token).toBe(NEW_REFRESH_TOKEN);
+
+        global.Date.now = realDateNow;
+      });
+
+      it('should preserve access token when updating refresh token', async () => {
+        const entry = {
+          ...defaultData,
+          refresh_token: OLD_REFRESH_TOKEN
+        };
+
+        await manager.set(entry);
+
+        await manager.updateEntry(OLD_REFRESH_TOKEN, NEW_REFRESH_TOKEN);
+
+        const result = await manager.get(CacheKey.fromCacheEntry(entry));
+        expect(result?.access_token).toBe(TEST_ACCESS_TOKEN);
+        expect(result?.refresh_token).toBe(NEW_REFRESH_TOKEN);
+      });
+
+      it('should only update entries with matching old refresh token', async () => {
+        const entryA = {
+          ...defaultData,
+          audience: 'https://api-a.com',
+          refresh_token: OLD_REFRESH_TOKEN
+        };
+
+        const entryB = {
+          ...defaultData,
+          audience: 'https://api-b.com',
+          refresh_token: 'different_refresh_token'
+        };
+
+        await manager.set(entryA);
+        await manager.set(entryB);
+
+        await manager.updateEntry(OLD_REFRESH_TOKEN, NEW_REFRESH_TOKEN);
+
+        const resultA = await manager.get(CacheKey.fromCacheEntry(entryA));
+        const resultB = await manager.get(CacheKey.fromCacheEntry(entryB));
+
+        expect(resultA?.refresh_token).toBe(NEW_REFRESH_TOKEN);
+        expect(resultB?.refresh_token).toBe('different_refresh_token');
+      });
+
+      it('should handle empty cache gracefully', async () => {
+        await expect(
+          manager.updateEntry(OLD_REFRESH_TOKEN, NEW_REFRESH_TOKEN)
+        ).resolves.not.toThrow();
+      });
+
+      it('should handle entries without refresh token', async () => {
+        const entry = {
+          ...defaultData
+          // No refresh_token
+        };
+
+        await manager.set(entry);
+
+        await expect(
+          manager.updateEntry(OLD_REFRESH_TOKEN, NEW_REFRESH_TOKEN)
+        ).resolves.not.toThrow();
+
+        const result = await manager.get(CacheKey.fromCacheEntry(entry));
+        expect(result?.refresh_token).toBeUndefined();
+      });
+
+      it('should correctly handle MRRT scenario with multiple audiences over time', async () => {
+        const now = Date.now();
+        const realDateNow = Date.now.bind(global.Date);
+
+        // Setup: Create 4 audience entries at Monday 9 AM
+        const audiences = [
+          'https://api-a.com',
+          'https://api-b.com',
+          'https://api-c.com',
+          'https://api-d.com'
+        ];
+
+        global.Date.now = jest.fn(() => now);
+
+        for (const audience of audiences) {
+          await manager.set({
+            ...defaultData,
+            audience,
+            access_token: `token_${audience}`,
+            expires_in: dayInSeconds,
+            refresh_token: OLD_REFRESH_TOKEN
+          });
+        }
+
+        const originalExpiresAt = Math.floor(now / 1000) + dayInSeconds;
+
+        // Advance time by 22 hours
+        const laterTime = now + (22 * 3600 * 1000);
+        global.Date.now = jest.fn(() => laterTime);
+
+        // Act: Simulate refresh token rotation
+        await manager.updateEntry(OLD_REFRESH_TOKEN, NEW_REFRESH_TOKEN);
+
+        // Assert: All entries still expire at original time
+        for (const audience of audiences) {
+          const cacheKey = new CacheKey({
+            clientId: TEST_CLIENT_ID,
+            audience,
+            scope: TEST_SCOPES
+          }).toKey();
+
+          const wrappedEntry = await cache.get<WrappedCacheEntry>(cacheKey);
+
+          expect(wrappedEntry!.expiresAt).toBe(originalExpiresAt);
+          expect(wrappedEntry!.body.refresh_token).toBe(NEW_REFRESH_TOKEN);
+        }
+
+        // Advance time to 1 hour after original expiry
+        const expiredTime = now + (25 * 3600 * 1000);
+        global.Date.now = jest.fn(() => expiredTime);
+
+        // Assert: Tokens should be recognized as expired
+        for (const audience of audiences) {
+          const key = new CacheKey({
+            clientId: TEST_CLIENT_ID,
+            audience,
+            scope: TEST_SCOPES
+          });
+          const result = await manager.get(key);
+
+          // Should return only refresh token (access token stripped)
+          expect(result?.access_token).toBeUndefined();
+          expect(result?.refresh_token).toBe(NEW_REFRESH_TOKEN);
+        }
+
+        global.Date.now = realDateNow;
+      });
     });
 
     describe('getIdToken', () => {

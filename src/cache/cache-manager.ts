@@ -270,11 +270,15 @@ export class CacheManager {
   }
 
   /**
-   * Updates in the cache all entries that has a match with previous refresh_token with the
-   * new refresh_token obtained from the server
-   * @param oldRefreshToken Old refresh_token used on refresh
-   * @param newRefreshToken New refresh_token obtained from the server after refresh
-  */
+   * Updates the refresh token in all cache entries that contain the old refresh token.
+   *
+   * When a refresh token is rotated, multiple cache entries (for different audiences/scopes)
+   * may share the same refresh token. This method propagates the new refresh token to all
+   * matching entries.
+   *
+   * @param oldRefreshToken The refresh token that was used and is now invalid
+   * @param newRefreshToken The new refresh token received from the server
+   */
   async updateEntry(
     oldRefreshToken: string,
     newRefreshToken: string,
@@ -287,12 +291,8 @@ export class CacheManager {
       const entry = await this.cache.get<WrappedCacheEntry>(key);
 
       if (entry?.body?.refresh_token === oldRefreshToken) {
-        const cacheEntry = {
-          ...entry.body,
-          refresh_token: newRefreshToken,
-        } as CacheEntry;
-
-        await this.set(cacheEntry);
+        entry.body.refresh_token = newRefreshToken;
+        await this.cache.set(key, entry);
       }
     }
   }
