@@ -9,7 +9,7 @@ import { TimeoutError } from './errors';
 /** Lock manager interface - callback pattern ensures automatic lock release */
 export interface ILockManager {
   /**
-   * Acquire a lock and execute callback while holding it.
+   * Run callback while holding a lock.
    * Lock is automatically released when callback completes or throws.
    *
    * @param key - Lock identifier
@@ -18,7 +18,7 @@ export interface ILockManager {
    * @returns Promise resolving to callback's return value
    * @throws Error if lock cannot be acquired within timeout
    */
-  acquireLock<T>(
+  runWithLock<T>(
     key: string,
     timeout: number,
     callback: () => Promise<T>
@@ -27,7 +27,7 @@ export interface ILockManager {
 
 /** Web Locks API implementation - true mutex with OS-level queuing */
 export class WebLocksApiManager implements ILockManager {
-  async acquireLock<T>(
+  async runWithLock<T>(
     key: string,
     timeout: number,
     callback: () => Promise<T>
@@ -66,14 +66,9 @@ export class LegacyLockManager implements ILockManager {
       this.activeLocks.forEach(key => this.lock.releaseLock(key));
       this.activeLocks.clear();
     };
-
-    // Auto-release locks on page unload (only in browser context)
-    if (typeof window !== 'undefined') {
-      window.addEventListener('pagehide', this.pagehideHandler);
-    }
   }
 
-  async acquireLock<T>(
+  async runWithLock<T>(
     key: string,
     timeout: number,
     callback: () => Promise<T>
@@ -91,6 +86,11 @@ export class LegacyLockManager implements ILockManager {
     }
 
     this.activeLocks.add(key);
+
+    // Add pagehide listener when acquiring first lock
+    if (this.activeLocks.size === 1 && typeof window !== 'undefined') {
+      window.addEventListener('pagehide', this.pagehideHandler);
+    }
 
     try {
       return await callback();

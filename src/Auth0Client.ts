@@ -883,7 +883,7 @@ export class Auth0Client {
       getTokenOptions.authorizationParams.audience || 'default'
     );
 
-    return await this.lockManager.acquireLock(lockKey, 5000, async () => {
+    return await this.lockManager.runWithLock(lockKey, 5000, async () => {
       // Check the cache a second time, because it may have been populated
       // by a previous call while this call was waiting to acquire the lock.
       if (cacheMode !== 'off') {
@@ -1065,7 +1065,7 @@ export class Auth0Client {
     // To resolve that, we add a second-level locking that locks only the iframe calls in
     // the same way as was done before https://github.com/auth0/auth0-spa-js/pull/1408.
     try {
-      return await this.lockManager.acquireLock(
+      return await this.lockManager.runWithLock(
         iframeLockKey,
         5000,
         async () => {

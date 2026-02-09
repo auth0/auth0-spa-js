@@ -5,7 +5,7 @@ import {
   LegacyLockManager
 } from '../src/lock';
 import { TimeoutError } from '../src/errors';
-import { mockAcquireLock } from '../__mocks__/lock';
+import { mockRunWithLock } from '../__mocks__/lock';
 
 // The actual implementation is mocked by __mocks__/lock.ts in Jest
 // These tests verify the lock abstraction works through the mock
@@ -16,11 +16,11 @@ describe('lock', () => {
   });
 
   describe('getLockManager', () => {
-    it('should return a lock manager with acquireLock method', () => {
+    it('should return a lock manager with runWithLock method', () => {
       const manager = getLockManager();
       expect(manager).toBeDefined();
-      expect(manager.acquireLock).toBeDefined();
-      expect(typeof manager.acquireLock).toBe('function');
+      expect(manager.runWithLock).toBeDefined();
+      expect(typeof manager.runWithLock).toBe('function');
     });
 
     it('should return same instance on multiple calls', () => {
@@ -35,7 +35,7 @@ describe('lock', () => {
       const manager = getLockManager();
       const callback = jest.fn().mockResolvedValue('result');
 
-      const result = await manager.acquireLock('test-key', 5000, callback);
+      const result = await manager.runWithLock('test-key', 5000, callback);
 
       expect(callback).toHaveBeenCalled();
       expect(result).toBe('result');
@@ -46,7 +46,7 @@ describe('lock', () => {
       const expectedValue = { data: 'test' };
       const callback = jest.fn().mockResolvedValue(expectedValue);
 
-      const result = await manager.acquireLock('key', 5000, callback);
+      const result = await manager.runWithLock('key', 5000, callback);
 
       expect(result).toBe(expectedValue);
     });
@@ -57,16 +57,16 @@ describe('lock', () => {
       const callback = jest.fn().mockRejectedValue(error);
 
       await expect(
-        manager.acquireLock('key', 5000, callback)
+        manager.runWithLock('key', 5000, callback)
       ).rejects.toThrow('callback failed');
     });
 
     it('should handle multiple sequential lock acquisitions', async () => {
       const manager = getLockManager();
 
-      const result1 = await manager.acquireLock('key1', 5000, async () => 'result1');
-      const result2 = await manager.acquireLock('key2', 5000, async () => 'result2');
-      const result3 = await manager.acquireLock('key3', 5000, async () => 'result3');
+      const result1 = await manager.runWithLock('key1', 5000, async () => 'result1');
+      const result2 = await manager.runWithLock('key2', 5000, async () => 'result2');
+      const result3 = await manager.runWithLock('key3', 5000, async () => 'result3');
 
       expect(result1).toBe('result1');
       expect(result2).toBe('result2');
@@ -77,7 +77,7 @@ describe('lock', () => {
       const manager = getLockManager();
       const executionOrder: string[] = [];
 
-      const result = await manager.acquireLock('key', 5000, async () => {
+      const result = await manager.runWithLock('key', 5000, async () => {
         executionOrder.push('inside-callback');
         return 'done';
       });
@@ -91,7 +91,7 @@ describe('lock', () => {
     it('should work with async callbacks that take time', async () => {
       const manager = getLockManager();
 
-      const result = await manager.acquireLock('key', 5000, async () => {
+      const result = await manager.runWithLock('key', 5000, async () => {
         await new Promise(resolve => setTimeout(resolve, 10));
         return 'completed';
       });
@@ -103,9 +103,9 @@ describe('lock', () => {
       const manager = getLockManager();
 
       // These should all succeed with different keys
-      await manager.acquireLock('audience1', 5000, async () => 'r1');
-      await manager.acquireLock('audience2', 5000, async () => 'r2');
-      await manager.acquireLock('iframe-lock', 5000, async () => 'r3');
+      await manager.runWithLock('audience1', 5000, async () => 'r1');
+      await manager.runWithLock('audience2', 5000, async () => 'r2');
+      await manager.runWithLock('iframe-lock', 5000, async () => 'r3');
 
       // All completed without issues
       expect(true).toBe(true);
@@ -114,11 +114,11 @@ describe('lock', () => {
     it('should provide correct lock key to underlying implementation', async () => {
       const manager = getLockManager();
       
-      await manager.acquireLock('my-custom-key', 5000, async () => 'result');
-      await manager.acquireLock('another-key', 3000, async () => 'result2');
+      await manager.runWithLock('my-custom-key', 5000, async () => 'result');
+      await manager.runWithLock('another-key', 3000, async () => 'result2');
 
       // Mock was called (verified by not throwing)
-      expect(mockAcquireLock).toBeDefined();
+      expect(mockRunWithLock).toBeDefined();
     });
   });
 
@@ -158,7 +158,7 @@ describe('lock', () => {
         return await callback({ name: key });
       });
 
-      const result = await manager.acquireLock('test-key', 5000, async () => 'success');
+      const result = await manager.runWithLock('test-key', 5000, async () => 'success');
 
       expect(result).toBe('success');
       expect(mockLocks.request).toHaveBeenCalledWith(
@@ -179,7 +179,7 @@ describe('lock', () => {
       });
 
       await expect(
-        manager.acquireLock('test-key', 100, async () => 'should-not-execute')
+        manager.runWithLock('test-key', 100, async () => 'should-not-execute')
       ).rejects.toThrow(TimeoutError);
     });
 
@@ -192,7 +192,7 @@ describe('lock', () => {
       });
 
       await expect(
-        manager.acquireLock('test-key', 5000, async () => 'result')
+        manager.runWithLock('test-key', 5000, async () => 'result')
       ).rejects.toThrow('Custom error');
     });
 
@@ -204,7 +204,7 @@ describe('lock', () => {
       });
 
       await expect(
-        manager.acquireLock('test-key', 5000, async () => 'result')
+        manager.runWithLock('test-key', 5000, async () => 'result')
       ).rejects.toThrow('Lock not available');
     });
   });
@@ -216,7 +216,7 @@ describe('lock', () => {
       releaseLockSpy.mockResolvedValue(undefined);
 
       const manager = new LegacyLockManager();
-      const result = await manager.acquireLock('test-key', 5000, async () => 'success');
+      const result = await manager.runWithLock('test-key', 5000, async () => 'success');
 
       expect(result).toBe('success');
       expect(acquireLockSpy).toHaveBeenCalledWith('test-key', 5000);
@@ -232,7 +232,7 @@ describe('lock', () => {
       releaseLockSpy.mockResolvedValue(undefined);
 
       const manager = new LegacyLockManager();
-      const result = await manager.acquireLock('test-key', 5000, async () => 'success');
+      const result = await manager.runWithLock('test-key', 5000, async () => 'success');
 
       expect(result).toBe('success');
       expect(acquireLockSpy).toHaveBeenCalledTimes(3);
@@ -244,7 +244,7 @@ describe('lock', () => {
 
       const manager = new LegacyLockManager();
       await expect(
-        manager.acquireLock('test-key', 5000, async () => 'result')
+        manager.runWithLock('test-key', 5000, async () => 'result')
       ).rejects.toThrow(TimeoutError);
 
       expect(acquireLockSpy).toHaveBeenCalledTimes(10);
@@ -258,7 +258,7 @@ describe('lock', () => {
       const manager = new LegacyLockManager();
       const error = new Error('Callback error');
       await expect(
-        manager.acquireLock('test-key', 5000, async () => {
+        manager.runWithLock('test-key', 5000, async () => {
           throw error;
         })
       ).rejects.toThrow('Callback error');
@@ -272,7 +272,7 @@ describe('lock', () => {
       releaseLockSpy.mockResolvedValue(undefined);
 
       const manager = new LegacyLockManager();
-      const promise = manager.acquireLock('test-key', 5000, async () => {
+      const promise = manager.runWithLock('test-key', 5000, async () => {
         // Lock should be tracked while callback is executing
         expect((manager as any).activeLocks.has('test-key')).toBe(true);
         return 'success';
@@ -292,7 +292,7 @@ describe('lock', () => {
       const manager = new LegacyLockManager();
       
       // Acquire a lock and trigger pagehide while holding it
-      const promise = manager.acquireLock('test-key', 5000, async () => {
+      const promise = manager.runWithLock('test-key', 5000, async () => {
         // Trigger pagehide event
         window.dispatchEvent(new Event('pagehide'));
         return 'success';
@@ -315,8 +315,8 @@ describe('lock', () => {
       const manager = new LegacyLockManager();
       
       // Acquire and release multiple locks
-      await manager.acquireLock('key1', 5000, async () => 'r1');
-      await manager.acquireLock('key2', 5000, async () => 'r2');
+      await manager.runWithLock('key1', 5000, async () => 'r1');
+      await manager.runWithLock('key2', 5000, async () => 'r2');
 
       // Verify addEventListener was called during constructor
       expect(addEventListenerSpy).toHaveBeenCalledWith('pagehide', expect.any(Function));
