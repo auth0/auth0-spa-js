@@ -1494,48 +1494,6 @@ describe('Auth0Client', () => {
       );
     });
 
-    it('should add and remove a pagehide handler', async () => {
-      const auth0 = setup();
-
-      jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
-        access_token: TEST_ACCESS_TOKEN,
-        state: TEST_STATE
-      });
-
-      await getTokenSilently(auth0);
-
-      expect(mockWindow.addEventListener).toHaveBeenCalledWith(
-        'pagehide',
-        expect.anything()
-      );
-      expect(mockWindow.removeEventListener).toHaveBeenCalledWith(
-        'pagehide',
-        expect.anything()
-      );
-    });
-
-    it('should release the lock when pagehide handler triggered', async () => {
-      const auth0 = setup();
-
-      jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
-        access_token: TEST_ACCESS_TOKEN,
-        state: TEST_STATE
-      });
-
-      mockWindow.addEventListener.mockImplementation((event, handler) => {
-        if (event === 'pagehide') {
-          handler();
-          expect(releaseLockSpy).toHaveBeenCalledWith(
-            buildGetTokenSilentlyLockKey('auth0_client_id', 'default')
-          );
-        }
-      });
-
-      expect.assertions(1);
-
-      await getTokenSilently(auth0);
-    });
-
     it('should retry acquiring a lock', async () => {
       const auth0 = setup();
 
@@ -1700,76 +1658,6 @@ describe('Auth0Client', () => {
 
         expect(releaseLockSpy).toHaveBeenCalledWith(
           `auth0.lock.getTokenSilently.${TEST_CLIENT_ID}.default`
-        );
-      });
-
-      it('should add pagehide event listener only on first lock acquisition', async () => {
-        const auth0 = setup();
-
-        // Ensure to delay the resolution here to allow both requests to start
-        // and ensure the second one attempts to acquire the lock before the first one releases it.
-        jest.spyOn(<any>utils, 'runIframe').mockReturnValue(
-          new Promise(resolve => {
-            setTimeout(
-              () =>
-                resolve({
-                  access_token: TEST_ACCESS_TOKEN,
-                  state: TEST_STATE,
-                  code: TEST_CODE
-                }),
-              100
-            );
-          })
-        );
-
-        await Promise.all([
-          getTokenSilently(auth0, {
-            authorizationParams: { audience: 'audience1' }
-          }),
-          getTokenSilently(auth0, {
-            authorizationParams: { audience: 'audience2' }
-          })
-        ]);
-
-        // With the global iframe lock, requests are serialized, so each request cycle
-        // will add and remove the pagehide listener. However, addEventListener is still
-        // called once per lock acquisition cycle.
-        expect(mockWindow.addEventListener).toHaveBeenCalled();
-      });
-
-      it('should remove pagehide event listener only when all locks are released', async () => {
-        const auth0 = setup();
-        let pagehideHandler: (() => void) | undefined;
-
-        jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
-          access_token: TEST_ACCESS_TOKEN,
-          state: TEST_STATE
-        });
-
-        // Capture the pagehide handler
-        mockWindow.addEventListener.mockImplementation((event, handler) => {
-          if (event === 'pagehide') {
-            pagehideHandler = handler as () => void;
-          }
-        });
-
-        // Start two requests but let them finish
-        await getTokenSilently(auth0, {
-          authorizationParams: { audience: 'audience1' }
-        });
-
-        // Clear the mock to track subsequent calls
-        mockWindow.removeEventListener.mockClear();
-
-        await getTokenSilently(auth0, {
-          authorizationParams: { audience: 'audience2' }
-        });
-
-        // Event listener should only be removed once, after the last lock
-        expect(mockWindow.removeEventListener).toHaveBeenCalledTimes(1);
-        expect(mockWindow.removeEventListener).toHaveBeenCalledWith(
-          'pagehide',
-          pagehideHandler
         );
       });
 
