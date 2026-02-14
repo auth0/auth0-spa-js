@@ -1,5 +1,14 @@
 # Change Log
 
+## [v2.15.0](https://github.com/auth0/auth0-spa-js/tree/v2.15.0) (2026-02-11)
+[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.14.0...v2.15.0)
+
+**Added**
+- feat: use Web Locks API for cross-tab synchronization [\#1530](https://github.com/auth0/auth0-spa-js/pull/1530) ([yogeshchoudhary147](https://github.com/yogeshchoudhary147))
+
+**Fixed**
+- fix: preserve token expiration during refresh token rotation [\#1529](https://github.com/auth0/auth0-spa-js/pull/1529) ([yogeshchoudhary147](https://github.com/yogeshchoudhary147))
+
 ## [v2.14.0](https://github.com/auth0/auth0-spa-js/tree/v2.14.0) (2026-02-05)
 [Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.13.1...v2.14.0)
 

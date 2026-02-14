@@ -5,6 +5,7 @@
 - [Refresh Tokens](#refresh-tokens)
 - [Data Caching Options](#creating-a-custom-cache)
 - [Organizations](#organizations)
+- [Custom Token Exchange (CTE)](#custom-token-exchange-cte)
 - [Device-bound tokens with DPoP](#device-bound-tokens-with-dpop)
 - [Connect Accounts for using Token Vault](#connect-accounts-for-using-token-vault)
 - [Accessing SDK Configuration](#accessing-sdk-configuration)
