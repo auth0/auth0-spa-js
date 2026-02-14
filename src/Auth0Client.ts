@@ -883,37 +883,45 @@ export class Auth0Client {
       getTokenOptions.authorizationParams.audience || 'default'
     );
 
-    return await this.lockManager.runWithLock(lockKey, 5000, async () => {
-      // Check the cache a second time, because it may have been populated
-      // by a previous call while this call was waiting to acquire the lock.
-      if (cacheMode !== 'off') {
-        const entry = await this._getEntryFromCache({
-          scope: getTokenOptions.authorizationParams.scope,
-          audience:
-            getTokenOptions.authorizationParams.audience || DEFAULT_AUDIENCE,
-          clientId: this.options.clientId
-        });
+    try {
+      return await this.lockManager.runWithLock(lockKey, 5000, async () => {
+        // Check the cache a second time, because it may have been populated
+        // by a previous call while this call was waiting to acquire the lock.
+        if (cacheMode !== 'off') {
+          const entry = await this._getEntryFromCache({
+            scope: getTokenOptions.authorizationParams.scope,
+            audience:
+              getTokenOptions.authorizationParams.audience || DEFAULT_AUDIENCE,
+            clientId: this.options.clientId
+          });
 
-        if (entry) {
-          return entry;
+          if (entry) {
+            return entry;
+          }
         }
+
+        const authResult = this.options.useRefreshTokens
+          ? await this._getTokenUsingRefreshToken(getTokenOptions)
+          : await this._getTokenFromIFrame(getTokenOptions);
+
+        const { id_token, token_type, access_token, oauthTokenScope, expires_in } =
+          authResult;
+
+        return {
+          id_token,
+          token_type,
+          access_token,
+          ...(oauthTokenScope ? { scope: oauthTokenScope } : null),
+          expires_in
+        };
+      });
+    } catch (error) {
+      // Lock is already released - safe to open popup
+      if (this._isInteractiveError(error) && this.options.interactiveErrorHandler === 'popup') {
+        return await this._handleInteractiveErrorWithPopup(getTokenOptions);
       }
-
-      const authResult = this.options.useRefreshTokens
-        ? await this._getTokenUsingRefreshToken(getTokenOptions)
-        : await this._getTokenFromIFrame(getTokenOptions);
-
-      const { id_token, token_type, access_token, oauthTokenScope, expires_in } =
-        authResult;
-
-      return {
-        id_token,
-        token_type,
-        access_token,
-        ...(oauthTokenScope ? { scope: oauthTokenScope } : null),
-        expires_in
-      };
-    });
+      throw error;
+    }
   }
 
   /**
