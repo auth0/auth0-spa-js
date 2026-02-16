@@ -2,6 +2,13 @@ import { ICache } from './cache';
 import type { Dpop } from './dpop/dpop';
 import { CompleteResponse } from './MyAccountApiClient';
 
+/**
+ * Configuration option for automatic interactive error handling.
+ *
+ * - `'popup'`: SDK automatically opens Universal Login popup on MFA error
+ */
+export type InteractiveErrorHandler = 'popup';
+
 export interface AuthorizationParams {
   /**
    * - `'page'`: displays the UI with a full page view
@@ -296,6 +303,21 @@ export interface Auth0ClientOptions {
    */
   useDpop?: boolean;
 
+  /**
+   * Configures automatic handling of interactive authentication errors.
+   *
+   * When set, the SDK intercepts `mfa_required` errors from `getTokenSilently()`
+   * and handles them automatically instead of throwing to the caller.
+   *
+   * - `'popup'`: Opens Universal Login in a popup to complete MFA.
+   *   The original `authorizationParams` (audience, scope) are preserved.
+   *   On success, the token is returned. On failure, popup errors are thrown.
+   *
+   * This option only affects `getTokenSilently()`. Other methods are not affected.
+   *
+   * @default undefined (MFA errors are thrown to the caller)
+   */
+  interactiveErrorHandler?: InteractiveErrorHandler;
 
   /**
    * URL parameters that will be sent back to the Authorization Server. This can be known parameters
