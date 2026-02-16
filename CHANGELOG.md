@@ -1,5 +1,12 @@
 # Change Log
 
+## [v2.16.0](https://github.com/auth0/auth0-spa-js/tree/v2.16.0) (2026-02-16)
+[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.15.0...v2.16.0)
+
+**Added**
+- feat: implement step-up authentication with interactive error handling and popup support [\#1531](https://github.com/auth0/auth0-spa-js/pull/1531) ([gyaneshgouraw-okta](https://github.com/gyaneshgouraw-okta))
+- Chore: Update TOC to reflect Custom Token Exchange section in EXAMPLES.md [\#1533](https://github.com/auth0/auth0-spa-js/pull/1533) ([cschetan77](https://github.com/cschetan77))
+
 ## [v2.15.0](https://github.com/auth0/auth0-spa-js/tree/v2.15.0) (2026-02-11)
 [Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.14.0...v2.15.0)
 
