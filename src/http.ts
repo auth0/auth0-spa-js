@@ -70,6 +70,7 @@ const fetchWithWorker = async (
 ) => {
   return sendMessage(
     {
+      type: 'refresh',
       auth: {
         audience,
         scope
@@ -227,3 +228,55 @@ export async function getJSON<T>(
 
   return data;
 }
+
+export const doRevoke = async (
+  fetchUrl: string,
+  fetchOptions: FetchOptions,
+  timeout: number,
+  audience?: string,
+  scope?: string,
+  worker?: Worker,
+  useFormData?: boolean
+): Promise<void> => {
+  if (worker) {
+    return sendMessage(
+      {
+        type: 'revoke',
+        timeout,
+        fetchUrl,
+        fetchOptions,
+        useFormData,
+        auth: { audience: audience || '', scope: scope || '' }
+      },
+      worker
+    );
+  }
+
+  const controller = createAbortController();
+  fetchOptions.signal = controller.signal;
+
+  let timeoutId: NodeJS.Timeout;
+
+  const response = await Promise.race([
+    fetch(fetchUrl, fetchOptions),
+    new Promise<never>((_, reject) => {
+      timeoutId = setTimeout(() => {
+        controller.abort();
+        reject(new Error("Timeout when executing 'fetch'"));
+      }, timeout);
+    })
+  ]).finally(() => {
+    clearTimeout(timeoutId);
+  });
+
+  if (!response.ok) {
+    let errorDescription: string | undefined;
+    try {
+      const { error_description } = JSON.parse(await response.text());
+      errorDescription = error_description;
+    } catch {
+      // body absent or not valid JSON
+    }
+    throw new Error(errorDescription || `HTTP error ${response.status}`);
+  }
+};
