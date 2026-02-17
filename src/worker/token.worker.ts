@@ -1,7 +1,11 @@
 import { MissingRefreshTokenError } from '../errors';
 import { FetchResponse } from '../global';
 import { createQueryParams, fromEntries } from '../utils';
-import { WorkerMessage, WorkerRefreshTokenMessage } from './worker.types';
+import {
+  WorkerMessage,
+  WorkerRefreshTokenMessage,
+  WorkerRevokeTokenMessage
+} from './worker.types';
 
 let refreshTokens: Record<string, string> = {};
 let allowedBaseUrl: string | null = null;
@@ -21,6 +25,14 @@ const setRefreshToken = (
 
 const deleteRefreshToken = (audience: string, scope: string) =>
   delete refreshTokens[cacheKey(audience, scope)];
+
+const deleteRefreshTokensByValue = (refreshToken: string): void => {
+  Object.entries(refreshTokens).forEach(([key, token]) => {
+    if (token === refreshToken) {
+      delete refreshTokens[key];
+    }
+  });
+};
 
 const wait = (time: number) =>
   new Promise<void>(resolve => setTimeout(resolve, time));
@@ -181,8 +193,83 @@ const messageHandler = async ({
   }
 };
 
+const revokeMessageHandler = async ({
+  data: { timeout, auth, fetchUrl, fetchOptions, useFormData },
+  ports: [port]
+}: MessageEvent<WorkerRevokeTokenMessage>) => {
+  const { audience, scope } = auth || {};
+
+  try {
+    const refreshToken = getRefreshToken(audience, scope);
+
+    if (!refreshToken) {
+      // No refresh token to revoke - this is not an error
+      port.postMessage({ ok: true });
+      return;
+    }
+
+    // Inject the refresh token into the pre-built body, mirroring how
+    // messageHandler injects refresh_token for the token endpoint.
+    const body = useFormData
+      ? formDataToObject(fetchOptions.body as string)
+      : JSON.parse(fetchOptions.body as string);
+
+    fetchOptions.body = useFormData
+      ? createQueryParams({ ...body, token: refreshToken })
+      : JSON.stringify({ ...body, token: refreshToken });
+
+    let abortController: AbortController | undefined;
+
+    if (typeof AbortController === 'function') {
+      abortController = new AbortController();
+      fetchOptions.signal = abortController.signal;
+    }
+
+    let response: void | Response;
+
+    try {
+      response = await Promise.race([
+        wait(timeout),
+        fetch(fetchUrl, { ...fetchOptions })
+      ]);
+    } catch (error) {
+      port.postMessage({ error: error.message });
+      return;
+    }
+
+    if (!response) {
+      if (abortController) abortController.abort();
+      port.postMessage({ error: "Timeout when executing 'fetch'" });
+      return;
+    }
+
+    if (!response.ok) {
+      let errorDescription: string | undefined;
+      try {
+        const { error_description } = JSON.parse(await response.text());
+        errorDescription = error_description;
+      } catch {
+        // body absent or not valid JSON
+      }
+
+      port.postMessage({ error: errorDescription || `HTTP error ${response.status}` });
+      return;
+    }
+
+    // Success - delete all entries with this refresh token from worker memory (MRRT support)
+    deleteRefreshTokensByValue(refreshToken);
+
+    port.postMessage({ ok: true });
+  } catch (error) {
+    port.postMessage({
+      error: error.message || 'Unknown error during token revocation'
+    });
+  }
+};
+
 const isAuthorizedWorkerRequest = (
-  workerRequest: WorkerRefreshTokenMessage
+  workerRequest: WorkerRefreshTokenMessage | WorkerRevokeTokenMessage,
+  expectedPath: string
 ) => {
   if (!allowedBaseUrl) {
     return false;
@@ -194,7 +281,7 @@ const isAuthorizedWorkerRequest = (
 
     return (
       requestedUrl.origin === allowedBaseOrigin &&
-      requestedUrl.pathname === '/oauth/token'
+      requestedUrl.pathname === expectedPath
     );
   } catch {
     return false;
@@ -218,9 +305,26 @@ const messageRouter = (event: MessageEvent<WorkerMessage>) => {
     return;
   }
 
+  if ('type' in data && data.type === 'revoke') {
+    if (!isAuthorizedWorkerRequest(data as WorkerRevokeTokenMessage, '/oauth/revoke')) {
+      port?.postMessage({
+        ok: false,
+        json: {
+          error: 'invalid_fetch_url',
+          error_description: 'Unauthorized fetch URL'
+        },
+        headers: {}
+      });
+      return;
+    }
+
+    revokeMessageHandler(event as MessageEvent<WorkerRevokeTokenMessage>);
+    return;
+  }
+
   if (
     !('fetchUrl' in data) ||
-    !isAuthorizedWorkerRequest(data as WorkerRefreshTokenMessage)
+    !isAuthorizedWorkerRequest(data as WorkerRefreshTokenMessage, '/oauth/token')
   ) {
     port?.postMessage({
       ok: false,
@@ -238,7 +342,7 @@ const messageRouter = (event: MessageEvent<WorkerMessage>) => {
 
 // Don't run `addEventListener` in our tests (this is replaced in rollup)
 if (process.env.NODE_ENV === 'test') {
-  module.exports = { messageHandler, messageRouter };
+  module.exports = { messageHandler, revokeMessageHandler, messageRouter };
   /* c8 ignore next 4  */
 } else {
   // @ts-ignore
