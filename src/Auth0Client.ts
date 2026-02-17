@@ -17,7 +17,7 @@ import {
 
 import { getLockManager, type ILockManager } from './lock';
 
-import { oauthToken } from './api';
+import { oauthToken, revokeToken } from './api';
 
 import { injectDefaultScopes, scopesToRequest } from './scope';
 
@@ -90,7 +90,8 @@ import {
   RedirectConnectAccountOptions,
   ResponseType,
   ClientAuthorizationParams,
-  ClientConfiguration
+  ClientConfiguration,
+  RevokeOptions
 } from './global';
 
 // @ts-ignore
@@ -1079,6 +1080,88 @@ export class Auth0Client {
     );
 
     return url + federatedQuery;
+  }
+
+  /**
+   * ```js
+   * await auth0.revoke();
+   * ```
+   *
+   * Revokes the refresh token using the `/oauth/revoke` endpoint.
+   * This invalidates the refresh token so it can no longer be used to obtain new access tokens.
+   *
+   * The method works with both memory and localStorage cache modes:
+   * - For memory storage with worker: The refresh token never leaves the worker thread,
+   *   maintaining security isolation
+   * - For localStorage: The token is retrieved from cache and revoked
+   *
+   * If `useRefreshTokens` is disabled, this method does nothing.
+   * The refresh token is identified by the provided authorization parameters (audience/scope).
+   *
+   * When using Multi-Resource Refresh Tokens (MRRT), revoking a token will affect
+   * all cache entries that share the same refresh token.
+   *
+   * @param options - Optional parameters to identify which refresh token to revoke
+   *
+   * @example
+   * // Revoke the default refresh token
+   * await auth0.revoke();
+   *
+   * @example
+   * // Revoke refresh token for specific audience/scope
+   * await auth0.revoke({
+   *   authorizationParams: {
+   *     audience: 'https://api.example.com',
+   *     scope: 'read:data'
+   *   }
+   * });
+   */
+  public async revoke(options: RevokeOptions = {}): Promise<void> {
+    if (!this.options.useRefreshTokens) {
+      return;
+    }
+
+    const audience =
+      options.authorizationParams?.audience ||
+      this.options.authorizationParams.audience;
+
+    const scope = scopesToRequest(
+      this.scope,
+      options.authorizationParams?.scope,
+      audience
+    );
+
+    const cacheKey = new CacheKey({
+      scope,
+      audience: audience || DEFAULT_AUDIENCE,
+      clientId: this.options.clientId
+    });
+
+    // In worker mode the refresh token lives in worker memory, so refreshToken
+    // will be undefined here. In non-worker mode it comes from the main-thread cache.
+    const refreshToken = (await this.cacheManager.get(cacheKey))?.refresh_token;
+
+    if (!refreshToken && !this.worker) {
+      return;
+    }
+
+    await revokeToken(
+      {
+        baseUrl: this.domainUrl,
+        timeout: this.httpTimeoutMs,
+        auth0Client: this.options.auth0Client,
+        useFormData: this.options.useFormData,
+        clientId: this.options.clientId,
+        refreshToken,
+        audience: cacheKey.audience,
+        scope: cacheKey.scope
+      },
+      this.worker
+    );
+
+    if (refreshToken) {
+      await this.cacheManager.stripRefreshToken(refreshToken);
+    }
   }
 
   /**

@@ -859,6 +859,40 @@ export type GetTokenSilentlyVerboseResponse = Omit<
   'refresh_token'
 >;
 
+/**
+ * Options for revoking a refresh token
+ */
+export interface RevokeOptions {
+  /**
+   * Optional authorization parameters to identify which refresh token to revoke.
+   * If not provided, revokes the refresh token for the default audience/scope.
+   *
+   * @example
+   * await auth0.revoke({
+   *   authorizationParams: {
+   *     audience: 'https://api.example.com',
+   *     scope: 'read:data'
+   *   }
+   * });
+   */
+  authorizationParams?: AuthorizationParams;
+}
+
+/**
+ * @ignore
+ * Internal options for the revokeToken API call
+ */
+export interface RevokeTokenOptions {
+  baseUrl: string;
+  clientId: string;
+  refreshToken?: string;
+  audience?: string;
+  scope?: string;
+  timeout?: number;
+  auth0Client?: any;
+  useFormData?: boolean;
+}
+
 // MFA API types
 export type {
   Authenticator,
