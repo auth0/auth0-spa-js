@@ -24,6 +24,7 @@ import {
 } from '../constants';
 
 import { GenericError, MfaRequiredError } from '../../src/errors';
+import { MFA_STEP_UP_ERROR_DESCRIPTION } from '../../src/constants';
 
 jest.mock('es-cookie');
 jest.mock('../../src/jwt');
@@ -345,7 +346,7 @@ describe('Auth0Client', () => {
         jest.spyOn(<any>utils, 'runIframe').mockRejectedValue(
           GenericError.fromPayload({
             error: 'login_required',
-            error_description: 'Multifactor authentication required'
+            error_description: MFA_STEP_UP_ERROR_DESCRIPTION
           })
         );
 
@@ -397,7 +398,7 @@ describe('Auth0Client', () => {
         jest.spyOn(<any>utils, 'runIframe').mockRejectedValue(
           GenericError.fromPayload({
             error: 'login_required',
-            error_description: 'Multifactor authentication required'
+            error_description: MFA_STEP_UP_ERROR_DESCRIPTION
           })
         );
 

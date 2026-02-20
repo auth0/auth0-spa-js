@@ -57,6 +57,7 @@ import {
   DEFAULT_POPUP_CONFIG_OPTIONS,
   DEFAULT_AUTHORIZE_TIMEOUT_IN_SECONDS,
   MISSING_REFRESH_TOKEN_ERROR_MESSAGE,
+  MFA_STEP_UP_ERROR_DESCRIPTION,
   DEFAULT_SCOPE,
   DEFAULT_SESSION_CHECK_EXPIRY_DAYS,
   DEFAULT_AUTH0_CLIENT,
@@ -947,7 +948,7 @@ export class Auth0Client {
   private _isIframeMfaError(error: GenericError): boolean {
     return (
       error.error === 'login_required' &&
-      error.error_description === 'Multifactor authentication required'
+      error.error_description === MFA_STEP_UP_ERROR_DESCRIPTION
     );
   }
 
