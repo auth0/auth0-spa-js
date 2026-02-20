@@ -1229,7 +1229,12 @@ export class Auth0Client {
         // When the login_required error is actually an MFA step-up requirement
         // and the interactive error handler is configured, skip logout so the
         // session is preserved for the popup flow.
-        if (!(e instanceof GenericError && this._isIframeMfaError(e) && this.options.interactiveErrorHandler)) {
+        const shouldSkipLogoutForMfaStepUp =
+          e instanceof GenericError &&
+          this._isIframeMfaError(e) &&
+          this.options.interactiveErrorHandler;
+
+        if (!shouldSkipLogoutForMfaStepUp) {
           this.logout({
             openUrl: false
           });
