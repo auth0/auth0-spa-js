@@ -23,7 +23,7 @@ import {
   TEST_TOKEN_TYPE
 } from '../constants';
 
-import { MfaRequiredError } from '../../src/errors';
+import { GenericError, MfaRequiredError } from '../../src/errors';
 
 jest.mock('es-cookie');
 jest.mock('../../src/jwt');
@@ -323,6 +323,109 @@ describe('Auth0Client', () => {
 
         // Verify popup was NOT opened
         expect(utils.runPopup).not.toHaveBeenCalled();
+      });
+    });
+
+    describe('iframe flow', () => {
+      it('should open popup when iframe returns MFA step-up error', async () => {
+        const auth0 = setup({
+          interactiveErrorHandler: 'popup',
+        });
+
+        await loginWithRedirect(auth0, {
+          authorizationParams: {
+            audience: TEST_AUDIENCE,
+            scope: 'read:data'
+          }
+        });
+
+        mockFetch.mockReset();
+
+        // Mock runIframe to reject with MFA step-up error
+        jest.spyOn(<any>utils, 'runIframe').mockRejectedValue(
+          GenericError.fromPayload({
+            error: 'login_required',
+            error_description: 'Multifactor authentication required'
+          })
+        );
+
+        setupPopupMock(mockWindow, {
+          code: 'my_code',
+          state: TEST_STATE
+        });
+
+        // Token response from popup's code exchange
+        mockFetch.mockResolvedValueOnce(
+          fetchResponse(true, {
+            id_token: TEST_ID_TOKEN,
+            refresh_token: TEST_REFRESH_TOKEN,
+            access_token: TEST_ACCESS_TOKEN,
+            token_type: TEST_TOKEN_TYPE,
+            expires_in: 86400
+          })
+        );
+
+        const token = await auth0.getTokenSilently({
+          authorizationParams: {
+            audience: TEST_AUDIENCE,
+            scope: 'read:data'
+          },
+          cacheMode: 'off'
+        });
+
+        expect(token).toBeTruthy();
+        expect(utils.runPopup).toHaveBeenCalled();
+      });
+
+      it('should not call logout when handler is configured and error is iframe MFA step-up', async () => {
+        const auth0 = setup({
+          interactiveErrorHandler: 'popup'
+        });
+
+        await loginWithRedirect(auth0, {
+          authorizationParams: {
+            audience: TEST_AUDIENCE,
+            scope: 'read:data'
+          }
+        });
+
+        mockFetch.mockReset();
+
+        jest.spyOn(auth0, 'logout');
+
+        // Mock runIframe to reject with MFA step-up error
+        jest.spyOn(<any>utils, 'runIframe').mockRejectedValue(
+          GenericError.fromPayload({
+            error: 'login_required',
+            error_description: 'Multifactor authentication required'
+          })
+        );
+
+        setupPopupMock(mockWindow, {
+          code: 'my_code',
+          state: TEST_STATE
+        });
+
+        // Token response from popup's code exchange
+        mockFetch.mockResolvedValueOnce(
+          fetchResponse(true, {
+            id_token: TEST_ID_TOKEN,
+            refresh_token: TEST_REFRESH_TOKEN,
+            access_token: TEST_ACCESS_TOKEN,
+            token_type: TEST_TOKEN_TYPE,
+            expires_in: 86400
+          })
+        );
+
+        await auth0.getTokenSilently({
+          authorizationParams: {
+            audience: TEST_AUDIENCE,
+            scope: 'read:data'
+          },
+          cacheMode: 'off'
+        });
+
+        expect(auth0.logout).not.toHaveBeenCalled();
       });
     });
   });

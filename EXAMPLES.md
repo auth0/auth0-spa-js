@@ -1208,22 +1208,19 @@ try {
 
 Step-up authentication lets you request elevated access for sensitive operations (e.g. a specific audience or scope) and automatically handle MFA challenges via a popup, without manually catching errors or managing the MFA API.
 
-When `getTokenSilently()` encounters an `mfa_required` error and `interactiveErrorHandler` is configured, the SDK automatically opens a Universal Login popup to complete MFA, then returns the token.
-
-> [!NOTE]
-> The interactive error handler currently only handles `mfa_required` errors. Other interactive errors (e.g. `login_required`, `consent_required`) are not intercepted and will be thrown to the caller as usual.
+When `getTokenSilently()` encounters an MFA step-up error and `interactiveErrorHandler` is configured, the SDK automatically opens a Universal Login popup to complete MFA, then returns the token. This works regardless of whether you use refresh tokens (`useRefreshTokens: true`) or the default configuration.
 
 ### Setup
 
-Enable the interactive error handler when creating the client. Refresh tokens must also be enabled, since `mfa_required` errors originate from the refresh token exchange. This feature is most suitable when combined with [Multi-Resource Refresh Tokens (MRRT)](#using-multi-resource-refresh-tokens), which allow a single refresh token to obtain access tokens for multiple APIs — making step-up requests across different audiences seamless.
+Enable the interactive error handler when creating the client. Step-up authentication works with or without refresh tokens — no additional configuration is needed. When using refresh tokens, consider combining with [Multi-Resource Refresh Tokens (MRRT)](#using-multi-resource-refresh-tokens), which allow a single refresh token to obtain access tokens for multiple APIs — making step-up requests across different audiences seamless.
 
 ```js
 const auth0 = await createAuth0Client({
   domain: '<AUTH0_DOMAIN>',
   clientId: '<AUTH0_CLIENT_ID>',
-  useRefreshTokens: true,
-  useMrrt: true, //optional
   interactiveErrorHandler: 'popup',
+  useRefreshTokens: true, // optional — works with or without refresh tokens
+  useMrrt: true, // optional — useful when stepping up across multiple APIs
   authorizationParams: {
     redirect_uri: '<MY_CALLBACK_URL>'
   }
@@ -1279,7 +1276,7 @@ try {
 ```
 
 > [!NOTE]
-> If `interactiveErrorHandler` is not configured, `MfaRequiredError` is thrown as usual, and you can handle it manually using the [MFA API](#multi-factor-authentication-mfa).
+> If `interactiveErrorHandler` is not configured, MFA errors are thrown to the caller as usual. When using refresh tokens, you can handle `MfaRequiredError` manually using the [MFA API](#multi-factor-authentication-mfa).
 
 > [!IMPORTANT]
 > `interactiveErrorHandler` only affects `getTokenSilently()`. Other methods like `loginWithPopup()` and `loginWithRedirect()` are not affected.
