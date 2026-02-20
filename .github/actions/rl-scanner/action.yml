@@ -31,7 +31,7 @@ runs:
     - name: Install RL Wrapper
       shell: bash
       run: |
-        pip install rl-wrapper>=1.0.0 --index-url "https://${{ env.PRODSEC_TOOLS_USER }}:${{ env.PRODSEC_TOOLS_TOKEN }}@a0us.jfrog.io/artifactory/api/pypi/python-local/simple"
+        pip install rl-wrapper --index-url "https://${{ env.PRODSEC_TOOLS_USER }}:${{ env.PRODSEC_TOOLS_TOKEN }}@a0us.jfrog.io/artifactory/api/pypi/python/simple"
 
     - name: Run RL Scanner
       shell: bash
