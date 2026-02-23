@@ -429,7 +429,7 @@ export class Auth0Client {
     const params = getAuthorizeParams(
       this.options,
       this.scope,
-      { ...authorizationParams, ...sessionTransferParams },
+      { ...sessionTransferParams, ...authorizationParams },
       state,
       nonce,
       code_challenge,
