@@ -377,6 +377,22 @@ export class Auth0Client {
     }
   }
 
+  /**
+   * Extracts the session_transfer_token from the current URL query parameters
+   * for Native to Web SSO flows.
+   *
+   * @returns The session transfer token if present, undefined otherwise
+   */
+  private _extractSessionTransferToken(): string | undefined {
+    if (typeof window === 'undefined') return;
+    try {
+      const params = new URLSearchParams(window.location.search);
+      return params.get('session_transfer_token') || undefined;
+    } catch {
+      return;
+    }
+  }
+
   private async _prepareAuthorizeUrl(
     authorizationParams: AuthorizationParams,
     authorizeOptions?: Partial<AuthorizeOptions>,
@@ -397,10 +413,23 @@ export class Auth0Client {
     const code_challenge = bufferToBase64UrlEncoded(code_challengeBuffer);
     const thumbprint = await this.dpop?.calculateThumbprint();
 
+    // Native to Web SSO: Extract session_transfer_token from URL if enabled (default: true)
+    // and not already provided in authorizationParams
+    let sessionTransferParams: AuthorizationParams = {};
+    if (
+      this.options.enableSessionTransfer !== false &&
+      !authorizationParams.session_transfer_token
+    ) {
+      const sessionTransferToken = this._extractSessionTransferToken();
+      if (sessionTransferToken) {
+        sessionTransferParams = { session_transfer_token: sessionTransferToken };
+      }
+    }
+
     const params = getAuthorizeParams(
       this.options,
       this.scope,
-      authorizationParams,
+      { ...authorizationParams, ...sessionTransferParams },
       state,
       nonce,
       code_challenge,

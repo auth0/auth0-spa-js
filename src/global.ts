@@ -114,6 +114,15 @@ export interface AuthorizationParams {
   redirect_uri?: string;
 
   /**
+   * Session transfer token from a native application for Native to Web SSO.
+   * When `enableSessionTransfer` is true (default), this is automatically
+   * extracted from URL query parameters if present.
+   *
+   * @see https://auth0.com/docs/authenticate/single-sign-on/native-to-web
+   */
+  session_transfer_token?: string;
+
+  /**
    * If you need to send custom parameters to the Authorization Server,
    * make sure to use the original parameter name.
    */
@@ -324,6 +333,22 @@ export interface Auth0ClientOptions {
    * defined by Auth0 or custom parameters that you define.
   */
   authorizationParams?: ClientAuthorizationParams;
+
+  /**
+   * If `true`, the SDK automatically extracts `session_transfer_token` from URL query
+   * parameters and includes it in authorization requests for Native to Web SSO.
+   *
+   * This enables seamless single sign-on when users transition from a native mobile
+   * application to a web application.
+   *
+   * The default setting is `true`.
+   *
+   * Set to `false` to disable automatic extraction if you prefer to handle
+   * session transfer tokens manually.
+   *
+   * @see https://auth0.com/docs/authenticate/single-sign-on/native-to-web
+   */
+  enableSessionTransfer?: boolean;
 }
 
 /**

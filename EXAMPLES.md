@@ -5,6 +5,7 @@
 - [Refresh Tokens](#refresh-tokens)
 - [Data Caching Options](#creating-a-custom-cache)
 - [Organizations](#organizations)
+- [Native to Web SSO](#native-to-web-sso)
 - [Custom Token Exchange (CTE)](#custom-token-exchange-cte)
 - [Device-bound tokens with DPoP](#device-bound-tokens-with-dpop)
 - [Connect Accounts for using Token Vault](#connect-accounts-for-using-token-vault)
@@ -288,6 +289,75 @@ if (organization && invitation) {
   });
 }
 ```
+
+## Native to Web SSO
+
+[Native to Web SSO](https://auth0.com/docs/authenticate/single-sign-on/native-to-web) enables seamless single sign-on when users transition from a native mobile application to a web application. The SDK automatically detects and includes `session_transfer_token` from URL query parameters in authorization requests.
+
+### Automatic Session Transfer Token Detection
+
+By default, the SDK automatically extracts `session_transfer_token` from the current URL and includes it in the `/authorize` request. This enables Native to Web SSO without requiring any code changes in your web application.
+
+```js
+// When your web app is opened with a URL like:
+// https://yourapp.com?session_transfer_token=xyz123
+//
+// The SDK automatically includes the token in loginWithRedirect:
+await auth0.loginWithRedirect();
+// The /authorize request will include session_transfer_token=xyz123
+```
+
+### Disabling Automatic Detection
+
+If you need to disable automatic session transfer token detection, set `enableSessionTransfer` to `false`:
+
+```js
+const auth0 = await createAuth0Client({
+  domain: '<AUTH0_DOMAIN>',
+  clientId: '<AUTH0_CLIENT_ID>',
+  enableSessionTransfer: false, // Disable automatic detection
+  authorizationParams: {
+    redirect_uri: '<MY_CALLBACK_URL>'
+  }
+});
+```
+
+### Manually Providing Session Transfer Token
+
+You can also manually provide the session transfer token in `authorizationParams`:
+
+```js
+// Extract token from URL manually
+const params = new URLSearchParams(window.location.search);
+const sessionTransferToken = params.get('session_transfer_token');
+
+if (sessionTransferToken) {
+  await auth0.loginWithRedirect({
+    authorizationParams: {
+      session_transfer_token: sessionTransferToken
+    }
+  });
+}
+```
+
+**Note:** Manually provided tokens take precedence over automatically detected ones.
+
+### Using with Organizations
+
+When using Native to Web SSO with [Organizations](https://auth0.com/docs/manage-users/organizations), ensure the `organization` parameter in your web application matches the organization associated with the session transfer token:
+
+```js
+// The native app authenticated with org_abc123
+// The web app must use the same organization
+await auth0.loginWithRedirect({
+  authorizationParams: {
+    organization: 'org_abc123'
+    // session_transfer_token is automatically included from URL
+  }
+});
+```
+
+If there is an organization mismatch, authentication will fail and the user will be prompted to log in again.
 
 ## Custom Token Exchange (CTE)
 
