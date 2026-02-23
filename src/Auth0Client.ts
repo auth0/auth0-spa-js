@@ -57,6 +57,7 @@ import {
   DEFAULT_POPUP_CONFIG_OPTIONS,
   DEFAULT_AUTHORIZE_TIMEOUT_IN_SECONDS,
   MISSING_REFRESH_TOKEN_ERROR_MESSAGE,
+  MFA_STEP_UP_ERROR_DESCRIPTION,
   DEFAULT_SCOPE,
   DEFAULT_SESSION_CHECK_EXPIRY_DAYS,
   DEFAULT_AUTH0_CLIENT,
@@ -926,10 +927,29 @@ export class Auth0Client {
 
   /**
    * Checks if an error should be handled by the interactive error handler.
-   * Currently only handles mfa_required; extensible for future error types.
+   * Matches:
+   * - MfaRequiredError (refresh token path, error='mfa_required')
+   * - GenericError from iframe path (error='login_required',
+   *   error_description='Multifactor authentication required')
+   * Extensible for future interactive error types.
    */
-  private _isInteractiveError(error: unknown): error is MfaRequiredError {
-    return error instanceof MfaRequiredError;
+  private _isInteractiveError(
+    error: unknown
+  ): error is MfaRequiredError | GenericError {
+    return error instanceof MfaRequiredError || (error instanceof GenericError && this._isIframeMfaError(error));
+  }
+
+  /**
+   * Checks if a login_required error from the iframe flow is actually
+   * an MFA step-up requirement. The /authorize endpoint returns
+   * error='login_required' with error_description='Multifactor authentication required'
+   * when MFA is needed but prompt=none prevents interaction.
+   */
+  private _isIframeMfaError(error: GenericError): boolean {
+    return (
+      error.error === 'login_required' &&
+      error.error_description === MFA_STEP_UP_ERROR_DESCRIPTION
+    );
   }
 
   /**
@@ -1207,9 +1227,19 @@ export class Auth0Client {
       );
     } catch (e) {
       if (e.error === 'login_required') {
-        this.logout({
-          openUrl: false
-        });
+        // When the login_required error is actually an MFA step-up requirement
+        // and the interactive error handler is configured, skip logout so the
+        // session is preserved for the popup flow.
+        const shouldSkipLogoutForMfaStepUp =
+          e instanceof GenericError &&
+          this._isIframeMfaError(e) &&
+          this.options.interactiveErrorHandler === 'popup';
+
+        if (!shouldSkipLogoutForMfaStepUp) {
+          this.logout({
+            openUrl: false
+          });
+        }
       }
       throw e;
     }
