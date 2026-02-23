@@ -1233,7 +1233,7 @@ export class Auth0Client {
         const shouldSkipLogoutForMfaStepUp =
           e instanceof GenericError &&
           this._isIframeMfaError(e) &&
-          this.options.interactiveErrorHandler;
+          this.options.interactiveErrorHandler === 'popup';
 
         if (!shouldSkipLogoutForMfaStepUp) {
           this.logout({
