@@ -1,14 +1,5 @@
 # Change Log
 
-## [v2.17.0](https://github.com/auth0/auth0-spa-js/tree/v2.17.0) (2026-02-23)
-[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.16.0...v2.17.0)
-
-**Added**
-- feat: support MFA step-up authentication via popup in iframe-based silent auth flow [\#1540](https://github.com/auth0/auth0-spa-js/pull/1540) ([gyaneshgouraw-okta](https://github.com/gyaneshgouraw-okta))
-
-**Fixed**
-- Fix misspelling of `authenticate` in `createAuth0Client` docstring [\#1537](https://github.com/auth0/auth0-spa-js/pull/1537) ([StephenP-Hung](https://github.com/StephenP-Hung))
-
 ## [v2.16.0](https://github.com/auth0/auth0-spa-js/tree/v2.16.0) (2026-02-16)
 [Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.15.0...v2.16.0)
 
