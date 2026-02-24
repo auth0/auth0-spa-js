@@ -307,15 +307,15 @@ await auth0.loginWithRedirect();
 // The /authorize request will include session_transfer_token=xyz123
 ```
 
-### Disabling Automatic Detection
+### Disabling Automatic URL Parsing
 
-If you need to disable automatic session transfer token detection, set `enableSessionTransfer` to `false`:
+The `enableSessionTransfer` flag controls whether the SDK automatically parses `session_transfer_token` from the URL. Setting it to `false` disables only the automatic URL parsing — you can still manually provide the token via `authorizationParams` when calling `loginWithRedirect`:
 
 ```js
 const auth0 = await createAuth0Client({
   domain: '<AUTH0_DOMAIN>',
   clientId: '<AUTH0_CLIENT_ID>',
-  enableSessionTransfer: false, // Disable automatic detection
+  enableSessionTransfer: false, // Disable automatic URL parsing only
   authorizationParams: {
     redirect_uri: '<MY_CALLBACK_URL>'
   }
