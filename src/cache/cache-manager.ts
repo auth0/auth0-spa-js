@@ -163,6 +163,23 @@ export class CacheManager {
     await this.cache.remove(cacheKey.toKey());
   }
 
+  async stripRefreshToken(refreshToken: string): Promise<void> {
+    const keys = await this.getCacheKeys();
+
+    /* c8 ignore next */
+    if (!keys) return;
+
+    // Find all cache entries that have this refresh token and strip only the refresh token,
+    // leaving the access token intact (it remains valid until it expires)
+    for (const key of keys) {
+      const entry = await this.cache.get<WrappedCacheEntry>(key);
+      if (entry?.body?.refresh_token === refreshToken) {
+        delete entry.body.refresh_token;
+        await this.cache.set(key, entry);
+      }
+    }
+  }
+
   async clear(clientId?: string): Promise<void> {
     const keys = await this.getCacheKeys();
 
