@@ -413,23 +413,10 @@ export class Auth0Client {
     const code_challenge = bufferToBase64UrlEncoded(code_challengeBuffer);
     const thumbprint = await this.dpop?.calculateThumbprint();
 
-    // Native to Web SSO: Extract session_transfer_token from URL if enabled (default: true)
-    // and not already provided in authorizationParams
-    let sessionTransferParams: AuthorizationParams = {};
-    if (
-      this.options.enableSessionTransfer !== false &&
-      !authorizationParams.session_transfer_token
-    ) {
-      const sessionTransferToken = this._extractSessionTransferToken();
-      if (sessionTransferToken) {
-        sessionTransferParams = { session_transfer_token: sessionTransferToken };
-      }
-    }
-
     const params = getAuthorizeParams(
       this.options,
       this.scope,
-      { ...sessionTransferParams, ...authorizationParams },
+      authorizationParams,
       state,
       nonce,
       code_challenge,
@@ -491,8 +478,24 @@ export class Auth0Client {
       }
     }
 
+    // Native to Web SSO: Extract session_transfer_token from URL if enabled (default: true)
+    // and not already provided in authorizationParams
+    let authorizationParams = options.authorizationParams || {};
+    if (
+      this.options.enableSessionTransfer !== false &&
+      !authorizationParams.session_transfer_token
+    ) {
+      const sessionTransferToken = this._extractSessionTransferToken();
+      if (sessionTransferToken) {
+        authorizationParams = {
+          ...authorizationParams,
+          session_transfer_token: sessionTransferToken
+        };
+      }
+    }
+
     const params = await this._prepareAuthorizeUrl(
-      options.authorizationParams || {},
+      authorizationParams,
       { response_mode: 'web_message' },
       window.location.origin
     );
@@ -581,8 +584,24 @@ export class Auth0Client {
       urlOptions.authorizationParams?.organization ||
       this.options.authorizationParams.organization;
 
+    // Native to Web SSO: Extract session_transfer_token from URL if enabled (default: true)
+    // and not already provided in authorizationParams
+    let authorizationParams = urlOptions.authorizationParams || {};
+    if (
+      this.options.enableSessionTransfer !== false &&
+      !authorizationParams.session_transfer_token
+    ) {
+      const sessionTransferToken = this._extractSessionTransferToken();
+      if (sessionTransferToken) {
+        authorizationParams = {
+          ...authorizationParams,
+          session_transfer_token: sessionTransferToken
+        };
+      }
+    }
+
     const { url, ...transaction } = await this._prepareAuthorizeUrl(
-      urlOptions.authorizationParams || {}
+      authorizationParams
     );
 
     this.transactionManager.create<LoginTransaction>({

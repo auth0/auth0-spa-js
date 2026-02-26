@@ -4,15 +4,11 @@ import * as utils from '../../src/utils';
 import * as scope from '../../src/scope';
 import { expect } from '@jest/globals';
 
-import { assertUrlEquals, setupFn } from './helpers';
+import { setupFn } from './helpers';
 
 import {
-  TEST_CLIENT_ID,
   TEST_CODE_CHALLENGE,
   TEST_DOMAIN,
-  TEST_NONCE,
-  TEST_REDIRECT_URI,
-  TEST_SCOPES,
   TEST_STATE
 } from '../constants';
 
@@ -205,14 +201,16 @@ describe('Auth0Client', () => {
           location: { href: '' }
         });
 
-        // We can't easily verify popup URL in this test setup,
-        // but the same _prepareAuthorizeUrl is used
-        // This test ensures no errors occur with session transfer in popup flow
         try {
           await auth0.loginWithPopup();
         } catch {
-          // Expected to fail due to mock setup, but no session transfer errors
+          // Expected to fail due to incomplete mock setup
         }
+
+        // Verify session_transfer_token was included in the popup authorize URL
+        const popupUrl = (utils.runPopup as jest.Mock).mock.calls[0][0].popup.location.href;
+        const url = new URL(popupUrl);
+        expect(url.searchParams.get('session_transfer_token')).toBe('popup-stt-token');
       });
     });
   });
