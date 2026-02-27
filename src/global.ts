@@ -335,9 +335,10 @@ export interface Auth0ClientOptions {
   authorizationParams?: ClientAuthorizationParams;
 
   /**
-   * If `true`, the SDK automatically extracts `session_transfer_token` from URL query
-   * parameters and includes it in authorization requests for Native to Web SSO.
+   * Query parameter name to extract the session transfer token from for Native to Web SSO.
    *
+   * When set, the SDK automatically extracts the token from the specified URL query
+   * parameter and includes it as `session_transfer_token` in authorization requests.
    * This enables seamless single sign-on when users transition from a native mobile
    * application to a web application.
    *
@@ -345,14 +346,28 @@ export interface Auth0ClientOptions {
    * `window.history.replaceState()` to prevent accidental reuse on subsequent
    * authentication requests.
    *
-   * The default setting is `true`.
+   * **Default:** `undefined` (feature disabled)
    *
-   * Set to `false` to disable automatic extraction if you prefer to handle
+   * **Common values:**
+   * - `'session_transfer_token'` - Standard parameter name
+   * - `'stt'` - Shortened version
+   * - Custom parameter name of your choice
+   *
+   * Set to `undefined` to disable automatic extraction if you prefer to handle
    * session transfer tokens manually.
+   *
+   * @example
+   * ```js
+   * const auth0 = await createAuth0Client({
+   *   domain: '<AUTH0_DOMAIN>',
+   *   clientId: '<AUTH0_CLIENT_ID>',
+   *   sessionTransferTokenQueryParamName: 'session_transfer_token'
+   * });
+   * ```
    *
    * @see https://auth0.com/docs/authenticate/single-sign-on/native-to-web
    */
-  enableSessionTransfer?: boolean;
+  sessionTransferTokenQueryParamName?: string;
 }
 
 /**

@@ -378,32 +378,35 @@ export class Auth0Client {
   }
 
   /**
-   * Extracts the session_transfer_token from the current URL query parameters
+   * Extracts the session transfer token from the current URL query parameters
    * for Native to Web SSO flows.
    *
+   * @param paramName The query parameter name to extract from the URL
    * @returns The session transfer token if present, undefined otherwise
    */
-  private _extractSessionTransferToken(): string | undefined {
+  private _extractSessionTransferToken(paramName: string): string | undefined {
     if (typeof window === 'undefined') return;
     try {
       const params = new URLSearchParams(window.location.search);
-      return params.get('session_transfer_token') || undefined;
+      return params.get(paramName) || undefined;
     } catch {
       return;
     }
   }
 
   /**
-   * Clears the session_transfer_token from the current URL using the History API.
+   * Clears the session transfer token from the current URL using the History API.
    * This prevents the token from being re-sent on subsequent authentication requests,
    * which is important since session transfer tokens are typically single-use.
+   *
+   * @param paramName The query parameter name to remove from the URL
    */
-  private _clearSessionTransferTokenFromUrl(): void {
+  private _clearSessionTransferTokenFromUrl(paramName: string): void {
     if (typeof window === 'undefined') return;
     try {
       const url = new URL(window.location.href);
-      if (url.searchParams.has('session_transfer_token')) {
-        url.searchParams.delete('session_transfer_token');
+      if (url.searchParams.has(paramName)) {
+        url.searchParams.delete(paramName);
         window.history.replaceState({}, '', url.toString());
       }
     } catch {
@@ -496,21 +499,25 @@ export class Auth0Client {
       }
     }
 
-    // Native to Web SSO: Extract session_transfer_token from URL if enabled (default: true)
+    // Native to Web SSO: Extract session_transfer_token from URL if configured
     // and not already provided in authorizationParams
     let authorizationParams = options.authorizationParams || {};
     if (
-      this.options.enableSessionTransfer !== false &&
+      this.options.sessionTransferTokenQueryParamName &&
       !authorizationParams.session_transfer_token
     ) {
-      const sessionTransferToken = this._extractSessionTransferToken();
+      const sessionTransferToken = this._extractSessionTransferToken(
+        this.options.sessionTransferTokenQueryParamName
+      );
       if (sessionTransferToken) {
         authorizationParams = {
           ...authorizationParams,
           session_transfer_token: sessionTransferToken
         };
         // Clear the token from URL to prevent re-use on subsequent calls
-        this._clearSessionTransferTokenFromUrl();
+        this._clearSessionTransferTokenFromUrl(
+          this.options.sessionTransferTokenQueryParamName
+        );
       }
     }
 
@@ -604,21 +611,25 @@ export class Auth0Client {
       urlOptions.authorizationParams?.organization ||
       this.options.authorizationParams.organization;
 
-    // Native to Web SSO: Extract session_transfer_token from URL if enabled (default: true)
+    // Native to Web SSO: Extract session_transfer_token from URL if configured
     // and not already provided in authorizationParams
     let authorizationParams = urlOptions.authorizationParams || {};
     if (
-      this.options.enableSessionTransfer !== false &&
+      this.options.sessionTransferTokenQueryParamName &&
       !authorizationParams.session_transfer_token
     ) {
-      const sessionTransferToken = this._extractSessionTransferToken();
+      const sessionTransferToken = this._extractSessionTransferToken(
+        this.options.sessionTransferTokenQueryParamName
+      );
       if (sessionTransferToken) {
         authorizationParams = {
           ...authorizationParams,
           session_transfer_token: sessionTransferToken
         };
         // Clear the token from URL to prevent re-use on subsequent calls
-        this._clearSessionTransferTokenFromUrl();
+        this._clearSessionTransferTokenFromUrl(
+          this.options.sessionTransferTokenQueryParamName
+        );
       }
     }
 

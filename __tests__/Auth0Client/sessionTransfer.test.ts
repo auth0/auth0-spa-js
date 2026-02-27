@@ -74,8 +74,8 @@ describe('Auth0Client', () => {
   });
 
   describe('Native to Web SSO - Session Transfer Token', () => {
-    describe('enableSessionTransfer option', () => {
-      it('should automatically include session_transfer_token from URL when enableSessionTransfer is true (default)', async () => {
+    describe('sessionTransferTokenQueryParamName option', () => {
+      it('should NOT include session_transfer_token by default (feature disabled)', async () => {
         // Set session_transfer_token in URL
         (window.location as any).search = '?session_transfer_token=test-stt-token-123';
 
@@ -85,43 +85,60 @@ describe('Auth0Client', () => {
 
         const url = new URL(mockWindow.location.assign.mock.calls[0][0]);
 
-        // Verify session_transfer_token is included in authorize URL
-        expect(url.searchParams.get('session_transfer_token')).toBe('test-stt-token-123');
-      });
-
-      it('should automatically include session_transfer_token when enableSessionTransfer is explicitly true', async () => {
-        (window.location as any).search = '?session_transfer_token=explicit-true-token';
-
-        const auth0 = setup({
-          enableSessionTransfer: true
-        });
-
-        await auth0.loginWithRedirect();
-
-        const url = new URL(mockWindow.location.assign.mock.calls[0][0]);
-
-        expect(url.searchParams.get('session_transfer_token')).toBe('explicit-true-token');
-      });
-
-      it('should NOT include session_transfer_token when enableSessionTransfer is false', async () => {
-        (window.location as any).search = '?session_transfer_token=should-not-appear';
-
-        const auth0 = setup({
-          enableSessionTransfer: false
-        });
-
-        await auth0.loginWithRedirect();
-
-        const url = new URL(mockWindow.location.assign.mock.calls[0][0]);
-
-        // session_transfer_token should NOT be in the URL
+        // Verify session_transfer_token is NOT included (feature disabled by default)
         expect(url.searchParams.get('session_transfer_token')).toBeNull();
+      });
+
+      it('should extract token from standard parameter name when configured', async () => {
+        (window.location as any).search = '?session_transfer_token=standard-token';
+
+        const auth0 = setup({
+          sessionTransferTokenQueryParamName: 'session_transfer_token'
+        });
+
+        await auth0.loginWithRedirect();
+
+        const url = new URL(mockWindow.location.assign.mock.calls[0][0]);
+
+        expect(url.searchParams.get('session_transfer_token')).toBe('standard-token');
+      });
+
+      it('should extract token from custom parameter name', async () => {
+        (window.location as any).search = '?stt=custom-token-123';
+
+        const auth0 = setup({
+          sessionTransferTokenQueryParamName: 'stt'
+        });
+
+        await auth0.loginWithRedirect();
+
+        const url = new URL(mockWindow.location.assign.mock.calls[0][0]);
+
+        // Verify it's sent as session_transfer_token to Auth0
+        expect(url.searchParams.get('session_transfer_token')).toBe('custom-token-123');
+      });
+
+      it('should extract token from another custom parameter name', async () => {
+        (window.location as any).search = '?my_custom_token=another-token';
+
+        const auth0 = setup({
+          sessionTransferTokenQueryParamName: 'my_custom_token'
+        });
+
+        await auth0.loginWithRedirect();
+
+        const url = new URL(mockWindow.location.assign.mock.calls[0][0]);
+
+        // Verify it's sent as session_transfer_token to Auth0
+        expect(url.searchParams.get('session_transfer_token')).toBe('another-token');
       });
 
       it('should NOT override manually provided session_transfer_token in authorizationParams', async () => {
         (window.location as any).search = '?session_transfer_token=url-token';
 
-        const auth0 = setup();
+        const auth0 = setup({
+          sessionTransferTokenQueryParamName: 'session_transfer_token'
+        });
 
         await auth0.loginWithRedirect({
           authorizationParams: {
@@ -135,10 +152,12 @@ describe('Auth0Client', () => {
         expect(url.searchParams.get('session_transfer_token')).toBe('manual-token');
       });
 
-      it('should not include session_transfer_token when not present in URL', async () => {
+      it('should not include session_transfer_token when configured param not present in URL', async () => {
         (window.location as any).search = '';
 
-        const auth0 = setup();
+        const auth0 = setup({
+          sessionTransferTokenQueryParamName: 'session_transfer_token'
+        });
 
         await auth0.loginWithRedirect();
 
@@ -147,10 +166,12 @@ describe('Auth0Client', () => {
         expect(url.searchParams.get('session_transfer_token')).toBeNull();
       });
 
-      it('should handle URL with other query params alongside session_transfer_token', async () => {
-        (window.location as any).search = '?foo=bar&session_transfer_token=mixed-params-token&baz=qux';
+      it('should handle URL with other query params alongside session transfer token', async () => {
+        (window.location as any).search = '?foo=bar&stt=mixed-params-token&baz=qux';
 
-        const auth0 = setup();
+        const auth0 = setup({
+          sessionTransferTokenQueryParamName: 'stt'
+        });
 
         await auth0.loginWithRedirect();
 
@@ -159,11 +180,13 @@ describe('Auth0Client', () => {
         expect(url.searchParams.get('session_transfer_token')).toBe('mixed-params-token');
       });
 
-      it('should handle URL-encoded session_transfer_token', async () => {
+      it('should handle URL-encoded session transfer token', async () => {
         const encodedToken = encodeURIComponent('token+with/special=chars');
         (window.location as any).search = `?session_transfer_token=${encodedToken}`;
 
-        const auth0 = setup();
+        const auth0 = setup({
+          sessionTransferTokenQueryParamName: 'session_transfer_token'
+        });
 
         await auth0.loginWithRedirect();
 
@@ -172,7 +195,7 @@ describe('Auth0Client', () => {
         expect(url.searchParams.get('session_transfer_token')).toBe('token+with/special=chars');
       });
 
-      it('should clear session_transfer_token from URL after extraction in loginWithRedirect', async () => {
+      it('should clear configured param from URL after extraction in loginWithRedirect', async () => {
         const mockReplaceState = jest.fn();
         window.history.replaceState = mockReplaceState;
 
@@ -185,12 +208,12 @@ describe('Auth0Client', () => {
             href: {
               configurable: true,
               writable: true,
-              value: 'https://example.com?session_transfer_token=test-token&other=param'
+              value: 'https://example.com?stt=test-token&other=param'
             },
             search: {
               configurable: true,
               writable: true,
-              value: '?session_transfer_token=test-token&other=param'
+              value: '?stt=test-token&other=param'
             },
             assign: {
               configurable: true,
@@ -199,7 +222,9 @@ describe('Auth0Client', () => {
           }
         ) as Location;
 
-        const auth0 = setup();
+        const auth0 = setup({
+          sessionTransferTokenQueryParamName: 'stt'
+        });
 
         await auth0.loginWithRedirect();
 
@@ -213,7 +238,7 @@ describe('Auth0Client', () => {
         expect(cleanedUrl).toBe('https://example.com/?other=param');
       });
 
-      it('should NOT clear session_transfer_token from URL when manually provided in authorizationParams', async () => {
+      it('should NOT clear URL when manually provided in authorizationParams', async () => {
         const mockReplaceState = jest.fn();
         window.history.replaceState = mockReplaceState;
 
@@ -239,7 +264,9 @@ describe('Auth0Client', () => {
           }
         ) as Location;
 
-        const auth0 = setup();
+        const auth0 = setup({
+          sessionTransferTokenQueryParamName: 'session_transfer_token'
+        });
 
         await auth0.loginWithRedirect({
           authorizationParams: {
@@ -255,7 +282,7 @@ describe('Auth0Client', () => {
         expect(mockReplaceState).not.toHaveBeenCalled();
       });
 
-      it('should NOT clear URL when enableSessionTransfer is false', async () => {
+      it('should NOT clear URL when feature is disabled (no param name configured)', async () => {
         const mockReplaceState = jest.fn();
         window.history.replaceState = mockReplaceState;
 
@@ -281,9 +308,8 @@ describe('Auth0Client', () => {
           }
         ) as Location;
 
-        const auth0 = setup({
-          enableSessionTransfer: false
-        });
+        const auth0 = setup();
+        // No sessionTransferTokenQueryParamName configured
 
         await auth0.loginWithRedirect();
 
@@ -297,10 +323,12 @@ describe('Auth0Client', () => {
     });
 
     describe('loginWithPopup with session transfer', () => {
-      it('should include session_transfer_token in popup flow when present in URL', async () => {
-        (window.location as any).search = '?session_transfer_token=popup-stt-token';
+      it('should include session transfer token in popup flow when configured', async () => {
+        (window.location as any).search = '?stt=popup-stt-token';
 
-        const auth0 = setup();
+        const auth0 = setup({
+          sessionTransferTokenQueryParamName: 'stt'
+        });
 
         // Mock popup response
         mockWindow.addEventListener.mockImplementationOnce((type: string, cb: Function) => {
@@ -336,7 +364,7 @@ describe('Auth0Client', () => {
         expect(url.searchParams.get('session_transfer_token')).toBe('popup-stt-token');
       });
 
-      it('should clear session_transfer_token from URL after extraction in loginWithPopup', async () => {
+      it('should clear configured param from URL after extraction in loginWithPopup', async () => {
         const mockReplaceState = jest.fn();
         window.history.replaceState = mockReplaceState;
 
@@ -348,12 +376,12 @@ describe('Auth0Client', () => {
             href: {
               configurable: true,
               writable: true,
-              value: 'https://example.com?session_transfer_token=popup-token&foo=bar'
+              value: 'https://example.com?my_token=popup-token&foo=bar'
             },
             search: {
               configurable: true,
               writable: true,
-              value: '?session_transfer_token=popup-token&foo=bar'
+              value: '?my_token=popup-token&foo=bar'
             },
             assign: {
               configurable: true,
@@ -367,7 +395,9 @@ describe('Auth0Client', () => {
           }
         ) as Location;
 
-        const auth0 = setup();
+        const auth0 = setup({
+          sessionTransferTokenQueryParamName: 'my_token'
+        });
 
         mockWindow.addEventListener.mockImplementationOnce((type: string, cb: Function) => {
           if (type === 'message') {
