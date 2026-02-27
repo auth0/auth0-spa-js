@@ -393,6 +393,24 @@ export class Auth0Client {
     }
   }
 
+  /**
+   * Clears the session_transfer_token from the current URL using the History API.
+   * This prevents the token from being re-sent on subsequent authentication requests,
+   * which is important since session transfer tokens are typically single-use.
+   */
+  private _clearSessionTransferTokenFromUrl(): void {
+    if (typeof window === 'undefined') return;
+    try {
+      const url = new URL(window.location.href);
+      if (url.searchParams.has('session_transfer_token')) {
+        url.searchParams.delete('session_transfer_token');
+        window.history.replaceState({}, '', url.toString());
+      }
+    } catch {
+      // Silently fail if URL manipulation isn't possible
+    }
+  }
+
   private async _prepareAuthorizeUrl(
     authorizationParams: AuthorizationParams,
     authorizeOptions?: Partial<AuthorizeOptions>,
@@ -491,6 +509,8 @@ export class Auth0Client {
           ...authorizationParams,
           session_transfer_token: sessionTransferToken
         };
+        // Clear the token from URL to prevent re-use on subsequent calls
+        this._clearSessionTransferTokenFromUrl();
       }
     }
 
@@ -597,6 +617,8 @@ export class Auth0Client {
           ...authorizationParams,
           session_transfer_token: sessionTransferToken
         };
+        // Clear the token from URL to prevent re-use on subsequent calls
+        this._clearSessionTransferTokenFromUrl();
       }
     }
 

@@ -341,6 +341,10 @@ export interface Auth0ClientOptions {
    * This enables seamless single sign-on when users transition from a native mobile
    * application to a web application.
    *
+   * After extraction, the token is automatically removed from the URL using
+   * `window.history.replaceState()` to prevent accidental reuse on subsequent
+   * authentication requests.
+   *
    * The default setting is `true`.
    *
    * Set to `false` to disable automatic extraction if you prefer to handle

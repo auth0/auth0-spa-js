@@ -171,6 +171,129 @@ describe('Auth0Client', () => {
 
         expect(url.searchParams.get('session_transfer_token')).toBe('token+with/special=chars');
       });
+
+      it('should clear session_transfer_token from URL after extraction in loginWithRedirect', async () => {
+        const mockReplaceState = jest.fn();
+        window.history.replaceState = mockReplaceState;
+
+        // Recreate window.location with href property
+        delete (window as any).location;
+        window.location = Object.defineProperties(
+          {},
+          {
+            ...Object.getOwnPropertyDescriptors(oldWindowLocation),
+            href: {
+              configurable: true,
+              writable: true,
+              value: 'https://example.com?session_transfer_token=test-token&other=param'
+            },
+            search: {
+              configurable: true,
+              writable: true,
+              value: '?session_transfer_token=test-token&other=param'
+            },
+            assign: {
+              configurable: true,
+              value: jest.fn()
+            }
+          }
+        ) as Location;
+
+        const auth0 = setup();
+
+        await auth0.loginWithRedirect();
+
+        // Verify token was extracted and included in authorize URL
+        const authorizeUrl = new URL(mockWindow.location.assign.mock.calls[0][0]);
+        expect(authorizeUrl.searchParams.get('session_transfer_token')).toBe('test-token');
+
+        // Verify URL was cleaned (replaceState was called)
+        expect(mockReplaceState).toHaveBeenCalledTimes(1);
+        const cleanedUrl = mockReplaceState.mock.calls[0][2];
+        expect(cleanedUrl).toBe('https://example.com/?other=param');
+      });
+
+      it('should NOT clear session_transfer_token from URL when manually provided in authorizationParams', async () => {
+        const mockReplaceState = jest.fn();
+        window.history.replaceState = mockReplaceState;
+
+        delete (window as any).location;
+        window.location = Object.defineProperties(
+          {},
+          {
+            ...Object.getOwnPropertyDescriptors(oldWindowLocation),
+            href: {
+              configurable: true,
+              writable: true,
+              value: 'https://example.com?session_transfer_token=url-token'
+            },
+            search: {
+              configurable: true,
+              writable: true,
+              value: '?session_transfer_token=url-token'
+            },
+            assign: {
+              configurable: true,
+              value: jest.fn()
+            }
+          }
+        ) as Location;
+
+        const auth0 = setup();
+
+        await auth0.loginWithRedirect({
+          authorizationParams: {
+            session_transfer_token: 'manual-token'
+          }
+        });
+
+        // Manual token should be used, not the one from URL
+        const authorizeUrl = new URL(mockWindow.location.assign.mock.calls[0][0]);
+        expect(authorizeUrl.searchParams.get('session_transfer_token')).toBe('manual-token');
+
+        // URL should NOT be cleaned since token wasn't extracted from URL
+        expect(mockReplaceState).not.toHaveBeenCalled();
+      });
+
+      it('should NOT clear URL when enableSessionTransfer is false', async () => {
+        const mockReplaceState = jest.fn();
+        window.history.replaceState = mockReplaceState;
+
+        delete (window as any).location;
+        window.location = Object.defineProperties(
+          {},
+          {
+            ...Object.getOwnPropertyDescriptors(oldWindowLocation),
+            href: {
+              configurable: true,
+              writable: true,
+              value: 'https://example.com?session_transfer_token=test-token'
+            },
+            search: {
+              configurable: true,
+              writable: true,
+              value: '?session_transfer_token=test-token'
+            },
+            assign: {
+              configurable: true,
+              value: jest.fn()
+            }
+          }
+        ) as Location;
+
+        const auth0 = setup({
+          enableSessionTransfer: false
+        });
+
+        await auth0.loginWithRedirect();
+
+        // Token should not be included
+        const authorizeUrl = new URL(mockWindow.location.assign.mock.calls[0][0]);
+        expect(authorizeUrl.searchParams.get('session_transfer_token')).toBeNull();
+
+        // URL should NOT be cleaned
+        expect(mockReplaceState).not.toHaveBeenCalled();
+      });
     });
 
     describe('loginWithPopup with session transfer', () => {
@@ -211,6 +334,77 @@ describe('Auth0Client', () => {
         const popupUrl = (utils.runPopup as jest.Mock).mock.calls[0][0].popup.location.href;
         const url = new URL(popupUrl);
         expect(url.searchParams.get('session_transfer_token')).toBe('popup-stt-token');
+      });
+
+      it('should clear session_transfer_token from URL after extraction in loginWithPopup', async () => {
+        const mockReplaceState = jest.fn();
+        window.history.replaceState = mockReplaceState;
+
+        delete (window as any).location;
+        window.location = Object.defineProperties(
+          {},
+          {
+            ...Object.getOwnPropertyDescriptors(oldWindowLocation),
+            href: {
+              configurable: true,
+              writable: true,
+              value: 'https://example.com?session_transfer_token=popup-token&foo=bar'
+            },
+            search: {
+              configurable: true,
+              writable: true,
+              value: '?session_transfer_token=popup-token&foo=bar'
+            },
+            assign: {
+              configurable: true,
+              value: jest.fn()
+            },
+            origin: {
+              configurable: true,
+              writable: true,
+              value: 'https://example.com'
+            }
+          }
+        ) as Location;
+
+        const auth0 = setup();
+
+        mockWindow.addEventListener.mockImplementationOnce((type: string, cb: Function) => {
+          if (type === 'message') {
+            setTimeout(() => {
+              cb({
+                data: {
+                  type: 'authorization_response',
+                  response: {
+                    state: TEST_STATE,
+                    code: 'test-code'
+                  }
+                }
+              });
+            }, 0);
+          }
+        });
+
+        mockWindow.open.mockReturnValue({
+          close: () => {},
+          location: { href: '' }
+        });
+
+        try {
+          await auth0.loginWithPopup();
+        } catch {
+          // Expected to fail due to incomplete mock setup
+        }
+
+        // Verify token was extracted and included in authorize URL
+        const popupUrl = (utils.runPopup as jest.Mock).mock.calls[0][0].popup.location.href;
+        const url = new URL(popupUrl);
+        expect(url.searchParams.get('session_transfer_token')).toBe('popup-token');
+
+        // Verify URL was cleaned (replaceState was called)
+        expect(mockReplaceState).toHaveBeenCalledTimes(1);
+        const cleanedUrl = mockReplaceState.mock.calls[0][2];
+        expect(cleanedUrl).toBe('https://example.com/?foo=bar');
       });
     });
   });

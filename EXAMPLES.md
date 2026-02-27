@@ -307,6 +307,8 @@ await auth0.loginWithRedirect();
 // The /authorize request will include session_transfer_token=xyz123
 ```
 
+**Important:** After extracting the token, the SDK automatically removes it from the URL using `window.history.replaceState()`. This prevents the token from being accidentally reused on subsequent authentication requests, which is important since session transfer tokens are typically single-use. This cleanup happens with both `loginWithRedirect()` and `loginWithPopup()`.
+
 ### Disabling Automatic URL Parsing
 
 The `enableSessionTransfer` flag controls whether the SDK automatically parses `session_transfer_token` from the URL. Setting it to `false` disables only the automatic URL parsing — you can still manually provide the token via `authorizationParams` when calling `loginWithRedirect`:
@@ -341,6 +343,23 @@ if (sessionTransferToken) {
 ```
 
 **Note:** Manually provided tokens take precedence over automatically detected ones.
+
+### Using with loginWithPopup
+
+The SDK also supports Native to Web SSO with `loginWithPopup()`. The session transfer token is automatically extracted from the URL and cleaned after use, just like with `loginWithRedirect()`:
+
+```js
+// When your web app is opened with:
+// https://yourapp.com?session_transfer_token=xyz123
+
+// The SDK automatically includes the token in loginWithPopup:
+await auth0.loginWithPopup();
+
+// After login completes, the URL is cleaned:
+// https://yourapp.com
+```
+
+This is particularly useful for web applications that prefer popup-based authentication flows, as the main page URL persists throughout the login process (unlike redirect flows where the browser navigates away).
 
 ### Using with Organizations
 
