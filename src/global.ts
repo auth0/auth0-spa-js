@@ -114,6 +114,15 @@ export interface AuthorizationParams {
   redirect_uri?: string;
 
   /**
+   * Session transfer token from a native application for Native to Web SSO.
+   * When `enableSessionTransfer` is true (default), this is automatically
+   * extracted from URL query parameters if present.
+   *
+   * @see https://auth0.com/docs/authenticate/single-sign-on/native-to-web
+   */
+  session_transfer_token?: string;
+
+  /**
    * If you need to send custom parameters to the Authorization Server,
    * make sure to use the original parameter name.
    */
@@ -324,6 +333,41 @@ export interface Auth0ClientOptions {
    * defined by Auth0 or custom parameters that you define.
   */
   authorizationParams?: ClientAuthorizationParams;
+
+  /**
+   * Query parameter name to extract the session transfer token from for Native to Web SSO.
+   *
+   * When set, the SDK automatically extracts the token from the specified URL query
+   * parameter and includes it as `session_transfer_token` in authorization requests.
+   * This enables seamless single sign-on when users transition from a native mobile
+   * application to a web application.
+   *
+   * After extraction, the token is automatically removed from the URL using
+   * `window.history.replaceState()` to prevent accidental reuse on subsequent
+   * authentication requests.
+   *
+   * **Default:** `undefined` (feature disabled)
+   *
+   * **Common values:**
+   * - `'session_transfer_token'` - Standard parameter name
+   * - `'stt'` - Shortened version
+   * - Custom parameter name of your choice
+   *
+   * Set to `undefined` to disable automatic extraction if you prefer to handle
+   * session transfer tokens manually.
+   *
+   * @example
+   * ```js
+   * const auth0 = await createAuth0Client({
+   *   domain: '<AUTH0_DOMAIN>',
+   *   clientId: '<AUTH0_CLIENT_ID>',
+   *   sessionTransferTokenQueryParamName: 'session_transfer_token'
+   * });
+   * ```
+   *
+   * @see https://auth0.com/docs/authenticate/single-sign-on/native-to-web
+   */
+  sessionTransferTokenQueryParamName?: string;
 }
 
 /**
