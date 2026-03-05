@@ -115,8 +115,8 @@ export interface AuthorizationParams {
 
   /**
    * Session transfer token from a native application for Native to Web SSO.
-   * When `enableSessionTransfer` is true (default), this is automatically
-   * extracted from URL query parameters if present.
+   * When `sessionTransferTokenQueryParamName` is set, this is automatically
+   * extracted from the specified URL query parameter if present.
    *
    * @see https://auth0.com/docs/authenticate/single-sign-on/native-to-web
    */
