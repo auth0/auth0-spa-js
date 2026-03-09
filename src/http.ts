@@ -229,6 +229,29 @@ export async function getJSON<T>(
   return data;
 }
 
+const fetchWithTimeout = (
+  fetchUrl: string,
+  fetchOptions: FetchOptions,
+  timeout: number
+): Promise<Response> => {
+  const controller = createAbortController();
+  fetchOptions.signal = controller.signal;
+
+  let timeoutId: NodeJS.Timeout;
+
+  return Promise.race([
+    fetch(fetchUrl, fetchOptions),
+    new Promise<never>((_, reject) => {
+      timeoutId = setTimeout(() => {
+        controller.abort();
+        reject(new Error("Timeout when executing 'fetch'"));
+      }, timeout);
+    })
+  ]).finally(() => {
+    clearTimeout(timeoutId);
+  });
+};
+
 export const doRevoke = async (
   fetchUrl: string,
   fetchOptions: FetchOptions,
@@ -252,22 +275,7 @@ export const doRevoke = async (
     );
   }
 
-  const controller = createAbortController();
-  fetchOptions.signal = controller.signal;
-
-  let timeoutId: NodeJS.Timeout;
-
-  const response = await Promise.race([
-    fetch(fetchUrl, fetchOptions),
-    new Promise<never>((_, reject) => {
-      timeoutId = setTimeout(() => {
-        controller.abort();
-        reject(new Error("Timeout when executing 'fetch'"));
-      }, timeout);
-    })
-  ]).finally(() => {
-    clearTimeout(timeoutId);
-  });
+  const response = await fetchWithTimeout(fetchUrl, fetchOptions, timeout);
 
   if (!response.ok) {
     let errorDescription: string | undefined;
