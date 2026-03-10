@@ -1,5 +1,14 @@
 # Change Log
 
+## [v2.18.0](https://github.com/auth0/auth0-spa-js/tree/v2.18.0) (2026-03-10)
+[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.17.0...v2.18.0)
+
+**Added**
+- build(deps): update @auth0/auth0-auth-js to version 1.5.0 [\#1554](https://github.com/auth0/auth0-spa-js/pull/1554) ([gyaneshgouraw-okta](https://github.com/gyaneshgouraw-okta))
+
+**Removed**
+- chore: remove package-lock.json [\#1551](https://github.com/auth0/auth0-spa-js/pull/1551) ([gyaneshgouraw-okta](https://github.com/gyaneshgouraw-okta))
+
 ## [v2.17.0](https://github.com/auth0/auth0-spa-js/tree/v2.17.0) (2026-02-23)
 [Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.16.0...v2.17.0)
 
