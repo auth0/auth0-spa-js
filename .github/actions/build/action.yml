@@ -15,11 +15,11 @@ runs:
       uses: actions/setup-node@v3
       with:
         node-version: ${{ inputs.node }}
-        cache: 'npm'
+        package-manager-cache: false
 
     - name: Install dependencies
       shell: bash
-      run: npm ci
+      run: npm i
 
     - name: Build package
       shell: bash

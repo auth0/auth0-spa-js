@@ -53,7 +53,7 @@ runs:
           --repository "${{ github.repository }}" \
           --commit "${{ github.sha }}" \
           --build-env "github_actions" \
-          --suppress_output
+          --suppress-output
 
         # Check the outcome of the scanner
         if [ $? -ne 0 ]; then
