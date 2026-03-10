@@ -414,6 +414,26 @@ export class Auth0Client {
     }
   }
 
+  /**
+   * Applies the session transfer token from the URL to the authorization parameters
+   * if configured and not already provided.
+   *
+   * @param authorizationParams The authorization parameters to enhance
+   * @returns The authorization parameters with session_transfer_token added if applicable
+   */
+  private _applySessionTransferToken(
+    authorizationParams: AuthorizationParams
+  ): AuthorizationParams {
+    const paramName = this.options.sessionTransferTokenQueryParamName;
+    if (!paramName || authorizationParams.session_transfer_token) {
+      return authorizationParams;
+    }
+    const token = this._extractSessionTransferToken(paramName);
+    if (!token) return authorizationParams;
+    this._clearSessionTransferTokenFromUrl(paramName);
+    return { ...authorizationParams, session_transfer_token: token };
+  }
+
   private async _prepareAuthorizeUrl(
     authorizationParams: AuthorizationParams,
     authorizeOptions?: Partial<AuthorizeOptions>,
@@ -499,27 +519,7 @@ export class Auth0Client {
       }
     }
 
-    // Native to Web SSO: Extract session_transfer_token from URL if configured
-    // and not already provided in authorizationParams
-    let authorizationParams = options.authorizationParams || {};
-    if (
-      this.options.sessionTransferTokenQueryParamName &&
-      !authorizationParams.session_transfer_token
-    ) {
-      const sessionTransferToken = this._extractSessionTransferToken(
-        this.options.sessionTransferTokenQueryParamName
-      );
-      if (sessionTransferToken) {
-        authorizationParams = {
-          ...authorizationParams,
-          session_transfer_token: sessionTransferToken
-        };
-        // Clear the token from URL to prevent re-use on subsequent calls
-        this._clearSessionTransferTokenFromUrl(
-          this.options.sessionTransferTokenQueryParamName
-        );
-      }
-    }
+    const authorizationParams = this._applySessionTransferToken(options.authorizationParams || {});
 
     const params = await this._prepareAuthorizeUrl(
       authorizationParams,
@@ -611,27 +611,7 @@ export class Auth0Client {
       urlOptions.authorizationParams?.organization ||
       this.options.authorizationParams.organization;
 
-    // Native to Web SSO: Extract session_transfer_token from URL if configured
-    // and not already provided in authorizationParams
-    let authorizationParams = urlOptions.authorizationParams || {};
-    if (
-      this.options.sessionTransferTokenQueryParamName &&
-      !authorizationParams.session_transfer_token
-    ) {
-      const sessionTransferToken = this._extractSessionTransferToken(
-        this.options.sessionTransferTokenQueryParamName
-      );
-      if (sessionTransferToken) {
-        authorizationParams = {
-          ...authorizationParams,
-          session_transfer_token: sessionTransferToken
-        };
-        // Clear the token from URL to prevent re-use on subsequent calls
-        this._clearSessionTransferTokenFromUrl(
-          this.options.sessionTransferTokenQueryParamName
-        );
-      }
-    }
+    const authorizationParams = this._applySessionTransferToken(urlOptions.authorizationParams || {});
 
     const { url, ...transaction } = await this._prepareAuthorizeUrl(
       authorizationParams

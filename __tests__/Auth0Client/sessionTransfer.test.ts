@@ -8,7 +8,6 @@ import { setupFn } from './helpers';
 
 import {
   TEST_CODE_CHALLENGE,
-  TEST_DOMAIN,
   TEST_STATE
 } from '../constants';
 
