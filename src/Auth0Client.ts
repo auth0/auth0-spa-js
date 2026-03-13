@@ -386,13 +386,8 @@ export class Auth0Client {
    * @returns The session transfer token if present, undefined otherwise
    */
   private _extractSessionTransferToken(paramName: string): string | undefined {
-    if (typeof window === 'undefined') return;
-    try {
-      const params = new URLSearchParams(window.location.search);
-      return params.get(paramName) || undefined;
-    } catch {
-      return;
-    }
+    const params = new URLSearchParams(window.location.search);
+    return params.get(paramName) || undefined;
   }
 
   /**
@@ -403,7 +398,6 @@ export class Auth0Client {
    * @param paramName The query parameter name to remove from the URL
    */
   private _clearSessionTransferTokenFromUrl(paramName: string): void {
-    if (typeof window === 'undefined') return;
     try {
       const url = new URL(window.location.href);
       if (url.searchParams.has(paramName)) {
