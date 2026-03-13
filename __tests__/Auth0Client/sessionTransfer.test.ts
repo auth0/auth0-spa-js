@@ -319,6 +319,88 @@ describe('Auth0Client', () => {
         // URL should NOT be cleaned
         expect(mockReplaceState).not.toHaveBeenCalled();
       });
+
+      it('should not throw and not clear URL when window.location.href is not a valid URL', async () => {
+        const mockReplaceState = jest.fn();
+        window.history.replaceState = mockReplaceState;
+
+        delete (window as any).location;
+        window.location = Object.defineProperties(
+          {},
+          {
+            ...Object.getOwnPropertyDescriptors(oldWindowLocation),
+            href: {
+              configurable: true,
+              writable: true,
+              value: 'not-a-valid-url'
+            },
+            search: {
+              configurable: true,
+              writable: true,
+              value: '?stt=test-token'
+            },
+            assign: {
+              configurable: true,
+              value: jest.fn()
+            }
+          }
+        ) as Location;
+
+        const auth0 = setup({
+          sessionTransferTokenQueryParamName: 'stt'
+        });
+
+        // Should not throw even with an invalid href
+        await auth0.loginWithRedirect();
+
+        // Token should still be extracted from search and included in the authorize URL
+        const authorizeUrl = new URL(mockWindow.location.assign.mock.calls[0][0]);
+        expect(authorizeUrl.searchParams.get('session_transfer_token')).toBe('test-token');
+
+        // replaceState should NOT be called because new URL(href) threw
+        expect(mockReplaceState).not.toHaveBeenCalled();
+      });
+
+      it('should not call replaceState when param is in search but absent from href', async () => {
+        const mockReplaceState = jest.fn();
+        window.history.replaceState = mockReplaceState;
+
+        delete (window as any).location;
+        window.location = Object.defineProperties(
+          {},
+          {
+            ...Object.getOwnPropertyDescriptors(oldWindowLocation),
+            href: {
+              configurable: true,
+              writable: true,
+              // href intentionally omits the param already (e.g. cleaned elsewhere)
+              value: 'https://example.com'
+            },
+            search: {
+              configurable: true,
+              writable: true,
+              value: '?stt=test-token'
+            },
+            assign: {
+              configurable: true,
+              value: jest.fn()
+            }
+          }
+        ) as Location;
+
+        const auth0 = setup({
+          sessionTransferTokenQueryParamName: 'stt'
+        });
+
+        await auth0.loginWithRedirect();
+
+        // Token should still be extracted from search and included in the authorize URL
+        const authorizeUrl = new URL(mockWindow.location.assign.mock.calls[0][0]);
+        expect(authorizeUrl.searchParams.get('session_transfer_token')).toBe('test-token');
+
+        // replaceState should NOT be called because url.searchParams.has() returned false
+        expect(mockReplaceState).not.toHaveBeenCalled();
+      });
     });
 
     describe('loginWithPopup with session transfer', () => {
