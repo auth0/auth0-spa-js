@@ -908,6 +908,73 @@ cacheFactories.forEach(cacheFactory => {
       });
     });
 
+    describe('stripRefreshToken()', () => {
+      beforeEach(async () => {
+        await manager.clear();
+      });
+
+      it('strips refresh_token from the matching entry while keeping access_token', async () => {
+        await manager.set({ ...defaultData, refresh_token: TEST_REFRESH_TOKEN });
+
+        await manager.stripRefreshToken(TEST_REFRESH_TOKEN);
+
+        const result = await manager.get(defaultKey);
+        expect(result.access_token).toBe(TEST_ACCESS_TOKEN);
+        expect(result.refresh_token).toBeUndefined();
+      });
+
+      it('does not modify entries when no refresh_token matches', async () => {
+        await manager.set({ ...defaultData, refresh_token: TEST_REFRESH_TOKEN });
+
+        await manager.stripRefreshToken('non_existent_token');
+
+        const result = await manager.get(defaultKey);
+        expect(result.refresh_token).toBe(TEST_REFRESH_TOKEN);
+      });
+
+      it('strips refresh_token from all matching entries when multiple share the same token (MRRT)', async () => {
+        const key2 = new CacheKey({
+          clientId: TEST_CLIENT_ID,
+          audience: 'another_audience',
+          scope: TEST_SCOPES
+        });
+        const data2: CacheEntry = { ...defaultData, audience: 'another_audience' };
+
+        await manager.set({ ...defaultData, refresh_token: TEST_REFRESH_TOKEN });
+        await manager.set({ ...data2, refresh_token: TEST_REFRESH_TOKEN });
+
+        await manager.stripRefreshToken(TEST_REFRESH_TOKEN);
+
+        const result1 = await manager.get(defaultKey);
+        const result2 = await manager.get(key2);
+
+        expect(result1.access_token).toBe(TEST_ACCESS_TOKEN);
+        expect(result1.refresh_token).toBeUndefined();
+        expect(result2.access_token).toBe(TEST_ACCESS_TOKEN);
+        expect(result2.refresh_token).toBeUndefined();
+      });
+
+      it('only strips the matching entry when multiple entries have different refresh tokens', async () => {
+        const key2 = new CacheKey({
+          clientId: TEST_CLIENT_ID,
+          audience: 'another_audience',
+          scope: TEST_SCOPES
+        });
+        const data2: CacheEntry = { ...defaultData, audience: 'another_audience' };
+
+        await manager.set({ ...defaultData, refresh_token: TEST_REFRESH_TOKEN });
+        await manager.set({ ...data2, refresh_token: 'other_refresh_token' });
+
+        await manager.stripRefreshToken(TEST_REFRESH_TOKEN);
+
+        const result1 = await manager.get(defaultKey);
+        const result2 = await manager.get(key2);
+
+        expect(result1.refresh_token).toBeUndefined();
+        expect(result2.refresh_token).toBe('other_refresh_token');
+      });
+    });
+
     describe('getIdToken', () => {
       beforeEach(async () => {
         await manager.clear();
