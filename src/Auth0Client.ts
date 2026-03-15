@@ -1189,33 +1189,45 @@ export class Auth0Client {
     const audience =
       options.audience || this.options.authorizationParams.audience;
 
-    const cacheKey = new CacheKey({
-      audience: audience || DEFAULT_AUDIENCE,
-      clientId: this.options.clientId
-    });
+    const resolvedAudience = audience || DEFAULT_AUDIENCE;
 
-    // In worker mode the refresh token lives in worker memory, so refreshToken
-    // will be undefined here. In non-worker mode it comes from the main-thread cache.
-    const refreshToken = (await this.cacheManager.get(cacheKey))?.refresh_token;
+    if (this.worker) {
+      // Worker path: the worker holds all RTs in its own memory and handles
+      // revocation of every distinct RT for this audience internally.
+      await revokeToken(
+        {
+          baseUrl: this.domainUrl,
+          timeout: this.httpTimeoutMs,
+          auth0Client: this.options.auth0Client,
+          useFormData: this.options.useFormData,
+          clientId: this.options.clientId,
+          audience: resolvedAudience
+        },
+        this.worker
+      );
 
-    if (!refreshToken && !this.worker) {
       return;
     }
 
-    await revokeToken(
-      {
+    // Non-worker path: multiple distinct refresh tokens may exist for the same
+    // audience when different scope combinations were obtained via separate flows.
+    // Revoke each one individually so none are left alive.
+    const refreshTokens = await this.cacheManager.getRefreshTokensByAudience(
+      resolvedAudience,
+      this.options.clientId
+    );
+
+    for (const refreshToken of refreshTokens) {
+      await revokeToken({
         baseUrl: this.domainUrl,
         timeout: this.httpTimeoutMs,
         auth0Client: this.options.auth0Client,
         useFormData: this.options.useFormData,
         clientId: this.options.clientId,
         refreshToken,
-        audience: cacheKey.audience
-      },
-      this.worker
-    );
+        audience: resolvedAudience
+      });
 
-    if (refreshToken) {
       await this.cacheManager.stripRefreshToken(refreshToken);
     }
   }

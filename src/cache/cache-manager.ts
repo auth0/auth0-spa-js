@@ -287,6 +287,46 @@ export class CacheManager {
   }
 
   /**
+   * Returns all distinct refresh tokens stored for a given audience and client.
+   *
+   * Multiple cache entries may exist for the same audience when different scope
+   * combinations were obtained via separate authorization flows, each potentially
+   * carrying a different refresh token. A Set is used to deduplicate tokens that
+   * are shared across entries (e.g. MRRT).
+   *
+   * @param audience The audience to look up
+   * @param clientId The client id to scope the lookup
+   */
+  async getRefreshTokensByAudience(
+    audience: string,
+    clientId: string
+  ): Promise<string[]> {
+    const keys = await this.getCacheKeys();
+
+    if (!keys) return [];
+
+    const tokens = new Set<string>();
+
+    for (const key of keys) {
+      const cacheKey = CacheKey.fromKey(key);
+
+      if (
+        cacheKey.prefix === CACHE_KEY_PREFIX &&
+        cacheKey.clientId === clientId &&
+        cacheKey.audience === audience
+      ) {
+        const entry = await this.cache.get<WrappedCacheEntry>(key);
+
+        if (entry?.body?.refresh_token) {
+          tokens.add(entry.body.refresh_token);
+        }
+      }
+    }
+
+    return Array.from(tokens);
+  }
+
+  /**
    * Updates the refresh token in all cache entries that contain the old refresh token.
    *
    * When a refresh token is rotated, multiple cache entries (for different audiences/scopes)

@@ -975,6 +975,91 @@ cacheFactories.forEach(cacheFactory => {
       });
     });
 
+    describe('getRefreshTokensByAudience()', () => {
+      beforeEach(async () => {
+        await manager.clear();
+      });
+
+      it('returns empty array when no entries exist for the audience', async () => {
+        const result = await manager.getRefreshTokensByAudience(
+          TEST_AUDIENCE,
+          TEST_CLIENT_ID
+        );
+        expect(result).toEqual([]);
+      });
+
+      it('returns the single refresh token for the audience', async () => {
+        await manager.set({ ...defaultData, refresh_token: TEST_REFRESH_TOKEN });
+
+        const result = await manager.getRefreshTokensByAudience(
+          TEST_AUDIENCE,
+          TEST_CLIENT_ID
+        );
+        expect(result).toEqual([TEST_REFRESH_TOKEN]);
+      });
+
+      it('deduplicates when multiple scope entries share the same refresh token (MRRT)', async () => {
+        const entry2: CacheEntry = {
+          ...defaultData,
+          scope: 'openid profile email offline_access'
+        };
+
+        await manager.set({ ...defaultData, refresh_token: TEST_REFRESH_TOKEN });
+        await manager.set({ ...entry2, refresh_token: TEST_REFRESH_TOKEN });
+
+        const result = await manager.getRefreshTokensByAudience(
+          TEST_AUDIENCE,
+          TEST_CLIENT_ID
+        );
+        expect(result).toEqual([TEST_REFRESH_TOKEN]);
+      });
+
+      it('returns multiple distinct refresh tokens when scope combinations have different RTs', async () => {
+        const entry2: CacheEntry = {
+          ...defaultData,
+          scope: 'openid profile email offline_access'
+        };
+
+        await manager.set({ ...defaultData, refresh_token: TEST_REFRESH_TOKEN });
+        await manager.set({ ...entry2, refresh_token: 'rt_second' });
+
+        const result = await manager.getRefreshTokensByAudience(
+          TEST_AUDIENCE,
+          TEST_CLIENT_ID
+        );
+        expect(result).toHaveLength(2);
+        expect(result).toContain(TEST_REFRESH_TOKEN);
+        expect(result).toContain('rt_second');
+      });
+
+      it('does not return tokens from a different audience', async () => {
+        const otherEntry: CacheEntry = {
+          ...defaultData,
+          audience: 'https://other-api.example.com',
+          refresh_token: 'rt_other_audience'
+        };
+
+        await manager.set({ ...defaultData, refresh_token: TEST_REFRESH_TOKEN });
+        await manager.set(otherEntry);
+
+        const result = await manager.getRefreshTokensByAudience(
+          TEST_AUDIENCE,
+          TEST_CLIENT_ID
+        );
+        expect(result).toEqual([TEST_REFRESH_TOKEN]);
+      });
+
+      it('ignores entries without a refresh token', async () => {
+        await manager.set({ ...defaultData }); // no refresh_token
+
+        const result = await manager.getRefreshTokensByAudience(
+          TEST_AUDIENCE,
+          TEST_CLIENT_ID
+        );
+        expect(result).toEqual([]);
+      });
+    });
+
     describe('getIdToken', () => {
       beforeEach(async () => {
         await manager.clear();

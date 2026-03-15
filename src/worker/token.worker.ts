@@ -26,10 +26,15 @@ const setRefreshToken = (
 const deleteRefreshToken = (audience: string, scope: string) =>
   delete refreshTokens[cacheKey(audience, scope)];
 
-const getRefreshTokenByAudience = (audience: string): string | undefined => {
+const getRefreshTokensByAudience = (audience: string): string[] => {
   const prefix = `${audience}|`;
-  const key = Object.keys(refreshTokens).find(k => k.startsWith(prefix));
-  return key ? refreshTokens[key] : undefined;
+  const seen = new Set<string>();
+  Object.entries(refreshTokens).forEach(([key, token]) => {
+    if (key.startsWith(prefix)) {
+      seen.add(token);
+    }
+  });
+  return Array.from(seen);
 };
 
 const deleteRefreshTokensByValue = (refreshToken: string): void => {
@@ -206,64 +211,64 @@ const revokeMessageHandler = async ({
   const { audience } = auth || {};
 
   try {
-    const refreshToken = getRefreshTokenByAudience(audience);
+    const tokensToRevoke = getRefreshTokensByAudience(audience);
 
-    if (!refreshToken) {
-      // No refresh token to revoke - this is not an error
+    if (tokensToRevoke.length === 0) {
       port.postMessage({ ok: true });
       return;
     }
 
-    // Inject the refresh token into the pre-built body, mirroring how
-    // messageHandler injects refresh_token for the token endpoint.
-    const body = useFormData
+    // Parse the base body once; rebuild per RT so each request is independent.
+    const baseBody = useFormData
       ? formDataToObject(fetchOptions.body as string)
       : JSON.parse(fetchOptions.body as string);
 
-    fetchOptions.body = useFormData
-      ? createQueryParams({ ...body, token: refreshToken })
-      : JSON.stringify({ ...body, token: refreshToken });
+    for (const refreshToken of tokensToRevoke) {
+      const body = useFormData
+        ? createQueryParams({ ...baseBody, token: refreshToken })
+        : JSON.stringify({ ...baseBody, token: refreshToken });
 
-    let abortController: AbortController | undefined;
+      let abortController: AbortController | undefined;
+      let signal: AbortSignal | undefined;
 
-    if (typeof AbortController === 'function') {
-      abortController = new AbortController();
-      fetchOptions.signal = abortController.signal;
-    }
-
-    let response: void | Response;
-
-    try {
-      response = await Promise.race([
-        wait(timeout),
-        fetch(fetchUrl, { ...fetchOptions })
-      ]);
-    } catch (error) {
-      port.postMessage({ error: error.message });
-      return;
-    }
-
-    if (!response) {
-      if (abortController) abortController.abort();
-      port.postMessage({ error: "Timeout when executing 'fetch'" });
-      return;
-    }
-
-    if (!response.ok) {
-      let errorDescription: string | undefined;
-      try {
-        const { error_description } = JSON.parse(await response.text());
-        errorDescription = error_description;
-      } catch {
-        // body absent or not valid JSON
+      if (typeof AbortController === 'function') {
+        abortController = new AbortController();
+        signal = abortController.signal;
       }
 
-      port.postMessage({ error: errorDescription || `HTTP error ${response.status}` });
-      return;
-    }
+      let response: void | Response;
 
-    // Success - delete all entries with this refresh token from worker memory (MRRT support)
-    deleteRefreshTokensByValue(refreshToken);
+      try {
+        response = await Promise.race([
+          wait(timeout),
+          fetch(fetchUrl, { ...fetchOptions, body, signal })
+        ]);
+      } catch (error) {
+        port.postMessage({ error: error.message });
+        return;
+      }
+
+      if (!response) {
+        if (abortController) abortController.abort();
+        port.postMessage({ error: "Timeout when executing 'fetch'" });
+        return;
+      }
+
+      if (!response.ok) {
+        let errorDescription: string | undefined;
+        try {
+          const { error_description } = JSON.parse(await response.text());
+          errorDescription = error_description;
+        } catch {
+          // body absent or not valid JSON
+        }
+
+        port.postMessage({ error: errorDescription || `HTTP error ${response.status}` });
+        return;
+      }
+
+      deleteRefreshTokensByValue(refreshToken);
+    }
 
     port.postMessage({ ok: true });
   } catch (error) {

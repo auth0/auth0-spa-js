@@ -751,6 +751,138 @@ describe('token worker', () => {
 
       expect(responseAudience2.json.error).toBe('missing_refresh_token');
     });
+
+    it('revokes all distinct refresh tokens when multiple scope entries exist for the same audience', async () => {
+      // Seed two distinct refresh tokens under the same audience but different scopes
+      mockFetch.mockReturnValueOnce(
+        Promise.resolve({
+          ok: true,
+          json: () => ({ refresh_token: 'rt_scope_a' }),
+          headers: new Headers()
+        })
+      );
+
+      await messageHandlerAsync({
+        fetchUrl: 'https://test.auth0.com/oauth/token',
+        fetchOptions: {
+          method: 'POST',
+          body: JSON.stringify({ grant_type: 'authorization_code' })
+        },
+        auth: { audience: 'my_audience', scope: 'openid read:data' }
+      });
+
+      mockFetch.mockReturnValueOnce(
+        Promise.resolve({
+          ok: true,
+          json: () => ({ refresh_token: 'rt_scope_b' }),
+          headers: new Headers()
+        })
+      );
+
+      await messageHandlerAsync({
+        fetchUrl: 'https://test.auth0.com/oauth/token',
+        fetchOptions: {
+          method: 'POST',
+          body: JSON.stringify({ grant_type: 'authorization_code' })
+        },
+        auth: { audience: 'my_audience', scope: 'openid write:data' }
+      });
+
+      // Both revoke calls succeed
+      mockFetch
+        .mockReturnValueOnce(
+          Promise.resolve({ ok: true, text: () => Promise.resolve('') })
+        )
+        .mockReturnValueOnce(
+          Promise.resolve({ ok: true, text: () => Promise.resolve('') })
+        );
+
+      const response = await revokeHandlerAsync(revokeOpts({ audience: 'my_audience' }));
+
+      expect(response.ok).toBe(true);
+      // One fetch call per distinct RT
+      expect(mockFetch).toHaveBeenCalledTimes(4); // 2 seeds + 2 revokes
+
+      const revokeCall1Body = JSON.parse(mockFetch.mock.calls[2][1].body);
+      const revokeCall2Body = JSON.parse(mockFetch.mock.calls[3][1].body);
+      const revokedTokens = [revokeCall1Body.token, revokeCall2Body.token];
+
+      expect(revokedTokens).toContain('rt_scope_a');
+      expect(revokedTokens).toContain('rt_scope_b');
+
+      // Both tokens should be gone from worker memory
+      const afterRevokeA = await messageHandlerAsync({
+        fetchUrl: 'https://test.auth0.com/oauth/token',
+        fetchOptions: {
+          method: 'POST',
+          body: JSON.stringify({ grant_type: 'refresh_token' })
+        },
+        auth: { audience: 'my_audience', scope: 'openid read:data' }
+      });
+      expect(afterRevokeA.json.error).toBe('missing_refresh_token');
+
+      const afterRevokeB = await messageHandlerAsync({
+        fetchUrl: 'https://test.auth0.com/oauth/token',
+        fetchOptions: {
+          method: 'POST',
+          body: JSON.stringify({ grant_type: 'refresh_token' })
+        },
+        auth: { audience: 'my_audience', scope: 'openid write:data' }
+      });
+      expect(afterRevokeB.json.error).toBe('missing_refresh_token');
+    });
+
+    it('stops and returns error if the first revoke call fails when multiple RTs exist', async () => {
+      // Seed two distinct refresh tokens
+      mockFetch.mockReturnValueOnce(
+        Promise.resolve({
+          ok: true,
+          json: () => ({ refresh_token: 'rt_scope_a' }),
+          headers: new Headers()
+        })
+      );
+
+      await messageHandlerAsync({
+        fetchUrl: 'https://test.auth0.com/oauth/token',
+        fetchOptions: {
+          method: 'POST',
+          body: JSON.stringify({ grant_type: 'authorization_code' })
+        },
+        auth: { audience: 'my_audience', scope: 'openid read:data' }
+      });
+
+      mockFetch.mockReturnValueOnce(
+        Promise.resolve({
+          ok: true,
+          json: () => ({ refresh_token: 'rt_scope_b' }),
+          headers: new Headers()
+        })
+      );
+
+      await messageHandlerAsync({
+        fetchUrl: 'https://test.auth0.com/oauth/token',
+        fetchOptions: {
+          method: 'POST',
+          body: JSON.stringify({ grant_type: 'authorization_code' })
+        },
+        auth: { audience: 'my_audience', scope: 'openid write:data' }
+      });
+
+      // First revoke fails
+      mockFetch.mockReturnValueOnce(
+        Promise.resolve({
+          ok: false,
+          status: 400,
+          text: () => Promise.resolve(JSON.stringify({ error_description: 'token invalid' }))
+        })
+      );
+
+      const response = await revokeHandlerAsync(revokeOpts({ audience: 'my_audience' }));
+
+      expect(response.error).toBe('token invalid');
+      // Second revoke should not have been attempted
+      expect(mockFetch).toHaveBeenCalledTimes(3); // 2 seeds + 1 failed revoke
+    });
   });
 
   describe('messageRouter', () => {

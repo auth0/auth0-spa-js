@@ -189,6 +189,53 @@ describe('Auth0Client', () => {
       expect(url).toBe(`https://${TEST_DOMAIN}/oauth/revoke`);
     });
 
+    it('revokes all distinct refresh tokens when multiple scope entries exist for the same audience', async () => {
+      const auth0 = setup(defaultConfig);
+
+      jest
+        .spyOn((auth0 as any).cacheManager, 'getRefreshTokensByAudience')
+        .mockResolvedValue(['rt_one', 'rt_two']);
+
+      mockFetch
+        .mockResolvedValueOnce({ ok: true, text: () => Promise.resolve('') })
+        .mockResolvedValueOnce({ ok: true, text: () => Promise.resolve('') });
+
+      await auth0.revoke();
+
+      expect(mockFetch).toHaveBeenCalledTimes(2);
+
+      const body1 = Object.fromEntries(
+        new URLSearchParams(mockFetch.mock.calls[0][1].body)
+      );
+      const body2 = Object.fromEntries(
+        new URLSearchParams(mockFetch.mock.calls[1][1].body)
+      );
+
+      expect(body1).toMatchObject({ token: 'rt_one' });
+      expect(body2).toMatchObject({ token: 'rt_two' });
+    });
+
+    it('stops and throws if a revoke call fails when multiple RTs exist', async () => {
+      const auth0 = setup(defaultConfig);
+
+      jest
+        .spyOn((auth0 as any).cacheManager, 'getRefreshTokensByAudience')
+        .mockResolvedValue(['rt_one', 'rt_two']);
+
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 400,
+        text: () =>
+          Promise.resolve(
+            JSON.stringify({ error_description: 'The token has been revoked' })
+          )
+      });
+
+      await expect(auth0.revoke()).rejects.toThrow('The token has been revoked');
+      // Second token should not have been attempted
+      expect(mockFetch).toHaveBeenCalledTimes(1);
+    });
+
     it('sends message to worker when worker is available', async () => {
       // Use default (memory) cache so the worker path is taken
       const sendMessageSpy = jest
