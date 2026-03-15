@@ -1159,25 +1159,27 @@ export class Auth0Client {
    * - For localStorage: The token is retrieved from cache and revoked
    *
    * If `useRefreshTokens` is disabled, this method does nothing.
-   * The refresh token is identified by the provided authorization parameters (audience/scope).
    *
-   * When using Multi-Resource Refresh Tokens (MRRT), revoking a token will affect
-   * all cache entries that share the same refresh token.
+   * **Important:** This method revokes the refresh token for a single audience. If your
+   * application requests tokens for multiple audiences, each audience may have its own
+   * refresh token. To fully revoke all refresh tokens, call this method once per audience.
+   * If you want to terminate the user's session entirely, use `logout()` instead.
    *
-   * @param options - Optional parameters to identify which refresh token to revoke
+   * When using Multi-Resource Refresh Tokens (MRRT), a single refresh token may cover
+   * multiple audiences. In that case, revoking it will affect all cache entries that
+   * share the same token.
+   *
+   * @param options - Optional parameters to identify which refresh token to revoke.
+   *   Defaults to the audience configured in `authorizationParams`.
    *
    * @example
    * // Revoke the default refresh token
    * await auth0.revoke();
    *
    * @example
-   * // Revoke refresh token for specific audience/scope
-   * await auth0.revoke({
-   *   authorizationParams: {
-   *     audience: 'https://api.example.com',
-   *     scope: 'read:data'
-   *   }
-   * });
+   * // Revoke refresh tokens for each audience individually
+   * await auth0.revoke({ audience: 'https://api.example.com' });
+   * await auth0.revoke({ audience: 'https://api2.example.com' });
    */
   public async revoke(options: RevokeOptions = {}): Promise<void> {
     if (!this.options.useRefreshTokens) {
@@ -1185,17 +1187,9 @@ export class Auth0Client {
     }
 
     const audience =
-      options.authorizationParams?.audience ||
-      this.options.authorizationParams.audience;
-
-    const scope = scopesToRequest(
-      this.scope,
-      options.authorizationParams?.scope,
-      audience
-    );
+      options.audience || this.options.authorizationParams.audience;
 
     const cacheKey = new CacheKey({
-      scope,
       audience: audience || DEFAULT_AUDIENCE,
       clientId: this.options.clientId
     });
@@ -1216,8 +1210,7 @@ export class Auth0Client {
         useFormData: this.options.useFormData,
         clientId: this.options.clientId,
         refreshToken,
-        audience: cacheKey.audience,
-        scope: cacheKey.scope
+        audience: cacheKey.audience
       },
       this.worker
     );

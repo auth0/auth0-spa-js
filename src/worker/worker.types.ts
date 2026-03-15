@@ -21,8 +21,11 @@ export type WorkerRefreshTokenMessage = WorkerTokenMessage & {
   useMrrt?: boolean;
 };
 
-export type WorkerRevokeTokenMessage = WorkerTokenMessage & {
+export type WorkerRevokeTokenMessage = Omit<WorkerTokenMessage, 'auth'> & {
   type: 'revoke';
+  auth: {
+    audience: string;
+  };
 };
 
 export type WorkerMessage =

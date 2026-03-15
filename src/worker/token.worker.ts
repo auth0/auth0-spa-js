@@ -26,6 +26,12 @@ const setRefreshToken = (
 const deleteRefreshToken = (audience: string, scope: string) =>
   delete refreshTokens[cacheKey(audience, scope)];
 
+const getRefreshTokenByAudience = (audience: string): string | undefined => {
+  const prefix = `${audience}|`;
+  const key = Object.keys(refreshTokens).find(k => k.startsWith(prefix));
+  return key ? refreshTokens[key] : undefined;
+};
+
 const deleteRefreshTokensByValue = (refreshToken: string): void => {
   Object.entries(refreshTokens).forEach(([key, token]) => {
     if (token === refreshToken) {
@@ -197,10 +203,10 @@ const revokeMessageHandler = async ({
   data: { timeout, auth, fetchUrl, fetchOptions, useFormData },
   ports: [port]
 }: MessageEvent<WorkerRevokeTokenMessage>) => {
-  const { audience, scope } = auth || {};
+  const { audience } = auth || {};
 
   try {
-    const refreshToken = getRefreshToken(audience, scope);
+    const refreshToken = getRefreshTokenByAudience(audience);
 
     if (!refreshToken) {
       // No refresh token to revoke - this is not an error

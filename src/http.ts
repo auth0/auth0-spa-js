@@ -257,7 +257,6 @@ export const doRevoke = async (
   fetchOptions: FetchOptions,
   timeout: number,
   audience?: string,
-  scope?: string,
   worker?: Worker,
   useFormData?: boolean
 ): Promise<void> => {
@@ -269,7 +268,7 @@ export const doRevoke = async (
         fetchUrl,
         fetchOptions,
         useFormData,
-        auth: { audience: audience || '', scope: scope || '' }
+        auth: { audience: audience || '' }
       },
       worker
     );

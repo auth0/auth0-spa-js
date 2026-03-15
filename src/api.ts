@@ -85,7 +85,6 @@ export async function revokeToken(
     useFormData,
     refreshToken,
     audience,
-    scope,
     clientId
   }: RevokeTokenOptions,
   worker?: Worker
@@ -118,7 +117,6 @@ export async function revokeToken(
     },
     timeout || DEFAULT_FETCH_TIMEOUT_MS,
     audience,
-    scope,
     worker,
     useFormData
   );

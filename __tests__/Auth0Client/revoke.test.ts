@@ -183,9 +183,7 @@ describe('Auth0Client', () => {
         text: () => Promise.resolve('')
       });
 
-      await auth0.revoke({
-        authorizationParams: { audience: 'https://api.example.com' }
-      });
+      await auth0.revoke({ audience: 'https://api.example.com' });
 
       const [url] = mockFetch.mock.calls[0];
       expect(url).toBe(`https://${TEST_DOMAIN}/oauth/revoke`);
@@ -209,8 +207,7 @@ describe('Auth0Client', () => {
             method: 'POST'
           }),
           auth: expect.objectContaining({
-            audience: expect.any(String),
-            scope: expect.any(String)
+            audience: expect.any(String)
           })
         }),
         expect.anything()
