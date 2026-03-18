@@ -447,6 +447,7 @@
                     clientId: this.clientId,
                     useRefreshTokens: true,
                     cacheLocation: 'localstorage',
+                    useMrrt: true,
                     authorizationParams: {
                         redirect_uri: `${window.location.origin}/mfa_flow.html`,
                         ...(this.audience && { audience: this.audience }),
@@ -541,7 +542,13 @@
                     await this.auth0.getTokenSilently({
                         cacheMode: "off",
                         authorizationParams: {
-                            ...(this.audience && { audience: this.audience })
+                            // ...(this.audience && { audience: this.audience })
+                            // audience: "https://email-otp-challenge.us.auth0.com/my-org/",
+                            // scope: "read:my_org:configuration"
+
+                            audience: "https://email-otp-challenge.us.auth0.com/me/",
+                            scope: "read:me:connected_accounts"
+
                         }
                     });
                 } catch (e) {
