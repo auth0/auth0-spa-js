@@ -129,17 +129,27 @@ describe('utils', () => {
   describe('createRandomString', () => {
     it('creates random string based on crypto.getRandomValues', () => {
       (<any>global).crypto = {
-        getRandomValues: () => [1, 5, 10, 15, 100]
+        getRandomValues: (a: Uint8Array) => { a.fill(1); return a; }
       };
-      expect(createRandomString()).toBe('15AFY');
+      expect(createRandomString()).toBe('1'.repeat(43));
     });
-    it('creates random string with a length between 43 and 128', () => {
+    it('creates random string with a length of 43', () => {
       (<any>global).crypto = {
         getRandomValues: (a: Uint8Array) => Array(a.length).fill(0)
       };
+      expect(createRandomString().length).toBe(43);
+    });
+    it('skips bytes >= validMax to eliminate modulo bias', () => {
+      let callCount = 0;
+      (<any>global).crypto = {
+        getRandomValues: (a: Uint8Array) => {
+          callCount++;
+          return Array(a.length).fill(callCount === 1 ? 198 : 5);
+        }
+      };
       const result = createRandomString();
-      expect(result.length).toBeGreaterThanOrEqual(43);
-      expect(result.length).toBeLessThanOrEqual(128);
+      expect(result.length).toBe(43);
+      expect(result).toBe('5'.repeat(43));
     });
   });
   describe('encode', () => {

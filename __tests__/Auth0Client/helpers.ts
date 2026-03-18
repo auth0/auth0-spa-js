@@ -118,6 +118,8 @@ export const fetchResponse = (
 
 export const setupFn = (mockVerify: jest.Mock) => {
   return (config?: Partial<Auth0ClientOptions>, claims?: Partial<IdToken>) => {
+    jest.spyOn(utils, 'createRandomString').mockReturnValue('123');
+
     const options: Auth0ClientOptions = {
       domain: TEST_DOMAIN,
       clientId: TEST_CLIENT_ID,

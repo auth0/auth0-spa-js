@@ -149,11 +149,18 @@ export const getCrypto = () => {
 export const createRandomString = () => {
   const charset =
     '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-_~.';
+  const validMax = 256 - (256 % charset.length);
   let random = '';
-  const randomValues = Array.from(
-    getCrypto().getRandomValues(new Uint8Array(43))
-  );
-  randomValues.forEach(v => (random += charset[v % charset.length]));
+  while (random.length < 43) {
+    const bytes = Array.from(
+      getCrypto().getRandomValues(new Uint8Array(43 - random.length))
+    );
+    for (const byte of bytes) {
+      if (random.length < 43 && byte < validMax) {
+        random += charset[byte % charset.length];
+      }
+    }
+  }
   return random;
 };
 
