@@ -148,6 +148,7 @@ describe('utils', () => {
         }
       };
       const result = createRandomString();
+      expect(callCount).toBeGreaterThan(1);
       expect(result.length).toBe(43);
       expect(result).toBe('5'.repeat(43));
     });

@@ -152,9 +152,7 @@ export const createRandomString = () => {
   const validMax = 256 - (256 % charset.length);
   let random = '';
   while (random.length < 43) {
-    const bytes = Array.from(
-      getCrypto().getRandomValues(new Uint8Array(43 - random.length))
-    );
+    const bytes = getCrypto().getRandomValues(new Uint8Array(43 - random.length));
     for (const byte of bytes) {
       if (random.length < 43 && byte < validMax) {
         random += charset[byte % charset.length];
