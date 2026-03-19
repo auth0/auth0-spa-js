@@ -1,5 +1,14 @@
 # Change Log
 
+## [v2.18.0](https://github.com/auth0/auth0-spa-js/tree/v2.18.0) (2026-03-19)
+[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.17.1...v2.18.0)
+
+**Added**
+- Feat/native to web sso support [\#1547](https://github.com/auth0/auth0-spa-js/pull/1547) ([nelsonmaia](https://github.com/nelsonmaia))
+
+**Fixed**
+- fix: eliminate modulo bias in createRandomString [\#1559](https://github.com/auth0/auth0-spa-js/pull/1559) ([yogeshchoudhary147](https://github.com/yogeshchoudhary147))
+
 ## [v2.17.1](https://github.com/auth0/auth0-spa-js/tree/v2.17.1) (2026-03-12)
 [Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.17.0...v2.17.1)
 
