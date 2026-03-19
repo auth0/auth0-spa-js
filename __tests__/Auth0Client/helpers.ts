@@ -118,6 +118,10 @@ export const fetchResponse = (
 
 export const setupFn = (mockVerify: jest.Mock) => {
   return (config?: Partial<Auth0ClientOptions>, claims?: Partial<IdToken>) => {
+    // Decouple Auth0Client tests from the crypto implementation. The actual
+    // createRandomString behaviour is covered in __tests__/utils.test.ts.
+    jest.spyOn(utils, 'createRandomString').mockReturnValue('123');
+
     const options: Auth0ClientOptions = {
       domain: TEST_DOMAIN,
       clientId: TEST_CLIENT_ID,

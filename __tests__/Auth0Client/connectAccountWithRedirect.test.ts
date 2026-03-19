@@ -4,7 +4,7 @@ import { Auth0Client, RedirectConnectAccountOptions } from '../../src';
   subtle: {
     digest: () => ''
   },
-  getRandomValues: () => ''
+  getRandomValues: (a: Uint8Array) => { a.fill(0); return a; }
 };
 
 describe('Auth0Client', () => {
