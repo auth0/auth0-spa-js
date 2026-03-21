@@ -906,7 +906,7 @@ export type GetTokenSilentlyVerboseResponse = Omit<
 /**
  * Options for revoking a refresh token
  */
-export interface RevokeOptions {
+export interface RevokeRefreshTokenOptions {
   /** Audience to identify which refresh token to revoke. Omit for default audience. */
   audience?: string;
 }

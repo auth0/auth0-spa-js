@@ -239,25 +239,8 @@ export async function getJSON<T>(
 export const doRevoke = async (
   fetchUrl: string,
   fetchOptions: FetchOptions,
-  timeout: number,
-  audience: string,
-  worker?: Worker,
-  useFormData?: boolean
+  timeout: number
 ): Promise<void> => {
-  if (worker) {
-    return sendMessage(
-      {
-        type: 'revoke',
-        timeout,
-        fetchUrl,
-        fetchOptions,
-        useFormData,
-        auth: { audience }
-      },
-      worker
-    );
-  }
-
   const response = await fetchWithTimeout(fetchUrl, fetchOptions, timeout);
 
   if (!response.ok) {

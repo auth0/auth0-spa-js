@@ -64,7 +64,7 @@ describe('Auth0Client', () => {
     window.location = oldWindowLocation;
   });
 
-  describe('revoke()', () => {
+  describe('revokeRefreshToken()', () => {
     // Use localstorage to avoid the worker path so the refresh token
     // is stored in the main-thread cache.
     const defaultConfig = {
@@ -75,7 +75,7 @@ describe('Auth0Client', () => {
     it('does nothing when useRefreshTokens is not enabled', async () => {
       const auth0 = setup({ useRefreshTokens: false, cacheLocation: 'localstorage' });
 
-      await auth0.revoke();
+      await auth0.revokeRefreshToken();
 
       expect(mockFetch).not.toHaveBeenCalled();
     });
@@ -83,7 +83,7 @@ describe('Auth0Client', () => {
     it('does nothing when no refresh token is in the cache', async () => {
       const auth0 = setup(defaultConfig);
 
-      await auth0.revoke();
+      await auth0.revokeRefreshToken();
 
       expect(mockFetch).not.toHaveBeenCalled();
     });
@@ -98,7 +98,7 @@ describe('Auth0Client', () => {
         text: () => Promise.resolve('')
       });
 
-      await auth0.revoke();
+      await auth0.revokeRefreshToken();
 
       expect(mockFetch).toHaveBeenCalledTimes(1);
       const [url, options] = mockFetch.mock.calls[0];
@@ -125,7 +125,7 @@ describe('Auth0Client', () => {
         'stripRefreshToken'
       );
 
-      await auth0.revoke();
+      await auth0.revokeRefreshToken();
 
       expect(stripRefreshTokenSpy).toHaveBeenCalledWith(TEST_REFRESH_TOKEN);
     });
@@ -140,7 +140,7 @@ describe('Auth0Client', () => {
         text: () => Promise.resolve('')
       });
 
-      await auth0.revoke();
+      await auth0.revokeRefreshToken();
 
       // id token claims are served from cache — still available after revocation
       const claims = await auth0.getIdTokenClaims();
@@ -167,7 +167,7 @@ describe('Auth0Client', () => {
           )
       });
 
-      await expect(auth0.revoke()).rejects.toThrow('The token has been revoked');
+      await expect(auth0.revokeRefreshToken()).rejects.toThrow('The token has been revoked');
     });
 
     it('uses the provided audience when revoking', async () => {
@@ -183,7 +183,7 @@ describe('Auth0Client', () => {
         text: () => Promise.resolve('')
       });
 
-      await auth0.revoke({ audience: 'https://api.example.com' });
+      await auth0.revokeRefreshToken({ audience: 'https://api.example.com' });
 
       const [url] = mockFetch.mock.calls[0];
       expect(url).toBe(`https://${TEST_DOMAIN}/oauth/revoke`);
@@ -200,7 +200,7 @@ describe('Auth0Client', () => {
         .mockResolvedValueOnce({ ok: true, text: () => Promise.resolve('') })
         .mockResolvedValueOnce({ ok: true, text: () => Promise.resolve('') });
 
-      await auth0.revoke();
+      await auth0.revokeRefreshToken();
 
       expect(mockFetch).toHaveBeenCalledTimes(2);
 
@@ -231,7 +231,7 @@ describe('Auth0Client', () => {
           )
       });
 
-      await expect(auth0.revoke()).rejects.toThrow('The token has been revoked');
+      await expect(auth0.revokeRefreshToken()).rejects.toThrow('The token has been revoked');
       // Second token should not have been attempted
       expect(mockFetch).toHaveBeenCalledTimes(1);
     });
@@ -244,7 +244,7 @@ describe('Auth0Client', () => {
 
       const auth0 = setup({ useRefreshTokens: true });
 
-      await auth0.revoke();
+      await auth0.revokeRefreshToken();
 
       expect(sendMessageSpy).toHaveBeenCalledWith(
         expect.objectContaining({

@@ -22,6 +22,7 @@ interface RevokeTokenOptions {
 }
 import * as dpopUtils from './dpop/utils';
 import { getJSON, doRevoke } from './http';
+import { sendMessage } from './worker/worker.utils';
 import { createQueryParams, stripAuth0Client } from './utils';
 
 export async function oauthToken(
@@ -116,23 +117,34 @@ export async function revokeToken(
     ? createQueryParams(allParams)
     : JSON.stringify(allParams);
 
-  return await doRevoke(
-    `${baseUrl}/oauth/revoke`,
-    {
-      method: 'POST',
-      body,
-      headers: {
-        'Content-Type': useFormData
-          ? 'application/x-www-form-urlencoded'
-          : 'application/json',
-        'Auth0-Client': btoa(
-          JSON.stringify(stripAuth0Client(auth0Client || DEFAULT_AUTH0_CLIENT))
-        )
-      }
-    },
-    timeout || DEFAULT_FETCH_TIMEOUT_MS,
-    audience ?? DEFAULT_AUDIENCE,
-    worker,
-    useFormData
-  );
+  const fetchUrl = `${baseUrl}/oauth/revoke`;
+  const fetchOptions = {
+    method: 'POST',
+    body,
+    headers: {
+      'Content-Type': useFormData
+        ? 'application/x-www-form-urlencoded'
+        : 'application/json',
+      'Auth0-Client': btoa(
+        JSON.stringify(stripAuth0Client(auth0Client || DEFAULT_AUTH0_CLIENT))
+      )
+    }
+  };
+  const resolvedTimeout = timeout || DEFAULT_FETCH_TIMEOUT_MS;
+
+  if (worker) {
+    return sendMessage(
+      {
+        type: 'revoke',
+        timeout: resolvedTimeout,
+        fetchUrl,
+        fetchOptions,
+        useFormData,
+        auth: { audience: audience ?? DEFAULT_AUDIENCE }
+      },
+      worker
+    );
+  }
+
+  return doRevoke(fetchUrl, fetchOptions, resolvedTimeout);
 }

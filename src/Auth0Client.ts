@@ -91,7 +91,7 @@ import {
   ResponseType,
   ClientAuthorizationParams,
   ClientConfiguration,
-  RevokeOptions
+  RevokeRefreshTokenOptions
 } from './global';
 
 // @ts-ignore
@@ -1147,7 +1147,7 @@ export class Auth0Client {
 
   /**
    * ```js
-   * await auth0.revoke();
+   * await auth0.revokeRefreshToken();
    * ```
    *
    * Revokes the refresh token using the `/oauth/revoke` endpoint.
@@ -1174,14 +1174,14 @@ export class Auth0Client {
    *
    * @example
    * // Revoke the default refresh token
-   * await auth0.revoke();
+   * await auth0.revokeRefreshToken();
    *
    * @example
    * // Revoke refresh tokens for each audience individually
-   * await auth0.revoke({ audience: 'https://api.example.com' });
-   * await auth0.revoke({ audience: 'https://api2.example.com' });
+   * await auth0.revokeRefreshToken({ audience: 'https://api.example.com' });
+   * await auth0.revokeRefreshToken({ audience: 'https://api2.example.com' });
    */
-  public async revoke(options: RevokeOptions = {}): Promise<void> {
+  public async revokeRefreshToken(options: RevokeRefreshTokenOptions = {}): Promise<void> {
     if (!this.options.useRefreshTokens) {
       return;
     }
