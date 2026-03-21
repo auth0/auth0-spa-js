@@ -911,20 +911,6 @@ export interface RevokeOptions {
   audience?: string;
 }
 
-/**
- * @ignore
- * Internal options for the revokeToken API call
- */
-export interface RevokeTokenOptions {
-  baseUrl: string;
-  clientId: string;
-  refreshToken?: string;
-  audience?: string;
-  timeout?: number;
-  auth0Client?: any;
-  useFormData?: boolean;
-}
-
 // MFA API types
 export type {
   Authenticator,

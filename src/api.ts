@@ -1,13 +1,25 @@
-import {
-  TokenEndpointOptions,
-  TokenEndpointResponse,
-  RevokeTokenOptions
-} from './global';
+import { TokenEndpointOptions, TokenEndpointResponse } from './global';
 import {
   DEFAULT_AUTH0_CLIENT,
   DEFAULT_AUDIENCE,
   DEFAULT_FETCH_TIMEOUT_MS
 } from './constants';
+
+/**
+ * @ignore
+ * Internal options for the revokeToken API call.
+ * Kept in api.ts (not global.ts) so it is not part of the public type surface.
+ */
+interface RevokeTokenOptions {
+  baseUrl: string;
+  /** Maps directly to the OAuth `client_id` parameter. */
+  client_id: string;
+  refreshToken?: string;
+  audience?: string;
+  timeout?: number;
+  auth0Client?: any;
+  useFormData?: boolean;
+}
 import * as dpopUtils from './dpop/utils';
 import { getJSON, doRevoke } from './http';
 import { createQueryParams, stripAuth0Client } from './utils';
@@ -85,15 +97,18 @@ export async function revokeToken(
     useFormData,
     refreshToken,
     audience,
-    clientId
+    client_id
   }: RevokeTokenOptions,
   worker?: Worker
 ): Promise<void> {
   // For the worker path refreshToken is undefined — the worker holds it in
   // memory and injects it (mirroring how messageHandler injects refresh_token).
   // For the non-worker path it is included directly in the body.
+  // token_type_hint is a SHOULD per RFC 7009 §2.1 to help the server locate
+  // the token faster.
   const allParams = {
-    client_id: clientId,
+    client_id,
+    token_type_hint: 'refresh_token' as const,
     ...(refreshToken !== undefined && { token: refreshToken })
   };
 
@@ -116,7 +131,7 @@ export async function revokeToken(
       }
     },
     timeout || DEFAULT_FETCH_TIMEOUT_MS,
-    audience,
+    audience ?? DEFAULT_AUDIENCE,
     worker,
     useFormData
   );

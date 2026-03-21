@@ -502,7 +502,7 @@ describe('revokeToken', () => {
 
     await revokeToken({
       baseUrl: `https://${TEST_DOMAIN}`,
-      clientId: TEST_CLIENT_ID,
+      client_id: TEST_CLIENT_ID,
       refreshToken: 'test_refresh_token',
       auth0Client: DEFAULT_AUTH0_CLIENT
     });
@@ -513,6 +513,7 @@ describe('revokeToken', () => {
         method: 'POST',
         body: JSON.stringify({
           client_id: TEST_CLIENT_ID,
+          token_type_hint: 'refresh_token',
           token: 'test_refresh_token'
         }),
         headers: {
@@ -531,7 +532,7 @@ describe('revokeToken', () => {
 
     await revokeToken({
       baseUrl: `https://${TEST_DOMAIN}`,
-      clientId: TEST_CLIENT_ID,
+      client_id: TEST_CLIENT_ID,
       refreshToken: 'test_refresh_token',
       useFormData: true,
       auth0Client: DEFAULT_AUTH0_CLIENT
@@ -541,7 +542,7 @@ describe('revokeToken', () => {
       `https://${TEST_DOMAIN}/oauth/revoke`,
       expect.objectContaining({
         method: 'POST',
-        body: `client_id=${TEST_CLIENT_ID}&token=test_refresh_token`,
+        body: `client_id=${TEST_CLIENT_ID}&token_type_hint=refresh_token&token=test_refresh_token`,
         headers: expect.objectContaining({
           'Content-Type': 'application/x-www-form-urlencoded'
         })
@@ -566,7 +567,7 @@ describe('revokeToken', () => {
     await expect(
       revokeToken({
         baseUrl: `https://${TEST_DOMAIN}`,
-        clientId: TEST_CLIENT_ID,
+        client_id: TEST_CLIENT_ID,
         refreshToken: 'invalid_token',
         auth0Client: DEFAULT_AUTH0_CLIENT
       })
@@ -585,7 +586,7 @@ describe('revokeToken', () => {
     await expect(
       revokeToken({
         baseUrl: `https://${TEST_DOMAIN}`,
-        clientId: TEST_CLIENT_ID,
+        client_id: TEST_CLIENT_ID,
         refreshToken: 'test_refresh_token',
         auth0Client: DEFAULT_AUTH0_CLIENT
       })
@@ -610,7 +611,7 @@ describe('revokeToken', () => {
     await expect(
       revokeToken({
         baseUrl: `https://${TEST_DOMAIN}`,
-        clientId: TEST_CLIENT_ID,
+        client_id: TEST_CLIENT_ID,
         refreshToken: 'test_refresh_token',
         timeout: 100,
         auth0Client: DEFAULT_AUTH0_CLIENT
@@ -631,7 +632,7 @@ describe('revokeToken', () => {
     await expect(
       revokeToken({
         baseUrl: `https://${TEST_DOMAIN}`,
-        clientId: TEST_CLIENT_ID,
+        client_id: TEST_CLIENT_ID,
         refreshToken: 'test_refresh_token',
         auth0Client: DEFAULT_AUTH0_CLIENT
       })
@@ -650,7 +651,7 @@ describe('revokeToken', () => {
     await expect(
       revokeToken({
         baseUrl: `https://${TEST_DOMAIN}`,
-        clientId: TEST_CLIENT_ID,
+        client_id: TEST_CLIENT_ID,
         refreshToken: 'test_refresh_token',
         auth0Client: DEFAULT_AUTH0_CLIENT
       })

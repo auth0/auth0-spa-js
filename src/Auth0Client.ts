@@ -1200,7 +1200,7 @@ export class Auth0Client {
           timeout: this.httpTimeoutMs,
           auth0Client: this.options.auth0Client,
           useFormData: this.options.useFormData,
-          clientId: this.options.clientId,
+          client_id: this.options.clientId,
           audience: resolvedAudience
         },
         this.worker
@@ -1217,13 +1217,18 @@ export class Auth0Client {
       this.options.clientId
     );
 
+    // Each token is revoked server-side then stripped from the cache.
+    // If revokeToken throws (e.g. a network error on RT2 after RT1 succeeded),
+    // the error surfaces to the caller and any remaining tokens are left
+    // untouched — the caller can safely retry. RT1 is already gone from the
+    // server, so a retry will attempt RT2 again without re-revoking RT1.
     for (const refreshToken of refreshTokens) {
       await revokeToken({
         baseUrl: this.domainUrl,
         timeout: this.httpTimeoutMs,
         auth0Client: this.options.auth0Client,
         useFormData: this.options.useFormData,
-        clientId: this.options.clientId,
+        client_id: this.options.clientId,
         refreshToken,
         audience: resolvedAudience
       });

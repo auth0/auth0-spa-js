@@ -763,7 +763,7 @@ describe('token worker', () => {
       );
 
       await messageHandlerAsync({
-        fetchUrl: 'https://test.auth0.com/oauth/token',
+        fetchUrl: TOKEN_ENDPOINT,
         fetchOptions: {
           method: 'POST',
           body: JSON.stringify({ grant_type: 'authorization_code' })
@@ -780,7 +780,7 @@ describe('token worker', () => {
       );
 
       await messageHandlerAsync({
-        fetchUrl: 'https://test.auth0.com/oauth/token',
+        fetchUrl: TOKEN_ENDPOINT,
         fetchOptions: {
           method: 'POST',
           body: JSON.stringify({ grant_type: 'authorization_code' })
@@ -812,7 +812,7 @@ describe('token worker', () => {
 
       // Both tokens should be gone from worker memory
       const afterRevokeA = await messageHandlerAsync({
-        fetchUrl: 'https://test.auth0.com/oauth/token',
+        fetchUrl: TOKEN_ENDPOINT,
         fetchOptions: {
           method: 'POST',
           body: JSON.stringify({ grant_type: 'refresh_token' })
@@ -822,7 +822,7 @@ describe('token worker', () => {
       expect(afterRevokeA.json.error).toBe('missing_refresh_token');
 
       const afterRevokeB = await messageHandlerAsync({
-        fetchUrl: 'https://test.auth0.com/oauth/token',
+        fetchUrl: TOKEN_ENDPOINT,
         fetchOptions: {
           method: 'POST',
           body: JSON.stringify({ grant_type: 'refresh_token' })
@@ -843,7 +843,7 @@ describe('token worker', () => {
       );
 
       await messageHandlerAsync({
-        fetchUrl: 'https://test.auth0.com/oauth/token',
+        fetchUrl: TOKEN_ENDPOINT,
         fetchOptions: {
           method: 'POST',
           body: JSON.stringify({ grant_type: 'authorization_code' })
@@ -860,7 +860,7 @@ describe('token worker', () => {
       );
 
       await messageHandlerAsync({
-        fetchUrl: 'https://test.auth0.com/oauth/token',
+        fetchUrl: TOKEN_ENDPOINT,
         fetchOptions: {
           method: 'POST',
           body: JSON.stringify({ grant_type: 'authorization_code' })

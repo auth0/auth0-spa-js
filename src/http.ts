@@ -17,27 +17,17 @@ import { DPOP_NONCE_HEADER } from './dpop/utils';
 
 export const createAbortController = () => new AbortController();
 
-const dofetch = async (fetchUrl: string, fetchOptions: FetchOptions) => {
-  const response = await fetch(fetchUrl, fetchOptions);
-
-  return {
-    ok: response.ok,
-    json: await response.json(),
-
-    /**
-     * This is not needed, but do it anyway so the object shape is the
-     * same as when using a Web Worker (which *does* need this, see
-     * src/worker/token.worker.ts).
-     */
-    headers: fromEntries(response.headers)
-  };
-};
-
-const fetchWithoutWorker = async (
+/**
+ * Shared low-level primitive: wraps a single `fetch` call with an
+ * AbortController-based timeout and returns the raw `Response`.
+ * Both `fetchWithoutWorker` (JSON token path) and `doRevoke` (no-body revoke
+ * path) build on this to avoid duplicating the abort+timeout orchestration.
+ */
+const fetchWithTimeout = (
   fetchUrl: string,
   fetchOptions: FetchOptions,
   timeout: number
-) => {
+): Promise<Response> => {
   const controller = createAbortController();
   fetchOptions.signal = controller.signal;
 
@@ -45,9 +35,8 @@ const fetchWithoutWorker = async (
 
   // The promise will resolve with one of these two promises (the fetch or the timeout), whichever completes first.
   return Promise.race([
-    dofetch(fetchUrl, fetchOptions),
-
-    new Promise((_, reject) => {
+    fetch(fetchUrl, fetchOptions),
+    new Promise<never>((_, reject) => {
       timeoutId = setTimeout(() => {
         controller.abort();
         reject(new Error("Timeout when executing 'fetch'"));
@@ -56,6 +45,24 @@ const fetchWithoutWorker = async (
   ]).finally(() => {
     clearTimeout(timeoutId);
   });
+};
+
+const fetchWithoutWorker = async (
+  fetchUrl: string,
+  fetchOptions: FetchOptions,
+  timeout: number
+) => {
+  const response = await fetchWithTimeout(fetchUrl, fetchOptions, timeout);
+  return {
+    ok: response.ok,
+    json: await response.json(),
+    /**
+     * This is not needed, but do it anyway so the object shape is the
+     * same as when using a Web Worker (which *does* need this, see
+     * src/worker/token.worker.ts).
+     */
+    headers: fromEntries(response.headers)
+  };
 };
 
 const fetchWithWorker = async (
@@ -229,34 +236,11 @@ export async function getJSON<T>(
   return data;
 }
 
-const fetchWithTimeout = (
-  fetchUrl: string,
-  fetchOptions: FetchOptions,
-  timeout: number
-): Promise<Response> => {
-  const controller = createAbortController();
-  fetchOptions.signal = controller.signal;
-
-  let timeoutId: NodeJS.Timeout;
-
-  return Promise.race([
-    fetch(fetchUrl, fetchOptions),
-    new Promise<never>((_, reject) => {
-      timeoutId = setTimeout(() => {
-        controller.abort();
-        reject(new Error("Timeout when executing 'fetch'"));
-      }, timeout);
-    })
-  ]).finally(() => {
-    clearTimeout(timeoutId);
-  });
-};
-
 export const doRevoke = async (
   fetchUrl: string,
   fetchOptions: FetchOptions,
   timeout: number,
-  audience?: string,
+  audience: string,
   worker?: Worker,
   useFormData?: boolean
 ): Promise<void> => {
@@ -268,7 +252,7 @@ export const doRevoke = async (
         fetchUrl,
         fetchOptions,
         useFormData,
-        auth: { audience: audience || '' }
+        auth: { audience }
       },
       worker
     );
