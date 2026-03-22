@@ -14,14 +14,15 @@ interface RevokeTokenOptions {
   baseUrl: string;
   /** Maps directly to the OAuth `client_id` parameter. */
   client_id: string;
-  refreshToken?: string;
+  /** Tokens to revoke. Empty for the worker path — the worker holds its own store. */
+  refreshTokens: string[];
   audience?: string;
   timeout?: number;
   auth0Client?: any;
   useFormData?: boolean;
 }
 import * as dpopUtils from './dpop/utils';
-import { getJSON, doRevoke } from './http';
+import { getJSON, fetchWithTimeout } from './http';
 import { sendMessage } from './worker/worker.utils';
 import { createQueryParams, stripAuth0Client } from './utils';
 
@@ -82,13 +83,16 @@ export async function oauthToken(
 }
 
 /**
- * Revokes a refresh token using the /oauth/revoke endpoint.
+ * Revokes refresh tokens using the /oauth/revoke endpoint.
  *
- * @param options - The options for revoking the token
- * @param worker  - Optional Web Worker; when provided the worker holds the
- *                  refresh token in memory and injects it into the request
- * @returns A promise that resolves when the token is successfully revoked
- * @throws {Error} If the API request fails
+ * Mirrors the oauthToken pattern: the worker/non-worker dispatch lives here,
+ * keeping Auth0Client free of transport concerns.
+ *
+ * - Worker path: sends a single message; the worker holds its own RT store and
+ *   loops internally. refreshTokens is empty (worker ignores it).
+ * - Non-worker path: loops over refreshTokens and issues one request per token.
+ *
+ * @throws {Error} If any revoke request fails
  */
 export async function revokeToken(
   {
@@ -96,49 +100,38 @@ export async function revokeToken(
     timeout,
     auth0Client,
     useFormData,
-    refreshToken,
+    refreshTokens,
     audience,
     client_id
   }: RevokeTokenOptions,
   worker?: Worker
 ): Promise<void> {
-  // For the worker path refreshToken is undefined — the worker holds it in
-  // memory and injects it (mirroring how messageHandler injects refresh_token).
-  // For the non-worker path it is included directly in the body.
-  // token_type_hint is a SHOULD per RFC 7009 §2.1 to help the server locate
-  // the token faster.
-  const allParams = {
-    client_id,
-    token_type_hint: 'refresh_token' as const,
-    ...(refreshToken !== undefined && { token: refreshToken })
-  };
-
-  const body = useFormData
-    ? createQueryParams(allParams)
-    : JSON.stringify(allParams);
-
-  const fetchUrl = `${baseUrl}/oauth/revoke`;
-  const fetchOptions = {
-    method: 'POST',
-    body,
-    headers: {
-      'Content-Type': useFormData
-        ? 'application/x-www-form-urlencoded'
-        : 'application/json',
-      'Auth0-Client': btoa(
-        JSON.stringify(stripAuth0Client(auth0Client || DEFAULT_AUTH0_CLIENT))
-      )
-    }
-  };
   const resolvedTimeout = timeout || DEFAULT_FETCH_TIMEOUT_MS;
+  const fetchUrl = `${baseUrl}/oauth/revoke`;
+  const headers = {
+    'Content-Type': useFormData
+      ? 'application/x-www-form-urlencoded'
+      : 'application/json',
+    'Auth0-Client': btoa(
+      JSON.stringify(stripAuth0Client(auth0Client || DEFAULT_AUTH0_CLIENT))
+    )
+  };
 
   if (worker) {
+    // Worker holds its own RT store and injects each token into the request.
+    // Send the base body (without token) so the worker can loop over its tokens.
+    // token_type_hint is a SHOULD per RFC 7009 §2.1.
+    const baseParams = { client_id, token_type_hint: 'refresh_token' as const };
+    const body = useFormData
+      ? createQueryParams(baseParams)
+      : JSON.stringify(baseParams);
+
     return sendMessage(
       {
         type: 'revoke',
         timeout: resolvedTimeout,
         fetchUrl,
-        fetchOptions,
+        fetchOptions: { method: 'POST', body, headers },
         useFormData,
         auth: { audience: audience ?? DEFAULT_AUDIENCE }
       },
@@ -146,5 +139,31 @@ export async function revokeToken(
     );
   }
 
-  return doRevoke(fetchUrl, fetchOptions, resolvedTimeout);
+  for (const refreshToken of refreshTokens) {
+    const params = {
+      client_id,
+      token_type_hint: 'refresh_token' as const,
+      token: refreshToken
+    };
+    const body = useFormData
+      ? createQueryParams(params)
+      : JSON.stringify(params);
+
+    const response = await fetchWithTimeout(
+      fetchUrl,
+      { method: 'POST', body, headers },
+      resolvedTimeout
+    );
+
+    if (!response.ok) {
+      let errorDescription: string | undefined;
+      try {
+        const { error_description } = JSON.parse(await response.text());
+        errorDescription = error_description;
+      } catch {
+        // body absent or not valid JSON
+      }
+      throw new Error(errorDescription || `HTTP error ${response.status}`);
+    }
+  }
 }

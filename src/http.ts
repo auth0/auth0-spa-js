@@ -18,12 +18,11 @@ import { DPOP_NONCE_HEADER } from './dpop/utils';
 export const createAbortController = () => new AbortController();
 
 /**
- * Shared low-level primitive: wraps a single `fetch` call with an
- * AbortController-based timeout and returns the raw `Response`.
- * Both `fetchWithoutWorker` (JSON token path) and `doRevoke` (no-body revoke
- * path) build on this to avoid duplicating the abort+timeout orchestration.
+ * Wraps a single `fetch` call with an AbortController-based timeout and
+ * returns the raw `Response`. Shared by the JSON token path and the revoke
+ * path to avoid duplicating abort/timeout orchestration.
  */
-const fetchWithTimeout = (
+export const fetchWithTimeout = (
   fetchUrl: string,
   fetchOptions: FetchOptions,
   timeout: number
@@ -235,22 +234,3 @@ export async function getJSON<T>(
 
   return data;
 }
-
-export const doRevoke = async (
-  fetchUrl: string,
-  fetchOptions: FetchOptions,
-  timeout: number
-): Promise<void> => {
-  const response = await fetchWithTimeout(fetchUrl, fetchOptions, timeout);
-
-  if (!response.ok) {
-    let errorDescription: string | undefined;
-    try {
-      const { error_description } = JSON.parse(await response.text());
-      errorDescription = error_description;
-    } catch {
-      // body absent or not valid JSON
-    }
-    throw new Error(errorDescription || `HTTP error ${response.status}`);
-  }
-};

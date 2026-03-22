@@ -419,8 +419,7 @@ describe('token worker', () => {
   describe('revokeMessageHandler', () => {
     let revokeHandlerAsync;
 
-    // Builds a revokeMessageHandler message in the new format (fetchUrl + fetchOptions),
-    // matching what doRevoke in http.ts now sends to the worker.
+    // Builds a revokeMessageHandler message matching the format sent by revokeToken in api.ts.
     const revokeOpts = ({
       audience = 'my_audience',
       timeout = 5000,

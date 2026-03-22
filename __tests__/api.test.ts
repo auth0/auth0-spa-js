@@ -503,7 +503,7 @@ describe('revokeToken', () => {
     await revokeToken({
       baseUrl: `https://${TEST_DOMAIN}`,
       client_id: TEST_CLIENT_ID,
-      refreshToken: 'test_refresh_token',
+      refreshTokens: ['test_refresh_token'],
       auth0Client: DEFAULT_AUTH0_CLIENT
     });
 
@@ -533,7 +533,7 @@ describe('revokeToken', () => {
     await revokeToken({
       baseUrl: `https://${TEST_DOMAIN}`,
       client_id: TEST_CLIENT_ID,
-      refreshToken: 'test_refresh_token',
+      refreshTokens: ['test_refresh_token'],
       useFormData: true,
       auth0Client: DEFAULT_AUTH0_CLIENT
     });
@@ -568,7 +568,7 @@ describe('revokeToken', () => {
       revokeToken({
         baseUrl: `https://${TEST_DOMAIN}`,
         client_id: TEST_CLIENT_ID,
-        refreshToken: 'invalid_token',
+        refreshTokens: ['test_refresh_token'],
         auth0Client: DEFAULT_AUTH0_CLIENT
       })
     ).rejects.toThrow('The token is invalid');
@@ -587,7 +587,7 @@ describe('revokeToken', () => {
       revokeToken({
         baseUrl: `https://${TEST_DOMAIN}`,
         client_id: TEST_CLIENT_ID,
-        refreshToken: 'test_refresh_token',
+        refreshTokens: ['test_refresh_token'],
         auth0Client: DEFAULT_AUTH0_CLIENT
       })
     ).rejects.toThrow('HTTP error 500');
@@ -612,7 +612,7 @@ describe('revokeToken', () => {
       revokeToken({
         baseUrl: `https://${TEST_DOMAIN}`,
         client_id: TEST_CLIENT_ID,
-        refreshToken: 'test_refresh_token',
+        refreshTokens: ['test_refresh_token'],
         timeout: 100,
         auth0Client: DEFAULT_AUTH0_CLIENT
       })
@@ -633,7 +633,7 @@ describe('revokeToken', () => {
       revokeToken({
         baseUrl: `https://${TEST_DOMAIN}`,
         client_id: TEST_CLIENT_ID,
-        refreshToken: 'test_refresh_token',
+        refreshTokens: ['test_refresh_token'],
         auth0Client: DEFAULT_AUTH0_CLIENT
       })
     ).resolves.toBeUndefined();
@@ -652,7 +652,7 @@ describe('revokeToken', () => {
       revokeToken({
         baseUrl: `https://${TEST_DOMAIN}`,
         client_id: TEST_CLIENT_ID,
-        refreshToken: 'test_refresh_token',
+        refreshTokens: ['test_refresh_token'],
         auth0Client: DEFAULT_AUTH0_CLIENT
       })
     ).rejects.toThrow('HTTP error 400');

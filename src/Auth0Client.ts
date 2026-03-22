@@ -1191,49 +1191,31 @@ export class Auth0Client {
 
     const resolvedAudience = audience || DEFAULT_AUDIENCE;
 
-    if (this.worker) {
-      // Worker path: the worker holds all RTs in its own memory and handles
-      // revocation of every distinct RT for this audience internally.
-      await revokeToken(
-        {
-          baseUrl: this.domainUrl,
-          timeout: this.httpTimeoutMs,
-          auth0Client: this.options.auth0Client,
-          useFormData: this.options.useFormData,
-          client_id: this.options.clientId,
-          audience: resolvedAudience
-        },
-        this.worker
-      );
-
-      return;
-    }
-
-    // Non-worker path: multiple distinct refresh tokens may exist for the same
-    // audience when different scope combinations were obtained via separate flows.
-    // Revoke each one individually so none are left alive.
+    // For the non-worker path the main-thread cache holds the refresh tokens.
+    // For the worker path the worker holds its own RT store — the cache returns
+    // [] and revokeToken sends a single message; the worker loops internally.
     const refreshTokens = await this.cacheManager.getRefreshTokensByAudience(
       resolvedAudience,
       this.options.clientId
     );
 
-    // Each token is revoked server-side then stripped from the cache.
-    // If revokeToken throws (e.g. a network error on RT2 after RT1 succeeded),
-    // the error surfaces to the caller and any remaining tokens are left
-    // untouched — the caller can safely retry. RT1 is already gone from the
-    // server, so a retry will attempt RT2 again without re-revoking RT1.
-    for (const refreshToken of refreshTokens) {
-      await revokeToken({
+    await revokeToken(
+      {
         baseUrl: this.domainUrl,
         timeout: this.httpTimeoutMs,
         auth0Client: this.options.auth0Client,
         useFormData: this.options.useFormData,
         client_id: this.options.clientId,
-        refreshToken,
+        refreshTokens,
         audience: resolvedAudience
-      });
+      },
+      this.worker
+    );
 
-      await this.cacheManager.stripRefreshToken(refreshToken);
+    // Strip revoked tokens from the main-thread cache.
+    // No-op for the worker path since refreshTokens is empty.
+    for (const token of refreshTokens) {
+      await this.cacheManager.stripRefreshToken(token);
     }
   }
 
