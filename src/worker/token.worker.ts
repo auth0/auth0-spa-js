@@ -27,10 +27,9 @@ const deleteRefreshToken = (audience: string, scope: string) =>
   delete refreshTokens[cacheKey(audience, scope)];
 
 const getRefreshTokensByAudience = (audience: string): string[] => {
-  const prefix = `${audience}|`;
   const seen = new Set<string>();
   Object.entries(refreshTokens).forEach(([key, token]) => {
-    if (key.startsWith(prefix)) {
+    if (cacheKeyContainsAudience(audience, key)) {
       seen.add(token);
     }
   });
@@ -236,13 +235,14 @@ const revokeMessageHandler = async ({
         signal = abortController.signal;
       }
 
+      let timeoutId: ReturnType<typeof setTimeout>;
       let response: void | Response;
 
       try {
         response = await Promise.race([
-          wait(timeout),
+          new Promise<void>(resolve => { timeoutId = setTimeout(resolve, timeout); }),
           fetch(fetchUrl, { ...fetchOptions, body, signal })
-        ]);
+        ]).finally(() => clearTimeout(timeoutId));
       } catch (error) {
         port.postMessage({ error: error.message });
         return;

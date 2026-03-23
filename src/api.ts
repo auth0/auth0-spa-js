@@ -107,6 +107,8 @@ export async function revokeToken(
   worker?: Worker
 ): Promise<void> {
   const resolvedTimeout = timeout || DEFAULT_FETCH_TIMEOUT_MS;
+  // token_type_hint is a SHOULD per RFC 7009 §2.1; used in both paths below.
+  const token_type_hint = 'refresh_token' as const;
   const fetchUrl = `${baseUrl}/oauth/revoke`;
   const headers = {
     'Content-Type': useFormData
@@ -120,8 +122,7 @@ export async function revokeToken(
   if (worker) {
     // Worker holds its own RT store and injects each token into the request.
     // Send the base body (without token) so the worker can loop over its tokens.
-    // token_type_hint is a SHOULD per RFC 7009 §2.1.
-    const baseParams = { client_id, token_type_hint: 'refresh_token' as const };
+    const baseParams = { client_id, token_type_hint };
     const body = useFormData
       ? createQueryParams(baseParams)
       : JSON.stringify(baseParams);
@@ -140,11 +141,7 @@ export async function revokeToken(
   }
 
   for (const refreshToken of refreshTokens) {
-    const params = {
-      client_id,
-      token_type_hint: 'refresh_token' as const,
-      token: refreshToken
-    };
+    const params = { client_id, token_type_hint, token: refreshToken };
     const body = useFormData
       ? createQueryParams(params)
       : JSON.stringify(params);
