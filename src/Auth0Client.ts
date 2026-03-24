@@ -1199,22 +1199,36 @@ export class Auth0Client {
       this.options.clientId
     );
 
-    await revokeToken(
-      {
+    if (this.worker) {
+      await revokeToken(
+        {
+          baseUrl: this.domainUrl,
+          timeout: this.httpTimeoutMs,
+          auth0Client: this.options.auth0Client,
+          useFormData: this.options.useFormData,
+          client_id: this.options.clientId,
+          refreshTokens,
+          audience: resolvedAudience
+        },
+        this.worker
+      );
+
+      return;
+    }
+
+    // Revoke and strip one token at a time so cache state remains consistent
+    // if a later revoke call fails.
+    for (const token of refreshTokens) {
+      await revokeToken({
         baseUrl: this.domainUrl,
         timeout: this.httpTimeoutMs,
         auth0Client: this.options.auth0Client,
         useFormData: this.options.useFormData,
         client_id: this.options.clientId,
-        refreshTokens,
+        refreshTokens: [token],
         audience: resolvedAudience
-      },
-      this.worker
-    );
+      });
 
-    // Strip revoked tokens from the main-thread cache.
-    // No-op for the worker path since refreshTokens is empty.
-    for (const token of refreshTokens) {
       await this.cacheManager.stripRefreshToken(token);
     }
   }

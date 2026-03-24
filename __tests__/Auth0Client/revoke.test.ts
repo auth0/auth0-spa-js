@@ -236,6 +236,36 @@ describe('Auth0Client', () => {
       expect(mockFetch).toHaveBeenCalledTimes(1);
     });
 
+    it('strips already revoked tokens from cache when a later revoke call fails', async () => {
+      const auth0 = setup(defaultConfig);
+
+      jest
+        .spyOn((auth0 as any).cacheManager, 'getRefreshTokensByAudience')
+        .mockResolvedValue(['rt_one', 'rt_two']);
+
+      const stripRefreshTokenSpy = jest.spyOn(
+        (auth0 as any).cacheManager,
+        'stripRefreshToken'
+      );
+
+      mockFetch
+        .mockResolvedValueOnce({ ok: true, text: () => Promise.resolve('') })
+        .mockResolvedValueOnce({
+          ok: false,
+          status: 400,
+          text: () =>
+            Promise.resolve(
+              JSON.stringify({ error_description: 'The token has been revoked' })
+            )
+        });
+
+      await expect(auth0.revokeRefreshToken()).rejects.toThrow('The token has been revoked');
+
+      expect(mockFetch).toHaveBeenCalledTimes(2);
+      expect(stripRefreshTokenSpy).toHaveBeenCalledTimes(1);
+      expect(stripRefreshTokenSpy).toHaveBeenCalledWith('rt_one');
+    });
+
     it('sends message to worker when worker is available', async () => {
       // Use default (memory) cache so the worker path is taken
       const sendMessageSpy = jest
