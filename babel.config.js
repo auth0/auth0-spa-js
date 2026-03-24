@@ -14,6 +14,10 @@ module.exports = {
       },
       useBuiltIns: false,
       modules: false
-    }]
+    }],
+    // Allow Babel to parse and strip TypeScript when processing .ts files.
+    // rollup-plugin-typescript2 handles type-checking; this preset ensures
+    // Babel can compile .ts source if it receives it before rpt2 transforms it.
+    '@babel/preset-typescript'
   ]
 };
