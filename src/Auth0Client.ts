@@ -32,7 +32,11 @@ import {
   DecodedToken
 } from './cache';
 
-import { ConnectAccountTransaction, LoginTransaction, TransactionManager } from './transaction-manager';
+import {
+  ConnectAccountTransaction,
+  LoginTransaction,
+  TransactionManager
+} from './transaction-manager';
 import { verify as verifyIdToken } from './jwt';
 import {
   AuthenticationError,
@@ -151,7 +155,7 @@ export class Auth0Client {
   private readonly nowProvider: () => number | Promise<number>;
   private readonly httpTimeoutMs: number;
   private readonly options: Auth0ClientOptions & {
-    authorizationParams: ClientAuthorizationParams,
+    authorizationParams: ClientAuthorizationParams;
   };
   private readonly userCache: ICache = new InMemoryCache().enclosedCache;
   private readonly myAccountApi: MyAccountApiClient;
@@ -290,10 +294,9 @@ export class Auth0Client {
     // Initialize auth-js client foundational Oauth feature support
     this.authJsClient = new Auth0AuthJsClient({
       domain: this.options.domain,
-      clientId: this.options.clientId,
+      clientId: this.options.clientId
     });
     this.mfa = new MfaApiClient(this.authJsClient.mfa, this);
-
 
     // Don't use web workers unless using refresh tokens in memory
     if (
@@ -463,8 +466,8 @@ export class Auth0Client {
       nonce,
       code_challenge,
       authorizationParams.redirect_uri ||
-      this.options.authorizationParams.redirect_uri ||
-      fallbackRedirectUri,
+        this.options.authorizationParams.redirect_uri ||
+        fallbackRedirectUri,
       authorizeOptions?.response_mode,
       thumbprint
     );
@@ -520,7 +523,9 @@ export class Auth0Client {
       }
     }
 
-    const authorizationParams = this._applySessionTransferToken(options.authorizationParams || {});
+    const authorizationParams = this._applySessionTransferToken(
+      options.authorizationParams || {}
+    );
 
     const params = await this._prepareAuthorizeUrl(
       authorizationParams,
@@ -615,7 +620,9 @@ export class Auth0Client {
       urlOptions.authorizationParams?.organization ||
       this.options.authorizationParams.organization;
 
-    const authorizationParams = this._applySessionTransferToken(urlOptions.authorizationParams || {});
+    const authorizationParams = this._applySessionTransferToken(
+      urlOptions.authorizationParams || {}
+    );
 
     const { url, ...transaction } = await this._prepareAuthorizeUrl(
       authorizationParams
@@ -786,7 +793,7 @@ export class Auth0Client {
     return {
       ...data,
       appState: transaction.appState,
-      response_type: ResponseType.ConnectCode,
+      response_type: ResponseType.ConnectCode
     };
   }
 
@@ -832,7 +839,7 @@ export class Auth0Client {
 
     try {
       await this.getTokenSilently(options);
-    } catch (_) { }
+    } catch (_) {}
   }
 
   /**
@@ -903,7 +910,8 @@ export class Auth0Client {
         scope: scopesToRequest(
           this.scope,
           options.authorizationParams?.scope,
-          options.authorizationParams?.audience || this.options.authorizationParams.audience,
+          options.authorizationParams?.audience ||
+            this.options.authorizationParams.audience
         )
       }
     };
@@ -928,9 +936,10 @@ export class Auth0Client {
     if (cacheMode !== 'off') {
       const entry = await this._getEntryFromCache({
         scope: getTokenOptions.authorizationParams.scope,
-        audience: getTokenOptions.authorizationParams.audience || DEFAULT_AUDIENCE,
+        audience:
+          getTokenOptions.authorizationParams.audience || DEFAULT_AUDIENCE,
         clientId: this.options.clientId,
-        cacheMode,
+        cacheMode
       });
 
       if (entry) {
@@ -969,8 +978,13 @@ export class Auth0Client {
           ? await this._getTokenUsingRefreshToken(getTokenOptions)
           : await this._getTokenFromIFrame(getTokenOptions);
 
-        const { id_token, token_type, access_token, oauthTokenScope, expires_in } =
-          authResult;
+        const {
+          id_token,
+          token_type,
+          access_token,
+          oauthTokenScope,
+          expires_in
+        } = authResult;
 
         return {
           id_token,
@@ -982,7 +996,10 @@ export class Auth0Client {
       });
     } catch (error) {
       // Lock is already released - safe to open popup
-      if (this._isInteractiveError(error) && this.options.interactiveErrorHandler === 'popup') {
+      if (
+        this._isInteractiveError(error) &&
+        this.options.interactiveErrorHandler === 'popup'
+      ) {
         return await this._handleInteractiveErrorWithPopup(getTokenOptions);
       }
       throw error;
@@ -1000,7 +1017,10 @@ export class Auth0Client {
   private _isInteractiveError(
     error: unknown
   ): error is MfaRequiredError | GenericError {
-    return error instanceof MfaRequiredError || (error instanceof GenericError && this._isIframeMfaError(error));
+    return (
+      error instanceof MfaRequiredError ||
+      (error instanceof GenericError && this._isIframeMfaError(error))
+    );
   }
 
   /**
@@ -1032,8 +1052,7 @@ export class Auth0Client {
 
       const entry = await this._getEntryFromCache({
         scope: options.authorizationParams.scope,
-        audience:
-          options.authorizationParams.audience || DEFAULT_AUDIENCE,
+        audience: options.authorizationParams.audience || DEFAULT_AUDIENCE,
         clientId: this.options.clientId
       });
 
@@ -1079,7 +1098,8 @@ export class Auth0Client {
         scope: scopesToRequest(
           this.scope,
           options.authorizationParams?.scope,
-          options.authorizationParams?.audience || this.options.authorizationParams.audience
+          options.authorizationParams?.audience ||
+            this.options.authorizationParams.audience
         )
       }
     };
@@ -1181,7 +1201,9 @@ export class Auth0Client {
    * await auth0.revokeRefreshToken({ audience: 'https://api.example.com' });
    * await auth0.revokeRefreshToken({ audience: 'https://api2.example.com' });
    */
-  public async revokeRefreshToken(options: RevokeRefreshTokenOptions = {}): Promise<void> {
+  public async revokeRefreshToken(
+    options: RevokeRefreshTokenOptions = {}
+  ): Promise<void> {
     if (!this.options.useRefreshTokens) {
       return;
     }
@@ -1199,38 +1221,20 @@ export class Auth0Client {
       this.options.clientId
     );
 
-    if (this.worker) {
-      await revokeToken(
-        {
-          baseUrl: this.domainUrl,
-          timeout: this.httpTimeoutMs,
-          auth0Client: this.options.auth0Client,
-          useFormData: this.options.useFormData,
-          client_id: this.options.clientId,
-          refreshTokens,
-          audience: resolvedAudience
-        },
-        this.worker
-      );
-
-      return;
-    }
-
-    // Revoke and strip one token at a time so cache state remains consistent
-    // if a later revoke call fails.
-    for (const token of refreshTokens) {
-      await revokeToken({
+    await revokeToken(
+      {
         baseUrl: this.domainUrl,
         timeout: this.httpTimeoutMs,
         auth0Client: this.options.auth0Client,
         useFormData: this.options.useFormData,
         client_id: this.options.clientId,
-        refreshTokens: [token],
-        audience: resolvedAudience
-      });
-
-      await this.cacheManager.stripRefreshToken(token);
-    }
+        refreshTokens,
+        audience: resolvedAudience,
+        onRefreshTokenRevoked: refreshToken =>
+          this.cacheManager.stripRefreshToken(refreshToken)
+      },
+      this.worker
+    );
   }
 
   /**
@@ -1441,19 +1445,20 @@ export class Auth0Client {
       this.options.useMrrt,
       options.authorizationParams,
       cache?.audience,
-      cache?.scope,
+      cache?.scope
     );
 
     try {
-      const tokenResult = await this._requestToken({
-        ...options.authorizationParams,
-        grant_type: 'refresh_token',
-        refresh_token: cache && cache.refresh_token,
-        redirect_uri,
-        ...(timeout && { timeout })
-      },
+      const tokenResult = await this._requestToken(
         {
-          scopesToRequest,
+          ...options.authorizationParams,
+          grant_type: 'refresh_token',
+          refresh_token: cache && cache.refresh_token,
+          redirect_uri,
+          ...(timeout && { timeout })
+        },
+        {
+          scopesToRequest
         }
       );
 
@@ -1475,13 +1480,13 @@ export class Auth0Client {
           cache?.audience,
           cache?.scope,
           options.authorizationParams.audience,
-          options.authorizationParams.scope,
+          options.authorizationParams.scope
         );
 
         if (isRefreshMrrt) {
           const tokenHasAllScopes = allScopesAreIncluded(
             scopesToRequest,
-            tokenResult.scope,
+            tokenResult.scope
           );
 
           if (!tokenHasAllScopes) {
@@ -1494,17 +1499,17 @@ export class Auth0Client {
             await this.cacheManager.remove(
               this.options.clientId,
               options.authorizationParams.audience,
-              options.authorizationParams.scope,
+              options.authorizationParams.scope
             );
 
             const missingScopes = getMissingScopes(
               scopesToRequest,
-              tokenResult.scope,
+              tokenResult.scope
             );
 
             throw new MissingScopesError(
               options.authorizationParams.audience || 'default',
-              missingScopes,
+              missingScopes
             );
           }
         }
@@ -1569,14 +1574,15 @@ export class Auth0Client {
   }
 
   private async _getIdTokenFromCache() {
-    const audience = this.options.authorizationParams.audience || DEFAULT_AUDIENCE;
+    const audience =
+      this.options.authorizationParams.audience || DEFAULT_AUDIENCE;
     const scope = this.scope[audience];
 
     const cache = await this.cacheManager.getIdToken(
       new CacheKey({
         clientId: this.options.clientId,
         audience,
-        scope,
+        scope
       })
     );
 
@@ -1598,7 +1604,7 @@ export class Auth0Client {
     scope,
     audience,
     clientId,
-    cacheMode,
+    cacheMode
   }: {
     scope: string;
     audience: string;
@@ -1613,7 +1619,7 @@ export class Auth0Client {
       }),
       60, // get a new token if within 60 seconds of expiring
       this.options.useMrrt,
-      cacheMode,
+      cacheMode
     );
 
     if (entry && entry.access_token) {
@@ -1639,7 +1645,8 @@ export class Auth0Client {
       | TokenExchangeRequestOptions,
     additionalParameters?: RequestTokenAdditionalParameters
   ) {
-    const { nonceIn, organization, scopesToRequest } = additionalParameters || {};
+    const { nonceIn, organization, scopesToRequest } =
+      additionalParameters || {};
     const authResult = await oauthToken(
       {
         baseUrl: this.domainUrl,
@@ -1650,7 +1657,7 @@ export class Auth0Client {
         useMrrt: this.options.useMrrt,
         dpop: this.dpop,
         ...options,
-        scope: scopesToRequest || options.scope,
+        scope: scopesToRequest || options.scope
       },
       this.worker
     );
@@ -1666,8 +1673,10 @@ export class Auth0Client {
     if (options.grant_type === 'authorization_code') {
       const existingIdToken = await this._getIdTokenFromCache();
 
-      if (existingIdToken?.decodedToken?.claims?.sub &&
-        existingIdToken.decodedToken.claims.sub !== decodedToken.claims.sub) {
+      if (
+        existingIdToken?.decodedToken?.claims?.sub &&
+        existingIdToken.decodedToken.claims.sub !== decodedToken.claims.sub
+      ) {
         // Different user detected - clear cached tokens
         await this.cacheManager.clear(this.options.clientId);
         this.userCache.remove(CACHE_KEY_ID_TOKEN_SUFFIX);
@@ -1767,7 +1776,8 @@ export class Auth0Client {
         options.audience || this.options.authorizationParams.audience
       ),
       audience: options.audience || this.options.authorizationParams.audience,
-      organization: options.organization || this.options.authorizationParams.organization
+      organization:
+        options.organization || this.options.authorizationParams.organization
     });
   }
 
@@ -1879,11 +1889,10 @@ export class Auth0Client {
     });
   }
 
-
   /**
    * Initiates a redirect to connect the user's account with a specified connection.
    * This method generates PKCE parameters, creates a transaction, and redirects to the /connect endpoint.
-   * 
+   *
    * You must enable `Offline Access` from the Connection Permissions settings to be able to use the connection with Connected Accounts.
    *
    * @template TAppState - The application state to persist through the transaction.
@@ -1908,7 +1917,7 @@ export class Auth0Client {
       scopes,
       authorization_params,
       redirectUri = this.options.authorizationParams.redirect_uri ||
-      window.location.origin
+        window.location.origin
     } = options;
 
     if (!connection) {
@@ -1970,7 +1979,10 @@ export class Auth0Client {
   ): Promise<TokenEndpointResponse> {
     // Need to add better typing here
     const { mfaToken, ...restOptions } = options;
-    return this._requestToken({ ...restOptions, mfa_token: mfaToken } as any, additionalParameters);
+    return this._requestToken(
+      { ...restOptions, mfa_token: mfaToken } as any,
+      additionalParameters
+    );
   }
 }
 

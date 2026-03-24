@@ -20,6 +20,7 @@ interface RevokeTokenOptions {
   timeout?: number;
   auth0Client?: any;
   useFormData?: boolean;
+  onRefreshTokenRevoked?: (refreshToken: string) => Promise<void> | void;
 }
 import * as dpopUtils from './dpop/utils';
 import { getJSON, fetchWithTimeout } from './http';
@@ -102,7 +103,8 @@ export async function revokeToken(
     useFormData,
     refreshTokens,
     audience,
-    client_id
+    client_id,
+    onRefreshTokenRevoked
   }: RevokeTokenOptions,
   worker?: Worker
 ): Promise<void> {
@@ -162,5 +164,7 @@ export async function revokeToken(
       }
       throw new Error(errorDescription || `HTTP error ${response.status}`);
     }
+
+    await onRefreshTokenRevoked?.(refreshToken);
   }
 }
