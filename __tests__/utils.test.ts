@@ -233,7 +233,7 @@ describe('utils', () => {
               jest.runOnlyPendingTimers();
             }, 10);
             jest.useFakeTimers();
-            await expect(runPopup({ popup })).rejects.toMatchObject(
+            await expect(runPopup({ popup }, url)).rejects.toMatchObject(
               TIMEOUT_ERROR
             );
             jest.useRealTimers();
@@ -244,6 +244,7 @@ describe('utils', () => {
 
     it('returns authorization response message', async () => {
       const message = {
+        origin: 'https://authorize.com',
         data: {
           type: 'authorization_response',
           response: { id_token: 'id_token' }
@@ -252,7 +253,7 @@ describe('utils', () => {
 
       const { popup, url } = setup(message);
 
-      await expect(runPopup({ popup })).resolves.toMatchObject(
+      await expect(runPopup({ popup }, url)).resolves.toMatchObject(
         message.data.response
       );
 
@@ -262,6 +263,7 @@ describe('utils', () => {
 
     it('returns authorization error message', async () => {
       const message = {
+        origin: 'https://authorize.com',
         data: {
           type: 'authorization_response',
           response: {
@@ -273,7 +275,7 @@ describe('utils', () => {
 
       const { popup, url } = setup(message);
 
-      await expect(runPopup({ popup })).rejects.toMatchObject({
+      await expect(runPopup({ popup }, url)).rejects.toMatchObject({
         ...message.data.response,
         message: 'error_description'
       });
@@ -299,10 +301,13 @@ describe('utils', () => {
       jest.useFakeTimers();
 
       await expect(
-        runPopup({
-          timeoutInSeconds: seconds,
-          popup
-        })
+        runPopup(
+          {
+            timeoutInSeconds: seconds,
+            popup
+          },
+          url
+        )
       ).rejects.toMatchObject({ ...TIMEOUT_ERROR, popup });
 
       jest.useRealTimers();
@@ -322,7 +327,7 @@ describe('utils', () => {
 
       jest.useFakeTimers();
 
-      await expect(runPopup({ popup })).rejects.toMatchObject(TIMEOUT_ERROR);
+      await expect(runPopup({ popup }, url)).rejects.toMatchObject(TIMEOUT_ERROR);
 
       jest.useRealTimers();
     });
@@ -343,9 +348,34 @@ describe('utils', () => {
 
       jest.useFakeTimers();
 
-      await expect(runPopup({ popup })).rejects.toMatchObject(
+      await expect(runPopup({ popup }, url)).rejects.toMatchObject(
         POPUP_CANCEL_ERROR
       );
+
+      jest.useRealTimers();
+    });
+
+    it('ignores messages from a cross-origin window and times out', async () => {
+      const crossOriginMessage = {
+        origin: 'https://attacker.example.com',
+        data: {
+          type: 'authorization_response',
+          response: {
+            error: 'access_denied',
+            error_description: 'INJECTED BY CROSS-ORIGIN ATTACKER'
+          }
+        }
+      };
+
+      const { popup } = setup(crossOriginMessage);
+
+      setTimeout(() => {
+        jest.runOnlyPendingTimers();
+      }, 10);
+
+      jest.useFakeTimers();
+
+      await expect(runPopup({ popup }, url)).rejects.toMatchObject(TIMEOUT_ERROR);
 
       jest.useRealTimers();
     });

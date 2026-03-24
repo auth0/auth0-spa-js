@@ -8,6 +8,7 @@ import { setupFn } from './helpers';
 
 import {
   TEST_CODE_CHALLENGE,
+  TEST_DOMAIN,
   TEST_STATE
 } from '../constants';
 
@@ -416,6 +417,7 @@ describe('Auth0Client', () => {
           if (type === 'message') {
             setTimeout(() => {
               cb({
+                origin: `https://${TEST_DOMAIN}`,
                 data: {
                   type: 'authorization_response',
                   response: {
@@ -484,6 +486,7 @@ describe('Auth0Client', () => {
           if (type === 'message') {
             setTimeout(() => {
               cb({
+                origin: `https://${TEST_DOMAIN}`,
                 data: {
                   type: 'authorization_response',
                   response: {

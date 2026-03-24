@@ -17,6 +17,7 @@ import {
 import {
   TEST_ACCESS_TOKEN,
   TEST_CODE_CHALLENGE,
+  TEST_DOMAIN,
   TEST_ID_TOKEN,
   TEST_REFRESH_TOKEN,
   TEST_STATE,
@@ -59,6 +60,7 @@ const setupPopupMock = (mockWin: any, response: any = {}) => {
     if (type === 'message') {
       setTimeout(() => {
         cb({
+          origin: `https://${TEST_DOMAIN}`,
           data: {
             type: 'authorization_response',
             response

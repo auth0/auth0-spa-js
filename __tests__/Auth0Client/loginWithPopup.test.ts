@@ -358,10 +358,13 @@ describe('Auth0Client', () => {
 
       await loginWithPopup(auth0);
 
-      expect(utils.runPopup).toHaveBeenCalledWith({
-        ...DEFAULT_POPUP_CONFIG_OPTIONS,
-        popup: expect.anything()
-      });
+      expect(utils.runPopup).toHaveBeenCalledWith(
+        {
+          ...DEFAULT_POPUP_CONFIG_OPTIONS,
+          popup: expect.anything()
+        },
+        `https://${TEST_DOMAIN}`
+      );
     });
 
     it('should be able to provide custom config', async () => {
@@ -369,10 +372,13 @@ describe('Auth0Client', () => {
 
       await loginWithPopup(auth0, {}, { timeoutInSeconds: 3 });
 
-      expect(utils.runPopup).toHaveBeenCalledWith({
-        timeoutInSeconds: 3,
-        popup: expect.anything()
-      });
+      expect(utils.runPopup).toHaveBeenCalledWith(
+        {
+          timeoutInSeconds: 3,
+          popup: expect.anything()
+        },
+        `https://${TEST_DOMAIN}`
+      );
     });
 
     it('throws an error if not resolved before timeout', async () => {
