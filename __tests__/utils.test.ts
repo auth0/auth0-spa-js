@@ -379,6 +379,27 @@ describe('utils', () => {
 
       jest.useRealTimers();
     });
+
+    it('ignores invalid messages from expected origin and times out', async () => {
+      const invalidSameOriginMessage = {
+        origin: url,
+        data: {
+          type: 'other-type'
+        }
+      };
+
+      const { popup } = setup(invalidSameOriginMessage);
+
+      setTimeout(() => {
+        jest.runOnlyPendingTimers();
+      }, 10);
+
+      jest.useFakeTimers();
+
+      await expect(runPopup({ popup }, url)).rejects.toMatchObject(TIMEOUT_ERROR);
+
+      jest.useRealTimers();
+    });
   });
   describe('runIframe', () => {
     const TIMEOUT_ERROR = {
