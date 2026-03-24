@@ -34,7 +34,8 @@ const getPlugins = shouldMinify => {
       pattern: /^(?!(?:[a-zA-Z]:)|\/).+\.worker\.ts$/
     }),
     resolve({
-      browser: true
+      browser: true,
+      extensions: ['.mjs', '.js', '.json', '.node', '.ts']
     }),
     commonjs(),
     typescript({

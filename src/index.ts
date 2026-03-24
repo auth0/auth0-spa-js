@@ -58,16 +58,19 @@ export type {
 } from './mfa';
 
 export {
-  ICache,
   LocalStorageCache,
   InMemoryCache,
+  CacheKey
+} from './cache';
+
+export type {
+  ICache,
   Cacheable,
   DecodedToken,
   CacheEntry,
   WrappedCacheEntry,
   KeyManifestEntry,
   MaybePromise,
-  CacheKey,
   CacheKeyData
 } from './cache';
 
@@ -79,4 +82,4 @@ export type {
 
 export { MyAccountApiError } from './MyAccountApiClient';
 
-export { CustomTokenExchangeOptions } from './TokenExchange';
+export type { CustomTokenExchangeOptions } from './TokenExchange';
