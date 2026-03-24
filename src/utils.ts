@@ -97,7 +97,7 @@ export const openPopup = (url: string) => {
   );
 };
 
-export const runPopup = (config: PopupConfigOptions) => {
+export const runPopup = (config: PopupConfigOptions, eventOrigin: string) => {
   return new Promise<AuthenticationResult>((resolve, reject) => {
     let popupEventListener: (e: MessageEvent) => void;
 
@@ -118,6 +118,7 @@ export const runPopup = (config: PopupConfigOptions) => {
     }, (config.timeoutInSeconds || DEFAULT_AUTHORIZE_TIMEOUT_IN_SECONDS) * 1000);
 
     popupEventListener = function (e: MessageEvent) {
+      if (e.origin !== eventOrigin) return;
       if (!e.data || e.data.type !== 'authorization_response') {
         return;
       }
