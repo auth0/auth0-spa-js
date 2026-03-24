@@ -524,13 +524,16 @@ export class Auth0Client {
 
     config.popup.location.href = params.url;
 
-    const codeResult = await runPopup({
-      ...config,
-      timeoutInSeconds:
-        config.timeoutInSeconds ||
-        this.options.authorizeTimeoutInSeconds ||
-        DEFAULT_AUTHORIZE_TIMEOUT_IN_SECONDS
-    });
+    const codeResult = await runPopup(
+      {
+        ...config,
+        timeoutInSeconds:
+          config.timeoutInSeconds ||
+          this.options.authorizeTimeoutInSeconds ||
+          DEFAULT_AUTHORIZE_TIMEOUT_IN_SECONDS
+      },
+      new URL(params.url).origin
+    );
 
     if (params.state !== codeResult.state) {
       throw new GenericError('state_mismatch', 'Invalid state');

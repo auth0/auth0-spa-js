@@ -299,6 +299,7 @@ export const setupMessageEventLister = (
     if (type === 'message') {
       setTimeout(() => {
         cb({
+          origin: `https://${TEST_DOMAIN}`,
           data: {
             type: 'authorization_response',
             response
