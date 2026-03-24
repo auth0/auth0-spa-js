@@ -34,7 +34,8 @@ const getPlugins = shouldMinify => {
       pattern: /^(?!(?:[a-zA-Z]:)|\/).+\.worker\.ts$/
     }),
     resolve({
-      browser: true
+      browser: true,
+      extensions: ['.mjs', '.js', '.json', '.node', '.ts']
     }),
     commonjs(),
     typescript({
@@ -50,7 +51,7 @@ const getPlugins = shouldMinify => {
     }),
     babel({
       babelHelpers: 'bundled',
-      extensions: ['.js'],
+      extensions: ['.js', '.ts'],
       exclude: /node_modules\/(?!(@auth0\/auth0-auth-js|openid-client|oauth4webapi|jose))/ //Exclude all node_modules except auth0-auth-js, openid-client, oauth4webapi, and jose
     }),
     replace({
