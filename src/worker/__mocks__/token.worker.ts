@@ -1,10 +1,10 @@
-const { messageHandler } = jest.requireActual('../token.worker');
+const { messageRouter } = jest.requireActual('../token.worker');
 
 export default class {
   postMessage(data, ports) {
-    messageHandler({
+    messageRouter({
       data,
-      ports
+      ports: ports || []
     });
   }
 }

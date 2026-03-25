@@ -1,9 +1,10 @@
 import { MissingRefreshTokenError } from '../errors';
 import { FetchResponse } from '../global';
 import { createQueryParams, fromEntries } from '../utils';
-import { WorkerRefreshTokenMessage } from './worker.types';
+import { WorkerMessage, WorkerRefreshTokenMessage } from './worker.types';
 
 let refreshTokens: Record<string, string> = {};
+let allowedBaseUrl: string | null = null;
 
 const cacheKey = (audience: string, scope: string) => `${audience}|${scope}`;
 
@@ -180,11 +181,66 @@ const messageHandler = async ({
   }
 };
 
+const isAuthorizedWorkerRequest = (
+  workerRequest: WorkerRefreshTokenMessage
+) => {
+  if (!allowedBaseUrl) {
+    return false;
+  }
+
+  try {
+    const allowedBaseOrigin = new URL(allowedBaseUrl).origin;
+    const requestedUrl = new URL(workerRequest.fetchUrl);
+
+    return (
+      requestedUrl.origin === allowedBaseOrigin &&
+      requestedUrl.pathname === '/oauth/token'
+    );
+  } catch {
+    return false;
+  }
+};
+
+const messageRouter = (event: MessageEvent<WorkerMessage>) => {
+  const { data, ports } = event;
+  const [port] = ports;
+
+  if ('type' in data && data.type === 'init') {
+    if (allowedBaseUrl === null) {
+      try {
+        new URL(data.allowedBaseUrl);
+        allowedBaseUrl = data.allowedBaseUrl;
+      } catch {
+        return;
+      }
+    }
+
+    return;
+  }
+
+  if (
+    !('fetchUrl' in data) ||
+    !isAuthorizedWorkerRequest(data as WorkerRefreshTokenMessage)
+  ) {
+    port?.postMessage({
+      ok: false,
+      json: {
+        error: 'invalid_fetch_url',
+        error_description: 'Unauthorized fetch URL'
+      },
+      headers: {}
+    });
+    return;
+  }
+
+  messageHandler(event as MessageEvent<WorkerRefreshTokenMessage>);
+};
+
 // Don't run `addEventListener` in our tests (this is replaced in rollup)
 if (process.env.NODE_ENV === 'test') {
-  module.exports = { messageHandler };
+  module.exports = { messageHandler, messageRouter };
   /* c8 ignore next 4  */
 } else {
   // @ts-ignore
-  addEventListener('message', messageHandler);
+  addEventListener('message', messageRouter);
 }
