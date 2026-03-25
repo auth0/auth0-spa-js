@@ -351,6 +351,48 @@ describe('token worker', () => {
     expect(mockFetch.mock.calls.length).toBe(1);
   });
 
+  it('rejects messages with a malformed fetchUrl', async () => {
+    const response = await messageHandlerAsync({
+      fetchUrl: 'not-a-valid-url',
+      fetchOptions: {
+        method: 'POST',
+        body: JSON.stringify({ grant_type: 'refresh_token' })
+      }
+    });
+
+    expect(response.ok).toBe(false);
+    expect(response.json.error).toBe('invalid_fetch_url');
+    expect(mockFetch).not.toHaveBeenCalled();
+  });
+
+  it('ignores init message with a malformed allowedBaseUrl', async () => {
+    jest.resetModules();
+
+    const { messageRouter } = require('../src/worker/token.worker');
+
+    messageRouter({
+      data: { type: 'init', allowedBaseUrl: 'not-a-valid-url' },
+      ports: []
+    });
+
+    const response = await new Promise<FetchResponse>(resolve =>
+      messageRouter({
+        data: {
+          fetchUrl: TOKEN_ENDPOINT,
+          fetchOptions: {
+            method: 'POST',
+            body: JSON.stringify({ grant_type: 'refresh_token' })
+          }
+        },
+        ports: [{ postMessage: resolve }]
+      })
+    );
+
+    expect(response.ok).toBe(false);
+    expect(response.json.error).toBe('invalid_fetch_url');
+    expect(mockFetch).not.toHaveBeenCalled();
+  });
+
   it('rejects token requests before worker initialization', async () => {
     jest.resetModules();
 
