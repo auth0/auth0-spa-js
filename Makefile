@@ -2,7 +2,7 @@
 
 install:
 	@echo "Running install..."
-	npm ci
+	npm install
 
 lint:
 	@echo "Running lint..."
