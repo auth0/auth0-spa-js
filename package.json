@@ -54,7 +54,7 @@
     "publish:cdn": "ccu --trace"
   },
   "devDependencies": {
-    "@auth0/component-cdn-uploader": "^3.0.0",
+    "@auth0/component-cdn-uploader": "^3.0.1",
     "@babel/core": "^7.28.5",
     "@babel/preset-env": "^7.28.5",
     "@babel/preset-typescript": "^7.28.5",
