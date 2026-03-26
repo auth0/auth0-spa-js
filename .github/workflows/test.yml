@@ -78,6 +78,40 @@ jobs:
         uses: codecov/codecov-action@57e3a136b779b570ffcdbf80b3bdc90e7fab3de2 # pin@6.0.0
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
+
+  verify-types:
+    needs: test
+
+    name: Verify Type Declarations
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          package-manager-cache: false
+
+      - name: Restore build artifacts
+        uses: actions/cache/restore@v5
+        with:
+          path: .
+          key: ${{ env.CACHE_KEY }}
+
+      - name: Generate type declarations
+        run: npm run build:types
+
+      - name: Assert dist/typings/index.d.ts exists
+        run: test -f dist/typings/index.d.ts || (echo "dist/typings/index.d.ts is missing" && exit 1)
+
+      - name: Check types with attw
+        run: |
+          npm pack --ignore-scripts
+          npx attw auth0-auth0-spa-js-*.tgz
+
   gatsby:
     needs: test
 
