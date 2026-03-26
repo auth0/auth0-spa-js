@@ -1,5 +1,11 @@
 # Change Log
 
+## [v2.18.2](https://github.com/auth0/auth0-spa-js/tree/v2.18.2) (2026-03-26)
+[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.18.1...v2.18.2)
+
+**Fixed**
+- fix(build): restore dist/typings/ in published package [\#1574](https://github.com/auth0/auth0-spa-js/pull/1574) ([yogeshchoudhary147](https://github.com/yogeshchoudhary147))
+
 ## [v2.18.1](https://github.com/auth0/auth0-spa-js/tree/v2.18.1) (2026-03-26)
 [Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.18.0...v2.18.1)
 
