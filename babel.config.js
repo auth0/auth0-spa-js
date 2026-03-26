@@ -1,6 +1,5 @@
 module.exports = {
   presets: [
-    '@babel/preset-typescript',
     ['@babel/preset-env', {
       // Target browsers that support ES2017 features (async/await, object spread, etc.)
       targets: {
