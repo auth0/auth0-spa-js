@@ -1,5 +1,5 @@
 const fs = require('fs');
-const { join } = require('path');
+const path = require('path');
 const rimraf = require('rimraf');
 
 const source = './dist/typings/src';
@@ -9,19 +9,24 @@ if (!fs.existsSync(source)) {
   return;
 }
 
-const files = fs.readdirSync(source, {
-  withFileTypes: true,
-});
-
 let fileCount = 0;
 
-files.forEach((file) => {
-  if (file.isFile()) {
-    fs.copyFileSync(join(source, file.name), join(dest, file.name));
-    fileCount++;
-  }
-});
+function moveDir(srcDir, destDir) {
+  fs.readdirSync(srcDir, { withFileTypes: true }).forEach((entry) => {
+    const srcPath = path.join(srcDir, entry.name);
+    const destPath = path.join(destDir, entry.name);
 
+    if (entry.isDirectory()) {
+      fs.mkdirSync(destPath, { recursive: true });
+      moveDir(srcPath, destPath);
+    } else {
+      fs.copyFileSync(srcPath, destPath);
+      fileCount++;
+    }
+  });
+}
+
+moveDir(source, dest);
 rimraf.sync(source);
 
 console.log(`Moved ${fileCount} type definition files`);

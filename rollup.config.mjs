@@ -52,6 +52,24 @@ const getPlugins = shouldMinify => {
     babel({
       babelHelpers: 'bundled',
       extensions: ['.js', '.ts'],
+      babelrc: false,
+      presets: [
+        '@babel/preset-typescript',
+        ['@babel/preset-env', {
+          targets: {
+            browsers: [
+              'chrome >= 60',
+              'safari >= 11',
+              'firefox >= 55',
+              'edge >= 15',
+              'ios >= 11',
+              'android >= 67'
+            ]
+          },
+          useBuiltIns: false,
+          modules: false
+        }]
+      ],
       exclude: /node_modules\/(?!(@auth0\/auth0-auth-js|openid-client|oauth4webapi|jose))/ //Exclude all node_modules except auth0-auth-js, openid-client, oauth4webapi, and jose
     }),
     replace({

@@ -1,0 +1,13 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "emitDeclarationOnly": true,
+    "declaration": true,
+    "declarationDir": "./dist/typings",
+    "types": ["node"],
+    "skipLibCheck": true,
+    "lib": ["ES2018", "ES2019.Object", "DOM", "DOM.Iterable"]
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": ["__tests__", "**/__mocks__/**", "dist", "node_modules"]
+}

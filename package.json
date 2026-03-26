@@ -33,6 +33,7 @@
     "start": "npm run dev",
     "docs": "typedoc --options ./typedoc.js src",
     "build": "rimraf dist && rollup -m -c --environment NODE_ENV:production && npm run test:es-check",
+    "build:types": "tsc --project tsconfig.types.json",
     "build:stats": "rimraf dist && rollup -m -c --environment NODE_ENV:production --environment WITH_STATS:true && npm run test:es-check && open bundle-stats/index.html",
     "lint": "eslint --ext .jsx,.js src/",
     "lint:security": "eslint ./src --ext ts --no-eslintrc --config ./.eslintrc.security",
@@ -50,7 +51,7 @@
     "serve:coverage": "serve coverage/lcov-report -n",
     "serve:stats": "serve bundle-stats -n",
     "print-bundle-size": "node ./scripts/print-bundle-size.mjs",
-    "prepack": "npm run build && node ./scripts/prepack",
+    "prepack": "npm run build && npm run build:types && node ./scripts/prepack",
     "publish:cdn": "ccu --trace"
   },
   "devDependencies": {
