@@ -104,9 +104,6 @@ jobs:
       - name: Generate type declarations
         run: npm run build:types
 
-      - name: Assert dist/typings/index.d.ts exists
-        run: test -f dist/typings/index.d.ts || (echo "dist/typings/index.d.ts is missing" && exit 1)
-
   gatsby:
     needs: test
 

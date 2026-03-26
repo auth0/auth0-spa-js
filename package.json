@@ -51,7 +51,7 @@
     "serve:coverage": "serve coverage/lcov-report -n",
     "serve:stats": "serve bundle-stats -n",
     "print-bundle-size": "node ./scripts/print-bundle-size.mjs",
-    "prepack": "npm run build && npm run build:types && node ./scripts/prepack",
+    "prepack": "npm run build && npm run build:types",
     "publish:cdn": "ccu --trace"
   },
   "devDependencies": {
