@@ -127,7 +127,7 @@ describe('Auth0', () => {
     ) as Location;
     // --
 
-    window.Worker = jest.fn();
+    window.Worker = jest.fn().mockImplementation(() => ({ postMessage: jest.fn() }));
 
     (<any>global).crypto = {
       subtle: {

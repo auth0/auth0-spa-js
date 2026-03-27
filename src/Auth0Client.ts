@@ -306,6 +306,11 @@ export class Auth0Client {
       } else {
         this.worker = new TokenWorker();
       }
+
+      this.worker.postMessage({
+        type: 'init',
+        allowedBaseUrl: this.domainUrl
+      });
     }
   }
 

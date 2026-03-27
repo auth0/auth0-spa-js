@@ -83,6 +83,11 @@ describe('oauthToken', () => {
     const worker = new Worker();
     const spy = jest.spyOn(worker, 'postMessage');
 
+    worker.postMessage({
+      type: 'init',
+      allowedBaseUrl: 'https://test.com'
+    });
+
     const body = {
       redirect_uri: 'http://localhost',
       grant_type: 'authorization_code',

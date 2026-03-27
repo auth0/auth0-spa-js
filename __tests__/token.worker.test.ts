@@ -2,8 +2,11 @@ import { MISSING_REFRESH_TOKEN_ERROR_MESSAGE } from '../src/constants';
 import { assertPostFn } from './Auth0Client/helpers';
 import * as utils from '../src/utils';
 import { expect } from '@jest/globals';
+import { FetchResponse } from '../src/global';
 
 const mockFetch = <jest.Mock>window.fetch;
+const ALLOWED_BASE_URL = 'https://tenant.auth0.com';
+const TOKEN_ENDPOINT = `${ALLOWED_BASE_URL}/oauth/token`;
 
 describe('token worker', () => {
   let originalFetch;
@@ -15,16 +18,28 @@ describe('token worker', () => {
     // The web worker uses native fetch.
     window.fetch = mockFetch;
 
-    const { messageHandler } = require('../src/worker/token.worker');
+    const { messageRouter } = require('../src/worker/token.worker');
+
+    messageRouter({
+      data: { type: 'init', allowedBaseUrl: ALLOWED_BASE_URL },
+      ports: []
+    });
 
     messageHandlerAsync = opts =>
       new Promise(resolve =>
-        messageHandler({ data: opts, ports: [{ postMessage: resolve }] })
+        messageRouter({ data: opts, ports: [{ postMessage: resolve }] })
       );
 
     secondMessageHandlerAsync = opts =>
       new Promise(resolve =>
-        messageHandler({ data: { ...opts, useMrrt: true, auth: { audience: 'example', scope: 'scope1' } }, ports: [{ postMessage: resolve }] })
+        messageRouter({
+          data: {
+            ...opts,
+            useMrrt: true,
+            auth: { audience: 'example', scope: 'scope1' }
+          },
+          ports: [{ postMessage: resolve }]
+        })
       );
   });
 
@@ -45,7 +60,7 @@ describe('token worker', () => {
     );
 
     const response = await messageHandlerAsync({
-      fetchUrl: '/foo',
+      fetchUrl: TOKEN_ENDPOINT,
       fetchOptions: {
         method: 'POST',
         body: JSON.stringify({})
@@ -68,7 +83,7 @@ describe('token worker', () => {
       })
     );
     await messageHandlerAsync({
-      fetchUrl: '/foo',
+      fetchUrl: TOKEN_ENDPOINT,
       fetchOptions: {
         method: 'POST',
         body: utils.createQueryParams({
@@ -79,7 +94,7 @@ describe('token worker', () => {
     });
 
     await messageHandlerAsync({
-      fetchUrl: '/foo',
+      fetchUrl: TOKEN_ENDPOINT,
       fetchOptions: {
         method: 'POST',
         body: utils.createQueryParams({
@@ -90,7 +105,7 @@ describe('token worker', () => {
     });
 
     assertPostFn(mockFetch)(
-      '/foo',
+      TOKEN_ENDPOINT,
       {
         grant_type: 'refresh_token',
         refresh_token: 'foo'
@@ -114,7 +129,7 @@ describe('token worker', () => {
     );
 
     const response = await messageHandlerAsync({
-      fetchUrl: '/foo',
+      fetchUrl: TOKEN_ENDPOINT,
       fetchOptions: {
         method: 'POST',
         body: JSON.stringify({})
@@ -139,7 +154,7 @@ describe('token worker', () => {
       })
     );
     await messageHandlerAsync({
-      fetchUrl: '/foo',
+      fetchUrl: TOKEN_ENDPOINT,
       fetchOptions: {
         method: 'POST',
         body: JSON.stringify({
@@ -149,7 +164,7 @@ describe('token worker', () => {
     });
 
     await messageHandlerAsync({
-      fetchUrl: '/foo',
+      fetchUrl: TOKEN_ENDPOINT,
       fetchOptions: {
         method: 'POST',
         body: JSON.stringify({
@@ -166,7 +181,7 @@ describe('token worker', () => {
 
   it(`errors with grant_type='refresh_token' and no token is stored`, async () => {
     const response = await messageHandlerAsync({
-      fetchUrl: '/foo',
+      fetchUrl: TOKEN_ENDPOINT,
       fetchOptions: {
         method: 'POST',
         body: JSON.stringify({
@@ -185,7 +200,7 @@ describe('token worker', () => {
     mockFetch.mockReturnValue(Promise.reject(new Error('fail')));
 
     const response = await messageHandlerAsync({
-      fetchUrl: '/foo',
+      fetchUrl: TOKEN_ENDPOINT,
       fetchOptions: {
         method: 'POST',
         body: JSON.stringify({})
@@ -211,7 +226,7 @@ describe('token worker', () => {
     );
 
     const response = await messageHandlerAsync({
-      fetchUrl: '/foo',
+      fetchUrl: TOKEN_ENDPOINT,
       fetchOptions: {
         method: 'POST',
         body: JSON.stringify({})
@@ -235,7 +250,7 @@ describe('token worker', () => {
     );
 
     const response = await messageHandlerAsync({
-      fetchUrl: '/foo',
+      fetchUrl: TOKEN_ENDPOINT,
       fetchOptions: {
         method: 'POST',
         body: JSON.stringify({})
@@ -265,7 +280,7 @@ describe('token worker', () => {
       );
 
     await messageHandlerAsync({
-      fetchUrl: '/foo',
+      fetchUrl: TOKEN_ENDPOINT,
       fetchOptions: {
         method: 'POST',
         body: JSON.stringify({
@@ -275,7 +290,7 @@ describe('token worker', () => {
     });
 
     await messageHandlerAsync({
-      fetchUrl: '/foo',
+      fetchUrl: TOKEN_ENDPOINT,
       fetchOptions: {
         method: 'POST',
         body: JSON.stringify({
@@ -285,7 +300,7 @@ describe('token worker', () => {
     });
 
     const result = await messageHandlerAsync({
-      fetchUrl: '/foo',
+      fetchUrl: TOKEN_ENDPOINT,
       fetchOptions: {
         method: 'POST',
         body: JSON.stringify({
@@ -302,22 +317,135 @@ describe('token worker', () => {
     );
   });
 
+  it('rejects messages sent to an unauthorized URL', async () => {
+    mockFetch.mockReturnValue(
+      Promise.resolve({
+        ok: true,
+        json: () => ({ refresh_token: 'foo' }),
+        headers: new Headers()
+      })
+    );
+
+    await messageHandlerAsync({
+      fetchUrl: TOKEN_ENDPOINT,
+      fetchOptions: {
+        method: 'POST',
+        body: JSON.stringify({
+          grant_type: 'authorization_code'
+        })
+      }
+    });
+
+    const response = await messageHandlerAsync({
+      fetchUrl: 'https://attacker.example.com/oauth/token',
+      fetchOptions: {
+        method: 'POST',
+        body: JSON.stringify({
+          grant_type: 'refresh_token'
+        })
+      }
+    });
+
+    expect(response.ok).toBe(false);
+    expect(response.json.error).toBe('invalid_fetch_url');
+    expect(mockFetch.mock.calls.length).toBe(1);
+  });
+
+  it('rejects messages with a malformed fetchUrl', async () => {
+    const response = await messageHandlerAsync({
+      fetchUrl: 'not-a-valid-url',
+      fetchOptions: {
+        method: 'POST',
+        body: JSON.stringify({ grant_type: 'refresh_token' })
+      }
+    });
+
+    expect(response.ok).toBe(false);
+    expect(response.json.error).toBe('invalid_fetch_url');
+    expect(mockFetch).not.toHaveBeenCalled();
+  });
+
+  it('ignores init message with a malformed allowedBaseUrl', async () => {
+    jest.resetModules();
+
+    const { messageRouter } = require('../src/worker/token.worker');
+
+    messageRouter({
+      data: { type: 'init', allowedBaseUrl: 'not-a-valid-url' },
+      ports: []
+    });
+
+    const response = await new Promise<FetchResponse>(resolve =>
+      messageRouter({
+        data: {
+          fetchUrl: TOKEN_ENDPOINT,
+          fetchOptions: {
+            method: 'POST',
+            body: JSON.stringify({ grant_type: 'refresh_token' })
+          }
+        },
+        ports: [{ postMessage: resolve }]
+      })
+    );
+
+    expect(response.ok).toBe(false);
+    expect(response.json.error).toBe('invalid_fetch_url');
+    expect(mockFetch).not.toHaveBeenCalled();
+  });
+
+  it('rejects token requests before worker initialization', async () => {
+    jest.resetModules();
+
+    const { messageRouter } = require('../src/worker/token.worker');
+
+    const response = await new Promise<FetchResponse>(resolve =>
+      messageRouter({
+        data: {
+          fetchUrl: TOKEN_ENDPOINT,
+          fetchOptions: {
+            method: 'POST',
+            body: JSON.stringify({ grant_type: 'refresh_token' })
+          }
+        },
+        ports: [{ postMessage: resolve }]
+      })
+    );
+
+    expect(response.ok).toBe(false);
+    expect(response.json.error).toBe('invalid_fetch_url');
+    expect(mockFetch).not.toHaveBeenCalled();
+  });
+
   describe("useMrrt", () => {
     beforeEach(() => {
       originalFetch = window.fetch;
       // The web worker uses native fetch.
       window.fetch = mockFetch;
 
-      const { messageHandler } = require('../src/worker/token.worker');
+      const { messageRouter } = require('../src/worker/token.worker');
 
       messageHandlerAsync = opts =>
         new Promise(resolve =>
-          messageHandler({ data: { ...opts, useMrrt: true, auth: { audience: 'audience1', scope: 'scope1' } }, ports: [{ postMessage: resolve }] })
+          messageRouter({
+            data: {
+              ...opts,
+              useMrrt: true,
+              auth: { audience: 'audience1', scope: 'scope1' }
+            },
+            ports: [{ postMessage: resolve }]
+          })
         );
 
       secondMessageHandlerAsync = opts =>
         new Promise(resolve =>
-          messageHandler({ data: { ...opts, useMrrt: true, auth: { audience: 'audience2', scope: 'scope2' } }, ports: [{ postMessage: resolve }] })
+          messageRouter({
+            data: {
+              ...opts,
+              useMrrt: true,
+              auth: { audience: 'audience2', scope: 'scope2' }
+            },
+            ports: [{ postMessage: resolve }]
+          })
         );
     });
 
@@ -331,7 +459,7 @@ describe('token worker', () => {
       );
 
       await messageHandlerAsync({
-        fetchUrl: '/foo',
+        fetchUrl: TOKEN_ENDPOINT,
         fetchOptions: {
           method: 'POST',
           body: JSON.stringify({
@@ -341,7 +469,7 @@ describe('token worker', () => {
       });
 
       await messageHandlerAsync({
-        fetchUrl: '/foo',
+        fetchUrl: TOKEN_ENDPOINT,
         fetchOptions: {
           method: 'POST',
           body: JSON.stringify({
@@ -351,7 +479,7 @@ describe('token worker', () => {
       });
 
       await secondMessageHandlerAsync({
-        fetchUrl: '/foo',
+        fetchUrl: TOKEN_ENDPOINT,
         fetchOptions: {
           method: 'POST',
           body: JSON.stringify({
@@ -373,16 +501,30 @@ describe('token worker', () => {
       // The web worker uses native fetch.
       window.fetch = mockFetch;
 
-      const { messageHandler } = require('../src/worker/token.worker');
+      const { messageRouter } = require('../src/worker/token.worker');
 
       messageHandlerAsync = opts =>
         new Promise(resolve =>
-          messageHandler({ data: { ...opts, useMrrt: true, auth: { audience: 'default', scope: 'scope1' } }, ports: [{ postMessage: resolve }] })
+          messageRouter({
+            data: {
+              ...opts,
+              useMrrt: true,
+              auth: { audience: 'default', scope: 'scope1' }
+            },
+            ports: [{ postMessage: resolve }]
+          })
         );
 
       secondMessageHandlerAsync = opts =>
         new Promise(resolve =>
-          messageHandler({ data: { ...opts, useMrrt: true, auth: { audience: 'audience2', scope: 'scope2' } }, ports: [{ postMessage: resolve }] })
+          messageRouter({
+            data: {
+              ...opts,
+              useMrrt: true,
+              auth: { audience: 'audience2', scope: 'scope2' }
+            },
+            ports: [{ postMessage: resolve }]
+          })
         );
     });
 
@@ -396,7 +538,7 @@ describe('token worker', () => {
       );
 
       await messageHandlerAsync({
-        fetchUrl: '/foo',
+        fetchUrl: TOKEN_ENDPOINT,
         fetchOptions: {
           method: 'POST',
           body: JSON.stringify({
@@ -406,7 +548,7 @@ describe('token worker', () => {
       });
 
       await messageHandlerAsync({
-        fetchUrl: '/foo',
+        fetchUrl: TOKEN_ENDPOINT,
         fetchOptions: {
           method: 'POST',
           body: JSON.stringify({
@@ -419,7 +561,7 @@ describe('token worker', () => {
       });
 
       await secondMessageHandlerAsync({
-        fetchUrl: '/foo',
+        fetchUrl: TOKEN_ENDPOINT,
         fetchOptions: {
           method: 'POST',
           body: JSON.stringify({
