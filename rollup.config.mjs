@@ -52,7 +52,7 @@ const getPlugins = shouldMinify => {
     babel({
       babelHelpers: 'bundled',
       extensions: ['.js', '.ts'],
-      babelrc: false,
+      configFile: false,
       presets: [
         '@babel/preset-typescript',
         ['@babel/preset-env', {
