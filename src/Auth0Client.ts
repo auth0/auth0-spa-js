@@ -307,7 +307,7 @@ export class Auth0Client {
         this.worker = new TokenWorker();
       }
 
-      this.worker.postMessage({
+      this.worker!.postMessage({
         type: 'init',
         allowedBaseUrl: this.domainUrl
       });
