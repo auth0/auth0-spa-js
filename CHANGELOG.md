@@ -1,5 +1,12 @@
 # Change Log
 
+## [v2.18.3](https://github.com/auth0/auth0-spa-js/tree/v2.18.3) (2026-03-30)
+[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.18.2...v2.18.3)
+
+**Added**
+- fix: validate fetchUrl against allowlisted domain in token worker [\#1569](https://github.com/auth0/auth0-spa-js/pull/1569) ([yogeshchoudhary147](https://github.com/yogeshchoudhary147))
+- ci: add verify-types job to prevent missing typings on publish [\#1576](https://github.com/auth0/auth0-spa-js/pull/1576) ([yogeshchoudhary147](https://github.com/yogeshchoudhary147))
+
 ## [v2.18.2](https://github.com/auth0/auth0-spa-js/tree/v2.18.2) (2026-03-26)
 [Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.18.1...v2.18.2)
 
