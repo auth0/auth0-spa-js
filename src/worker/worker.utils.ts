@@ -1,16 +1,27 @@
-import { WorkerRefreshTokenMessage } from './worker.types';
+import {
+  WorkerRefreshTokenMessage,
+  WorkerRevokeTokenMessage
+} from './worker.types';
 
 /**
- * Sends the specified message to the web worker
- * @param message The message to send
- * @param to The worker to send the message to
+ * Sends a message to a Web Worker and returns a Promise that resolves with
+ * the worker's response, or rejects if the worker replies with an error.
+ *
+ * Uses a {@link MessageChannel} so each call gets its own private reply port,
+ * making concurrent calls safe without shared state.
+ *
+ * @param message - The typed message to send (`refresh` or `revoke`).
+ * @param to      - The target {@link Worker} instance.
+ * @returns A Promise that resolves with the worker's response payload.
  */
-export const sendMessage = (message: WorkerRefreshTokenMessage, to: Worker) =>
-  new Promise(function (resolve, reject) {
+export const sendMessage = <T = any>(
+  message: WorkerRefreshTokenMessage | WorkerRevokeTokenMessage,
+  to: Worker
+): Promise<T> =>
+  new Promise<T>(function (resolve, reject) {
     const messageChannel = new MessageChannel();
 
     messageChannel.port1.onmessage = function (event) {
-      // Only for fetch errors, as these get retried
       if (event.data.error) {
         reject(new Error(event.data.error));
       } else {

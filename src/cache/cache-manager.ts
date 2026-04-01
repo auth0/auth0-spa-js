@@ -163,6 +163,23 @@ export class CacheManager {
     await this.cache.remove(cacheKey.toKey());
   }
 
+  async stripRefreshToken(refreshToken: string): Promise<void> {
+    const keys = await this.getCacheKeys();
+
+    /* c8 ignore next */
+    if (!keys) return;
+
+    // Find all cache entries that have this refresh token and strip only the refresh token,
+    // leaving the access token intact (it remains valid until it expires)
+    for (const key of keys) {
+      const entry = await this.cache.get<WrappedCacheEntry>(key);
+      if (entry?.body?.refresh_token === refreshToken) {
+        delete entry.body.refresh_token;
+        await this.cache.set(key, entry);
+      }
+    }
+  }
+
   async clear(clientId?: string): Promise<void> {
     const keys = await this.getCacheKeys();
 
@@ -267,6 +284,46 @@ export class CacheManager {
     }
 
     return undefined;
+  }
+
+  /**
+   * Returns all distinct refresh tokens stored for a given audience and client.
+   *
+   * Multiple cache entries may exist for the same audience when different scope
+   * combinations were obtained via separate authorization flows, each potentially
+   * carrying a different refresh token. A Set is used to deduplicate tokens that
+   * are shared across entries (e.g. MRRT).
+   *
+   * @param audience The audience to look up
+   * @param clientId The client id to scope the lookup
+   */
+  async getRefreshTokensByAudience(
+    audience: string,
+    clientId: string
+  ): Promise<string[]> {
+    const keys = await this.getCacheKeys();
+
+    if (!keys) return [];
+
+    const tokens = new Set<string>();
+
+    for (const key of keys) {
+      const cacheKey = CacheKey.fromKey(key);
+
+      if (
+        cacheKey.prefix === CACHE_KEY_PREFIX &&
+        cacheKey.clientId === clientId &&
+        cacheKey.audience === audience
+      ) {
+        const entry = await this.cache.get<WrappedCacheEntry>(key);
+
+        if (entry?.body?.refresh_token) {
+          tokens.add(entry.body.refresh_token);
+        }
+      }
+    }
+
+    return Array.from(tokens);
   }
 
   /**

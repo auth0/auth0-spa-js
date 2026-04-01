@@ -17,7 +17,7 @@ import {
 
 import { getLockManager, type ILockManager } from './lock';
 
-import { oauthToken } from './api';
+import { oauthToken, revokeToken } from './api';
 
 import { injectDefaultScopes, scopesToRequest } from './scope';
 
@@ -90,7 +90,8 @@ import {
   RedirectConnectAccountOptions,
   ResponseType,
   ClientAuthorizationParams,
-  ClientConfiguration
+  ClientConfiguration,
+  RevokeRefreshTokenOptions
 } from './global';
 
 // @ts-ignore
@@ -1142,6 +1143,76 @@ export class Auth0Client {
     );
 
     return url + federatedQuery;
+  }
+
+  /**
+   * ```js
+   * await auth0.revokeRefreshToken();
+   * ```
+   *
+   * Revokes the refresh token using the `/oauth/revoke` endpoint.
+   * This invalidates the refresh token so it can no longer be used to obtain new access tokens.
+   *
+   * The method works with both memory and localStorage cache modes:
+   * - For memory storage with worker: The refresh token never leaves the worker thread,
+   *   maintaining security isolation
+   * - For localStorage: The token is retrieved from cache and revoked
+   *
+   * If `useRefreshTokens` is disabled, this method does nothing.
+   *
+   * **Important:** This method revokes the refresh token for a single audience. If your
+   * application requests tokens for multiple audiences, each audience may have its own
+   * refresh token. To fully revoke all refresh tokens, call this method once per audience.
+   * If you want to terminate the user's session entirely, use `logout()` instead.
+   *
+   * When using Multi-Resource Refresh Tokens (MRRT), a single refresh token may cover
+   * multiple audiences. In that case, revoking it will affect all cache entries that
+   * share the same token.
+   *
+   * @param options - Optional parameters to identify which refresh token to revoke.
+   *   Defaults to the audience configured in `authorizationParams`.
+   *
+   * @example
+   * // Revoke the default refresh token
+   * await auth0.revokeRefreshToken();
+   *
+   * @example
+   * // Revoke refresh tokens for each audience individually
+   * await auth0.revokeRefreshToken({ audience: 'https://api.example.com' });
+   * await auth0.revokeRefreshToken({ audience: 'https://api2.example.com' });
+   */
+  public async revokeRefreshToken(options: RevokeRefreshTokenOptions = {}): Promise<void> {
+    if (!this.options.useRefreshTokens) {
+      return;
+    }
+
+    const audience =
+      options.audience || this.options.authorizationParams.audience;
+
+    const resolvedAudience = audience || DEFAULT_AUDIENCE;
+
+    // For the non-worker path the main-thread cache holds the refresh tokens.
+    // For the worker path the worker holds its own RT store — the cache returns
+    // [] and revokeToken sends a single message; the worker loops internally.
+    const refreshTokens = await this.cacheManager.getRefreshTokensByAudience(
+      resolvedAudience,
+      this.options.clientId
+    );
+
+    await revokeToken(
+      {
+        baseUrl: this.domainUrl,
+        timeout: this.httpTimeoutMs,
+        auth0Client: this.options.auth0Client,
+        useFormData: this.options.useFormData,
+        client_id: this.options.clientId,
+        refreshTokens,
+        audience: resolvedAudience,
+        onRefreshTokenRevoked: refreshToken =>
+          this.cacheManager.stripRefreshToken(refreshToken)
+      },
+      this.worker
+    );
   }
 
   /**

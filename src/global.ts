@@ -903,6 +903,14 @@ export type GetTokenSilentlyVerboseResponse = Omit<
   'refresh_token'
 >;
 
+/**
+ * Options for revoking a refresh token
+ */
+export interface RevokeRefreshTokenOptions {
+  /** Audience to identify which refresh token to revoke. Omit for default audience. */
+  audience?: string;
+}
+
 // MFA API types
 export type {
   Authenticator,
