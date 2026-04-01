@@ -657,4 +657,72 @@ describe('revokeToken', () => {
       })
     ).rejects.toThrow('HTTP error 400');
   });
+
+  it('delegates to the worker via sendMessage when a worker is provided', async () => {
+    const workerUtils = require('../src/worker/worker.utils');
+    jest.spyOn(workerUtils, 'sendMessage').mockResolvedValue(undefined);
+
+    const worker = {} as Worker;
+
+    await revokeToken(
+      {
+        baseUrl: `https://${TEST_DOMAIN}`,
+        client_id: TEST_CLIENT_ID,
+        refreshTokens: [],
+        auth0Client: DEFAULT_AUTH0_CLIENT,
+        audience: '__test_audience__'
+      },
+      worker
+    );
+
+    expect(workerUtils.sendMessage).toHaveBeenCalledWith(
+      {
+        type: 'revoke',
+        timeout: 10000,
+        fetchUrl: `https://${TEST_DOMAIN}/oauth/revoke`,
+        fetchOptions: {
+          method: 'POST',
+          body: JSON.stringify({ client_id: TEST_CLIENT_ID, token_type_hint: 'refresh_token' }),
+          headers: {
+            'Content-Type': 'application/json',
+            'Auth0-Client': btoa(JSON.stringify(DEFAULT_AUTH0_CLIENT))
+          }
+        },
+        useFormData: undefined,
+        auth: { audience: '__test_audience__' }
+      },
+      worker
+    );
+  });
+
+  it('sends form-encoded body to worker when useFormData is true', async () => {
+    const workerUtils = require('../src/worker/worker.utils');
+    jest.spyOn(workerUtils, 'sendMessage').mockResolvedValue(undefined);
+
+    const worker = {} as Worker;
+
+    await revokeToken(
+      {
+        baseUrl: `https://${TEST_DOMAIN}`,
+        client_id: TEST_CLIENT_ID,
+        refreshTokens: [],
+        auth0Client: DEFAULT_AUTH0_CLIENT,
+        useFormData: true,
+        audience: '__test_audience__'
+      },
+      worker
+    );
+
+    expect(workerUtils.sendMessage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        fetchOptions: expect.objectContaining({
+          body: `client_id=${TEST_CLIENT_ID}&token_type_hint=refresh_token`,
+          headers: expect.objectContaining({
+            'Content-Type': 'application/x-www-form-urlencoded'
+          })
+        })
+      }),
+      worker
+    );
+  });
 });

@@ -882,6 +882,39 @@ describe('token worker', () => {
       // Second revoke should not have been attempted
       expect(mockFetch).toHaveBeenCalledTimes(3); // 2 seeds + 1 failed revoke
     });
+
+    it('returns error from outer catch when body is malformed JSON and a token is stored', async () => {
+      // Seed a refresh token
+      mockFetch.mockReturnValueOnce(
+        Promise.resolve({
+          ok: true,
+          json: () => ({ refresh_token: 'seeded_rt', foo: 'bar' }),
+          headers: new Headers()
+        })
+      );
+
+      await messageHandlerAsync({
+        fetchUrl: TOKEN_ENDPOINT,
+        fetchOptions: {
+          method: 'POST',
+          body: JSON.stringify({ grant_type: 'authorization_code' })
+        },
+        auth: { audience: 'my_audience', scope: 'openid' },
+        timeout: 5000
+      });
+
+      // Malformed body causes JSON.parse to throw, hitting the outer catch
+      const response = await revokeHandlerAsync({
+        ...revokeOpts(),
+        fetchOptions: {
+          method: 'POST',
+          body: 'not valid json',
+          headers: { 'Content-Type': 'application/json', 'Auth0-Client': 'test' }
+        }
+      });
+
+      expect(response.error).toBeTruthy();
+    });
   });
 
   describe('messageRouter', () => {
@@ -933,6 +966,24 @@ describe('token worker', () => {
       // No refresh token stored, so revoke returns ok:true without calling fetch
       expect(response.ok).toBe(true);
       expect(mockFetch).not.toHaveBeenCalled();
+    });
+
+    it('rejects unauthorized fetchUrl for type=revoke', async () => {
+      const response = await routerAsync({
+        type: 'revoke',
+        timeout: 5000,
+        fetchUrl: 'https://evil.com/oauth/revoke',
+        fetchOptions: {
+          method: 'POST',
+          body: JSON.stringify({ client_id: 'client_id' }),
+          headers: { 'Content-Type': 'application/json', 'Auth0-Client': 'test' }
+        },
+        auth: { audience: 'my_audience' }
+      });
+
+      expect(response.ok).toBe(false);
+      expect(response.json.error).toBe('invalid_fetch_url');
+      expect(response.json.error_description).toBe('Unauthorized fetch URL');
     });
   });
 
