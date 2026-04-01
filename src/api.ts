@@ -23,6 +23,7 @@ interface RevokeTokenOptions {
   onRefreshTokenRevoked?: (refreshToken: string) => Promise<void> | void;
 }
 import * as dpopUtils from './dpop/utils';
+import { GenericError } from './errors';
 import { getJSON, fetchWithTimeout } from './http';
 import { sendMessage } from './worker/worker.utils';
 import { createQueryParams, stripAuth0Client } from './utils';
@@ -93,7 +94,7 @@ export async function oauthToken(
  *   loops internally. refreshTokens is empty (worker ignores it).
  * - Non-worker path: loops over refreshTokens and issues one request per token.
  *
- * @throws {Error} If any revoke request fails
+ * @throws {GenericError} If any revoke request fails
  */
 export async function revokeToken(
   {
@@ -155,14 +156,14 @@ export async function revokeToken(
     );
 
     if (!response.ok) {
+      let error: string | undefined;
       let errorDescription: string | undefined;
       try {
-        const { error_description } = JSON.parse(await response.text());
-        errorDescription = error_description;
+        ({ error, error_description: errorDescription } = JSON.parse(await response.text()));
       } catch {
         // body absent or not valid JSON
       }
-      throw new Error(errorDescription || `HTTP error ${response.status}`);
+      throw new GenericError(error || 'revoke_error', errorDescription || `HTTP error ${response.status}`);
     }
 
     await onRefreshTokenRevoked?.(refreshToken);
