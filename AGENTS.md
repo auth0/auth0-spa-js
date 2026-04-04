@@ -1,3 +1,5 @@
+# AGENTS.md
+
 ## Project Overview
 
 Auth0 SDK for Single Page Applications using Authorization Code Grant Flow with PKCE. This is a TypeScript library that provides authentication functionality for browser-based applications.
@@ -95,6 +97,7 @@ dist/                    # Build output (generated)
 ### Token Refresh Strategy
 
 The SDK supports two token refresh mechanisms:
+
 1. **Refresh Tokens** (`useRefreshTokens: true`): Uses refresh_token grant with optional web worker for secure storage
 2. **Silent Authentication**: Uses hidden iframe with `prompt=none` (requires custom domain for third-party cookie issues)
 
@@ -105,6 +108,7 @@ The SDK supports two token refresh mechanisms:
 ### Build Output
 
 Rollup bundles the SDK into multiple formats:
+
 - UMD (browser): `dist/auth0-spa-js.production.js`
 - ESM: `dist/auth0-spa-js.production.esm.js`
 - CJS: `dist/lib/auth0-spa-js.cjs.js`

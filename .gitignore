@@ -20,3 +20,4 @@ bundle-stats
 log/
 *.log
 results/
+.claude/settings.local.json
