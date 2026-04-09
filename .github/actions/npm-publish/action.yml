@@ -25,7 +25,7 @@ runs:
 
     - name: Update npm
       shell: bash
-      run: npm install -g npm@11
+      run: npm install -g npm@11.10.0
 
     - name: Install dependencies
       shell: bash
