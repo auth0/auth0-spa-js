@@ -1,5 +1,11 @@
 # Change Log
 
+## [v2.19.0](https://github.com/auth0/auth0-spa-js/tree/v2.19.0) (2026-04-09)
+[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.18.3...v2.19.0)
+
+**Added**
+- feat: add refresh token revocation [\#1541](https://github.com/auth0/auth0-spa-js/pull/1541) ([yogeshchoudhary147](https://github.com/yogeshchoudhary147))
+
 ## [v2.18.3](https://github.com/auth0/auth0-spa-js/tree/v2.18.3) (2026-03-30)
 [Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.18.2...v2.18.3)
 
