@@ -123,6 +123,7 @@ jobs:
         with:
           node: ${{ env.NODE_VERSION }}
           cache: ${{ env.CACHE_KEY }}
+          ignore-scripts: false
           install: |
             npx gatsby new my-app < /dev/null
           content: |

@@ -18,6 +18,10 @@ inputs:
   import:
     description: The SDK's import code to inject.
     required: true
+  ignore-scripts:
+    description: Ignore npm scripts during app creation.
+    required: false
+    default: true
 
 runs:
   using: composite
@@ -42,6 +46,8 @@ runs:
     - name: Create application
       shell: bash
       run: ${{ inputs.install }}
+      env:
+        npm_config_ignore_scripts: ${{ inputs.ignore-scripts }}
 
     - name: Install SDK
       shell: bash
