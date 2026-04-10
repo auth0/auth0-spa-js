@@ -111,6 +111,28 @@ describe('Auth0Client', () => {
       expect(utils.runIframe).toHaveBeenCalled();
     });
 
+    it('checks the auth0 session when useIsAuthenticatedCookies is false even without cookie', async () => {
+      const auth0 = setup({ useIsAuthenticatedCookies: false });
+
+      jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
+        access_token: TEST_ACCESS_TOKEN,
+        state: TEST_STATE
+      });
+
+      mockFetch.mockResolvedValueOnce(
+        fetchResponse(true, {
+          id_token: TEST_ID_TOKEN,
+          refresh_token: TEST_REFRESH_TOKEN,
+          access_token: TEST_ACCESS_TOKEN,
+          expires_in: 86400
+        })
+      );
+
+      await auth0.checkSession();
+
+      expect(utils.runIframe).toHaveBeenCalled();
+    });
+
     it('checks the legacy samesite cookie', async () => {
       const auth0 = setup();
 

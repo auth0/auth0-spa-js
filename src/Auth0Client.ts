@@ -816,17 +816,19 @@ export class Auth0Client {
    * @param options
    */
   public async checkSession(options?: GetTokenSilentlyOptions) {
-    if (!this.cookieStorage.get(this.isAuthenticatedCookieName)) {
-      if (!this.cookieStorage.get(OLD_IS_AUTHENTICATED_COOKIE_NAME)) {
-        return;
-      } else {
-        // Migrate the existing cookie to the new name scoped by client ID
-        this.cookieStorage.save(this.isAuthenticatedCookieName, true, {
-          daysUntilExpire: this.sessionCheckExpiryDays,
-          cookieDomain: this.options.cookieDomain
-        });
+    if (this.options.useIsAuthenticatedCookies !== false) {
+      if (!this.cookieStorage.get(this.isAuthenticatedCookieName)) {
+        if (!this.cookieStorage.get(OLD_IS_AUTHENTICATED_COOKIE_NAME)) {
+          return;
+        } else {
+          // Migrate the existing cookie to the new name scoped by client ID
+          this.cookieStorage.save(this.isAuthenticatedCookieName, true, {
+            daysUntilExpire: this.sessionCheckExpiryDays,
+            cookieDomain: this.options.cookieDomain
+          });
 
-        this.cookieStorage.remove(OLD_IS_AUTHENTICATED_COOKIE_NAME);
+          this.cookieStorage.remove(OLD_IS_AUTHENTICATED_COOKIE_NAME);
+        }
       }
     }
 
@@ -1665,10 +1667,12 @@ export class Auth0Client {
       client_id: this.options.clientId
     });
 
-    this.cookieStorage.save(this.isAuthenticatedCookieName, true, {
-      daysUntilExpire: this.sessionCheckExpiryDays,
-      cookieDomain: this.options.cookieDomain
-    });
+    if (this.options.useIsAuthenticatedCookies !== false) {
+      this.cookieStorage.save(this.isAuthenticatedCookieName, true, {
+        daysUntilExpire: this.sessionCheckExpiryDays,
+        cookieDomain: this.options.cookieDomain
+      });
+    }
 
     this._processOrgHint(organization || decodedToken.claims.org_id);
 

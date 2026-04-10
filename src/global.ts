@@ -273,6 +273,14 @@ export interface Auth0ClientOptions {
   cookieDomain?: string;
 
   /**
+   * If `false`, the SDK will not set or read the `auth0.<clientId>.is.authenticated`
+   * cookie (nor its `_legacy_` variant when `legacySameSiteCookie` is enabled).
+   * This can be useful in environments where cookies are restricted.
+   * Defaults to `true`.
+   */
+  useIsAuthenticatedCookies?: boolean;
+
+  /**
    * If true, data to the token endpoint is transmitted as x-www-form-urlencoded data, if false it will be transmitted as JSON. The default setting is `true`.
    *
    * **Note:** Setting this to `false` may affect you if you use Auth0 Rules and are sending custom, non-primitive data. If you disable this,

@@ -2306,6 +2306,22 @@ describe('Auth0Client', () => {
       );
     });
 
+    it('does not save cookies when useIsAuthenticatedCookies is false', async () => {
+      const auth0 = setup({
+        useIsAuthenticatedCookies: false,
+        legacySameSiteCookie: true
+      });
+
+      jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
+        access_token: TEST_ACCESS_TOKEN,
+        state: TEST_STATE
+      });
+
+      await getTokenSilently(auth0);
+
+      expect(<jest.Mock>esCookie.set).not.toHaveBeenCalled();
+    });
+
     it('stores the org_id in a hint cookie if returned in the ID token claims', async () => {
       const auth0 = setup(
         { authorizationParams: { organization: TEST_ORG_ID } },

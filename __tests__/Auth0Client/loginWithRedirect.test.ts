@@ -629,6 +629,17 @@ describe('Auth0Client', () => {
       );
     });
 
+    it('does not save cookies when useIsAuthenticatedCookies is false', async () => {
+      const auth0 = setup({
+        useIsAuthenticatedCookies: false,
+        legacySameSiteCookie: true
+      });
+
+      await loginWithRedirect(auth0);
+
+      expect(<jest.Mock>esCookie.set).not.toHaveBeenCalled();
+    });
+
     it('saves authenticated cookie key in storage for an extended period', async () => {
       const auth0 = setup({
         sessionCheckExpiryDays: 2
@@ -665,7 +676,8 @@ describe('Auth0Client', () => {
         cacheLocation: 'localstorage',
         legacySameSiteCookie: true,
         nowProvider: () => Date.now(),
-        sessionCheckExpiryDays: 1
+        sessionCheckExpiryDays: 1,
+        useIsAuthenticatedCookies: true
       });
 
       await loginWithRedirect(auth0);

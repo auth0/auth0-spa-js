@@ -687,6 +687,17 @@ describe('Auth0Client', () => {
       );
     });
 
+    it('does not save cookies when useIsAuthenticatedCookies is false', async () => {
+      const auth0 = setup({
+        useIsAuthenticatedCookies: false,
+        legacySameSiteCookie: true
+      });
+
+      await loginWithPopup(auth0);
+
+      expect(<jest.Mock>esCookie.set).not.toHaveBeenCalled();
+    });
+
     it('saves organization hint cookie in storage', async () => {
       const auth0 = setup(
         {
