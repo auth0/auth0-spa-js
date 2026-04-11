@@ -5,6 +5,7 @@ import {
 
 import version from '../src/version';
 import { oauthToken, revokeToken } from '../src/api';
+import { GenericError } from '../src/errors';
 import * as http from '../src/http';
 import * as dpopUtils from '../src/dpop/utils';
 
@@ -693,6 +694,27 @@ describe('revokeToken', () => {
       },
       worker
     );
+  });
+
+  it('throws GenericError when worker rejects', async () => {
+    const workerUtils = require('../src/worker/worker.utils');
+    jest.spyOn(workerUtils, 'sendMessage').mockRejectedValue(new Error('HTTP error 400'));
+
+    const worker = {} as Worker;
+
+    const error = await revokeToken(
+      {
+        baseUrl: `https://${TEST_DOMAIN}`,
+        client_id: TEST_CLIENT_ID,
+        refreshTokens: [],
+        auth0Client: DEFAULT_AUTH0_CLIENT
+      },
+      worker
+    ).catch(e => e);
+
+    expect(error).toBeInstanceOf(GenericError);
+    expect(error.error).toBe('revoke_error');
+    expect(error.message).toBe('HTTP error 400');
   });
 
   it('sends form-encoded body to worker when useFormData is true', async () => {

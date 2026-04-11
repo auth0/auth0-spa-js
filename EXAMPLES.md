@@ -161,13 +161,17 @@ await auth0.revokeRefreshToken();
 
 #### Error Handling
 
-`revokeRefreshToken()` throws if the `/oauth/revoke` endpoint returns an error (for example, if the token has already been revoked or is invalid). Wrap the call in a try/catch:
+`revokeRefreshToken()` throws a `GenericError` if the `/oauth/revoke` endpoint returns an error (for example, if the token has already been revoked or is invalid). Wrap the call in a try/catch:
 
 ```js
+import { GenericError } from '@auth0/auth0-spa-js';
+
 try {
   await auth0.revokeRefreshToken();
 } catch (e) {
-  console.error('Failed to revoke refresh token:', e.message);
+  if (e instanceof GenericError) {
+    console.error(e.error, e.error_description);
+  }
 }
 ```
 

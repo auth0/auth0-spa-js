@@ -130,17 +130,21 @@ export async function revokeToken(
       ? createQueryParams(baseParams)
       : JSON.stringify(baseParams);
 
-    return sendMessage(
-      {
-        type: 'revoke',
-        timeout: resolvedTimeout,
-        fetchUrl,
-        fetchOptions: { method: 'POST', body, headers },
-        useFormData,
-        auth: { audience: audience ?? DEFAULT_AUDIENCE }
-      },
-      worker
-    );
+    try {
+      return await sendMessage(
+        {
+          type: 'revoke',
+          timeout: resolvedTimeout,
+          fetchUrl,
+          fetchOptions: { method: 'POST', body, headers },
+          useFormData,
+          auth: { audience: audience ?? DEFAULT_AUDIENCE }
+        },
+        worker
+      );
+    } catch (e) {
+      throw new GenericError('revoke_error', (e as Error).message);
+    }
   }
 
   for (const refreshToken of refreshTokens) {
