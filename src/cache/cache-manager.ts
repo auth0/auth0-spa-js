@@ -77,6 +77,11 @@ export class CacheManager {
       cacheKey.toKey()
     );
 
+    // Track the key where the entry was actually found, so that
+    // expiry-related writes (strip / remove) target the correct entry
+    // instead of creating a ghost entry under the lookup key.
+    let resolvedCacheKey = cacheKey;
+
     if (!wrappedEntry) {
       const keys = await this.getCacheKeys();
 
@@ -86,6 +91,7 @@ export class CacheManager {
 
       if (matchedKey) {
         wrappedEntry = await this.cache.get<WrappedCacheEntry>(matchedKey);
+        resolvedCacheKey = CacheKey.fromKey(matchedKey);
       }
 
       // To refresh using MRRT we need to send a request to the server
@@ -106,11 +112,11 @@ export class CacheManager {
 
     if (wrappedEntry.expiresAt - expiryAdjustmentSeconds < nowSeconds) {
       if (wrappedEntry.body.refresh_token) {
-        return this.modifiedCachedEntry(wrappedEntry, cacheKey);
+        return this.modifiedCachedEntry(wrappedEntry, resolvedCacheKey);
       }
 
-      await this.cache.remove(cacheKey.toKey());
-      await this.keyManifest?.remove(cacheKey.toKey());
+      await this.cache.remove(resolvedCacheKey.toKey());
+      await this.keyManifest?.remove(resolvedCacheKey.toKey());
 
       return;
     }
