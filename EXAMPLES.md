@@ -155,23 +155,19 @@ This method only has an effect when `useRefreshTokens` is `true`. If refresh tok
 await auth0.revokeRefreshToken();
 ```
 
-**How it affects the cache:** The access token is preserved in the cache — only the refresh token entry is cleared. The next call to `getTokenSilently()` will require a new login if the access token has also expired.
+**How it affects the cache:** The access token is preserved in the cache — only the refresh token entry is cleared. Once the access token expires, `getTokenSilently()` will attempt silent auth (via iframe, if `useRefreshTokensFallback` is enabled and the Auth0 session is still active) before requiring a new interactive login.
 
 **Difference from `logout()`:** `revokeRefreshToken()` invalidates the refresh token on the Auth0 server and removes it from the local cache, but it does **not** clear the user's Auth0 session or the rest of the local cache. If you want to fully terminate the session, use `logout()` instead.
 
 #### Error Handling
 
-`revokeRefreshToken()` throws a `GenericError` if the `/oauth/revoke` endpoint returns an error (for example, if the token has already been revoked or is invalid). Wrap the call in a try/catch:
+`revokeRefreshToken()` throws if the `/oauth/revoke` endpoint returns an error (for example, if the token has already been revoked or is invalid). Wrap the call in a try/catch:
 
 ```js
-import { GenericError } from '@auth0/auth0-spa-js';
-
 try {
   await auth0.revokeRefreshToken();
 } catch (e) {
-  if (e instanceof GenericError) {
-    console.error('Failed to revoke refresh token:', e.message);
-  }
+  console.error('Failed to revoke refresh token:', e.message);
 }
 ```
 
