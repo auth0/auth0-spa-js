@@ -144,6 +144,64 @@ await createAuth0Client({
 > This new option only works in the initialization of the client, it's not applicable to other runtime methods.
 > When using scope as an object, and no entry for the default audience is provided, the SDK will use the scopes of the `DEFAULT_AUDIENCE`. Those will be `openid, email, profile` and `offline_access` if `useRefreshTokens` is enabled.
 
+### Revoking Refresh Tokens
+
+The `revokeRefreshToken()` method explicitly revokes a refresh token via the `/oauth/revoke` endpoint ([RFC 7009](https://www.rfc-editor.org/rfc/rfc7009)). This invalidates the refresh token so it can no longer be used to obtain new access tokens.
+
+This method only has an effect when `useRefreshTokens` is `true`. If refresh tokens are disabled it returns immediately without doing anything.
+
+```js
+// Revoke the refresh token for the default audience
+await auth0.revokeRefreshToken();
+```
+
+**How it affects the cache:** The access token is preserved in the cache — only the refresh token entry is cleared. The next call to `getTokenSilently()` will require a new login if the access token has also expired.
+
+**Difference from `logout()`:** `revokeRefreshToken()` invalidates the refresh token on the Auth0 server and removes it from the local cache, but it does **not** clear the user's Auth0 session or the rest of the local cache. If you want to fully terminate the session, use `logout()` instead.
+
+#### Error Handling
+
+`revokeRefreshToken()` throws a `GenericError` if the `/oauth/revoke` endpoint returns an error (for example, if the token has already been revoked or is invalid). Wrap the call in a try/catch:
+
+```js
+import { GenericError } from '@auth0/auth0-spa-js';
+
+try {
+  await auth0.revokeRefreshToken();
+} catch (e) {
+  if (e instanceof GenericError) {
+    console.error('Failed to revoke refresh token:', e.message);
+  }
+}
+```
+
+#### Revoking Refresh Tokens for Multiple Audiences
+
+If your application requests tokens for more than one audience, each audience may have its own refresh token. Call `revokeRefreshToken()` once per audience to revoke them all:
+
+```js
+await auth0.revokeRefreshToken({ audience: 'https://api.example.com' });
+await auth0.revokeRefreshToken({ audience: 'https://api2.example.com' });
+```
+
+Omitting the `audience` option targets the audience configured in `authorizationParams` (or the default audience if none is set).
+
+#### Multiple Refresh Tokens per Audience
+
+A single audience can accumulate more than one refresh token if different scope combinations were obtained through separate authorization flows. A single `revokeRefreshToken()` call handles all of them — the SDK collects every distinct refresh token stored for that audience and revokes them sequentially in one call.
+
+If one revocation fails, the error is thrown immediately. Any tokens already revoked in that sequence are stripped from the cache; the remaining ones are left untouched.
+
+#### Revoking Refresh Tokens with MRRT
+
+When using [Multi-Resource Refresh Tokens (MRRT)](#using-multi-resource-refresh-tokens), a single refresh token may cover multiple audiences. Revoking it for any one of those audiences invalidates the shared token and clears all cache entries that reference it:
+
+```js
+// With MRRT, this single call revokes the shared token and
+// cleans up all cache entries that reference it
+await auth0.revokeRefreshToken();
+```
+
 ## Data caching options
 
 The SDK can be configured to cache ID tokens and access tokens either in memory or in local storage. The default is in memory. This setting can be controlled using the `cacheLocation` option when creating the Auth0 client.
