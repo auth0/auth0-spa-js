@@ -427,6 +427,51 @@ cacheFactories.forEach(cacheFactory => {
         global.Date.now = realDateNow;
       });
 
+      it('does not corrupt the original superset entry in InMemoryCache when subset-matched entry is expired', async () => {
+        const now = Date.now();
+        const realDateNow = Date.now.bind(global.Date);
+
+        const extendedScope = 'openid profile read:data';
+        const defaultScope = 'openid profile';
+
+        const data = {
+          ...defaultData,
+          scope: extendedScope,
+          refresh_token: TEST_REFRESH_TOKEN,
+        };
+
+        await manager.set(data);
+
+        // Read the original entry BEFORE expiry to get a reference
+        const originalKey = new CacheKey({
+          clientId: TEST_CLIENT_ID,
+          audience: TEST_AUDIENCE,
+          scope: extendedScope,
+        });
+        const beforeExpiry = await cache.get<WrappedCacheEntry>(originalKey.toKey());
+        expect(beforeExpiry.body.access_token).toBe(TEST_ACCESS_TOKEN);
+
+        // Advance past expiry
+        global.Date.now = jest.fn(() => now + (dayInSeconds + 60) * 1000);
+
+        // Look up by narrower scope — triggers subset match + modifiedCachedEntry
+        const lookupKey = new CacheKey({
+          clientId: TEST_CLIENT_ID,
+          audience: TEST_AUDIENCE,
+          scope: defaultScope,
+        });
+
+        await manager.get(lookupKey);
+
+        // The entry under the original key IS expected to be stripped (body replaced),
+        // but via cache.set with a new object, not via in-place mutation of the old reference.
+        const afterExpiry = await cache.get<WrappedCacheEntry>(originalKey.toKey());
+        expect(afterExpiry.body.refresh_token).toBe(TEST_REFRESH_TOKEN);
+        expect(afterExpiry.body).not.toBe(beforeExpiry.body);
+
+        global.Date.now = realDateNow;
+      });
+
       it('removes expired subset-matched entry under the correct key when no refresh token', async () => {
         const now = Date.now();
         const realDateNow = Date.now.bind(global.Date);

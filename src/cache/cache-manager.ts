@@ -127,18 +127,27 @@ export class CacheManager {
   private async modifiedCachedEntry(wrappedEntry: WrappedCacheEntry, cacheKey: CacheKey): Promise<Partial<CacheEntry>> {
     // We need to keep audience and scope in order to check them later when doing refresh
     // using MRRT. See getScopeToRequest method.
-    wrappedEntry.body = {
+    //
+    // Build a new object instead of mutating wrappedEntry.body in-place,
+    // because InMemoryCache returns direct references — mutating would
+    // corrupt the original entry stored under a different (superset) key.
+    const strippedBody: Partial<CacheEntry> = {
       refresh_token: wrappedEntry.body.refresh_token,
       audience: wrappedEntry.body.audience,
       scope: wrappedEntry.body.scope,
     };
 
-    await this.cache.set(cacheKey.toKey(), wrappedEntry);
+    const strippedEntry: WrappedCacheEntry = {
+      body: strippedBody,
+      expiresAt: wrappedEntry.expiresAt,
+    };
+
+    await this.cache.set(cacheKey.toKey(), strippedEntry);
 
     return {
-      refresh_token: wrappedEntry.body.refresh_token,
-      audience: wrappedEntry.body.audience,
-      scope: wrappedEntry.body.scope,
+      refresh_token: strippedBody.refresh_token,
+      audience: strippedBody.audience,
+      scope: strippedBody.scope,
     };
   }
 
