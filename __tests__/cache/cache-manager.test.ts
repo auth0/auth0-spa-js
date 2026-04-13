@@ -336,6 +336,52 @@ cacheFactories.forEach(cacheFactory => {
         });
       })
 
+      it('does not write a ghost entry at the requested key when finding a refresh token via MRRT', async () => {
+        const data = {
+          ...defaultData,
+          refresh_token: TEST_REFRESH_TOKEN,
+          decodedToken: {
+            claims: {
+              __raw: TEST_ID_TOKEN,
+              name: 'Test',
+              exp: nowSeconds() + dayInSeconds * 2
+            },
+            user: { name: 'Test' }
+          }
+        };
+
+        await manager.set(data);
+
+        const mrrtKey = new CacheKey({
+          clientId: TEST_CLIENT_ID,
+          audience: 'my_second_audience',
+          scope: 'scope_1 scope_2',
+        });
+
+        const result = await manager.get(mrrtKey, undefined, true);
+
+        // Return value should carry the donor's refresh token, audience and scope
+        expect(result).toStrictEqual({
+          refresh_token: TEST_REFRESH_TOKEN,
+          audience: data.audience,
+          scope: data.scope,
+        });
+
+        // No entry should have been written at the requested key
+        const ghostEntry = await cache.get(mrrtKey.toKey());
+        expect(ghostEntry).toBeFalsy();
+
+        // The donor entry should be untouched
+        const donorKey = new CacheKey({
+          clientId: TEST_CLIENT_ID,
+          audience: TEST_AUDIENCE,
+          scope: data.scope,
+        });
+        const donorEntry = await cache.get<WrappedCacheEntry>(donorKey.toKey());
+        expect(donorEntry?.body?.access_token).toBe(TEST_ACCESS_TOKEN);
+        expect(donorEntry?.body?.refresh_token).toBe(TEST_REFRESH_TOKEN);
+      });
+
       it('strips everything except the refresh token and audience when expiry has been reached', async () => {
         const now = Date.now();
         const realDateNow = Date.now.bind(global.Date);

@@ -293,7 +293,11 @@ export class CacheManager {
         const cachedEntry = await this.cache.get<WrappedCacheEntry>(key);
 
         if (cachedEntry?.body?.refresh_token) {
-          return this.modifiedCachedEntry(cachedEntry, keyToMatch);
+          return {
+            refresh_token: cachedEntry.body.refresh_token,
+            audience: cachedEntry.body.audience,
+            scope: cachedEntry.body.scope,
+          };
         }
       }
     }
