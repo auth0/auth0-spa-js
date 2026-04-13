@@ -917,6 +917,288 @@ describe('token worker', () => {
     });
   });
 
+  describe('clear message', () => {
+    it('Test A — clear empties the refresh-token store', async () => {
+      // Seed a refresh token via a normal authorization_code round-trip
+      mockFetch.mockReturnValueOnce(
+        Promise.resolve({
+          ok: true,
+          json: () => ({ refresh_token: 'foo' }),
+          headers: new Headers()
+        })
+      );
+
+      await messageHandlerAsync({
+        fetchUrl: TOKEN_ENDPOINT,
+        fetchOptions: {
+          method: 'POST',
+          body: JSON.stringify({ grant_type: 'authorization_code' })
+        }
+      });
+
+      const { messageRouter } = require('../src/worker/token.worker');
+
+      // Dispatch the clear message and assert ACK
+      const ack = await new Promise(resolve =>
+        messageRouter({
+          data: { type: 'clear' },
+          ports: [{ postMessage: resolve }]
+        })
+      );
+
+      expect(ack).toEqual({ ok: true });
+
+      // A subsequent refresh_token grant must now fail because the store is empty
+      const response = await messageHandlerAsync({
+        fetchUrl: TOKEN_ENDPOINT,
+        fetchOptions: {
+          method: 'POST',
+          body: JSON.stringify({ grant_type: 'refresh_token' })
+        }
+      });
+
+      expect(response.json.error).toBe('missing_refresh_token');
+      expect(response.json.error_description).toContain(
+        MISSING_REFRESH_TOKEN_ERROR_MESSAGE
+      );
+      // Only one fetch call was issued (the seed); the refresh after clear
+      // short-circuits without going to the network.
+      expect(mockFetch).toHaveBeenCalledTimes(1);
+    });
+
+    it('Test B — clear wipes the MRRT latest_refresh_token slot', async () => {
+      const { messageRouter } = require('../src/worker/token.worker');
+
+      const mrrtFor = (audience: string, scope: string) => (opts: any) =>
+        new Promise<any>(resolve =>
+          messageRouter({
+            data: { ...opts, useMrrt: true, auth: { audience, scope } },
+            ports: [{ postMessage: resolve }]
+          })
+        );
+
+      // Seed an MRRT under audience1/scope1 — this should populate the
+      // latest_refresh_token MRRT slot in the worker.
+      mockFetch.mockReturnValueOnce(
+        Promise.resolve({
+          ok: true,
+          json: () => ({ refresh_token: 'shared_rt' }),
+          headers: new Headers()
+        })
+      );
+
+      await mrrtFor('audience1', 'scope1')({
+        fetchUrl: TOKEN_ENDPOINT,
+        fetchOptions: {
+          method: 'POST',
+          body: JSON.stringify({ grant_type: 'authorization_code' })
+        }
+      });
+
+      // Sanity: the MRRT slot allows audience2 to refresh using the same RT
+      mockFetch.mockReturnValueOnce(
+        Promise.resolve({
+          ok: true,
+          json: () => ({ refresh_token: 'shared_rt' }),
+          headers: new Headers()
+        })
+      );
+
+      const before = await mrrtFor('audience2', 'scope2')({
+        fetchUrl: TOKEN_ENDPOINT,
+        fetchOptions: {
+          method: 'POST',
+          body: JSON.stringify({ grant_type: 'refresh_token' })
+        }
+      });
+      expect(before.json).toEqual({});
+
+      // Now clear
+      const ack = await new Promise(resolve =>
+        messageRouter({
+          data: { type: 'clear' },
+          ports: [{ postMessage: resolve }]
+        })
+      );
+      expect(ack).toEqual({ ok: true });
+
+      // After clear: an MRRT-eligible refresh against a brand-new audience3
+      // must fail with missing_refresh_token (latest_refresh_token slot wiped)
+      const after = await mrrtFor('audience3', 'scope3')({
+        fetchUrl: TOKEN_ENDPOINT,
+        fetchOptions: {
+          method: 'POST',
+          body: JSON.stringify({ grant_type: 'refresh_token' })
+        }
+      });
+      expect(after.json.error).toBe('missing_refresh_token');
+
+      // And the original (audience1/scope1) entry is also gone
+      const original = await mrrtFor('audience1', 'scope1')({
+        fetchUrl: TOKEN_ENDPOINT,
+        fetchOptions: {
+          method: 'POST',
+          body: JSON.stringify({ grant_type: 'refresh_token' })
+        }
+      });
+      expect(original.json.error).toBe('missing_refresh_token');
+    });
+
+    it('Test C — clear with no ports is a safe no-op', () => {
+      const { messageRouter } = require('../src/worker/token.worker');
+
+      expect(() =>
+        messageRouter({ data: { type: 'clear' }, ports: [] })
+      ).not.toThrow();
+    });
+
+    it('clear on an empty store still ACKs ok:true', async () => {
+      const { messageRouter } = require('../src/worker/token.worker');
+
+      const ack = await new Promise(resolve =>
+        messageRouter({
+          data: { type: 'clear' },
+          ports: [{ postMessage: resolve }]
+        })
+      );
+
+      expect(ack).toEqual({ ok: true });
+      expect(mockFetch).not.toHaveBeenCalled();
+    });
+
+    it('clear is idempotent — back-to-back clears each ACK', async () => {
+      const { messageRouter } = require('../src/worker/token.worker');
+
+      const ack1 = await new Promise(resolve =>
+        messageRouter({
+          data: { type: 'clear' },
+          ports: [{ postMessage: resolve }]
+        })
+      );
+      const ack2 = await new Promise(resolve =>
+        messageRouter({
+          data: { type: 'clear' },
+          ports: [{ postMessage: resolve }]
+        })
+      );
+
+      expect(ack1).toEqual({ ok: true });
+      expect(ack2).toEqual({ ok: true });
+    });
+
+    it('clear does not depend on init / allowedBaseUrl gating', async () => {
+      // Re-import without invoking the init message — clear should still ACK
+      jest.resetModules();
+      const { messageRouter } = require('../src/worker/token.worker');
+
+      const ack = await new Promise(resolve =>
+        messageRouter({
+          data: { type: 'clear' },
+          ports: [{ postMessage: resolve }]
+        })
+      );
+
+      expect(ack).toEqual({ ok: true });
+      expect(mockFetch).not.toHaveBeenCalled();
+    });
+
+    it('clear does not contact the network', async () => {
+      // Seed a refresh token first
+      mockFetch.mockReturnValueOnce(
+        Promise.resolve({
+          ok: true,
+          json: () => ({ refresh_token: 'foo' }),
+          headers: new Headers()
+        })
+      );
+      await messageHandlerAsync({
+        fetchUrl: TOKEN_ENDPOINT,
+        fetchOptions: {
+          method: 'POST',
+          body: JSON.stringify({ grant_type: 'authorization_code' })
+        }
+      });
+
+      const fetchCallsBefore = mockFetch.mock.calls.length;
+
+      const { messageRouter } = require('../src/worker/token.worker');
+      await new Promise(resolve =>
+        messageRouter({
+          data: { type: 'clear' },
+          ports: [{ postMessage: resolve }]
+        })
+      );
+
+      expect(mockFetch.mock.calls.length).toBe(fetchCallsBefore);
+    });
+
+    it('worker remains usable after clear — a fresh authorization_code seeds a new RT', async () => {
+      // Seed
+      mockFetch.mockReturnValueOnce(
+        Promise.resolve({
+          ok: true,
+          json: () => ({ refresh_token: 'first_rt' }),
+          headers: new Headers()
+        })
+      );
+      await messageHandlerAsync({
+        fetchUrl: TOKEN_ENDPOINT,
+        fetchOptions: {
+          method: 'POST',
+          body: JSON.stringify({ grant_type: 'authorization_code' })
+        }
+      });
+
+      // Clear
+      const { messageRouter } = require('../src/worker/token.worker');
+      await new Promise(resolve =>
+        messageRouter({
+          data: { type: 'clear' },
+          ports: [{ postMessage: resolve }]
+        })
+      );
+
+      // Seed again — simulates a re-login on the same client instance
+      mockFetch.mockReturnValueOnce(
+        Promise.resolve({
+          ok: true,
+          json: () => ({ refresh_token: 'second_rt' }),
+          headers: new Headers()
+        })
+      );
+      await messageHandlerAsync({
+        fetchUrl: TOKEN_ENDPOINT,
+        fetchOptions: {
+          method: 'POST',
+          body: JSON.stringify({ grant_type: 'authorization_code' })
+        }
+      });
+
+      // Use the new RT
+      mockFetch.mockReturnValueOnce(
+        Promise.resolve({
+          ok: true,
+          json: () => ({ refresh_token: 'second_rt' }),
+          headers: new Headers()
+        })
+      );
+      await messageHandlerAsync({
+        fetchUrl: TOKEN_ENDPOINT,
+        fetchOptions: {
+          method: 'POST',
+          body: JSON.stringify({ grant_type: 'refresh_token' })
+        }
+      });
+
+      // The refresh request should have used the second RT, not the cleared first
+      const refreshCall = mockFetch.mock.calls[mockFetch.mock.calls.length - 1];
+      expect(JSON.parse(refreshCall[1].body)).toEqual({
+        grant_type: 'refresh_token',
+        refresh_token: 'second_rt'
+      });
+    });
+  });
+
   describe('messageRouter', () => {
     let routerAsync;
 

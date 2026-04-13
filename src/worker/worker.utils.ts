@@ -1,4 +1,5 @@
 import {
+  WorkerClearMessage,
   WorkerRefreshTokenMessage,
   WorkerRevokeTokenMessage
 } from './worker.types';
@@ -15,7 +16,10 @@ import {
  * @returns A Promise that resolves with the worker's response payload.
  */
 export const sendMessage = <T = any>(
-  message: WorkerRefreshTokenMessage | WorkerRevokeTokenMessage,
+  message:
+    | WorkerRefreshTokenMessage
+    | WorkerRevokeTokenMessage
+    | WorkerClearMessage,
   to: Worker
 ): Promise<T> =>
   new Promise<T>(function (resolve, reject) {

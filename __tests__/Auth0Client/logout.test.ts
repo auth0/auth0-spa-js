@@ -8,9 +8,21 @@ import { TEST_AUTH0_CLIENT_QUERY_STRING } from '../constants';
 import { expect } from '@jest/globals';
 
 // @ts-ignore
-import { loginWithRedirectFn, setupFn } from './helpers';
-import { TEST_CLIENT_ID, TEST_CODE_CHALLENGE, TEST_DOMAIN } from '../constants';
+import { fetchResponse, loginWithRedirectFn, setupFn } from './helpers';
+import {
+  TEST_ACCESS_TOKEN,
+  TEST_CLIENT_ID,
+  TEST_CODE_CHALLENGE,
+  TEST_DOMAIN,
+  TEST_ID_TOKEN,
+  TEST_REFRESH_TOKEN,
+  TEST_STATE,
+  TEST_TOKEN_TYPE
+} from '../constants';
 import { InMemoryAsyncCacheNoKeys } from '../cache/shared';
+import { MissingRefreshTokenError } from '../../src/errors';
+// @ts-ignore — resolved to the test mock via jest.mock() below, which provides a default class export
+import TokenWorker from '../../src/worker/token.worker';
 
 jest.mock('es-cookie');
 jest.mock('../../src/jwt');
@@ -352,6 +364,386 @@ describe('Auth0Client', () => {
           'https://auth0_domain/v2/logout?client_id=my-client-id'
         )
       );
+    });
+
+    describe('worker token clearing (issue #1596)', () => {
+      // The worker is only spawned when useRefreshTokens + cacheLocation: 'memory'
+      // are both set AND window.Worker is truthy. The mock at
+      // src/worker/__mocks__/token.worker.ts makes that the in-process
+      // messageRouter, so we can spy on TokenWorker.prototype.postMessage.
+
+      it("Test D — logout sends a 'clear' message to the worker", async () => {
+        const postMessageSpy = jest.spyOn(
+          TokenWorker.prototype as any,
+          'postMessage'
+        );
+
+        const auth0 = setup({
+          useRefreshTokens: true,
+          cacheLocation: 'memory'
+        });
+
+        await loginWithRedirect(auth0);
+        postMessageSpy.mockClear();
+
+        await auth0.logout({ openUrl: false });
+
+        const clearCalls = postMessageSpy.mock.calls.filter(
+          ([msg]) => msg && (msg as any).type === 'clear'
+        );
+        expect(clearCalls.length).toBeGreaterThanOrEqual(1);
+      });
+
+      it('Test E — getTokenSilently after logout throws MissingRefreshTokenError', async () => {
+        const auth0 = setup({
+          useRefreshTokens: true,
+          cacheLocation: 'memory'
+        });
+
+        await loginWithRedirect(auth0);
+
+        // Sanity: pre-logout, getTokenSilently works
+        mockFetch.mockResolvedValueOnce(
+          fetchResponse(true, {
+            id_token: TEST_ID_TOKEN,
+            refresh_token: TEST_REFRESH_TOKEN,
+            access_token: TEST_ACCESS_TOKEN,
+            token_type: TEST_TOKEN_TYPE,
+            expires_in: 86400
+          })
+        );
+        const preToken = await auth0.getTokenSilently({ cacheMode: 'off' });
+        expect(preToken).toBe(TEST_ACCESS_TOKEN);
+
+        await auth0.logout({ openUrl: false });
+
+        // Reset fetch so any accidental network call would be obvious
+        mockFetch.mockReset();
+
+        await expect(auth0.getTokenSilently()).rejects.toThrow(
+          MissingRefreshTokenError
+        );
+
+        // The worker must NOT be round-tripped to mint a fresh token —
+        // no /oauth/token request should be issued.
+        expect(mockFetch).not.toHaveBeenCalled();
+      });
+
+      it('Test E (cacheMode=off) — explicit refresh after logout also throws', async () => {
+        const auth0 = setup({
+          useRefreshTokens: true,
+          cacheLocation: 'memory'
+        });
+
+        await loginWithRedirect(auth0);
+        await auth0.logout({ openUrl: false });
+
+        mockFetch.mockReset();
+
+        await expect(
+          auth0.getTokenSilently({ cacheMode: 'off' })
+        ).rejects.toThrow(MissingRefreshTokenError);
+        expect(mockFetch).not.toHaveBeenCalled();
+      });
+
+      it('Test F — falls back to iframe after logout when useRefreshTokensFallback is true', async () => {
+        const auth0 = setup({
+          useRefreshTokens: true,
+          useRefreshTokensFallback: true,
+          cacheLocation: 'memory'
+        });
+
+        await loginWithRedirect(auth0);
+        await auth0.logout({ openUrl: false });
+
+        // After logout the worker is empty and the in-memory cache is wiped.
+        // With the fallback enabled, _getTokenUsingRefreshToken should hand
+        // off to the iframe path instead of throwing MissingRefreshTokenError.
+        const runIframeSpy = jest
+          .spyOn(<any>utils, 'runIframe')
+          .mockResolvedValue({
+            access_token: TEST_ACCESS_TOKEN,
+            state: TEST_STATE
+          });
+
+        // Provide a token-endpoint response for the iframe code exchange.
+        mockFetch.mockResolvedValueOnce(
+          fetchResponse(true, {
+            id_token: TEST_ID_TOKEN,
+            access_token: TEST_ACCESS_TOKEN,
+            token_type: TEST_TOKEN_TYPE,
+            expires_in: 86400
+          })
+        );
+
+        // We don't assert the token value (the iframe path has many moving
+        // parts) — only that the iframe was invoked rather than the worker
+        // silently re-minting an access token.
+        try {
+          await auth0.getTokenSilently();
+        } catch {
+          // The iframe path may still error on PKCE/state mismatch in this
+          // mocked harness; the assertion below is what matters.
+        }
+
+        expect(runIframeSpy).toHaveBeenCalled();
+
+        runIframeSpy.mockRestore();
+      });
+
+      it('Test G — logout without a worker (localstorage) does not post any message', async () => {
+        const postMessageSpy = jest.spyOn(
+          TokenWorker.prototype as any,
+          'postMessage'
+        );
+
+        const auth0 = setup({
+          useRefreshTokens: true,
+          cacheLocation: 'localstorage'
+        });
+
+        // Worker should not be created in localstorage mode
+        expect((<any>auth0).worker).toBeUndefined();
+
+        await loginWithRedirect(auth0);
+        postMessageSpy.mockClear();
+
+        await expect(auth0.logout({ openUrl: false })).resolves.not.toThrow();
+
+        // No postMessage on the (non-existent) worker
+        expect(postMessageSpy).not.toHaveBeenCalled();
+      });
+
+      it('Test G2 — logout without useRefreshTokens does not post any message', async () => {
+        const postMessageSpy = jest.spyOn(
+          TokenWorker.prototype as any,
+          'postMessage'
+        );
+
+        const auth0 = setup({
+          useRefreshTokens: false,
+          cacheLocation: 'memory'
+        });
+
+        expect((<any>auth0).worker).toBeUndefined();
+
+        await loginWithRedirect(auth0);
+        postMessageSpy.mockClear();
+
+        await auth0.logout({ openUrl: false });
+
+        expect(postMessageSpy).not.toHaveBeenCalled();
+      });
+
+      it('Test H — workerHasRefreshToken flips: false → true after login → false after logout', async () => {
+        const auth0 = setup({
+          useRefreshTokens: true,
+          cacheLocation: 'memory'
+        });
+
+        // Initially the worker exists but no RT has been seeded
+        expect((<any>auth0).worker).toBeDefined();
+        expect((<any>auth0).workerHasRefreshToken).toBeFalsy();
+
+        await loginWithRedirect(auth0);
+
+        // After a successful login that returned a refresh_token via the
+        // worker, the flag must be true.
+        expect((<any>auth0).workerHasRefreshToken).toBe(true);
+
+        await auth0.logout({ openUrl: false });
+
+        // Logout resets the flag
+        expect((<any>auth0).workerHasRefreshToken).toBe(false);
+      });
+
+      it('logout still completes when the worker clear ACK fails', async () => {
+        const auth0 = setup({
+          useRefreshTokens: true,
+          cacheLocation: 'memory'
+        });
+
+        await loginWithRedirect(auth0);
+
+        // Make the worker postMessage throw on the next call (the clear)
+        const postMessageSpy = jest
+          .spyOn(TokenWorker.prototype as any, 'postMessage')
+          .mockImplementationOnce(() => {
+            throw new Error('worker channel broken');
+          });
+
+        // Logout must not propagate the worker failure
+        await expect(auth0.logout({ openUrl: false })).resolves.not.toThrow();
+
+        // The flag is still cleared even when the ACK round-trip blew up,
+        // so subsequent token requests deterministically fail.
+        expect((<any>auth0).workerHasRefreshToken).toBe(false);
+
+        await expect(auth0.getTokenSilently()).rejects.toThrow(
+          MissingRefreshTokenError
+        );
+
+        postMessageSpy.mockRestore();
+      });
+
+      it('worker clear is sent before window.location.assign', async () => {
+        const order: string[] = [];
+
+        const postMessageSpy = jest
+          .spyOn(TokenWorker.prototype as any, 'postMessage')
+          .mockImplementation(function (this: any, msg: any, ports?: any[]) {
+            if (msg && msg.type === 'clear') {
+              order.push('clear');
+            }
+            // Delegate to the real mock so the ACK still happens
+            const { messageRouter } = jest.requireActual(
+              '../../src/worker/token.worker'
+            );
+            messageRouter({ data: msg, ports: ports || [] });
+          });
+
+        (window.location.assign as jest.Mock).mockImplementation(() => {
+          order.push('assign');
+        });
+
+        const auth0 = setup({
+          useRefreshTokens: true,
+          cacheLocation: 'memory'
+        });
+
+        await loginWithRedirect(auth0);
+        order.length = 0;
+
+        await auth0.logout();
+
+        expect(order).toContain('clear');
+        expect(order).toContain('assign');
+        expect(order.indexOf('clear')).toBeLessThan(order.indexOf('assign'));
+
+        postMessageSpy.mockRestore();
+      });
+
+      it('logout clears the worker even when openUrl is a no-op (issue reproducer)', async () => {
+        // This is the exact scenario from issue #1596:
+        // logout({ openUrl: false }) must leave the worker unable to mint tokens.
+        const auth0 = setup({
+          useRefreshTokens: true,
+          cacheLocation: 'memory'
+        });
+
+        await loginWithRedirect(auth0);
+
+        // loginWithRedirect calls window.location.assign for the authorize URL.
+        // Reset so we can assert logout does NOT call it when openUrl: false.
+        (window.location.assign as jest.Mock).mockClear();
+
+        await auth0.logout({ openUrl: false });
+
+        // The /v2/logout redirect was skipped via openUrl: false
+        expect(window.location.assign).not.toHaveBeenCalled();
+
+        mockFetch.mockReset();
+
+        await expect(auth0.getTokenSilently()).rejects.toThrow(
+          MissingRefreshTokenError
+        );
+      });
+
+      it('logout clears the worker when openUrl is provided as an async no-op fn', async () => {
+        const auth0 = setup({
+          useRefreshTokens: true,
+          cacheLocation: 'memory'
+        });
+
+        await loginWithRedirect(auth0);
+        await auth0.logout({ openUrl: async () => {} });
+
+        mockFetch.mockReset();
+
+        await expect(auth0.getTokenSilently()).rejects.toThrow(
+          MissingRefreshTokenError
+        );
+        expect((<any>auth0).workerHasRefreshToken).toBe(false);
+      });
+
+      it('logout clears the worker when onRedirect is provided as a no-op', async () => {
+        const auth0 = setup({
+          useRefreshTokens: true,
+          cacheLocation: 'memory'
+        });
+
+        await loginWithRedirect(auth0);
+        await auth0.logout({ onRedirect: async () => {} });
+
+        mockFetch.mockReset();
+
+        await expect(auth0.getTokenSilently()).rejects.toThrow(
+          MissingRefreshTokenError
+        );
+      });
+
+      it('logout({ clientId }) with a different clientId still clears the worker', async () => {
+        // The worker is scoped to this Auth0Client instance (per the plan:
+        // "The worker is scoped to this Auth0Client instance ... Clearing the
+        // worker is still correct because the worker only ever holds tokens
+        // for this instance"). So the worker-clear runs and the flag flips
+        // to false, even though the main-client cache is untouched (existing
+        // cache-clear behavior for custom clientId is preserved).
+        const postMessageSpy = jest.spyOn(
+          TokenWorker.prototype as any,
+          'postMessage'
+        );
+
+        const auth0 = setup({
+          useRefreshTokens: true,
+          cacheLocation: 'memory'
+        });
+
+        await loginWithRedirect(auth0);
+        postMessageSpy.mockClear();
+
+        await auth0.logout({ clientId: 'some-other-client', openUrl: false });
+
+        // Worker was cleared
+        const clearCalls = postMessageSpy.mock.calls.filter(
+          ([msg]) => msg && (msg as any).type === 'clear'
+        );
+        expect(clearCalls.length).toBeGreaterThanOrEqual(1);
+        expect((<any>auth0).workerHasRefreshToken).toBe(false);
+
+        postMessageSpy.mockRestore();
+      });
+
+      it('a fresh login after logout re-arms the worker (no client re-instantiation)', async () => {
+        const auth0 = setup({
+          useRefreshTokens: true,
+          cacheLocation: 'memory'
+        });
+
+        await loginWithRedirect(auth0);
+        await auth0.logout({ openUrl: false });
+
+        expect((<any>auth0).workerHasRefreshToken).toBe(false);
+
+        // Re-login on the same Auth0Client instance — the worker should still
+        // be alive (not terminated) and re-seed the RT.
+        await loginWithRedirect(auth0);
+
+        expect((<any>auth0).workerHasRefreshToken).toBe(true);
+
+        // And token refresh should succeed
+        mockFetch.mockResolvedValueOnce(
+          fetchResponse(true, {
+            id_token: TEST_ID_TOKEN,
+            refresh_token: TEST_REFRESH_TOKEN,
+            access_token: TEST_ACCESS_TOKEN,
+            token_type: TEST_TOKEN_TYPE,
+            expires_in: 86400
+          })
+        );
+        const token = await auth0.getTokenSilently({ cacheMode: 'off' });
+        expect(token).toBe(TEST_ACCESS_TOKEN);
+      });
     });
   });
 });

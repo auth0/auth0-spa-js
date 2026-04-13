@@ -456,6 +456,8 @@ describe('Auth0Client', () => {
         useRefreshTokens: true
       });
 
+      await loginWithRedirect(auth0);
+
       jest.spyOn(<any>api, 'oauthToken');
 
       jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
@@ -466,7 +468,8 @@ describe('Auth0Client', () => {
       });
 
       await getTokenSilently(auth0, {
-        timeoutInSeconds: 10
+        timeoutInSeconds: 10,
+        cacheMode: 'off'
       });
 
       expect(api.oauthToken).toHaveBeenCalledWith(
@@ -483,6 +486,10 @@ describe('Auth0Client', () => {
         httpTimeoutInSeconds: 30
       });
 
+      await loginWithRedirect(auth0);
+
+      (http.switchFetch as jest.Mock).mockClear();
+
       jest.spyOn(<any>api, 'oauthToken');
 
       jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
@@ -492,7 +499,7 @@ describe('Auth0Client', () => {
         code: TEST_CODE
       });
 
-      await getTokenSilently(auth0);
+      await getTokenSilently(auth0, { cacheMode: 'off' });
 
       expect((http.switchFetch as jest.Mock).mock.calls[0][6]).toEqual(30000);
     });

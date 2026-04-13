@@ -316,6 +316,12 @@ const messageRouter = (event: MessageEvent<WorkerMessage>) => {
     return;
   }
 
+  if ('type' in data && data.type === 'clear') {
+    refreshTokens = {};
+    port?.postMessage({ ok: true });
+    return;
+  }
+
   if ('type' in data && data.type === 'revoke') {
     if (!isAuthorizedWorkerRequest(data as WorkerRevokeTokenMessage, '/oauth/revoke')) {
       port?.postMessage({

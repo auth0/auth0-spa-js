@@ -28,7 +28,12 @@ export type WorkerRevokeTokenMessage = Omit<WorkerTokenMessage, 'auth'> & {
   };
 };
 
+export type WorkerClearMessage = {
+  type: 'clear';
+};
+
 export type WorkerMessage =
   | WorkerInitMessage
   | WorkerRefreshTokenMessage
-  | WorkerRevokeTokenMessage;
+  | WorkerRevokeTokenMessage
+  | WorkerClearMessage;

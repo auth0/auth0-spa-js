@@ -96,6 +96,7 @@ import {
 
 // @ts-ignore
 import TokenWorker from './worker/token.worker.ts';
+import { sendMessage } from './worker/worker.utils';
 import { singlePromise, retryPromise } from './promise-utils';
 import { CacheKeyManifest } from './cache/key-manifest';
 import {
@@ -168,6 +169,7 @@ export class Auth0Client {
   public readonly mfa: MfaApiClient;
 
   private worker?: Worker;
+  private workerHasRefreshToken = false;
   private readonly authJsClient: Auth0AuthJsClient;
 
   private readonly defaultOptions: Partial<Auth0ClientOptions> = {
@@ -1247,6 +1249,16 @@ export class Auth0Client {
 
     await this.dpop?.clear();
 
+    if (this.worker) {
+      try {
+        await sendMessage({ type: 'clear' }, this.worker);
+      } catch {
+        // Worker is an internal, best-effort cleanup channel. If the ACK round-trip
+        // fails we still proceed with logout so the user is not left in a half-state.
+      }
+      this.workerHasRefreshToken = false;
+    }
+
     const url = this._buildLogoutUrl(logoutOptions);
 
     if (openUrl) {
@@ -1398,7 +1410,10 @@ export class Auth0Client {
     // and you don't have a refresh token in web worker memory
     // and useRefreshTokensFallback was explicitly enabled
     // fallback to an iframe
-    if ((!cache || !cache.refresh_token) && !this.worker) {
+    if (
+      (!cache || !cache.refresh_token) &&
+      (!this.worker || !this.workerHasRefreshToken)
+    ) {
       if (this.options.useRefreshTokensFallback) {
         return await this._getTokenFromIFrame(options);
       }
@@ -1636,6 +1651,10 @@ export class Auth0Client {
       },
       this.worker
     );
+
+    if (this.worker) {
+      this.workerHasRefreshToken = true;
+    }
 
     const decodedToken = await this._verifyIdToken(
       authResult.id_token,
