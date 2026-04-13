@@ -77,6 +77,11 @@ export class CacheManager {
       cacheKey.toKey()
     );
 
+    // Track the key where the entry was actually found, so that
+    // expiry-related writes (strip / remove) target the correct entry
+    // instead of creating a ghost entry under the lookup key.
+    let resolvedCacheKey = cacheKey;
+
     if (!wrappedEntry) {
       const keys = await this.getCacheKeys();
 
@@ -86,6 +91,7 @@ export class CacheManager {
 
       if (matchedKey) {
         wrappedEntry = await this.cache.get<WrappedCacheEntry>(matchedKey);
+        resolvedCacheKey = CacheKey.fromKey(matchedKey);
       }
 
       // To refresh using MRRT we need to send a request to the server
@@ -106,11 +112,11 @@ export class CacheManager {
 
     if (wrappedEntry.expiresAt - expiryAdjustmentSeconds < nowSeconds) {
       if (wrappedEntry.body.refresh_token) {
-        return this.modifiedCachedEntry(wrappedEntry, cacheKey);
+        return this.modifiedCachedEntry(wrappedEntry, resolvedCacheKey);
       }
 
-      await this.cache.remove(cacheKey.toKey());
-      await this.keyManifest?.remove(cacheKey.toKey());
+      await this.cache.remove(resolvedCacheKey.toKey());
+      await this.keyManifest?.remove(resolvedCacheKey.toKey());
 
       return;
     }
@@ -121,18 +127,27 @@ export class CacheManager {
   private async modifiedCachedEntry(wrappedEntry: WrappedCacheEntry, cacheKey: CacheKey): Promise<Partial<CacheEntry>> {
     // We need to keep audience and scope in order to check them later when doing refresh
     // using MRRT. See getScopeToRequest method.
-    wrappedEntry.body = {
+    //
+    // Build a new object instead of mutating wrappedEntry.body in-place,
+    // because InMemoryCache returns direct references — mutating would
+    // corrupt the original entry stored under a different (superset) key.
+    const strippedBody: Partial<CacheEntry> = {
       refresh_token: wrappedEntry.body.refresh_token,
       audience: wrappedEntry.body.audience,
       scope: wrappedEntry.body.scope,
     };
 
-    await this.cache.set(cacheKey.toKey(), wrappedEntry);
+    const strippedEntry: WrappedCacheEntry = {
+      body: strippedBody,
+      expiresAt: wrappedEntry.expiresAt,
+    };
+
+    await this.cache.set(cacheKey.toKey(), strippedEntry);
 
     return {
-      refresh_token: wrappedEntry.body.refresh_token,
-      audience: wrappedEntry.body.audience,
-      scope: wrappedEntry.body.scope,
+      refresh_token: strippedBody.refresh_token,
+      audience: strippedBody.audience,
+      scope: strippedBody.scope,
     };
   }
 
@@ -278,7 +293,11 @@ export class CacheManager {
         const cachedEntry = await this.cache.get<WrappedCacheEntry>(key);
 
         if (cachedEntry?.body?.refresh_token) {
-          return this.modifiedCachedEntry(cachedEntry, keyToMatch);
+          return {
+            refresh_token: cachedEntry.body.refresh_token,
+            audience: cachedEntry.body.audience,
+            scope: cachedEntry.body.scope,
+          };
         }
       }
     }

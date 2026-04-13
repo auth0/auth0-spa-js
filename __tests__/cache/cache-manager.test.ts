@@ -240,6 +240,10 @@ cacheFactories.forEach(cacheFactory => {
 
 
     describe('when refresh tokens are used', () => {
+      beforeEach(async () => {
+        await manager.clear();
+      });
+
       describe('when no matching key has been found and the useMrrt is true', () => {
         it('should return undefined when no entry has a refresh_token', async () => {
           const data = {
@@ -332,6 +336,52 @@ cacheFactories.forEach(cacheFactory => {
         });
       })
 
+      it('does not write a ghost entry at the requested key when finding a refresh token via MRRT', async () => {
+        const data = {
+          ...defaultData,
+          refresh_token: TEST_REFRESH_TOKEN,
+          decodedToken: {
+            claims: {
+              __raw: TEST_ID_TOKEN,
+              name: 'Test',
+              exp: nowSeconds() + dayInSeconds * 2
+            },
+            user: { name: 'Test' }
+          }
+        };
+
+        await manager.set(data);
+
+        const mrrtKey = new CacheKey({
+          clientId: TEST_CLIENT_ID,
+          audience: 'my_second_audience',
+          scope: 'scope_1 scope_2',
+        });
+
+        const result = await manager.get(mrrtKey, undefined, true);
+
+        // Return value should carry the donor's refresh token, audience and scope
+        expect(result).toStrictEqual({
+          refresh_token: TEST_REFRESH_TOKEN,
+          audience: data.audience,
+          scope: data.scope,
+        });
+
+        // No entry should have been written at the requested key
+        const ghostEntry = await cache.get(mrrtKey.toKey());
+        expect(ghostEntry).toBeFalsy();
+
+        // The donor entry should be untouched
+        const donorKey = new CacheKey({
+          clientId: TEST_CLIENT_ID,
+          audience: TEST_AUDIENCE,
+          scope: data.scope,
+        });
+        const donorEntry = await cache.get<WrappedCacheEntry>(donorKey.toKey());
+        expect(donorEntry?.body?.access_token).toBe(TEST_ACCESS_TOKEN);
+        expect(donorEntry?.body?.refresh_token).toBe(TEST_REFRESH_TOKEN);
+      });
+
       it('strips everything except the refresh token and audience when expiry has been reached', async () => {
         const now = Date.now();
         const realDateNow = Date.now.bind(global.Date);
@@ -365,6 +415,144 @@ cacheFactories.forEach(cacheFactory => {
           audience: data.audience,
           scope: data.scope
         });
+
+        global.Date.now = realDateNow;
+      });
+
+      it('does not create a ghost entry under the lookup key when subset-matched entry is expired', async () => {
+        const now = Date.now();
+        const realDateNow = Date.now.bind(global.Date);
+
+        const extendedScope = 'openid profile read:data';
+        const defaultScope = 'openid profile';
+
+        const data = {
+          ...defaultData,
+          scope: extendedScope,
+          refresh_token: TEST_REFRESH_TOKEN,
+        };
+
+        await manager.set(data);
+
+        // Advance past expiry
+        global.Date.now = jest.fn(() => now + (dayInSeconds + 60) * 1000);
+
+        // Look up by default (narrower) scope — triggers subset matching
+        const lookupKey = new CacheKey({
+          clientId: TEST_CLIENT_ID,
+          audience: TEST_AUDIENCE,
+          scope: defaultScope,
+        });
+
+        const result = await manager.get(lookupKey);
+
+        // Should return stripped entry with refresh token
+        expect(result).toStrictEqual({
+          refresh_token: TEST_REFRESH_TOKEN,
+          audience: data.audience,
+          scope: data.scope,
+        });
+
+        // The stripped entry should be saved under the ORIGINAL (extended scope) key,
+        // not under the lookup (default scope) key.
+        const ghostKey = lookupKey.toKey();
+        const ghostEntry = await cache.get(ghostKey);
+        expect(ghostEntry).toBeFalsy();
+
+        // The original key should still have an entry (now stripped)
+        const originalKey = new CacheKey({
+          clientId: TEST_CLIENT_ID,
+          audience: TEST_AUDIENCE,
+          scope: extendedScope,
+        });
+        const originalEntry = await cache.get<WrappedCacheEntry>(originalKey.toKey());
+        expect(originalEntry).toBeDefined();
+        expect(originalEntry.body.refresh_token).toBe(TEST_REFRESH_TOKEN);
+        expect(originalEntry.body.access_token).toBeUndefined();
+
+        global.Date.now = realDateNow;
+      });
+
+      it('does not corrupt the original superset entry in InMemoryCache when subset-matched entry is expired', async () => {
+        const now = Date.now();
+        const realDateNow = Date.now.bind(global.Date);
+
+        const extendedScope = 'openid profile read:data';
+        const defaultScope = 'openid profile';
+
+        const data = {
+          ...defaultData,
+          scope: extendedScope,
+          refresh_token: TEST_REFRESH_TOKEN,
+        };
+
+        await manager.set(data);
+
+        // Read the original entry BEFORE expiry to get a reference
+        const originalKey = new CacheKey({
+          clientId: TEST_CLIENT_ID,
+          audience: TEST_AUDIENCE,
+          scope: extendedScope,
+        });
+        const beforeExpiry = await cache.get<WrappedCacheEntry>(originalKey.toKey());
+        expect(beforeExpiry.body.access_token).toBe(TEST_ACCESS_TOKEN);
+
+        // Advance past expiry
+        global.Date.now = jest.fn(() => now + (dayInSeconds + 60) * 1000);
+
+        // Look up by narrower scope — triggers subset match + modifiedCachedEntry
+        const lookupKey = new CacheKey({
+          clientId: TEST_CLIENT_ID,
+          audience: TEST_AUDIENCE,
+          scope: defaultScope,
+        });
+
+        await manager.get(lookupKey);
+
+        // The entry under the original key IS expected to be stripped (body replaced),
+        // but via cache.set with a new object, not via in-place mutation of the old reference.
+        const afterExpiry = await cache.get<WrappedCacheEntry>(originalKey.toKey());
+        expect(afterExpiry.body.refresh_token).toBe(TEST_REFRESH_TOKEN);
+        expect(afterExpiry.body).not.toBe(beforeExpiry.body);
+
+        global.Date.now = realDateNow;
+      });
+
+      it('removes expired subset-matched entry under the correct key when no refresh token', async () => {
+        const now = Date.now();
+        const realDateNow = Date.now.bind(global.Date);
+
+        const extendedScope = 'openid profile read:data';
+        const defaultScope = 'openid profile';
+
+        const data = {
+          ...defaultData,
+          scope: extendedScope,
+          // No refresh_token
+        };
+
+        await manager.set(data);
+
+        // Advance past expiry
+        global.Date.now = jest.fn(() => now + (dayInSeconds + 60) * 1000);
+
+        const lookupKey = new CacheKey({
+          clientId: TEST_CLIENT_ID,
+          audience: TEST_AUDIENCE,
+          scope: defaultScope,
+        });
+
+        const result = await manager.get(lookupKey);
+        expect(result).toBeUndefined();
+
+        // The original key should be removed
+        const originalKey = new CacheKey({
+          clientId: TEST_CLIENT_ID,
+          audience: TEST_AUDIENCE,
+          scope: extendedScope,
+        });
+        const entry = await cache.get(originalKey.toKey());
+        expect(entry).toBeFalsy();
 
         global.Date.now = realDateNow;
       });
