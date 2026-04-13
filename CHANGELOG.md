@@ -1,5 +1,13 @@
 # Change Log
 
+## [v2.19.1](https://github.com/auth0/auth0-spa-js/tree/v2.19.1) (2026-04-13)
+[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.19.0...v2.19.1)
+
+**Fixed**
+- fix: prevent ghost cache entry during multi-audience refresh token (MRRT) lookup [\#1592](https://github.com/auth0/auth0-spa-js/pull/1592) ([yogeshchoudhary147](https://github.com/yogeshchoudhary147))
+- fix: prevent ghost cache entry when subset-matched token expires [\#1590](https://github.com/auth0/auth0-spa-js/pull/1590) ([yogeshchoudhary147](https://github.com/yogeshchoudhary147))
+- fix: throw GenericError from worker path in revokeRefreshToken [\#1589](https://github.com/auth0/auth0-spa-js/pull/1589) ([yogeshchoudhary147](https://github.com/yogeshchoudhary147))
+
 ## [v2.19.0](https://github.com/auth0/auth0-spa-js/tree/v2.19.0) (2026-04-09)
 [Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.18.3...v2.19.0)
 
