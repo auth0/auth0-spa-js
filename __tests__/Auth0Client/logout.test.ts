@@ -535,28 +535,6 @@ describe('Auth0Client', () => {
         expect(postMessageSpy).not.toHaveBeenCalled();
       });
 
-      it('Test H — workerHasRefreshToken flips: false → true after login → false after logout', async () => {
-        const auth0 = setup({
-          useRefreshTokens: true,
-          cacheLocation: 'memory'
-        });
-
-        // Initially the worker exists but no RT has been seeded
-        expect((<any>auth0).worker).toBeDefined();
-        expect((<any>auth0).workerHasRefreshToken).toBeFalsy();
-
-        await loginWithRedirect(auth0);
-
-        // After a successful login that returned a refresh_token via the
-        // worker, the flag must be true.
-        expect((<any>auth0).workerHasRefreshToken).toBe(true);
-
-        await auth0.logout({ openUrl: false });
-
-        // Logout resets the flag
-        expect((<any>auth0).workerHasRefreshToken).toBe(false);
-      });
-
       it('logout still completes when the worker clear ACK fails', async () => {
         const auth0 = setup({
           useRefreshTokens: true,
@@ -574,14 +552,6 @@ describe('Auth0Client', () => {
 
         // Logout must not propagate the worker failure
         await expect(auth0.logout({ openUrl: false })).resolves.not.toThrow();
-
-        // The flag is still cleared even when the ACK round-trip blew up,
-        // so subsequent token requests deterministically fail.
-        expect((<any>auth0).workerHasRefreshToken).toBe(false);
-
-        await expect(auth0.getTokenSilently()).rejects.toThrow(
-          MissingRefreshTokenError
-        );
 
         postMessageSpy.mockRestore();
       });
@@ -663,7 +633,6 @@ describe('Auth0Client', () => {
         await expect(auth0.getTokenSilently()).rejects.toThrow(
           MissingRefreshTokenError
         );
-        expect((<any>auth0).workerHasRefreshToken).toBe(false);
       });
 
       it('logout clears the worker when onRedirect is provided as a no-op', async () => {
@@ -683,11 +652,8 @@ describe('Auth0Client', () => {
       });
 
       it('logout({ clientId }) with a different clientId still clears the worker', async () => {
-        // The worker is scoped to this Auth0Client instance (per the plan:
-        // "The worker is scoped to this Auth0Client instance ... Clearing the
-        // worker is still correct because the worker only ever holds tokens
-        // for this instance"). So the worker-clear runs and the flag flips
-        // to false, even though the main-client cache is untouched (existing
+        // The worker is scoped to this Auth0Client instance, so the worker-clear
+        // runs even when the caller passes a custom clientId (existing
         // cache-clear behavior for custom clientId is preserved).
         const postMessageSpy = jest.spyOn(
           TokenWorker.prototype as any,
@@ -709,7 +675,6 @@ describe('Auth0Client', () => {
           ([msg]) => msg && (msg as any).type === 'clear'
         );
         expect(clearCalls.length).toBeGreaterThanOrEqual(1);
-        expect((<any>auth0).workerHasRefreshToken).toBe(false);
 
         postMessageSpy.mockRestore();
       });
@@ -723,13 +688,9 @@ describe('Auth0Client', () => {
         await loginWithRedirect(auth0);
         await auth0.logout({ openUrl: false });
 
-        expect((<any>auth0).workerHasRefreshToken).toBe(false);
-
         // Re-login on the same Auth0Client instance — the worker should still
         // be alive (not terminated) and re-seed the RT.
         await loginWithRedirect(auth0);
-
-        expect((<any>auth0).workerHasRefreshToken).toBe(true);
 
         // And token refresh should succeed
         mockFetch.mockResolvedValueOnce(
