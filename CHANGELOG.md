@@ -1,5 +1,11 @@
 # Change Log
 
+## [v2.19.2](https://github.com/auth0/auth0-spa-js/tree/v2.19.2) (2026-04-15)
+[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.19.1...v2.19.2)
+
+**Security**
+- fix: clear worker refresh tokens on logout (#1596) [\#1597](https://github.com/auth0/auth0-spa-js/pull/1597) ([parasol-aser](https://github.com/parasol-aser))
+
 ## [v2.19.1](https://github.com/auth0/auth0-spa-js/tree/v2.19.1) (2026-04-13)
 [Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.19.0...v2.19.1)
 
