@@ -918,7 +918,7 @@ describe('token worker', () => {
   });
 
   describe('clear message', () => {
-    it('Test A — clear empties the refresh-token store', async () => {
+    it('clear empties the refresh-token store', async () => {
       // Seed a refresh token via a normal authorization_code round-trip
       mockFetch.mockReturnValueOnce(
         Promise.resolve({
@@ -966,7 +966,7 @@ describe('token worker', () => {
       expect(mockFetch).toHaveBeenCalledTimes(1);
     });
 
-    it('Test B — clear wipes the MRRT latest_refresh_token slot', async () => {
+    it('clear wipes the MRRT latest_refresh_token slot', async () => {
       const { messageRouter } = require('../src/worker/token.worker');
 
       const mrrtFor = (audience: string, scope: string) => (opts: any) =>
@@ -1044,7 +1044,7 @@ describe('token worker', () => {
       expect(original.json.error).toBe('missing_refresh_token');
     });
 
-    it('Test C — clear with no ports is a safe no-op', () => {
+    it('clear with no ports is a safe no-op', () => {
       const { messageRouter } = require('../src/worker/token.worker');
 
       expect(() =>

@@ -372,7 +372,7 @@ describe('Auth0Client', () => {
       // src/worker/__mocks__/token.worker.ts makes that the in-process
       // messageRouter, so we can spy on TokenWorker.prototype.postMessage.
 
-      it("Test D — logout sends a 'clear' message to the worker", async () => {
+      it("logout sends a 'clear' message to the worker", async () => {
         const postMessageSpy = jest.spyOn(
           TokenWorker.prototype as any,
           'postMessage'
@@ -391,10 +391,10 @@ describe('Auth0Client', () => {
         const clearCalls = postMessageSpy.mock.calls.filter(
           ([msg]) => msg && (msg as any).type === 'clear'
         );
-        expect(clearCalls.length).toBeGreaterThanOrEqual(1);
+        expect(clearCalls.length).toBe(1);
       });
 
-      it('Test E — getTokenSilently after logout throws MissingRefreshTokenError', async () => {
+      it('getTokenSilently after logout throws MissingRefreshTokenError', async () => {
         const auth0 = setup({
           useRefreshTokens: true,
           cacheLocation: 'memory'
@@ -429,7 +429,7 @@ describe('Auth0Client', () => {
         expect(mockFetch).not.toHaveBeenCalled();
       });
 
-      it('Test E (cacheMode=off) — explicit refresh after logout also throws', async () => {
+      it('explicit refresh with cacheMode=off after logout throws MissingRefreshTokenError', async () => {
         const auth0 = setup({
           useRefreshTokens: true,
           cacheLocation: 'memory'
@@ -446,7 +446,7 @@ describe('Auth0Client', () => {
         expect(mockFetch).not.toHaveBeenCalled();
       });
 
-      it('Test F — falls back to iframe after logout when useRefreshTokensFallback is true', async () => {
+      it('falls back to iframe after logout when useRefreshTokensFallback is true', async () => {
         const auth0 = setup({
           useRefreshTokens: true,
           useRefreshTokensFallback: true,
@@ -491,7 +491,7 @@ describe('Auth0Client', () => {
         runIframeSpy.mockRestore();
       });
 
-      it('Test G — logout without a worker (localstorage) does not post any message', async () => {
+      it('logout without a worker (localstorage) does not post any message', async () => {
         const postMessageSpy = jest.spyOn(
           TokenWorker.prototype as any,
           'postMessage'
@@ -514,7 +514,7 @@ describe('Auth0Client', () => {
         expect(postMessageSpy).not.toHaveBeenCalled();
       });
 
-      it('Test G2 — logout without useRefreshTokens does not post any message', async () => {
+      it('logout without useRefreshTokens does not post any message', async () => {
         const postMessageSpy = jest.spyOn(
           TokenWorker.prototype as any,
           'postMessage'
@@ -674,7 +674,7 @@ describe('Auth0Client', () => {
         const clearCalls = postMessageSpy.mock.calls.filter(
           ([msg]) => msg && (msg as any).type === 'clear'
         );
-        expect(clearCalls.length).toBeGreaterThanOrEqual(1);
+        expect(clearCalls.length).toBe(1);
 
         postMessageSpy.mockRestore();
       });
