@@ -63,7 +63,6 @@ jobs:
         uses: actions/setup-node@v6
         with:
           node-version: ${{ env.NODE_VERSION }}
-          package-manager-cache: false
 
       - name: Restore build artifacts
         uses: actions/cache/restore@v5
@@ -93,7 +92,6 @@ jobs:
         uses: actions/setup-node@v6
         with:
           node-version: ${{ env.NODE_VERSION }}
-          package-manager-cache: false
 
       - name: Restore build artifacts
         uses: actions/cache/restore@v5
