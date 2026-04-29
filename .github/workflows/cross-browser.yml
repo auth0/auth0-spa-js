@@ -22,9 +22,7 @@ env:
   NODE_VERSION: 22
 
 jobs:
-
   cross-browser:
-
     name: ${{ matrix.browser }}
     runs-on: ${{ matrix.os }}
     timeout-minutes: 25
@@ -41,13 +39,16 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha || github.ref }}
 
-      - name: Build package
-        uses: ./.github/actions/build
+      - name: Setup Node
+        uses: actions/setup-node@v6
         with:
-          node: ${{ env.NODE_VERSION }}
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install dependencies
+        run: npm i --include=dev
 
       - name: Run cross-browser tests
-        uses: cypress-io/github-action@v6
+        uses: cypress-io/github-action@v7
         with:
           browser: ${{ matrix.browser }}
           start: npm run dev
@@ -57,7 +58,7 @@ jobs:
 
       - name: Upload Cypress screenshots
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: cypress-screenshots-${{ matrix.browser }}-${{ github.run_id }}
           path: cypress/screenshots
