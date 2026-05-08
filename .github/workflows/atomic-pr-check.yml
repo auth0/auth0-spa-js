@@ -1,0 +1,252 @@
+name: Atomic PR Check
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+    branches:
+      - main
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  atomic-check:
+    name: Atomic PR Check
+    runs-on: ubuntu-latest
+    # Skip automated dependency update bots — they always produce atomic PRs by definition
+    if: ${{ github.actor != 'dependabot[bot]' && github.actor != 'renovate[bot]' }}
+    steps:
+      - name: Analyse PR atomicity
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const owner      = context.repo.owner;
+            const repo       = context.repo.repo;
+            const pr         = context.payload.pull_request;
+            const prNumber   = pr.number;
+
+            // ──────────────────────────────────────────────────────────────
+            // Fetch all changed files (handles pagination automatically)
+            // ──────────────────────────────────────────────────────────────
+            const files = await github.paginate(github.rest.pulls.listFiles, {
+              owner, repo, pull_number: prNumber, per_page: 100,
+            });
+
+            const violations = [];
+            const warnings   = [];
+
+            // ──────────────────────────────────────────────────────────────
+            // Check 1 — PR title contains "and"
+            // Rationale: a title that needs "and" almost always covers two
+            // concerns.  This is the fastest signal from the Atomic PR doc.
+            // ──────────────────────────────────────────────────────────────
+            if (/\band\b/i.test(pr.title)) {
+              violations.push(
+                `**PR title contains "and":** \`${pr.title}\`\n` +
+                `  → If the title requires "and", the PR likely covers multiple concerns. ` +
+                `Split it so each PR has a single, unambiguous purpose.`
+              );
+            }
+
+            // ──────────────────────────────────────────────────────────────
+            // Check 2 — Number of changed files
+            // Thresholds are intentionally conservative for an SDK codebase.
+            // ──────────────────────────────────────────────────────────────
+            const FILE_WARN      = 15;
+            const FILE_VIOLATION = 40;
+            const fileCount      = files.length;
+
+            if (fileCount >= FILE_VIOLATION) {
+              violations.push(
+                `**Too many files changed:** ${fileCount} files (hard limit: ${FILE_VIOLATION}).\n` +
+                `  → Reviewers cannot audit this thoroughly. Break it into smaller, focused PRs.`
+              );
+            } else if (fileCount >= FILE_WARN) {
+              warnings.push(
+                `**Many files changed:** ${fileCount} files — verify every file is strictly required ` +
+                `for this single concern.`
+              );
+            }
+
+            // ──────────────────────────────────────────────────────────────
+            // Check 3 — Total line-change volume
+            // ──────────────────────────────────────────────────────────────
+            const LINE_WARN      = 400;
+            const LINE_VIOLATION = 1500;
+            const additions      = files.reduce((s, f) => s + f.additions, 0);
+            const deletions      = files.reduce((s, f) => s + f.deletions, 0);
+            const totalLines     = additions + deletions;
+
+            if (totalLines >= LINE_VIOLATION) {
+              violations.push(
+                `**Very large diff:** +${additions} / -${deletions} (${totalLines} total lines).\n` +
+                `  → A diff this size makes thorough review impractical. Consider splitting.`
+              );
+            } else if (totalLines >= LINE_WARN) {
+              warnings.push(
+                `**Large diff:** +${additions} / -${deletions} (${totalLines} lines) — ` +
+                `ensure reviewers can audit every changed line.`
+              );
+            }
+
+            // ──────────────────────────────────────────────────────────────
+            // Check 4 — Renames / moves mixed with logic changes
+            // Rationale: structural changes (PR A) should precede logic
+            // changes (PR B) so each is trivially verifiable.
+            // ──────────────────────────────────────────────────────────────
+            const renamedFiles  = files.filter(f => f.status === 'renamed');
+            const modifiedFiles = files.filter(f => f.status === 'modified' || f.status === 'changed');
+
+            if (renamedFiles.length > 0 && modifiedFiles.length > 0) {
+              const renamedList = renamedFiles.map(f => `\`${f.filename}\``).join(', ');
+              warnings.push(
+                `**Structural and logic changes mixed:** ${renamedFiles.length} renamed/moved ` +
+                `file(s) alongside ${modifiedFiles.length} modified file(s).\n` +
+                `  → Renamed files: ${renamedList}\n` +
+                `  → Per atomic PR guidelines, do the rename in a dedicated PR first, ` +
+                `then apply logic changes on top.`
+              );
+            }
+
+            // ──────────────────────────────────────────────────────────────
+            // Check 5 — Formatting / linting config files mixed with source
+            // Rationale: formatting noise hides real changes and makes the
+            // diff harder to audit.
+            // ──────────────────────────────────────────────────────────────
+            const isFormattingConfig = f => {
+              const name = f.filename.toLowerCase();
+              return (
+                /\.(eslint|prettier|stylelint|editorconfig)/.test(name) ||
+                name.endsWith('.config.js')  ||
+                name.endsWith('.config.ts')  ||
+                name.endsWith('.config.mjs') ||
+                name === '.prettierrc'        ||
+                name === '.editorconfig'
+              );
+            };
+
+            const configFiles = files.filter(isFormattingConfig);
+            const srcFiles    = files.filter(f => f.filename.startsWith('src/'));
+
+            if (configFiles.length > 0 && srcFiles.length > 0) {
+              const configList = configFiles.map(f => `\`${f.filename}\``).join(', ');
+              warnings.push(
+                `**Formatting/config changes mixed with source changes:** ${configList}\n` +
+                `  → Linting or formatting changes add noise to a logic diff. ` +
+                `Move them to a separate, instantly-reviewable PR.`
+              );
+            }
+
+            // ──────────────────────────────────────────────────────────────
+            // Check 6 — Scope spread across unrelated top-level areas
+            // ──────────────────────────────────────────────────────────────
+            const TRACKED_SCOPES = ['src', '__tests__', 'cypress', 'scripts', '.github'];
+            const SCOPE_WARN     = 3;
+
+            const touchedScopes = [
+              ...new Set(
+                files
+                  .map(f => f.filename.split('/')[0])
+                  .filter(d => TRACKED_SCOPES.includes(d))
+              )
+            ];
+
+            // src + __tests__ together is expected; only flag when additional
+            // unrelated areas (CI config, scripts, cypress, …) are also touched.
+            const unexpectedScopes = touchedScopes.filter(
+              s => s !== 'src' && s !== '__tests__'
+            );
+            const sourceAndTestOnly =
+              touchedScopes.includes('src') && unexpectedScopes.length === 0;
+
+            if (!sourceAndTestOnly && touchedScopes.length > SCOPE_WARN) {
+              warnings.push(
+                `**Wide scope:** changes span ${touchedScopes.length} major areas: ` +
+                `\`${touchedScopes.join('`, `')}\`.\n` +
+                `  → Verify that touching all these areas is strictly required for ` +
+                `this single contribution.`
+              );
+            }
+
+            // ──────────────────────────────────────────────────────────────
+            // Build the comment body
+            // ──────────────────────────────────────────────────────────────
+            const hasViolations = violations.length > 0;
+            const hasWarnings   = warnings.length > 0;
+
+            let commentBody;
+
+            if (!hasViolations && !hasWarnings) {
+              commentBody = [
+                '## Atomic PR Check — Passed ✓',
+                '',
+                'No atomicity concerns found. This PR looks well-scoped.',
+              ].join('\n');
+            } else {
+              const lines = ['## Atomic PR Check'];
+
+              if (hasViolations) {
+                lines.push(
+                  '',
+                  '### Violations',
+                  '_These must be addressed before the PR is ready for review._',
+                  ''
+                );
+                violations.forEach(v => lines.push(`- ${v}`, ''));
+              }
+
+              if (hasWarnings) {
+                lines.push(
+                  '',
+                  '### Warnings',
+                  '_Advisory — reviewers are empowered to request changes if these ' +
+                  'concerns affect auditability._',
+                  ''
+                );
+                warnings.forEach(w => lines.push(`- ${w}`, ''));
+              }
+
+              lines.push(
+                '',
+                '---',
+                '_Powered by the Atomic PR guidelines. ' +
+                'Reviewers are expected to refuse reviews for PRs that are not set up for easy auditing._'
+              );
+
+              commentBody = lines.join('\n');
+            }
+
+            // ──────────────────────────────────────────────────────────────
+            // Post or update the bot comment (idempotent on re-runs)
+            // ──────────────────────────────────────────────────────────────
+            const MARKER = '<!-- atomic-pr-check-v1 -->';
+            const body   = `${MARKER}\n${commentBody}`;
+
+            const { data: existingComments } = await github.rest.issues.listComments({
+              owner, repo, issue_number: prNumber,
+            });
+            const existingComment = existingComments.find(
+              c => c.body.startsWith(MARKER)
+            );
+
+            if (existingComment) {
+              await github.rest.issues.updateComment({
+                owner, repo, comment_id: existingComment.id, body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner, repo, issue_number: prNumber, body,
+              });
+            }
+
+            // ──────────────────────────────────────────────────────────────
+            // Fail the workflow step when hard violations are present.
+            // Add this check to branch protection rules to enforce it.
+            // ──────────────────────────────────────────────────────────────
+            if (hasViolations) {
+              core.setFailed(
+                `Atomic PR check found ${violations.length} violation(s). See the PR comment for details.`
+              );
+            }
