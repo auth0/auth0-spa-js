@@ -234,6 +234,21 @@ describe('Auth0Client', () => {
       expect(dpop.clear).toHaveBeenCalled();
     });
 
+    it('continues logout when DPoP clear fails', async () => {
+      const auth0 = setup({ useDpop: true });
+      const dpop = auth0['dpop']!;
+
+      jest
+        .spyOn(dpop, 'clear')
+        .mockRejectedValue(new Error('dpop storage unavailable'));
+
+      await expect(auth0.logout()).resolves.not.toThrow();
+
+      expect(window.location.assign).toHaveBeenCalledWith(
+        `https://${TEST_DOMAIN}/v2/logout?client_id=${TEST_CLIENT_ID}${TEST_AUTH0_CLIENT_QUERY_STRING}`
+      );
+    });
+
     it('skips `window.location.assign` when `options.onRedirect` is provided', async () => {
       const auth0 = setup();
       const onRedirect = jest.fn();

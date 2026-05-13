@@ -110,11 +110,13 @@ export class DpopStorage {
       table.getAllKeys()
     );
 
-    allKeys
-      ?.filter(predicate)
-      .map(k =>
-        this.executeDbRequest(table, 'readwrite', table => table.delete(k))
-      );
+    await Promise.all(
+      allKeys
+        ?.filter(predicate)
+        .map(k =>
+          this.executeDbRequest(table, 'readwrite', table => table.delete(k))
+        ) || []
+    );
   }
 
   protected deleteByClientId(table: Table, clientId: string): Promise<void> {

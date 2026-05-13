@@ -237,5 +237,41 @@ describe('DpopStorage', () => {
         expect.arrayContaining([`${clientId}aaa`, clientId])
       );
     });
+
+    it('waits for matching deletes before resolving', async () => {
+      const keys = [
+        `${clientId}::aaa`,
+        `${clientId}::bbb`,
+        `${clientId}aaa`
+      ];
+      const pendingDeletes: Array<() => void> = [];
+
+      jest
+        .spyOn(storage as any, 'executeDbRequest')
+        .mockImplementation((_, mode) => {
+          if (mode === 'readonly') {
+            return Promise.resolve(keys);
+          }
+
+          return new Promise<void>(resolve => pendingDeletes.push(resolve));
+        });
+
+      let resolved = false;
+      const clearPromise = storage
+        ['deleteByClientId'](table, clientId)
+        .then(() => {
+          resolved = true;
+        });
+
+      await Promise.resolve();
+
+      expect(pendingDeletes).toHaveLength(2);
+      expect(resolved).toBe(false);
+
+      pendingDeletes.forEach(resolve => resolve());
+      await clearPromise;
+
+      expect(resolved).toBe(true);
+    });
   });
 });

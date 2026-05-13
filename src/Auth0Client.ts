@@ -1246,7 +1246,12 @@ export class Auth0Client {
     });
     this.userCache.remove(CACHE_KEY_ID_TOKEN_SUFFIX);
 
-    await this.dpop?.clear();
+    try {
+      await this.dpop?.clear();
+    } catch {
+      // DPoP storage cleanup is best-effort. Logout should still redirect if
+      // IndexedDB or another storage backend fails while clearing local keys.
+    }
 
     if (this.worker) {
       try {
