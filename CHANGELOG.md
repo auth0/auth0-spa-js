@@ -1,5 +1,11 @@
 # Change Log
 
+## [v2.19.3](https://github.com/auth0/auth0-spa-js/tree/v2.19.3) (2026-05-15)
+[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.19.2...v2.19.3)
+
+**Fixed**
+- fix: ensure DPoP storage is fully cleared before logout completes [\#1605](https://github.com/auth0/auth0-spa-js/pull/1605) ([OWConnoi](https://github.com/OWConnoi))
+
 ## [v2.19.2](https://github.com/auth0/auth0-spa-js/tree/v2.19.2) (2026-04-15)
 [Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.19.1...v2.19.2)
 
