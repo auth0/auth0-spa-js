@@ -1789,7 +1789,9 @@ export class Auth0Client {
    * for a downstream API but do not want to change who the current user is.
    *
    * When a Web Worker is configured, the refresh_token is discarded inside the worker and
-   * never reaches the main thread.
+   * never reaches the main thread. When no Web Worker is configured, the raw authorization
+   * server response is returned — if a refresh_token is present, discard it; this method
+   * intentionally does not store it.
    *
    * @param {CustomTokenExchangeOptions} options - The options required to perform the token exchange.
    * @returns {Promise<TokenEndpointResponse>} A promise that resolves to the token endpoint response.
