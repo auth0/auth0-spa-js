@@ -895,6 +895,7 @@ export class User {
   address?: string;
   updated_at?: string;
   sub?: string;
+  act?: ActClaim;
   [key: string]: any;
 }
 
