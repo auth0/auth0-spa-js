@@ -65,6 +65,30 @@ export type CustomTokenExchangeOptions = {
   organization?: string;
 
   /**
+   * A token representing the acting party for delegation or impersonation scenarios.
+   *
+   * @remarks
+   * Used when one principal needs to act on behalf of another.
+   * For example, an AI agent acting on behalf of a user.
+   *
+   * @example
+   * "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+   */
+  actor_token?: string;
+
+  /**
+   * The type identifier for the actor token.
+   *
+   * @remarks
+   * Must be a URI under your organization's control, following the same
+   * rules as subject_token_type.
+   *
+   * @example
+   * "https://idp.example.com/token-type/agent"
+   */
+  actor_token_type?: string;
+
+  /**
    * Additional custom parameters for Auth0 Action processing
    *
    * @remarks

@@ -2,6 +2,7 @@ import { verify } from '../../src/jwt';
 import { MessageChannel } from 'worker_threads';
 import * as utils from '../../src/utils';
 import * as scope from '../../src/scope';
+import * as api from '../../src/api';
 
 // @ts-ignore
 
@@ -747,6 +748,165 @@ describe('Auth0Client', () => {
       await auth0.loginWithCustomTokenExchange(cteOptions);
 
       expect(capturedRequestOptions.organization).toEqual('org_12345');
+    });
+  });
+
+  describe('customTokenExchange()', () => {
+    const mockTokenResponse = {
+      id_token: TEST_ID_TOKEN,
+      access_token: TEST_ACCESS_TOKEN,
+      token_type: 'Bearer',
+      expires_in: 86400
+    };
+
+    const localSetup = (clientOptions?: Partial<Auth0ClientOptions>) => {
+      const auth0 = setup(clientOptions);
+      setupMessageEventLister(mockWindow, { state: TEST_STATE });
+      jest.spyOn(api, 'oauthToken').mockResolvedValue(mockTokenResponse as any);
+      return auth0;
+    };
+
+    it('calls oauthToken directly with skipTokenStorage: true', async () => {
+      const auth0 = localSetup();
+
+      await auth0.customTokenExchange({
+        subject_token: 'external_token',
+        subject_token_type: 'urn:acme:legacy-token'
+      });
+
+      expect(api.oauthToken).toHaveBeenCalledWith(
+        expect.objectContaining({
+          grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
+          subject_token: 'external_token',
+          subject_token_type: 'urn:acme:legacy-token'
+        }),
+        undefined,
+        true // skipTokenStorage
+      );
+    });
+
+    it('does not affect the current session', async () => {
+      const auth0 = localSetup();
+
+      expect(await auth0.isAuthenticated()).toBe(false);
+
+      await auth0.customTokenExchange({
+        subject_token: 'external_token',
+        subject_token_type: 'urn:acme:legacy-token'
+      });
+
+      expect(await auth0.isAuthenticated()).toBe(false);
+    });
+
+    it('returns the token response', async () => {
+      const auth0 = localSetup();
+
+      const result = await auth0.customTokenExchange({
+        subject_token: 'external_token',
+        subject_token_type: 'urn:acme:legacy-token'
+      });
+
+      expect(result.access_token).toEqual(TEST_ACCESS_TOKEN);
+      expect(result.id_token).toEqual(TEST_ID_TOKEN);
+      expect(result.expires_in).toEqual(86400);
+    });
+
+    it('passes actor_token and actor_token_type when provided', async () => {
+      const auth0 = localSetup();
+
+      await auth0.customTokenExchange({
+        subject_token: 'external_token',
+        subject_token_type: 'urn:acme:legacy-token',
+        actor_token: 'agent_token',
+        actor_token_type: 'https://idp.example.com/token-type/agent'
+      });
+
+      expect(api.oauthToken).toHaveBeenCalledWith(
+        expect.objectContaining({
+          actor_token: 'agent_token',
+          actor_token_type: 'https://idp.example.com/token-type/agent'
+        }),
+        undefined,
+        true
+      );
+    });
+
+    it('does not include actor_token when not provided', async () => {
+      const auth0 = localSetup();
+
+      await auth0.customTokenExchange({
+        subject_token: 'external_token',
+        subject_token_type: 'urn:acme:legacy-token'
+      });
+
+      const calledWith = (api.oauthToken as jest.Mock).mock.calls[0][0];
+      expect(calledWith.actor_token).toBeUndefined();
+      expect(calledWith.actor_token_type).toBeUndefined();
+    });
+
+    it('falls back to client default audience', async () => {
+      const auth0 = localSetup({
+        authorizationParams: { audience: 'https://default-api.com' }
+      });
+
+      await auth0.customTokenExchange({
+        subject_token: 'external_token',
+        subject_token_type: 'urn:acme:legacy-token'
+      });
+
+      expect(api.oauthToken).toHaveBeenCalledWith(
+        expect.objectContaining({ audience: 'https://default-api.com' }),
+        undefined,
+        true
+      );
+    });
+
+    it('uses provided audience over client default', async () => {
+      const auth0 = localSetup({
+        authorizationParams: { audience: 'https://default-api.com' }
+      });
+
+      await auth0.customTokenExchange({
+        subject_token: 'external_token',
+        subject_token_type: 'urn:acme:legacy-token',
+        audience: 'https://downstream-api.com'
+      });
+
+      expect(api.oauthToken).toHaveBeenCalledWith(
+        expect.objectContaining({ audience: 'https://downstream-api.com' }),
+        undefined,
+        true
+      );
+    });
+
+    it('passes organization when provided', async () => {
+      const auth0 = localSetup();
+
+      await auth0.customTokenExchange({
+        subject_token: 'external_token',
+        subject_token_type: 'urn:acme:legacy-token',
+        organization: 'org_12345'
+      });
+
+      expect(api.oauthToken).toHaveBeenCalledWith(
+        expect.objectContaining({ organization: 'org_12345' }),
+        undefined,
+        true
+      );
+    });
+
+    it('propagates errors from oauthToken', async () => {
+      const auth0 = setup();
+      jest
+        .spyOn(api, 'oauthToken')
+        .mockRejectedValue(new Error('invalid_grant'));
+
+      await expect(
+        auth0.customTokenExchange({
+          subject_token: 'bad_token',
+          subject_token_type: 'urn:acme:legacy-token'
+        })
+      ).rejects.toThrow('invalid_grant');
     });
   });
 

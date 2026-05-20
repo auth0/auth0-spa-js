@@ -82,7 +82,7 @@ const checkDownscoping = (scope: string, audience: string): boolean => {
 }
 
 const messageHandler = async ({
-  data: { timeout, auth, fetchUrl, fetchOptions, useFormData, useMrrt },
+  data: { timeout, auth, fetchUrl, fetchOptions, useFormData, useMrrt, skipTokenStorage },
   ports: [port]
 }: MessageEvent<WorkerRefreshTokenMessage>) => {
   let headers: FetchResponse['headers'] = {};
@@ -168,23 +168,28 @@ const messageHandler = async ({
     headers = fromEntries(response.headers);
     json = await response.json();
 
-    if (json.refresh_token) {
-      // If useMrrt is configured to true we want to save the latest refresh_token
-      // to be used when refreshing tokens with MRRT
-      if (useMrrt) {
-        refreshTokens["latest_refresh_token"] = json.refresh_token;
+    if (!skipTokenStorage) {
+      if (json.refresh_token) {
+        // If useMrrt is configured to true we want to save the latest refresh_token
+        // to be used when refreshing tokens with MRRT
+        if (useMrrt) {
+          refreshTokens["latest_refresh_token"] = json.refresh_token;
 
-        // To avoid having some refresh_token that has already been used
-        // we will update those inside the list with the new one obtained
-        // by the server
-        updateRefreshTokens(refreshToken, json.refresh_token);
+          // To avoid having some refresh_token that has already been used
+          // we will update those inside the list with the new one obtained
+          // by the server
+          updateRefreshTokens(refreshToken, json.refresh_token);
+        }
+
+        setRefreshToken(json.refresh_token, audience, scope);
+      } else {
+        deleteRefreshToken(audience, scope);
       }
-
-      setRefreshToken(json.refresh_token, audience, scope);
-      delete json.refresh_token;
-    } else {
-      deleteRefreshToken(audience, scope);
     }
+
+    // Always strip — the worker manages refresh tokens internally,
+    // they must never reach the main thread.
+    delete json.refresh_token;
 
     port.postMessage({
       ok: response.ok,

@@ -19,6 +19,7 @@ type WorkerTokenMessage = {
 export type WorkerRefreshTokenMessage = WorkerTokenMessage & {
   type: 'refresh';
   useMrrt?: boolean;
+  skipTokenStorage?: boolean;
 };
 
 export type WorkerRevokeTokenMessage = Omit<WorkerTokenMessage, 'auth'> & {
