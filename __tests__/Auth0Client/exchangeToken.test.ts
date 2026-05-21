@@ -908,6 +908,35 @@ describe('Auth0Client', () => {
         })
       ).rejects.toThrow('invalid_grant');
     });
+
+    it('verifies the id_token when present in the response', async () => {
+      const auth0 = localSetup();
+
+      await auth0.customTokenExchange({
+        subject_token: 'external_token',
+        subject_token_type: 'urn:acme:legacy-token'
+      });
+
+      expect(mockVerify).toHaveBeenCalledWith(
+        expect.objectContaining({ id_token: TEST_ID_TOKEN })
+      );
+    });
+
+    it('skips id_token verification when not present in the response', async () => {
+      const auth0 = setup();
+      jest.spyOn(api, 'oauthToken').mockResolvedValue({
+        access_token: TEST_ACCESS_TOKEN,
+        token_type: 'Bearer',
+        expires_in: 86400
+      } as any);
+
+      await auth0.customTokenExchange({
+        subject_token: 'external_token',
+        subject_token_type: 'urn:acme:legacy-token'
+      });
+
+      expect(mockVerify).not.toHaveBeenCalled();
+    });
   });
 
   describe('exchangeToken() deprecation', () => {

@@ -1813,7 +1813,7 @@ export class Auth0Client {
   async customTokenExchange(
     options: CustomTokenExchangeOptions
   ): Promise<TokenEndpointResponse> {
-    return oauthToken(
+    const result = await oauthToken(
       {
         baseUrl: this.domainUrl,
         client_id: this.options.clientId,
@@ -1826,6 +1826,12 @@ export class Auth0Client {
       this.worker,
       true // skipTokenStorage — when using a worker, refresh_token is discarded inside it
     );
+
+    if (result.id_token) {
+      await this._verifyIdToken(result.id_token, undefined, options.organization);
+    }
+
+    return result;
   }
 
   /**
