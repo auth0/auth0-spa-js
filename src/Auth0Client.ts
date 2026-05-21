@@ -1815,13 +1815,13 @@ export class Auth0Client {
   ): Promise<TokenEndpointResponse> {
     const result = await oauthToken(
       {
+        ...this._buildTokenExchangeParams(options),
         baseUrl: this.domainUrl,
         client_id: this.options.clientId,
         auth0Client: this.options.auth0Client,
         useFormData: this.options.useFormData,
         timeout: this.httpTimeoutMs,
         dpop: this.dpop,
-        ...this._buildTokenExchangeParams(options)
       },
       this.worker,
       true // skipTokenStorage — when using a worker, refresh_token is discarded inside it
