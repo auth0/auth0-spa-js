@@ -12,7 +12,7 @@
 ## Documentation
 
 - [Quickstart](https://auth0.com/docs/quickstart/spa/vanillajs/interactive) - our interactive guide for quickly adding login, logout and user information to your app using Auth0.
-- [Sample app](https://github.com/auth0-samples/auth0-javascript-samples/tree/master/01-Login) - a full-fledged sample app integrated with Auth0.
+- [Sample app](https://github.com/auth0-samples/auth0-javascript-samples/tree/master/01-Login) - a full-featured sample app integrated with Auth0.
 - [FAQs](https://github.com/auth0/auth0-spa-js/blob/main/FAQ.md) - frequently asked questions about auth0-spa-js SDK.
 - [Examples](https://github.com/auth0/auth0-spa-js/blob/main/EXAMPLES.md) - code samples for common scenarios.
 - [Docs Site](https://auth0.com/docs) - explore our Docs site and learn more about Auth0.
