@@ -572,7 +572,26 @@ async function safeTokenExchange() {
 }
 ```
 
-[Token Exchange Documentation](https://auth0.com/docs/authenticate/login/token-exchange)  
+### Delegation and Impersonation
+
+Use `customTokenExchange()` when one principal needs to act on behalf of another — for example, an AI agent acting on behalf of a user. Unlike `loginWithCustomTokenExchange()`, this method has no side effects: it does not update the session or affect `isAuthenticated()` / `getUser()`.
+
+Pass `actor_token` and `actor_token_type` alongside the subject token to identify the acting party per [RFC 8693](https://tools.ietf.org/html/rfc8693):
+
+```js
+const tokenResponse = await auth0.customTokenExchange({
+  subject_token: '<USER_TOKEN>',
+  subject_token_type: 'urn:acme:user-token',
+  actor_token: '<AGENT_TOKEN>',
+  actor_token_type: 'https://idp.example.com/token-type/agent',
+  audience: 'https://api.example.com'
+});
+
+// Use tokenResponse.access_token to call a downstream API
+// The current user session is unchanged
+```
+
+[Token Exchange Documentation](https://auth0.com/docs/authenticate/login/token-exchange)
 [RFC 8693 Spec](https://tools.ietf.org/html/rfc8693)
 
 ## Device-bound tokens with DPoP
