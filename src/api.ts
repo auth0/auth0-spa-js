@@ -37,6 +37,7 @@ export async function oauthToken(
     auth0Client,
     useFormData,
     useMrrt,
+    useOrt,
     dpop,
     ...options
   }: TokenEndpointOptions,
@@ -46,12 +47,13 @@ export async function oauthToken(
     options.grant_type === 'urn:ietf:params:oauth:grant-type:token-exchange';
 
   const refreshWithMrrt = options.grant_type === 'refresh_token' && useMrrt;
+  const refreshWithOrt = options.grant_type === 'refresh_token' && useOrt;
 
   const allParams = {
     ...options,
     ...(isTokenExchange && audience && { audience }),
     ...(isTokenExchange && scope && { scope }),
-    ...(refreshWithMrrt && { audience, scope })
+    ...((refreshWithMrrt || refreshWithOrt) && { audience, scope })
   };
 
   const body = useFormData

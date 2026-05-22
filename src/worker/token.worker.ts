@@ -9,6 +9,7 @@ import {
 
 let refreshTokens: Record<string, string> = {};
 let allowedBaseUrl: string | null = null;
+let useOrt: boolean = false;
 
 const cacheKey = (audience: string, scope: string) => `${audience}|${scope}`;
 
@@ -169,21 +170,27 @@ const messageHandler = async ({
     json = await response.json();
 
     if (json.refresh_token) {
-      // If useMrrt is configured to true we want to save the latest refresh_token
-      // to be used when refreshing tokens with MRRT
-      if (useMrrt) {
-        refreshTokens["latest_refresh_token"] = json.refresh_token;
+      // Only update RT if not using ORT (ORT does not rotate)
+      if (!useOrt) {
+        // If useMrrt is configured to true we want to save the latest refresh_token
+        // to be used when refreshing tokens with MRRT
+        if (useMrrt) {
+          refreshTokens["latest_refresh_token"] = json.refresh_token;
 
-        // To avoid having some refresh_token that has already been used
-        // we will update those inside the list with the new one obtained
-        // by the server
-        updateRefreshTokens(refreshToken, json.refresh_token);
+          // To avoid having some refresh_token that has already been used
+          // we will update those inside the list with the new one obtained
+          // by the server
+          updateRefreshTokens(refreshToken, json.refresh_token);
+        }
+
+        setRefreshToken(json.refresh_token, audience, scope);
       }
-
-      setRefreshToken(json.refresh_token, audience, scope);
       delete json.refresh_token;
     } else {
-      deleteRefreshToken(audience, scope);
+      // Only delete RT if not using ORT (ORT persists until session ends)
+      if (!useOrt) {
+        deleteRefreshToken(audience, scope);
+      }
     }
 
     port.postMessage({
@@ -312,6 +319,8 @@ const messageRouter = (event: MessageEvent<WorkerMessage>) => {
         return;
       }
     }
+
+    useOrt = data.useOrt ?? false;  // Store useOrt from init message
 
     return;
   }

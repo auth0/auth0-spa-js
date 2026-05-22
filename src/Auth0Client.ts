@@ -180,12 +180,29 @@ export class Auth0Client {
   };
 
   constructor(options: Auth0ClientOptions) {
+    // Validate that useOrt is not combined with conflicting flags
+    if (
+      options.useOrt === true &&
+      (options.useDpop === false || options.useRefreshTokens === false)
+    ) {
+      throw new Error(
+        'useOrt requires useDpop and useRefreshTokens; do not explicitly set them to false.'
+      );
+    }
+
+    // Normalize implicit flags before assigning to this.options
+    const normalizedOptions = { ...options };
+    if (normalizedOptions.useOrt) {
+      normalizedOptions.useRefreshTokens = true;
+      normalizedOptions.useDpop = true;
+    }
+
     this.options = {
       ...this.defaultOptions,
-      ...options,
+      ...normalizedOptions,
       authorizationParams: {
         ...this.defaultOptions.authorizationParams,
-        ...options.authorizationParams
+        ...normalizedOptions.authorizationParams
       }
     };
 
@@ -241,11 +258,14 @@ export class Auth0Client {
     // Construct the scopes based on the following:
     // 1. Always include `openid`
     // 2. Include the scopes provided in `authorizationParams. This defaults to `profile email`
-    // 3. Add `offline_access` if `useRefreshTokens` is enabled
+    // 3. Add `online_access` if `useOrt` is enabled, or `offline_access` if `useRefreshTokens` is enabled
+    // Choose scope based on ORT vs offline RT
     this.scope = injectDefaultScopes(
       this.options.authorizationParams.scope,
       'openid',
-      this.options.useRefreshTokens ? 'offline_access' : ''
+      this.options.useOrt
+        ? 'online_access'
+        : (this.options.useRefreshTokens ? 'offline_access' : '')
     );
 
     this.transactionManager = new TransactionManager(
@@ -311,7 +331,8 @@ export class Auth0Client {
 
       this.worker!.postMessage({
         type: 'init',
-        allowedBaseUrl: this.domainUrl
+        allowedBaseUrl: this.domainUrl,
+        useOrt: this.options.useOrt  // Pass useOrt flag to worker
       });
     }
   }
@@ -1454,9 +1475,18 @@ export class Auth0Client {
         }
       );
 
+      // Strip refresh_token from result when useOrt active (ORT does not rotate)
+      if (this.options.useOrt && tokenResult.refresh_token) {
+        delete tokenResult.refresh_token;
+      }
+
       // If is refreshed with MRRT, we update all entries that have the old
       // refresh_token with the new one if the server responded with one
-      if (tokenResult.refresh_token && cache?.refresh_token) {
+      if (
+        tokenResult.refresh_token &&
+        cache?.refresh_token &&
+        !this.options.useOrt  // Belt-and-suspenders guard for ORT safety
+      ) {
         await this.cacheManager.updateEntry(
           cache.refresh_token,
           tokenResult.refresh_token
@@ -1645,6 +1675,7 @@ export class Auth0Client {
         useFormData: this.options.useFormData,
         timeout: this.httpTimeoutMs,
         useMrrt: this.options.useMrrt,
+        useOrt: this.options.useOrt,
         dpop: this.dpop,
         ...options,
         scope: scopesToRequest || options.scope,
