@@ -1,5 +1,11 @@
 # Change Log
 
+## [v2.20.0](https://github.com/auth0/auth0-spa-js/tree/v2.20.0) (2026-05-22)
+[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.19.3...v2.20.0)
+
+**Added**
+- feat: CTE delegation and impersonation support [\#1608](https://github.com/auth0/auth0-spa-js/pull/1608) ([yogeshchoudhary147](https://github.com/yogeshchoudhary147))
+
 ## [v2.19.3](https://github.com/auth0/auth0-spa-js/tree/v2.19.3) (2026-05-15)
 [Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.19.2...v2.19.3)
 
