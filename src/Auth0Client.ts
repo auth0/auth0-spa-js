@@ -1750,14 +1750,16 @@ export class Auth0Client {
    * }
    * ```
    */
-  async loginWithCustomTokenExchange(
+  private _buildTokenExchangeParams(
     options: CustomTokenExchangeOptions
-  ): Promise<TokenEndpointResponse> {
-    return this._requestToken({
+  ): TokenExchangeRequestOptions {
+    return {
       ...options,
       grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
       subject_token: options.subject_token,
       subject_token_type: options.subject_token_type,
+      ...(options.actor_token && { actor_token: options.actor_token }),
+      ...(options.actor_token_type && { actor_token_type: options.actor_token_type }),
       scope: scopesToRequest(
         this.scope,
         options.scope,
@@ -1765,7 +1767,71 @@ export class Auth0Client {
       ),
       audience: options.audience || this.options.authorizationParams.audience,
       organization: options.organization || this.options.authorizationParams.organization
-    });
+    };
+  }
+
+  async loginWithCustomTokenExchange(
+    options: CustomTokenExchangeOptions
+  ): Promise<TokenEndpointResponse> {
+    return this._requestToken(this._buildTokenExchangeParams(options));
+  }
+
+  /**
+   * ```js
+   * await auth0.customTokenExchange(options);
+   * ```
+   *
+   * Exchanges an external subject token for Auth0 tokens without affecting the current session.
+   *
+   * Unlike `loginWithCustomTokenExchange`, this method has no side effects — it does not cache
+   * tokens, does not update the authenticated session, and does not affect `isAuthenticated()`
+   * or `getUser()`. Use this for delegation or impersonation scenarios where you need a token
+   * for a downstream API but do not want to change who the current user is.
+   *
+   * When a Web Worker is configured, the refresh_token is discarded inside the worker and
+   * never reaches the main thread. When no Web Worker is configured, the raw authorization
+   * server response is returned — if a refresh_token is present, discard it; this method
+   * intentionally does not store it.
+   *
+   * @param {CustomTokenExchangeOptions} options - The options required to perform the token exchange.
+   * @returns {Promise<TokenEndpointResponse>} A promise that resolves to the token endpoint response.
+   *
+   * **Example:**
+   * ```js
+   * const tokenResponse = await auth0.customTokenExchange({
+   *   subject_token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6Ikp...',
+   *   subject_token_type: 'urn:acme:legacy-system-token',
+   *   actor_token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6Ikp...',
+   *   actor_token_type: 'https://idp.example.com/token-type/agent',
+   *   audience: 'https://api.example.com',
+   * });
+   *
+   * // Use tokenResponse.access_token to call downstream API
+   * // Current user session is unchanged
+   * ```
+   */
+  async customTokenExchange(
+    options: CustomTokenExchangeOptions
+  ): Promise<TokenEndpointResponse> {
+    const result = await oauthToken(
+      {
+        ...this._buildTokenExchangeParams(options),
+        baseUrl: this.domainUrl,
+        client_id: this.options.clientId,
+        auth0Client: this.options.auth0Client,
+        useFormData: this.options.useFormData,
+        timeout: this.httpTimeoutMs,
+        dpop: this.dpop,
+      },
+      this.worker,
+      true // skipTokenStorage — when using a worker, refresh_token is discarded inside it
+    );
+
+    if (result.id_token) {
+      await this._verifyIdToken(result.id_token, undefined, options.organization);
+    }
+
+    return result;
   }
 
   /**

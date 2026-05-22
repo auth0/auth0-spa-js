@@ -1269,6 +1269,129 @@ describe('token worker', () => {
     });
   });
 
+  describe('skipTokenStorage', () => {
+    it('strips refresh_token from the response when skipTokenStorage is true', async () => {
+      mockFetch.mockReturnValue(
+        Promise.resolve({
+          ok: true,
+          json: () => ({ access_token: 'at', refresh_token: 'rt' }),
+          headers: new Headers()
+        })
+      );
+
+      const response = await messageHandlerAsync({
+        type: 'refresh',
+        skipTokenStorage: true,
+        fetchUrl: TOKEN_ENDPOINT,
+        fetchOptions: {
+          method: 'POST',
+          body: JSON.stringify({ grant_type: 'token-exchange' })
+        },
+        auth: { audience: 'default', scope: 'openid' }
+      });
+
+      expect(response.json.refresh_token).toBeUndefined();
+      expect(response.json.access_token).toBe('at');
+    });
+
+    it('does not store the refresh_token when skipTokenStorage is true', async () => {
+      mockFetch.mockReturnValueOnce(
+        Promise.resolve({
+          ok: true,
+          json: () => ({ access_token: 'at', refresh_token: 'rt' }),
+          headers: new Headers()
+        })
+      );
+
+      await messageHandlerAsync({
+        type: 'refresh',
+        skipTokenStorage: true,
+        fetchUrl: TOKEN_ENDPOINT,
+        fetchOptions: {
+          method: 'POST',
+          body: JSON.stringify({ grant_type: 'token-exchange' })
+        },
+        auth: { audience: 'default', scope: 'openid' }
+      });
+
+      // Subsequent refresh_token grant should fail — nothing was stored
+      const response = await messageHandlerAsync({
+        type: 'refresh',
+        fetchUrl: TOKEN_ENDPOINT,
+        fetchOptions: {
+          method: 'POST',
+          body: JSON.stringify({ grant_type: 'refresh_token' })
+        },
+        auth: { audience: 'default', scope: 'openid' }
+      });
+
+      expect(response.json.error).toBe('missing_refresh_token');
+      // Only one fetch call was made (the exchange); the refresh short-circuits
+      expect(mockFetch).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not overwrite a previously stored refresh_token when skipTokenStorage is true', async () => {
+      // Seed a refresh token via a normal authorization_code grant
+      mockFetch.mockReturnValueOnce(
+        Promise.resolve({
+          ok: true,
+          json: () => ({ refresh_token: 'stored_rt' }),
+          headers: new Headers()
+        })
+      );
+
+      await messageHandlerAsync({
+        fetchUrl: TOKEN_ENDPOINT,
+        fetchOptions: {
+          method: 'POST',
+          body: JSON.stringify({ grant_type: 'authorization_code' })
+        },
+        auth: { audience: 'default', scope: 'openid' }
+      });
+
+      // Token exchange with skipTokenStorage — must not touch the stored RT
+      mockFetch.mockReturnValueOnce(
+        Promise.resolve({
+          ok: true,
+          json: () => ({ access_token: 'at', refresh_token: 'exchange_rt' }),
+          headers: new Headers()
+        })
+      );
+
+      await messageHandlerAsync({
+        type: 'refresh',
+        skipTokenStorage: true,
+        fetchUrl: TOKEN_ENDPOINT,
+        fetchOptions: {
+          method: 'POST',
+          body: JSON.stringify({ grant_type: 'token-exchange' })
+        },
+        auth: { audience: 'default', scope: 'openid' }
+      });
+
+      // The subsequent refresh_token grant must still use 'stored_rt'
+      mockFetch.mockReturnValueOnce(
+        Promise.resolve({
+          ok: true,
+          json: () => ({ access_token: 'new_at' }),
+          headers: new Headers()
+        })
+      );
+
+      await messageHandlerAsync({
+        fetchUrl: TOKEN_ENDPOINT,
+        fetchOptions: {
+          method: 'POST',
+          body: JSON.stringify({ grant_type: 'refresh_token' })
+        },
+        auth: { audience: 'default', scope: 'openid' }
+      });
+
+      const refreshBody = JSON.parse(mockFetch.mock.calls[2][1].body);
+      expect(refreshBody.refresh_token).toBe('stored_rt');
+    });
+  });
+
   describe("useMrrt", () => {
     beforeEach(() => {
       originalFetch = window.fetch;

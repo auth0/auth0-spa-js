@@ -812,6 +812,20 @@ export interface JWTVerifyOptions {
   now?: number;
 }
 
+/**
+ * Represents the actor claim (`act`) in an ID token returned via a token exchange response.
+ *
+ * The `act` claim identifies the acting party — the entity that has been delegated authority
+ * to act on behalf of the subject. It is set via Auth0 Actions using the `setActor` command.
+ *
+ * @see {@link https://www.rfc-editor.org/rfc/rfc8693#section-4.1 | RFC 8693 Section 4.1}
+ */
+export interface ActClaim {
+  /** The identifier of the acting party. */
+  sub?: string;
+  [key: string]: any;
+}
+
 export interface IdToken {
   __raw: string;
   name?: string;
@@ -851,6 +865,12 @@ export interface IdToken {
   sid?: string;
   org_id?: string;
   org_name?: string;
+  /**
+   * The actor claim, present in ID tokens returned via token exchange responses.
+   * Identifies the acting party that has been delegated authority to act on behalf
+   * of the subject. Set via Auth0 Actions using the `setActor` command.
+   */
+  act?: ActClaim;
   [key: string]: any;
 }
 
@@ -875,6 +895,7 @@ export class User {
   address?: string;
   updated_at?: string;
   sub?: string;
+  act?: ActClaim;
   [key: string]: any;
 }
 

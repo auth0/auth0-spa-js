@@ -40,7 +40,8 @@ export async function oauthToken(
     dpop,
     ...options
   }: TokenEndpointOptions,
-  worker?: Worker
+  worker?: Worker,
+  skipTokenStorage?: boolean
 ) {
   const isTokenExchange =
     options.grant_type === 'urn:ietf:params:oauth:grant-type:token-exchange';
@@ -80,7 +81,9 @@ export async function oauthToken(
     worker,
     useFormData,
     useMrrt,
-    isDpopSupported ? dpop : undefined
+    isDpopSupported ? dpop : undefined,
+    undefined,
+    skipTokenStorage
   );
 }
 

@@ -82,7 +82,7 @@ const checkDownscoping = (scope: string, audience: string): boolean => {
 }
 
 const messageHandler = async ({
-  data: { timeout, auth, fetchUrl, fetchOptions, useFormData, useMrrt },
+  data: { timeout, auth, fetchUrl, fetchOptions, useFormData, useMrrt, skipTokenStorage },
   ports: [port]
 }: MessageEvent<WorkerRefreshTokenMessage>) => {
   let headers: FetchResponse['headers'] = {};
@@ -167,6 +167,12 @@ const messageHandler = async ({
 
     headers = fromEntries(response.headers);
     json = await response.json();
+
+    if (skipTokenStorage) {
+      delete json.refresh_token;
+      port.postMessage({ ok: response.ok, json, headers });
+      return;
+    }
 
     if (json.refresh_token) {
       // If useMrrt is configured to true we want to save the latest refresh_token
