@@ -46,18 +46,25 @@ export async function oauthToken(
   const isTokenExchange =
     options.grant_type === 'urn:ietf:params:oauth:grant-type:token-exchange';
 
+  const isWebAuthn =
+    options.grant_type === 'urn:okta:params:oauth:grant-type:webauthn';
+
   const refreshWithMrrt = options.grant_type === 'refresh_token' && useMrrt;
+
+  const includeAudienceAndScope = isTokenExchange || isWebAuthn || refreshWithMrrt;
 
   const allParams = {
     ...options,
-    ...(isTokenExchange && audience && { audience }),
-    ...(isTokenExchange && scope && { scope }),
-    ...(refreshWithMrrt && { audience, scope })
+    ...(includeAudienceAndScope && audience && { audience }),
+    ...(includeAudienceAndScope && scope && { scope }),
   };
 
-  const body = useFormData
-    ? createQueryParams(allParams)
-    : JSON.stringify(allParams);
+  // WebAuthn grant must use JSON so authn_response is sent as an object, not a string.
+  const useJson = isWebAuthn || !useFormData;
+
+  const body = useJson
+    ? JSON.stringify(allParams)
+    : createQueryParams(allParams);
 
   const isDpopSupported = dpopUtils.isGrantTypeSupported(options.grant_type);
 
@@ -70,9 +77,9 @@ export async function oauthToken(
       method: 'POST',
       body,
       headers: {
-        'Content-Type': useFormData
-          ? 'application/x-www-form-urlencoded'
-          : 'application/json',
+        'Content-Type': useJson
+          ? 'application/json'
+          : 'application/x-www-form-urlencoded',
         'Auth0-Client': btoa(
           JSON.stringify(stripAuth0Client(auth0Client || DEFAULT_AUTH0_CLIENT))
         )

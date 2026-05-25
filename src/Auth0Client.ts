@@ -122,6 +122,8 @@ import {
 } from './fetcher';
 import { MyAccountApiClient } from './MyAccountApiClient';
 import { MfaApiClient } from './mfa';
+import { PasskeyApiClient } from './passkey';
+import type { PasskeyCredentialResponse } from './passkey/types';
 import { AuthClient as Auth0AuthJsClient } from '@auth0/auth0-auth-js';
 
 /**
@@ -167,6 +169,17 @@ export class Auth0Client {
    * - Verifying MFA challenges
    */
   public readonly mfa: MfaApiClient;
+
+  /**
+   * Passkey API client for passkey authentication and enrollment.
+   *
+   * Provides methods for:
+   * - Requesting signup challenges (new user registration with passkey)
+   * - Requesting login challenges (existing user authentication with passkey)
+   * - Exchanging passkey credentials for tokens
+   * - Enrolling passkeys for authenticated users (My Account)
+   */
+  public readonly passkey: PasskeyApiClient;
 
   private worker?: Worker;
   private readonly authJsClient: Auth0AuthJsClient;
@@ -294,7 +307,12 @@ export class Auth0Client {
       clientId: this.options.clientId,
     });
     this.mfa = new MfaApiClient(this.authJsClient.mfa, this);
-
+    this.passkey = new PasskeyApiClient(
+      this.authJsClient.passkey,
+      this,
+      myAccountFetcher,
+      myAccountApiIdentifier
+    );
 
     // Don't use web workers unless using refresh tokens in memory
     if (
@@ -1633,7 +1651,8 @@ export class Auth0Client {
     options:
       | PKCERequestTokenOptions
       | RefreshTokenRequestTokenOptions
-      | TokenExchangeRequestOptions,
+      | TokenExchangeRequestOptions
+      | WebauthnRequestTokenOptions,
     additionalParameters?: RequestTokenAdditionalParameters
   ) {
     const { nonceIn, organization, scopesToRequest } = additionalParameters || {};
@@ -2015,6 +2034,31 @@ export class Auth0Client {
 
   /**
    * @internal
+   * Internal method used by PasskeyApiClient to exchange passkey credentials for tokens.
+   * Routes through _requestToken() so tokens are cached, ID token verified, and session established.
+   */
+  async _requestTokenForPasskey(
+    options: {
+      authSession: string;
+      credential: PasskeyCredentialResponse;
+      realm?: string;
+      scope?: string;
+      audience?: string;
+    }
+  ): Promise<TokenEndpointResponse> {
+    const audience = options.audience || this.options.authorizationParams.audience;
+    return this._requestToken({
+      grant_type: 'urn:okta:params:oauth:grant-type:webauthn',
+      auth_session: options.authSession,
+      authn_response: options.credential,
+      ...(options.realm && { realm: options.realm }),
+      scope: scopesToRequest(this.scope, options.scope, audience),
+      audience,
+    });
+  }
+
+  /**
+   * @internal
    * Internal method used by MfaApiClient to exchange MFA tokens for access tokens.
    * This method should not be called directly by applications.
    */
@@ -2062,6 +2106,13 @@ interface TokenExchangeRequestOptions extends BaseRequestTokenOptions {
   actor_token?: string;
   actor_token_type?: string;
   organization?: string;
+}
+
+interface WebauthnRequestTokenOptions extends BaseRequestTokenOptions {
+  grant_type: 'urn:okta:params:oauth:grant-type:webauthn';
+  auth_session: string;
+  authn_response: PasskeyCredentialResponse;
+  realm?: string;
 }
 
 interface RequestTokenAdditionalParameters {

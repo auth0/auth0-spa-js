@@ -10,6 +10,7 @@
 - [Device-bound tokens with DPoP](#device-bound-tokens-with-dpop)
 - [Connect Accounts for using Token Vault](#connect-accounts-for-using-token-vault)
 - [Accessing SDK Configuration](#accessing-sdk-configuration)
+- [Passkeys](#passkeys)
 - [Multi-Factor Authentication (MFA)](#multi-factor-authentication-mfa)
 - [Step-Up Authentication](#step-up-authentication)
 
@@ -898,7 +899,6 @@ You can now [call the API](#calling-an-api) with your access token and the API c
 > [!IMPORTANT]
 > You must enable `Offline Access` from the Connection Permissions settings to be able to use the connection with Connected Accounts.
 
-
 ## Accessing SDK Configuration
 
 After initializing the Auth0Client, you can retrieve the configuration details:
@@ -923,12 +923,307 @@ This is useful when you need to:
 - Pass configuration to other services or analytics
 - Verify the SDK is configured correctly
 
+## Passkeys
+
+Passkeys provide password-less authentication using platform biometrics (Face ID, Touch ID, Windows Hello) or security keys via the WebAuthn standard. The SDK supports three flows:
+
+1. **Signup** — Register a new user with a passkey
+2. **Login** — Authenticate an existing user with a passkey
+3. **Enrollment** — Add a passkey to an already-authenticated user's account
+
+- [Signup with Passkey](#signup-with-passkey)
+- [Login with Passkey](#login-with-passkey)
+- [Passkey Enrollment (Authenticated Users)](#passkey-enrollment-authenticated-users)
+- [Credential Serialization Helper](#credential-serialization-helper)
+- [Complete Passkey Flow Example](#complete-passkey-flow-example)
+- [Error Handling](#passkey-error-handling)
+
+### Setup
+
+Before using passkeys, enable the Database Connection with passkey support in your [Auth0 Dashboard](https://manage.auth0.com) under **Authentication** > **Database** > your connection > **Authentication Methods** > **Passkey**.
+
+### Signup with Passkey
+
+Register a new user by requesting a signup challenge, creating a credential with the browser's WebAuthn API, then exchanging it for tokens.
+
+```js
+import { createAuth0Client } from '@auth0/auth0-spa-js';
+
+const auth0 = await createAuth0Client({
+  domain: '<AUTH0_DOMAIN>',
+  clientId: '<AUTH0_CLIENT_ID>',
+  authorizationParams: {
+    redirect_uri: '<MY_CALLBACK_URL>'
+  }
+});
+
+// 1. Request a signup challenge
+const challenge = await auth0.passkey.signupChallenge({
+  email: 'user@example.com',
+  name: 'Jane Doe' // optional display name
+});
+
+// 2. Create the credential using the browser WebAuthn API
+const credential = await navigator.credentials.create({
+  publicKey: challenge.authnParamsPublicKey
+});
+
+// 3. Exchange the credential for tokens (session is established automatically)
+const tokens = await auth0.passkey.signinWithPasskey({
+  authSession: challenge.authSession,
+  credential: serializeCredential(credential)
+});
+
+// User is now logged in — getUser() works immediately
+const user = await auth0.getUser();
+console.log('Signed up:', user);
+```
+
+> [!NOTE] > `signinWithPasskey()` caches tokens and establishes a session automatically, just like `loginWithRedirect()`. After calling it, `isAuthenticated()`, `getUser()`, and `getTokenSilently()` all work as expected.
+
+### Login with Passkey
+
+Authenticate an existing user with their registered passkey.
+
+```js
+// 1. Request a login challenge
+const challenge = await auth0.passkey.loginChallenge();
+
+// 2. Get the credential using the browser WebAuthn API
+const credential = await navigator.credentials.get({
+  publicKey: challenge.authnParamsPublicKey
+});
+
+// 3. Exchange the credential for tokens
+const tokens = await auth0.passkey.signinWithPasskey({
+  authSession: challenge.authSession,
+  credential: serializeCredential(credential)
+});
+
+const user = await auth0.getUser();
+console.log('Logged in:', user);
+```
+
+#### Specifying a Realm
+
+If your tenant has multiple database connections with passkeys enabled, specify the `realm`:
+
+```js
+const challenge = await auth0.passkey.loginChallenge({
+  realm: 'Username-Password-Authentication'
+});
+```
+
+### Passkey Enrollment (Authenticated Users)
+
+Allow an already-authenticated user to add a passkey to their account. This uses the My Account API and requires a valid access token.
+
+```js
+// User must already be logged in
+const isAuthenticated = await auth0.isAuthenticated();
+
+if (isAuthenticated) {
+  // 1. Request an enrollment challenge
+  const enrollment = await auth0.passkey.enrollmentChallenge();
+
+  // 2. Create the credential
+  const credential = await navigator.credentials.create({
+    publicKey: enrollment.authnParamsPublicKey
+  });
+
+  // 3. Verify the enrollment
+  await auth0.passkey.enrollmentVerify({
+    authSession: enrollment.authSession,
+    credential: serializeCredential(credential)
+  });
+
+  console.log('Passkey enrolled successfully');
+}
+```
+
+#### Enrollment Options
+
+```js
+// Specify a connection or identity for multi-identity users
+const enrollment = await auth0.passkey.enrollmentChallenge({
+  connection: 'Username-Password-Authentication',
+  identity: 'auth0|user123'
+});
+```
+
+### Credential Serialization Helper
+
+The WebAuthn API returns `ArrayBuffer` values that must be serialized to base64url strings before sending to Auth0. Here's a helper function:
+
+```js
+function serializeCredential(credential) {
+  const response = {};
+
+  if (credential.response.attestationObject) {
+    response.attestationObject = bufferToBase64Url(
+      credential.response.attestationObject
+    );
+  }
+  if (credential.response.authenticatorData) {
+    response.authenticatorData = bufferToBase64Url(
+      credential.response.authenticatorData
+    );
+  }
+  if (credential.response.signature) {
+    response.signature = bufferToBase64Url(credential.response.signature);
+  }
+  if (credential.response.userHandle) {
+    response.userHandle = bufferToBase64Url(credential.response.userHandle);
+  }
+
+  response.clientDataJSON = bufferToBase64Url(
+    credential.response.clientDataJSON
+  );
+
+  return {
+    id: credential.id,
+    rawId: bufferToBase64Url(credential.rawId),
+    type: credential.type,
+    authenticatorAttachment: credential.authenticatorAttachment,
+    response,
+    clientExtensionResults: credential.getClientExtensionResults()
+  };
+}
+
+function bufferToBase64Url(buffer) {
+  const bytes = new Uint8Array(buffer);
+  let binary = '';
+  for (let i = 0; i < bytes.byteLength; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return btoa(binary)
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/, '');
+}
+```
+
+### Complete Passkey Flow Example
+
+A full example implementing signup, login, and enrollment with proper error handling:
+
+```js
+import { createAuth0Client } from '@auth0/auth0-spa-js';
+import {
+  PasskeyEnrollmentError,
+  PasskeyEnrollmentVerifyError
+} from '@auth0/auth0-spa-js';
+
+const auth0 = await createAuth0Client({
+  domain: '<AUTH0_DOMAIN>',
+  clientId: '<AUTH0_CLIENT_ID>',
+  authorizationParams: {
+    redirect_uri: '<MY_CALLBACK_URL>'
+  }
+});
+
+// --- Signup ---
+async function signupWithPasskey(email, displayName) {
+  const challenge = await auth0.passkey.signupChallenge({
+    email,
+    name: displayName
+  });
+
+  const credential = await navigator.credentials.create({
+    publicKey: challenge.authnParamsPublicKey
+  });
+
+  if (!credential) {
+    throw new Error('User cancelled the credential creation');
+  }
+
+  await auth0.passkey.signinWithPasskey({
+    authSession: challenge.authSession,
+    credential: serializeCredential(credential)
+  });
+
+  return await auth0.getUser();
+}
+
+// --- Login ---
+async function loginWithPasskey() {
+  const challenge = await auth0.passkey.loginChallenge();
+
+  const credential = await navigator.credentials.get({
+    publicKey: challenge.authnParamsPublicKey
+  });
+
+  if (!credential) {
+    throw new Error('User cancelled the credential request');
+  }
+
+  await auth0.passkey.signinWithPasskey({
+    authSession: challenge.authSession,
+    credential: serializeCredential(credential)
+  });
+
+  return await auth0.getUser();
+}
+
+// --- Enrollment ---
+async function enrollPasskey() {
+  const enrollment = await auth0.passkey.enrollmentChallenge();
+
+  const credential = await navigator.credentials.create({
+    publicKey: enrollment.authnParamsPublicKey
+  });
+
+  if (!credential) {
+    throw new Error('User cancelled the credential creation');
+  }
+
+  await auth0.passkey.enrollmentVerify({
+    authSession: enrollment.authSession,
+    credential: serializeCredential(credential)
+  });
+}
+```
+
+### Passkey Error Handling
+
+```js
+import {
+  PasskeyEnrollmentError,
+  PasskeyEnrollmentVerifyError
+} from '@auth0/auth0-spa-js';
+
+try {
+  await auth0.passkey.enrollmentChallenge();
+} catch (error) {
+  if (error instanceof PasskeyEnrollmentError) {
+    console.error('Enrollment failed:', error.message);
+    console.error('Error code:', error.code);
+    console.error('API details:', error.cause);
+  }
+}
+
+try {
+  await auth0.passkey.enrollmentVerify({ authSession, credential });
+} catch (error) {
+  if (error instanceof PasskeyEnrollmentVerifyError) {
+    console.error('Verification failed:', error.message);
+    console.error('API details:', error.cause);
+  }
+}
+```
+
+> [!TIP]
+> For signup and login challenge errors, the SDK propagates the underlying network or API errors directly. Wrap challenge calls in try/catch to handle cases like network failures or misconfigured connections.
+
+> [!IMPORTANT]
+> The WebAuthn API (`navigator.credentials.create()` / `navigator.credentials.get()`) may return `null` if the user cancels the biometric prompt. Always check for `null` before calling `signinWithPasskey()`.
+
 ## Multi-Factor Authentication (MFA)
 
 The MFA API allows you to manage multi-factor authentication for users. The SDK automatically handles MFA context, eliminating the need for manual parsing of error payloads.
+
 > [!NOTE]
 > Multi Factor Authentication support via SDKs is currently in Early Access. To request access to this feature, contact your Auth0 representative.
-
 
 - [Understanding the MFA Response](#understanding-the-mfa-response)
 - [Handling MFA required errors](#handling-mfa-required-errors)
@@ -1011,7 +1306,6 @@ try {
   await auth0.getTokenSilently();
 } catch (error) {
   if (error instanceof MfaRequiredError) {
-
     // Check if enrollment is required
     const enrollmentFactors = await auth0.mfa.getEnrollmentFactors(error.mfa_token);
 
