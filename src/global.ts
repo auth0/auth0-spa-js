@@ -313,6 +313,21 @@ export interface Auth0ClientOptions {
   useDpop?: boolean;
 
   /**
+   * If `true`, the SDK will use Online Refresh Tokens (ORT) for silent token refresh.
+   * ORTs are session-bound and terminate when the Auth0 web session ends, making them
+   * suitable for session-aware SPA clients that also require DPoP token binding.
+   *
+   * Setting `useOrt: true` implicitly enables `useRefreshTokens: true` and `useDpop: true`.
+   * Callers must not explicitly set `useRefreshTokens: false` or `useDpop: false` when
+   * `useOrt: true` — the SDK will throw an error if conflicting flags are provided.
+   *
+   * The default setting is `false`.
+   *
+   * @see https://www.rfc-editor.org/rfc/rfc9449.html
+   */
+  useOrt?: boolean;
+
+  /**
    * Configures automatic handling of interactive authentication errors.
    *
    * When set, the SDK intercepts `mfa_required` errors from `getTokenSilently()`
@@ -767,6 +782,7 @@ export interface TokenEndpointOptions {
   timeout?: number;
   auth0Client: any;
   useFormData?: boolean;
+  useOrt?: boolean;
   dpop?: Pick<Dpop, 'generateProof' | 'getNonce' | 'setNonce'>;
   [key: string]: any;
 }

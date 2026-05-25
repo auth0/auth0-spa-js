@@ -3,6 +3,7 @@ import { FetchOptions } from '../global';
 export type WorkerInitMessage = {
   type: 'init';
   allowedBaseUrl: string;
+  useOrt?: boolean; // ORT flag passed at initialization
 };
 
 type WorkerTokenMessage = {
