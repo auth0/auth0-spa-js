@@ -6,7 +6,6 @@ import type {
   PasskeySignupChallengeResponse,
   PasskeyLoginChallengeOptions,
   PasskeyLoginChallengeResponse,
-  PasskeyCredentialResponse,
   SigninWithPasskeyOptions,
   PasskeyEnrollmentOptions,
   PasskeyEnrollmentResponse,
