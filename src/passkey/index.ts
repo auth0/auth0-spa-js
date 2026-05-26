@@ -11,7 +11,6 @@ export type {
   PasskeyLoginChallengeOptions,
   PasskeyLoginChallengeResponse,
   PasskeyCredentialResponse,
-  GetTokenByPasskeyOptions,
   PasskeyCreationOptions,
   PasskeyRequestOptions,
   PasskeySignupOptions,

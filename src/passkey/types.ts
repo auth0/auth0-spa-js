@@ -4,7 +4,6 @@ import type {
   PasskeyLoginChallengeOptions,
   PasskeyLoginChallengeResponse,
   PasskeyCredentialResponse,
-  GetTokenByPasskeyOptions,
   PasskeyCreationOptions,
   PasskeyRequestOptions
 } from '@auth0/auth0-auth-js';
@@ -15,7 +14,6 @@ export type {
   PasskeyLoginChallengeOptions,
   PasskeyLoginChallengeResponse,
   PasskeyCredentialResponse,
-  GetTokenByPasskeyOptions,
   PasskeyCreationOptions,
   PasskeyRequestOptions
 };

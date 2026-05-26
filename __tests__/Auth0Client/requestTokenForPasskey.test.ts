@@ -12,8 +12,6 @@ import {
   TEST_REFRESH_TOKEN
 } from '../constants';
 
-import { Auth0ClientOptions } from '../../src';
-
 jest.mock('es-cookie');
 jest.mock('../../src/jwt');
 jest.mock('../../src/worker/token.worker');
