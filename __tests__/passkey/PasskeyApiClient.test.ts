@@ -155,10 +155,50 @@ describe('PasskeyApiClient', () => {
           })
         }),
         realm: undefined,
+        organization: undefined,
         scope: undefined,
         audience: undefined
       });
       expect(result).toEqual(mockTokenResponse);
+    });
+
+    it('should pass organization to both challenge and token exchange', async () => {
+      const challengeResponse = {
+        authSession: TEST_AUTH_SESSION,
+        authnParamsPublicKey: {
+          challenge: 'Y2hhbGxlbmdl',
+          rp: { id: 'example.auth0.com', name: 'Example' },
+          user: { id: 'dXNlci0x', name: 'user@example.com', displayName: 'User' },
+          pubKeyCredParams: [{ type: 'public-key', alg: -7 }]
+        }
+      };
+      mockPasskeyClient.register.mockResolvedValue(challengeResponse);
+
+      Object.defineProperty(global.navigator, 'credentials', {
+        value: { create: jest.fn().mockResolvedValue(createMockPublicKeyCredential('create')) },
+        configurable: true
+      });
+
+      mockAuth0Client._requestTokenForPasskey.mockResolvedValue({
+        access_token: 'at_123',
+        token_type: 'Bearer',
+        expires_in: 86400
+      });
+
+      await passkeyClient.signup({
+        email: 'user@example.com',
+        organization: 'org_abc123'
+      });
+
+      expect(mockPasskeyClient.register).toHaveBeenCalledWith({
+        email: 'user@example.com',
+        organization: 'org_abc123'
+      });
+      expect(mockAuth0Client._requestTokenForPasskey).toHaveBeenCalledWith(
+        expect.objectContaining({
+          organization: 'org_abc123'
+        })
+      );
     });
 
     it('should pass scope and audience to token exchange', async () => {
@@ -370,10 +410,44 @@ describe('PasskeyApiClient', () => {
           })
         }),
         realm: undefined,
+        organization: undefined,
         scope: undefined,
         audience: undefined
       });
       expect(result).toEqual(mockTokenResponse);
+    });
+
+    it('should pass organization to both challenge and token exchange', async () => {
+      const challengeResponse = {
+        authSession: TEST_AUTH_SESSION,
+        authnParamsPublicKey: {
+          challenge: 'Y2hhbGxlbmdl',
+          rpId: 'example.auth0.com'
+        }
+      };
+      mockPasskeyClient.challenge.mockResolvedValue(challengeResponse);
+
+      Object.defineProperty(global.navigator, 'credentials', {
+        value: { get: jest.fn().mockResolvedValue(createMockPublicKeyCredential('get')) },
+        configurable: true
+      });
+
+      mockAuth0Client._requestTokenForPasskey.mockResolvedValue({
+        access_token: 'at_123',
+        token_type: 'Bearer',
+        expires_in: 86400
+      });
+
+      await passkeyClient.login({ organization: 'org_abc123' });
+
+      expect(mockPasskeyClient.challenge).toHaveBeenCalledWith({
+        organization: 'org_abc123'
+      });
+      expect(mockAuth0Client._requestTokenForPasskey).toHaveBeenCalledWith(
+        expect.objectContaining({
+          organization: 'org_abc123'
+        })
+      );
     });
 
     it('should pass realm option to challenge and token exchange', async () => {

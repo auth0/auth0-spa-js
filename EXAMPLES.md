@@ -1005,6 +1005,17 @@ const tokens = await auth0.passkey.signup({
 });
 ```
 
+#### Organization-Scoped Signup
+
+To register a user within an organization context:
+
+```js
+const tokens = await auth0.passkey.signup({
+  email: 'user@example.com',
+  organization: 'org_abc123'
+});
+```
+
 > [!NOTE]
 > `passkey.signup()` and `passkey.login()` cache tokens and establish a session automatically, just like `loginWithRedirect()`. After calling them, `isAuthenticated()`, `getUser()`, and `getTokenSilently()` all work as expected.
 >
@@ -1028,6 +1039,16 @@ If your tenant has multiple database connections with passkeys enabled, specify 
 ```js
 const tokens = await auth0.passkey.login({
   realm: 'Username-Password-Authentication'
+});
+```
+
+#### Organization-Scoped Login
+
+To authenticate within an organization context:
+
+```js
+const tokens = await auth0.passkey.login({
+  organization: 'org_abc123'
 });
 ```
 

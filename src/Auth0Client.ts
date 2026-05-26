@@ -2044,14 +2044,17 @@ export class Auth0Client {
       realm?: string;
       scope?: string;
       audience?: string;
+      organization?: string;
     }
   ): Promise<TokenEndpointResponse> {
     const audience = options.audience || this.options.authorizationParams.audience;
+    const organization = options.organization || this.options.authorizationParams.organization;
     return this._requestToken({
       grant_type: 'urn:okta:params:oauth:grant-type:webauthn',
       auth_session: options.authSession,
       authn_response: options.credential,
       ...(options.realm && { realm: options.realm }),
+      ...(organization && { organization }),
       scope: scopesToRequest(this.scope, options.scope, audience),
       audience,
     });

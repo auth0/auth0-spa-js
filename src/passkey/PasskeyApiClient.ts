@@ -91,6 +91,7 @@ export class PasskeyApiClient {
       authSession: challenge.authSession,
       credential: serialized,
       realm: challengeOptions.realm,
+      organization: challengeOptions.organization,
       scope,
       audience
     });
@@ -135,6 +136,7 @@ export class PasskeyApiClient {
       authSession: challenge.authSession,
       credential: serialized,
       realm: challengeOptions.realm,
+      organization: challengeOptions.organization,
       scope,
       audience
     });
