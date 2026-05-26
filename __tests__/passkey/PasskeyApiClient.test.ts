@@ -537,42 +537,6 @@ describe('PasskeyApiClient', () => {
       await expect(passkeyClient.login()).rejects.toThrow('Token exchange failed');
     });
 
-    it('should convert allowCredentials IDs from base64url to ArrayBuffer', async () => {
-      const challengeResponse = {
-        authSession: TEST_AUTH_SESSION,
-        authnParamsPublicKey: {
-          challenge: 'Y2hhbGxlbmdl',
-          rpId: 'example.auth0.com',
-          allowCredentials: [
-            { id: 'Y3JlZC0x', type: 'public-key', transports: ['internal'] },
-            { id: 'Y3JlZC0y', type: 'public-key', transports: ['usb'] }
-          ]
-        }
-      };
-      mockPasskeyClient.challenge.mockResolvedValue(challengeResponse);
-
-      const mockCredential = createMockPublicKeyCredential('get');
-      Object.defineProperty(global.navigator, 'credentials', {
-        value: { get: jest.fn().mockResolvedValue(mockCredential) },
-        configurable: true
-      });
-
-      mockAuth0Client._requestTokenForPasskey.mockResolvedValue({
-        access_token: 'at_123',
-        token_type: 'Bearer',
-        expires_in: 86400
-      });
-
-      await passkeyClient.login();
-
-      const getCall = (navigator.credentials.get as jest.Mock).mock.calls[0][0];
-      expect(getCall.publicKey.allowCredentials).toHaveLength(2);
-      expect(getCall.publicKey.allowCredentials[0].id).toBeInstanceOf(ArrayBuffer);
-      expect(getCall.publicKey.allowCredentials[0].type).toBe('public-key');
-      expect(getCall.publicKey.allowCredentials[0].transports).toEqual(['internal']);
-      expect(getCall.publicKey.allowCredentials[1].id).toBeInstanceOf(ArrayBuffer);
-    });
-
     it('should serialize assertion credential with base64url encoding', async () => {
       const challengeResponse = {
         authSession: TEST_AUTH_SESSION,

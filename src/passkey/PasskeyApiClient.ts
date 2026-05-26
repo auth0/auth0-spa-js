@@ -282,20 +282,10 @@ function prepareCreationOptions(
 function prepareRequestOptions(
   publicKey: PasskeyRequestOptions
 ): PublicKeyCredentialRequestOptions {
-  const { allowCredentials, ...rest } = publicKey;
-  const opts = {
-    ...rest,
+  return {
+    ...publicKey,
     challenge: base64urlToBuffer(publicKey.challenge)
   } as unknown as PublicKeyCredentialRequestOptions;
-  if (allowCredentials && allowCredentials.length > 0) {
-    opts.allowCredentials = allowCredentials.map((c) => ({
-      ...c,
-      id: base64urlToBuffer(c.id),
-      type: c.type as 'public-key',
-      transports: c.transports as AuthenticatorTransport[] | undefined
-    }));
-  }
-  return opts;
 }
 
 function serializeCreationCredential(
