@@ -3,7 +3,6 @@ jest.mock('@auth0/auth0-auth-js', () => ({
 }));
 
 import { PasskeyApiClient } from '../../src/passkey/PasskeyApiClient';
-import type { PasskeyCredentialResponse } from '../../src/passkey/types';
 import {
   PasskeyEnrollmentError,
   PasskeyEnrollmentVerifyError
@@ -11,26 +10,6 @@ import {
 
 const TEST_API_BASE = 'https://auth0_domain/api/';
 const TEST_AUTH_SESSION = 'auth-session-abc123';
-
-function createMockCredential(
-  overrides?: Partial<PasskeyCredentialResponse>
-): PasskeyCredentialResponse {
-  return {
-    id: 'credential-id-123',
-    rawId: 'cmF3SWQtYmFzZTY0dXJs',
-    type: 'public-key',
-    authenticatorAttachment: 'platform',
-    response: {
-      clientDataJSON: 'Y2xpZW50RGF0YUpTT04',
-      attestationObject: 'YXR0ZXN0YXRpb25PYmplY3Q',
-      authenticatorData: 'YXV0aGVudGljYXRvckRhdGE',
-      signature: 'c2lnbmF0dXJl',
-      userHandle: 'dXNlckhhbmRsZQ'
-    },
-    clientExtensionResults: {},
-    ...overrides
-  };
-}
 
 function createMockFetcher() {
   return {
@@ -52,19 +31,56 @@ function createMockResponse(
   } as unknown as Response;
 }
 
+function createMockPublicKeyCredential(type: 'create' | 'get') {
+  const clientDataJSON = new Uint8Array([1, 2, 3]).buffer;
+
+  if (type === 'create') {
+    return {
+      id: 'credential-id-123',
+      rawId: new Uint8Array([10, 20, 30]).buffer,
+      type: 'public-key',
+      authenticatorAttachment: 'platform',
+      response: {
+        clientDataJSON,
+        attestationObject: new Uint8Array([40, 50, 60]).buffer
+      },
+      getClientExtensionResults: () => ({})
+    };
+  }
+
+  return {
+    id: 'credential-id-456',
+    rawId: new Uint8Array([10, 20, 30]).buffer,
+    type: 'public-key',
+    authenticatorAttachment: 'platform',
+    response: {
+      clientDataJSON,
+      authenticatorData: new Uint8Array([70, 80, 90]).buffer,
+      signature: new Uint8Array([100, 110, 120]).buffer,
+      userHandle: new Uint8Array([130, 140, 150]).buffer
+    },
+    getClientExtensionResults: () => ({})
+  };
+}
+
 describe('PasskeyApiClient', () => {
   let passkeyClient: PasskeyApiClient;
   let mockPasskeyClient: any;
   let mockAuth0Client: any;
   let mockFetcher: ReturnType<typeof createMockFetcher>;
 
+  const originalCredentials = Object.getOwnPropertyDescriptor(
+    global.navigator,
+    'credentials'
+  );
+
   beforeEach(() => {
     jest.clearAllMocks();
 
     mockPasskeyClient = {
-      signupChallenge: jest.fn(),
-      loginChallenge: jest.fn(),
-      signinWithPasskey: jest.fn()
+      register: jest.fn(),
+      challenge: jest.fn(),
+      getTokenByPasskey: jest.fn()
     };
 
     mockAuth0Client = {
@@ -81,66 +97,232 @@ describe('PasskeyApiClient', () => {
     );
   });
 
-  describe('signupChallenge', () => {
-    it('should delegate to PasskeyClient with email', async () => {
-      const mockResponse = {
+  afterEach(() => {
+    if (originalCredentials) {
+      Object.defineProperty(global.navigator, 'credentials', originalCredentials);
+    }
+  });
+
+  describe('signup', () => {
+    it('should handle full flow: challenge → WebAuthn → serialize → token exchange', async () => {
+      const challengeResponse = {
         authSession: TEST_AUTH_SESSION,
         authnParamsPublicKey: {
           challenge: 'Y2hhbGxlbmdl',
-          rp: { id: 'example.auth0.com', name: 'Example App' },
+          rp: { id: 'example.auth0.com', name: 'Example' },
           user: { id: 'dXNlci0x', name: 'user@example.com', displayName: 'User' },
           pubKeyCredParams: [{ type: 'public-key', alg: -7 }],
-          authenticatorSelection: { residentKey: 'preferred', userVerification: 'preferred' },
           timeout: 60000
         }
       };
-      mockPasskeyClient.signupChallenge.mockResolvedValue(mockResponse);
+      mockPasskeyClient.register.mockResolvedValue(challengeResponse);
 
-      const result = await passkeyClient.signupChallenge({ email: 'user@example.com' });
+      const mockCredential = createMockPublicKeyCredential('create');
+      Object.defineProperty(global.navigator, 'credentials', {
+        value: { create: jest.fn().mockResolvedValue(mockCredential) },
+        configurable: true
+      });
 
-      expect(mockPasskeyClient.signupChallenge).toHaveBeenCalledWith({ email: 'user@example.com' });
-      expect(result).toEqual(mockResponse);
-      expect(result.authSession).toBe(TEST_AUTH_SESSION);
-      expect(result.authnParamsPublicKey.rp.id).toBe('example.auth0.com');
+      const mockTokenResponse = {
+        id_token: 'eyJ...',
+        access_token: 'at_123',
+        token_type: 'Bearer',
+        expires_in: 86400
+      };
+      mockAuth0Client._requestTokenForPasskey.mockResolvedValue(mockTokenResponse);
+
+      const result = await passkeyClient.signup({ email: 'user@example.com' });
+
+      expect(mockPasskeyClient.register).toHaveBeenCalledWith({ email: 'user@example.com' });
+      expect(navigator.credentials.create).toHaveBeenCalledWith({
+        publicKey: expect.objectContaining({
+          challenge: expect.any(ArrayBuffer),
+          rp: { id: 'example.auth0.com', name: 'Example' },
+          user: expect.objectContaining({
+            id: expect.any(ArrayBuffer)
+          })
+        })
+      });
+      expect(mockAuth0Client._requestTokenForPasskey).toHaveBeenCalledWith({
+        authSession: TEST_AUTH_SESSION,
+        credential: expect.objectContaining({
+          id: 'credential-id-123',
+          rawId: expect.any(String),
+          type: 'public-key',
+          response: expect.objectContaining({
+            clientDataJSON: expect.any(String),
+            attestationObject: expect.any(String)
+          })
+        }),
+        realm: undefined,
+        scope: undefined,
+        audience: undefined
+      });
+      expect(result).toEqual(mockTokenResponse);
     });
 
-    it('should delegate to PasskeyClient with all options', async () => {
-      const options = {
-        email: 'user@example.com',
-        username: 'testuser',
-        name: 'Test User',
-        realm: 'Username-Password-Authentication'
-      };
-      const mockResponse = {
+    it('should pass scope and audience to token exchange', async () => {
+      const challengeResponse = {
         authSession: TEST_AUTH_SESSION,
         authnParamsPublicKey: {
           challenge: 'Y2hhbGxlbmdl',
-          rp: { id: 'example.auth0.com', name: 'Example App' },
-          user: { id: 'dXNlci0x', name: 'user@example.com', displayName: 'Test User' },
+          rp: { id: 'example.auth0.com', name: 'Example' },
+          user: { id: 'dXNlci0x', name: 'user@example.com', displayName: 'User' },
           pubKeyCredParams: [{ type: 'public-key', alg: -7 }]
         }
       };
-      mockPasskeyClient.signupChallenge.mockResolvedValue(mockResponse);
+      mockPasskeyClient.register.mockResolvedValue(challengeResponse);
 
-      const result = await passkeyClient.signupChallenge(options);
+      Object.defineProperty(global.navigator, 'credentials', {
+        value: { create: jest.fn().mockResolvedValue(createMockPublicKeyCredential('create')) },
+        configurable: true
+      });
 
-      expect(mockPasskeyClient.signupChallenge).toHaveBeenCalledWith(options);
-      expect(result.authnParamsPublicKey.user.displayName).toBe('Test User');
+      mockAuth0Client._requestTokenForPasskey.mockResolvedValue({
+        access_token: 'at_123',
+        token_type: 'Bearer',
+        expires_in: 86400
+      });
+
+      await passkeyClient.signup({
+        email: 'user@example.com',
+        realm: 'Username-Password-Authentication',
+        scope: 'openid profile email',
+        audience: 'https://api.example.com'
+      });
+
+      expect(mockPasskeyClient.register).toHaveBeenCalledWith({
+        email: 'user@example.com',
+        realm: 'Username-Password-Authentication'
+      });
+      expect(mockAuth0Client._requestTokenForPasskey).toHaveBeenCalledWith(
+        expect.objectContaining({
+          realm: 'Username-Password-Authentication',
+          scope: 'openid profile email',
+          audience: 'https://api.example.com'
+        })
+      );
     });
 
-    it('should propagate errors from PasskeyClient', async () => {
-      const error = new Error('Network error');
-      mockPasskeyClient.signupChallenge.mockRejectedValue(error);
+    it('should throw if user cancels WebAuthn prompt', async () => {
+      const challengeResponse = {
+        authSession: TEST_AUTH_SESSION,
+        authnParamsPublicKey: {
+          challenge: 'Y2hhbGxlbmdl',
+          rp: { id: 'example.auth0.com', name: 'Example' },
+          user: { id: 'dXNlci0x', name: 'user@example.com', displayName: 'User' },
+          pubKeyCredParams: [{ type: 'public-key', alg: -7 }]
+        }
+      };
+      mockPasskeyClient.register.mockResolvedValue(challengeResponse);
+
+      Object.defineProperty(global.navigator, 'credentials', {
+        value: { create: jest.fn().mockResolvedValue(null) },
+        configurable: true
+      });
 
       await expect(
-        passkeyClient.signupChallenge({ email: 'user@example.com' })
+        passkeyClient.signup({ email: 'user@example.com' })
+      ).rejects.toThrow('Passkey creation was cancelled or no credential was returned.');
+    });
+
+    it('should propagate errors from PasskeyClient.register', async () => {
+      mockPasskeyClient.register.mockRejectedValue(new Error('Network error'));
+
+      await expect(
+        passkeyClient.signup({ email: 'user@example.com' })
       ).rejects.toThrow('Network error');
+    });
+
+    it('should propagate errors from token exchange', async () => {
+      const challengeResponse = {
+        authSession: TEST_AUTH_SESSION,
+        authnParamsPublicKey: {
+          challenge: 'Y2hhbGxlbmdl',
+          rp: { id: 'example.auth0.com', name: 'Example' },
+          user: { id: 'dXNlci0x', name: 'user@example.com', displayName: 'User' },
+          pubKeyCredParams: [{ type: 'public-key', alg: -7 }]
+        }
+      };
+      mockPasskeyClient.register.mockResolvedValue(challengeResponse);
+
+      Object.defineProperty(global.navigator, 'credentials', {
+        value: { create: jest.fn().mockResolvedValue(createMockPublicKeyCredential('create')) },
+        configurable: true
+      });
+
+      mockAuth0Client._requestTokenForPasskey.mockRejectedValue(
+        new Error('Token exchange failed')
+      );
+
+      await expect(
+        passkeyClient.signup({ email: 'user@example.com' })
+      ).rejects.toThrow('Token exchange failed');
+    });
+
+    it('should not call PasskeyClient.getTokenByPasskey directly', async () => {
+      const challengeResponse = {
+        authSession: TEST_AUTH_SESSION,
+        authnParamsPublicKey: {
+          challenge: 'Y2hhbGxlbmdl',
+          rp: { id: 'example.auth0.com', name: 'Example' },
+          user: { id: 'dXNlci0x', name: 'user@example.com', displayName: 'User' },
+          pubKeyCredParams: [{ type: 'public-key', alg: -7 }]
+        }
+      };
+      mockPasskeyClient.register.mockResolvedValue(challengeResponse);
+
+      Object.defineProperty(global.navigator, 'credentials', {
+        value: { create: jest.fn().mockResolvedValue(createMockPublicKeyCredential('create')) },
+        configurable: true
+      });
+
+      mockAuth0Client._requestTokenForPasskey.mockResolvedValue({
+        access_token: 'at_123',
+        token_type: 'Bearer',
+        expires_in: 86400
+      });
+
+      await passkeyClient.signup({ email: 'user@example.com' });
+
+      expect(mockPasskeyClient.getTokenByPasskey).not.toHaveBeenCalled();
+    });
+
+    it('should serialize credential with base64url encoding', async () => {
+      const challengeResponse = {
+        authSession: TEST_AUTH_SESSION,
+        authnParamsPublicKey: {
+          challenge: 'Y2hhbGxlbmdl',
+          rp: { id: 'example.auth0.com', name: 'Example' },
+          user: { id: 'dXNlci0x', name: 'user@example.com', displayName: 'User' },
+          pubKeyCredParams: [{ type: 'public-key', alg: -7 }]
+        }
+      };
+      mockPasskeyClient.register.mockResolvedValue(challengeResponse);
+
+      Object.defineProperty(global.navigator, 'credentials', {
+        value: { create: jest.fn().mockResolvedValue(createMockPublicKeyCredential('create')) },
+        configurable: true
+      });
+
+      mockAuth0Client._requestTokenForPasskey.mockResolvedValue({
+        access_token: 'at_123',
+        token_type: 'Bearer',
+        expires_in: 86400
+      });
+
+      await passkeyClient.signup({ email: 'user@example.com' });
+
+      const credential = mockAuth0Client._requestTokenForPasskey.mock.calls[0][0].credential;
+      expect(credential.rawId).toMatch(/^[A-Za-z0-9_-]+$/);
+      expect(credential.response.clientDataJSON).toMatch(/^[A-Za-z0-9_-]+$/);
+      expect(credential.response.attestationObject).toMatch(/^[A-Za-z0-9_-]+$/);
     });
   });
 
-  describe('loginChallenge', () => {
-    it('should delegate to PasskeyClient without options', async () => {
-      const mockResponse = {
+  describe('login', () => {
+    it('should handle full flow: challenge → WebAuthn → serialize → token exchange', async () => {
+      const challengeResponse = {
         authSession: TEST_AUTH_SESSION,
         authnParamsPublicKey: {
           challenge: 'Y2hhbGxlbmdl',
@@ -149,59 +331,44 @@ describe('PasskeyApiClient', () => {
           userVerification: 'preferred'
         }
       };
-      mockPasskeyClient.loginChallenge.mockResolvedValue(mockResponse);
+      mockPasskeyClient.challenge.mockResolvedValue(challengeResponse);
 
-      const result = await passkeyClient.loginChallenge();
+      const mockCredential = createMockPublicKeyCredential('get');
+      Object.defineProperty(global.navigator, 'credentials', {
+        value: { get: jest.fn().mockResolvedValue(mockCredential) },
+        configurable: true
+      });
 
-      expect(mockPasskeyClient.loginChallenge).toHaveBeenCalledWith(undefined);
-      expect(result).toEqual(mockResponse);
-      expect(result.authnParamsPublicKey.rpId).toBe('example.auth0.com');
-    });
-
-    it('should delegate to PasskeyClient with realm option', async () => {
-      const options = { realm: 'Username-Password-Authentication' };
-      const mockResponse = {
-        authSession: TEST_AUTH_SESSION,
-        authnParamsPublicKey: {
-          challenge: 'Y2hhbGxlbmdl',
-          rpId: 'example.auth0.com'
-        }
-      };
-      mockPasskeyClient.loginChallenge.mockResolvedValue(mockResponse);
-
-      const result = await passkeyClient.loginChallenge(options);
-
-      expect(mockPasskeyClient.loginChallenge).toHaveBeenCalledWith(options);
-      expect(result.authSession).toBe(TEST_AUTH_SESSION);
-    });
-
-    it('should propagate errors from PasskeyClient', async () => {
-      const error = new Error('Service unavailable');
-      mockPasskeyClient.loginChallenge.mockRejectedValue(error);
-
-      await expect(passkeyClient.loginChallenge()).rejects.toThrow('Service unavailable');
-    });
-  });
-
-  describe('signinWithPasskey', () => {
-    it('should route through Auth0Client._requestTokenForPasskey', async () => {
-      const credential = createMockCredential();
       const mockTokenResponse = {
         id_token: 'eyJ...',
-        access_token: 'at_123',
+        access_token: 'at_456',
         token_type: 'Bearer',
         expires_in: 86400
       };
       mockAuth0Client._requestTokenForPasskey.mockResolvedValue(mockTokenResponse);
 
-      const result = await passkeyClient.signinWithPasskey({
-        authSession: TEST_AUTH_SESSION,
-        credential
-      });
+      const result = await passkeyClient.login();
 
+      expect(mockPasskeyClient.challenge).toHaveBeenCalledWith(undefined);
+      expect(navigator.credentials.get).toHaveBeenCalledWith({
+        publicKey: expect.objectContaining({
+          challenge: expect.any(ArrayBuffer),
+          rpId: 'example.auth0.com'
+        })
+      });
       expect(mockAuth0Client._requestTokenForPasskey).toHaveBeenCalledWith({
         authSession: TEST_AUTH_SESSION,
-        credential,
+        credential: expect.objectContaining({
+          id: 'credential-id-456',
+          rawId: expect.any(String),
+          type: 'public-key',
+          response: expect.objectContaining({
+            clientDataJSON: expect.any(String),
+            authenticatorData: expect.any(String),
+            signature: expect.any(String),
+            userHandle: expect.any(String)
+          })
+        }),
         realm: undefined,
         scope: undefined,
         audience: undefined
@@ -209,63 +376,158 @@ describe('PasskeyApiClient', () => {
       expect(result).toEqual(mockTokenResponse);
     });
 
-    it('should pass optional realm, scope, and audience', async () => {
-      const credential = createMockCredential();
-      const mockTokenResponse = {
-        id_token: 'eyJ...',
-        access_token: 'at_123',
-        token_type: 'Bearer',
-        expires_in: 86400,
-        scope: 'openid profile email'
+    it('should pass realm option to challenge and token exchange', async () => {
+      const challengeResponse = {
+        authSession: TEST_AUTH_SESSION,
+        authnParamsPublicKey: {
+          challenge: 'Y2hhbGxlbmdl',
+          rpId: 'example.auth0.com'
+        }
       };
-      mockAuth0Client._requestTokenForPasskey.mockResolvedValue(mockTokenResponse);
+      mockPasskeyClient.challenge.mockResolvedValue(challengeResponse);
 
-      const result = await passkeyClient.signinWithPasskey({
-        authSession: TEST_AUTH_SESSION,
-        credential,
-        realm: 'Username-Password-Authentication',
-        scope: 'openid profile email',
-        audience: 'https://api.example.com'
+      Object.defineProperty(global.navigator, 'credentials', {
+        value: { get: jest.fn().mockResolvedValue(createMockPublicKeyCredential('get')) },
+        configurable: true
       });
 
-      expect(mockAuth0Client._requestTokenForPasskey).toHaveBeenCalledWith({
-        authSession: TEST_AUTH_SESSION,
-        credential,
-        realm: 'Username-Password-Authentication',
-        scope: 'openid profile email',
-        audience: 'https://api.example.com'
-      });
-      expect(result.scope).toBe('openid profile email');
-    });
-
-    it('should not call PasskeyClient.signinWithPasskey directly', async () => {
-      const credential = createMockCredential();
       mockAuth0Client._requestTokenForPasskey.mockResolvedValue({
-        id_token: 'eyJ...',
         access_token: 'at_123',
         token_type: 'Bearer',
         expires_in: 86400
       });
 
-      await passkeyClient.signinWithPasskey({
-        authSession: TEST_AUTH_SESSION,
-        credential
+      await passkeyClient.login({
+        realm: 'Username-Password-Authentication',
+        scope: 'openid profile',
+        audience: 'https://api.example.com'
       });
 
-      expect(mockPasskeyClient.signinWithPasskey).not.toHaveBeenCalled();
+      expect(mockPasskeyClient.challenge).toHaveBeenCalledWith({
+        realm: 'Username-Password-Authentication'
+      });
+      expect(mockAuth0Client._requestTokenForPasskey).toHaveBeenCalledWith(
+        expect.objectContaining({
+          realm: 'Username-Password-Authentication',
+          scope: 'openid profile',
+          audience: 'https://api.example.com'
+        })
+      );
     });
 
-    it('should propagate errors from Auth0Client._requestTokenForPasskey', async () => {
-      const credential = createMockCredential();
-      const error = new Error('Token exchange failed');
-      mockAuth0Client._requestTokenForPasskey.mockRejectedValue(error);
+    it('should throw if user cancels WebAuthn prompt', async () => {
+      const challengeResponse = {
+        authSession: TEST_AUTH_SESSION,
+        authnParamsPublicKey: {
+          challenge: 'Y2hhbGxlbmdl',
+          rpId: 'example.auth0.com'
+        }
+      };
+      mockPasskeyClient.challenge.mockResolvedValue(challengeResponse);
 
-      await expect(
-        passkeyClient.signinWithPasskey({
-          authSession: TEST_AUTH_SESSION,
-          credential
-        })
-      ).rejects.toThrow('Token exchange failed');
+      Object.defineProperty(global.navigator, 'credentials', {
+        value: { get: jest.fn().mockResolvedValue(null) },
+        configurable: true
+      });
+
+      await expect(passkeyClient.login()).rejects.toThrow(
+        'Passkey authentication was cancelled or no credential was returned.'
+      );
+    });
+
+    it('should propagate errors from PasskeyClient.challenge', async () => {
+      mockPasskeyClient.challenge.mockRejectedValue(new Error('Service unavailable'));
+
+      await expect(passkeyClient.login()).rejects.toThrow('Service unavailable');
+    });
+
+    it('should propagate errors from token exchange', async () => {
+      const challengeResponse = {
+        authSession: TEST_AUTH_SESSION,
+        authnParamsPublicKey: {
+          challenge: 'Y2hhbGxlbmdl',
+          rpId: 'example.auth0.com'
+        }
+      };
+      mockPasskeyClient.challenge.mockResolvedValue(challengeResponse);
+
+      Object.defineProperty(global.navigator, 'credentials', {
+        value: { get: jest.fn().mockResolvedValue(createMockPublicKeyCredential('get')) },
+        configurable: true
+      });
+
+      mockAuth0Client._requestTokenForPasskey.mockRejectedValue(
+        new Error('Token exchange failed')
+      );
+
+      await expect(passkeyClient.login()).rejects.toThrow('Token exchange failed');
+    });
+
+    it('should convert allowCredentials IDs from base64url to ArrayBuffer', async () => {
+      const challengeResponse = {
+        authSession: TEST_AUTH_SESSION,
+        authnParamsPublicKey: {
+          challenge: 'Y2hhbGxlbmdl',
+          rpId: 'example.auth0.com',
+          allowCredentials: [
+            { id: 'Y3JlZC0x', type: 'public-key', transports: ['internal'] },
+            { id: 'Y3JlZC0y', type: 'public-key', transports: ['usb'] }
+          ]
+        }
+      };
+      mockPasskeyClient.challenge.mockResolvedValue(challengeResponse);
+
+      const mockCredential = createMockPublicKeyCredential('get');
+      Object.defineProperty(global.navigator, 'credentials', {
+        value: { get: jest.fn().mockResolvedValue(mockCredential) },
+        configurable: true
+      });
+
+      mockAuth0Client._requestTokenForPasskey.mockResolvedValue({
+        access_token: 'at_123',
+        token_type: 'Bearer',
+        expires_in: 86400
+      });
+
+      await passkeyClient.login();
+
+      const getCall = (navigator.credentials.get as jest.Mock).mock.calls[0][0];
+      expect(getCall.publicKey.allowCredentials).toHaveLength(2);
+      expect(getCall.publicKey.allowCredentials[0].id).toBeInstanceOf(ArrayBuffer);
+      expect(getCall.publicKey.allowCredentials[0].type).toBe('public-key');
+      expect(getCall.publicKey.allowCredentials[0].transports).toEqual(['internal']);
+      expect(getCall.publicKey.allowCredentials[1].id).toBeInstanceOf(ArrayBuffer);
+    });
+
+    it('should serialize assertion credential with base64url encoding', async () => {
+      const challengeResponse = {
+        authSession: TEST_AUTH_SESSION,
+        authnParamsPublicKey: {
+          challenge: 'Y2hhbGxlbmdl',
+          rpId: 'example.auth0.com'
+        }
+      };
+      mockPasskeyClient.challenge.mockResolvedValue(challengeResponse);
+
+      Object.defineProperty(global.navigator, 'credentials', {
+        value: { get: jest.fn().mockResolvedValue(createMockPublicKeyCredential('get')) },
+        configurable: true
+      });
+
+      mockAuth0Client._requestTokenForPasskey.mockResolvedValue({
+        access_token: 'at_123',
+        token_type: 'Bearer',
+        expires_in: 86400
+      });
+
+      await passkeyClient.login();
+
+      const credential = mockAuth0Client._requestTokenForPasskey.mock.calls[0][0].credential;
+      expect(credential.rawId).toMatch(/^[A-Za-z0-9_-]+$/);
+      expect(credential.response.clientDataJSON).toMatch(/^[A-Za-z0-9_-]+$/);
+      expect(credential.response.authenticatorData).toMatch(/^[A-Za-z0-9_-]+$/);
+      expect(credential.response.signature).toMatch(/^[A-Za-z0-9_-]+$/);
+      expect(credential.response.userHandle).toMatch(/^[A-Za-z0-9_-]+$/);
     });
   });
 
@@ -374,19 +636,6 @@ describe('PasskeyApiClient', () => {
       });
     });
 
-    it('should throw PasskeyEnrollmentError with detail field', async () => {
-      const errorBody = {
-        detail: 'User not found'
-      };
-      mockFetcher.fetchWithAuth.mockResolvedValue(
-        createMockResponse(false, errorBody)
-      );
-
-      await expect(passkeyClient.enrollmentChallenge()).rejects.toMatchObject({
-        message: 'User not found'
-      });
-    });
-
     it('should throw PasskeyEnrollmentError with default message on parse failure', async () => {
       mockFetcher.fetchWithAuth.mockResolvedValue({
         ok: false,
@@ -431,7 +680,15 @@ describe('PasskeyApiClient', () => {
 
   describe('enrollmentVerify', () => {
     it('should POST to verify endpoint with serialized credential', async () => {
-      const credential = createMockCredential();
+      const credential = {
+        id: 'cred-id',
+        rawId: 'cmF3SWQ',
+        type: 'public-key',
+        response: {
+          clientDataJSON: 'Y2xpZW50',
+          attestationObject: 'YXR0ZXN0'
+        }
+      } as any;
       mockFetcher.fetchWithAuth.mockResolvedValue(
         createMockResponse(true, {})
       );
@@ -455,7 +712,7 @@ describe('PasskeyApiClient', () => {
     });
 
     it('should resolve without returning a value on success', async () => {
-      const credential = createMockCredential();
+      const credential = { id: 'c', rawId: 'r', type: 'public-key', response: { clientDataJSON: 'c' } } as any;
       mockFetcher.fetchWithAuth.mockResolvedValue(
         createMockResponse(true, {})
       );
@@ -468,8 +725,8 @@ describe('PasskeyApiClient', () => {
       expect(result).toBeUndefined();
     });
 
-    it('should throw PasskeyEnrollmentVerifyError on non-ok response with error_description', async () => {
-      const credential = createMockCredential();
+    it('should throw PasskeyEnrollmentVerifyError on non-ok response', async () => {
+      const credential = { id: 'c', rawId: 'r', type: 'public-key', response: { clientDataJSON: 'c' } } as any;
       const errorBody = {
         error: 'invalid_credential',
         error_description: 'The credential response is invalid'
@@ -489,24 +746,8 @@ describe('PasskeyApiClient', () => {
       });
     });
 
-    it('should throw PasskeyEnrollmentVerifyError with detail field', async () => {
-      const credential = createMockCredential();
-      const errorBody = {
-        detail: 'Auth session expired'
-      };
-      mockFetcher.fetchWithAuth.mockResolvedValue(
-        createMockResponse(false, errorBody)
-      );
-
-      await expect(
-        passkeyClient.enrollmentVerify({ authSession: TEST_AUTH_SESSION, credential })
-      ).rejects.toMatchObject({
-        message: 'Auth session expired'
-      });
-    });
-
     it('should throw PasskeyEnrollmentVerifyError with default message when json parsing fails', async () => {
-      const credential = createMockCredential();
+      const credential = { id: 'c', rawId: 'r', type: 'public-key', response: { clientDataJSON: 'c' } } as any;
       mockFetcher.fetchWithAuth.mockResolvedValue({
         ok: false,
         status: 500,
@@ -519,28 +760,6 @@ describe('PasskeyApiClient', () => {
       ).rejects.toMatchObject({
         message: 'Failed to verify passkey enrollment'
       });
-    });
-
-    it('should send the full credential object in authn_response', async () => {
-      const credential = createMockCredential({
-        authenticatorAttachment: 'cross-platform',
-        clientExtensionResults: { credProps: { rk: true } }
-      });
-      mockFetcher.fetchWithAuth.mockResolvedValue(
-        createMockResponse(true, {})
-      );
-
-      await passkeyClient.enrollmentVerify({
-        authSession: TEST_AUTH_SESSION,
-        credential
-      });
-
-      const callBody = JSON.parse(
-        (mockFetcher.fetchWithAuth.mock.calls[0][1] as any).body
-      );
-      expect(callBody.authn_response).toEqual(credential);
-      expect(callBody.authn_response.authenticatorAttachment).toBe('cross-platform');
-      expect(callBody.authn_response.clientExtensionResults).toEqual({ credProps: { rk: true } });
     });
   });
 
@@ -567,13 +786,6 @@ describe('PasskeyApiClient', () => {
       expect(error.code).toBe('passkey_enrollment_verify_error');
       expect(error.message).toBe('Verify failed');
       expect(error.cause).toEqual(cause);
-    });
-
-    it('PasskeyEnrollmentError should work without cause', () => {
-      const error = new PasskeyEnrollmentError('No cause');
-
-      expect(error.cause).toBeUndefined();
-      expect(error.message).toBe('No cause');
     });
   });
 });

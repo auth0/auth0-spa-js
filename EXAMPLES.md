@@ -927,9 +927,9 @@ This is useful when you need to:
 
 Passkeys provide password-less authentication using platform biometrics (Face ID, Touch ID, Windows Hello) or security keys via the WebAuthn standard. The SDK supports three flows:
 
-1. **Signup** — Register a new user with a passkey
-2. **Login** — Authenticate an existing user with a passkey
-3. **Enrollment** — Add a passkey to an already-authenticated user's account
+1. **Signup**: Register a new user with a passkey
+2. **Login**: Authenticate an existing user with a passkey
+3. **Enrollment**: Add a passkey to an already-authenticated user's account
 
 - [Signup with Passkey](#signup-with-passkey)
 - [Login with Passkey](#login-with-passkey)
@@ -944,7 +944,7 @@ Before using passkeys, enable the Database Connection with passkey support in yo
 
 ### Signup with Passkey
 
-Register a new user by requesting a signup challenge, creating a credential with the browser's WebAuthn API, then exchanging it for tokens.
+Register a new user with a passkey. The SDK handles the entire flow internally: requesting a challenge from Auth0, triggering the browser's WebAuthn credential creation ceremony, serializing the result, and exchanging it for tokens.
 
 ```js
 import { createAuth0Client } from '@auth0/auth0-spa-js';
@@ -957,21 +957,10 @@ const auth0 = await createAuth0Client({
   }
 });
 
-// 1. Request a signup challenge
-const challenge = await auth0.passkey.signupChallenge({
+// One call handles everything — the user sees the biometric prompt
+const tokens = await auth0.passkey.signup({
   email: 'user@example.com',
   name: 'Jane Doe' // optional display name
-});
-
-// 2. Create the credential using the browser WebAuthn API
-const credential = await navigator.credentials.create({
-  publicKey: challenge.authnParamsPublicKey
-});
-
-// 3. Exchange the credential for tokens (session is established automatically)
-const tokens = await auth0.passkey.signinWithPasskey({
-  authSession: challenge.authSession,
-  credential: serializeCredential(credential)
 });
 
 // User is now logged in — getUser() works immediately
@@ -979,26 +968,25 @@ const user = await auth0.getUser();
 console.log('Signed up:', user);
 ```
 
-> [!NOTE] > `signinWithPasskey()` caches tokens and establishes a session automatically, just like `loginWithRedirect()`. After calling it, `isAuthenticated()`, `getUser()`, and `getTokenSilently()` all work as expected.
+You can also pass `scope` and `audience` to control the access token:
+
+```js
+const tokens = await auth0.passkey.signup({
+  email: 'user@example.com',
+  scope: 'openid profile email read:products',
+  audience: 'https://api.example.com'
+});
+```
+
+> [!NOTE]
+> `passkey.signup()` and `passkey.login()` cache tokens and establish a session automatically, just like `loginWithRedirect()`. After calling them, `isAuthenticated()`, `getUser()`, and `getTokenSilently()` all work as expected.
 
 ### Login with Passkey
 
-Authenticate an existing user with their registered passkey.
+Authenticate an existing user with their registered passkey. Like signup, a single call handles the entire flow.
 
 ```js
-// 1. Request a login challenge
-const challenge = await auth0.passkey.loginChallenge();
-
-// 2. Get the credential using the browser WebAuthn API
-const credential = await navigator.credentials.get({
-  publicKey: challenge.authnParamsPublicKey
-});
-
-// 3. Exchange the credential for tokens
-const tokens = await auth0.passkey.signinWithPasskey({
-  authSession: challenge.authSession,
-  credential: serializeCredential(credential)
-});
+const tokens = await auth0.passkey.login();
 
 const user = await auth0.getUser();
 console.log('Logged in:', user);
@@ -1009,7 +997,7 @@ console.log('Logged in:', user);
 If your tenant has multiple database connections with passkeys enabled, specify the `realm`:
 
 ```js
-const challenge = await auth0.passkey.loginChallenge({
+const tokens = await auth0.passkey.login({
   realm: 'Username-Password-Authentication'
 });
 ```
@@ -1053,7 +1041,7 @@ const enrollment = await auth0.passkey.enrollmentChallenge({
 
 ### Credential Serialization Helper
 
-The WebAuthn API returns `ArrayBuffer` values that must be serialized to base64url strings before sending to Auth0. Here's a helper function:
+For **enrollment**, the WebAuthn ceremony is not handled automatically by the SDK (since authenticated users may need custom UI between steps). You'll need to serialize the credential manually. Here's a helper:
 
 ```js
 function serializeCredential(credential) {
@@ -1063,17 +1051,6 @@ function serializeCredential(credential) {
     response.attestationObject = bufferToBase64Url(
       credential.response.attestationObject
     );
-  }
-  if (credential.response.authenticatorData) {
-    response.authenticatorData = bufferToBase64Url(
-      credential.response.authenticatorData
-    );
-  }
-  if (credential.response.signature) {
-    response.signature = bufferToBase64Url(credential.response.signature);
-  }
-  if (credential.response.userHandle) {
-    response.userHandle = bufferToBase64Url(credential.response.userHandle);
   }
 
   response.clientDataJSON = bufferToBase64Url(
@@ -1103,6 +1080,9 @@ function bufferToBase64Url(buffer) {
 }
 ```
 
+> [!NOTE]
+> The `serializeCredential` helper is only needed for enrollment. For `signup()` and `login()`, the SDK handles WebAuthn and serialization internally.
+
 ### Complete Passkey Flow Example
 
 A full example implementing signup, login, and enrollment with proper error handling:
@@ -1122,50 +1102,19 @@ const auth0 = await createAuth0Client({
   }
 });
 
-// --- Signup ---
+// --- Signup (single call) ---
 async function signupWithPasskey(email, displayName) {
-  const challenge = await auth0.passkey.signupChallenge({
-    email,
-    name: displayName
-  });
-
-  const credential = await navigator.credentials.create({
-    publicKey: challenge.authnParamsPublicKey
-  });
-
-  if (!credential) {
-    throw new Error('User cancelled the credential creation');
-  }
-
-  await auth0.passkey.signinWithPasskey({
-    authSession: challenge.authSession,
-    credential: serializeCredential(credential)
-  });
-
+  await auth0.passkey.signup({ email, name: displayName });
   return await auth0.getUser();
 }
 
-// --- Login ---
+// --- Login (single call) ---
 async function loginWithPasskey() {
-  const challenge = await auth0.passkey.loginChallenge();
-
-  const credential = await navigator.credentials.get({
-    publicKey: challenge.authnParamsPublicKey
-  });
-
-  if (!credential) {
-    throw new Error('User cancelled the credential request');
-  }
-
-  await auth0.passkey.signinWithPasskey({
-    authSession: challenge.authSession,
-    credential: serializeCredential(credential)
-  });
-
+  await auth0.passkey.login();
   return await auth0.getUser();
 }
 
-// --- Enrollment ---
+// --- Enrollment (multi-step, WebAuthn handled by caller) ---
 async function enrollPasskey() {
   const enrollment = await auth0.passkey.enrollmentChallenge();
 
@@ -1213,10 +1162,7 @@ try {
 ```
 
 > [!TIP]
-> For signup and login challenge errors, the SDK propagates the underlying network or API errors directly. Wrap challenge calls in try/catch to handle cases like network failures or misconfigured connections.
-
-> [!IMPORTANT]
-> The WebAuthn API (`navigator.credentials.create()` / `navigator.credentials.get()`) may return `null` if the user cancels the biometric prompt. Always check for `null` before calling `signinWithPasskey()`.
+> For `signup()` and `login()`, the SDK throws an `Error` with a descriptive message if the user cancels the biometric prompt (i.e., the WebAuthn API returns `null`). Wrap calls in try/catch to handle cancellation, network failures, or misconfigured connections.
 
 ## Multi-Factor Authentication (MFA)
 

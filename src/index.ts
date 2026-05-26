@@ -88,15 +88,18 @@ export {
   PasskeyEnrollmentError,
   PasskeyEnrollmentVerifyError
 } from './passkey/errors';
+export type { PasskeyErrorResponse } from './passkey/errors';
 export type {
   PasskeySignupChallengeOptions,
   PasskeySignupChallengeResponse,
   PasskeyLoginChallengeOptions,
   PasskeyLoginChallengeResponse,
   PasskeyCredentialResponse,
-  SigninWithPasskeyOptions,
+  GetTokenByPasskeyOptions,
   PasskeyCreationOptions,
   PasskeyRequestOptions,
+  PasskeySignupOptions,
+  PasskeyLoginOptions,
   PasskeyEnrollmentOptions,
   PasskeyEnrollmentResponse,
   PasskeyEnrollmentVerifyOptions

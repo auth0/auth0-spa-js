@@ -2,11 +2,11 @@ import type { Auth0Client } from '../Auth0Client';
 import type { Fetcher } from '../fetcher';
 import type { TokenEndpointResponse } from '../global';
 import type {
-  PasskeySignupChallengeOptions,
-  PasskeySignupChallengeResponse,
-  PasskeyLoginChallengeOptions,
-  PasskeyLoginChallengeResponse,
-  SigninWithPasskeyOptions,
+  PasskeySignupOptions,
+  PasskeyLoginOptions,
+  PasskeyCredentialResponse,
+  PasskeyCreationOptions,
+  PasskeyRequestOptions,
   PasskeyEnrollmentOptions,
   PasskeyEnrollmentResponse,
   PasskeyEnrollmentVerifyOptions
@@ -17,31 +17,19 @@ import { PasskeyClient } from '@auth0/auth0-auth-js';
 /**
  * Client for Auth0 Passkey operations.
  *
- * Provides methods for:
- * - Passkey signup (challenge + token exchange)
- * - Passkey login (challenge + token exchange)
- * - Passkey enrollment (for authenticated users adding a passkey)
- *
- * Authentication operations (signup, login, signin) delegate to auth0-auth-js PasskeyClient.
- * Enrollment operations use the My Account API via the SDK's authenticated fetcher.
+ * Provides 4 public methods:
+ * - `signup` — Register a new user with a passkey (full flow: challenge → WebAuthn → token exchange)
+ * - `login` — Sign in with a passkey (full flow: challenge → WebAuthn → token exchange)
+ * - `enrollmentChallenge` — Start passkey enrollment for an authenticated user
+ * - `enrollmentVerify` — Complete passkey enrollment
  *
  * @example
  * ```typescript
- * // Signup with passkey
- * const challenge = await auth0.passkey.signupChallenge({ email: 'user@example.com' });
- * const credential = await navigator.credentials.create({ publicKey: challenge.authnParamsPublicKey });
- * const tokens = await auth0.passkey.signinWithPasskey({
- *   authSession: challenge.authSession,
- *   credential: serializeCredential(credential),
- * });
+ * // Signup — single call handles everything
+ * const tokens = await auth0.passkey.signup({ email: 'user@example.com' });
  *
- * // Login with passkey
- * const loginChallenge = await auth0.passkey.loginChallenge();
- * const assertion = await navigator.credentials.get({ publicKey: loginChallenge.authnParamsPublicKey });
- * const tokens = await auth0.passkey.signinWithPasskey({
- *   authSession: loginChallenge.authSession,
- *   credential: serializeCredential(assertion),
- * });
+ * // Login — single call handles everything
+ * const tokens = await auth0.passkey.login();
  * ```
  */
 export class PasskeyApiClient {
@@ -67,51 +55,88 @@ export class PasskeyApiClient {
   }
 
   /**
-   * Requests a passkey signup challenge for a new user.
+   * Register a new user with a passkey.
    *
-   * Returns WebAuthn public key creation options to pass to
-   * `navigator.credentials.create()`.
+   * Handles the full flow: requests a signup challenge, triggers the browser
+   * WebAuthn credential creation ceremony, serializes the result, and exchanges
+   * it for tokens.
    *
-   * @throws {PasskeySignupChallengeError} If the request fails (invalid email, misconfigured connection, etc.)
+   * @throws {PasskeyRegisterError} If the challenge request fails
+   * @throws {GenericError} If the token exchange fails
+   * @throws {Error} If the user cancels the WebAuthn prompt
    */
-  async signupChallenge(
-    options: PasskeySignupChallengeOptions
-  ): Promise<PasskeySignupChallengeResponse> {
-    return this.#passkeyClient.signupChallenge(options);
-  }
+  async signup(options: PasskeySignupOptions): Promise<TokenEndpointResponse> {
+    const { scope, audience, ...challengeOptions } = options;
 
-  /**
-   * Requests a passkey login challenge for an existing user.
-   *
-   * Returns WebAuthn public key request options to pass to
-   * `navigator.credentials.get()`.
-   *
-   * @throws {PasskeyLoginChallengeError} If the request fails (invalid realm, network error, etc.)
-   */
-  async loginChallenge(
-    options?: PasskeyLoginChallengeOptions
-  ): Promise<PasskeyLoginChallengeResponse> {
-    return this.#passkeyClient.loginChallenge(options);
-  }
+    const challenge = await this.#passkeyClient.register(challengeOptions);
 
-  /**
-   * Exchanges a passkey credential for tokens.
-   *
-   * Call this after the user completes the WebAuthn ceremony (signup or login)
-   * with the serialized credential response. Tokens are cached and the session
-   * is established (same as standard login).
-   *
-   * @throws {GenericError} If the token exchange fails (expired authSession, invalid credential, etc.)
-   */
-  async signinWithPasskey(
-    options: SigninWithPasskeyOptions
-  ): Promise<TokenEndpointResponse> {
+    const publicKeyOptions = prepareCreationOptions(
+      challenge.authnParamsPublicKey
+    );
+    const credential = await navigator.credentials.create({
+      publicKey: publicKeyOptions
+    });
+
+    if (!credential) {
+      throw new Error(
+        'Passkey creation was cancelled or no credential was returned.'
+      );
+    }
+
+    const serialized = serializeCreationCredential(
+      credential as PublicKeyCredential
+    );
+
     return this.#auth0Client._requestTokenForPasskey({
-      authSession: options.authSession,
-      credential: options.credential,
-      realm: options.realm,
-      scope: options.scope,
-      audience: options.audience
+      authSession: challenge.authSession,
+      credential: serialized,
+      realm: challengeOptions.realm,
+      scope,
+      audience
+    });
+  }
+
+  /**
+   * Sign in with an existing passkey.
+   *
+   * Handles the full flow: requests a login challenge, triggers the browser
+   * WebAuthn assertion ceremony, serializes the result, and exchanges it
+   * for tokens.
+   *
+   * @throws {PasskeyChallengeError} If the challenge request fails
+   * @throws {GenericError} If the token exchange fails
+   * @throws {Error} If the user cancels the WebAuthn prompt
+   */
+  async login(options?: PasskeyLoginOptions): Promise<TokenEndpointResponse> {
+    const { scope, audience, ...challengeOptions } = options || {};
+
+    const challenge = await this.#passkeyClient.challenge(
+      Object.keys(challengeOptions).length ? challengeOptions : undefined
+    );
+
+    const publicKeyOptions = prepareRequestOptions(
+      challenge.authnParamsPublicKey
+    );
+    const credential = await navigator.credentials.get({
+      publicKey: publicKeyOptions
+    });
+
+    if (!credential) {
+      throw new Error(
+        'Passkey authentication was cancelled or no credential was returned.'
+      );
+    }
+
+    const serialized = serializeAssertionCredential(
+      credential as PublicKeyCredential
+    );
+
+    return this.#auth0Client._requestTokenForPasskey({
+      authSession: challenge.authSession,
+      credential: serialized,
+      realm: challengeOptions.realm,
+      scope,
+      audience
     });
   }
 
@@ -168,7 +193,6 @@ export class PasskeyApiClient {
     };
 
     const res = await this.#myAccountFetcher.fetchWithAuth(
-      // %7C is the URL-encoded pipe character in "passkey|new"
       `${this.#apiBase}v1/authentication-methods/passkey%7Cnew/verify`,
       {
         method: 'POST',
@@ -216,4 +240,96 @@ export class PasskeyApiClient {
 
     return body as T;
   }
+}
+
+function bufferToBase64url(buffer: ArrayBuffer): string {
+  const bytes = new Uint8Array(buffer);
+  let binary = '';
+  for (let i = 0; i < bytes.byteLength; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+function base64urlToBuffer(base64url: string): ArrayBuffer {
+  const base64 = base64url.replace(/-/g, '+').replace(/_/g, '/');
+  const padded = base64 + '='.repeat((4 - (base64.length % 4)) % 4);
+  const binary = atob(padded);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  return bytes.buffer;
+}
+
+function prepareCreationOptions(
+  publicKey: PasskeyCreationOptions
+): PublicKeyCredentialCreationOptions {
+  return {
+    ...publicKey,
+    challenge: base64urlToBuffer(publicKey.challenge),
+    user: {
+      ...publicKey.user,
+      id: base64urlToBuffer(publicKey.user.id)
+    },
+    pubKeyCredParams: publicKey.pubKeyCredParams as PublicKeyCredentialParameters[],
+    authenticatorSelection: publicKey.authenticatorSelection as AuthenticatorSelectionCriteria | undefined
+  };
+}
+
+function prepareRequestOptions(
+  publicKey: PasskeyRequestOptions
+): PublicKeyCredentialRequestOptions {
+  const { allowCredentials, ...rest } = publicKey;
+  const opts = {
+    ...rest,
+    challenge: base64urlToBuffer(publicKey.challenge)
+  } as unknown as PublicKeyCredentialRequestOptions;
+  if (allowCredentials && allowCredentials.length > 0) {
+    opts.allowCredentials = allowCredentials.map((c) => ({
+      ...c,
+      id: base64urlToBuffer(c.id),
+      type: c.type as 'public-key',
+      transports: c.transports as AuthenticatorTransport[] | undefined
+    }));
+  }
+  return opts;
+}
+
+function serializeCreationCredential(
+  credential: PublicKeyCredential
+): PasskeyCredentialResponse {
+  const response = credential.response as AuthenticatorAttestationResponse;
+  return {
+    id: credential.id,
+    rawId: bufferToBase64url(credential.rawId),
+    type: credential.type,
+    authenticatorAttachment: credential.authenticatorAttachment ?? undefined,
+    response: {
+      clientDataJSON: bufferToBase64url(response.clientDataJSON),
+      attestationObject: bufferToBase64url(response.attestationObject)
+    },
+    clientExtensionResults: credential.getClientExtensionResults() as Record<string, unknown>
+  };
+}
+
+function serializeAssertionCredential(
+  credential: PublicKeyCredential
+): PasskeyCredentialResponse {
+  const response = credential.response as AuthenticatorAssertionResponse;
+  return {
+    id: credential.id,
+    rawId: bufferToBase64url(credential.rawId),
+    type: credential.type,
+    authenticatorAttachment: credential.authenticatorAttachment ?? undefined,
+    response: {
+      clientDataJSON: bufferToBase64url(response.clientDataJSON),
+      authenticatorData: bufferToBase64url(response.authenticatorData),
+      signature: bufferToBase64url(response.signature),
+      userHandle: response.userHandle
+        ? bufferToBase64url(response.userHandle)
+        : undefined
+    },
+    clientExtensionResults: credential.getClientExtensionResults() as Record<string, unknown>
+  };
 }
