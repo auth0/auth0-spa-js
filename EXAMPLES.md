@@ -931,6 +931,7 @@ Passkeys provide password-less authentication using platform biometrics (Face ID
 2. **Login**: Authenticate an existing user with a passkey
 3. **Enrollment**: Add a passkey to an already-authenticated user's account
 
+- [Important: Use Refresh Tokens with Passkeys](#important-use-refresh-tokens-with-passkeys)
 - [Signup with Passkey](#signup-with-passkey)
 - [Login with Passkey](#login-with-passkey)
 - [Passkey Enrollment (Authenticated Users)](#passkey-enrollment-authenticated-users)
@@ -941,6 +942,32 @@ Passkeys provide password-less authentication using platform biometrics (Face ID
 ### Setup
 
 Before using passkeys, enable the Database Connection with passkey support in your [Auth0 Dashboard](https://manage.auth0.com) under **Authentication** > **Database** > your connection > **Authentication Methods** > **Passkey**.
+
+### Important: Use Refresh Tokens with Passkeys
+
+> [!IMPORTANT]
+> When using passkeys, you **must** configure the SDK with `useRefreshTokens: true`.
+
+Passkey authentication uses a direct token exchange (`/oauth/token` with the WebAuthn grant type). It does **not** create an Auth0 session cookie because there is no redirect to `/authorize`. This means that when the access token expires, the SDK cannot silently obtain a new one using an iframe (which relies on the Auth0 session cookie via `prompt=none`).
+
+Without refresh tokens, `getTokenSilently()` will either:
+- Fail with a `login_required` error (if no Auth0 session exists), or
+- Return tokens for a **different user** if a separate Auth0 session cookie exists from a prior redirect-based login, causing an unintended session swap.
+
+To avoid this, always enable refresh tokens:
+
+```js
+const auth0 = await createAuth0Client({
+  domain: '<AUTH0_DOMAIN>',
+  clientId: '<AUTH0_CLIENT_ID>',
+  useRefreshTokens: true, // Required for passkey-based sessions
+  authorizationParams: {
+    redirect_uri: '<MY_CALLBACK_URL>'
+  }
+});
+```
+
+You must also enable **Refresh Token Rotation** in your Auth0 Dashboard under **Applications** > your app > **Settings** > **Refresh Token Rotation**.
 
 ### Signup with Passkey
 
@@ -980,6 +1007,8 @@ const tokens = await auth0.passkey.signup({
 
 > [!NOTE]
 > `passkey.signup()` and `passkey.login()` cache tokens and establish a session automatically, just like `loginWithRedirect()`. After calling them, `isAuthenticated()`, `getUser()`, and `getTokenSilently()` all work as expected.
+>
+> Remember to configure `useRefreshTokens: true`. See [Important: Use Refresh Tokens with Passkeys](#important-use-refresh-tokens-with-passkeys).
 
 ### Login with Passkey
 
