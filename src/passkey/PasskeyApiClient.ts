@@ -48,11 +48,16 @@ export class PasskeyApiClient {
    *
    * @param options - Passkey signup options (user identifier, optional scope/audience)
    * @returns A promise that resolves to the token endpoint response containing access/ID tokens
+   * @throws {PasskeyError} If WebAuthn is not supported in the browser
    * @throws {PasskeyRegisterError} If the challenge request fails
    * @throws {GenericError} If the token exchange fails
    * @throws {PasskeyError} If the user cancels the WebAuthn prompt
    */
   async signup(options: PasskeySignupOptions): Promise<TokenEndpointResponse> {
+    if (!window.PublicKeyCredential) {
+      throw new PasskeyError('passkey_not_supported', 'WebAuthn is not supported in this browser.');
+    }
+
     const { scope, audience, ...challengeOptions } = options;
 
     const challenge = await this.#passkeyClient.register(challengeOptions);
@@ -94,11 +99,16 @@ export class PasskeyApiClient {
    *
    * @param options - Optional passkey login options (optional scope/audience/realm/organization)
    * @returns A promise that resolves to the token endpoint response containing access/ID tokens
+   * @throws {PasskeyError} If WebAuthn is not supported in the browser
    * @throws {PasskeyChallengeError} If the challenge request fails
    * @throws {GenericError} If the token exchange fails
    * @throws {PasskeyError} If the user cancels the WebAuthn prompt
    */
   async login(options?: PasskeyLoginOptions): Promise<TokenEndpointResponse> {
+    if (!window.PublicKeyCredential) {
+      throw new PasskeyError('passkey_not_supported', 'WebAuthn is not supported in this browser.');
+    }
+
     const { scope, audience, ...challengeOptions } = options || {};
 
     const challenge = await this.#passkeyClient.challenge(

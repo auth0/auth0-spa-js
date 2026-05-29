@@ -8,6 +8,8 @@ import { fetchResponse, setupFn } from './helpers';
 import {
   TEST_ACCESS_TOKEN,
   TEST_CODE_CHALLENGE,
+  TEST_DPOP_NONCE,
+  TEST_DPOP_PROOF,
   TEST_ID_TOKEN,
   TEST_REFRESH_TOKEN
 } from '../constants';
@@ -310,6 +312,32 @@ describe('Auth0Client', () => {
       expect(body.auth_session).toBe(TEST_AUTH_SESSION);
       expect(body.authn_response).toEqual(TEST_CREDENTIAL);
       expect(body.realm).toBe('my-connection');
+    });
+
+    it('sends DPoP-Proof header when DPoP is enabled', async () => {
+      const auth0 = setup({ useDpop: true });
+      const dpop = auth0['dpop']!;
+
+      jest.spyOn(dpop, 'getNonce').mockResolvedValue(TEST_DPOP_NONCE);
+      jest.spyOn(dpop, 'generateProof').mockResolvedValue(TEST_DPOP_PROOF);
+      jest.spyOn(dpop, 'setNonce').mockResolvedValue();
+
+      mockFetch.mockResolvedValueOnce(
+        fetchResponse(true, {
+          id_token: TEST_ID_TOKEN,
+          access_token: TEST_ACCESS_TOKEN,
+          token_type: 'Bearer',
+          expires_in: 86400
+        })
+      );
+
+      await auth0._requestTokenForPasskey({
+        authSession: TEST_AUTH_SESSION,
+        credential: TEST_CREDENTIAL as any
+      });
+
+      const [, fetchOptions] = mockFetch.mock.calls[0];
+      expect(fetchOptions.headers['dpop']).toBe(TEST_DPOP_PROOF);
     });
   });
 });

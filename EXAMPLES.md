@@ -938,7 +938,11 @@ Passkeys provide password-less authentication using platform biometrics (Face ID
 
 ### Setup
 
-Before using passkeys, enable the Database Connection with passkey support in your [Auth0 Dashboard](https://manage.auth0.com) under **Authentication** > **Database** > your connection > **Authentication Methods** > **Passkey**.
+Before using passkeys, ensure the following are configured in your [Auth0 Dashboard](https://manage.auth0.com):
+
+1. **Enable passkey authentication method**: Go to **Authentication** > **Database** > your connection > **Authentication Methods** > **Passkey**.
+2. **Enable the WebAuthn passkey grant**: Go to your **Application** > **Advanced Settings** > **Grant Types** and enable the **Passkey** grant.
+3. **Custom domain required**: Passkeys are bound to an origin (domain). A [custom domain](https://auth0.com/docs/customize/custom-domains) must be configured — passkeys will not work on the default `*.auth0.com` domain.
 
 ### Important: Use Refresh Tokens with Passkeys
 
@@ -1010,6 +1014,18 @@ To register a user within an organization context:
 const tokens = await auth0.passkey.signup({
   email: 'user@example.com',
   organization: 'org_abc123'
+});
+```
+
+#### All Supported Signup Properties
+
+```js
+const tokens = await auth0.passkey.signup({
+  email: 'user@example.com',        // required: user identifier
+  realm: 'my-db-connection',        // optional: target database connection
+  organization: 'org_abc123',       // optional: organization context
+  scope: 'openid profile email',    // optional: access token scopes
+  audience: 'https://api.example.com' // optional: API audience
 });
 ```
 

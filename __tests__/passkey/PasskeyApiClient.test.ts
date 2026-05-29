@@ -55,6 +55,12 @@ describe('PasskeyApiClient', () => {
   beforeEach(() => {
     jest.clearAllMocks();
 
+    Object.defineProperty(window, 'PublicKeyCredential', {
+      value: jest.fn(),
+      writable: true,
+      configurable: true
+    });
+
     mockPasskeyClient = {
       register: jest.fn(),
       challenge: jest.fn(),
@@ -216,6 +222,65 @@ describe('PasskeyApiClient', () => {
           audience: 'https://api.example.com'
         })
       );
+    });
+
+    it('should pass all supported properties to challenge and token exchange', async () => {
+      const challengeResponse = {
+        authSession: TEST_AUTH_SESSION,
+        authnParamsPublicKey: {
+          challenge: 'Y2hhbGxlbmdl',
+          rp: { id: 'example.auth0.com', name: 'Example' },
+          user: { id: 'dXNlci0x', name: 'user@example.com', displayName: 'User' },
+          pubKeyCredParams: [{ type: 'public-key', alg: -7 }]
+        }
+      };
+      mockPasskeyClient.register.mockResolvedValue(challengeResponse);
+
+      Object.defineProperty(global.navigator, 'credentials', {
+        value: { create: jest.fn().mockResolvedValue(createMockPublicKeyCredential('create')) },
+        configurable: true
+      });
+
+      mockAuth0Client._requestTokenForPasskey.mockResolvedValue({
+        access_token: 'at_123',
+        token_type: 'Bearer',
+        expires_in: 86400
+      });
+
+      await passkeyClient.signup({
+        email: 'user@example.com',
+        realm: 'Username-Password-Authentication',
+        organization: 'org_abc123',
+        scope: 'openid profile email',
+        audience: 'https://api.example.com'
+      });
+
+      expect(mockPasskeyClient.register).toHaveBeenCalledWith({
+        email: 'user@example.com',
+        realm: 'Username-Password-Authentication',
+        organization: 'org_abc123'
+      });
+      expect(mockAuth0Client._requestTokenForPasskey).toHaveBeenCalledWith(
+        expect.objectContaining({
+          authSession: TEST_AUTH_SESSION,
+          realm: 'Username-Password-Authentication',
+          organization: 'org_abc123',
+          scope: 'openid profile email',
+          audience: 'https://api.example.com'
+        })
+      );
+    });
+
+    it('should throw if WebAuthn is not supported', async () => {
+      Object.defineProperty(window, 'PublicKeyCredential', {
+        value: undefined,
+        writable: true,
+        configurable: true
+      });
+
+      await expect(
+        passkeyClient.signup({ email: 'user@example.com' })
+      ).rejects.toThrow('WebAuthn is not supported in this browser.');
     });
 
     it('should throw if user cancels WebAuthn prompt', async () => {
@@ -460,6 +525,18 @@ describe('PasskeyApiClient', () => {
           scope: 'openid profile',
           audience: 'https://api.example.com'
         })
+      );
+    });
+
+    it('should throw if WebAuthn is not supported', async () => {
+      Object.defineProperty(window, 'PublicKeyCredential', {
+        value: undefined,
+        writable: true,
+        configurable: true
+      });
+
+      await expect(passkeyClient.login()).rejects.toThrow(
+        'WebAuthn is not supported in this browser.'
       );
     });
 
