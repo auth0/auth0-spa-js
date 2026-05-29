@@ -1021,11 +1021,26 @@ const tokens = await auth0.passkey.signup({
 
 ```js
 const tokens = await auth0.passkey.signup({
-  email: 'user@example.com',        // required: user identifier
-  realm: 'my-db-connection',        // optional: target database connection
-  organization: 'org_abc123',       // optional: organization context
-  scope: 'openid profile email',    // optional: access token scopes
-  audience: 'https://api.example.com' // optional: API audience
+  // At least one identifier is required
+  email: 'user@example.com',
+  phoneNumber: '+1234567890',       // optional: E.164 format
+  username: 'janedoe',              // optional
+
+  // Profile fields (all optional)
+  name: 'Jane Doe',
+  givenName: 'Jane',
+  familyName: 'Doe',
+  nickname: 'janie',
+  picture: 'https://example.com/avatar.png',
+  userMetadata: { plan: 'pro' },
+
+  // Connection and org
+  realm: 'my-db-connection',
+  organization: 'org_abc123',
+
+  // Token options
+  scope: 'openid profile email',
+  audience: 'https://api.example.com'
 });
 ```
 

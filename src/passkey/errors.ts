@@ -5,12 +5,9 @@ export {
 } from '@auth0/auth0-auth-js';
 
 export interface PasskeyErrorResponse {
-  type?: string;
-  status?: number;
-  title?: string;
-  detail?: string;
-  error?: string;
-  error_description?: string;
+  error: string;
+  error_description: string;
+  message?: string;
 }
 
 export class PasskeyError extends Error {

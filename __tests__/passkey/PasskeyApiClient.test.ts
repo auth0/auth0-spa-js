@@ -249,6 +249,14 @@ describe('PasskeyApiClient', () => {
 
       await passkeyClient.signup({
         email: 'user@example.com',
+        phoneNumber: '+1234567890',
+        username: 'janedoe',
+        name: 'Jane Doe',
+        givenName: 'Jane',
+        familyName: 'Doe',
+        nickname: 'janie',
+        picture: 'https://example.com/avatar.png',
+        userMetadata: { plan: 'pro' },
         realm: 'Username-Password-Authentication',
         organization: 'org_abc123',
         scope: 'openid profile email',
@@ -257,6 +265,14 @@ describe('PasskeyApiClient', () => {
 
       expect(mockPasskeyClient.register).toHaveBeenCalledWith({
         email: 'user@example.com',
+        phoneNumber: '+1234567890',
+        username: 'janedoe',
+        name: 'Jane Doe',
+        givenName: 'Jane',
+        familyName: 'Doe',
+        nickname: 'janie',
+        picture: 'https://example.com/avatar.png',
+        userMetadata: { plan: 'pro' },
         realm: 'Username-Password-Authentication',
         organization: 'org_abc123'
       });
