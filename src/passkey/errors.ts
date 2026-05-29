@@ -1,4 +1,8 @@
-export { PasskeyRegisterError, PasskeyChallengeError } from '@auth0/auth0-auth-js';
+export {
+  PasskeyRegisterError,
+  PasskeyChallengeError,
+  PasskeyGetTokenError
+} from '@auth0/auth0-auth-js';
 
 export interface PasskeyErrorResponse {
   type?: string;

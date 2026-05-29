@@ -925,17 +925,14 @@ This is useful when you need to:
 
 ## Passkeys
 
-Passkeys provide password-less authentication using platform biometrics (Face ID, Touch ID, Windows Hello) or security keys via the WebAuthn standard. The SDK supports three flows:
+Passkeys provide password-less authentication using platform biometrics (Face ID, Touch ID, Windows Hello) or security keys via the WebAuthn standard. The SDK supports two flows:
 
 1. **Signup**: Register a new user with a passkey
 2. **Login**: Authenticate an existing user with a passkey
-3. **Enrollment**: Add a passkey to an already-authenticated user's account
 
 - [Important: Use Refresh Tokens with Passkeys](#important-use-refresh-tokens-with-passkeys)
 - [Signup with Passkey](#signup-with-passkey)
 - [Login with Passkey](#login-with-passkey)
-- [Passkey Enrollment (Authenticated Users)](#passkey-enrollment-authenticated-users)
-- [Credential Serialization Helper](#credential-serialization-helper)
 - [Complete Passkey Flow Example](#complete-passkey-flow-example)
 - [Error Handling](#passkey-error-handling)
 
@@ -1052,101 +1049,15 @@ const tokens = await auth0.passkey.login({
 });
 ```
 
-### Passkey Enrollment (Authenticated Users)
-
-Allow an already-authenticated user to add a passkey to their account. This uses the My Account API and requires a valid access token.
-
-```js
-// User must already be logged in
-const isAuthenticated = await auth0.isAuthenticated();
-
-if (isAuthenticated) {
-  // 1. Request an enrollment challenge
-  const enrollment = await auth0.passkey.enrollmentChallenge();
-
-  // 2. Create the credential
-  const credential = await navigator.credentials.create({
-    publicKey: enrollment.authnParamsPublicKey
-  });
-
-  // 3. Verify the enrollment
-  await auth0.passkey.enrollmentVerify({
-    authSession: enrollment.authSession,
-    credential: serializeCredential(credential)
-  });
-
-  console.log('Passkey enrolled successfully');
-}
-```
-
-#### Enrollment Options
-
-```js
-// Specify a connection or identity for multi-identity users
-const enrollment = await auth0.passkey.enrollmentChallenge({
-  connection: 'Username-Password-Authentication',
-  identity: 'auth0|user123'
-});
-```
-
-### Credential Serialization Helper
-
-For **enrollment**, the WebAuthn ceremony is not handled automatically by the SDK (since authenticated users may need custom UI between steps). You'll need to serialize the credential manually. Here's a helper:
-
-```js
-function serializeCredential(credential) {
-  const response = {};
-
-  if (credential.response.attestationObject) {
-    response.attestationObject = bufferToBase64Url(
-      credential.response.attestationObject
-    );
-  }
-
-  response.clientDataJSON = bufferToBase64Url(
-    credential.response.clientDataJSON
-  );
-
-  return {
-    id: credential.id,
-    rawId: bufferToBase64Url(credential.rawId),
-    type: credential.type,
-    authenticatorAttachment: credential.authenticatorAttachment,
-    response,
-    clientExtensionResults: credential.getClientExtensionResults()
-  };
-}
-
-function bufferToBase64Url(buffer) {
-  const bytes = new Uint8Array(buffer);
-  let binary = '';
-  for (let i = 0; i < bytes.byteLength; i++) {
-    binary += String.fromCharCode(bytes[i]);
-  }
-  return btoa(binary)
-    .replace(/\+/g, '-')
-    .replace(/\//g, '_')
-    .replace(/=+$/, '');
-}
-```
-
-> [!NOTE]
-> The `serializeCredential` helper is only needed for enrollment. For `signup()` and `login()`, the SDK handles WebAuthn and serialization internally.
-
 ### Complete Passkey Flow Example
-
-A full example implementing signup, login, and enrollment with proper error handling:
 
 ```js
 import { createAuth0Client } from '@auth0/auth0-spa-js';
-import {
-  PasskeyEnrollmentError,
-  PasskeyEnrollmentVerifyError
-} from '@auth0/auth0-spa-js';
 
 const auth0 = await createAuth0Client({
   domain: '<AUTH0_DOMAIN>',
   clientId: '<AUTH0_CLIENT_ID>',
+  useRefreshTokens: true,
   authorizationParams: {
     redirect_uri: '<MY_CALLBACK_URL>'
   }
@@ -1163,56 +1074,12 @@ async function loginWithPasskey() {
   await auth0.passkey.login();
   return await auth0.getUser();
 }
-
-// --- Enrollment (multi-step, WebAuthn handled by caller) ---
-async function enrollPasskey() {
-  const enrollment = await auth0.passkey.enrollmentChallenge();
-
-  const credential = await navigator.credentials.create({
-    publicKey: enrollment.authnParamsPublicKey
-  });
-
-  if (!credential) {
-    throw new Error('User cancelled the credential creation');
-  }
-
-  await auth0.passkey.enrollmentVerify({
-    authSession: enrollment.authSession,
-    credential: serializeCredential(credential)
-  });
-}
 ```
 
 ### Passkey Error Handling
 
-```js
-import {
-  PasskeyEnrollmentError,
-  PasskeyEnrollmentVerifyError
-} from '@auth0/auth0-spa-js';
-
-try {
-  await auth0.passkey.enrollmentChallenge();
-} catch (error) {
-  if (error instanceof PasskeyEnrollmentError) {
-    console.error('Enrollment failed:', error.message);
-    console.error('Error code:', error.code);
-    console.error('API details:', error.cause);
-  }
-}
-
-try {
-  await auth0.passkey.enrollmentVerify({ authSession, credential });
-} catch (error) {
-  if (error instanceof PasskeyEnrollmentVerifyError) {
-    console.error('Verification failed:', error.message);
-    console.error('API details:', error.cause);
-  }
-}
-```
-
 > [!TIP]
-> For `signup()` and `login()`, the SDK throws an `Error` with a descriptive message if the user cancels the biometric prompt (i.e., the WebAuthn API returns `null`). Wrap calls in try/catch to handle cancellation, network failures, or misconfigured connections.
+> Both `signup()` and `login()` throw an `Error` with a descriptive message if the user cancels the biometric prompt (i.e., the WebAuthn API returns `null`). Wrap calls in try/catch to handle cancellation, network failures, or misconfigured connections.
 
 ## Multi-Factor Authentication (MFA)
 

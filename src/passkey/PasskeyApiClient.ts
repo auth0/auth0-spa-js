@@ -7,7 +7,8 @@ import type {
   PasskeyCreationOptions,
   PasskeyRequestOptions
 } from './types';
-import { PasskeyClient } from '@auth0/auth0-auth-js';
+import type { PasskeyClient } from '@auth0/auth0-auth-js';
+import { PasskeyError } from './errors';
 
 /**
  * Client for Auth0 Passkey operations.
@@ -49,7 +50,7 @@ export class PasskeyApiClient {
    * @returns A promise that resolves to the token endpoint response containing access/ID tokens
    * @throws {PasskeyRegisterError} If the challenge request fails
    * @throws {GenericError} If the token exchange fails
-   * @throws {Error} If the user cancels the WebAuthn prompt
+   * @throws {PasskeyError} If the user cancels the WebAuthn prompt
    */
   async signup(options: PasskeySignupOptions): Promise<TokenEndpointResponse> {
     const { scope, audience, ...challengeOptions } = options;
@@ -64,7 +65,8 @@ export class PasskeyApiClient {
     });
 
     if (!credential) {
-      throw new Error(
+      throw new PasskeyError(
+        'passkey_cancelled',
         'Passkey creation was cancelled or no credential was returned.'
       );
     }
@@ -94,13 +96,13 @@ export class PasskeyApiClient {
    * @returns A promise that resolves to the token endpoint response containing access/ID tokens
    * @throws {PasskeyChallengeError} If the challenge request fails
    * @throws {GenericError} If the token exchange fails
-   * @throws {Error} If the user cancels the WebAuthn prompt
+   * @throws {PasskeyError} If the user cancels the WebAuthn prompt
    */
   async login(options?: PasskeyLoginOptions): Promise<TokenEndpointResponse> {
     const { scope, audience, ...challengeOptions } = options || {};
 
     const challenge = await this.#passkeyClient.challenge(
-      Object.values(challengeOptions).some(v => v !== undefined) ? challengeOptions : undefined
+      Object.keys(challengeOptions).length > 0 ? challengeOptions : undefined
     );
 
     const publicKeyOptions = prepareRequestOptions(
@@ -111,7 +113,8 @@ export class PasskeyApiClient {
     });
 
     if (!credential) {
-      throw new Error(
+      throw new PasskeyError(
+        'passkey_cancelled',
         'Passkey authentication was cancelled or no credential was returned.'
       );
     }
@@ -134,10 +137,7 @@ export class PasskeyApiClient {
 
 function bufferToBase64url(buffer: ArrayBuffer): string {
   const bytes = new Uint8Array(buffer);
-  let binary = '';
-  for (let i = 0; i < bytes.byteLength; i++) {
-    binary += String.fromCharCode(bytes[i]);
-  }
+  const binary = Array.from(bytes, b => String.fromCharCode(b)).join('');
   return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 }
 
@@ -173,7 +173,7 @@ function prepareRequestOptions(
   return {
     ...publicKey,
     challenge: base64urlToBuffer(publicKey.challenge)
-  } as unknown as PublicKeyCredentialRequestOptions;
+  } as PublicKeyCredentialRequestOptions;
 }
 
 function serializeCreationCredential(

@@ -171,13 +171,11 @@ export class Auth0Client {
   public readonly mfa: MfaApiClient;
 
   /**
-   * Passkey API client for passkey authentication and enrollment.
+   * Passkey API client for passwordless authentication.
    *
-   * Provides methods for:
-   * - Requesting signup challenges (new user registration with passkey)
-   * - Requesting login challenges (existing user authentication with passkey)
-   * - Exchanging passkey credentials for tokens
-   * - Enrolling passkeys for authenticated users (My Account)
+   * Provides two single-call methods that handle the full WebAuthn flow internally:
+   * - `signup(options)` — register a new user with a passkey
+   * - `login(options?)` — authenticate an existing user with a passkey
    */
   public readonly passkey: PasskeyApiClient;
 
@@ -2114,6 +2112,7 @@ interface WebauthnRequestTokenOptions extends BaseRequestTokenOptions {
   auth_session: string;
   authn_response: PasskeyCredentialResponse;
   realm?: string;
+  organization?: string;
 }
 
 interface RequestTokenAdditionalParameters {

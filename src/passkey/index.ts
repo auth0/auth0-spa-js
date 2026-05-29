@@ -4,7 +4,8 @@ export {
   PasskeyEnrollmentError,
   PasskeyEnrollmentVerifyError,
   PasskeyRegisterError,
-  PasskeyChallengeError
+  PasskeyChallengeError,
+  PasskeyGetTokenError
 } from './errors';
 export type { PasskeyErrorResponse } from './errors';
 export type {

@@ -88,7 +88,8 @@ export {
   PasskeyEnrollmentError,
   PasskeyEnrollmentVerifyError,
   PasskeyRegisterError,
-  PasskeyChallengeError
+  PasskeyChallengeError,
+  PasskeyGetTokenError
 } from './passkey';
 export type {
   PasskeyErrorResponse,
