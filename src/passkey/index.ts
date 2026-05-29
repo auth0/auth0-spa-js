@@ -2,7 +2,9 @@ export { PasskeyApiClient } from './PasskeyApiClient';
 export {
   PasskeyError,
   PasskeyEnrollmentError,
-  PasskeyEnrollmentVerifyError
+  PasskeyEnrollmentVerifyError,
+  PasskeyRegisterError,
+  PasskeyChallengeError
 } from './errors';
 export type { PasskeyErrorResponse } from './errors';
 export type {
@@ -14,8 +16,5 @@ export type {
   PasskeyCreationOptions,
   PasskeyRequestOptions,
   PasskeySignupOptions,
-  PasskeyLoginOptions,
-  PasskeyEnrollmentOptions,
-  PasskeyEnrollmentResponse,
-  PasskeyEnrollmentVerifyOptions
+  PasskeyLoginOptions
 } from './types';

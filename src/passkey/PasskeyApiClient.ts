@@ -1,27 +1,20 @@
 import type { Auth0Client } from '../Auth0Client';
-import type { Fetcher } from '../fetcher';
 import type { TokenEndpointResponse } from '../global';
 import type {
   PasskeySignupOptions,
   PasskeyLoginOptions,
   PasskeyCredentialResponse,
   PasskeyCreationOptions,
-  PasskeyRequestOptions,
-  PasskeyEnrollmentOptions,
-  PasskeyEnrollmentResponse,
-  PasskeyEnrollmentVerifyOptions
+  PasskeyRequestOptions
 } from './types';
-import { PasskeyEnrollmentError, PasskeyEnrollmentVerifyError } from './errors';
 import { PasskeyClient } from '@auth0/auth0-auth-js';
 
 /**
  * Client for Auth0 Passkey operations.
  *
- * Provides 4 public methods:
+ * Provides 2 public methods:
  * - `signup` — Register a new user with a passkey (full flow: challenge → WebAuthn → token exchange)
  * - `login` — Sign in with a passkey (full flow: challenge → WebAuthn → token exchange)
- * - `enrollmentChallenge` — Start passkey enrollment for an authenticated user
- * - `enrollmentVerify` — Complete passkey enrollment
  *
  * @example
  * ```typescript
@@ -35,23 +28,14 @@ import { PasskeyClient } from '@auth0/auth0-auth-js';
 export class PasskeyApiClient {
   #passkeyClient: PasskeyClient;
   #auth0Client: Auth0Client;
-  #myAccountFetcher: Fetcher<Response>;
-  #apiBase: string;
 
   /**
    * @internal
    * Do not instantiate directly. Use Auth0Client.passkey instead.
    */
-  constructor(
-    passkeyClient: PasskeyClient,
-    auth0Client: Auth0Client,
-    myAccountFetcher: Fetcher<Response>,
-    apiBase: string
-  ) {
+  constructor(passkeyClient: PasskeyClient, auth0Client: Auth0Client) {
     this.#passkeyClient = passkeyClient;
     this.#auth0Client = auth0Client;
-    this.#myAccountFetcher = myAccountFetcher;
-    this.#apiBase = apiBase;
   }
 
   /**
@@ -61,6 +45,8 @@ export class PasskeyApiClient {
    * WebAuthn credential creation ceremony, serializes the result, and exchanges
    * it for tokens.
    *
+   * @param options - Passkey signup options (user identifier, optional scope/audience)
+   * @returns A promise that resolves to the token endpoint response containing access/ID tokens
    * @throws {PasskeyRegisterError} If the challenge request fails
    * @throws {GenericError} If the token exchange fails
    * @throws {Error} If the user cancels the WebAuthn prompt
@@ -104,6 +90,8 @@ export class PasskeyApiClient {
    * WebAuthn assertion ceremony, serializes the result, and exchanges it
    * for tokens.
    *
+   * @param options - Optional passkey login options (optional scope/audience/realm/organization)
+   * @returns A promise that resolves to the token endpoint response containing access/ID tokens
    * @throws {PasskeyChallengeError} If the challenge request fails
    * @throws {GenericError} If the token exchange fails
    * @throws {Error} If the user cancels the WebAuthn prompt
@@ -112,7 +100,7 @@ export class PasskeyApiClient {
     const { scope, audience, ...challengeOptions } = options || {};
 
     const challenge = await this.#passkeyClient.challenge(
-      Object.keys(challengeOptions).length ? challengeOptions : undefined
+      Object.values(challengeOptions).some(v => v !== undefined) ? challengeOptions : undefined
     );
 
     const publicKeyOptions = prepareRequestOptions(
@@ -142,106 +130,6 @@ export class PasskeyApiClient {
     });
   }
 
-  /**
-   * Creates a passkey enrollment challenge for an authenticated user.
-   *
-   * Allows an existing user to add a passkey to their account.
-   * Returns WebAuthn public key creation options to pass to
-   * `navigator.credentials.create()`.
-   */
-  async enrollmentChallenge(
-    options?: PasskeyEnrollmentOptions
-  ): Promise<PasskeyEnrollmentResponse> {
-    const body: Record<string, unknown> = { type: 'passkey' };
-
-    if (options?.connection) body.connection = options.connection;
-    if (options?.identity) body.identity = options.identity;
-
-    const res = await this.#myAccountFetcher.fetchWithAuth(
-      `${this.#apiBase}v1/authentication-methods`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body)
-      }
-    );
-
-    const responseBody = await this.#handleResponse<{
-      auth_session: string;
-      authn_params_public_key: PasskeyEnrollmentResponse['authnParamsPublicKey'];
-    }>(
-      res,
-      'Failed to create passkey enrollment challenge',
-      PasskeyEnrollmentError
-    );
-
-    return {
-      authSession: responseBody.auth_session,
-      authnParamsPublicKey: responseBody.authn_params_public_key
-    };
-  }
-
-  /**
-   * Verifies a passkey enrollment to complete registration.
-   *
-   * Call this after the user creates a credential using the enrollment challenge.
-   */
-  async enrollmentVerify(
-    options: PasskeyEnrollmentVerifyOptions
-  ): Promise<void> {
-    const body = {
-      auth_session: options.authSession,
-      authn_response: options.credential
-    };
-
-    const res = await this.#myAccountFetcher.fetchWithAuth(
-      `${this.#apiBase}v1/authentication-methods/passkey%7Cnew/verify`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body)
-      }
-    );
-
-    await this.#handleResponse<void>(
-      res,
-      'Failed to verify passkey enrollment',
-      PasskeyEnrollmentVerifyError
-    );
-  }
-
-  async #handleResponse<T>(
-    res: Response,
-    defaultMessage: string,
-    ErrorClass:
-      | typeof PasskeyEnrollmentError
-      | typeof PasskeyEnrollmentVerifyError
-  ): Promise<T> {
-    let rawText: string | undefined;
-    let body: any;
-
-    try {
-      rawText = await res.text();
-      body = rawText ? JSON.parse(rawText) : undefined;
-    } catch {
-      if (!res.ok) {
-        throw new ErrorClass(defaultMessage, {
-          status: res.status,
-          detail: rawText
-        });
-      }
-      return undefined as T;
-    }
-
-    if (!res.ok) {
-      throw new ErrorClass(
-        body?.error_description || body?.detail || defaultMessage,
-        body
-      );
-    }
-
-    return body as T;
-  }
 }
 
 function bufferToBase64url(buffer: ArrayBuffer): string {

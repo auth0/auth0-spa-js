@@ -309,9 +309,7 @@ export class Auth0Client {
     this.mfa = new MfaApiClient(this.authJsClient.mfa, this);
     this.passkey = new PasskeyApiClient(
       this.authJsClient.passkey,
-      this,
-      myAccountFetcher,
-      myAccountApiIdentifier
+      this
     );
 
     // Don't use web workers unless using refresh tokens in memory

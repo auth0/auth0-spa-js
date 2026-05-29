@@ -8,28 +8,7 @@ import {
   PasskeyEnrollmentVerifyError
 } from '../../src/passkey/errors';
 
-const TEST_API_BASE = 'https://auth0_domain/api/';
 const TEST_AUTH_SESSION = 'auth-session-abc123';
-
-function createMockFetcher() {
-  return {
-    fetchWithAuth: jest.fn()
-  };
-}
-
-function createMockResponse(
-  ok: boolean,
-  body: any,
-  headers?: Record<string, string>
-): Response {
-  return {
-    ok,
-    status: ok ? 200 : 400,
-    json: () => Promise.resolve(body),
-    text: () => Promise.resolve(JSON.stringify(body)),
-    headers: new Headers(headers)
-  } as unknown as Response;
-}
 
 function createMockPublicKeyCredential(type: 'create' | 'get') {
   const clientDataJSON = new Uint8Array([1, 2, 3]).buffer;
@@ -67,7 +46,6 @@ describe('PasskeyApiClient', () => {
   let passkeyClient: PasskeyApiClient;
   let mockPasskeyClient: any;
   let mockAuth0Client: any;
-  let mockFetcher: ReturnType<typeof createMockFetcher>;
 
   const originalCredentials = Object.getOwnPropertyDescriptor(
     global.navigator,
@@ -87,13 +65,9 @@ describe('PasskeyApiClient', () => {
       _requestTokenForPasskey: jest.fn()
     };
 
-    mockFetcher = createMockFetcher();
-
     passkeyClient = new PasskeyApiClient(
       mockPasskeyClient,
-      mockAuth0Client,
-      mockFetcher as any,
-      TEST_API_BASE
+      mockAuth0Client
     );
   });
 
@@ -566,238 +540,6 @@ describe('PasskeyApiClient', () => {
       expect(credential.response.authenticatorData).toMatch(/^[A-Za-z0-9_-]+$/);
       expect(credential.response.signature).toMatch(/^[A-Za-z0-9_-]+$/);
       expect(credential.response.userHandle).toMatch(/^[A-Za-z0-9_-]+$/);
-    });
-  });
-
-  describe('enrollmentChallenge', () => {
-    it('should POST to authentication-methods endpoint', async () => {
-      const mockResponseBody = {
-        auth_session: TEST_AUTH_SESSION,
-        authn_params_public_key: {
-          challenge: 'Y2hhbGxlbmdl',
-          rp: { id: 'example.auth0.com', name: 'Example App' },
-          user: { id: 'dXNlci0x', name: 'user@example.com', displayName: 'User' },
-          pubKeyCredParams: [{ type: 'public-key', alg: -7 }]
-        }
-      };
-      mockFetcher.fetchWithAuth.mockResolvedValue(
-        createMockResponse(true, mockResponseBody)
-      );
-
-      const result = await passkeyClient.enrollmentChallenge();
-
-      expect(mockFetcher.fetchWithAuth).toHaveBeenCalledWith(
-        `${TEST_API_BASE}v1/authentication-methods`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ type: 'passkey' })
-        }
-      );
-      expect(result.authSession).toBe(TEST_AUTH_SESSION);
-      expect(result.authnParamsPublicKey.challenge).toBe('Y2hhbGxlbmdl');
-      expect(result.authnParamsPublicKey.rp.id).toBe('example.auth0.com');
-    });
-
-    it('should include connection when provided', async () => {
-      const mockResponseBody = {
-        auth_session: TEST_AUTH_SESSION,
-        authn_params_public_key: {
-          challenge: 'Y2hhbGxlbmdl',
-          rp: { id: 'example.auth0.com', name: 'Example App' },
-          user: { id: 'dXNlci0x', name: 'user@example.com', displayName: 'User' },
-          pubKeyCredParams: [{ type: 'public-key', alg: -7 }]
-        }
-      };
-      mockFetcher.fetchWithAuth.mockResolvedValue(
-        createMockResponse(true, mockResponseBody)
-      );
-
-      await passkeyClient.enrollmentChallenge({ connection: 'Username-Password-Authentication' });
-
-      expect(mockFetcher.fetchWithAuth).toHaveBeenCalledWith(
-        `${TEST_API_BASE}v1/authentication-methods`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ type: 'passkey', connection: 'Username-Password-Authentication' })
-        }
-      );
-    });
-
-    it('should include identity when provided', async () => {
-      const mockResponseBody = {
-        auth_session: TEST_AUTH_SESSION,
-        authn_params_public_key: {
-          challenge: 'Y2hhbGxlbmdl',
-          rp: { id: 'example.auth0.com', name: 'Example App' },
-          user: { id: 'dXNlci0x', name: 'user@example.com', displayName: 'User' },
-          pubKeyCredParams: [{ type: 'public-key', alg: -7 }]
-        }
-      };
-      mockFetcher.fetchWithAuth.mockResolvedValue(
-        createMockResponse(true, mockResponseBody)
-      );
-
-      await passkeyClient.enrollmentChallenge({
-        connection: 'Username-Password-Authentication',
-        identity: 'auth0|user123'
-      });
-
-      expect(mockFetcher.fetchWithAuth).toHaveBeenCalledWith(
-        `${TEST_API_BASE}v1/authentication-methods`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            type: 'passkey',
-            connection: 'Username-Password-Authentication',
-            identity: 'auth0|user123'
-          })
-        }
-      );
-    });
-
-    it('should throw PasskeyEnrollmentError on non-ok response', async () => {
-      const errorBody = {
-        error: 'invalid_request',
-        error_description: 'Connection does not support passkeys'
-      };
-      mockFetcher.fetchWithAuth.mockResolvedValue(
-        createMockResponse(false, errorBody)
-      );
-
-      await expect(passkeyClient.enrollmentChallenge()).rejects.toThrow(PasskeyEnrollmentError);
-      await expect(passkeyClient.enrollmentChallenge()).rejects.toMatchObject({
-        message: 'Connection does not support passkeys',
-        code: 'passkey_enrollment_error'
-      });
-    });
-
-    it('should throw PasskeyEnrollmentError with default message on parse failure', async () => {
-      mockFetcher.fetchWithAuth.mockResolvedValue({
-        ok: false,
-        status: 500,
-        text: () => Promise.resolve('Internal Server Error'),
-        headers: new Headers()
-      } as unknown as Response);
-
-      await expect(passkeyClient.enrollmentChallenge()).rejects.toThrow(PasskeyEnrollmentError);
-      await expect(passkeyClient.enrollmentChallenge()).rejects.toMatchObject({
-        message: 'Failed to create passkey enrollment challenge'
-      });
-    });
-
-    it('should transform snake_case API response to camelCase', async () => {
-      const mockResponseBody = {
-        auth_session: 'session-xyz',
-        authn_params_public_key: {
-          challenge: 'abc123',
-          rp: { id: 'rp.example.com', name: 'RP' },
-          user: { id: 'uid', name: 'u@e.com', displayName: 'U' },
-          pubKeyCredParams: [{ type: 'public-key', alg: -257 }],
-          authenticatorSelection: {
-            residentKey: 'required',
-            userVerification: 'required'
-          },
-          timeout: 120000
-        }
-      };
-      mockFetcher.fetchWithAuth.mockResolvedValue(
-        createMockResponse(true, mockResponseBody)
-      );
-
-      const result = await passkeyClient.enrollmentChallenge();
-
-      expect(result).toEqual({
-        authSession: 'session-xyz',
-        authnParamsPublicKey: mockResponseBody.authn_params_public_key
-      });
-    });
-  });
-
-  describe('enrollmentVerify', () => {
-    it('should POST to verify endpoint with serialized credential', async () => {
-      const credential = {
-        id: 'cred-id',
-        rawId: 'cmF3SWQ',
-        type: 'public-key',
-        response: {
-          clientDataJSON: 'Y2xpZW50',
-          attestationObject: 'YXR0ZXN0'
-        }
-      } as any;
-      mockFetcher.fetchWithAuth.mockResolvedValue(
-        createMockResponse(true, {})
-      );
-
-      await passkeyClient.enrollmentVerify({
-        authSession: TEST_AUTH_SESSION,
-        credential
-      });
-
-      expect(mockFetcher.fetchWithAuth).toHaveBeenCalledWith(
-        `${TEST_API_BASE}v1/authentication-methods/passkey%7Cnew/verify`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            auth_session: TEST_AUTH_SESSION,
-            authn_response: credential
-          })
-        }
-      );
-    });
-
-    it('should resolve without returning a value on success', async () => {
-      const credential = { id: 'c', rawId: 'r', type: 'public-key', response: { clientDataJSON: 'c' } } as any;
-      mockFetcher.fetchWithAuth.mockResolvedValue(
-        createMockResponse(true, {})
-      );
-
-      const result = await passkeyClient.enrollmentVerify({
-        authSession: TEST_AUTH_SESSION,
-        credential
-      });
-
-      expect(result).toBeUndefined();
-    });
-
-    it('should throw PasskeyEnrollmentVerifyError on non-ok response', async () => {
-      const credential = { id: 'c', rawId: 'r', type: 'public-key', response: { clientDataJSON: 'c' } } as any;
-      const errorBody = {
-        error: 'invalid_credential',
-        error_description: 'The credential response is invalid'
-      };
-      mockFetcher.fetchWithAuth.mockResolvedValue(
-        createMockResponse(false, errorBody)
-      );
-
-      await expect(
-        passkeyClient.enrollmentVerify({ authSession: TEST_AUTH_SESSION, credential })
-      ).rejects.toThrow(PasskeyEnrollmentVerifyError);
-      await expect(
-        passkeyClient.enrollmentVerify({ authSession: TEST_AUTH_SESSION, credential })
-      ).rejects.toMatchObject({
-        message: 'The credential response is invalid',
-        code: 'passkey_enrollment_verify_error'
-      });
-    });
-
-    it('should throw PasskeyEnrollmentVerifyError with default message when json parsing fails', async () => {
-      const credential = { id: 'c', rawId: 'r', type: 'public-key', response: { clientDataJSON: 'c' } } as any;
-      mockFetcher.fetchWithAuth.mockResolvedValue({
-        ok: false,
-        status: 500,
-        text: () => Promise.resolve('Internal Server Error'),
-        headers: new Headers()
-      } as unknown as Response);
-
-      await expect(
-        passkeyClient.enrollmentVerify({ authSession: TEST_AUTH_SESSION, credential })
-      ).rejects.toMatchObject({
-        message: 'Failed to verify passkey enrollment'
-      });
     });
   });
 

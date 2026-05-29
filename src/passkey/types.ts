@@ -33,27 +33,3 @@ export type PasskeyLoginOptions = PasskeyLoginChallengeOptions & {
   scope?: string;
   audience?: string;
 };
-
-/**
- * Options for creating a passkey enrollment challenge.
- */
-export interface PasskeyEnrollmentOptions {
-  connection?: string;
-  identity?: string;
-}
-
-/**
- * Response from a passkey enrollment challenge.
- */
-export interface PasskeyEnrollmentResponse {
-  authSession: string;
-  authnParamsPublicKey: PasskeyCreationOptions;
-}
-
-/**
- * Options for verifying a passkey enrollment.
- */
-export interface PasskeyEnrollmentVerifyOptions {
-  authSession: string;
-  credential: PasskeyCredentialResponse;
-}
