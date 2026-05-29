@@ -10,6 +10,7 @@
 - [Device-bound tokens with DPoP](#device-bound-tokens-with-dpop)
 - [Connect Accounts for using Token Vault](#connect-accounts-for-using-token-vault)
 - [Accessing SDK Configuration](#accessing-sdk-configuration)
+- [Passkeys](#passkeys)
 - [Multi-Factor Authentication (MFA)](#multi-factor-authentication-mfa)
 - [Step-Up Authentication](#step-up-authentication)
 
@@ -898,7 +899,6 @@ You can now [call the API](#calling-an-api) with your access token and the API c
 > [!IMPORTANT]
 > You must enable `Offline Access` from the Connection Permissions settings to be able to use the connection with Connected Accounts.
 
-
 ## Accessing SDK Configuration
 
 After initializing the Auth0Client, you can retrieve the configuration details:
@@ -923,12 +923,170 @@ This is useful when you need to:
 - Pass configuration to other services or analytics
 - Verify the SDK is configured correctly
 
+## Passkeys
+
+Passkeys provide password-less authentication using platform biometrics (Face ID, Touch ID, Windows Hello) or security keys via the WebAuthn standard. The SDK supports two flows:
+
+1. **Signup**: Register a new user with a passkey
+2. **Login**: Authenticate an existing user with a passkey
+
+- [Important: Use Refresh Tokens with Passkeys](#important-use-refresh-tokens-with-passkeys)
+- [Signup with Passkey](#signup-with-passkey)
+- [Login with Passkey](#login-with-passkey)
+- [Complete Passkey Flow Example](#complete-passkey-flow-example)
+- [Error Handling](#passkey-error-handling)
+
+### Setup
+
+Before using passkeys, enable the Database Connection with passkey support in your [Auth0 Dashboard](https://manage.auth0.com) under **Authentication** > **Database** > your connection > **Authentication Methods** > **Passkey**.
+
+### Important: Use Refresh Tokens with Passkeys
+
+> [!IMPORTANT]
+> When using passkeys, you **must** configure the SDK with `useRefreshTokens: true`.
+
+Passkey authentication uses a direct token exchange (`/oauth/token` with the WebAuthn grant type). It does **not** create an Auth0 session cookie because there is no redirect to `/authorize`. This means that when the access token expires, the SDK cannot silently obtain a new one using an iframe (which relies on the Auth0 session cookie via `prompt=none`).
+
+Without refresh tokens, `getTokenSilently()` will either:
+- Fail with a `login_required` error (if no Auth0 session exists), or
+- Return tokens for a **different user** if a separate Auth0 session cookie exists from a prior redirect-based login, causing an unintended session swap.
+
+To avoid this, always enable refresh tokens:
+
+```js
+const auth0 = await createAuth0Client({
+  domain: '<AUTH0_DOMAIN>',
+  clientId: '<AUTH0_CLIENT_ID>',
+  useRefreshTokens: true, // Required for passkey-based sessions
+  authorizationParams: {
+    redirect_uri: '<MY_CALLBACK_URL>'
+  }
+});
+```
+
+You must also enable **Refresh Token Rotation** in your Auth0 Dashboard under **Applications** > your app > **Settings** > **Refresh Token Rotation**.
+
+### Signup with Passkey
+
+Register a new user with a passkey. The SDK handles the entire flow internally: requesting a challenge from Auth0, triggering the browser's WebAuthn credential creation ceremony, serializing the result, and exchanging it for tokens.
+
+```js
+import { createAuth0Client } from '@auth0/auth0-spa-js';
+
+const auth0 = await createAuth0Client({
+  domain: '<AUTH0_DOMAIN>',
+  clientId: '<AUTH0_CLIENT_ID>',
+  authorizationParams: {
+    redirect_uri: '<MY_CALLBACK_URL>'
+  }
+});
+
+// One call handles everything — the user sees the biometric prompt
+const tokens = await auth0.passkey.signup({
+  email: 'user@example.com',
+  name: 'Jane Doe' // optional display name
+});
+
+// User is now logged in — getUser() works immediately
+const user = await auth0.getUser();
+console.log('Signed up:', user);
+```
+
+You can also pass `scope` and `audience` to control the access token:
+
+```js
+const tokens = await auth0.passkey.signup({
+  email: 'user@example.com',
+  scope: 'openid profile email read:products',
+  audience: 'https://api.example.com'
+});
+```
+
+#### Organization-Scoped Signup
+
+To register a user within an organization context:
+
+```js
+const tokens = await auth0.passkey.signup({
+  email: 'user@example.com',
+  organization: 'org_abc123'
+});
+```
+
+> [!NOTE]
+> `passkey.signup()` and `passkey.login()` cache tokens and establish a session automatically, just like `loginWithRedirect()`. After calling them, `isAuthenticated()`, `getUser()`, and `getTokenSilently()` all work as expected.
+>
+> Remember to configure `useRefreshTokens: true`. See [Important: Use Refresh Tokens with Passkeys](#important-use-refresh-tokens-with-passkeys).
+
+### Login with Passkey
+
+Authenticate an existing user with their registered passkey. Like signup, a single call handles the entire flow.
+
+```js
+const tokens = await auth0.passkey.login();
+
+const user = await auth0.getUser();
+console.log('Logged in:', user);
+```
+
+#### Specifying a Realm
+
+If your tenant has multiple database connections with passkeys enabled, specify the `realm`:
+
+```js
+const tokens = await auth0.passkey.login({
+  realm: 'Username-Password-Authentication'
+});
+```
+
+#### Organization-Scoped Login
+
+To authenticate within an organization context:
+
+```js
+const tokens = await auth0.passkey.login({
+  organization: 'org_abc123'
+});
+```
+
+### Complete Passkey Flow Example
+
+```js
+import { createAuth0Client } from '@auth0/auth0-spa-js';
+
+const auth0 = await createAuth0Client({
+  domain: '<AUTH0_DOMAIN>',
+  clientId: '<AUTH0_CLIENT_ID>',
+  useRefreshTokens: true,
+  authorizationParams: {
+    redirect_uri: '<MY_CALLBACK_URL>'
+  }
+});
+
+// --- Signup (single call) ---
+async function signupWithPasskey(email, displayName) {
+  await auth0.passkey.signup({ email, name: displayName });
+  return await auth0.getUser();
+}
+
+// --- Login (single call) ---
+async function loginWithPasskey() {
+  await auth0.passkey.login();
+  return await auth0.getUser();
+}
+```
+
+### Passkey Error Handling
+
+> [!TIP]
+> Both `signup()` and `login()` throw an `Error` with a descriptive message if the user cancels the biometric prompt (i.e., the WebAuthn API returns `null`). Wrap calls in try/catch to handle cancellation, network failures, or misconfigured connections.
+
 ## Multi-Factor Authentication (MFA)
 
 The MFA API allows you to manage multi-factor authentication for users. The SDK automatically handles MFA context, eliminating the need for manual parsing of error payloads.
+
 > [!NOTE]
 > Multi Factor Authentication support via SDKs is currently in Early Access. To request access to this feature, contact your Auth0 representative.
-
 
 - [Understanding the MFA Response](#understanding-the-mfa-response)
 - [Handling MFA required errors](#handling-mfa-required-errors)
@@ -1011,7 +1169,6 @@ try {
   await auth0.getTokenSilently();
 } catch (error) {
   if (error instanceof MfaRequiredError) {
-
     // Check if enrollment is required
     const enrollmentFactors = await auth0.mfa.getEnrollmentFactors(error.mfa_token);
 

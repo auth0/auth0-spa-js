@@ -82,4 +82,26 @@ export type {
 
 export { MyAccountApiError } from './MyAccountApiClient';
 
+export {
+  PasskeyApiClient,
+  PasskeyError,
+  PasskeyEnrollmentError,
+  PasskeyEnrollmentVerifyError,
+  PasskeyRegisterError,
+  PasskeyChallengeError,
+  PasskeyGetTokenError
+} from './passkey';
+export type {
+  PasskeyErrorResponse,
+  PasskeySignupChallengeOptions,
+  PasskeySignupChallengeResponse,
+  PasskeyLoginChallengeOptions,
+  PasskeyLoginChallengeResponse,
+  PasskeyCredentialResponse,
+  PasskeyCreationOptions,
+  PasskeyRequestOptions,
+  PasskeySignupOptions,
+  PasskeyLoginOptions
+} from './passkey';
+
 export type { CustomTokenExchangeOptions } from './TokenExchange';

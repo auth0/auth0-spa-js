@@ -116,7 +116,7 @@ window.addEventListener('load', async () => {
 
 ### More Examples
 
-For comprehensive examples covering various scenarios including logging out, calling APIs, refresh tokens, organizations, MFA, DPoP, and more, see the [EXAMPLES.md](https://github.com/auth0/auth0-spa-js/blob/main/EXAMPLES.md) document.
+For comprehensive examples covering various scenarios including logging out, calling APIs, refresh tokens, organizations, passkeys, MFA, DPoP, and more, see the [EXAMPLES.md](https://github.com/auth0/auth0-spa-js/blob/main/EXAMPLES.md) document.
 
 ## API Reference
 
