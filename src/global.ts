@@ -1,6 +1,6 @@
 import { ICache } from './cache';
 import type { Dpop } from './dpop/dpop';
-import { CompleteResponse } from './MyAccountApiClient';
+import { CompleteResponse } from './myaccount';
 
 /**
  * Configuration option for automatic interactive error handling.

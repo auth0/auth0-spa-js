@@ -36,7 +36,7 @@ describe('Auth0Client', () => {
       useMrrt: true,
       authorizationParams: {}
     } as any);
-    (client as any).myAccountApi = mockMyAccountApi;
+    (client as any).myAccount = mockMyAccountApi;
     (client as any).transactionManager =
       mockTransactionManager;
   });

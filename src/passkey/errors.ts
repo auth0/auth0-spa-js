@@ -23,18 +23,3 @@ export class PasskeyError extends Error {
   }
 }
 
-export class PasskeyEnrollmentError extends PasskeyError {
-  constructor(message: string, cause?: PasskeyErrorResponse) {
-    super('passkey_enrollment_error', message, cause);
-    this.name = 'PasskeyEnrollmentError';
-    Object.setPrototypeOf(this, PasskeyEnrollmentError.prototype);
-  }
-}
-
-export class PasskeyEnrollmentVerifyError extends PasskeyError {
-  constructor(message: string, cause?: PasskeyErrorResponse) {
-    super('passkey_enrollment_verify_error', message, cause);
-    this.name = 'PasskeyEnrollmentVerifyError';
-    Object.setPrototypeOf(this, PasskeyEnrollmentVerifyError.prototype);
-  }
-}
