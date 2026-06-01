@@ -1,5 +1,12 @@
 # Change Log
 
+## [v2.21.0](https://github.com/auth0/auth0-spa-js/tree/v2.21.0) (2026-06-01)
+[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.20.0...v2.21.0)
+
+**Added**
+- feat: add MyAccount API client [\#1615](https://github.com/auth0/auth0-spa-js/pull/1615) ([yogeshchoudhary147](https://github.com/yogeshchoudhary147))
+- feat: add passkey authentication support [\#1614](https://github.com/auth0/auth0-spa-js/pull/1614) ([yogeshchoudhary147](https://github.com/yogeshchoudhary147))
+
 ## [v2.20.0](https://github.com/auth0/auth0-spa-js/tree/v2.20.0) (2026-05-22)
 [Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.19.3...v2.20.0)
 
