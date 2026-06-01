@@ -118,9 +118,10 @@ import { Dpop } from './dpop/dpop';
 import {
   Fetcher,
   type FetcherConfig,
-  type CustomFetchMinimalOutput
+  type CustomFetchMinimalOutput,
+  type AuthParams
 } from './fetcher';
-import { MyAccountApiClient } from './MyAccountApiClient';
+import { MyAccountApiClient } from './myaccount';
 import { MfaApiClient } from './mfa';
 import { PasskeyApiClient } from './passkey';
 import type { PasskeyCredentialResponse } from './passkey/types';
@@ -157,7 +158,7 @@ export class Auth0Client {
     authorizationParams: ClientAuthorizationParams,
   };
   private readonly userCache: ICache = new InMemoryCache().enclosedCache;
-  private readonly myAccountApi: MyAccountApiClient;
+  public readonly myAccount: MyAccountApiClient;
 
   /**
    * MFA API client for multi-factor authentication operations.
@@ -285,16 +286,16 @@ export class Auth0Client {
     const myAccountApiIdentifier = `${this.domainUrl}/me/`;
     const myAccountFetcher = this.createFetcher({
       ...(this.options.useDpop && { dpopNonceId: '__auth0_my_account_api__' }),
-      getAccessToken: () =>
+      getAccessToken: (authParams?: AuthParams) =>
         this.getTokenSilently({
           authorizationParams: {
-            scope: 'create:me:connected_accounts',
+            scope: authParams?.scope?.join(' '),
             audience: myAccountApiIdentifier
           },
           detailedResponse: true
         })
     });
-    this.myAccountApi = new MyAccountApiClient(
+    this.myAccount = new MyAccountApiClient(
       myAccountFetcher,
       myAccountApiIdentifier
     );
@@ -791,7 +792,7 @@ export class Auth0Client {
       throw new GenericError('state_mismatch', 'Invalid state');
     }
 
-    const data = await this.myAccountApi.completeAccount({
+    const data = await this.myAccount.completeAccount({
       auth_session: transaction.auth_session,
       connect_code,
       redirect_uri: transaction.redirect_uri,
@@ -1999,7 +2000,7 @@ export class Auth0Client {
     const code_challenge = bufferToBase64UrlEncoded(code_challengeBuffer);
 
     const { connect_uri, connect_params, auth_session } =
-      await this.myAccountApi.connectAccount({
+      await this.myAccount.connectAccount({
         connection,
         scopes,
         redirect_uri: redirectUri,

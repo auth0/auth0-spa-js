@@ -31,7 +31,7 @@ import {
 
 import { DEFAULT_AUTH0_CLIENT } from '../../src/constants';
 import { Auth0Client, ConnectError, GenericError } from '../../src';
-import { CompleteResponse } from '../../src/MyAccountApiClient';
+import { CompleteResponse } from '../../src/myaccount';
 
 jest.mock('es-cookie');
 jest.mock('../../src/jwt');
@@ -554,7 +554,7 @@ describe('Auth0Client', () => {
       myAccountApi = {
         completeAccount: jest.fn().mockResolvedValue(completeResponse)
       };
-      (client as any).myAccountApi = myAccountApi;
+      (client as any).myAccount = myAccountApi;
       (client as any).transactionManager = {
         get: jest.fn(),
         remove: jest.fn()

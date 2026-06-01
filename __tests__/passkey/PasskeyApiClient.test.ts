@@ -3,10 +3,6 @@ jest.mock('@auth0/auth0-auth-js', () => ({
 }));
 
 import { PasskeyApiClient } from '../../src/passkey/PasskeyApiClient';
-import {
-  PasskeyEnrollmentError,
-  PasskeyEnrollmentVerifyError
-} from '../../src/passkey/errors';
 
 const TEST_AUTH_SESSION = 'auth-session-abc123';
 
@@ -636,29 +632,4 @@ describe('PasskeyApiClient', () => {
     });
   });
 
-  describe('error classes', () => {
-    it('PasskeyEnrollmentError should have correct properties', () => {
-      const cause = { error: 'invalid_request', error_description: 'Bad request' };
-      const error = new PasskeyEnrollmentError('Something went wrong', cause);
-
-      expect(error).toBeInstanceOf(Error);
-      expect(error).toBeInstanceOf(PasskeyEnrollmentError);
-      expect(error.name).toBe('PasskeyEnrollmentError');
-      expect(error.code).toBe('passkey_enrollment_error');
-      expect(error.message).toBe('Something went wrong');
-      expect(error.cause).toEqual(cause);
-    });
-
-    it('PasskeyEnrollmentVerifyError should have correct properties', () => {
-      const cause = { error: 'invalid_credential', error_description: 'Invalid' };
-      const error = new PasskeyEnrollmentVerifyError('Verify failed', cause);
-
-      expect(error).toBeInstanceOf(Error);
-      expect(error).toBeInstanceOf(PasskeyEnrollmentVerifyError);
-      expect(error.name).toBe('PasskeyEnrollmentVerifyError');
-      expect(error.code).toBe('passkey_enrollment_verify_error');
-      expect(error.message).toBe('Verify failed');
-      expect(error.cause).toEqual(cause);
-    });
-  });
 });

@@ -1,8 +1,6 @@
 export { PasskeyApiClient } from './PasskeyApiClient';
 export {
   PasskeyError,
-  PasskeyEnrollmentError,
-  PasskeyEnrollmentVerifyError,
   PasskeyRegisterError,
   PasskeyChallengeError,
   PasskeyGetTokenError
