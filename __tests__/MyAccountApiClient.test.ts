@@ -331,19 +331,6 @@ describe('MyAccountApiClient', () => {
       expect(result.location).toBe('https://api.example.com/me/v1/authentication-methods/passkey%7Cnew');
     });
 
-    it('parses id and location from Location header for non-passkey type', async () => {
-      mockFetcher.fetchWithAuth = jest.fn().mockResolvedValue({
-        ok: true,
-        headers: { get: jest.fn().mockReturnValue('https://api.example.com/me/v1/authentication-methods/am_2') },
-        text: jest.fn().mockResolvedValue(JSON.stringify({ id: 'am_2', auth_session: 'session-abc' }))
-      });
-
-      const result = await api.enrollmentChallenge({ type: 'webauthn-roaming' });
-
-      expect(result.id).toBe('am_2');
-      expect(result.location).toBe('https://api.example.com/me/v1/authentication-methods/am_2');
-    });
-
     it('falls back to empty string when Location header is absent', async () => {
       mockFetcher.fetchWithAuth = jest.fn().mockResolvedValue({
         ok: true,
@@ -491,19 +478,6 @@ describe('MyAccountApiClient', () => {
         status: 400,
         title: 'Bad Request'
       });
-    });
-
-    it('throws MyAccountApiError for webauthn-roaming failure', async () => {
-      mockFetcher.fetchWithAuth = jest.fn().mockResolvedValue({
-        ok: false,
-        text: jest.fn().mockResolvedValue(JSON.stringify({
-          type: 'error', status: 400, title: 'Bad Request', detail: 'Invalid credential'
-        }))
-      });
-
-      await expect(
-        api.enrollmentVerify({ type: 'webauthn-roaming', location: 'https://api.example.com/me/v1/authentication-methods/webauthn-roaming%7Cdev_abc', auth_session: 'session-abc', authn_response })
-      ).rejects.toThrow(MyAccountApiError);
     });
 
     it('sends otp_code for phone verify', async () => {

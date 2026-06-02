@@ -1801,26 +1801,6 @@ await auth0.myAccount.enrollmentVerify({
 });
 ```
 
-#### WebAuthn Platform / Roaming
-
-Same flow as [Passkey](#passkey) above -- just change the `type`:
-
-```js
-// Platform authenticator (e.g. Touch ID, Windows Hello)
-const challenge = await auth0.myAccount.enrollmentChallenge({ type: 'webauthn-platform' });
-
-// Roaming authenticator (e.g. a hardware security key)
-const challenge = await auth0.myAccount.enrollmentChallenge({ type: 'webauthn-roaming' });
-
-// The credential creation ceremony and verify call are identical to passkey
-await auth0.myAccount.enrollmentVerify({
-  type: 'webauthn-platform', // or 'webauthn-roaming'
-  id: challenge.id,
-  auth_session: challenge.auth_session,
-  authn_response: serializeCredential(credential)
-});
-```
-
 #### Push Notification
 
 ```js
