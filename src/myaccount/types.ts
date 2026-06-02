@@ -178,14 +178,6 @@ export interface PasskeyEnrollmentChallengeOptions {
   identity_user_id?: string;
 }
 
-export interface WebAuthnPlatformEnrollmentChallengeOptions {
-  type: 'webauthn-platform';
-}
-
-export interface WebAuthnRoamingEnrollmentChallengeOptions {
-  type: 'webauthn-roaming';
-}
-
 export interface PhoneEnrollmentChallengeOptions {
   type: 'phone';
   phone_number: string;
@@ -217,8 +209,6 @@ export interface PasswordEnrollmentChallengeOptions {
 
 export type EnrollmentChallengeOptions =
   | PasskeyEnrollmentChallengeOptions
-  | WebAuthnPlatformEnrollmentChallengeOptions
-  | WebAuthnRoamingEnrollmentChallengeOptions
   | PhoneEnrollmentChallengeOptions
   | EmailEnrollmentChallengeOptions
   | TotpEnrollmentChallengeOptions
@@ -237,18 +227,6 @@ interface EnrollmentChallengeBaseResponse {
 export interface PasskeyEnrollmentChallengeResponse
   extends EnrollmentChallengeBaseResponse {
   type: 'passkey';
-  authn_params_public_key: PasskeyCreationOptions;
-}
-
-export interface WebAuthnPlatformEnrollmentChallengeResponse
-  extends EnrollmentChallengeBaseResponse {
-  type: 'webauthn-platform';
-  authn_params_public_key: PasskeyCreationOptions;
-}
-
-export interface WebAuthnRoamingEnrollmentChallengeResponse
-  extends EnrollmentChallengeBaseResponse {
-  type: 'webauthn-roaming';
   authn_params_public_key: PasskeyCreationOptions;
 }
 
@@ -313,8 +291,6 @@ export interface PasswordEnrollmentChallengeResponse
 
 export type EnrollmentChallengeResponse =
   | PasskeyEnrollmentChallengeResponse
-  | WebAuthnPlatformEnrollmentChallengeResponse
-  | WebAuthnRoamingEnrollmentChallengeResponse
   | PhoneEnrollmentChallengeResponse
   | EmailEnrollmentChallengeResponse
   | TotpEnrollmentChallengeResponse
@@ -332,18 +308,6 @@ interface EnrollmentVerifyBaseOptions {
 export interface PasskeyEnrollmentVerifyOptions
   extends EnrollmentVerifyBaseOptions {
   type: 'passkey';
-  authn_response: PasskeyCredentialResponse;
-}
-
-export interface WebAuthnPlatformEnrollmentVerifyOptions
-  extends EnrollmentVerifyBaseOptions {
-  type: 'webauthn-platform';
-  authn_response: PasskeyCredentialResponse;
-}
-
-export interface WebAuthnRoamingEnrollmentVerifyOptions
-  extends EnrollmentVerifyBaseOptions {
-  type: 'webauthn-roaming';
   authn_response: PasskeyCredentialResponse;
 }
 
@@ -383,8 +347,6 @@ export interface PasswordEnrollmentVerifyOptions
 
 export type EnrollmentVerifyOptions =
   | PasskeyEnrollmentVerifyOptions
-  | WebAuthnPlatformEnrollmentVerifyOptions
-  | WebAuthnRoamingEnrollmentVerifyOptions
   | PhoneEnrollmentVerifyOptions
   | EmailEnrollmentVerifyOptions
   | TotpEnrollmentVerifyOptions
