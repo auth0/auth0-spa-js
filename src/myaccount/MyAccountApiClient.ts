@@ -190,11 +190,9 @@ export class MyAccountApiClient {
     );
 
     const raw = await this._handleResponse(res);
-
-    if (options.type === 'passkey') {
-      return { ...raw, id: 'passkey|new' };
-    }
-    return raw;
+    const location = res.headers.get('location') ?? '';
+    const id = decodeURIComponent(location.split('/').pop() || '');
+    return { ...raw, id, location };
   }
 
   /**
@@ -204,11 +202,10 @@ export class MyAccountApiClient {
    * @returns A promise that resolves to the confirmed authentication method
    */
   async enrollmentVerify(options: EnrollmentVerifyOptions): Promise<AuthenticationMethod> {
-    const { id, type: _, ...body } = options as any;
-    const methodId = encodeURIComponent(id);
+    const { location, type: _, ...body } = options as any;
 
     const res = await this.myAccountFetcher.fetchWithAuth(
-      `${this.apiBase}v1/authentication-methods/${methodId}/verify`,
+      `${location}/verify`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

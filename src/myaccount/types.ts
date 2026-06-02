@@ -230,6 +230,7 @@ export type EnrollmentChallengeOptions =
 
 interface EnrollmentChallengeBaseResponse {
   id: string;
+  location: string;
   auth_session: string;
 }
 
@@ -324,7 +325,7 @@ export type EnrollmentChallengeResponse =
 // ─── Enrollment Verify ────────────────────────────────────────────────────────
 
 interface EnrollmentVerifyBaseOptions {
-  id: string;
+  location: string;
   auth_session: string;
 }
 

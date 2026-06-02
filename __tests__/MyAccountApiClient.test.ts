@@ -301,6 +301,7 @@ describe('MyAccountApiClient', () => {
     it('sends POST to correct endpoint with correct scope', async () => {
       mockFetcher.fetchWithAuth = jest.fn().mockResolvedValue({
         ok: true,
+        headers: { get: jest.fn().mockReturnValue('https://api.example.com/me/v1/authentication-methods/passkey%7Cnew') },
         text: jest.fn().mockResolvedValue(JSON.stringify({ auth_session: 's' }))
       });
 
@@ -317,31 +318,49 @@ describe('MyAccountApiClient', () => {
       );
     });
 
-    it('sets id to passkey|new for passkey type', async () => {
+    it('parses id and location from Location header', async () => {
       mockFetcher.fetchWithAuth = jest.fn().mockResolvedValue({
         ok: true,
+        headers: { get: jest.fn().mockReturnValue('https://api.example.com/me/v1/authentication-methods/passkey%7Cnew') },
         text: jest.fn().mockResolvedValue(JSON.stringify({ auth_session: 'session-abc' }))
       });
 
       const result = await api.enrollmentChallenge({ type: 'passkey' });
 
       expect(result.id).toBe('passkey|new');
+      expect(result.location).toBe('https://api.example.com/me/v1/authentication-methods/passkey%7Cnew');
     });
 
-    it('returns raw id for non-passkey type', async () => {
+    it('parses id and location from Location header for non-passkey type', async () => {
       mockFetcher.fetchWithAuth = jest.fn().mockResolvedValue({
         ok: true,
+        headers: { get: jest.fn().mockReturnValue('https://api.example.com/me/v1/authentication-methods/am_2') },
         text: jest.fn().mockResolvedValue(JSON.stringify({ id: 'am_2', auth_session: 'session-abc' }))
       });
 
       const result = await api.enrollmentChallenge({ type: 'webauthn-roaming' });
 
       expect(result.id).toBe('am_2');
+      expect(result.location).toBe('https://api.example.com/me/v1/authentication-methods/am_2');
+    });
+
+    it('falls back to empty string when Location header is absent', async () => {
+      mockFetcher.fetchWithAuth = jest.fn().mockResolvedValue({
+        ok: true,
+        headers: { get: jest.fn().mockReturnValue(null) },
+        text: jest.fn().mockResolvedValue(JSON.stringify({ auth_session: 'session-abc' }))
+      });
+
+      const result = await api.enrollmentChallenge({ type: 'passkey' });
+
+      expect(result.id).toBe('');
+      expect(result.location).toBe('');
     });
 
     it('includes connection and identity when provided', async () => {
       mockFetcher.fetchWithAuth = jest.fn().mockResolvedValue({
         ok: true,
+        headers: { get: jest.fn().mockReturnValue('https://api.example.com/me/v1/authentication-methods/passkey%7Cnew') },
         text: jest.fn().mockResolvedValue(JSON.stringify({ auth_session: 's' }))
       });
 
@@ -434,10 +453,10 @@ describe('MyAccountApiClient', () => {
         text: jest.fn().mockResolvedValue(JSON.stringify(verifiedMethod))
       });
 
-      await api.enrollmentVerify({ type: 'passkey', id: 'passkey|new', auth_session: 'session-abc', authn_response });
+      await api.enrollmentVerify({ type: 'passkey', location: 'https://api.example.com/me/v1/authentication-methods/passkey%7Cnew', auth_session: 'session-abc', authn_response });
 
       expect(mockFetcher.fetchWithAuth).toHaveBeenCalledWith(
-        `${apiBase}v1/authentication-methods/passkey%7Cnew/verify`,
+        'https://api.example.com/me/v1/authentication-methods/passkey%7Cnew/verify',
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -453,7 +472,7 @@ describe('MyAccountApiClient', () => {
         text: jest.fn().mockResolvedValue(JSON.stringify(verifiedMethod))
       });
 
-      const result = await api.enrollmentVerify({ type: 'passkey', id: 'passkey|new', auth_session: 'session-abc', authn_response });
+      const result = await api.enrollmentVerify({ type: 'passkey', location: 'https://api.example.com/me/v1/authentication-methods/passkey%7Cnew', auth_session: 'session-abc', authn_response });
 
       expect(result).toMatchObject({ id: 'passkey|new', type: 'passkey', confirmed: true });
     });
@@ -466,8 +485,8 @@ describe('MyAccountApiClient', () => {
         }))
       });
 
-      await expect(api.enrollmentVerify({ type: 'passkey', id: 'passkey|new', auth_session: 'session-abc', authn_response })).rejects.toThrow(MyAccountApiError);
-      await expect(api.enrollmentVerify({ type: 'passkey', id: 'passkey|new', auth_session: 'session-abc', authn_response })).rejects.toMatchObject({
+      await expect(api.enrollmentVerify({ type: 'passkey', location: 'https://api.example.com/me/v1/authentication-methods/passkey%7Cnew', auth_session: 'session-abc', authn_response })).rejects.toThrow(MyAccountApiError);
+      await expect(api.enrollmentVerify({ type: 'passkey', location: 'https://api.example.com/me/v1/authentication-methods/passkey%7Cnew', auth_session: 'session-abc', authn_response })).rejects.toMatchObject({
         message: 'Invalid credential',
         status: 400,
         title: 'Bad Request'
@@ -483,7 +502,7 @@ describe('MyAccountApiClient', () => {
       });
 
       await expect(
-        api.enrollmentVerify({ type: 'webauthn-roaming', id: 'webauthn-roaming|dev_abc', auth_session: 'session-abc', authn_response })
+        api.enrollmentVerify({ type: 'webauthn-roaming', location: 'https://api.example.com/me/v1/authentication-methods/webauthn-roaming%7Cdev_abc', auth_session: 'session-abc', authn_response })
       ).rejects.toThrow(MyAccountApiError);
     });
 
@@ -493,10 +512,10 @@ describe('MyAccountApiClient', () => {
         text: jest.fn().mockResolvedValue(JSON.stringify({ id: 'phone|dev_abc', type: 'phone' }))
       });
 
-      await api.enrollmentVerify({ type: 'phone', id: 'phone|dev_abc', auth_session: 'session-abc', otp_code: '123456' });
+      await api.enrollmentVerify({ type: 'phone', location: 'https://api.example.com/me/v1/authentication-methods/phone%7Cdev_abc', auth_session: 'session-abc', otp_code: '123456' });
 
       expect(mockFetcher.fetchWithAuth).toHaveBeenCalledWith(
-        `${apiBase}v1/authentication-methods/phone%7Cdev_abc/verify`,
+        'https://api.example.com/me/v1/authentication-methods/phone%7Cdev_abc/verify',
         expect.objectContaining({
           body: JSON.stringify({ auth_session: 'session-abc', otp_code: '123456' })
         }),
@@ -510,10 +529,10 @@ describe('MyAccountApiClient', () => {
         text: jest.fn().mockResolvedValue(JSON.stringify({ id: 'password|dev_abc', type: 'password' }))
       });
 
-      await api.enrollmentVerify({ type: 'password', id: 'password|dev_abc', auth_session: 'session-abc', new_password: 'secret123!' });
+      await api.enrollmentVerify({ type: 'password', location: 'https://api.example.com/me/v1/authentication-methods/password%7Cdev_abc', auth_session: 'session-abc', new_password: 'secret123!' });
 
       expect(mockFetcher.fetchWithAuth).toHaveBeenCalledWith(
-        `${apiBase}v1/authentication-methods/password%7Cdev_abc/verify`,
+        'https://api.example.com/me/v1/authentication-methods/password%7Cdev_abc/verify',
         expect.objectContaining({
           body: JSON.stringify({ auth_session: 'session-abc', new_password: 'secret123!' })
         }),
@@ -526,7 +545,7 @@ describe('MyAccountApiClient', () => {
       mockFetcher.fetchWithAuth = jest.fn().mockRejectedValue(networkError);
 
       await expect(
-        api.enrollmentVerify({ type: 'passkey', id: 'passkey|new', auth_session: 'session-abc', authn_response })
+        api.enrollmentVerify({ type: 'passkey', location: 'https://api.example.com/me/v1/authentication-methods/passkey%7Cnew', auth_session: 'session-abc', authn_response })
       ).rejects.toThrow('Network failure');
     });
 
@@ -535,7 +554,7 @@ describe('MyAccountApiClient', () => {
       jest.spyOn(api as any, '_handleResponse').mockRejectedValue(new Error('unexpected'));
 
       await expect(
-        api.enrollmentVerify({ type: 'passkey', id: 'passkey|new', auth_session: 'session-abc', authn_response })
+        api.enrollmentVerify({ type: 'passkey', location: 'https://api.example.com/me/v1/authentication-methods/passkey%7Cnew', auth_session: 'session-abc', authn_response })
       ).rejects.toThrow('unexpected');
     });
   });
