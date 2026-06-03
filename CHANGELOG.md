@@ -1,5 +1,11 @@
 # Change Log
 
+## [v2.21.1](https://github.com/auth0/auth0-spa-js/tree/v2.21.1) (2026-06-03)
+[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.21.0...v2.21.1)
+
+**Changed**
+- fix: parse enrollment id and verify url from location header [\#1617](https://github.com/auth0/auth0-spa-js/pull/1617) ([yogeshchoudhary147](https://github.com/yogeshchoudhary147))
+
 ## [v2.21.0](https://github.com/auth0/auth0-spa-js/tree/v2.21.0) (2026-06-01)
 [Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.20.0...v2.21.0)
 
