@@ -82,6 +82,8 @@ export type CacheEntry = {
   client_id: string;
   refresh_token?: string;
   oauthTokenScope?: string;
+  /** Resource server audience from an MRRT exchange response. Only present when `useMrrt: true`. */
+  resource?: string;
 };
 
 export type WrappedCacheEntry = {

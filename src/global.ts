@@ -778,6 +778,13 @@ export type TokenEndpointResponse = {
   refresh_token?: string;
   expires_in: number;
   scope?: string;
+  /**
+   * The audience (resource server) associated with the issued access token.
+   * Only present when exchanging a Multi-Resource Refresh Token (MRRT), i.e.,
+   * when `useMrrt: true` is configured. The value matches the `aud` claim of
+   * the returned access token.
+   */
+  resource?: string;
 };
 
 /**

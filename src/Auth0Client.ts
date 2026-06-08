@@ -41,6 +41,7 @@ import {
   MfaRequiredError,
   MissingRefreshTokenError,
   MissingScopesError,
+  MrrtResourceMismatchError,
   PopupOpenError,
   TimeoutError
 } from './errors';
@@ -985,7 +986,7 @@ export class Auth0Client {
           ? await this._getTokenUsingRefreshToken(getTokenOptions)
           : await this._getTokenFromIFrame(getTokenOptions);
 
-        const { id_token, token_type, access_token, oauthTokenScope, expires_in } =
+        const { id_token, token_type, access_token, oauthTokenScope, expires_in, resource } =
           authResult;
 
         return {
@@ -993,7 +994,8 @@ export class Auth0Client {
           token_type,
           access_token,
           ...(oauthTokenScope ? { scope: oauthTokenScope } : null),
-          expires_in
+          expires_in,
+          ...(resource ? { resource } : null)
         };
       });
     } catch (error) {
@@ -1629,7 +1631,7 @@ export class Auth0Client {
     );
 
     if (entry && entry.access_token) {
-      const { token_type, access_token, oauthTokenScope, expires_in } =
+      const { token_type, access_token, oauthTokenScope, expires_in, resource } =
         entry as CacheEntry;
       const cache = await this._getIdTokenFromCache();
       return (
@@ -1638,7 +1640,8 @@ export class Auth0Client {
           token_type: token_type ? token_type : 'Bearer',
           access_token,
           ...(oauthTokenScope ? { scope: oauthTokenScope } : null),
-          expires_in
+          expires_in,
+          ...(resource ? { resource } : null)
         }
       );
     }
@@ -1667,6 +1670,12 @@ export class Auth0Client {
       },
       this.worker
     );
+
+    if (this.options.useMrrt && authResult.resource && options.audience) {
+      if (authResult.resource !== options.audience) {
+        throw new MrrtResourceMismatchError(options.audience, authResult.resource);
+      }
+    }
 
     const decodedToken = await this._verifyIdToken(
       authResult.id_token,

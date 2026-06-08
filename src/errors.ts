@@ -149,6 +149,20 @@ export class MissingScopesError extends GenericError {
 }
 
 /**
+ * Error thrown when the `resource` field in an MRRT token response does not match
+ * the requested audience, indicating the server returned a token for the wrong resource.
+ */
+export class MrrtResourceMismatchError extends GenericError {
+  constructor(public requested: string, public received: string) {
+    super(
+      'mrrt_resource_mismatch',
+      `MRRT resource mismatch: requested '${requested}' but server returned '${received}'`
+    );
+    Object.setPrototypeOf(this, MrrtResourceMismatchError.prototype);
+  }
+}
+
+/**
  * Error thrown when the wrong DPoP nonce is used and a potential subsequent retry wasn't able to fix it.
  */
 export class UseDpopNonceError extends GenericError {
