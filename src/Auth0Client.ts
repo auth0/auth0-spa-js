@@ -38,6 +38,7 @@ import {
   AuthenticationError,
   ConnectError,
   GenericError,
+  InvalidConfigurationError,
   MfaRequiredError,
   MissingRefreshTokenError,
   MissingScopesError,
@@ -59,6 +60,7 @@ import {
   MISSING_REFRESH_TOKEN_ERROR_MESSAGE,
   MFA_STEP_UP_ERROR_DESCRIPTION,
   DEFAULT_SCOPE,
+  ONLINE_ACCESS_SCOPE,
   DEFAULT_SESSION_CHECK_EXPIRY_DAYS,
   DEFAULT_AUTH0_CLIENT,
   INVALID_REFRESH_TOKEN_ERROR_MESSAGE,
@@ -71,6 +73,7 @@ import {
 
 import {
   Auth0ClientOptions,
+  Auth0ClientOptionsBase,
   AuthorizationParams,
   AuthorizeOptions,
   RedirectLoginOptions,
@@ -155,7 +158,8 @@ export class Auth0Client {
   private readonly isAuthenticatedCookieName: string;
   private readonly nowProvider: () => number | Promise<number>;
   private readonly httpTimeoutMs: number;
-  private readonly options: Auth0ClientOptions & {
+  private readonly onlineAccess: boolean;
+  private readonly options: Auth0ClientOptionsBase & {
     authorizationParams: ClientAuthorizationParams,
   };
   private readonly userCache: ICache = new InMemoryCache().enclosedCache;
@@ -184,7 +188,7 @@ export class Auth0Client {
   private worker?: Worker;
   private readonly authJsClient: Auth0AuthJsClient;
 
-  private readonly defaultOptions: Partial<Auth0ClientOptions> = {
+  private readonly defaultOptions: Partial<Auth0ClientOptionsBase> = {
     authorizationParams: {
       scope: DEFAULT_SCOPE
     },
@@ -192,7 +196,31 @@ export class Auth0Client {
     useFormData: true
   };
 
+  /**
+   * Validates the online-access configuration and returns whether online mode is enabled.
+   *
+   * Online access requires DPoP. The TypeScript types already forbid the invalid combinations
+   * when `onlineAccess` is a literal `true`, but this runtime check covers dynamically-built
+   * config, `as any` casts, and plain-JS consumers that bypass the compiler.
+   */
+  private resolveOnlineAccess(options: Auth0ClientOptions): boolean {
+    if (options.onlineAccess !== true) {
+      return false;
+    }
+
+    if (options.useDpop !== true) {
+      throw new InvalidConfigurationError(
+        '`onlineAccess: true` requires DPoP, which is missing or disabled.',
+        'Set `useDpop: true` (DPoP is mandatory for online access).'
+      );
+    }
+
+    return true;
+  }
+
   constructor(options: Auth0ClientOptions) {
+    this.onlineAccess = this.resolveOnlineAccess(options);
+
     this.options = {
       ...this.defaultOptions,
       ...options,
@@ -254,11 +282,17 @@ export class Auth0Client {
     // Construct the scopes based on the following:
     // 1. Always include `openid`
     // 2. Include the scopes provided in `authorizationParams. This defaults to `profile email`
-    // 3. Add `offline_access` if `useRefreshTokens` is enabled
+    // 3. Add `online_access` when in online-access mode, otherwise `offline_access` if
+    //    `useRefreshTokens` is enabled. Online and offline are mutually exclusive — online
+    //    must never inject `offline_access`.
     this.scope = injectDefaultScopes(
       this.options.authorizationParams.scope,
       'openid',
-      this.options.useRefreshTokens ? 'offline_access' : ''
+      this.onlineAccess
+        ? ONLINE_ACCESS_SCOPE
+        : this.options.useRefreshTokens
+        ? 'offline_access'
+        : ''
     );
 
     this.transactionManager = new TransactionManager(
@@ -316,7 +350,7 @@ export class Auth0Client {
     if (
       typeof window !== 'undefined' &&
       window.Worker &&
-      this.options.useRefreshTokens &&
+      (this.options.useRefreshTokens || this.onlineAccess) &&
       cacheLocation === CACHE_LOCATION_MEMORY
     ) {
       if (this.options.workerUrl) {
@@ -994,7 +1028,7 @@ export class Auth0Client {
           }
         }
 
-        const authResult = this.options.useRefreshTokens
+        const authResult = (this.options.useRefreshTokens || this.onlineAccess)
           ? await this._getTokenUsingRefreshToken(getTokenOptions)
           : await this._getTokenFromIFrame(getTokenOptions);
 
@@ -1211,7 +1245,7 @@ export class Auth0Client {
    * await auth0.revokeRefreshToken({ audience: 'https://api2.example.com' });
    */
   public async revokeRefreshToken(options: RevokeRefreshTokenOptions = {}): Promise<void> {
-    if (!this.options.useRefreshTokens) {
+    if (!this.options.useRefreshTokens && !this.onlineAccess) {
       return;
     }
 
@@ -1455,8 +1489,13 @@ export class Auth0Client {
       );
 
       // If is refreshed with MRRT, we update all entries that have the old
-      // refresh_token with the new one if the server responded with one
-      if (tokenResult.refresh_token && cache?.refresh_token) {
+      // refresh_token with the new one if the server responded with one.
+      // Online Refresh Tokens are non-rotating, so the stored RT is never replaced.
+      if (
+        !this.onlineAccess &&
+        tokenResult.refresh_token &&
+        cache?.refresh_token
+      ) {
         await this.cacheManager.updateEntry(
           cache.refresh_token,
           tokenResult.refresh_token

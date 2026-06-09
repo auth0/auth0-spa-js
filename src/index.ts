@@ -25,6 +25,7 @@ export { Auth0Client };
 export {
   ConnectError,
   GenericError,
+  InvalidConfigurationError,
   AuthenticationError,
   TimeoutError,
   PopupTimeoutError,

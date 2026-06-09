@@ -114,9 +114,27 @@ window.addEventListener('load', async () => {
 });
 ```
 
+### Online Access
+
+Pass `onlineAccess: true` (together with the required `useDpop: true`) to use **Online Refresh Tokens** — non-rotating refresh tokens bound to the Auth0 session lifetime. The SDK injects the `online_access` scope and routes renewal through the refresh-token grant.
+
+```js
+const auth0 = await createAuth0Client({
+  domain: '<AUTH0_DOMAIN>',
+  clientId: '<AUTH0_CLIENT_ID>',
+  onlineAccess: true,
+  useDpop: true,
+  authorizationParams: {
+    redirect_uri: '<MY_CALLBACK_URL>'
+  }
+});
+```
+
+DPoP is mandatory and must be set explicitly; do not set `useRefreshTokens` (it requests `offline_access`, which conflicts with online access). See [Online Access](https://github.com/auth0/auth0-spa-js/blob/main/EXAMPLES.md#online-access-online-refresh-tokens) in EXAMPLES.md for the full guide.
+
 ### More Examples
 
-For comprehensive examples covering various scenarios including logging out, calling APIs, refresh tokens, organizations, passkeys, MFA, DPoP, and more, see the [EXAMPLES.md](https://github.com/auth0/auth0-spa-js/blob/main/EXAMPLES.md) document.
+For comprehensive examples covering various scenarios including logging out, calling APIs, refresh tokens, online access, organizations, passkeys, MFA, DPoP, and more, see the [EXAMPLES.md](https://github.com/auth0/auth0-spa-js/blob/main/EXAMPLES.md) document.
 
 ## API Reference
 
