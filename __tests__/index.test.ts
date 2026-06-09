@@ -1,4 +1,4 @@
-import { Auth0ClientOptions } from '../src/global';
+import { Auth0ClientOptionsBase } from '../src/global';
 import * as scope from '../src/scope';
 import { expect } from '@jest/globals';
 
@@ -38,7 +38,7 @@ jest.mock('../src/storage', () => ({
 }));
 
 const setup = async (
-  clientOptions: Partial<Auth0ClientOptions> = {},
+  clientOptions: Partial<Auth0ClientOptionsBase> = {},
   callConstructor = true
 ) => {
   const tokenVerifier = require('../src/jwt').verify;
