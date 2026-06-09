@@ -4,7 +4,7 @@
  * @jest-environment node
  */
 
-import { Auth0Client, Auth0ClientOptionsBase } from '../../src';
+import { Auth0Client, Auth0ClientOptions } from '../../src';
 import {
   TEST_CLIENT_ID,
   TEST_DOMAIN,
@@ -16,7 +16,7 @@ import { beforeEach, describe, expect } from '@jest/globals';
 import { Dpop } from '../../src/dpop/dpop';
 
 function newTestAuth0Client(
-  extraOpts?: Partial<Auth0ClientOptionsBase>
+  extraOpts?: Partial<Auth0ClientOptions>
 ): Auth0Client {
   return new Auth0Client({
     ...extraOpts,

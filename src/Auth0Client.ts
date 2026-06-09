@@ -72,7 +72,6 @@ import {
 
 import {
   Auth0ClientOptions,
-  Auth0ClientOptionsBase,
   AuthorizationParams,
   AuthorizeOptions,
   RedirectLoginOptions,
@@ -158,7 +157,7 @@ export class Auth0Client {
   private readonly nowProvider: () => number | Promise<number>;
   private readonly httpTimeoutMs: number;
   private readonly onlineAccess: boolean;
-  private readonly options: Auth0ClientOptionsBase & {
+  private readonly options: Auth0ClientOptions & {
     authorizationParams: ClientAuthorizationParams,
   };
   private readonly userCache: ICache = new InMemoryCache().enclosedCache;
@@ -187,7 +186,7 @@ export class Auth0Client {
   private worker?: Worker;
   private readonly authJsClient: Auth0AuthJsClient;
 
-  private readonly defaultOptions: Partial<Auth0ClientOptionsBase> = {
+  private readonly defaultOptions: Partial<Auth0ClientOptions> = {
     authorizationParams: {
       scope: DEFAULT_SCOPE
     },
@@ -198,9 +197,7 @@ export class Auth0Client {
   /**
    * Validates the online-access configuration and returns whether online mode is enabled.
    *
-   * Online access requires DPoP. The TypeScript types already forbid the invalid combinations
-   * when `onlineAccess` is a literal `true`, but this runtime check covers dynamically-built
-   * config, `as any` casts, and plain-JS consumers that bypass the compiler.
+   * Online access requires DPoP, so `onlineAccess: true` without `useDpop: true` throws.
    */
   private resolveOnlineAccess(options: Auth0ClientOptions): boolean {
     if (options.onlineAccess !== true) {
