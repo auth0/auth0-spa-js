@@ -257,13 +257,13 @@ The two options request **different, mutually exclusive** refresh-token types, a
 | Rotation | Rotating (a new RT is issued on each refresh) | Non-rotating (same RT reused) |
 | DPoP | Optional | **Required** (`useDpop: true`) |
 
-Because `useRefreshTokens` injects `offline_access` — which conflicts with `online_access` — do **not** set both. In TypeScript, setting `useRefreshTokens` alongside `onlineAccess: true` is a compile-time error.
+Because `useRefreshTokens` injects `offline_access` — which conflicts with `online_access` — do **not** set both. In TypeScript, calling `createAuth0Client` with `useRefreshTokens` alongside `onlineAccess: true` is a compile-time error.
 
 ### Configuration validation
 
 The SDK enforces the DPoP requirement at two layers:
 
-1. **Compile-time (TypeScript).** `Auth0ClientOptions` is a discriminated union on `onlineAccess`. When `onlineAccess` is the literal `true`, the compiler requires `useDpop: true` and forbids `useRefreshTokens`:
+1. **Compile-time (TypeScript).** When you call `createAuth0Client` with `onlineAccess` set to the literal `true`, the compiler requires `useDpop: true` and forbids `useRefreshTokens`:
 
    ```ts
    // ❌ compile error: `useDpop` is required when `onlineAccess: true`

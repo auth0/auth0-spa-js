@@ -141,7 +141,7 @@ interface BaseLoginOptions {
   authorizationParams?: AuthorizationParams;
 }
 
-export interface Auth0ClientOptionsBase {
+export interface Auth0ClientOptions {
   /**
    * Your Auth0 account domain such as `'example.auth0.com'`,
    * `'example.eu.auth0.com'` or , `'example.mycompany.com'`
@@ -313,6 +313,20 @@ export interface Auth0ClientOptionsBase {
   useDpop?: boolean;
 
   /**
+   * Opt in to Online Refresh Tokens (ORTs): non-rotating refresh tokens bound to
+   * the Auth0 session lifetime. When `true`, the SDK injects the `online_access`
+   * scope, routes token renewal through the refresh_token grant, and stores the
+   * (non-rotating) refresh token in the existing cache.
+   *
+   * Online access requires DPoP — you must also set `useDpop: true`. Do NOT set
+   * `useRefreshTokens` alongside it: that injects `offline_access`, which conflicts
+   * with `online_access`.
+   *
+   * Defaults to `false` — when unset or `false` the SDK behaves exactly as before.
+   */
+  onlineAccess?: boolean;
+
+  /**
    * Configures automatic handling of interactive authentication errors.
    *
    * When set, the SDK intercepts `mfa_required` errors from `getTokenSilently()`
@@ -369,44 +383,6 @@ export interface Auth0ClientOptionsBase {
    */
   sessionTransferTokenQueryParamName?: string;
 }
-
-/**
- * Configuration options for the Auth0Client.
- *
- * This is a discriminated union on `onlineAccess`:
- * - When `onlineAccess: true`, the SDK uses Online Refresh Tokens. DPoP is mandatory and must
- *   be set explicitly (`useDpop: true`); `useRefreshTokens` must not be set (online injects
- *   `online_access`, not `offline_access`). The compiler enforces both constraints.
- * - Otherwise (`onlineAccess` unset or `false`), behavior is exactly as before — `useDpop` and
- *   `useRefreshTokens` are independent optional booleans.
- *
- * The compile-time check only narrows when `onlineAccess` is a literal `true`. The Auth0Client
- * constructor performs an equivalent runtime check that also covers dynamic config and plain JS.
- *
- * @category Main
- */
-export type Auth0ClientOptions =
-  | (Auth0ClientOptionsBase & {
-      /**
-       * Opt in to Online Refresh Tokens. Injects the `online_access` scope, routes renewal
-       * through the refresh_token grant, and stores the non-rotating refresh token in the
-       * existing cache. Requires `useDpop: true` (DPoP is mandatory for online access and must
-       * be set explicitly). Do NOT set `useRefreshTokens` — it injects `offline_access`, which
-       * conflicts with online access.
-       */
-      onlineAccess: true;
-      useDpop: true;
-      useRefreshTokens?: never;
-    })
-  | (Auth0ClientOptionsBase & {
-      /**
-       * Opt in to Online Refresh Tokens. Defaults to `false` — when unset or `false` the SDK
-       * behaves exactly as before.
-       */
-      onlineAccess?: false;
-      useDpop?: boolean;
-      useRefreshTokens?: boolean;
-    });
 
 /**
  * Configuration details exposed by the Auth0Client after initialization.
