@@ -1548,15 +1548,6 @@ export class Auth0Client {
         }
       }
 
-      if (e instanceof MfaRequiredError) {
-        this.mfa.setMFAAuthDetails(
-          e.mfa_token,
-          options.authorizationParams?.scope,
-          options.authorizationParams?.audience,
-          e.mfa_requirements
-        );
-      }
-
       throw e;
     }
   }
@@ -1644,6 +1635,12 @@ export class Auth0Client {
     }
   }
 
+  private _storeMfaContext(e: unknown, scope?: string, audience?: string): void {
+    if (e instanceof MfaRequiredError) {
+      this.mfa.setMFAAuthDetails(e.mfa_token, scope, audience, e.mfa_requirements);
+    }
+  }
+
   private async _requestToken(
     options:
       | PKCERequestTokenOptions
@@ -1653,57 +1650,66 @@ export class Auth0Client {
     additionalParameters?: RequestTokenAdditionalParameters
   ) {
     const { nonceIn, organization, scopesToRequest } = additionalParameters || {};
-    const authResult = await oauthToken(
-      {
-        baseUrl: this.domainUrl,
-        client_id: this.options.clientId,
-        auth0Client: this.options.auth0Client,
-        useFormData: this.options.useFormData,
-        timeout: this.httpTimeoutMs,
-        useMrrt: this.options.useMrrt,
-        dpop: this.dpop,
-        ...options,
-        scope: scopesToRequest || options.scope,
-      },
-      this.worker
-    );
+    try {
+      const authResult = await oauthToken(
+        {
+          baseUrl: this.domainUrl,
+          client_id: this.options.clientId,
+          auth0Client: this.options.auth0Client,
+          useFormData: this.options.useFormData,
+          timeout: this.httpTimeoutMs,
+          useMrrt: this.options.useMrrt,
+          dpop: this.dpop,
+          ...options,
+          scope: scopesToRequest || options.scope,
+        },
+        this.worker
+      );
 
-    const decodedToken = await this._verifyIdToken(
-      authResult.id_token,
-      nonceIn,
-      organization
-    );
+      const decodedToken = await this._verifyIdToken(
+        authResult.id_token,
+        nonceIn,
+        organization
+      );
 
-    // When logging in with authorization_code, check if a different user is authenticating
-    // If so, clear the cache to prevent tokens from multiple users coexisting
-    if (options.grant_type === 'authorization_code') {
-      const existingIdToken = await this._getIdTokenFromCache();
+      // When logging in with authorization_code, check if a different user is authenticating
+      // If so, clear the cache to prevent tokens from multiple users coexisting
+      if (options.grant_type === 'authorization_code') {
+        const existingIdToken = await this._getIdTokenFromCache();
 
-      if (existingIdToken?.decodedToken?.claims?.sub &&
-        existingIdToken.decodedToken.claims.sub !== decodedToken.claims.sub) {
-        // Different user detected - clear cached tokens
-        await this.cacheManager.clear(this.options.clientId);
-        this.userCache.remove(CACHE_KEY_ID_TOKEN_SUFFIX);
+        if (existingIdToken?.decodedToken?.claims?.sub &&
+          existingIdToken.decodedToken.claims.sub !== decodedToken.claims.sub) {
+          // Different user detected - clear cached tokens
+          await this.cacheManager.clear(this.options.clientId);
+          this.userCache.remove(CACHE_KEY_ID_TOKEN_SUFFIX);
+        }
       }
+
+      await this._saveEntryInCache({
+        ...authResult,
+        decodedToken,
+        scope: options.scope,
+        audience: options.audience || DEFAULT_AUDIENCE,
+        ...(authResult.scope ? { oauthTokenScope: authResult.scope } : null),
+        client_id: this.options.clientId
+      });
+
+      this.cookieStorage.save(this.isAuthenticatedCookieName, true, {
+        daysUntilExpire: this.sessionCheckExpiryDays,
+        cookieDomain: this.options.cookieDomain
+      });
+
+      this._processOrgHint(organization || decodedToken.claims.org_id);
+
+      return { ...authResult, decodedToken };
+    } catch (e) {
+      // Exclude authorization_code: MFA is handled by Universal Login during the
+      // authorization phase for redirect/popup flows, not via a token endpoint error.
+      if (options.grant_type !== 'authorization_code') {
+        this._storeMfaContext(e, scopesToRequest || options.scope, options.audience);
+      }
+      throw e;
     }
-
-    await this._saveEntryInCache({
-      ...authResult,
-      decodedToken,
-      scope: options.scope,
-      audience: options.audience || DEFAULT_AUDIENCE,
-      ...(authResult.scope ? { oauthTokenScope: authResult.scope } : null),
-      client_id: this.options.clientId
-    });
-
-    this.cookieStorage.save(this.isAuthenticatedCookieName, true, {
-      daysUntilExpire: this.sessionCheckExpiryDays,
-      cookieDomain: this.options.cookieDomain
-    });
-
-    this._processOrgHint(organization || decodedToken.claims.org_id);
-
-    return { ...authResult, decodedToken };
   }
 
   /*
@@ -1829,25 +1835,31 @@ export class Auth0Client {
   async customTokenExchange(
     options: CustomTokenExchangeOptions
   ): Promise<TokenEndpointResponse> {
-    const result = await oauthToken(
-      {
-        ...this._buildTokenExchangeParams(options),
-        baseUrl: this.domainUrl,
-        client_id: this.options.clientId,
-        auth0Client: this.options.auth0Client,
-        useFormData: this.options.useFormData,
-        timeout: this.httpTimeoutMs,
-        dpop: this.dpop,
-      },
-      this.worker,
-      true // skipTokenStorage — when using a worker, refresh_token is discarded inside it
-    );
+    const params = this._buildTokenExchangeParams(options);
+    try {
+      const result = await oauthToken(
+        {
+          ...params,
+          baseUrl: this.domainUrl,
+          client_id: this.options.clientId,
+          auth0Client: this.options.auth0Client,
+          useFormData: this.options.useFormData,
+          timeout: this.httpTimeoutMs,
+          dpop: this.dpop,
+        },
+        this.worker,
+        true // skipTokenStorage — when using a worker, refresh_token is discarded inside it
+      );
 
-    if (result.id_token) {
-      await this._verifyIdToken(result.id_token, undefined, options.organization);
+      if (result.id_token) {
+        await this._verifyIdToken(result.id_token, undefined, options.organization);
+      }
+
+      return result;
+    } catch (e) {
+      this._storeMfaContext(e, params.scope, params.audience);
+      throw e;
     }
-
-    return result;
   }
 
   /**
