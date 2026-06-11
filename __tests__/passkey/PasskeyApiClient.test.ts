@@ -3,6 +3,7 @@ jest.mock('@auth0/auth0-auth-js', () => ({
 }));
 
 import { PasskeyApiClient } from '../../src/passkey/PasskeyApiClient';
+import { MfaRequiredError } from '../../src/errors';
 
 const TEST_AUTH_SESSION = 'auth-session-abc123';
 
@@ -409,6 +410,40 @@ describe('PasskeyApiClient', () => {
       expect(credential.response.clientDataJSON).toMatch(/^[A-Za-z0-9_-]+$/);
       expect(credential.response.attestationObject).toMatch(/^[A-Za-z0-9_-]+$/);
     });
+
+    it('should re-throw MfaRequiredError', async () => {
+      const challengeResponse = {
+        authSession: TEST_AUTH_SESSION,
+        authnParamsPublicKey: {
+          challenge: 'Y2hhbGxlbmdl',
+          rp: { id: 'example.auth0.com', name: 'Example' },
+          user: { id: 'dXNlci0x', name: 'user@example.com', displayName: 'User' },
+          pubKeyCredParams: [{ type: 'public-key', alg: -7 }]
+        }
+      };
+      mockPasskeyClient.register.mockResolvedValue(challengeResponse);
+
+      Object.defineProperty(global.navigator, 'credentials', {
+        value: { create: jest.fn().mockResolvedValue(createMockPublicKeyCredential('create')) },
+        configurable: true
+      });
+
+      const mfaError = new MfaRequiredError(
+        'mfa_required',
+        'Multifactor authentication required',
+        'mfa-token-123',
+        { challenge: [{ type: 'otp' }] }
+      );
+      mockAuth0Client._requestTokenForPasskey.mockRejectedValue(mfaError);
+
+      await expect(
+        passkeyClient.signup({
+          email: 'user@example.com',
+          scope: 'openid profile',
+          audience: 'https://api.example.com'
+        })
+      ).rejects.toThrow(mfaError);
+    });
   });
 
   describe('login', () => {
@@ -629,6 +664,37 @@ describe('PasskeyApiClient', () => {
       expect(credential.response.authenticatorData).toMatch(/^[A-Za-z0-9_-]+$/);
       expect(credential.response.signature).toMatch(/^[A-Za-z0-9_-]+$/);
       expect(credential.response.userHandle).toMatch(/^[A-Za-z0-9_-]+$/);
+    });
+
+    it('should re-throw MfaRequiredError', async () => {
+      const challengeResponse = {
+        authSession: TEST_AUTH_SESSION,
+        authnParamsPublicKey: {
+          challenge: 'Y2hhbGxlbmdl',
+          rpId: 'example.auth0.com'
+        }
+      };
+      mockPasskeyClient.challenge.mockResolvedValue(challengeResponse);
+
+      Object.defineProperty(global.navigator, 'credentials', {
+        value: { get: jest.fn().mockResolvedValue(createMockPublicKeyCredential('get')) },
+        configurable: true
+      });
+
+      const mfaError = new MfaRequiredError(
+        'mfa_required',
+        'Multifactor authentication required',
+        'mfa-token-456',
+        { enroll: [{ type: 'otp' }] }
+      );
+      mockAuth0Client._requestTokenForPasskey.mockRejectedValue(mfaError);
+
+      await expect(
+        passkeyClient.login({
+          scope: 'openid profile',
+          audience: 'https://api.example.com'
+        })
+      ).rejects.toThrow(mfaError);
     });
   });
 

@@ -2,6 +2,7 @@ import { verify } from '../../src/jwt';
 import { MessageChannel } from 'worker_threads';
 import * as utils from '../../src/utils';
 import * as scope from '../../src/scope';
+import { MfaRequiredError } from '../../src/errors';
 
 import { fetchResponse, setupFn } from './helpers';
 
@@ -280,6 +281,36 @@ describe('Auth0Client', () => {
         error: 'invalid_grant',
         error_description: 'Auth session has expired'
       });
+    });
+
+    it('stores MFA context and re-throws MfaRequiredError', async () => {
+      const auth0 = setup();
+      const setMFAAuthDetailsSpy = jest.spyOn(auth0.mfa, 'setMFAAuthDetails');
+
+      mockFetch.mockResolvedValueOnce(
+        fetchResponse(false, {
+          error: 'mfa_required',
+          error_description: 'Multifactor authentication required',
+          mfa_token: 'mfa-token-123',
+          mfa_requirements: { challenge: [{ type: 'otp' }] }
+        })
+      );
+
+      await expect(
+        auth0._requestTokenForPasskey({
+          authSession: TEST_AUTH_SESSION,
+          credential: TEST_CREDENTIAL as any,
+          scope: 'openid profile',
+          audience: 'https://api.example.com'
+        })
+      ).rejects.toThrow(MfaRequiredError);
+
+      expect(setMFAAuthDetailsSpy).toHaveBeenCalledWith(
+        'mfa-token-123',
+        'openid profile email',
+        'https://api.example.com',
+        { challenge: [{ type: 'otp' }] }
+      );
     });
 
     it('sends JSON body to /oauth/token endpoint (not form-encoded)', async () => {

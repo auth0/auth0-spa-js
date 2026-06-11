@@ -3,6 +3,7 @@ import { MessageChannel } from 'worker_threads';
 import * as utils from '../../src/utils';
 import * as scope from '../../src/scope';
 import * as api from '../../src/api';
+import { MfaRequiredError } from '../../src/errors';
 
 // @ts-ignore
 
@@ -749,6 +750,59 @@ describe('Auth0Client', () => {
 
       expect(capturedRequestOptions.organization).toEqual('org_12345');
     });
+
+    it('stores MFA context and re-throws MfaRequiredError', async () => {
+      const auth0 = setup({
+        authorizationParams: {
+          scope: 'openid profile',
+          audience: 'https://api.example.com'
+        }
+      });
+
+      mockFetch.mockResolvedValueOnce(
+        fetchResponse(false, {
+          error: 'mfa_required',
+          error_description: 'Multifactor authentication required',
+          mfa_token: 'mfa-token-123',
+          mfa_requirements: { challenge: [{ type: 'otp' }] }
+        })
+      );
+
+      const setMFAAuthDetailsSpy = jest.spyOn(auth0.mfa, 'setMFAAuthDetails');
+
+      await expect(
+        auth0.loginWithCustomTokenExchange({
+          subject_token: 'external_token_value',
+          subject_token_type: 'urn:acme:legacy-system-token',
+          scope: 'openid profile',
+          audience: 'https://api.example.com'
+        })
+      ).rejects.toThrow(MfaRequiredError);
+
+      expect(setMFAAuthDetailsSpy).toHaveBeenCalledWith(
+        'mfa-token-123',
+        expect.stringContaining('openid profile'),
+        'https://api.example.com',
+        { challenge: [{ type: 'otp' }] }
+      );
+    });
+
+    it('should re-throw non-MFA errors without storing MFA context', async () => {
+      const auth0 = await localSetup();
+
+      const genericError = new Error('invalid_grant');
+      auth0['_requestToken'] = jest.fn().mockRejectedValue(genericError);
+      const setMFAAuthDetailsSpy = jest.spyOn(auth0.mfa, 'setMFAAuthDetails');
+
+      await expect(
+        auth0.loginWithCustomTokenExchange({
+          subject_token: 'external_token_value',
+          subject_token_type: 'urn:acme:legacy-system-token'
+        })
+      ).rejects.toThrow('invalid_grant');
+
+      expect(setMFAAuthDetailsSpy).not.toHaveBeenCalled();
+    });
   });
 
   describe('customTokenExchange()', () => {
@@ -936,6 +990,42 @@ describe('Auth0Client', () => {
       });
 
       expect(mockVerify).not.toHaveBeenCalled();
+    });
+
+    it('stores MFA context and re-throws MfaRequiredError', async () => {
+      const auth0 = setup({
+        authorizationParams: {
+          scope: 'openid profile',
+          audience: 'https://api.example.com'
+        }
+      });
+
+      jest.spyOn(api, 'oauthToken').mockRejectedValue(
+        new MfaRequiredError(
+          'mfa_required',
+          'Multifactor authentication required',
+          'mfa-token-123',
+          { challenge: [{ type: 'otp' }] }
+        )
+      );
+
+      const setMFAAuthDetailsSpy = jest.spyOn(auth0.mfa, 'setMFAAuthDetails');
+
+      await expect(
+        auth0.customTokenExchange({
+          subject_token: 'external_token',
+          subject_token_type: 'urn:acme:legacy-token',
+          scope: 'openid profile',
+          audience: 'https://api.example.com'
+        })
+      ).rejects.toThrow(MfaRequiredError);
+
+      expect(setMFAAuthDetailsSpy).toHaveBeenCalledWith(
+        'mfa-token-123',
+        expect.stringContaining('openid profile'),
+        'https://api.example.com',
+        { challenge: [{ type: 'otp' }] }
+      );
     });
   });
 
