@@ -1,0 +1,238 @@
+import { expect } from '@jest/globals';
+import { MessageChannel } from 'worker_threads';
+import * as utils from '../../src/utils';
+import * as scope from '../../src/scope';
+import * as DpopModule from '../../src/dpop/dpop';
+import { verify } from '../../src/jwt';
+
+import {
+  getTokenSilentlyFn,
+  loginWithRedirectFn,
+  setupFn
+} from './helpers';
+
+import {
+  TEST_CODE_CHALLENGE,
+  TEST_REFRESH_TOKEN
+} from '../constants';
+import { DEFAULT_AUDIENCE } from '../../src/constants';
+import { InvalidConfigurationError } from '../../src/errors';
+
+jest.mock('es-cookie');
+jest.mock('../../src/jwt');
+jest.mock('../../src/worker/token.worker');
+
+const mockWindow = <any>global;
+const mockFetch = <jest.Mock>mockWindow.fetch;
+const mockVerify = <jest.Mock>verify;
+
+jest
+  .spyOn(utils, 'bufferToBase64UrlEncoded')
+  .mockReturnValue(TEST_CODE_CHALLENGE);
+
+const setup = setupFn(mockVerify);
+const loginWithRedirect = loginWithRedirectFn(mockWindow, mockFetch);
+const getTokenSilently = getTokenSilentlyFn(mockWindow, mockFetch);
+
+describe('Auth0Client', () => {
+  const oldWindowLocation = window.location;
+
+  beforeEach(() => {
+    delete window.location;
+    window.location = Object.defineProperties(
+      {},
+      {
+        ...Object.getOwnPropertyDescriptors(oldWindowLocation),
+        assign: {
+          configurable: true,
+          value: jest.fn()
+        }
+      }
+    ) as Location;
+
+    mockWindow.open = jest.fn();
+    mockWindow.addEventListener = jest.fn();
+    mockWindow.removeEventListener = jest.fn();
+    mockWindow.crypto = {
+      subtle: {
+        digest: () => 'foo'
+      },
+      getRandomValues() {
+        return '123';
+      }
+    };
+    mockWindow.MessageChannel = MessageChannel;
+    mockWindow.Worker = {};
+    jest.spyOn(scope, 'getUniqueScopes');
+    jest.spyOn(DpopModule, 'Dpop').mockImplementation(
+      () =>
+        ({
+          calculateThumbprint: jest.fn().mockResolvedValue('test-thumbprint'),
+          generateProof: jest.fn().mockResolvedValue('test-dpop-proof'),
+          getNonce: jest.fn().mockResolvedValue(undefined),
+          setNonce: jest.fn().mockResolvedValue(undefined),
+          clear: jest.fn().mockResolvedValue(undefined)
+        } as any)
+    );
+    sessionStorage.clear();
+  });
+
+  afterEach(() => {
+    mockFetch.mockReset();
+    jest.clearAllMocks();
+    window.location = oldWindowLocation;
+  });
+
+  describe('online access — configuration validation', () => {
+    it('throws InvalidConfigurationError when onlineAccess is true but useDpop is unset', () => {
+      expect(() =>
+        setup({ onlineAccess: true } as any)
+      ).toThrow(InvalidConfigurationError);
+    });
+
+    it('throws InvalidConfigurationError when onlineAccess is true but useDpop is false', () => {
+      expect(() =>
+        setup({ onlineAccess: true, useDpop: false } as any)
+      ).toThrow(InvalidConfigurationError);
+    });
+
+    it('error message tells the customer to pass useDpop: true', () => {
+      expect(() => setup({ onlineAccess: true } as any)).toThrow(
+        /useDpop: true/
+      );
+    });
+
+    it('does not throw when onlineAccess is true and useDpop is true', () => {
+      expect(() =>
+        setup({ onlineAccess: true, useDpop: true } as any)
+      ).not.toThrow();
+    });
+
+    it('leaves behavior unchanged when onlineAccess is unset (no DPoP required)', () => {
+      expect(() => setup()).not.toThrow();
+    });
+
+    it('leaves behavior unchanged when onlineAccess is false (no DPoP required)', () => {
+      expect(() => setup({ onlineAccess: false } as any)).not.toThrow();
+    });
+  });
+
+  describe('online access — scope injection', () => {
+    it('injects online_access (and not offline_access) when online', () => {
+      const auth0 = setup({
+        onlineAccess: true,
+        useDpop: true,
+        authorizationParams: {
+          scope: 'profile email test-scope'
+        }
+      } as any);
+
+      expect((<any>auth0).scope).toMatchObject({
+        [DEFAULT_AUDIENCE]: 'openid profile email test-scope online_access'
+      });
+      expect((<any>auth0).scope[DEFAULT_AUDIENCE]).not.toContain(
+        'offline_access'
+      );
+    });
+
+    it('injects offline_access (and not online_access) when using refresh tokens', () => {
+      const auth0 = setup({
+        useRefreshTokens: true,
+        authorizationParams: {
+          scope: 'profile email test-scope'
+        }
+      });
+
+      expect((<any>auth0).scope).toMatchObject({
+        [DEFAULT_AUDIENCE]: 'openid profile email test-scope offline_access'
+      });
+      expect((<any>auth0).scope[DEFAULT_AUDIENCE]).not.toContain(
+        'online_access'
+      );
+    });
+  });
+
+  describe('online access — refresh-token routing', () => {
+    it('routes silent renewal through the refresh_token grant when online', async () => {
+      const auth0 = setup({
+        onlineAccess: true,
+        useDpop: true,
+        cacheLocation: 'localstorage'
+      } as any);
+
+      const refreshSpy = jest.spyOn(
+        auth0 as any,
+        '_getTokenUsingRefreshToken'
+      );
+      const iframeSpy = jest.spyOn(auth0 as any, '_getTokenFromIFrame');
+
+      await loginWithRedirect(auth0);
+      mockFetch.mockReset();
+
+      await getTokenSilently(auth0, { cacheMode: 'off' });
+
+      expect(refreshSpy).toHaveBeenCalled();
+      expect(iframeSpy).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('online access — non-rotation', () => {
+    it('does NOT rotate the stored refresh token when online', async () => {
+      const auth0 = setup({
+        onlineAccess: true,
+        useDpop: true,
+        cacheLocation: 'localstorage'
+      } as any);
+
+      const updateEntrySpy = jest.spyOn(
+        auth0['cacheManager'],
+        'updateEntry'
+      );
+
+      await loginWithRedirect(auth0);
+      mockFetch.mockReset();
+
+      await getTokenSilently(
+        auth0,
+        { cacheMode: 'off' },
+        {
+          token: {
+            response: { refresh_token: 'new_refresh_token' }
+          }
+        }
+      );
+
+      expect(updateEntrySpy).not.toHaveBeenCalled();
+    });
+
+    it('rotates the stored refresh token when using rotating (offline) refresh tokens', async () => {
+      const auth0 = setup({
+        useRefreshTokens: true,
+        cacheLocation: 'localstorage'
+      });
+
+      const updateEntrySpy = jest.spyOn(
+        auth0['cacheManager'],
+        'updateEntry'
+      );
+
+      await loginWithRedirect(auth0);
+      mockFetch.mockReset();
+
+      await getTokenSilently(
+        auth0,
+        { cacheMode: 'off' },
+        {
+          token: {
+            response: { refresh_token: 'new_refresh_token' }
+          }
+        }
+      );
+
+      expect(updateEntrySpy).toHaveBeenCalledWith(
+        TEST_REFRESH_TOKEN,
+        'new_refresh_token'
+      );
+    });
+  });
+});

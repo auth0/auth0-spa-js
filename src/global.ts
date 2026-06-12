@@ -313,6 +313,20 @@ export interface Auth0ClientOptions {
   useDpop?: boolean;
 
   /**
+   * Opt in to Online Refresh Tokens (ORTs): non-rotating refresh tokens bound to
+   * the Auth0 session lifetime. When `true`, the SDK injects the `online_access`
+   * scope, routes token renewal through the refresh_token grant, and stores the
+   * (non-rotating) refresh token in the existing cache.
+   *
+   * Online access requires DPoP — you must also set `useDpop: true`. Do NOT set
+   * `useRefreshTokens` alongside it: that injects `offline_access`, which conflicts
+   * with `online_access`.
+   *
+   * Defaults to `false` — when unset or `false` the SDK behaves exactly as before.
+   */
+  onlineAccess?: boolean;
+
+  /**
    * Configures automatic handling of interactive authentication errors.
    *
    * When set, the SDK intercepts `mfa_required` errors from `getTokenSilently()`
