@@ -30,7 +30,7 @@ import {
 } from '../constants';
 
 import { DEFAULT_AUTH0_CLIENT } from '../../src/constants';
-import { Auth0Client, ConnectError, GenericError } from '../../src';
+import { Auth0Client, ConnectError, GenericError, MfaRequiredError } from '../../src';
 import { CompleteResponse } from '../../src/myaccount';
 
 jest.mock('es-cookie');
@@ -321,6 +321,34 @@ describe('Auth0Client', () => {
 
       // should not throw
       await auth0.handleRedirectCallback();
+    });
+
+    it('should re-throw MfaRequiredError without storing MFA context for authorization_code grant', async () => {
+      // MFA for redirect/popup flows is handled by Universal Login during the
+      // authorization phase — mfa_required should never come from the token
+      // endpoint here, but if it does the SDK must not store MFA context.
+      const auth0 = setup();
+      const setMFAAuthDetailsSpy = jest.spyOn(auth0.mfa, 'setMFAAuthDetails');
+
+      await expect(
+        loginWithRedirect(
+          auth0,
+          {},
+          {
+            token: {
+              success: false,
+              response: {
+                error: 'mfa_required',
+                error_description: 'Multifactor authentication required',
+                mfa_token: 'mfa-token-123',
+                mfa_requirements: { challenge: [{ type: 'otp' }] }
+              }
+            }
+          }
+        )
+      ).rejects.toThrow(MfaRequiredError);
+
+      expect(setMFAAuthDetailsSpy).not.toHaveBeenCalled();
     });
   });
 
