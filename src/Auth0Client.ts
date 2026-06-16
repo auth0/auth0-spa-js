@@ -128,6 +128,7 @@ import { MfaApiClient } from './mfa';
 import { PasskeyApiClient } from './passkey';
 import type { PasskeyCredentialResponse } from './passkey/types';
 import { AuthClient as Auth0AuthJsClient } from '@auth0/auth0-auth-js';
+import { OrtCookieStore } from './ort-cookie-store';
 
 /**
  * @ignore
@@ -157,6 +158,7 @@ export class Auth0Client {
   private readonly nowProvider: () => number | Promise<number>;
   private readonly httpTimeoutMs: number;
   private readonly onlineAccess: boolean;
+  private readonly ortCookieStore: OrtCookieStore | undefined;
   private readonly options: Auth0ClientOptions & {
     authorizationParams: ClientAuthorizationParams,
   };
@@ -216,6 +218,9 @@ export class Auth0Client {
 
   constructor(options: Auth0ClientOptions) {
     this.onlineAccess = this.resolveOnlineAccess(options);
+    this.ortCookieStore = this.onlineAccess
+      ? new OrtCookieStore(options.cookieDomain)
+      : undefined;
 
     this.options = {
       ...this.defaultOptions,
@@ -1280,8 +1285,11 @@ export class Auth0Client {
 
     if (options.clientId === null) {
       await this.cacheManager.clear();
+      this.ortCookieStore?.clearAll();
     } else {
-      await this.cacheManager.clear(options.clientId || this.options.clientId);
+      const clientId = options.clientId || this.options.clientId;
+      await this.cacheManager.clear(clientId);
+      this.ortCookieStore?.clearByClientId(clientId);
     }
 
     this.cookieStorage.remove(this.orgHintCookieName, {
@@ -1445,15 +1453,31 @@ export class Auth0Client {
       authorizationParams: AuthorizationParams & { scope: string };
     }
   ): Promise<GetTokenSilentlyResult> {
+    const resolvedAudience =
+      options.authorizationParams.audience || DEFAULT_AUDIENCE;
+
     const cache = await this.cacheManager.get(
       new CacheKey({
         scope: options.authorizationParams.scope,
-        audience: options.authorizationParams.audience || DEFAULT_AUDIENCE,
+        audience: resolvedAudience,
         clientId: this.options.clientId
       }),
       undefined,
       this.options.useMrrt
     );
+
+    // In online-access mode the ORT is stored in a session cookie rather than
+    // inside the main cache entry. Hydrate it here so the rest of the path
+    // (worker check, _requestToken call) works without any further changes.
+    if (this.ortCookieStore && cache && !cache.refresh_token) {
+      const ort = this.ortCookieStore.get(
+        this.options.clientId,
+        resolvedAudience
+      );
+      if (ort) {
+        (cache as CacheEntry).refresh_token = ort;
+      }
+    }
 
     // If you don't have a refresh token in memory
     // and you don't have a refresh token in web worker memory
@@ -1613,7 +1637,20 @@ export class Auth0Client {
       entry.decodedToken
     );
 
-    await this.cacheManager.set(entryWithoutIdToken);
+    // In online-access mode the ORT lives in a session cookie so it survives
+    // page reloads but is cleared when the browser closes (ephemeral). Strip it
+    // from the main cache entry to stay well within the ICache storage limits.
+    if (this.ortCookieStore && entryWithoutIdToken.refresh_token) {
+      this.ortCookieStore.set(
+        this.options.clientId,
+        entryWithoutIdToken.audience,
+        entryWithoutIdToken.refresh_token
+      );
+      const { refresh_token: _rt, ...entryWithoutOrt } = entryWithoutIdToken;
+      await this.cacheManager.set(entryWithoutOrt);
+    } else {
+      await this.cacheManager.set(entryWithoutIdToken);
+    }
   }
 
   private async _getIdTokenFromCache() {

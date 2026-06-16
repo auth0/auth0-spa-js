@@ -3,6 +3,7 @@ import { MessageChannel } from 'worker_threads';
 import * as utils from '../../src/utils';
 import * as scope from '../../src/scope';
 import * as DpopModule from '../../src/dpop/dpop';
+import * as Cookies from 'es-cookie';
 import { verify } from '../../src/jwt';
 
 import {
@@ -12,6 +13,7 @@ import {
 } from './helpers';
 
 import {
+  TEST_CLIENT_ID,
   TEST_CODE_CHALLENGE,
   TEST_REFRESH_TOKEN
 } from '../constants';
@@ -21,6 +23,9 @@ import { InvalidConfigurationError } from '../../src/errors';
 jest.mock('es-cookie');
 jest.mock('../../src/jwt');
 jest.mock('../../src/worker/token.worker');
+
+const mockCookies = Cookies as jest.Mocked<typeof Cookies>;
+const ORT_COOKIE_NAME = `@@auth0spajs@@::${TEST_CLIENT_ID}::ort::${DEFAULT_AUDIENCE}`;
 
 const mockWindow = <any>global;
 const mockFetch = <jest.Mock>mockWindow.fetch;
@@ -75,6 +80,8 @@ describe('Auth0Client', () => {
         } as any)
     );
     sessionStorage.clear();
+    mockCookies.get.mockReturnValue(undefined);
+    mockCookies.getAll.mockReturnValue({});
   });
 
   afterEach(() => {
@@ -169,6 +176,11 @@ describe('Auth0Client', () => {
       await loginWithRedirect(auth0);
       mockFetch.mockReset();
 
+      // ORT now lives in a session cookie, not the main cache entry.
+      mockCookies.get.mockImplementation((name: string) =>
+        name === ORT_COOKIE_NAME ? TEST_REFRESH_TOKEN : undefined
+      );
+
       await getTokenSilently(auth0, { cacheMode: 'off' });
 
       expect(refreshSpy).toHaveBeenCalled();
@@ -191,6 +203,11 @@ describe('Auth0Client', () => {
 
       await loginWithRedirect(auth0);
       mockFetch.mockReset();
+
+      // ORT lives in the cookie after login; provide it for the renewal call.
+      mockCookies.get.mockImplementation((name: string) =>
+        name === ORT_COOKIE_NAME ? TEST_REFRESH_TOKEN : undefined
+      );
 
       await getTokenSilently(
         auth0,
