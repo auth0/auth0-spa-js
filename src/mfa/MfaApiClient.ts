@@ -415,6 +415,7 @@ export class MfaApiClient {
           error.error_description
         );
       }
+      // MfaRequiredError is handled upstream in Auth0Client._requestToken before reaching here.
       throw error;
     }
   }

@@ -1635,6 +1635,8 @@ export class Auth0Client {
     }
   }
 
+  // Central MFA context store — called from _requestToken for all non-authorization_code
+  // grants (including via _requestTokenForMfa) and from customTokenExchange.
   private _storeMfaContext(e: unknown, scope?: string, audience?: string): void {
     if (e instanceof MfaRequiredError) {
       this.mfa.setMFAAuthDetails(e.mfa_token, scope, audience, e.mfa_requirements);
