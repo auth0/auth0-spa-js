@@ -1668,8 +1668,8 @@ try {
 
 The MyAccount API lets you manage the current user's authentication methods, factors, and connected accounts directly from the SPA.
 
-> [!IMPORTANT]
-> The MyAccount API requires DPoP, refresh tokens, and MRRT. See [Configure the SDK](#configure-the-sdk) under the Connect Accounts section for setup.
+> [!NOTE]
+> The MyAccount API requires refresh tokens and MRRT if your app is configured with a custom API audience. DPoP is supported but optional.
 
 ### Factors
 
@@ -1745,7 +1745,7 @@ const credential = await navigator.credentials.create({
 // Step 3: verify and complete enrollment
 const method = await auth0.myAccount.enrollmentVerify({
   type: 'passkey',
-  id: challenge.id,
+  location: challenge.location,
   auth_session: challenge.auth_session,
   authn_response: serializeCredential(credential)
 });
@@ -1764,7 +1764,7 @@ const challenge = await auth0.myAccount.enrollmentChallenge({
 // Step 2: verify with the OTP the user received
 await auth0.myAccount.enrollmentVerify({
   type: 'phone',
-  id: challenge.id,
+  location: challenge.location,
   auth_session: challenge.auth_session,
   otp_code: '123456'
 });
@@ -1780,7 +1780,7 @@ const challenge = await auth0.myAccount.enrollmentChallenge({
 
 await auth0.myAccount.enrollmentVerify({
   type: 'email',
-  id: challenge.id,
+  location: challenge.location,
   auth_session: challenge.auth_session,
   otp_code: '123456'
 });
@@ -1795,7 +1795,7 @@ const challenge = await auth0.myAccount.enrollmentChallenge({ type: 'totp' });
 
 await auth0.myAccount.enrollmentVerify({
   type: 'totp',
-  id: challenge.id,
+  location: challenge.location,
   auth_session: challenge.auth_session,
   otp_code: '123456'
 });
@@ -1810,7 +1810,7 @@ const challenge = await auth0.myAccount.enrollmentChallenge({ type: 'push-notifi
 // No OTP needed — user approves on their device
 await auth0.myAccount.enrollmentVerify({
   type: 'push-notification',
-  id: challenge.id,
+  location: challenge.location,
   auth_session: challenge.auth_session
 });
 ```
@@ -1824,7 +1824,7 @@ const challenge = await auth0.myAccount.enrollmentChallenge({ type: 'recovery-co
 // Verify just confirms the user has saved the code
 await auth0.myAccount.enrollmentVerify({
   type: 'recovery-code',
-  id: challenge.id,
+  location: challenge.location,
   auth_session: challenge.auth_session
 });
 ```
@@ -1836,7 +1836,7 @@ const challenge = await auth0.myAccount.enrollmentChallenge({ type: 'password' }
 
 await auth0.myAccount.enrollmentVerify({
   type: 'password',
-  id: challenge.id,
+  location: challenge.location,
   auth_session: challenge.auth_session,
   new_password: 'newSecurePassword123!'
 });
