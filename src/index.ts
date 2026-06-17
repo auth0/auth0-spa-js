@@ -147,4 +147,18 @@ export type {
   PasskeyLoginOptions
 } from './passkey';
 
+export {
+  PasswordlessApiClient,
+  PasswordlessError,
+  PasswordlessChallengeError
+} from './passwordless';
+export type {
+  PasswordlessErrorResponse,
+  DeliveryMethod,
+  PasswordlessEmailChallengeOptions,
+  PasswordlessPhoneChallengeOptions,
+  PasswordlessChallengeResponse,
+  PasswordlessLoginOptions
+} from './passwordless';
+
 export type { CustomTokenExchangeOptions } from './TokenExchange';

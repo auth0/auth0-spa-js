@@ -49,9 +49,13 @@ export async function oauthToken(
   const isWebAuthn =
     options.grant_type === 'urn:okta:params:oauth:grant-type:webauthn';
 
+  const isPasswordlessOtp =
+    options.grant_type === 'http://auth0.com/oauth/grant-type/passwordless/otp';
+
   const refreshWithMrrt = options.grant_type === 'refresh_token' && useMrrt;
 
-  const includeAudienceAndScope = isTokenExchange || isWebAuthn || refreshWithMrrt;
+  const includeAudienceAndScope =
+    isTokenExchange || isWebAuthn || isPasswordlessOtp || refreshWithMrrt;
 
   const allParams = {
     ...options,
@@ -91,6 +95,61 @@ export async function oauthToken(
     isDpopSupported ? dpop : undefined,
     undefined,
     skipTokenStorage
+  );
+}
+
+/**
+ * @ignore
+ * Internal options for the passwordless OTP challenge call.
+ */
+interface PasswordlessChallengeOptions {
+  baseUrl: string;
+  client_id: string;
+  params: Record<string, string>;
+  timeout?: number;
+  auth0Client?: any;
+  useFormData?: boolean;
+}
+
+/**
+ * Issues a database-connection OTP challenge via the `/otp/challenge` endpoint.
+ *
+ * Mirrors the `oauthToken` transport pattern. The response carries an opaque
+ * `auth_session` to be exchanged for tokens via the passwordless OTP grant.
+ *
+ * @throws {GenericError} If the challenge request fails.
+ */
+export async function passwordlessChallenge<T>({
+  baseUrl,
+  client_id,
+  params,
+  timeout,
+  auth0Client,
+  useFormData
+}: PasswordlessChallengeOptions): Promise<T> {
+  const allParams = { client_id, ...params };
+
+  const body = useFormData
+    ? createQueryParams(allParams)
+    : JSON.stringify(allParams);
+
+  return await getJSON<T>(
+    `${baseUrl}/otp/challenge`,
+    timeout,
+    DEFAULT_AUDIENCE,
+    '',
+    {
+      method: 'POST',
+      body,
+      headers: {
+        'Content-Type': useFormData
+          ? 'application/x-www-form-urlencoded'
+          : 'application/json',
+        'Auth0-Client': btoa(
+          JSON.stringify(stripAuth0Client(auth0Client || DEFAULT_AUTH0_CLIENT))
+        )
+      }
+    }
   );
 }
 

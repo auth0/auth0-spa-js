@@ -17,7 +17,7 @@ import {
 
 import { getLockManager, type ILockManager } from './lock';
 
-import { oauthToken, revokeToken } from './api';
+import { oauthToken, passwordlessChallenge, revokeToken } from './api';
 
 import { injectDefaultScopes, scopesToRequest } from './scope';
 
@@ -125,6 +125,8 @@ import { MyAccountApiClient } from './myaccount';
 import { MfaApiClient } from './mfa';
 import { PasskeyApiClient } from './passkey';
 import type { PasskeyCredentialResponse } from './passkey/types';
+import { PasswordlessApiClient } from './passwordless';
+import type { PasswordlessChallengeResponse } from './passwordless/types';
 import { AuthClient as Auth0AuthJsClient } from '@auth0/auth0-auth-js';
 
 /**
@@ -179,6 +181,15 @@ export class Auth0Client {
    * - `login(options?)` — authenticate an existing user with a passkey
    */
   public readonly passkey: PasskeyApiClient;
+
+  /**
+   * Passwordless API client for database-connection OTP authentication.
+   *
+   * Provides a two-step email/SMS one-time-code flow:
+   * - `challengeWithEmail(options)` / `challengeWithPhone(options)` — issue a code
+   * - `loginWithOTP(options)` — exchange the code for tokens and establish a session
+   */
+  public readonly passwordless: PasswordlessApiClient;
 
   private worker?: Worker;
   private readonly authJsClient: Auth0AuthJsClient;
@@ -310,6 +321,7 @@ export class Auth0Client {
       this.authJsClient.passkey,
       this
     );
+    this.passwordless = new PasswordlessApiClient(this);
 
     // Don't use web workers unless using refresh tokens in memory
     if (
@@ -1649,7 +1661,8 @@ export class Auth0Client {
       | PKCERequestTokenOptions
       | RefreshTokenRequestTokenOptions
       | TokenExchangeRequestOptions
-      | WebauthnRequestTokenOptions,
+      | WebauthnRequestTokenOptions
+      | PasswordlessOtpRequestTokenOptions,
     additionalParameters?: RequestTokenAdditionalParameters
   ) {
     const { nonceIn, organization, scopesToRequest } = additionalParameters || {};
@@ -2079,6 +2092,49 @@ export class Auth0Client {
     const { mfaToken, ...restOptions } = options;
     return this._requestToken({ ...restOptions, mfa_token: mfaToken } as any, additionalParameters);
   }
+
+  /**
+   * @internal
+   * Internal method used by PasswordlessApiClient to issue an OTP challenge.
+   * Kept on Auth0Client so the client owns transport configuration (domain,
+   * client_id, timeout, useFormData, Auth0-Client header).
+   */
+  async _passwordlessChallenge(
+    params: Record<string, string>
+  ): Promise<PasswordlessChallengeResponse> {
+    return passwordlessChallenge<PasswordlessChallengeResponse>({
+      baseUrl: this.domainUrl,
+      client_id: this.options.clientId,
+      params,
+      auth0Client: this.options.auth0Client,
+      useFormData: this.options.useFormData,
+      timeout: this.httpTimeoutMs
+    });
+  }
+
+  /**
+   * @internal
+   * Internal method used by PasswordlessApiClient to exchange an OTP for tokens.
+   * Routes through _requestToken() so tokens are cached, the ID token verified,
+   * and an authenticated session established.
+   */
+  async _requestTokenForPasswordless(
+    options: {
+      authSession: string;
+      otp: string;
+      scope?: string;
+      audience?: string;
+    }
+  ): Promise<TokenEndpointResponse> {
+    const audience = options.audience || this.options.authorizationParams.audience;
+    return this._requestToken({
+      grant_type: 'http://auth0.com/oauth/grant-type/passwordless/otp',
+      auth_session: options.authSession,
+      otp: options.otp,
+      scope: scopesToRequest(this.scope, options.scope, audience),
+      audience
+    });
+  }
 }
 
 interface BaseRequestTokenOptions {
@@ -2114,6 +2170,12 @@ interface WebauthnRequestTokenOptions extends BaseRequestTokenOptions {
   authn_response: PasskeyCredentialResponse;
   realm?: string;
   organization?: string;
+}
+
+interface PasswordlessOtpRequestTokenOptions extends BaseRequestTokenOptions {
+  grant_type: 'http://auth0.com/oauth/grant-type/passwordless/otp';
+  auth_session: string;
+  otp: string;
 }
 
 interface RequestTokenAdditionalParameters {
