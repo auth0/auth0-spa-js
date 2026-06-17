@@ -25,7 +25,7 @@ import {
   MfaVerifyError,
   MfaEnrollmentFactorsError
 } from './errors';
-import { MfaRequirements, MfaRequiredError } from '../errors';
+import { MfaRequirements } from '../errors';
 import { MfaContextManager } from './MfaContextManager';
 
 /**
@@ -115,27 +115,30 @@ export class MfaApiClient {
    * ```
    */
   public async getAuthenticators(mfaToken: string): Promise<Authenticator[]> {
-    // Auto-resolve challenge types from stored context
     const context = this.contextManager.get(mfaToken);
 
-    // Single validation check for context and challenge types
-    if (!context?.mfaRequirements?.challenge || context.mfaRequirements.challenge.length === 0) {
+    if (!context) {
       throw new MfaListAuthenticatorsError(
         'invalid_request',
-        'challengeType is required and must contain at least one challenge type, please check mfa_required error payload'
+        'MFA context not found for this MFA token'
       );
     }
 
-    const challengeTypes = context.mfaRequirements.challenge.map(
+    // step-up policy: challenge types are present, filter to only accepted types
+    // global MFA policy: challenge types are absent, all authenticators are valid
+    const challengeTypes = context.mfaRequirements?.challenge?.map(
       c => c.type
-    ) as ChallengeType[];
+    ) as ChallengeType[] | undefined;
 
     try {
       const allAuthenticators = await this.authJsMfaClient.listAuthenticators({
         mfaToken
       });
 
-      // Filter authenticators by challenge types from context
+      if (!challengeTypes || challengeTypes.length === 0) {
+        return allAuthenticators;
+      }
+
       return allAuthenticators.filter(auth => {
         if (!auth.type) return false;
         return challengeTypes.includes(auth.type as ChallengeType);
@@ -406,19 +409,13 @@ export class MfaApiClient {
 
       return result;
     } catch (error: unknown) {
-      if (error instanceof MfaRequiredError) {
-        this.setMFAAuthDetails(
-          error.mfa_token,
-          scope,
-          audience,
-          error.mfa_requirements
-        );
-      } else if (error instanceof MfaVerifyError) {
+      if (error instanceof MfaVerifyError) {
         throw new MfaVerifyError(
           error.error,
           error.error_description
         );
       }
+      // MfaRequiredError is handled upstream in Auth0Client._requestToken before reaching here.
       throw error;
     }
   }

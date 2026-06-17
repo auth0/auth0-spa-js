@@ -45,6 +45,7 @@ import {
   MfaChallengeError as Auth0JsMfaChallengeError
 } from '@auth0/auth0-auth-js';
 import type { Authenticator } from '../../src/mfa/types';
+import { MfaRequiredError } from '../../src/errors';
 
 describe('MfaApiClient', () => {
   let mfaClient: MfaApiClient;
@@ -97,31 +98,41 @@ describe('MfaApiClient', () => {
 
       await expect(
         mfaClient.getAuthenticators(mfaToken)
-      ).rejects.toThrow('challengeType is required');
+      ).rejects.toThrow('MFA context not found for this MFA token');
     });
 
-    it('should throw error when context has no mfaRequirements', async () => {
+    it('should return all authenticators when context has no mfaRequirements (global MFA policy)', async () => {
       const mfaToken = 'test-mfa-token';
+      const mockData: Authenticator[] = [
+        { id: 'otp|dev_123', authenticatorType: 'otp', active: true, type: 'otp' },
+        { id: 'email|dev_789', authenticatorType: 'oob', active: true, type: 'email' }
+      ];
 
-      // Set up context without mfaRequirements
+      // Global MFA policy: context exists but mfaRequirements is absent
       mfaClient.setMFAAuthDetails(mfaToken, 'openid profile', 'https://api.example.com');
+      mockAuthJsMfaClient.listAuthenticators.mockResolvedValue(mockData);
 
-      await expect(
-        mfaClient.getAuthenticators(mfaToken)
-      ).rejects.toThrow('challengeType is required');
+      const result = await mfaClient.getAuthenticators(mfaToken);
+
+      expect(result).toEqual(mockData);
     });
 
-    it('should throw error when context has empty challenge array', async () => {
+    it('should return all authenticators when context has empty challenge array (global MFA policy)', async () => {
       const mfaToken = 'test-mfa-token';
+      const mockData: Authenticator[] = [
+        { id: 'otp|dev_123', authenticatorType: 'otp', active: true, type: 'otp' },
+        { id: 'email|dev_789', authenticatorType: 'oob', active: true, type: 'email' }
+      ];
 
-      // Set up context with empty challenge array
+      // Global MFA policy: challenge array is empty, no type constraints
       mfaClient.setMFAAuthDetails(mfaToken, 'openid profile', 'https://api.example.com', {
         challenge: []
       });
+      mockAuthJsMfaClient.listAuthenticators.mockResolvedValue(mockData);
 
-      await expect(
-        mfaClient.getAuthenticators(mfaToken)
-      ).rejects.toThrow('challengeType is required');
+      const result = await mfaClient.getAuthenticators(mfaToken);
+
+      expect(result).toEqual(mockData);
     });
 
     it('should filter authenticators by single challenge type', async () => {
@@ -616,6 +627,32 @@ describe('MfaApiClient', () => {
       await expect(mfaClient.verify(params)).rejects.toThrow(
         'MFA context not found for this MFA token'
       );
+    });
+
+    it('re-throws MfaRequiredError without storing context at the MfaApiClient layer', async () => {
+      // MFA context storage for mfa_required is centralised in Auth0Client._requestToken.
+      // MfaApiClient.verify must not intercept the error — it re-throws so the central
+      // handler (which runs before the error reaches this layer) has already stored context.
+      const mfaToken = 'token123';
+
+      mfaClient.setMFAAuthDetails(mfaToken, 'openid profile', 'https://api.example.com');
+
+      // Spy after context setup so we only track calls triggered by verify() itself.
+      const setMFAAuthDetailsSpy = jest.spyOn(mfaClient, 'setMFAAuthDetails');
+
+      const mfaError = new MfaRequiredError(
+        'mfa_required',
+        'Multifactor authentication required',
+        'new-mfa-token-456',
+        { challenge: [{ type: 'otp' }] }
+      );
+      mockAuth0Client._requestTokenForMfa.mockRejectedValue(mfaError);
+
+      await expect(
+        mfaClient.verify({ mfaToken, otp: '123456' })
+      ).rejects.toThrow(mfaError);
+
+      expect(setMFAAuthDetailsSpy).not.toHaveBeenCalled();
     });
   });
 

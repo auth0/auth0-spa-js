@@ -50,7 +50,7 @@ import {
   INVALID_REFRESH_TOKEN_ERROR_MESSAGE,
   USER_BLOCKED_ERROR_MESSAGE
 } from '../../src/constants';
-import { GenericError } from '../../src/errors';
+import { GenericError, MfaRequiredError } from '../../src/errors';
 import {
   buildGetTokenSilentlyLockKey,
   buildIframeLockKey
@@ -2593,6 +2593,41 @@ describe('Auth0Client', () => {
       ).rejects.toThrow(USER_BLOCKED_ERROR_MESSAGE);
 
       expect(auth0.logout).toHaveBeenCalledWith({ openUrl: false });
+    });
+
+    it('when using Refresh Tokens and mfa_required is returned, stores MFA context and re-throws MfaRequiredError', async () => {
+      const auth0 = setup({
+        useRefreshTokens: true,
+        authorizationParams: {
+          scope: 'openid profile',
+          audience: 'https://api.example.com'
+        }
+      });
+
+      await loginWithRedirect(auth0);
+      mockFetch.mockReset();
+
+      mockFetch.mockResolvedValueOnce(
+        fetchResponse(false, {
+          error: 'mfa_required',
+          error_description: 'Multifactor authentication required',
+          mfa_token: 'mfa-token-123',
+          mfa_requirements: { challenge: [{ type: 'otp' }] }
+        })
+      );
+
+      const setMFAAuthDetailsSpy = jest.spyOn(auth0.mfa, 'setMFAAuthDetails');
+
+      await expect(
+        auth0.getTokenSilently({ cacheMode: 'off' })
+      ).rejects.toThrow(MfaRequiredError);
+
+      expect(setMFAAuthDetailsSpy).toHaveBeenCalledWith(
+        'mfa-token-123',
+        'openid profile offline_access',
+        'https://api.example.com',
+        { challenge: [{ type: 'otp' }] }
+      );
     });
 
     it('when using Refresh Tokens and fallback fails, ensure the user is logged out', async () => {
