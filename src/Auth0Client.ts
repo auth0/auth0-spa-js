@@ -201,8 +201,16 @@ export class Auth0Client {
    * Online access requires DPoP, so `onlineAccess: true` without `useDpop: true` throws.
    */
   private resolveOnlineAccess(options: Auth0ClientOptions): boolean {
+
     if (options.onlineAccess !== true) {
       return false;
+    }
+
+    if (options.useRefreshTokens == true) {
+      throw new InvalidConfigurationError(
+        '`onlineAccess: true` requires useRefreshTokens to be false.',
+        'Set `useRefreshTokens: false`.'
+      );
     }
 
     if (options.useDpop !== true) {
@@ -288,8 +296,8 @@ export class Auth0Client {
       this.onlineAccess
         ? ONLINE_ACCESS_SCOPE
         : this.options.useRefreshTokens
-        ? 'offline_access'
-        : ''
+          ? 'offline_access'
+          : ''
     );
 
     this.transactionManager = new TransactionManager(
