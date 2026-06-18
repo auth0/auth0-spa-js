@@ -1,5 +1,11 @@
 # Change Log
 
+## [v2.21.2](https://github.com/auth0/auth0-spa-js/tree/v2.21.2) (2026-06-18)
+[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.21.1...v2.21.2)
+
+**Fixed**
+- fix: ensure `MfaRequiredError` is propagated and MFA context is stored for passkey and custom token exchange grant types [\#1626](https://github.com/auth0/auth0-spa-js/pull/1626) ([yogeshchoudhary147](https://github.com/yogeshchoudhary147))
+
 ## [v2.21.1](https://github.com/auth0/auth0-spa-js/tree/v2.21.1) (2026-06-03)
 [Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.21.0...v2.21.1)
 
