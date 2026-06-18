@@ -84,43 +84,64 @@ describe('Auth0Client', () => {
   });
 
   describe('online access — configuration validation', () => {
-    it('throws InvalidConfigurationError when onlineAccess is true but useDpop is unset', () => {
+    it('throws InvalidConfigurationError when online but useRefreshTokens is unset', () => {
       expect(() =>
-        setup({ onlineAccess: true } as any)
+        setup({ refreshTokenMode: 'online', useDpop: true } as any)
       ).toThrow(InvalidConfigurationError);
     });
 
-    it('throws InvalidConfigurationError when onlineAccess is true but useDpop is false', () => {
+    it('error message tells the customer to pass useRefreshTokens: true', () => {
       expect(() =>
-        setup({ onlineAccess: true, useDpop: false } as any)
+        setup({ refreshTokenMode: 'online', useDpop: true } as any)
+      ).toThrow(/useRefreshTokens: true/);
+    });
+
+    it('throws InvalidConfigurationError when online but useDpop is unset', () => {
+      expect(() =>
+        setup({ refreshTokenMode: 'online', useRefreshTokens: true } as any)
+      ).toThrow(InvalidConfigurationError);
+    });
+
+    it('throws InvalidConfigurationError when online but useDpop is false', () => {
+      expect(() =>
+        setup({
+          refreshTokenMode: 'online',
+          useRefreshTokens: true,
+          useDpop: false
+        } as any)
       ).toThrow(InvalidConfigurationError);
     });
 
     it('error message tells the customer to pass useDpop: true', () => {
-      expect(() => setup({ onlineAccess: true } as any)).toThrow(
-        /useDpop: true/
-      );
+      expect(() =>
+        setup({ refreshTokenMode: 'online', useRefreshTokens: true } as any)
+      ).toThrow(/useDpop: true/);
     });
 
-    it('does not throw when onlineAccess is true and useDpop is true', () => {
+    it('does not throw when online with useRefreshTokens: true and useDpop: true', () => {
       expect(() =>
-        setup({ onlineAccess: true, useDpop: true } as any)
+        setup({
+          refreshTokenMode: 'online',
+          useRefreshTokens: true,
+          useDpop: true
+        } as any)
       ).not.toThrow();
     });
 
-    it('leaves behavior unchanged when onlineAccess is unset (no DPoP required)', () => {
+    it('leaves behavior unchanged when refreshTokenMode is unset (no DPoP required)', () => {
       expect(() => setup()).not.toThrow();
     });
 
-    it('leaves behavior unchanged when onlineAccess is false (no DPoP required)', () => {
-      expect(() => setup({ onlineAccess: false } as any)).not.toThrow();
+    it('leaves behavior unchanged when refreshTokenMode is offline (no DPoP required)', () => {
+      expect(() => setup({ refreshTokenMode: 'offline' } as any)).not.toThrow();
     });
   });
 
   describe('online access — scope injection', () => {
     it('injects online_access (and not offline_access) when online', () => {
       const auth0 = setup({
-        onlineAccess: true,
+        refreshTokenMode: 'online',
+        useRefreshTokens: true,
         useDpop: true,
         authorizationParams: {
           scope: 'profile email test-scope'
@@ -155,7 +176,8 @@ describe('Auth0Client', () => {
   describe('online access — refresh-token routing', () => {
     it('routes silent renewal through the refresh_token grant when online', async () => {
       const auth0 = setup({
-        onlineAccess: true,
+        refreshTokenMode: 'online',
+        useRefreshTokens: true,
         useDpop: true,
         cacheLocation: 'localstorage'
       } as any);
@@ -179,7 +201,8 @@ describe('Auth0Client', () => {
   describe('online access — non-rotation', () => {
     it('does NOT rotate the stored refresh token when online', async () => {
       const auth0 = setup({
-        onlineAccess: true,
+        refreshTokenMode: 'online',
+        useRefreshTokens: true,
         useDpop: true,
         cacheLocation: 'localstorage'
       } as any);

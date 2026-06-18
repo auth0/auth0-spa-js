@@ -192,30 +192,32 @@ export class Auth0Client {
       scope: DEFAULT_SCOPE
     },
     useRefreshTokensFallback: false,
-    useFormData: true
+    useFormData: true,
+    refreshTokenMode: 'offline',
   };
 
   /**
    * Validates the online-access configuration and returns whether online mode is enabled.
    *
-   * Online access requires DPoP, so `onlineAccess: true` without `useDpop: true` throws.
+   * Online mode (`refreshTokenMode: 'online'`) is a refresh-token grant, so it requires
+   * `useRefreshTokens: true`, and it requires DPoP, so `useDpop: true` is mandatory.
    */
   private resolveOnlineAccess(options: Auth0ClientOptions): boolean {
 
-    if (options.onlineAccess !== true) {
+    if (options.refreshTokenMode !== 'online') {
       return false;
     }
 
-    if (options.useRefreshTokens == true) {
+    if (options.useRefreshTokens !== true) {
       throw new InvalidConfigurationError(
-        '`onlineAccess: true` requires useRefreshTokens to be false.',
-        'Set `useRefreshTokens: false`.'
+        '`refreshTokenMode: "online"` requires the refresh-token grant.',
+        'Set `useRefreshTokens: true`.'
       );
     }
 
     if (options.useDpop !== true) {
       throw new InvalidConfigurationError(
-        '`onlineAccess: true` requires DPoP, which is missing or disabled.',
+        '`refreshTokenMode: "online"` requires DPoP, which is missing or disabled.',
         'Set `useDpop: true` (DPoP is mandatory for online access).'
       );
     }
@@ -351,11 +353,12 @@ export class Auth0Client {
       this
     );
 
-    // Don't use web workers unless using refresh tokens in memory
+    // Don't use web workers unless using refresh tokens in memory.
+    // Online mode requires `useRefreshTokens: true`, so it is covered here too.
     if (
       typeof window !== 'undefined' &&
       window.Worker &&
-      (this.options.useRefreshTokens || this.onlineAccess) &&
+      this.options.useRefreshTokens &&
       cacheLocation === CACHE_LOCATION_MEMORY
     ) {
       if (this.options.workerUrl) {
@@ -1033,7 +1036,7 @@ export class Auth0Client {
           }
         }
 
-        const authResult = (this.options.useRefreshTokens || this.onlineAccess)
+        const authResult = this.options.useRefreshTokens
           ? await this._getTokenUsingRefreshToken(getTokenOptions)
           : await this._getTokenFromIFrame(getTokenOptions);
 
@@ -1250,7 +1253,7 @@ export class Auth0Client {
    * await auth0.revokeRefreshToken({ audience: 'https://api2.example.com' });
    */
   public async revokeRefreshToken(options: RevokeRefreshTokenOptions = {}): Promise<void> {
-    if (!this.options.useRefreshTokens && !this.onlineAccess) {
+    if (!this.options.useRefreshTokens) {
       return;
     }
 

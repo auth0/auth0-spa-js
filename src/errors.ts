@@ -30,7 +30,7 @@ export class GenericError extends Error {
 
 /**
  * Thrown at construction time when the Auth0Client is configured with an invalid combination
- * of options (e.g. `onlineAccess: true` without `useDpop: true`). Carries a `suggestion` with
+ * of options (e.g. `refreshTokenMode: 'online'` without `useDpop: true`). Carries a `suggestion` with
  * the exact configuration change to make.
  */
 export class InvalidConfigurationError extends GenericError {

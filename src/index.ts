@@ -6,21 +6,21 @@ import './global';
 export * from './global';
 
 /**
- * Online access requires DPoP and is incompatible with `useRefreshTokens` (which
- * requests `offline_access`). When `onlineAccess` is the literal `true`, the compiler
- * requires `useDpop: true` and forbids `useRefreshTokens`. This only narrows on a literal
- * `true`; dynamic values, casts, and plain JS are covered by the runtime check in the
+ * Online mode (`refreshTokenMode: 'online'`) is a refresh-token grant and requires DPoP.
+ * When `refreshTokenMode` is the literal `'online'`, the compiler requires both
+ * `useRefreshTokens: true` and `useDpop: true`. This only narrows on the literal `'online'`;
+ * dynamic values, casts, and plain JS are covered by the runtime check in the
  * `Auth0Client` constructor.
  */
 export async function createAuth0Client(
   options: Auth0ClientOptions & {
-    onlineAccess: true;
+    refreshTokenMode: 'online';
+    useRefreshTokens: true;
     useDpop: true;
-    useRefreshTokens?: never;
   }
 ): Promise<Auth0Client>;
 export async function createAuth0Client(
-  options: Auth0ClientOptions & { onlineAccess?: false }
+  options: Auth0ClientOptions & { refreshTokenMode?: 'offline' }
 ): Promise<Auth0Client>;
 /**
  * Asynchronously creates the Auth0Client instance and calls `checkSession`.

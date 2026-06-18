@@ -90,7 +90,7 @@ const setup = async (
     domain: TEST_DOMAIN,
     clientId: TEST_CLIENT_ID,
     ...clientOptions
-  } as Auth0ClientOptions & { onlineAccess?: false };
+  } as Auth0ClientOptions & { refreshTokenMode?: 'offline' };
 
   const auth0 = callConstructor
     ? await createAuth0Client(opts)
