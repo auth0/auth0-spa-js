@@ -1,0 +1,15 @@
+{
+  "name": "@auth0/lint-pr-title",
+  "version": "1.0.0",
+  "description": "Lint PR titles with commitlint",
+  "main": "src/index.js",
+  "type": "module",
+  "private": true,
+  "dependencies": {
+    "@actions/core": "^3.0.0",
+    "@actions/github": "^9.0.0",
+    "@commitlint/format": "^20.0.0",
+    "@commitlint/lint": "^20.0.0",
+    "@commitlint/load": "^20.1.0"
+  }
+}
