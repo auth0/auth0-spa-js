@@ -1,0 +1,8 @@
+name: lint-pr-title
+description: Ensure PR titles match the Conventional Commits Specification (https://www.conventionalcommits.org/).
+runs:
+  using: 'node24'
+  main: 'src/index.js'
+branding:
+  icon: 'shield'
+  color: 'green'
