@@ -17,7 +17,13 @@ async function run() {
     core.info(`📝 Validating PR Title: "${prTitle}"`);
 
     // 2. Load the commitlint configuration from the repository
-    const config = await load();
+    const config = await load({}, { file: 'commitlint.config.mjs', cwd: process.cwd() });
+
+    if (!config.rules || Object.keys(config.rules).length === 0) {
+      core.setFailed('⛔️ No commitlint rules loaded. Is commitlint.config.mjs present at the repo root?');
+      return;
+    }
+
     core.info('✅ Loaded commitlint configuration successfully.');
 
     // 3. Lint the pull request title

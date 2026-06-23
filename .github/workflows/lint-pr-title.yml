@@ -7,7 +7,7 @@ on:
       - edited
 
 permissions:
-  pull-requests: read
+  contents: read
 
 env:
   NODE_VERSION: 24
@@ -30,7 +30,7 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
 
       - name: Install action dependencies
-        run: npm install
+        run: npm install --ignore-scripts
         working-directory: .github/actions/lint-pr-title
 
       - name: Lint PR Title
