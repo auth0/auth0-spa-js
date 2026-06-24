@@ -31,6 +31,7 @@ runs:
       uses: actions/setup-node@v6
       with:
         node-version: ${{ inputs.node }}
+        cache: npm
 
     - name: Restore build artifacts
       uses: actions/cache/restore@v3
@@ -40,7 +41,7 @@ runs:
 
     - name: Install dependencies
       shell: bash
-      run: npm i
+      run: npm ci
 
     - name: Create application
       shell: bash
