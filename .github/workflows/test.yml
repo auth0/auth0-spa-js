@@ -99,8 +99,11 @@ jobs:
           path: .
           key: ${{ env.CACHE_KEY }}
 
-      - name: Generate type declarations
-        run: npm run build:types
+      - name: Verify type declarations
+        run: |
+          count=$(npm pack --dry-run 2>&1 | grep -c "dist/typings/" || true)
+          echo "Found $count typings files in package"
+          test "$count" -gt 0 || { echo "typings not included in package!"; exit 1; }
 
   gatsby:
     needs: test
