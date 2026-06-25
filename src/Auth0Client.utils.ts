@@ -7,6 +7,7 @@ import {
   LogoutOptions
 } from './global';
 import { scopesToRequest } from './scope';
+import { ONLINE_ACCESS_SCOPE } from './constants';
 
 /**
  * @ignore
@@ -123,7 +124,17 @@ export const patchOpenUrlWithOnRedirect = <
 
 /**
  * @ignore
- * 
+ *
+ * Function used to trim the `online_access` scope from a list of scopes. 
+ * This is used in the MRRT flow to avoid spurious missing scope errors, 
+ * since `online_access` is never echoed back in the response.
+ */
+const withoutOnlineAccessScope = (scopes: string[]): string[] =>
+  scopes.filter((scope) => scope !== ONLINE_ACCESS_SCOPE);
+
+/**
+ * @ignore
+ *
  * Checks if all scopes are included inside other array of scopes
  */
 export const allScopesAreIncluded = (scopeToInclude?: string, scopes?: string): boolean => {
@@ -134,11 +145,17 @@ export const allScopesAreIncluded = (scopeToInclude?: string, scopes?: string): 
 
 /**
  * @ignore
- * 
- * Returns the scopes that are missing after a refresh
+ *
+ * Returns the scopes that are missing after a refresh.
+ *
+ * `online_access` is stripped from the requested scopes because this only runs in the MRRT
+ * flow: the server does not issue a new ORT for an MRRT cross-audience exchange, so the same
+ * (non-rotating) ORT is reused and `online_access` is never echoed back in the response scope.
+ * Comparing the injected `online_access` against the response would otherwise flag it as a
+ * spurious missing scope.
  */
 export const getMissingScopes = (requestedScope?: string, respondedScope?: string): string => {
-  const requestedScopes = requestedScope?.split(" ") || [];
+  const requestedScopes = withoutOnlineAccessScope(requestedScope?.split(" ") || []);
   const respondedScopes = respondedScope?.split(" ") || [];
 
   const missingScopes = requestedScopes.filter((scope) => respondedScopes.indexOf(scope) == -1);

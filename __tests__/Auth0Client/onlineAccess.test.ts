@@ -258,4 +258,71 @@ describe('Auth0Client', () => {
       );
     });
   });
+
+  describe('online access — MRRT cross-audience scope check', () => {
+    // A cross-audience MRRT refresh injects online_access into the request, but the server
+    // strips it during the exchange and never echoes it back. The missing-scope guard must
+    // ignore it, otherwise a successful refresh throws a spurious MissingScopesError.
+    it('does not flag injected online_access as missing after an MRRT refresh', async () => {
+      const auth0 = setup({
+        refreshTokenMode: 'online',
+        useRefreshTokens: true,
+        useDpop: true,
+        useMrrt: true,
+        cacheLocation: 'localstorage'
+      } as any);
+
+      await loginWithRedirect(auth0);
+      mockFetch.mockReset();
+
+      const result = await getTokenSilently(
+        auth0,
+        {
+          authorizationParams: {
+            audience: 'https://resource-server/',
+            scope: 'read:foo'
+          },
+          cacheMode: 'off',
+          detailedResponse: true
+        },
+        {
+          // Server echoes resource scopes but never online_access.
+          token: { response: { scope: 'openid profile email read:foo' } }
+        }
+      );
+
+      expect((result as any).access_token).toBeTruthy();
+    });
+
+    // The guard must still fire for genuinely missing resource scopes.
+    it('still throws MissingScopesError when a real resource scope is not returned', async () => {
+      const auth0 = setup({
+        refreshTokenMode: 'online',
+        useRefreshTokens: true,
+        useDpop: true,
+        useMrrt: true,
+        cacheLocation: 'localstorage'
+      } as any);
+
+      await loginWithRedirect(auth0);
+      mockFetch.mockReset();
+
+      await expect(
+        getTokenSilently(
+          auth0,
+          {
+            authorizationParams: {
+              audience: 'https://resource-server/',
+              scope: 'read:foo write:foo'
+            },
+            cacheMode: 'off',
+            detailedResponse: true
+          },
+          {
+            token: { response: { scope: 'openid profile email read:foo' } }
+          }
+        )
+      ).rejects.toThrow(/write:foo/);
+    });
+  });
 });

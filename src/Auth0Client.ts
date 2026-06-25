@@ -112,7 +112,6 @@ import {
   OLD_IS_AUTHENTICATED_COOKIE_NAME,
   patchOpenUrlWithOnRedirect,
   getScopeToRequest,
-  allScopesAreIncluded,
   isRefreshWithMrrt,
   getMissingScopes
 } from './Auth0Client.utils';
@@ -1511,12 +1510,12 @@ export class Auth0Client {
         );
 
         if (isRefreshMrrt) {
-          const tokenHasAllScopes = allScopesAreIncluded(
+          const missingScopes = getMissingScopes(
             scopesToRequest,
             tokenResult.scope,
           );
 
-          if (!tokenHasAllScopes) {
+          if (missingScopes) {
             if (this.options.useRefreshTokensFallback) {
               return await this._getTokenFromIFrame(options);
             }
@@ -1527,11 +1526,6 @@ export class Auth0Client {
               this.options.clientId,
               options.authorizationParams.audience,
               options.authorizationParams.scope,
-            );
-
-            const missingScopes = getMissingScopes(
-              scopesToRequest,
-              tokenResult.scope,
             );
 
             throw new MissingScopesError(
