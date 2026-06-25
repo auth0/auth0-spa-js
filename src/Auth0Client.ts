@@ -1219,6 +1219,12 @@ export class Auth0Client {
    *
    * If `useRefreshTokens` is disabled, this method does nothing.
    *
+   * **Online mode:** when `refreshTokenMode` is `'online'` this method only clears the
+   * cached refresh token locally — it does **not** revoke the Online Refresh Token at the
+   * authorization server. Online Refresh Tokens are non-rotating and session-bound, and the
+   * server does not support token-only revocation for them. To end an online session, use
+   * `logout()` instead, which terminates the session and thereby invalidates the ORT.
+   *
    * **Important:** This method revokes the refresh token for a single audience. If your
    * application requests tokens for multiple audiences, each audience may have its own
    * refresh token. To fully revoke all refresh tokens, call this method once per audience.

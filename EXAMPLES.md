@@ -154,6 +154,9 @@ The `revokeRefreshToken()` method explicitly revokes a refresh token via the `/o
 
 This method only has an effect when `useRefreshTokens` is `true`. If refresh tokens are disabled it returns immediately without doing anything.
 
+> [!NOTE]
+> In [online access](#online-access-online-refresh-tokens) mode (`refreshTokenMode: RefreshTokenMode.Online`), `revokeRefreshToken()` only clears the cached refresh token locally — it does **not** revoke the Online Refresh Token at the authorization server. Online Refresh Tokens are non-rotating and session-bound, and the server does not support token-only revocation for them. To end an online session, call `logout()` instead, which terminates the session and thereby invalidates the ORT.
+
 ```js
 // Revoke the refresh token for the default audience
 await auth0.revokeRefreshToken();
@@ -316,6 +319,9 @@ await auth0.logout({ logoutParams: { returnTo: window.location.origin } });
 ```
 
 After logout, the ORT is no longer valid; a subsequent `getTokenSilently()` falls through to the [iframe fallback](#refresh-token-fallback) (if `useRefreshTokensFallback` is enabled) and ultimately to an interactive login.
+
+> [!NOTE]
+> In online mode, [`revokeRefreshToken()`](#revoking-refresh-tokens) only clears the cached token locally — it does **not** revoke the ORT at the authorization server. The server has no token-only revocation for non-rotating ORTs, so `logout()` is the only way to invalidate an ORT.
 
 ### Using with Multi-Resource Refresh Tokens (MRRT)
 
