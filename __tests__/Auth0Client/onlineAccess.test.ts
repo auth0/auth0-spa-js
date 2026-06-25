@@ -228,6 +228,35 @@ describe('Auth0Client', () => {
       expect(updateEntrySpy).not.toHaveBeenCalled();
     });
 
+    it('preserves the cached ORT across force-refreshes when the response carries no refresh_token', async () => {
+      const auth0 = setup({
+        refreshTokenMode: 'online',
+        useRefreshTokens: true,
+        useDpop: true,
+        cacheLocation: 'localstorage'
+      } as any);
+
+      await loginWithRedirect(auth0);
+      mockFetch.mockReset();
+
+      // Online refresh tokens are non-rotating: the server exchanges the ORT but
+      // returns no refresh_token. The cached ORT must survive so the next
+      // force-refresh does not fail with MissingRefreshTokenError.
+      await getTokenSilently(
+        auth0,
+        { cacheMode: 'off' },
+        { token: { response: { refresh_token: undefined } } }
+      );
+
+      await expect(
+        getTokenSilently(
+          auth0,
+          { cacheMode: 'off' },
+          { token: { response: { refresh_token: undefined } } }
+        )
+      ).resolves.toBeTruthy();
+    });
+
     it('rotates the stored refresh token when using rotating (offline) refresh tokens', async () => {
       const auth0 = setup({
         useRefreshTokens: true,

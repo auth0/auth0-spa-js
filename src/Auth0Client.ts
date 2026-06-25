@@ -1785,9 +1785,18 @@ export class Auth0Client {
           };
         }
       }
+      // Online refresh tokens are non-rotating: the server returns no refresh_token, so
+      // carry the ORT forward to avoid evicting it on save. Online-only: in offline mode
+      // a refresh token is single-use and reusing it would trip reuse detection.
+      const refresh_token =
+        authResult.refresh_token ||
+        (this.onlineAccess && options.grant_type === 'refresh_token'
+          ? options.refresh_token
+          : undefined);
 
       await this._saveEntryInCache({
         ...authResult,
+        ...(refresh_token ? { refresh_token } : null),
         decodedToken,
         scope: options.scope,
         audience: options.audience || DEFAULT_AUDIENCE,
