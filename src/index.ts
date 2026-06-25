@@ -6,11 +6,9 @@ import './global';
 export * from './global';
 
 /**
- * Online mode (`refreshTokenMode: 'online'`) is a refresh-token grant and requires DPoP.
- * When `refreshTokenMode` is the literal `'online'`, the compiler requires both
- * `useRefreshTokens: true` and `useDpop: true`. This only narrows on the literal `'online'`;
- * dynamic values, casts, and plain JS are covered by the runtime check in the
- * `Auth0Client` constructor.
+ * Online mode requires `useRefreshTokens: true` and `useDpop: true`, enforced here at
+ * compile time. Dynamic values, casts, and plain JS are covered by the runtime check in
+ * the `Auth0Client` constructor.
  */
 export async function createAuth0Client(
   options: Auth0ClientOptions & {

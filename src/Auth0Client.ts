@@ -196,12 +196,7 @@ export class Auth0Client {
     refreshTokenMode: 'offline',
   };
 
-  /**
-   * Validates the online-access configuration and returns whether online mode is enabled.
-   *
-   * Online mode (`refreshTokenMode: 'online'`) is a refresh-token grant, so it requires
-   * `useRefreshTokens: true`, and it requires DPoP, so `useDpop: true` is mandatory.
-   */
+  /** Validates online-access config and returns whether online mode is enabled. */
   private resolveOnlineAccess(options: Auth0ClientOptions): boolean {
 
     if (options.refreshTokenMode !== 'online') {
@@ -286,12 +281,7 @@ export class Auth0Client {
       ? this.cookieStorage
       : SessionStorage;
 
-    // Construct the scopes based on the following:
-    // 1. Always include `openid`
-    // 2. Include the scopes provided in `authorizationParams. This defaults to `profile email`
-    // 3. Add `online_access` when in online-access mode, otherwise `offline_access` if
-    //    `useRefreshTokens` is enabled. Online and offline are mutually exclusive — online
-    //    must never inject `offline_access`.
+    // `online_access` and `offline_access` are mutually exclusive — inject at most one.
     this.scope = injectDefaultScopes(
       this.options.authorizationParams.scope,
       'openid',
@@ -354,7 +344,6 @@ export class Auth0Client {
     );
 
     // Don't use web workers unless using refresh tokens in memory.
-    // Online mode requires `useRefreshTokens: true`, so it is covered here too.
     if (
       typeof window !== 'undefined' &&
       window.Worker &&
@@ -1496,9 +1485,8 @@ export class Auth0Client {
         }
       );
 
-      // If is refreshed with MRRT, we update all entries that have the old
-      // refresh_token with the new one if the server responded with one.
-      // Online Refresh Tokens are non-rotating, so the stored RT is never replaced.
+      // Propagate a rotated RT to all MRRT entries. Skipped for online mode,
+      // where ORTs are non-rotating.
       if (
         !this.onlineAccess &&
         tokenResult.refresh_token &&

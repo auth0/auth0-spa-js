@@ -220,14 +220,16 @@ This makes ORTs a good fit for SPAs that want a refresh-token renewal path whose
 
 ### Enabling Online Access
 
-Set `refreshTokenMode: 'online'` together with `useRefreshTokens: true` and `useDpop: true`:
+Set `refreshTokenMode` to `RefreshTokenMode.Online` together with `useRefreshTokens: true` and `useDpop: true`:
 
 ```js
+import { createAuth0Client, RefreshTokenMode } from '@auth0/auth0-spa-js';
+
 const auth0 = await createAuth0Client({
   domain: '<AUTH0_DOMAIN>',
   clientId: '<AUTH0_CLIENT_ID>',
   useRefreshTokens: true, // required — online access is a refresh-token grant
-  refreshTokenMode: 'online',
+  refreshTokenMode: RefreshTokenMode.Online,
   useDpop: true, // required — DPoP is mandatory for online access
   authorizationParams: {
     redirect_uri: '<MY_CALLBACK_URL>'
@@ -235,7 +237,7 @@ const auth0 = await createAuth0Client({
 });
 ```
 
-`refreshTokenMode` is a sub-option of `useRefreshTokens`. It defaults to `'offline'` (the rotating [offline refresh tokens](#refresh-tokens) described above); setting it to `'online'` opts into Online Refresh Tokens.
+`refreshTokenMode` is a sub-option of `useRefreshTokens`. It defaults to `RefreshTokenMode.Offline` (the rotating [offline refresh tokens](#refresh-tokens) described above); setting it to `RefreshTokenMode.Online` opts into Online Refresh Tokens. Always reference the exported `RefreshTokenMode` enum rather than hard-coding the mode.
 
 Enabling this option causes the SDK to:
 
@@ -244,16 +246,16 @@ Enabling this option causes the SDK to:
 - Store the non-rotating ORT in the existing cache and reuse it on every refresh, never replacing it.
 
 > [!NOTE]
-> Online access is **opt-in**. When `refreshTokenMode` is unset or `'offline'`, the SDK behaves exactly as before.
+> Online access is **opt-in**. When `refreshTokenMode` is unset or `RefreshTokenMode.Offline`, the SDK behaves exactly as before.
 
 > [!NOTE]
 > This feature requires the `online_refresh_tokens` flag to be enabled for your tenant and `allow_online_access` to be enabled on the resource server (on by default).
 
-### `refreshTokenMode: 'offline'` vs. `'online'`
+### `RefreshTokenMode.Offline` vs. `RefreshTokenMode.Online`
 
-`refreshTokenMode` selects which refresh-token type the refresh-token grant uses. It is a sub-option of `useRefreshTokens` (which must be `true` for either mode) and defaults to `'offline'`:
+`refreshTokenMode` selects which refresh-token type the refresh-token grant uses. It is a sub-option of `useRefreshTokens` (which must be `true` for either mode) and defaults to `RefreshTokenMode.Offline`:
 
-| | `refreshTokenMode: 'offline'` (default) | `refreshTokenMode: 'online'` |
+| | `RefreshTokenMode.Offline` (default) | `RefreshTokenMode.Online` |
 | --- | --- | --- |
 | Requires | `useRefreshTokens: true` | `useRefreshTokens: true` + `useDpop: true` |
 | Scope injected | `offline_access` | `online_access` |
@@ -267,32 +269,34 @@ The two modes inject mutually exclusive scopes (`offline_access` vs. `online_acc
 
 The SDK enforces the DPoP requirement at two layers:
 
-1. **Compile-time (TypeScript).** When you call `createAuth0Client` with `refreshTokenMode` set to the literal `'online'`, the compiler requires both `useRefreshTokens: true` and `useDpop: true`:
+1. **Compile-time (TypeScript).** When you call `createAuth0Client` with `refreshTokenMode: RefreshTokenMode.Online`, the compiler requires both `useRefreshTokens: true` and `useDpop: true`:
 
    ```ts
-   // ❌ compile error: `useRefreshTokens: true` and `useDpop: true` are required when `refreshTokenMode: 'online'`
-   createAuth0Client({ domain, clientId, refreshTokenMode: 'online' });
+   import { createAuth0Client, RefreshTokenMode } from '@auth0/auth0-spa-js';
+
+   // ❌ compile error: `useRefreshTokens: true` and `useDpop: true` are required for online mode
+   createAuth0Client({ domain, clientId, refreshTokenMode: RefreshTokenMode.Online });
 
    // ❌ compile error: `useDpop: true` is still required
-   createAuth0Client({ domain, clientId, refreshTokenMode: 'online', useRefreshTokens: true });
+   createAuth0Client({ domain, clientId, refreshTokenMode: RefreshTokenMode.Online, useRefreshTokens: true });
 
    // ✅ valid
-   createAuth0Client({ domain, clientId, refreshTokenMode: 'online', useRefreshTokens: true, useDpop: true });
+   createAuth0Client({ domain, clientId, refreshTokenMode: RefreshTokenMode.Online, useRefreshTokens: true, useDpop: true });
    ```
 
    > [!NOTE]
-   > The compile-time check only narrows when `refreshTokenMode` is the **literal** `'online'`. A dynamically-typed value (e.g. `refreshTokenMode: someString`), an `as any` cast, or plain JavaScript all bypass it — which is why the runtime check below exists too.
+   > The compile-time check narrows on the online mode value. A dynamically-typed value (e.g. a `refreshTokenMode` read from config at runtime), an `as any` cast, or plain JavaScript all bypass it — which is why the runtime check below exists too.
 
-2. **Runtime (all consumers, including plain JS).** The `Auth0Client` constructor throws an `InvalidConfigurationError` when `refreshTokenMode: 'online'` but `useRefreshTokens` or `useDpop` is not `true`. The error's `suggestion` tells you exactly which option to set:
+2. **Runtime (all consumers, including plain JS).** The `Auth0Client` constructor throws an `InvalidConfigurationError` when online mode is requested but `useRefreshTokens` or `useDpop` is not `true`. The error's `suggestion` tells you exactly which option to set:
 
    ```js
-   import { InvalidConfigurationError } from '@auth0/auth0-spa-js';
+   import { createAuth0Client, RefreshTokenMode, InvalidConfigurationError } from '@auth0/auth0-spa-js';
 
    try {
      const auth0 = await createAuth0Client({
        domain: '<AUTH0_DOMAIN>',
        clientId: '<AUTH0_CLIENT_ID>',
-       refreshTokenMode: 'online',
+       refreshTokenMode: RefreshTokenMode.Online,
        useRefreshTokens: true // missing useDpop: true
      });
    } catch (e) {
@@ -318,11 +322,13 @@ After logout, the ORT is no longer valid; a subsequent `getTokenSilently()` fall
 Online access is compatible with [MRRT](#using-multi-resource-refresh-tokens): a single ORT can be exchanged for access tokens across the audiences allowed by your refresh-token policies. The ORT remains non-rotating throughout — the same token is reused for every cross-audience exchange.
 
 ```js
+import { createAuth0Client, RefreshTokenMode } from '@auth0/auth0-spa-js';
+
 const auth0 = await createAuth0Client({
   domain: '<AUTH0_DOMAIN>',
   clientId: '<AUTH0_CLIENT_ID>',
   useRefreshTokens: true,
-  refreshTokenMode: 'online',
+  refreshTokenMode: RefreshTokenMode.Online,
   useDpop: true,
   useMrrt: true,
   authorizationParams: {
