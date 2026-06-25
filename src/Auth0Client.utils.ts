@@ -148,14 +148,21 @@ export const allScopesAreIncluded = (scopeToInclude?: string, scopes?: string): 
  *
  * Returns the scopes that are missing after a refresh.
  *
- * `online_access` is stripped from the requested scopes because this only runs in the MRRT
- * flow: the server does not issue a new ORT for an MRRT cross-audience exchange, so the same
- * (non-rotating) ORT is reused and `online_access` is never echoed back in the response scope.
- * Comparing the injected `online_access` against the response would otherwise flag it as a
- * spurious missing scope.
+ * When `onlineAccess` is true, `online_access` is stripped from the requested scopes before
+ * comparing: in online mode the server reuses the same (non-rotating) ORT for an MRRT
+ * cross-audience exchange and never echoes `online_access` back in the response scope, so
+ * comparing it would flag a spurious missing scope. Outside online mode the strip is not
+ * applied, so a genuinely missing `online_access` is still reported.
  */
-export const getMissingScopes = (requestedScope?: string, respondedScope?: string): string => {
-  const requestedScopes = withoutOnlineAccessScope(requestedScope?.split(" ") || []);
+export const getMissingScopes = (
+  requestedScope?: string,
+  respondedScope?: string,
+  onlineAccess?: boolean
+): string => {
+  const splitRequested = requestedScope?.split(" ") || [];
+  const requestedScopes = onlineAccess
+    ? withoutOnlineAccessScope(splitRequested)
+    : splitRequested;
   const respondedScopes = respondedScope?.split(" ") || [];
 
   const missingScopes = requestedScopes.filter((scope) => respondedScopes.indexOf(scope) == -1);

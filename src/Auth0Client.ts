@@ -1519,6 +1519,7 @@ export class Auth0Client {
           const missingScopes = getMissingScopes(
             scopesToRequest,
             tokenResult.scope,
+            this.onlineAccess
           );
 
           if (missingScopes) {
