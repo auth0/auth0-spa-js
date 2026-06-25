@@ -257,6 +257,36 @@ describe('Auth0Client', () => {
       ).resolves.toBeTruthy();
     });
 
+    it('preserves the cached ORT across force-refreshes in the worker (memory) path', async () => {
+      // Online mode + the default memory cache routes refreshes through the web
+      // worker, which holds its own RT store. The worker must not evict the
+      // non-rotating ORT when the response carries no refresh_token, otherwise the
+      // next force-refresh fails with MissingRefreshTokenError.
+      const auth0 = setup({
+        refreshTokenMode: 'online',
+        useRefreshTokens: true,
+        useDpop: true
+        // no cacheLocation → memory → web worker
+      } as any);
+
+      await loginWithRedirect(auth0);
+      mockFetch.mockReset();
+
+      await getTokenSilently(
+        auth0,
+        { cacheMode: 'off' },
+        { token: { response: { refresh_token: undefined } } }
+      );
+
+      await expect(
+        getTokenSilently(
+          auth0,
+          { cacheMode: 'off' },
+          { token: { response: { refresh_token: undefined } } }
+        )
+      ).resolves.toBeTruthy();
+    });
+
     it('rotates the stored refresh token when using rotating (offline) refresh tokens', async () => {
       const auth0 = setup({
         useRefreshTokens: true,

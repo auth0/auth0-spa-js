@@ -1754,6 +1754,7 @@ export class Auth0Client {
           timeout: this.httpTimeoutMs,
           useMrrt: this.options.useMrrt,
           dpop: this.dpop,
+          nonRotating: this.onlineAccess,
           ...options,
           scope: scopesToRequest || options.scope,
         },
