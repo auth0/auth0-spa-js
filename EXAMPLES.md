@@ -220,19 +220,22 @@ This makes ORTs a good fit for SPAs that want a refresh-token renewal path whose
 
 ### Enabling Online Access
 
-Set `onlineAccess: true` together with `useDpop: true`:
+Set `refreshTokenMode: 'online'` together with `useRefreshTokens: true` and `useDpop: true`:
 
 ```js
 const auth0 = await createAuth0Client({
   domain: '<AUTH0_DOMAIN>',
   clientId: '<AUTH0_CLIENT_ID>',
-  onlineAccess: true,
+  useRefreshTokens: true, // required — online access is a refresh-token grant
+  refreshTokenMode: 'online',
   useDpop: true, // required — DPoP is mandatory for online access
   authorizationParams: {
     redirect_uri: '<MY_CALLBACK_URL>'
   }
 });
 ```
+
+`refreshTokenMode` is a sub-option of `useRefreshTokens`. It defaults to `'offline'` (the rotating [offline refresh tokens](#refresh-tokens) described above); setting it to `'online'` opts into Online Refresh Tokens.
 
 Enabling this option causes the SDK to:
 
@@ -241,45 +244,46 @@ Enabling this option causes the SDK to:
 - Store the non-rotating ORT in the existing cache and reuse it on every refresh, never replacing it.
 
 > [!NOTE]
-> Online access is **opt-in**. When `onlineAccess` is unset or `false`, the SDK behaves exactly as before.
+> Online access is **opt-in**. When `refreshTokenMode` is unset or `'offline'`, the SDK behaves exactly as before.
 
 > [!NOTE]
 > This feature requires the `online_refresh_tokens` flag to be enabled for your tenant and `allow_online_access` to be enabled on the resource server (on by default).
 
-### `onlineAccess` vs. `useRefreshTokens`
+### `refreshTokenMode: 'offline'` vs. `'online'`
 
-The two options request **different, mutually exclusive** refresh-token types, and you should set only one:
+`refreshTokenMode` selects which refresh-token type the refresh-token grant uses. It is a sub-option of `useRefreshTokens` (which must be `true` for either mode) and defaults to `'offline'`:
 
-| | `useRefreshTokens: true` | `onlineAccess: true` |
+| | `refreshTokenMode: 'offline'` (default) | `refreshTokenMode: 'online'` |
 | --- | --- | --- |
+| Requires | `useRefreshTokens: true` | `useRefreshTokens: true` + `useDpop: true` |
 | Scope injected | `offline_access` | `online_access` |
 | Token lifetime | Independent of the session (survives logout until revoked/expired) | Bound to the Auth0 session |
 | Rotation | Rotating (a new RT is issued on each refresh) | Non-rotating (same RT reused) |
 | DPoP | Optional | **Required** (`useDpop: true`) |
 
-Because `useRefreshTokens` injects `offline_access` — which conflicts with `online_access` — do **not** set both. In TypeScript, calling `createAuth0Client` with `useRefreshTokens` alongside `onlineAccess: true` is a compile-time error.
+The two modes inject mutually exclusive scopes (`offline_access` vs. `online_access`), so the SDK emits only one — it never sends both. You select between them with `refreshTokenMode`, not by combining flags.
 
 ### Configuration validation
 
 The SDK enforces the DPoP requirement at two layers:
 
-1. **Compile-time (TypeScript).** When you call `createAuth0Client` with `onlineAccess` set to the literal `true`, the compiler requires `useDpop: true` and forbids `useRefreshTokens`:
+1. **Compile-time (TypeScript).** When you call `createAuth0Client` with `refreshTokenMode` set to the literal `'online'`, the compiler requires both `useRefreshTokens: true` and `useDpop: true`:
 
    ```ts
-   // ❌ compile error: `useDpop` is required when `onlineAccess: true`
-   createAuth0Client({ domain, clientId, onlineAccess: true });
+   // ❌ compile error: `useRefreshTokens: true` and `useDpop: true` are required when `refreshTokenMode: 'online'`
+   createAuth0Client({ domain, clientId, refreshTokenMode: 'online' });
 
-   // ❌ compile error: `useRefreshTokens` conflicts with `onlineAccess`
-   createAuth0Client({ domain, clientId, onlineAccess: true, useDpop: true, useRefreshTokens: true });
+   // ❌ compile error: `useDpop: true` is still required
+   createAuth0Client({ domain, clientId, refreshTokenMode: 'online', useRefreshTokens: true });
 
    // ✅ valid
-   createAuth0Client({ domain, clientId, onlineAccess: true, useDpop: true });
+   createAuth0Client({ domain, clientId, refreshTokenMode: 'online', useRefreshTokens: true, useDpop: true });
    ```
 
    > [!NOTE]
-   > The compile-time check only narrows when `onlineAccess` is a **literal** `true`. A dynamically-typed value (e.g. `onlineAccess: someBoolean`), an `as any` cast, or plain JavaScript all bypass it — which is why the runtime check below exists too.
+   > The compile-time check only narrows when `refreshTokenMode` is the **literal** `'online'`. A dynamically-typed value (e.g. `refreshTokenMode: someString`), an `as any` cast, or plain JavaScript all bypass it — which is why the runtime check below exists too.
 
-2. **Runtime (all consumers, including plain JS).** The `Auth0Client` constructor throws an `InvalidConfigurationError` when `onlineAccess: true` but `useDpop` is `false` or unset. The error's message tells you to set `useDpop: true`:
+2. **Runtime (all consumers, including plain JS).** The `Auth0Client` constructor throws an `InvalidConfigurationError` when `refreshTokenMode: 'online'` but `useRefreshTokens` or `useDpop` is not `true`. The error's `suggestion` tells you exactly which option to set:
 
    ```js
    import { InvalidConfigurationError } from '@auth0/auth0-spa-js';
@@ -288,7 +292,8 @@ The SDK enforces the DPoP requirement at two layers:
      const auth0 = await createAuth0Client({
        domain: '<AUTH0_DOMAIN>',
        clientId: '<AUTH0_CLIENT_ID>',
-       onlineAccess: true // missing useDpop: true
+       refreshTokenMode: 'online',
+       useRefreshTokens: true // missing useDpop: true
      });
    } catch (e) {
      if (e instanceof InvalidConfigurationError) {
@@ -316,7 +321,8 @@ Online access is compatible with [MRRT](#using-multi-resource-refresh-tokens): a
 const auth0 = await createAuth0Client({
   domain: '<AUTH0_DOMAIN>',
   clientId: '<AUTH0_CLIENT_ID>',
-  onlineAccess: true,
+  useRefreshTokens: true,
+  refreshTokenMode: 'online',
   useDpop: true,
   useMrrt: true,
   authorizationParams: {
