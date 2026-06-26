@@ -119,6 +119,30 @@ describe('Auth0Client', () => {
 
         await expect(loginWithRedirect(auth0)).resolves.not.toThrow();
       });
+
+      it('throws if session_expiry is a millisecond-magnitude value', async () => {
+        const iat = nowSeconds();
+        const auth0 = setup({}, { iat, session_expiry: iat * 1000 });
+
+        const error = await loginWithRedirect(auth0).catch(e => e);
+        expect(error).toBeInstanceOf(GenericError);
+        expect(error.error).toBe('invalid_token');
+        expect(error.message).toBe(
+          'Invalid session_expiry: value appears to be in milliseconds; expected a Unix timestamp in seconds.'
+        );
+      });
+
+      it('throws if session_expiry is a non-numeric string', async () => {
+        const iat = nowSeconds();
+        const auth0 = setup({}, { iat, session_expiry: 'not-a-number' as any });
+
+        const error = await loginWithRedirect(auth0).catch(e => e);
+        expect(error).toBeInstanceOf(GenericError);
+        expect(error.error).toBe('invalid_token');
+        expect(error.message).toBe(
+          'Invalid session_expiry: value must be a number.'
+        );
+      });
     });
 
     describe('getTokenSilently ceiling enforcement', () => {
