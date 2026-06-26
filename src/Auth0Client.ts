@@ -281,14 +281,17 @@ export class Auth0Client {
       : SessionStorage;
 
     // `online_access` and `offline_access` are mutually exclusive — inject at most one.
+    let sessionScope = '';
+    if (this.onlineAccess) {
+      sessionScope = ONLINE_ACCESS_SCOPE;
+    } else if (this.options.useRefreshTokens) {
+      sessionScope = 'offline_access';
+    }
+
     this.scope = injectDefaultScopes(
       this.options.authorizationParams.scope,
       'openid',
-      this.onlineAccess
-        ? ONLINE_ACCESS_SCOPE
-        : this.options.useRefreshTokens
-          ? 'offline_access'
-          : ''
+      sessionScope
     );
 
     this.transactionManager = new TransactionManager(

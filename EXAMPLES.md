@@ -211,7 +211,7 @@ await auth0.revokeRefreshToken();
 
 ## Online Access (Online Refresh Tokens)
 
-**Online Refresh Tokens (ORTs)** are a refresh token type bound to the lifetime of the user's Auth0 session. Unlike the rotating [offline refresh tokens](#refresh-tokens) described above, an ORT is:
+**Online Refresh Tokens (ORTs)** are a refresh token type bound to the lifetime of the user's Auth0 session. See the [Auth0 documentation on Online Refresh Tokens](https://auth0.com/docs/secure/tokens/refresh-tokens/online-refresh-tokens/online-refresh-tokens) for the full conceptual overview. Unlike the rotating [offline refresh tokens](#refresh-tokens) described above, an ORT is:
 
 - **Session-bound** — it is valid only while the underlying Auth0 session is active. When the session ends (logout, idle/absolute session expiry, or an admin revoking the session), the ORT stops working.
 - **Non-rotating** — refreshing an access token with an ORT does **not** issue a new refresh token. The same ORT is reused for the life of the session.
