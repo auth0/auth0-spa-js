@@ -1541,11 +1541,25 @@ export class Auth0Client {
     entry: CacheEntry & { id_token: string; decodedToken: DecodedToken }
   ) {
     const { session_expiry, iat } = entry.decodedToken.claims;
-    if (session_expiry !== undefined && (iat === undefined || session_expiry <= iat)) {
-      throw new GenericError(
-        'invalid_token',
-        'Invalid session_expiry: session ceiling is before or at the token issue time.'
-      );
+    if (session_expiry !== undefined) {
+      if (typeof session_expiry !== 'number') {
+        throw new GenericError(
+          'invalid_token',
+          'Invalid session_expiry: value must be a number.'
+        );
+      }
+      if (session_expiry >= 10_000_000_000) {
+        throw new GenericError(
+          'invalid_token',
+          'Invalid session_expiry: value appears to be in milliseconds; expected a Unix timestamp in seconds.'
+        );
+      }
+      if (iat === undefined || session_expiry <= iat) {
+        throw new GenericError(
+          'invalid_token',
+          'Invalid session_expiry: session ceiling is before or at the token issue time.'
+        );
+      }
     }
 
     const { id_token, decodedToken, ...entryWithoutIdToken } = entry;
