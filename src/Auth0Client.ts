@@ -65,7 +65,8 @@ import {
   USER_BLOCKED_ERROR_MESSAGE,
   DEFAULT_NOW_PROVIDER,
   DEFAULT_FETCH_TIMEOUT_MS,
-  DEFAULT_AUDIENCE
+  DEFAULT_AUDIENCE,
+  SESSION_EXPIRY_LEEWAY_SECONDS
 } from './constants';
 
 import {
@@ -592,6 +593,10 @@ export class Auth0Client {
    * @typeparam TUser The type to return, has to extend {@link User}.
    */
   public async getUser<TUser extends User>(): Promise<TUser | undefined> {
+    if (await this._isSessionCeilingReached()) {
+      return undefined;
+    }
+
     const cache = await this._getIdTokenFromCache();
 
     return cache?.decodedToken?.user as TUser;
@@ -605,6 +610,10 @@ export class Auth0Client {
    * Returns all claims from the id_token if available.
    */
   public async getIdTokenClaims(): Promise<IdToken | undefined> {
+    if (await this._isSessionCeilingReached()) {
+      return undefined;
+    }
+
     const cache = await this._getIdTokenFromCache();
 
     return cache?.decodedToken?.claims;
@@ -939,6 +948,10 @@ export class Auth0Client {
   ): Promise<undefined | GetTokenSilentlyVerboseResponse> {
     const { cacheMode, ...getTokenOptions } = options;
 
+    if (await this._isSessionCeilingReached()) {
+      return undefined;
+    }
+
     // Check the cache before acquiring the lock to avoid the latency of
     // `lock.acquireLock` when the cache is populated.
     if (cacheMode !== 'off') {
@@ -1247,35 +1260,7 @@ export class Auth0Client {
   public async logout(options: LogoutOptions = {}): Promise<void> {
     const { openUrl, ...logoutOptions } = patchOpenUrlWithOnRedirect(options);
 
-    if (options.clientId === null) {
-      await this.cacheManager.clear();
-    } else {
-      await this.cacheManager.clear(options.clientId || this.options.clientId);
-    }
-
-    this.cookieStorage.remove(this.orgHintCookieName, {
-      cookieDomain: this.options.cookieDomain
-    });
-    this.cookieStorage.remove(this.isAuthenticatedCookieName, {
-      cookieDomain: this.options.cookieDomain
-    });
-    this.userCache.remove(CACHE_KEY_ID_TOKEN_SUFFIX);
-
-    try {
-      await this.dpop?.clear();
-    } catch {
-      // DPoP storage cleanup is best-effort. Logout should still redirect if
-      // IndexedDB or another storage backend fails while clearing local keys.
-    }
-
-    if (this.worker) {
-      try {
-        await sendMessage({ type: 'clear' }, this.worker);
-      } catch {
-        // Worker is an internal, best-effort cleanup channel. If the ACK round-trip
-        // fails we still proceed with logout so the user is not left in a half-state.
-      }
-    }
+    await this._clearLocalSession(options.clientId);
 
     const url = this._buildLogoutUrl(logoutOptions);
 
@@ -1555,6 +1540,28 @@ export class Auth0Client {
   private async _saveEntryInCache(
     entry: CacheEntry & { id_token: string; decodedToken: DecodedToken }
   ) {
+    const { session_expiry, iat } = entry.decodedToken.claims;
+    if (session_expiry !== undefined) {
+      if (typeof session_expiry !== 'number') {
+        throw new GenericError(
+          'invalid_token',
+          'Invalid session_expiry: value must be a number.'
+        );
+      }
+      if (session_expiry >= 10_000_000_000) {
+        throw new GenericError(
+          'invalid_token',
+          'Invalid session_expiry: value appears to be in milliseconds; expected a Unix timestamp in seconds.'
+        );
+      }
+      if (iat === undefined || session_expiry <= iat) {
+        throw new GenericError(
+          'invalid_token',
+          'Invalid session_expiry: session ceiling is before or at the token issue time.'
+        );
+      }
+    }
+
     const { id_token, decodedToken, ...entryWithoutIdToken } = entry;
 
     this.userCache.set(CACHE_KEY_ID_TOKEN_SUFFIX, {
@@ -1569,6 +1576,56 @@ export class Auth0Client {
     );
 
     await this.cacheManager.set(entryWithoutIdToken);
+  }
+
+  private async _clearLocalSession(clientId: string | null | undefined = this.options.clientId) {
+    if (clientId === null) {
+      await this.cacheManager.clear();
+    } else {
+      await this.cacheManager.clear(clientId);
+    }
+    this.cookieStorage.remove(this.orgHintCookieName, {
+      cookieDomain: this.options.cookieDomain
+    });
+    this.cookieStorage.remove(this.isAuthenticatedCookieName, {
+      cookieDomain: this.options.cookieDomain
+    });
+    this.userCache.remove(CACHE_KEY_ID_TOKEN_SUFFIX);
+
+    try {
+      await this.dpop?.clear();
+    } catch {
+      // DPoP storage cleanup is best-effort.
+    }
+
+    if (this.worker) {
+      try {
+        await sendMessage({ type: 'clear' }, this.worker);
+      } catch {
+        // Worker cleanup is best-effort.
+      }
+    }
+  }
+
+  private async _isSessionCeilingReached(): Promise<boolean> {
+    const inMemory = this.userCache.get<IdTokenEntry>(
+      CACHE_KEY_ID_TOKEN_SUFFIX
+    ) as IdTokenEntry;
+    const idTokenEntry =
+      inMemory ??
+      await this.cacheManager.getIdToken(
+        new CacheKey({ clientId: this.options.clientId })
+      );
+    const sessionExpiresAt = idTokenEntry?.decodedToken?.claims?.session_expiry;
+    if (sessionExpiresAt === undefined) return false;
+
+    const now = await this.nowProvider();
+    const nowSeconds = Math.floor(now / 1000);
+    if (nowSeconds >= sessionExpiresAt - SESSION_EXPIRY_LEEWAY_SECONDS) {
+      await this._clearLocalSession();
+      return true;
+    }
+    return false;
   }
 
   private async _getIdTokenFromCache() {
@@ -1668,7 +1725,7 @@ export class Auth0Client {
         this.worker
       );
 
-      const decodedToken = await this._verifyIdToken(
+      let decodedToken = await this._verifyIdToken(
         authResult.id_token,
         nonceIn,
         organization
@@ -1684,6 +1741,19 @@ export class Auth0Client {
           // Different user detected - clear cached tokens
           await this.cacheManager.clear(this.options.clientId);
           this.userCache.remove(CACHE_KEY_ID_TOKEN_SUFFIX);
+        }
+      }
+
+      // Silent refresh — pin the session_expiry ceiling from the initial login.
+      // Prevents the server from extending the ceiling via a refresh token response.
+      if (options.grant_type !== 'authorization_code') {
+        const existingIdToken = await this._getIdTokenFromCache();
+        const existingCeiling = existingIdToken?.decodedToken?.claims?.session_expiry;
+        if (existingCeiling !== undefined) {
+          decodedToken = {
+            ...decodedToken,
+            claims: { ...decodedToken.claims, session_expiry: existingCeiling }
+          };
         }
       }
 

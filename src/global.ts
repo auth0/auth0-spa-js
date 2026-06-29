@@ -866,6 +866,11 @@ export interface IdToken {
   org_id?: string;
   org_name?: string;
   /**
+   * IPSIE session expiry ceiling (Unix timestamp in seconds).
+   * When present, the SDK will not return tokens after this point in time.
+   */
+  session_expiry?: number;
+  /**
    * The actor claim, present in ID tokens returned via token exchange responses.
    * Identifies the acting party that has been delegated authority to act on behalf
    * of the subject. Set via Auth0 Actions using the `setActor` command.
