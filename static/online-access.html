@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>auth0-spa-js · Online Access sample</title>
+  <!-- Loads the local dev bundle served by `npm run dev` from /dist. -->
+  <script src="/auth0-spa-js.development.js"></script>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      max-width: 760px;
+      margin: 40px auto;
+      padding: 0 20px;
+      line-height: 1.5;
+    }
+    button {
+      font-size: 0.95rem;
+      padding: 8px 14px;
+      margin: 0 8px 8px 0;
+      cursor: pointer;
+    }
+    pre {
+      background: #f4f4f4;
+      padding: 16px;
+      border-radius: 6px;
+      overflow-x: auto;
+      font-size: 0.85rem;
+    }
+    .hidden { display: none; }
+    .mode-bar {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      background: #eef2ff;
+      border: 1px solid #c7d2fe;
+      border-radius: 6px;
+      padding: 10px 14px;
+      margin-bottom: 20px;
+    }
+    .mode-bar a {
+      text-decoration: none;
+      padding: 4px 10px;
+      border-radius: 4px;
+      border: 1px solid #6366f1;
+      color: #4338ca;
+    }
+    .mode-bar a.active { background: #6366f1; color: #fff; }
+    .diag table { border-collapse: collapse; width: 100%; font-size: 0.85rem; }
+    .diag th, .diag td {
+      border: 1px solid #ddd;
+      padding: 6px 10px;
+      text-align: left;
+      vertical-align: top;
+    }
+    .diag th { background: #fafafa; width: 220px; }
+    .ok { color: #15803d; font-weight: 600; }
+    .bad { color: #b91c1c; font-weight: 600; }
+    code { background: #f0f0f0; padding: 1px 5px; border-radius: 3px; }
+    h2 { margin-top: 32px; }
+    .config input {
+      font-size: 0.9rem;
+      padding: 6px 8px;
+      margin: 0 6px 8px 0;
+      width: 280px;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>auth0-spa-js · Online Access sample</h1>
+  <p>Using the local dev bundle at <code>/auth0-spa-js.development.js</code></p>
+
+  <div class="mode-bar">
+    <strong>Refresh-token mode:</strong>
+    <a id="mode-offline" href="?mode=offline">offline (default)</a>
+    <a id="mode-online" href="?mode=online">online (ORT)</a>
+    <span id="mode-note"></span>
+  </div>
+
+  <!-- Config (static files have no build step / env vars; persisted to localStorage). -->
+  <section id="config-form" class="config hidden">
+    <h2>Configuration</h2>
+    <div>
+      <input id="cfg-domain" placeholder="domain (your-tenant.auth0.com)" />
+      <input id="cfg-clientId" placeholder="client ID" />
+    </div>
+    <div>
+      <input id="cfg-audience" placeholder="login audience (DPoP-enabled API)" />
+      <button id="cfg-save">Save config</button>
+    </div>
+  </section>
+
+  <div id="controls">
+    <button id="login">Log in</button>
+    <button id="logout" class="hidden">Log out</button>
+    <button id="token-first" class="hidden">Token: first resource (MRRT)</button>
+    <button id="token-second" class="hidden">Token: second resource (MRRT)</button>
+    <button id="force-refresh" class="hidden">Force refresh (compare RT)</button>
+    <button id="session-continuity" class="hidden">Session continuity (refresh &times;2)</button>
+    <button id="revoke" class="hidden">Revoke refresh token</button>
+  </div>
+
+  <p id="status">Loading&hellip;</p>
+
+  <section id="config-error" class="hidden">
+    <h2>Configuration error</h2>
+    <pre id="config-error-json"></pre>
+  </section>
+
+  <section id="diag" class="diag">
+    <h2>Diagnostics</h2>
+    <table>
+      <tbody>
+        <tr><th>Mode (<code>refreshTokenMode</code>)</th><td id="diag-mode">&mdash;</td></tr>
+        <tr><th>Injected scope</th><td id="diag-scope">&mdash;</td></tr>
+        <tr><th>Scope mutual exclusivity</th><td id="diag-exclusivity">&mdash;</td></tr>
+        <tr><th>DPoP keypair (IndexedDB)</th><td id="diag-dpop">&mdash;</td></tr>
+        <tr><th>Refresh token (cache)</th><td id="diag-rt">&mdash;</td></tr>
+        <tr><th>Non-rotation check</th><td id="diag-rotation">&mdash;</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section id="profile" class="hidden">
+    <h2>User profile</h2>
+    <pre id="profile-json"></pre>
+  </section>
+
+  <section id="token-section">
+    <h2>Access token (last exchange)</h2>
+    <pre id="token-out"></pre>
+  </section>
+
+  <script>
+    // ---- Config (replaces the Vite env vars; persisted to localStorage) ----
+    var CONFIG_KEY = 'online-access-config';
+    function loadConfig() {
+      try { return JSON.parse(localStorage.getItem(CONFIG_KEY) || '{}'); }
+      catch (e) { return {}; }
+    }
+    var cfg = loadConfig();
+    var domain = cfg.domain || '';
+    var clientId = cfg.clientId || '';
+    var LOGIN_AUDIENCE = cfg.audience || '';
+
+    // Mode selected via ?mode=online|offline to test both paths without editing code.
+    var mode =
+      new URLSearchParams(window.location.search).get('mode') === 'online'
+        ? 'online'
+        : 'offline';
+
+    var RESOURCE_SERVERS = {
+      firstResourceServer: { audience: 'https://firstresourceserver/', scope: 'fs:write fs:read' },
+      secondResourceServer: { audience: 'https://secondresourceserver/', scope: 'fs:read' }
+    };
+
+    var $ = function (id) { return document.getElementById(id); };
+
+    var loginBtn = $('login');
+    var logoutBtn = $('logout');
+    var firstBtn = $('token-first');
+    var secondBtn = $('token-second');
+    var forceRefreshBtn = $('force-refresh');
+    var sessionContinuityBtn = $('session-continuity');
+    var revokeBtn = $('revoke');
+    var statusEl = $('status');
+    var profileEl = $('profile');
+    var profileJsonEl = $('profile-json');
+    var tokenOutEl = $('token-out');
+    var configErrorEl = $('config-error');
+    var configErrorJsonEl = $('config-error-json');
+
+    var diagModeEl = $('diag-mode');
+    var diagScopeEl = $('diag-scope');
+    var diagExclusivityEl = $('diag-exclusivity');
+    var diagDpopEl = $('diag-dpop');
+    var diagRtEl = $('diag-rt');
+    var diagRotationEl = $('diag-rotation');
+
+    function markModeBar() {
+      $('mode-' + mode).classList.add('active');
+      $('mode-note').textContent =
+        mode === 'online'
+          ? '→ useRefreshTokens: true + refreshTokenMode: "online" + useDpop: true'
+          : '→ useRefreshTokens: true + refreshTokenMode: "offline" (rotating RTs)';
+    }
+
+    function wireConfigForm() {
+      var form = $('config-form');
+      form.classList.remove('hidden');
+      $('cfg-domain').value = domain;
+      $('cfg-clientId').value = clientId;
+      $('cfg-audience').value = LOGIN_AUDIENCE;
+      $('cfg-save').addEventListener('click', function () {
+        localStorage.setItem(CONFIG_KEY, JSON.stringify({
+          domain: $('cfg-domain').value.trim(),
+          clientId: $('cfg-clientId').value.trim(),
+          audience: $('cfg-audience').value.trim()
+        }));
+        window.location.reload();
+      });
+    }
+
+    function createClient() {
+      // Online mode mandates useRefreshTokens + useDpop. The SDK throws
+      // InvalidConfigurationError at construction otherwise.
+      var shared = {
+        domain: domain,
+        clientId: clientId,
+        useRefreshTokensFallback: true,
+        useMrrt: true,
+        cacheLocation: 'memory'
+      };
+      if (mode === 'online') {
+        return new auth0.Auth0Client(Object.assign({}, shared, {
+          useRefreshTokens: true,
+          refreshTokenMode: 'online',
+          useDpop: true
+        }));
+      }
+      return new auth0.Auth0Client(Object.assign({}, shared, {
+        useRefreshTokens: true,
+        refreshTokenMode: 'offline',
+        useDpop: true
+      }));
+    }
+
+    async function main() {
+      markModeBar();
+      wireConfigForm();
+
+      if (!domain || !clientId) {
+        statusEl.textContent = 'Missing config. Fill in domain and client ID above and click "Save config".';
+        return;
+      }
+
+      var client;
+      try {
+        client = createClient();
+      } catch (err) {
+        // Online mode without the required options throws InvalidConfigurationError.
+        showConfigError(err);
+        return;
+      }
+
+      // Handle the redirect back from Auth0 after login.
+      if (window.location.search.indexOf('code=') !== -1 && window.location.search.indexOf('state=') !== -1) {
+        await client.handleRedirectCallback();
+        window.history.replaceState({}, document.title, window.location.pathname + '?mode=' + mode);
+      }
+
+      await render(client);
+
+      loginBtn.addEventListener('click', function () {
+        client.loginWithRedirect({
+          authorizationParams: Object.assign(
+            {
+              redirect_uri: window.location.origin + '/online-access.html?mode=' + mode,
+              scope: 'openid profile email'
+            },
+            LOGIN_AUDIENCE ? { audience: LOGIN_AUDIENCE } : {}
+          )
+        });
+      });
+
+      logoutBtn.addEventListener('click', function () {
+        client.logout({
+          logoutParams: { returnTo: window.location.origin + '/online-access.html?mode=' + mode }
+        });
+      });
+
+      firstBtn.addEventListener('click', function () { getCredentialsForResource(client, 'firstResourceServer'); });
+      secondBtn.addEventListener('click', function () { getCredentialsForResource(client, 'secondResourceServer'); });
+      forceRefreshBtn.addEventListener('click', function () { forceRefresh(client); });
+      sessionContinuityBtn.addEventListener('click', function () { sessionContinuity(client); });
+      revokeBtn.addEventListener('click', function () { revoke(client); });
+    }
+
+    function showConfigError(err) {
+      configErrorEl.classList.remove('hidden');
+      if (err && err.error === 'invalid_configuration') {
+        statusEl.textContent = 'Auth0Client construction failed (InvalidConfigurationError).';
+        configErrorJsonEl.textContent = JSON.stringify(
+          { name: 'InvalidConfigurationError', error: err.error, error_description: err.error_description, suggestion: err.suggestion },
+          null, 2
+        );
+      } else {
+        statusEl.textContent = 'Auth0Client construction failed.';
+        configErrorJsonEl.textContent = err instanceof Error ? err.name + ': ' + err.message : String(err);
+      }
+    }
+
+    // Exchanges the refresh token for an access token for a different audience (MRRT).
+    async function getCredentialsForResource(client, resourceKey) {
+      var resource = RESOURCE_SERVERS[resourceKey];
+      tokenOutEl.textContent = 'Requesting token for ' + resource.audience + ' via MRRT…';
+
+      try {
+        var detailed = await client.getTokenSilently({
+          authorizationParams: { audience: resource.audience, scope: resource.scope },
+          cacheMode: 'off',
+          detailedResponse: true
+        });
+        tokenOutEl.textContent = JSON.stringify(
+          { audience: resource.audience, requestedScope: resource.scope, response: detailed },
+          null, 2
+        );
+      } catch (err) {
+        tokenOutEl.textContent =
+          'Failed to get token for ' + resource.audience + ':\n' +
+          (err instanceof Error ? err.message : String(err)) + '\n\n' +
+          'Make sure:\n' +
+          '1. You logged in in this mode (online_access for an ORT, or offline_access).\n' +
+          '2. The resource-server API is configured in the Auth0 Dashboard and DPoP-enabled.\n' +
+          '3. `online_refresh_tokens` (tenant) and `allow_online_access` (resource server) are enabled.';
+      }
+
+      await refreshDiagnostics(client);
+    }
+
+    // Compares the cached RT before/after a forced exchange: online = unchanged, offline = rotated.
+    async function forceRefresh(client) {
+      var before = readRefreshTokenFromCache();
+      tokenOutEl.textContent = 'Forcing a refresh-token exchange…';
+
+      try {
+        await client.getTokenSilently(Object.assign(
+          { cacheMode: 'off' },
+          LOGIN_AUDIENCE ? { authorizationParams: { audience: LOGIN_AUDIENCE } } : {}
+        ));
+      } catch (err) {
+        tokenOutEl.textContent = 'Force refresh failed:\n' + (err instanceof Error ? err.message : String(err));
+        return;
+      }
+
+      var after = readRefreshTokenFromCache();
+      var unchanged = before && after && before === after;
+      var expectedUnchanged = mode === 'online';
+
+      diagRotationEl.innerHTML =
+        before == null || after == null
+          ? '<span class="bad">No refresh token found in cache (memory mode keeps the RT in the worker).</span>'
+          : unchanged
+            ? '<span class="' + (expectedUnchanged ? 'ok' : 'bad') + '">RT UNCHANGED after refresh' +
+              (expectedUnchanged ? ' ✓ (expected for online/ORT)' : ' ✗ (offline should rotate)') + '</span>'
+            : '<span class="' + (expectedUnchanged ? 'bad' : 'ok') + '">RT CHANGED after refresh' +
+              (expectedUnchanged ? ' ✗ (online ORT should NOT rotate)' : ' ✓ (expected for offline)') + '</span>';
+
+      tokenOutEl.textContent = JSON.stringify(
+        { mode: mode, refreshTokenBefore: mask(before), refreshTokenAfter: mask(after), changed: !unchanged },
+        null, 2
+      );
+
+      await refreshDiagnostics(client);
+    }
+
+    // Two back-to-back forced refreshes. In online + memory cache (the default), the RT lives
+    // only inside the Web Worker. A non-rotating ORT exchange returns no replacement token; if
+    // the worker evicts its stored ORT on that empty response, the SECOND refresh throws
+    // MissingRefreshTokenError. Refresh #1 succeeds, refresh #2 is the canary.
+    async function sessionContinuity(client) {
+      tokenOutEl.textContent = 'Refreshing twice to test session continuity…';
+
+      var opts = Object.assign(
+        { cacheMode: 'off' },
+        LOGIN_AUDIENCE ? { authorizationParams: { audience: LOGIN_AUDIENCE } } : {}
+      );
+
+      var results = [];
+      for (var attempt = 1; attempt <= 2; attempt++) {
+        try {
+          await client.getTokenSilently(opts);
+          results.push({ refresh: attempt, ok: true });
+        } catch (err) {
+          results.push({ refresh: attempt, ok: false, error: err instanceof Error ? err.message : String(err) });
+          break;
+        }
+      }
+
+      var allOk = results.every(function (r) { return r.ok; });
+      var firstFail = results.find(function (r) { return !r.ok; });
+      diagRotationEl.innerHTML = allOk
+        ? '<span class="ok">Session survived 2 refreshes ✓ (ORT preserved)</span>'
+        : '<span class="bad">Session broke on refresh #' + (firstFail && firstFail.refresh) + ' ✗ (worker evicted the ORT)</span>';
+
+      tokenOutEl.textContent = JSON.stringify({ mode: mode, results: results }, null, 2);
+
+      await refreshDiagnostics(client);
+    }
+
+    // Calls revokeRefreshToken and reports the raw outcome. Online: clears the local cache only,
+    // the ORT is NOT revoked server-side. Offline: revokes the rotating RT at the server.
+    async function revoke(client) {
+      var before = readRefreshTokenFromCache();
+      tokenOutEl.textContent = 'Revoking refresh token…';
+
+      var error;
+      try {
+        // The RT is cached under the login audience; pass it so the lookup finds the token.
+        // With no audience the SDK defaults to DEFAULT_AUDIENCE and finds nothing.
+        await client.revokeRefreshToken(LOGIN_AUDIENCE ? { audience: LOGIN_AUDIENCE } : {});
+      } catch (err) {
+        error = err instanceof Error ? err.message : String(err);
+      }
+
+      var after = readRefreshTokenFromCache();
+
+      tokenOutEl.textContent = JSON.stringify(
+        Object.assign(
+          {
+            mode: mode,
+            note: mode === 'online'
+              ? 'Online: local cache cleared only; ORT NOT revoked server-side. Use logout() to end the session.'
+              : 'Offline: rotating refresh token revoked at the server.',
+            refreshTokenBefore: mask(before),
+            refreshTokenAfter: mask(after),
+            changed: before !== after
+          },
+          error ? { error: error } : null
+        ),
+        null, 2
+      );
+
+      await refreshDiagnostics(client);
+    }
+
+    // Reads the first refresh token from the localStorage cache (keys: `@@auth0spajs@@…`).
+    // Note: in memory/worker mode the RT lives in the worker, so this returns undefined.
+    function readRefreshTokenFromCache() {
+      for (var i = 0; i < localStorage.length; i++) {
+        var key = localStorage.key(i);
+        if (!key || key.indexOf('@@auth0spajs@@') !== 0) continue;
+        try {
+          var entry = JSON.parse(localStorage.getItem(key));
+          var rt = entry && entry.body && entry.body.refresh_token;
+          if (rt) return rt;
+        } catch (e) { /* ignore non-JSON entries */ }
+      }
+      return undefined;
+    }
+
+    function mask(token) {
+      if (!token) return token;
+      return token.length <= 12 ? token : token.slice(0, 6) + '…' + token.slice(-6) + ' (len ' + token.length + ')';
+    }
+
+    // Reflectively reads the SDK's private injected scope — diagnostics only.
+    function readInjectedScope(client) {
+      var scopeMap = client.scope;
+      if (!scopeMap) return '(unavailable)';
+      return Object.values(scopeMap).join(' | ') || '(empty)';
+    }
+
+    async function dpopKeypairPresent() {
+      return new Promise(function (resolve) {
+        var req = window.indexedDB.open('auth0-spa-js');
+        req.onerror = function () { resolve(false); };
+        req.onsuccess = function () {
+          var db = req.result;
+          if (!db.objectStoreNames.contains('keypair')) { db.close(); return resolve(false); }
+          var tx = db.transaction('keypair', 'readonly');
+          var count = tx.objectStore('keypair').count();
+          count.onsuccess = function () { resolve(count.result > 0); db.close(); };
+          count.onerror = function () { resolve(false); db.close(); };
+        };
+      });
+    }
+
+    async function refreshDiagnostics(client) {
+      diagModeEl.innerHTML = '<code>' + mode + '</code>';
+
+      var injected = readInjectedScope(client);
+      diagScopeEl.innerHTML = '<code>' + injected + '</code>';
+
+      var hasOnline = injected.indexOf('online_access') !== -1;
+      var hasOffline = injected.indexOf('offline_access') !== -1;
+      var exclusive = hasOnline !== hasOffline;
+      var correct = mode === 'online' ? hasOnline && !hasOffline : hasOffline && !hasOnline;
+      diagExclusivityEl.innerHTML = !exclusive
+        ? '<span class="bad">BOTH or NEITHER scope present ✗</span>'
+        : correct
+          ? '<span class="ok">Only ' + (mode === 'online' ? 'online_access' : 'offline_access') + ' present ✓</span>'
+          : '<span class="bad">Wrong scope for this mode ✗</span>';
+
+      var dpop = await dpopKeypairPresent();
+      diagDpopEl.innerHTML =
+        mode === 'online'
+          ? dpop
+            ? '<span class="ok">keypair present ✓ (required for online)</span>'
+            : '<span class="bad">no keypair ✗ (online requires DPoP)</span>'
+          : dpop
+            ? 'keypair present (DPoP enabled)'
+            : 'no keypair (DPoP not enabled — fine for offline)';
+
+      var rt = readRefreshTokenFromCache();
+      diagRtEl.innerHTML = rt
+        ? '<code>' + mask(rt) + '</code>'
+        : '<span class="bad">none in localStorage (memory mode keeps it in the worker)</span>';
+    }
+
+    async function render(client) {
+      var isAuthenticated = await client.isAuthenticated();
+
+      loginBtn.classList.toggle('hidden', isAuthenticated);
+      logoutBtn.classList.toggle('hidden', !isAuthenticated);
+      firstBtn.classList.toggle('hidden', !isAuthenticated);
+      secondBtn.classList.toggle('hidden', !isAuthenticated);
+      forceRefreshBtn.classList.toggle('hidden', !isAuthenticated);
+      sessionContinuityBtn.classList.toggle('hidden', !isAuthenticated);
+      revokeBtn.classList.toggle('hidden', !isAuthenticated);
+      profileEl.classList.toggle('hidden', !isAuthenticated);
+
+      if (isAuthenticated) {
+        var user = await client.getUser();
+        statusEl.textContent = 'Logged in as ' + ((user && (user.name || user.email)) || 'unknown') + ' (mode: ' + mode + ')';
+        profileJsonEl.textContent = JSON.stringify(user, null, 2);
+      } else {
+        statusEl.textContent = 'You are not logged in. (mode: ' + mode + ')';
+        profileJsonEl.textContent = '';
+      }
+
+      await refreshDiagnostics(client);
+    }
+
+    main().catch(function (err) {
+      statusEl.textContent = 'Error: ' + (err instanceof Error ? err.message : String(err));
+      console.error(err);
+    });
+  </script>
+</body>
+
+</html>

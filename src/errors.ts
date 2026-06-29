@@ -29,6 +29,17 @@ export class GenericError extends Error {
 }
 
 /**
+ * Thrown at construction time for an invalid option combination (e.g.
+ * `refreshTokenMode: 'online'` without `useDpop: true`). The `suggestion` names the fix.
+ */
+export class InvalidConfigurationError extends GenericError {
+  constructor(message: string, public suggestion: string) {
+    super('invalid_configuration', `${message} ${suggestion}`);
+    Object.setPrototypeOf(this, InvalidConfigurationError.prototype);
+  }
+}
+
+/**
  * Thrown when handling the redirect callback fails, will be one of Auth0's
  * Authentication API's Standard Error Responses: https://auth0.com/docs/api/authentication?javascript#standard-error-responses
  */

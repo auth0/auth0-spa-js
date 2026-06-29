@@ -7,6 +7,7 @@ import {
   LogoutOptions
 } from './global';
 import { scopesToRequest } from './scope';
+import { ONLINE_ACCESS_SCOPE } from './constants';
 
 /**
  * @ignore
@@ -123,7 +124,17 @@ export const patchOpenUrlWithOnRedirect = <
 
 /**
  * @ignore
- * 
+ *
+ * Function used to trim the `online_access` scope from a list of scopes. 
+ * This is used in the MRRT flow to avoid spurious missing scope errors, 
+ * since `online_access` is never echoed back in the response.
+ */
+const withoutOnlineAccessScope = (scopes: string[]): string[] =>
+  scopes.filter((scope) => scope !== ONLINE_ACCESS_SCOPE);
+
+/**
+ * @ignore
+ *
  * Checks if all scopes are included inside other array of scopes
  */
 export const allScopesAreIncluded = (scopeToInclude?: string, scopes?: string): boolean => {
@@ -134,11 +145,24 @@ export const allScopesAreIncluded = (scopeToInclude?: string, scopes?: string): 
 
 /**
  * @ignore
- * 
- * Returns the scopes that are missing after a refresh
+ *
+ * Returns the scopes that are missing after a refresh.
+ *
+ * When `onlineAccess` is true, `online_access` is stripped from the requested scopes before
+ * comparing: in online mode the server reuses the same (non-rotating) ORT for an MRRT
+ * cross-audience exchange and never echoes `online_access` back in the response scope, so
+ * comparing it would flag a spurious missing scope. Outside online mode the strip is not
+ * applied, so a genuinely missing `online_access` is still reported.
  */
-export const getMissingScopes = (requestedScope?: string, respondedScope?: string): string => {
-  const requestedScopes = requestedScope?.split(" ") || [];
+export const getMissingScopes = (
+  requestedScope?: string,
+  respondedScope?: string,
+  onlineAccess?: boolean
+): string => {
+  const splitRequested = requestedScope?.split(" ") || [];
+  const requestedScopes = onlineAccess
+    ? withoutOnlineAccessScope(splitRequested)
+    : splitRequested;
   const respondedScopes = respondedScope?.split(" ") || [];
 
   const missingScopes = requestedScopes.filter((scope) => respondedScopes.indexOf(scope) == -1);

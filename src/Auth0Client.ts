@@ -38,6 +38,7 @@ import {
   AuthenticationError,
   ConnectError,
   GenericError,
+  InvalidConfigurationError,
   MfaRequiredError,
   MissingRefreshTokenError,
   MissingScopesError,
@@ -59,6 +60,7 @@ import {
   MISSING_REFRESH_TOKEN_ERROR_MESSAGE,
   MFA_STEP_UP_ERROR_DESCRIPTION,
   DEFAULT_SCOPE,
+  ONLINE_ACCESS_SCOPE,
   DEFAULT_SESSION_CHECK_EXPIRY_DAYS,
   DEFAULT_AUTH0_CLIENT,
   INVALID_REFRESH_TOKEN_ERROR_MESSAGE,
@@ -110,7 +112,6 @@ import {
   OLD_IS_AUTHENTICATED_COOKIE_NAME,
   patchOpenUrlWithOnRedirect,
   getScopeToRequest,
-  allScopesAreIncluded,
   isRefreshWithMrrt,
   getMissingScopes
 } from './Auth0Client.utils';
@@ -155,6 +156,7 @@ export class Auth0Client {
   private readonly isAuthenticatedCookieName: string;
   private readonly nowProvider: () => number | Promise<number>;
   private readonly httpTimeoutMs: number;
+  private readonly onlineAccess: boolean;
   private readonly options: Auth0ClientOptions & {
     authorizationParams: ClientAuthorizationParams,
   };
@@ -189,10 +191,37 @@ export class Auth0Client {
       scope: DEFAULT_SCOPE
     },
     useRefreshTokensFallback: false,
-    useFormData: true
+    useFormData: true,
+    refreshTokenMode: 'offline',
   };
 
+  /** Validates online-access config and returns whether online mode is enabled. */
+  private resolveOnlineAccess(options: Auth0ClientOptions): boolean {
+
+    if (options.refreshTokenMode !== 'online') {
+      return false;
+    }
+
+    if (options.useRefreshTokens !== true) {
+      throw new InvalidConfigurationError(
+        '`refreshTokenMode: "online"` requires the refresh-token grant.',
+        'Set `useRefreshTokens: true`.'
+      );
+    }
+
+    if (options.useDpop !== true) {
+      throw new InvalidConfigurationError(
+        '`refreshTokenMode: "online"` requires DPoP, which is missing or disabled.',
+        'Set `useDpop: true` (DPoP is mandatory for online access).'
+      );
+    }
+
+    return true;
+  }
+
   constructor(options: Auth0ClientOptions) {
+    this.onlineAccess = this.resolveOnlineAccess(options);
+
     this.options = {
       ...this.defaultOptions,
       ...options,
@@ -251,14 +280,18 @@ export class Auth0Client {
       ? this.cookieStorage
       : SessionStorage;
 
-    // Construct the scopes based on the following:
-    // 1. Always include `openid`
-    // 2. Include the scopes provided in `authorizationParams. This defaults to `profile email`
-    // 3. Add `offline_access` if `useRefreshTokens` is enabled
+    // `online_access` and `offline_access` are mutually exclusive — inject at most one.
+    let sessionScope = '';
+    if (this.onlineAccess) {
+      sessionScope = ONLINE_ACCESS_SCOPE;
+    } else if (this.options.useRefreshTokens) {
+      sessionScope = 'offline_access';
+    }
+
     this.scope = injectDefaultScopes(
       this.options.authorizationParams.scope,
       'openid',
-      this.options.useRefreshTokens ? 'offline_access' : ''
+      sessionScope
     );
 
     this.transactionManager = new TransactionManager(
@@ -312,7 +345,7 @@ export class Auth0Client {
       this
     );
 
-    // Don't use web workers unless using refresh tokens in memory
+    // Don't use web workers unless using refresh tokens in memory.
     if (
       typeof window !== 'undefined' &&
       window.Worker &&
@@ -1189,6 +1222,12 @@ export class Auth0Client {
    *
    * If `useRefreshTokens` is disabled, this method does nothing.
    *
+   * **Online mode:** when `refreshTokenMode` is `'online'` this method only clears the
+   * cached refresh token locally — it does **not** revoke the Online Refresh Token at the
+   * authorization server. Online Refresh Tokens are non-rotating and session-bound, and the
+   * server does not support token-only revocation for them. To end an online session, use
+   * `logout()` instead, which terminates the session and thereby invalidates the ORT.
+   *
    * **Important:** This method revokes the refresh token for a single audience. If your
    * application requests tokens for multiple audiences, each audience may have its own
    * refresh token. To fully revoke all refresh tokens, call this method once per audience.
@@ -1454,9 +1493,13 @@ export class Auth0Client {
         }
       );
 
-      // If is refreshed with MRRT, we update all entries that have the old
-      // refresh_token with the new one if the server responded with one
-      if (tokenResult.refresh_token && cache?.refresh_token) {
+      // Propagate a rotated RT to all MRRT entries. Skipped for online mode,
+      // where ORTs are non-rotating.
+      if (
+        !this.onlineAccess &&
+        tokenResult.refresh_token &&
+        cache?.refresh_token
+      ) {
         await this.cacheManager.updateEntry(
           cache.refresh_token,
           tokenResult.refresh_token
@@ -1476,12 +1519,13 @@ export class Auth0Client {
         );
 
         if (isRefreshMrrt) {
-          const tokenHasAllScopes = allScopesAreIncluded(
+          const missingScopes = getMissingScopes(
             scopesToRequest,
             tokenResult.scope,
+            this.onlineAccess
           );
 
-          if (!tokenHasAllScopes) {
+          if (missingScopes) {
             if (this.options.useRefreshTokensFallback) {
               return await this._getTokenFromIFrame(options);
             }
@@ -1492,11 +1536,6 @@ export class Auth0Client {
               this.options.clientId,
               options.authorizationParams.audience,
               options.authorizationParams.scope,
-            );
-
-            const missingScopes = getMissingScopes(
-              scopesToRequest,
-              tokenResult.scope,
             );
 
             throw new MissingScopesError(
@@ -1719,6 +1758,7 @@ export class Auth0Client {
           timeout: this.httpTimeoutMs,
           useMrrt: this.options.useMrrt,
           dpop: this.dpop,
+          nonRotating: this.onlineAccess,
           ...options,
           scope: scopesToRequest || options.scope,
         },
@@ -1756,9 +1796,18 @@ export class Auth0Client {
           };
         }
       }
+      // Online refresh tokens are non-rotating: the server returns no refresh_token, so
+      // carry the ORT forward to avoid evicting it on save. Online-only: in offline mode
+      // a refresh token is single-use and reusing it would trip reuse detection.
+      const refresh_token =
+        authResult.refresh_token ||
+        (this.onlineAccess && options.grant_type === 'refresh_token'
+          ? options.refresh_token
+          : undefined);
 
       await this._saveEntryInCache({
         ...authResult,
+        ...(refresh_token ? { refresh_token } : null),
         decodedToken,
         scope: options.scope,
         audience: options.audience || DEFAULT_AUDIENCE,
