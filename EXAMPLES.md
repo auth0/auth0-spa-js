@@ -525,6 +525,8 @@ async function performTokenExchange() {
 // Note: exchangeToken() is deprecated - use loginWithCustomTokenExchange() instead
 ```
 
+> ⚠️ **Deprecated** — `exchangeToken()` will be removed in the next major version. Use `loginWithCustomTokenExchange()` instead.
+
 ### Required Auth0 Configuration
 
 1. **Create Token Exchange Profile** in Auth0 Dashboard:
@@ -1305,9 +1307,7 @@ const emailEnrollment = await auth0.mfa.enroll({
   email: 'user@example.com' 
 });
 
-const oobCode = voiceEnrollment.oobCode; // Use this code to complete enrollment verification
-
-// Use this code to complete enrollment verification
+const oobCode = emailEnrollment.oobCode; // Use this code to complete enrollment verification
 ```
 
 #### Enrolling Push Notification
