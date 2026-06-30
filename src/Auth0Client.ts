@@ -1223,10 +1223,12 @@ export class Auth0Client {
    * If `useRefreshTokens` is disabled, this method does nothing.
    *
    * **Online mode:** when `refreshTokenMode` is `'online'`, revoking the ORT via
-   * `/oauth/revoke` **also terminates the Auth0 session**. Because Online Refresh Tokens
-   * are session-bound, the authorization server ties the token directly to the session —
-   * revoking the ORT invalidates the session server-side. This means the user will be
-   * required to log in again even if their session cookie has not yet expired.
+   * `/oauth/revoke` **also terminates the Auth0 session** and **clears the entire local
+   * cache** (access token, ID token, user profile). Because Online Refresh Tokens are
+   * session-bound, the authorization server ties the token directly to the session —
+   * revoking the ORT invalidates the session server-side. The local cache is cleared
+   * immediately so that `isAuthenticated()` returns `false` and `getUser()` returns
+   * `undefined` right away, without waiting for the access token to expire.
    * Use this when you need to force a sign-out without a redirect (e.g. background
    * revocation). For a redirect-based sign-out, prefer `logout()`.
    *
@@ -1283,6 +1285,14 @@ export class Auth0Client {
       },
       this.worker
     );
+
+    // In online mode the ORT is session-bound: revoking it terminates the Auth0 session
+    // server-side. Clear the entire local cache so that isAuthenticated() returns false
+    // and getUser() returns undefined immediately — the stale access token and ID token
+    // must not remain visible to the application after the session is gone.
+    if (this.onlineAccess) {
+      await this._clearLocalSession();
+    }
   }
 
   /**
