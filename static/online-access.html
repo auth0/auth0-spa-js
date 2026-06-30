@@ -390,12 +390,16 @@
       await refreshDiagnostics(client);
     }
 
-    // Calls revokeRefreshToken and reports the raw outcome. Online: clears the local cache only,
-    // the ORT is NOT revoked server-side. Offline: revokes the rotating RT at the server.
+    // Calls revokeRefreshToken.
+    // Online (memory/worker mode): the ORT lives in the worker's in-memory store.
+    //   revokeToken sends a 'revoke' message to the worker → worker calls /oauth/revoke
+    //   with the ORT → deletes it from its store. Server-side revocation works.
+    // Offline: rotating RT read from ICache → revoked at server.
     async function revoke(client) {
       var before = readRefreshTokenFromCache();
       tokenOutEl.textContent = 'Revoking refresh token…';
 
+      var t0 = performance.now();
       var error;
       try {
         // The RT is cached under the login audience; pass it so the lookup finds the token.
@@ -404,6 +408,7 @@
       } catch (err) {
         error = err instanceof Error ? err.message : String(err);
       }
+      var ms = Math.round(performance.now() - t0);
 
       var after = readRefreshTokenFromCache();
 
@@ -412,13 +417,14 @@
           {
             mode: mode,
             note: mode === 'online'
-              ? 'Online: local cache cleared only; ORT NOT revoked server-side. Use logout() to end the session.'
+              ? 'Online (worker mode): ORT revoked at /oauth/revoke via worker. getTokenSilently should now fail.'
               : 'Offline: rotating refresh token revoked at the server.',
+            durationMs: ms,
             refreshTokenBefore: mask(before),
             refreshTokenAfter: mask(after),
-            changed: before !== after
+            cacheChanged: before !== after
           },
-          error ? { error: error } : null
+          error ? { error: error } : { success: true }
         ),
         null, 2
       );

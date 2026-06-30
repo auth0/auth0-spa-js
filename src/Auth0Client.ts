@@ -1222,16 +1222,18 @@ export class Auth0Client {
    *
    * If `useRefreshTokens` is disabled, this method does nothing.
    *
-   * **Online mode:** when `refreshTokenMode` is `'online'` this method only clears the
-   * cached refresh token locally — it does **not** revoke the Online Refresh Token at the
-   * authorization server. Online Refresh Tokens are non-rotating and session-bound, and the
-   * server does not support token-only revocation for them. To end an online session, use
-   * `logout()` instead, which terminates the session and thereby invalidates the ORT.
+   * **Online mode:** when `refreshTokenMode` is `'online'`, revoking the ORT via
+   * `/oauth/revoke` **also terminates the Auth0 session**. Because Online Refresh Tokens
+   * are session-bound, the authorization server ties the token directly to the session —
+   * revoking the ORT invalidates the session server-side. This means the user will be
+   * required to log in again even if their session cookie has not yet expired.
+   * Use this when you need to force a sign-out without a redirect (e.g. background
+   * revocation). For a redirect-based sign-out, prefer `logout()`.
    *
    * **Important:** This method revokes the refresh token for a single audience. If your
    * application requests tokens for multiple audiences, each audience may have its own
    * refresh token. To fully revoke all refresh tokens, call this method once per audience.
-   * If you want to terminate the user's session entirely, use `logout()` instead.
+   * If you want to terminate the user's session with a redirect, use `logout()` instead.
    *
    * When using Multi-Resource Refresh Tokens (MRRT), a single refresh token may cover
    * multiple audiences. In that case, revoking it will affect all cache entries that
@@ -1758,7 +1760,7 @@ export class Auth0Client {
           timeout: this.httpTimeoutMs,
           useMrrt: this.options.useMrrt,
           dpop: this.dpop,
-          nonRotating: this.onlineAccess,
+          preserveRefreshToken: this.onlineAccess,
           ...options,
           scope: scopesToRequest || options.scope,
         },

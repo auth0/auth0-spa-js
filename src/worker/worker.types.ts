@@ -21,10 +21,10 @@ export type WorkerRefreshTokenMessage = WorkerTokenMessage & {
   useMrrt?: boolean;
   skipTokenStorage?: boolean;
   /**
-   * Non-rotating refresh token (Online Refresh Token). When set, the worker keeps
-   * the stored token if the response carries no replacement, instead of deleting it.
+   * When true the worker keeps the stored token if the response carries no replacement
+   * (Online Refresh Tokens are non-rotating and never come back with a new token).
    */
-  nonRotating?: boolean;
+  preserveRefreshToken?: boolean;
 };
 
 export type WorkerRevokeTokenMessage = Omit<WorkerTokenMessage, 'auth'> & {
