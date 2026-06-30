@@ -171,7 +171,11 @@ await auth0.revokeRefreshToken();
 - **Offline mode:** only the refresh token entry is cleared — the access token remains in cache until it expires. Once it expires, `getTokenSilently()` will attempt silent auth (via iframe, if `useRefreshTokensFallback` is enabled and the Auth0 session is still active) before requiring a new interactive login.
 - **Online mode:** the entire local cache is cleared (access token, ID token, user profile). `isAuthenticated()` returns `false` immediately. The user must log in again.
 
-**Difference from `logout()`:** `revokeRefreshToken()` invalidates the refresh token on the Auth0 server and removes it from the local cache, but it does **not** clear the user's Auth0 session or the rest of the local cache. If you want to fully terminate the session, use `logout()` instead.
+**Difference from `logout()`:**
+- In **offline mode**, `revokeRefreshToken()` invalidates the rotating refresh token at the server and strips it from the cache, but does **not** terminate the Auth0 session or clear the rest of the local cache (access token, ID token, user profile remain until they expire).
+- In **online mode**, `revokeRefreshToken()` terminates the Auth0 session server-side and clears the entire local cache immediately — equivalent to a silent `logout()` without a redirect.
+
+In both modes, if you want a **redirect-based** sign-out, use `logout()` instead.
 
 #### Error Handling
 
