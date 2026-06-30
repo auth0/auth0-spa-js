@@ -75,6 +75,7 @@ describe('Auth0Client', () => {
         } as any)
     );
     sessionStorage.clear();
+    localStorage.clear();
   });
 
   afterEach(() => {
@@ -382,6 +383,105 @@ describe('Auth0Client', () => {
           }
         )
       ).rejects.toThrow(/write:foo/);
+    });
+  });
+
+  describe('online access — revokeRefreshToken clears local session', () => {
+    const onlineConfig = {
+      refreshTokenMode: 'online' as const,
+      useRefreshTokens: true,
+      useDpop: true,
+      cacheLocation: 'localstorage' as const
+    };
+
+    const mockSuccessfulRevoke = () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: () => Promise.resolve({}),
+        text: () => Promise.resolve('')
+      });
+    };
+
+    it('clears the entire local cache after successful revocation', async () => {
+      const auth0 = setup(onlineConfig as any);
+      await loginWithRedirect(auth0);
+      mockFetch.mockReset();
+      mockSuccessfulRevoke();
+
+      const clearSpy = jest.spyOn((auth0 as any).cacheManager, 'clear');
+
+      await auth0.revokeRefreshToken();
+
+      expect(clearSpy).toHaveBeenCalled();
+    });
+
+    it('isAuthenticated() returns false immediately after revokeRefreshToken', async () => {
+      const auth0 = setup(onlineConfig as any);
+      await loginWithRedirect(auth0);
+      mockFetch.mockReset();
+      mockSuccessfulRevoke();
+
+      expect(await auth0.isAuthenticated()).toBe(true);
+
+      await auth0.revokeRefreshToken();
+
+      expect(await auth0.isAuthenticated()).toBe(false);
+    });
+
+    it('getUser() returns undefined immediately after revokeRefreshToken', async () => {
+      const auth0 = setup(onlineConfig as any);
+      await loginWithRedirect(auth0);
+      mockFetch.mockReset();
+      mockSuccessfulRevoke();
+
+      expect(await auth0.getUser()).toBeDefined();
+
+      await auth0.revokeRefreshToken();
+
+      expect(await auth0.getUser()).toBeUndefined();
+    });
+
+    it('does NOT clear the local cache if the revoke request fails', async () => {
+      const auth0 = setup(onlineConfig as any);
+      await loginWithRedirect(auth0);
+      mockFetch.mockReset();
+
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 400,
+        text: () =>
+          Promise.resolve(
+            JSON.stringify({ error_description: 'The token has been revoked' })
+          )
+      });
+
+      const clearSpy = jest.spyOn((auth0 as any).cacheManager, 'clear');
+
+      await expect(auth0.revokeRefreshToken()).rejects.toThrow();
+
+      expect(clearSpy).not.toHaveBeenCalled();
+      // User should still appear authenticated since server revoke failed
+      expect(await auth0.isAuthenticated()).toBe(true);
+    });
+
+    it('does NOT clear the local cache after revokeRefreshToken in offline mode', async () => {
+      const auth0 = setup({
+        useRefreshTokens: true,
+        cacheLocation: 'localstorage' as const
+      });
+      await loginWithRedirect(auth0);
+      mockFetch.mockReset();
+      mockSuccessfulRevoke();
+
+      const clearSpy = jest.spyOn((auth0 as any).cacheManager, 'clear');
+
+      await auth0.revokeRefreshToken();
+
+      expect(clearSpy).not.toHaveBeenCalled();
+      // Access token and user profile remain after offline revocation
+      expect(await auth0.isAuthenticated()).toBe(true);
+      expect(await auth0.getUser()).toBeDefined();
     });
   });
 });
