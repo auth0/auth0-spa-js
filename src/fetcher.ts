@@ -1,5 +1,5 @@
 import { DPOP_NONCE_HEADER } from './dpop/utils';
-import { UseDpopNonceError } from './errors';
+import { GenericError, UseDpopNonceError } from './errors';
 import { GetTokenSilentlyVerboseResponse } from './global';
 
 export type ResponseHeaders =
@@ -21,7 +21,7 @@ export type AuthParams = {
   audience?: string;
 };
 
-type AccessTokenFactory = (authParams?: AuthParams) => Promise<string | GetTokenSilentlyVerboseResponse>;
+type AccessTokenFactory = (authParams?: AuthParams) => Promise<string | GetTokenSilentlyVerboseResponse | undefined>;
 
 enum TokenType {
   Bearer = 'Bearer',
@@ -94,7 +94,7 @@ export class Fetcher<TOutput extends CustomFetchMinimalOutput> {
     throw new TypeError('`url` must be absolute or `baseUrl` non-empty.');
   }
 
-  protected getAccessToken(authParams?: AuthParams): Promise<string | GetTokenSilentlyVerboseResponse> {
+  protected getAccessToken(authParams?: AuthParams): Promise<string | GetTokenSilentlyVerboseResponse | undefined> {
     return this.config.getAccessToken
       ? this.config.getAccessToken(authParams)
       : this.hooks.getAccessToken(authParams);
@@ -170,6 +170,10 @@ export class Fetcher<TOutput extends CustomFetchMinimalOutput> {
 
   protected async prepareRequest(request: Request, authParams?: AuthParams) {
     const accessTokenResponse = await this.getAccessToken(authParams);
+
+    if (accessTokenResponse === undefined) {
+      throw new GenericError('missing_access_token', 'No access token was returned by getTokenSilently.');
+    }
 
     let tokenType: string;
     let accessToken: string;
