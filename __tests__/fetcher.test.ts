@@ -5,7 +5,7 @@
  */
 
 import { beforeEach, describe, expect } from '@jest/globals';
-import { UseDpopNonceError } from '../src/errors';
+import { GenericError, UseDpopNonceError } from '../src/errors';
 import { GetTokenSilentlyVerboseResponse } from '../src/global';
 import {
   Fetcher,
@@ -332,6 +332,30 @@ describe('Fetcher', () => {
         request,
         TEST_ACCESS_TOKEN
       ));
+  });
+
+  describe('prepareRequest() with undefined token', () => {
+    const fetcher = newTestFetcher({});
+    const request = new Request('https://example.com');
+
+    beforeEach(() => {
+      fetcher['getAccessToken'] = () => Promise.resolve(undefined);
+      fetcher['setAuthorizationHeader'] = jest.fn();
+      fetcher['setDpopProofHeader'] = jest.fn();
+    });
+
+    it('rejects with GenericError missing_access_token', () =>
+      expect(fetcher['prepareRequest'](request)).rejects.toThrow(GenericError));
+
+    it('does not set authorization header', async () => {
+      await fetcher['prepareRequest'](request).catch(() => {});
+      expect(fetcher['setAuthorizationHeader']).not.toHaveBeenCalled();
+    });
+
+    it('does not set DPoP header', async () => {
+      await fetcher['prepareRequest'](request).catch(() => {});
+      expect(fetcher['setDpopProofHeader']).not.toHaveBeenCalled();
+    });
   });
 
   describe('getHeader()', () => {
