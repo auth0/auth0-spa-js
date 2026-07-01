@@ -900,7 +900,7 @@ export class Auth0Client {
    */
   public async getTokenSilently(
     options: GetTokenSilentlyOptions & { detailedResponse: true }
-  ): Promise<GetTokenSilentlyVerboseResponse>;
+  ): Promise<GetTokenSilentlyVerboseResponse | undefined>;
 
   /**
    * Fetches a new access token and returns it.
@@ -909,7 +909,7 @@ export class Auth0Client {
    */
   public async getTokenSilently(
     options?: GetTokenSilentlyOptions
-  ): Promise<string>;
+  ): Promise<string | undefined>;
 
   /**
    * Fetches a new access token, and either returns just the access token (the default) or the response from the /oauth/token endpoint, depending on the `detailedResponse` option.
