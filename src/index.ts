@@ -48,8 +48,11 @@ export {
   PopupOpenError,
   MfaRequiredError,
   MissingRefreshTokenError,
+  MissingScopesError,
   UseDpopNonceError
 } from './errors';
+
+export type { MfaRequirements } from './errors';
 
 export {
   MfaError,
