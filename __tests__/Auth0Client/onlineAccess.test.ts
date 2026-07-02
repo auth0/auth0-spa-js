@@ -18,7 +18,7 @@ import {
   TEST_ID_TOKEN
 } from '../constants';
 import { DEFAULT_AUDIENCE } from '../../src/constants';
-import { InvalidConfigurationError, MfaRequiredError } from '../../src/errors';
+import { InvalidConfigurationError } from '../../src/errors';
 import { fetchResponse } from './helpers';
 
 jest.mock('es-cookie');
@@ -596,12 +596,18 @@ describe('Auth0Client', () => {
 
     it('uses options.refresh_token directly for refresh_token grant without hitting the cache', async () => {
       // The refactored ?? path: options.refresh_token is set on the refresh_token grant,
-      // so the cache lookup branch must NOT run — the token on options is used as-is.
+      // so the cache lookup inside _requestToken must NOT fire — options.refresh_token
+      // short-circuits the ?? before the cache is read.
+      //
+      // Verifiable because _getTokenUsingRefreshToken calls cacheManager.get exactly once
+      // (to retrieve the cached RT before the exchange). A second call would mean the
+      // ?? fallback ran — which must NOT happen when options.refresh_token is present.
       const auth0 = setup(onlineConfig as any);
       await loginWithRedirect(auth0);
       mockFetch.mockReset();
 
-      // Force-refresh: server returns no refresh_token (non-rotating ORT behaviour)
+      const cacheGetSpy = jest.spyOn((auth0 as any).cacheManager, 'get');
+
       mockFetch.mockResolvedValueOnce(
         fetchResponse(true, {
           id_token: TEST_ID_TOKEN,
@@ -615,8 +621,12 @@ describe('Auth0Client', () => {
 
       await auth0.getTokenSilently({ cacheMode: 'off' });
 
-      // ORT from the original login (TEST_REFRESH_TOKEN) must survive in cache —
-      // it was on options.refresh_token and ?? short-circuits before the cache lookup.
+      // _getTokenUsingRefreshToken calls get() once. The ORT carry-forward in
+      // _requestToken must NOT add a second call — options.refresh_token is set
+      // so ?? resolves without reaching the cache.
+      expect(cacheGetSpy).toHaveBeenCalledTimes(1);
+
+      // And the ORT must still be in the cache after the refresh.
       const rt = getCacheEntries().map(e => e?.body?.refresh_token).find(Boolean);
       expect(rt).toBe(TEST_REFRESH_TOKEN);
     });
