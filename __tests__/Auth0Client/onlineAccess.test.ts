@@ -486,6 +486,28 @@ describe('Auth0Client', () => {
       expect(await auth0.isAuthenticated()).toBe(true);
       expect(await auth0.getUser()).toBeDefined();
     });
+
+    it('clears state via worker path (in-memory cache) after successful revocation in online mode', async () => {
+      // Default cacheLocation is memory, which activates the worker path.
+      // _clearLocalSession() sends { type: 'clear' } to the worker; verify
+      // that isAuthenticated() returns false immediately after revocation.
+      const auth0 = setup({
+        refreshTokenMode: 'online' as const,
+        useRefreshTokens: true,
+        useDpop: true
+        // no cacheLocation — defaults to memory (worker path)
+      } as any);
+      await loginWithRedirect(auth0);
+      mockFetch.mockReset();
+      mockSuccessfulRevoke();
+
+      expect(await auth0.isAuthenticated()).toBe(true);
+
+      await auth0.revokeRefreshToken();
+
+      expect(await auth0.isAuthenticated()).toBe(false);
+      expect(await auth0.getUser()).toBeUndefined();
+    });
   });
 
   describe('online access — MFA grant carries ORT forward when server returns none', () => {

@@ -1811,10 +1811,10 @@ export class Auth0Client {
       // carry the ORT forward to avoid evicting it on save.
       // Online-only: in offline mode a refresh token is single-use and reusing it would
       // trip reuse detection.
-      let refresh_token = authResult.refresh_token;
-      if (!refresh_token && this.onlineAccess) {
-        const optionsRefreshToken = (options as RefreshTokenRequestTokenOptions).refresh_token;
-        refresh_token = optionsRefreshToken ?? (await this.cacheManager.get(
+      // Mutate authResult so ...authResult in _saveEntryInCache picks up the ORT directly.
+      // Safe: GetTokenSilentlyVerboseResponse omits refresh_token, so it never reaches app code.
+      if (!authResult.refresh_token && this.onlineAccess) {
+        authResult.refresh_token = (options as RefreshTokenRequestTokenOptions).refresh_token ?? (await this.cacheManager.get(
           new CacheKey({
             scope: scopesToRequest || options.scope,
             audience: options.audience || DEFAULT_AUDIENCE,
@@ -1825,7 +1825,6 @@ export class Auth0Client {
 
       await this._saveEntryInCache({
         ...authResult,
-        ...(refresh_token ? { refresh_token } : null),
         decodedToken,
         scope: options.scope,
         audience: options.audience || DEFAULT_AUDIENCE,
