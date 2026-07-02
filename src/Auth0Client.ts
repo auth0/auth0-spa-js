@@ -197,7 +197,6 @@ export class Auth0Client {
 
   /** Validates online-access config and returns whether online mode is enabled. */
   private resolveOnlineAccess(options: Auth0ClientOptions): boolean {
-
     if (options.refreshTokenMode !== 'online') {
       return false;
     }
@@ -1222,16 +1221,20 @@ export class Auth0Client {
    *
    * If `useRefreshTokens` is disabled, this method does nothing.
    *
-   * **Online mode:** when `refreshTokenMode` is `'online'` this method only clears the
-   * cached refresh token locally — it does **not** revoke the Online Refresh Token at the
-   * authorization server. Online Refresh Tokens are non-rotating and session-bound, and the
-   * server does not support token-only revocation for them. To end an online session, use
-   * `logout()` instead, which terminates the session and thereby invalidates the ORT.
+   * **Online mode:** when `refreshTokenMode` is `'online'`, revoking the ORT via
+   * `/oauth/revoke` **also terminates the Auth0 session** and **clears the entire local
+   * cache** (access token, ID token, user profile). Because Online Refresh Tokens are
+   * session-bound, the authorization server ties the token directly to the session —
+   * revoking the ORT invalidates the session server-side. The local cache is cleared
+   * immediately so that `isAuthenticated()` returns `false` and `getUser()` returns
+   * `undefined` right away, without waiting for the access token to expire.
+   * Use this when you need to force a sign-out without a redirect (e.g. background
+   * revocation). For a redirect-based sign-out, prefer `logout()`.
    *
    * **Important:** This method revokes the refresh token for a single audience. If your
    * application requests tokens for multiple audiences, each audience may have its own
    * refresh token. To fully revoke all refresh tokens, call this method once per audience.
-   * If you want to terminate the user's session entirely, use `logout()` instead.
+   * If you want to terminate the user's session with a redirect, use `logout()` instead.
    *
    * When using Multi-Resource Refresh Tokens (MRRT), a single refresh token may cover
    * multiple audiences. In that case, revoking it will affect all cache entries that
@@ -1281,6 +1284,14 @@ export class Auth0Client {
       },
       this.worker
     );
+
+    // In online mode the ORT is session-bound: revoking it terminates the Auth0 session
+    // server-side. Clear the entire local cache so that isAuthenticated() returns false
+    // and getUser() returns undefined immediately — the stale access token and ID token
+    // must not remain visible to the application after the session is gone.
+    if (this.onlineAccess) {
+      await this._clearLocalSession();
+    }
   }
 
   /**
@@ -1758,7 +1769,7 @@ export class Auth0Client {
           timeout: this.httpTimeoutMs,
           useMrrt: this.options.useMrrt,
           dpop: this.dpop,
-          nonRotating: this.onlineAccess,
+          preserveRefreshToken: this.onlineAccess,
           ...options,
           scope: scopesToRequest || options.scope,
         },
@@ -1797,17 +1808,23 @@ export class Auth0Client {
         }
       }
       // Online refresh tokens are non-rotating: the server returns no refresh_token, so
-      // carry the ORT forward to avoid evicting it on save. Online-only: in offline mode
-      // a refresh token is single-use and reusing it would trip reuse detection.
-      const refresh_token =
-        authResult.refresh_token ||
-        (this.onlineAccess && options.grant_type === 'refresh_token'
-          ? options.refresh_token
-          : undefined);
+      // carry the ORT forward to avoid evicting it on save.
+      // Online-only: in offline mode a refresh token is single-use and reusing it would
+      // trip reuse detection.
+      // Mutate authResult so ...authResult in _saveEntryInCache picks up the ORT directly.
+      // Safe: GetTokenSilentlyVerboseResponse omits refresh_token, so it never reaches app code.
+      if (!authResult.refresh_token && this.onlineAccess) {
+        authResult.refresh_token = (options as RefreshTokenRequestTokenOptions).refresh_token ?? (await this.cacheManager.get(
+          new CacheKey({
+            scope: scopesToRequest || options.scope,
+            audience: options.audience || DEFAULT_AUDIENCE,
+            clientId: this.options.clientId,
+          })
+        ))?.refresh_token;
+      }
 
       await this._saveEntryInCache({
         ...authResult,
-        ...(refresh_token ? { refresh_token } : null),
         decodedToken,
         scope: options.scope,
         audience: options.audience || DEFAULT_AUDIENCE,

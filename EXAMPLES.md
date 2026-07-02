@@ -154,17 +154,28 @@ The `revokeRefreshToken()` method explicitly revokes a refresh token via the `/o
 
 This method only has an effect when `useRefreshTokens` is `true`. If refresh tokens are disabled it returns immediately without doing anything.
 
-> [!NOTE]
-> In [online access](#online-access-online-refresh-tokens) mode (`refreshTokenMode: RefreshTokenMode.Online`), `revokeRefreshToken()` only clears the cached refresh token locally — it does **not** revoke the Online Refresh Token at the authorization server. Online Refresh Tokens are non-rotating and session-bound, and the server does not support token-only revocation for them. To end an online session, call `logout()` instead, which terminates the session and thereby invalidates the ORT.
+> [!WARNING]
+> In [online access](#online-access-online-refresh-tokens) mode (`refreshTokenMode: RefreshTokenMode.Online`), `revokeRefreshToken()` behaves differently from offline mode:
+> - The ORT **is** revoked at the authorization server via `/oauth/revoke`.
+> - Because the ORT is session-bound, the Auth0 **session is terminated server-side** as part of revocation.
+> - The entire local cache is cleared immediately — the access token, ID token, and user profile are wiped. `isAuthenticated()` returns `false` and `getUser()` returns `undefined` right away.
+>
+> After calling `revokeRefreshToken()` in online mode, redirect the user to login — `getTokenSilently()` will fail because the session is gone. For a redirect-based sign-out, `logout()` achieves the same result.
 
 ```js
 // Revoke the refresh token for the default audience
 await auth0.revokeRefreshToken();
 ```
 
-**How it affects the cache:** The access token is preserved in the cache — only the refresh token entry is cleared. Once the access token expires, `getTokenSilently()` will attempt silent auth (via iframe, if `useRefreshTokensFallback` is enabled and the Auth0 session is still active) before requiring a new interactive login.
+**How it affects the cache:**
+- **Offline mode:** only the refresh token entry is cleared — the access token remains in cache until it expires. Once it expires, `getTokenSilently()` will attempt silent auth (via iframe, if `useRefreshTokensFallback` is enabled and the Auth0 session is still active) before requiring a new interactive login.
+- **Online mode:** the entire local cache is cleared (access token, ID token, user profile). `isAuthenticated()` returns `false` immediately. The user must log in again.
 
-**Difference from `logout()`:** `revokeRefreshToken()` invalidates the refresh token on the Auth0 server and removes it from the local cache, but it does **not** clear the user's Auth0 session or the rest of the local cache. If you want to fully terminate the session, use `logout()` instead.
+**Difference from `logout()`:**
+- In **offline mode**, `revokeRefreshToken()` invalidates the rotating refresh token at the server and strips it from the cache, but does **not** terminate the Auth0 session or clear the rest of the local cache (access token, ID token, user profile remain until they expire).
+- In **online mode**, `revokeRefreshToken()` terminates the Auth0 session server-side and clears the entire local cache immediately — equivalent to a silent `logout()` without a redirect.
+
+In both modes, if you want a **redirect-based** sign-out, use `logout()` instead.
 
 #### Error Handling
 
@@ -320,8 +331,8 @@ await auth0.logout({ logoutParams: { returnTo: window.location.origin } });
 
 After logout, the ORT is no longer valid; a subsequent `getTokenSilently()` falls through to the [iframe fallback](#refresh-token-fallback) (if `useRefreshTokensFallback` is enabled) and ultimately to an interactive login.
 
-> [!NOTE]
-> In online mode, [`revokeRefreshToken()`](#revoking-refresh-tokens) only clears the cached token locally — it does **not** revoke the ORT at the authorization server. The server has no token-only revocation for non-rotating ORTs, so `logout()` is the only way to invalidate an ORT.
+> [!WARNING]
+> In online mode, [`revokeRefreshToken()`](#revoking-refresh-tokens) revokes the ORT at the authorization server **and terminates the Auth0 session**. The entire local cache (access token, ID token, user profile) is cleared immediately — `isAuthenticated()` returns `false` right away. Redirect the user to login after calling this. Use `logout()` instead if you want a redirect-based sign-out.
 
 ### Using with Multi-Resource Refresh Tokens (MRRT)
 

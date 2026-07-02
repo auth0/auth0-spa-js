@@ -74,7 +74,7 @@ const fetchWithWorker = async (
   useFormData?: boolean,
   useMrrt?: boolean,
   skipTokenStorage?: boolean,
-  nonRotating?: boolean
+  preserveRefreshToken?: boolean
 ) => {
   return sendMessage(
     {
@@ -89,7 +89,7 @@ const fetchWithWorker = async (
       useFormData,
       useMrrt,
       skipTokenStorage,
-      nonRotating
+      preserveRefreshToken
     },
     worker
   );
@@ -105,7 +105,7 @@ export const switchFetch = async (
   timeout = DEFAULT_FETCH_TIMEOUT_MS,
   useMrrt?: boolean,
   skipTokenStorage?: boolean,
-  nonRotating?: boolean
+  preserveRefreshToken?: boolean
 ): Promise<any> => {
   if (worker) {
     return fetchWithWorker(
@@ -118,7 +118,7 @@ export const switchFetch = async (
       useFormData,
       useMrrt,
       skipTokenStorage,
-      nonRotating
+      preserveRefreshToken
     );
   } else {
     return fetchWithoutWorker(fetchUrl, fetchOptions, timeout);
@@ -137,7 +137,7 @@ export async function getJSON<T>(
   dpop?: Pick<Dpop, 'generateProof' | 'getNonce' | 'setNonce'>,
   isDpopRetry?: boolean,
   skipTokenStorage?: boolean,
-  nonRotating?: boolean
+  preserveRefreshToken?: boolean
 ): Promise<T> {
   if (dpop) {
     const dpopProof = await dpop.generateProof({
@@ -164,7 +164,7 @@ export async function getJSON<T>(
         timeout,
         useMrrt,
         skipTokenStorage,
-        nonRotating
+        preserveRefreshToken
       );
       fetchError = null;
       break;
@@ -239,7 +239,7 @@ export async function getJSON<T>(
         dpop,
         true, // !
         skipTokenStorage,
-        nonRotating
+        preserveRefreshToken
       );
     }
 
