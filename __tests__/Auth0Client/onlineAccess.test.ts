@@ -594,6 +594,33 @@ describe('Auth0Client', () => {
       expect(rt).toBe(NEW_ORT);
     });
 
+    it('uses options.refresh_token directly for refresh_token grant without hitting the cache', async () => {
+      // The refactored ?? path: options.refresh_token is set on the refresh_token grant,
+      // so the cache lookup branch must NOT run — the token on options is used as-is.
+      const auth0 = setup(onlineConfig as any);
+      await loginWithRedirect(auth0);
+      mockFetch.mockReset();
+
+      // Force-refresh: server returns no refresh_token (non-rotating ORT behaviour)
+      mockFetch.mockResolvedValueOnce(
+        fetchResponse(true, {
+          id_token: TEST_ID_TOKEN,
+          access_token: 'new-access-token',
+          token_type: 'Bearer',
+          expires_in: 86400,
+          scope: 'openid profile email online_access',
+          // no refresh_token — server does not echo ORT back
+        })
+      );
+
+      await auth0.getTokenSilently({ cacheMode: 'off' });
+
+      // ORT from the original login (TEST_REFRESH_TOKEN) must survive in cache —
+      // it was on options.refresh_token and ?? short-circuits before the cache lookup.
+      const rt = getCacheEntries().map(e => e?.body?.refresh_token).find(Boolean);
+      expect(rt).toBe(TEST_REFRESH_TOKEN);
+    });
+
     it('does NOT carry the ORT forward on MFA grants in offline mode', async () => {
       const auth0 = setup({
         useRefreshTokens: true,
