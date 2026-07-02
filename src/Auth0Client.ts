@@ -1809,34 +1809,18 @@ export class Auth0Client {
       }
       // Online refresh tokens are non-rotating: the server returns no refresh_token, so
       // carry the ORT forward to avoid evicting it on save.
-      //
-      // refresh_token grant: the ORT being exchanged is on options.refresh_token.
-      //
-      // MFA grants (mfa-otp, mfa-oob, mfa-recovery-code): options carries no refresh_token
-      // field. The ORT was stored in the cache at login / last refresh; read it from there
-      // so the same token survives the step-up verify.
-      //
       // Online-only: in offline mode a refresh token is single-use and reusing it would
       // trip reuse detection.
       let refresh_token = authResult.refresh_token;
       if (!refresh_token && this.onlineAccess) {
-        const MFA_GRANTS = new Set([
-          'http://auth0.com/oauth/grant-type/mfa-otp',
-          'http://auth0.com/oauth/grant-type/mfa-oob',
-          'http://auth0.com/oauth/grant-type/mfa-recovery-code',
-        ]);
-        if (options.grant_type === 'refresh_token') {
-          refresh_token = options.refresh_token;
-        } else if (MFA_GRANTS.has(options.grant_type)) {
-          const cachedEntry = await this.cacheManager.get(
-            new CacheKey({
-              scope: scopesToRequest || options.scope,
-              audience: options.audience || DEFAULT_AUDIENCE,
-              clientId: this.options.clientId,
-            })
-          );
-          refresh_token = cachedEntry?.refresh_token;
-        }
+        const optionsRefreshToken = (options as RefreshTokenRequestTokenOptions).refresh_token;
+        refresh_token = optionsRefreshToken ?? (await this.cacheManager.get(
+          new CacheKey({
+            scope: scopesToRequest || options.scope,
+            audience: options.audience || DEFAULT_AUDIENCE,
+            clientId: this.options.clientId,
+          })
+        ))?.refresh_token;
       }
 
       await this._saveEntryInCache({
