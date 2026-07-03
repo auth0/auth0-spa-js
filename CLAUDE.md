@@ -84,11 +84,9 @@ See [references/testing.md](references/testing.md) for conventions, mocking util
 
 ## Code Style
 
-- **Linter:** ESLint (`npm run lint` over `src/`); a separate security config runs via `npm run lint:security`. Prettier (`.prettierrc`): single quotes, no trailing commas, arrow-parens avoided, 80-col.
-- **Naming:** `PascalCase` types/classes (`Auth0Client`, `CacheManager`), `camelCase` members; public options are TS interfaces in `global.ts`.
-- **Bundle discipline:** code must stay ES2017-clean (`test:es-check` enforces it) and tree-shakeable — avoid pulling heavy deps into the browser bundle.
+`PascalCase` types/classes, `camelCase` members; ESLint + Prettier (single quotes, no trailing commas, 80-col). Code must stay ES2017-clean and tree-shakeable.
 
-Dominant patterns: a `createAuth0Client()` async factory over the `Auth0Client` class; pluggable `ICache` storage backends; typed errors extending `GenericError`; `@auth0/auth0-auth-js` wrapped for OAuth/MFA primitives.
+See [references/code-style.md](references/code-style.md) for the full conventions — linter/formatter setup, naming, bundle discipline, and dominant patterns. Read when writing or reviewing code.
 
 ---
 
