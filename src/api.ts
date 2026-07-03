@@ -38,7 +38,7 @@ export async function oauthToken(
     useFormData,
     useMrrt,
     dpop,
-    nonRotating,
+    preserveRefreshToken,
     ...options
   }: TokenEndpointOptions,
   worker?: Worker,
@@ -92,7 +92,7 @@ export async function oauthToken(
     isDpopSupported ? dpop : undefined,
     undefined,
     skipTokenStorage,
-    nonRotating
+    preserveRefreshToken
   );
 }
 

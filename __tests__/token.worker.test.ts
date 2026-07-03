@@ -210,7 +210,7 @@ describe('token worker', () => {
         method: 'POST',
         body: JSON.stringify({ grant_type: 'refresh_token' })
       },
-      nonRotating: true
+      preserveRefreshToken: true
     });
 
     // Second refresh: the stored ORT must still be injected (not evicted).
@@ -227,7 +227,7 @@ describe('token worker', () => {
         method: 'POST',
         body: JSON.stringify({ grant_type: 'refresh_token' })
       },
-      nonRotating: true
+      preserveRefreshToken: true
     });
 
     expect(response.json.error).toBeUndefined();
