@@ -10,7 +10,7 @@ jobs:
   snyk-cli:
     uses: auth0/devsecops-tooling/.github/workflows/sca-scan.yml@main
     with:
-      pre-scan-commands: "npm install"
+      pre-scan-commands: "npm ci"
       additional-arguments: "--exclude=README.md"
       node-version: 24
     secrets: inherit

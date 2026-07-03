@@ -10,7 +10,6 @@ cypress.env.json
 .idea
 test-results
 yarn.lock
-package-lock.json
 .DS_Store
 release-tmp*
 bundle-stats
