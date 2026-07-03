@@ -92,9 +92,9 @@ See [references/code-style.md](references/code-style.md) for the full convention
 
 ## Git Workflow
 
-- **Commits:** Conventional Commits — enforced by commitlint (`commitlint.config.mjs`) and a PR-title lint check. Allowed types: `feat, fix, docs, chore, build, refactor, test, ci, perf, revert`.
-- **PRs:** satisfy the PR template; unit tests, lint, CodeQL, and cross-browser checks must pass.
-- **Changelog:** `CHANGELOG.md`.
+Conventional Commits, **enforced by commitlint** — a non-conforming message (or PR title) fails CI. Allowed types: `feat, fix, docs, chore, build, refactor, test, ci, perf, revert`.
+
+See [references/git-workflow.md](references/git-workflow.md) for branch naming, PR requirements (template + required checks), and changelog conventions. Read when committing or opening a PR.
 
 ---
 
