@@ -54,6 +54,42 @@ Key files: `src/index.ts` (entry), `src/Auth0Client.ts` (core), `src/api.ts` (te
 
 ---
 
+## Boundaries
+
+### ✅ Always Do
+- Run `npm test` and `npm run lint` before committing
+- Add Jest specs for new behavior; keep code ES2017-clean (`npm run test:es-check`) and tree-shakeable
+- Update `README.md` and `EXAMPLES.md` in the same PR when changing the public API, options, or supported integration patterns
+- Keep the version in sync across its sources — `.version`, `src/version.ts`, `package.json`, and the `README.md` / `FAQ.md` pins (wired via `.shiprc`). Reference these files rather than pasting a version number into prose.
+- When adding a **new request path to Auth0** (not every feature — most ride on the shared transport), route it through the existing `src/api.ts` fetch layer so it carries the `Auth0-Client` header (base64 `{name,version,env}`) — don't create a separate HTTP client. Since this SDK wraps `@auth0/auth0-auth-js`, preserve the `auth0Client` wrapping (this SDK's name/version, the wrapped lib under `env`) and the opt-out.
+
+### ⚠️ Ask First
+- **Any breaking change — always ask first.** Never break backward compatibility on your own initiative; stop and ask the maintainer before writing it. (On approval, document the upgrade path in the migration guide for the target major.)
+- Adding/bumping runtime dependencies (they ship in the browser bundle — watch bundle size)
+- Modifying the public API on `Auth0Client` / `createAuth0Client` / `global.ts`
+- Changes to token storage, DPoP proof generation, PKCE, or the web-worker refresh path
+- Changes to `.github/workflows/` or the Rollup build config
+
+### 🚫 Never Do
+- Commit secrets, API keys, or tokens
+- Log or expose `access_token` / `refresh_token` / `id_token` — especially not to the main thread when the web worker is in use
+- Disable PKCE, or weaken DPoP proofs
+- Hand-edit `dist/` or `docs/` (generated build/TypeDoc output)
+- Remove or skip failing tests instead of fixing them
+
+---
+
+## Security Considerations
+
+- **PKCE:** always used for the authorization-code flow — never expose an option to disable it.
+- **Token storage:** in-memory by default (`InMemoryCache`); `LocalStorageCache` is opt-in and documented as higher-risk. With refresh tokens + in-memory cache, refresh happens in a **web worker** (`src/worker/token.worker.ts`) to keep tokens off the main thread.
+- **DPoP:** `src/dpop/` binds tokens to a key pair (RFC 9449); `fetcher.ts` attaches the proof. Don't bypass it when DPoP is enabled.
+- **Silent auth:** hidden-iframe `prompt=none` needs a custom domain to survive third-party-cookie restrictions.
+
+---
+
+> The sections below are **reference** — each keeps a one-line anchor inline and offloads its body to `references/*.md` behind a linked pointer. Read a pointer only when the task needs it.
+
 ## Commands
 
 ```bash
@@ -95,40 +131,6 @@ See [references/code-style.md](references/code-style.md) for the full convention
 Conventional Commits, **enforced by commitlint** — a non-conforming message (or PR title) fails CI. Allowed types: `feat, fix, docs, chore, build, refactor, test, ci, perf, revert`.
 
 See [references/git-workflow.md](references/git-workflow.md) for branch naming, PR requirements (template + required checks), and changelog conventions. Read when committing or opening a PR.
-
----
-
-## Boundaries
-
-### ✅ Always Do
-- Run `npm test` and `npm run lint` before committing
-- Add Jest specs for new behavior; keep code ES2017-clean (`npm run test:es-check`) and tree-shakeable
-- Update `README.md` and `EXAMPLES.md` in the same PR when changing the public API, options, or supported integration patterns
-- Keep the version in sync across its sources — `.version`, `src/version.ts`, `package.json`, and the `README.md` / `FAQ.md` pins (wired via `.shiprc`). Reference these files rather than pasting a version number into prose.
-- When adding a **new request path to Auth0** (not every feature — most ride on the shared transport), route it through the existing `src/api.ts` fetch layer so it carries the `Auth0-Client` header (base64 `{name,version,env}`) — don't create a separate HTTP client. Since this SDK wraps `@auth0/auth0-auth-js`, preserve the `auth0Client` wrapping (this SDK's name/version, the wrapped lib under `env`) and the opt-out.
-
-### ⚠️ Ask First
-- **Any breaking change — always ask first.** Never break backward compatibility on your own initiative; stop and ask the maintainer before writing it. (On approval, document the upgrade path in the migration guide for the target major.)
-- Adding/bumping runtime dependencies (they ship in the browser bundle — watch bundle size)
-- Modifying the public API on `Auth0Client` / `createAuth0Client` / `global.ts`
-- Changes to token storage, DPoP proof generation, PKCE, or the web-worker refresh path
-- Changes to `.github/workflows/` or the Rollup build config
-
-### 🚫 Never Do
-- Commit secrets, API keys, or tokens
-- Log or expose `access_token` / `refresh_token` / `id_token` — especially not to the main thread when the web worker is in use
-- Disable PKCE, or weaken DPoP proofs
-- Hand-edit `dist/` or `docs/` (generated build/TypeDoc output)
-- Remove or skip failing tests instead of fixing them
-
----
-
-## Security Considerations
-
-- **PKCE:** always used for the authorization-code flow — never expose an option to disable it.
-- **Token storage:** in-memory by default (`InMemoryCache`); `LocalStorageCache` is opt-in and documented as higher-risk. With refresh tokens + in-memory cache, refresh happens in a **web worker** (`src/worker/token.worker.ts`) to keep tokens off the main thread.
-- **DPoP:** `src/dpop/` binds tokens to a key pair (RFC 9449); `fetcher.ts` attaches the proof. Don't bypass it when DPoP is enabled.
-- **Silent auth:** hidden-iframe `prompt=none` needs a custom domain to survive third-party-cookie restrictions.
 
 ---
 
