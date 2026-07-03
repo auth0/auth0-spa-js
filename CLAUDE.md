@@ -30,35 +30,6 @@ Apply these on every task in this repo — they keep changes correct, small, and
 
 ---
 
-## Commands
-
-```bash
-# Unit tests (with coverage)
-npm test
-
-# Lint
-npm run lint
-
-# Dev server with live reload (http://localhost:3000)
-npm run dev
-
-# Production build (UMD + ESM + CJS + worker bundles; runs test:es-check)
-npm run build
-```
-
-See `references/commands.md` for the full command list (integration/Cypress, es-check, bundle stats, security lint, docs, release). Read only when you need to run, build, or test something beyond the four above.
-
----
-
-## Testing
-
-- **Unit:** Jest + jsdom, in `__tests__/` — files follow `__tests__/[module]/[feature].test.ts` or `__tests__/Auth0Client/[method].test.ts`. The default `npm test` suite is unit-only — no credentials required.
-- **Integration:** Cypress in `cypress/e2e/`, run against a **local** mock OIDC provider (`scripts/oidc-provider.mjs`) — not a live tenant.
-- **Coverage:** Jest coverage → Codecov in CI.
-- Mock network with `jest-fetch-mock`; storage with `jest-localstorage-mock` / `fake-indexeddb`. Don't hit real endpoints in unit tests.
-
----
-
 ## Project Structure
 
 ```
@@ -80,6 +51,34 @@ docs/        # generated TypeDoc output (do not hand-edit)
 ```
 
 Key files: `src/index.ts` (entry), `src/Auth0Client.ts` (core), `src/api.ts` (telemetry header lives here), `src/errors.ts` (error hierarchy, rooted at `GenericError`).
+
+---
+
+## Commands
+
+```bash
+# Unit tests (with coverage)
+npm test
+
+# Lint
+npm run lint
+
+# Dev server with live reload (http://localhost:3000)
+npm run dev
+
+# Production build (UMD + ESM + CJS + worker bundles; runs test:es-check)
+npm run build
+```
+
+See [references/commands.md](references/commands.md) for the full command list (integration/Cypress, es-check, bundle stats, security lint, docs, release). Read only when you need to run, build, or test something beyond the four above.
+
+---
+
+## Testing
+
+The default `npm test` suite is **unit-only — no credentials required** (Jest + jsdom, in `__tests__/`). The Cypress integration tier runs against a **local** mock OIDC provider — not a live tenant.
+
+See [references/testing.md](references/testing.md) for conventions, mocking utilities, the integration/Cypress commands, and coverage. Read when writing or debugging tests.
 
 ---
 
@@ -139,30 +138,12 @@ Dominant patterns: a `createAuth0Client()` async factory over the `Auth0Client` 
 
 The high-frequency traps: **don't move worker-side token refresh onto the main thread**, silent-iframe auth needs a custom domain, and new code must stay ES2017-clean + tree-shakeable.
 
-See `references/pitfalls.md` for the full list with fixes (web-worker token exposure, third-party-cookie silent auth, bundle/ES level, DPoP online-mode dual checks, wrapping `@auth0/auth0-auth-js`). Read when touching token handling, the web worker, DPoP, bundling, or the auth-js wrapping.
+See [references/pitfalls.md](references/pitfalls.md) for the full list with fixes (web-worker token exposure, third-party-cookie silent auth, bundle/ES level, DPoP online-mode dual checks, wrapping `@auth0/auth0-auth-js`). Read when touching token handling, the web worker, DPoP, bundling, or the auth-js wrapping.
 
 ---
 
 ## Docs Update Rules
 
-> A PR that changes public API, configuration, or supported patterns is **not complete** until the relevant docs are updated in the same PR.
+Tracked docs are `README.md` and `EXAMPLES.md`. A PR that changes the public API, configuration, or supported patterns is **not complete** until they're updated in the same PR (enforced by the Always Do boundary above).
 
-### Tracked Docs
-
-| Doc | Covers |
-|-----|--------|
-| `README.md` | Install, getting started, configuration, common usage |
-| `EXAMPLES.md` | Detailed usage — refresh tokens, online access, DPoP, organizations, passkeys, MFA, MyAccount, custom cache |
-
-### When You Change Code, Update These Docs
-
-| When this changes | Update |
-|-------------------|--------|
-| Public API on `Auth0Client` / `createAuth0Client` / `global.ts` options | `README.md` (usage), `EXAMPLES.md` (affected samples) |
-| Public method or export added | `EXAMPLES.md` (add a usage sample) |
-| Public method or export removed or renamed | `README.md` + `EXAMPLES.md` — update every reference |
-| Install / package requirements | `README.md` (installation) |
-| Token storage, cache, DPoP, or refresh behavior | `EXAMPLES.md` (relevant section) |
-| New integration pattern (framework, org, provider) | `EXAMPLES.md` (new section) |
-
-> When you touch code that maps to a doc above, update that doc **in the same PR** — do not defer.
+See [references/docs-update.md](references/docs-update.md) for the full code-to-docs mapping — which doc to touch for each kind of change. Read when changing the public API, config, install requirements, token/cache/DPoP behavior, or adding an integration pattern.
