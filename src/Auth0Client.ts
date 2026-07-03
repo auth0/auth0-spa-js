@@ -1819,7 +1819,9 @@ export class Auth0Client {
             scope: scopesToRequest || options.scope,
             audience: options.audience || DEFAULT_AUDIENCE,
             clientId: this.options.clientId,
-          })
+          }),
+          undefined,
+          this.options.useMrrt
         ))?.refresh_token;
       }
 

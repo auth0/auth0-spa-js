@@ -599,6 +599,47 @@ describe('Auth0Client', () => {
       expect(rt).toBe(TEST_REFRESH_TOKEN);
     });
 
+    it('carries the ORT forward via MRRT when MFA is required on a brand-new audience with no existing cache entry', async () => {
+      // Regression test: the carry-forward lookup at _requestToken must pass useMrrt
+      // through to cacheManager.get(), otherwise a first-ever request for a new
+      // audience/scope combo (no exact key, no scope-superset match) can't find the
+      // ORT stashed under the login audience's cache entry.
+      const auth0 = setup({
+        ...onlineConfig,
+        useMrrt: true
+      } as any);
+      await loginWithRedirect(auth0);
+      mockFetch.mockReset();
+
+      const NEW_AUDIENCE = 'https://brand-new-resource/';
+
+      mockFetch.mockResolvedValueOnce(
+        fetchResponse(false, {
+          error: 'mfa_required',
+          error_description: 'MFA required',
+          mfa_token: 'test-mfa-mrrt-token'
+        })
+      );
+      try {
+        await auth0.getTokenSilently({
+          authorizationParams: { audience: NEW_AUDIENCE, scope: 'read:foo' },
+          cacheMode: 'off'
+        });
+      } catch (_) {}
+
+      mockMfaVerifyResponse(); // no refresh_token — non-rotating ORT behaviour
+
+      await auth0.mfa.verify({ mfaToken: 'test-mfa-mrrt-token', otp: '123456' });
+
+      // Must check the NEW_AUDIENCE entry specifically — the untouched login entry
+      // (default audience) always still has the ORT, so find(Boolean) over all
+      // entries would pass even if the carry-forward for this entry failed.
+      const newAudienceEntry = getCacheEntries().find(
+        e => e?.body?.audience === NEW_AUDIENCE
+      );
+      expect(newAudienceEntry?.body?.refresh_token).toBe(TEST_REFRESH_TOKEN);
+    });
+
     it('uses the server-returned ORT when the server does issue one on the MFA grant', async () => {
       const auth0 = setup(onlineConfig as any);
       await loginWithRedirect(auth0);
