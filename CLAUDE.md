@@ -46,9 +46,7 @@ npm run dev
 npm run build
 ```
 
-- **Single test file:** `npx jest __tests__/Auth0Client/getTokenSilently.test.ts`
-- **Security lint:** `npm run lint:security` (eslint-plugin-security)
-- **Integration (Cypress):** `npm run test:integration` — spins up the local dev server + mock OIDC provider; no live tenant or credentials required.
+See `references/commands.md` for the full command list (integration/Cypress, es-check, bundle stats, security lint, docs, release). Read only when you need to run, build, or test something beyond the four above.
 
 ---
 
@@ -139,11 +137,9 @@ Dominant patterns: a `createAuth0Client()` async factory over the `Auth0Client` 
 
 ## Common Pitfalls
 
-1. **Web-worker token exposure.** Refresh-token + in-memory-cache mode refreshes in a web worker specifically so tokens never touch the main thread — don't "simplify" this back onto the main thread.
-2. **Silent auth vs. third-party cookies.** Iframe `prompt=none` silently fails without a custom domain in browsers that block third-party cookies; refresh tokens are the robust path.
-3. **Bundle size / ES level.** New code must pass `test:es-check` (ES2017) and stay tree-shakeable; a heavy runtime dep bloats every consumer's bundle.
-4. **DPoP online mode constraints.** `createAuth0Client` enforces `useRefreshTokens: true` + `useDpop: true` for online mode at compile time (overloads in `index.ts`) and again at runtime (`Auth0Client` constructor) — keep both checks in sync.
-5. **Wrapping `@auth0/auth0-auth-js`.** OAuth/MFA primitives come from that lib; telemetry must nest its version under `env` rather than reporting only this SDK.
+The high-frequency traps: **don't move worker-side token refresh onto the main thread**, silent-iframe auth needs a custom domain, and new code must stay ES2017-clean + tree-shakeable.
+
+See `references/pitfalls.md` for the full list with fixes (web-worker token exposure, third-party-cookie silent auth, bundle/ES level, DPoP online-mode dual checks, wrapping `@auth0/auth0-auth-js`). Read when touching token handling, the web worker, DPoP, bundling, or the auth-js wrapping.
 
 ---
 
