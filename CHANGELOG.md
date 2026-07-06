@@ -1,5 +1,11 @@
 # Change Log
 
+## [v2.23.0](https://github.com/auth0/auth0-spa-js/tree/v2.23.0) (2026-07-03)
+[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.22.0...v2.23.0)
+
+**Added**
+- feat: add support for online access (Online Refresh Tokens) [\#1624](https://github.com/auth0/auth0-spa-js/pull/1624) ([subhankarmaiti](https://github.com/subhankarmaiti))
+
 ## [v2.22.0](https://github.com/auth0/auth0-spa-js/tree/v2.22.0) (2026-06-29)
 [Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.21.2...v2.22.0)
 
