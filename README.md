@@ -116,6 +116,9 @@ window.addEventListener('load', async () => {
 
 ### Online Access
 
+> [!NOTE]
+> Online Access (Online Refresh Tokens) support via SDKs is currently in Early Access. To request access to this feature, contact your Auth0 representative.
+
 Set `refreshTokenMode` to `RefreshTokenMode.Online` (together with the required `useRefreshTokens: true` and `useDpop: true`) to use **Online Refresh Tokens** — non-rotating refresh tokens bound to the Auth0 session lifetime. The SDK injects the `online_access` scope and routes renewal through the refresh-token grant.
 
 ```js
