@@ -222,6 +222,9 @@ await auth0.revokeRefreshToken();
 
 ## Online Access (Online Refresh Tokens)
 
+> [!NOTE]
+> Online Access (Online Refresh Tokens) support via SDKs is currently in Early Access. To request access to this feature, contact your Auth0 representative.
+
 **Online Refresh Tokens (ORTs)** are a refresh token type bound to the lifetime of the user's Auth0 session. See the [Auth0 documentation on Online Refresh Tokens](https://auth0.com/docs/secure/tokens/refresh-tokens/online-refresh-tokens/online-refresh-tokens) for the full conceptual overview. Unlike the rotating [offline refresh tokens](#refresh-tokens) described above, an ORT is:
 
 - **Session-bound** — it is valid only while the underlying Auth0 session is active. When the session ends (logout, idle/absolute session expiry, or an admin revoking the session), the ORT stops working.
@@ -261,9 +264,6 @@ Enabling this option causes the SDK to:
 
 > [!NOTE]
 > Online access is **opt-in**. When `refreshTokenMode` is unset or `RefreshTokenMode.Offline`, the SDK behaves exactly as before.
-
-> [!NOTE]
-> This feature requires the `online_refresh_tokens` flag to be enabled for your tenant and `allow_online_access` to be enabled on the resource server (on by default).
 
 ### `RefreshTokenMode.Offline` vs. `RefreshTokenMode.Online`
 
