@@ -38,6 +38,7 @@ import {
   AuthenticationError,
   ConnectError,
   GenericError,
+  InvalidConfigurationError,
   MfaRequiredError,
   MissingRefreshTokenError,
   MissingScopesError,
@@ -59,13 +60,15 @@ import {
   MISSING_REFRESH_TOKEN_ERROR_MESSAGE,
   MFA_STEP_UP_ERROR_DESCRIPTION,
   DEFAULT_SCOPE,
+  ONLINE_ACCESS_SCOPE,
   DEFAULT_SESSION_CHECK_EXPIRY_DAYS,
   DEFAULT_AUTH0_CLIENT,
   INVALID_REFRESH_TOKEN_ERROR_MESSAGE,
   USER_BLOCKED_ERROR_MESSAGE,
   DEFAULT_NOW_PROVIDER,
   DEFAULT_FETCH_TIMEOUT_MS,
-  DEFAULT_AUDIENCE
+  DEFAULT_AUDIENCE,
+  SESSION_EXPIRY_LEEWAY_SECONDS
 } from './constants';
 
 import {
@@ -109,7 +112,6 @@ import {
   OLD_IS_AUTHENTICATED_COOKIE_NAME,
   patchOpenUrlWithOnRedirect,
   getScopeToRequest,
-  allScopesAreIncluded,
   isRefreshWithMrrt,
   getMissingScopes
 } from './Auth0Client.utils';
@@ -154,6 +156,7 @@ export class Auth0Client {
   private readonly isAuthenticatedCookieName: string;
   private readonly nowProvider: () => number | Promise<number>;
   private readonly httpTimeoutMs: number;
+  private readonly onlineAccess: boolean;
   private readonly options: Auth0ClientOptions & {
     authorizationParams: ClientAuthorizationParams,
   };
@@ -188,10 +191,36 @@ export class Auth0Client {
       scope: DEFAULT_SCOPE
     },
     useRefreshTokensFallback: false,
-    useFormData: true
+    useFormData: true,
+    refreshTokenMode: 'offline',
   };
 
+  /** Validates online-access config and returns whether online mode is enabled. */
+  private resolveOnlineAccess(options: Auth0ClientOptions): boolean {
+    if (options.refreshTokenMode !== 'online') {
+      return false;
+    }
+
+    if (options.useRefreshTokens !== true) {
+      throw new InvalidConfigurationError(
+        '`refreshTokenMode: "online"` requires the refresh-token grant.',
+        'Set `useRefreshTokens: true`.'
+      );
+    }
+
+    if (options.useDpop !== true) {
+      throw new InvalidConfigurationError(
+        '`refreshTokenMode: "online"` requires DPoP, which is missing or disabled.',
+        'Set `useDpop: true` (DPoP is mandatory for online access).'
+      );
+    }
+
+    return true;
+  }
+
   constructor(options: Auth0ClientOptions) {
+    this.onlineAccess = this.resolveOnlineAccess(options);
+
     this.options = {
       ...this.defaultOptions,
       ...options,
@@ -250,14 +279,18 @@ export class Auth0Client {
       ? this.cookieStorage
       : SessionStorage;
 
-    // Construct the scopes based on the following:
-    // 1. Always include `openid`
-    // 2. Include the scopes provided in `authorizationParams. This defaults to `profile email`
-    // 3. Add `offline_access` if `useRefreshTokens` is enabled
+    // `online_access` and `offline_access` are mutually exclusive — inject at most one.
+    let sessionScope = '';
+    if (this.onlineAccess) {
+      sessionScope = ONLINE_ACCESS_SCOPE;
+    } else if (this.options.useRefreshTokens) {
+      sessionScope = 'offline_access';
+    }
+
     this.scope = injectDefaultScopes(
       this.options.authorizationParams.scope,
       'openid',
-      this.options.useRefreshTokens ? 'offline_access' : ''
+      sessionScope
     );
 
     this.transactionManager = new TransactionManager(
@@ -311,7 +344,7 @@ export class Auth0Client {
       this
     );
 
-    // Don't use web workers unless using refresh tokens in memory
+    // Don't use web workers unless using refresh tokens in memory.
     if (
       typeof window !== 'undefined' &&
       window.Worker &&
@@ -592,6 +625,10 @@ export class Auth0Client {
    * @typeparam TUser The type to return, has to extend {@link User}.
    */
   public async getUser<TUser extends User>(): Promise<TUser | undefined> {
+    if (await this._isSessionCeilingReached()) {
+      return undefined;
+    }
+
     const cache = await this._getIdTokenFromCache();
 
     return cache?.decodedToken?.user as TUser;
@@ -605,6 +642,10 @@ export class Auth0Client {
    * Returns all claims from the id_token if available.
    */
   public async getIdTokenClaims(): Promise<IdToken | undefined> {
+    if (await this._isSessionCeilingReached()) {
+      return undefined;
+    }
+
     const cache = await this._getIdTokenFromCache();
 
     return cache?.decodedToken?.claims;
@@ -939,6 +980,10 @@ export class Auth0Client {
   ): Promise<undefined | GetTokenSilentlyVerboseResponse> {
     const { cacheMode, ...getTokenOptions } = options;
 
+    if (await this._isSessionCeilingReached()) {
+      return undefined;
+    }
+
     // Check the cache before acquiring the lock to avoid the latency of
     // `lock.acquireLock` when the cache is populated.
     if (cacheMode !== 'off') {
@@ -1176,10 +1221,20 @@ export class Auth0Client {
    *
    * If `useRefreshTokens` is disabled, this method does nothing.
    *
+   * **Online mode:** when `refreshTokenMode` is `'online'`, revoking the ORT via
+   * `/oauth/revoke` **also terminates the Auth0 session** and **clears the entire local
+   * cache** (access token, ID token, user profile). Because Online Refresh Tokens are
+   * session-bound, the authorization server ties the token directly to the session —
+   * revoking the ORT invalidates the session server-side. The local cache is cleared
+   * immediately so that `isAuthenticated()` returns `false` and `getUser()` returns
+   * `undefined` right away, without waiting for the access token to expire.
+   * Use this when you need to force a sign-out without a redirect (e.g. background
+   * revocation). For a redirect-based sign-out, prefer `logout()`.
+   *
    * **Important:** This method revokes the refresh token for a single audience. If your
    * application requests tokens for multiple audiences, each audience may have its own
    * refresh token. To fully revoke all refresh tokens, call this method once per audience.
-   * If you want to terminate the user's session entirely, use `logout()` instead.
+   * If you want to terminate the user's session with a redirect, use `logout()` instead.
    *
    * When using Multi-Resource Refresh Tokens (MRRT), a single refresh token may cover
    * multiple audiences. In that case, revoking it will affect all cache entries that
@@ -1229,6 +1284,14 @@ export class Auth0Client {
       },
       this.worker
     );
+
+    // In online mode the ORT is session-bound: revoking it terminates the Auth0 session
+    // server-side. Clear the entire local cache so that isAuthenticated() returns false
+    // and getUser() returns undefined immediately — the stale access token and ID token
+    // must not remain visible to the application after the session is gone.
+    if (this.onlineAccess) {
+      await this._clearLocalSession();
+    }
   }
 
   /**
@@ -1247,35 +1310,7 @@ export class Auth0Client {
   public async logout(options: LogoutOptions = {}): Promise<void> {
     const { openUrl, ...logoutOptions } = patchOpenUrlWithOnRedirect(options);
 
-    if (options.clientId === null) {
-      await this.cacheManager.clear();
-    } else {
-      await this.cacheManager.clear(options.clientId || this.options.clientId);
-    }
-
-    this.cookieStorage.remove(this.orgHintCookieName, {
-      cookieDomain: this.options.cookieDomain
-    });
-    this.cookieStorage.remove(this.isAuthenticatedCookieName, {
-      cookieDomain: this.options.cookieDomain
-    });
-    this.userCache.remove(CACHE_KEY_ID_TOKEN_SUFFIX);
-
-    try {
-      await this.dpop?.clear();
-    } catch {
-      // DPoP storage cleanup is best-effort. Logout should still redirect if
-      // IndexedDB or another storage backend fails while clearing local keys.
-    }
-
-    if (this.worker) {
-      try {
-        await sendMessage({ type: 'clear' }, this.worker);
-      } catch {
-        // Worker is an internal, best-effort cleanup channel. If the ACK round-trip
-        // fails we still proceed with logout so the user is not left in a half-state.
-      }
-    }
+    await this._clearLocalSession(options.clientId);
 
     const url = this._buildLogoutUrl(logoutOptions);
 
@@ -1469,9 +1504,13 @@ export class Auth0Client {
         }
       );
 
-      // If is refreshed with MRRT, we update all entries that have the old
-      // refresh_token with the new one if the server responded with one
-      if (tokenResult.refresh_token && cache?.refresh_token) {
+      // Propagate a rotated RT to all MRRT entries. Skipped for online mode,
+      // where ORTs are non-rotating.
+      if (
+        !this.onlineAccess &&
+        tokenResult.refresh_token &&
+        cache?.refresh_token
+      ) {
         await this.cacheManager.updateEntry(
           cache.refresh_token,
           tokenResult.refresh_token
@@ -1491,12 +1530,13 @@ export class Auth0Client {
         );
 
         if (isRefreshMrrt) {
-          const tokenHasAllScopes = allScopesAreIncluded(
+          const missingScopes = getMissingScopes(
             scopesToRequest,
             tokenResult.scope,
+            this.onlineAccess
           );
 
-          if (!tokenHasAllScopes) {
+          if (missingScopes) {
             if (this.options.useRefreshTokensFallback) {
               return await this._getTokenFromIFrame(options);
             }
@@ -1507,11 +1547,6 @@ export class Auth0Client {
               this.options.clientId,
               options.authorizationParams.audience,
               options.authorizationParams.scope,
-            );
-
-            const missingScopes = getMissingScopes(
-              scopesToRequest,
-              tokenResult.scope,
             );
 
             throw new MissingScopesError(
@@ -1555,6 +1590,28 @@ export class Auth0Client {
   private async _saveEntryInCache(
     entry: CacheEntry & { id_token: string; decodedToken: DecodedToken }
   ) {
+    const { session_expiry, iat } = entry.decodedToken.claims;
+    if (session_expiry !== undefined) {
+      if (typeof session_expiry !== 'number') {
+        throw new GenericError(
+          'invalid_token',
+          'Invalid session_expiry: value must be a number.'
+        );
+      }
+      if (session_expiry >= 10_000_000_000) {
+        throw new GenericError(
+          'invalid_token',
+          'Invalid session_expiry: value appears to be in milliseconds; expected a Unix timestamp in seconds.'
+        );
+      }
+      if (iat === undefined || session_expiry <= iat) {
+        throw new GenericError(
+          'invalid_token',
+          'Invalid session_expiry: session ceiling is before or at the token issue time.'
+        );
+      }
+    }
+
     const { id_token, decodedToken, ...entryWithoutIdToken } = entry;
 
     this.userCache.set(CACHE_KEY_ID_TOKEN_SUFFIX, {
@@ -1569,6 +1626,56 @@ export class Auth0Client {
     );
 
     await this.cacheManager.set(entryWithoutIdToken);
+  }
+
+  private async _clearLocalSession(clientId: string | null | undefined = this.options.clientId) {
+    if (clientId === null) {
+      await this.cacheManager.clear();
+    } else {
+      await this.cacheManager.clear(clientId);
+    }
+    this.cookieStorage.remove(this.orgHintCookieName, {
+      cookieDomain: this.options.cookieDomain
+    });
+    this.cookieStorage.remove(this.isAuthenticatedCookieName, {
+      cookieDomain: this.options.cookieDomain
+    });
+    this.userCache.remove(CACHE_KEY_ID_TOKEN_SUFFIX);
+
+    try {
+      await this.dpop?.clear();
+    } catch {
+      // DPoP storage cleanup is best-effort.
+    }
+
+    if (this.worker) {
+      try {
+        await sendMessage({ type: 'clear' }, this.worker);
+      } catch {
+        // Worker cleanup is best-effort.
+      }
+    }
+  }
+
+  private async _isSessionCeilingReached(): Promise<boolean> {
+    const inMemory = this.userCache.get<IdTokenEntry>(
+      CACHE_KEY_ID_TOKEN_SUFFIX
+    ) as IdTokenEntry;
+    const idTokenEntry =
+      inMemory ??
+      await this.cacheManager.getIdToken(
+        new CacheKey({ clientId: this.options.clientId })
+      );
+    const sessionExpiresAt = idTokenEntry?.decodedToken?.claims?.session_expiry;
+    if (sessionExpiresAt === undefined) return false;
+
+    const now = await this.nowProvider();
+    const nowSeconds = Math.floor(now / 1000);
+    if (nowSeconds >= sessionExpiresAt - SESSION_EXPIRY_LEEWAY_SECONDS) {
+      await this._clearLocalSession();
+      return true;
+    }
+    return false;
   }
 
   private async _getIdTokenFromCache() {
@@ -1662,13 +1769,14 @@ export class Auth0Client {
           timeout: this.httpTimeoutMs,
           useMrrt: this.options.useMrrt,
           dpop: this.dpop,
+          preserveRefreshToken: this.onlineAccess,
           ...options,
           scope: scopesToRequest || options.scope,
         },
         this.worker
       );
 
-      const decodedToken = await this._verifyIdToken(
+      let decodedToken = await this._verifyIdToken(
         authResult.id_token,
         nonceIn,
         organization
@@ -1685,6 +1793,36 @@ export class Auth0Client {
           await this.cacheManager.clear(this.options.clientId);
           this.userCache.remove(CACHE_KEY_ID_TOKEN_SUFFIX);
         }
+      }
+
+      // Silent refresh — pin the session_expiry ceiling from the initial login.
+      // Prevents the server from extending the ceiling via a refresh token response.
+      if (options.grant_type !== 'authorization_code') {
+        const existingIdToken = await this._getIdTokenFromCache();
+        const existingCeiling = existingIdToken?.decodedToken?.claims?.session_expiry;
+        if (existingCeiling !== undefined) {
+          decodedToken = {
+            ...decodedToken,
+            claims: { ...decodedToken.claims, session_expiry: existingCeiling }
+          };
+        }
+      }
+      // Online refresh tokens are non-rotating: the server returns no refresh_token, so
+      // carry the ORT forward to avoid evicting it on save.
+      // Online-only: in offline mode a refresh token is single-use and reusing it would
+      // trip reuse detection.
+      // Mutate authResult so ...authResult in _saveEntryInCache picks up the ORT directly.
+      // Safe: GetTokenSilentlyVerboseResponse omits refresh_token, so it never reaches app code.
+      if (!authResult.refresh_token && this.onlineAccess) {
+        authResult.refresh_token = (options as RefreshTokenRequestTokenOptions).refresh_token ?? (await this.cacheManager.get(
+          new CacheKey({
+            scope: scopesToRequest || options.scope,
+            audience: options.audience || DEFAULT_AUDIENCE,
+            clientId: this.options.clientId,
+          }),
+          undefined,
+          this.options.useMrrt
+        ))?.refresh_token;
       }
 
       await this._saveEntryInCache({

@@ -6,6 +6,21 @@ import './global';
 export * from './global';
 
 /**
+ * Online mode requires `useRefreshTokens: true` and `useDpop: true`, enforced here at
+ * compile time. Dynamic values, casts, and plain JS are covered by the runtime check in
+ * the `Auth0Client` constructor.
+ */
+export async function createAuth0Client(
+  options: Auth0ClientOptions & {
+    refreshTokenMode: 'online';
+    useRefreshTokens: true;
+    useDpop: true;
+  }
+): Promise<Auth0Client>;
+export async function createAuth0Client(
+  options: Auth0ClientOptions & { refreshTokenMode?: 'offline' }
+): Promise<Auth0Client>;
+/**
  * Asynchronously creates the Auth0Client instance and calls `checkSession`.
  *
  * **Note:** There are caveats to using this in a private browser tab, which may not silently authenticate
@@ -25,6 +40,7 @@ export { Auth0Client };
 export {
   ConnectError,
   GenericError,
+  InvalidConfigurationError,
   AuthenticationError,
   TimeoutError,
   PopupTimeoutError,
@@ -32,8 +48,11 @@ export {
   PopupOpenError,
   MfaRequiredError,
   MissingRefreshTokenError,
+  MissingScopesError,
   UseDpopNonceError
 } from './errors';
+
+export type { MfaRequirements } from './errors';
 
 export {
   MfaError,

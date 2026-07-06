@@ -86,12 +86,14 @@ const setup = async (
     close: jest.fn()
   };
 
+  const opts = {
+    domain: TEST_DOMAIN,
+    clientId: TEST_CLIENT_ID,
+    ...clientOptions
+  } as Auth0ClientOptions & { refreshTokenMode?: 'offline' };
+
   const auth0 = callConstructor
-    ? await createAuth0Client({
-        domain: TEST_DOMAIN,
-        clientId: TEST_CLIENT_ID,
-        ...clientOptions
-      })
+    ? await createAuth0Client(opts)
     : undefined;
 
   const transactionManager =

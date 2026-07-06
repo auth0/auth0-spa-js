@@ -9,6 +9,22 @@ import { CompleteResponse } from './myaccount';
  */
 export type InteractiveErrorHandler = 'popup';
 
+/**
+ * The refresh-token variant used when `useRefreshTokens: true`.
+ *
+ * - {@link RefreshTokenMode.Offline} (default): rotating offline refresh tokens.
+ * - {@link RefreshTokenMode.Online}: non-rotating Online Refresh Tokens (ORTs).
+ */
+// `const` object, not a TS `enum`, so members stay string-literal types and
+// remain assignable to the `createAuth0Client` overloads.
+export const RefreshTokenMode = {
+  Offline: 'offline',
+  Online: 'online'
+} as const;
+
+export type RefreshTokenMode =
+  (typeof RefreshTokenMode)[keyof typeof RefreshTokenMode];
+
 export interface AuthorizationParams {
   /**
    * - `'page'`: displays the UI with a full page view
@@ -311,6 +327,18 @@ export interface Auth0ClientOptions {
    * The default setting is `false`.
    */
   useDpop?: boolean;
+
+  /**
+   * Selects the refresh-token variant used when `useRefreshTokens: true`.
+   * Defaults to {@link RefreshTokenMode.Offline}.
+   *
+   * - {@link RefreshTokenMode.Offline} (default): rotating offline refresh tokens (`offline_access`).
+   * - {@link RefreshTokenMode.Online}: non-rotating, session-bound Online Refresh Tokens (`online_access`).
+   *
+   * Online mode requires `useRefreshTokens: true` and `useDpop: true`. The
+   * `online_access` and `offline_access` scopes are mutually exclusive.
+   */
+  refreshTokenMode?: RefreshTokenMode;
 
   /**
    * Configures automatic handling of interactive authentication errors.
@@ -865,6 +893,11 @@ export interface IdToken {
   sid?: string;
   org_id?: string;
   org_name?: string;
+  /**
+   * IPSIE session expiry ceiling (Unix timestamp in seconds).
+   * When present, the SDK will not return tokens after this point in time.
+   */
+  session_expiry?: number;
   /**
    * The actor claim, present in ID tokens returned via token exchange responses.
    * Identifies the acting party that has been delegated authority to act on behalf

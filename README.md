@@ -30,7 +30,7 @@ npm install @auth0/auth0-spa-js
 From the CDN:
 
 ```html
-<script src="https://cdn.auth0.com/js/auth0-spa-js/2.21/auth0-spa-js.production.js"></script>
+<script src="https://cdn.auth0.com/js/auth0-spa-js/2.23/auth0-spa-js.production.js"></script>
 ```
 
 ### Configure Auth0
@@ -114,9 +114,33 @@ window.addEventListener('load', async () => {
 });
 ```
 
+### Online Access
+
+> [!NOTE]
+> Online Access (Online Refresh Tokens) support via SDKs is currently in Early Access. To request access to this feature, contact your Auth0 representative.
+
+Set `refreshTokenMode` to `RefreshTokenMode.Online` (together with the required `useRefreshTokens: true` and `useDpop: true`) to use **Online Refresh Tokens** — non-rotating refresh tokens bound to the Auth0 session lifetime. The SDK injects the `online_access` scope and routes renewal through the refresh-token grant.
+
+```js
+import { createAuth0Client, RefreshTokenMode } from '@auth0/auth0-spa-js';
+
+const auth0 = await createAuth0Client({
+  domain: '<AUTH0_DOMAIN>',
+  clientId: '<AUTH0_CLIENT_ID>',
+  useRefreshTokens: true,
+  refreshTokenMode: RefreshTokenMode.Online,
+  useDpop: true,
+  authorizationParams: {
+    redirect_uri: '<MY_CALLBACK_URL>'
+  }
+});
+```
+
+`refreshTokenMode` is a sub-option of `useRefreshTokens`: it defaults to `RefreshTokenMode.Offline` (the rotating refresh tokens described above) and must be set to `RefreshTokenMode.Online` for Online Refresh Tokens. Online mode requires both `useRefreshTokens: true` and `useDpop: true`. See [Online Access](https://github.com/auth0/auth0-spa-js/blob/main/EXAMPLES.md#online-access-online-refresh-tokens) in EXAMPLES.md for the full guide.
+
 ### More Examples
 
-For comprehensive examples covering various scenarios including logging out, calling APIs, refresh tokens, organizations, passkeys, MFA, DPoP, and more, see the [EXAMPLES.md](https://github.com/auth0/auth0-spa-js/blob/main/EXAMPLES.md) document.
+For comprehensive examples covering various scenarios including logging out, calling APIs, refresh tokens, online access, organizations, passkeys, MFA, DPoP, and more, see the [EXAMPLES.md](https://github.com/auth0/auth0-spa-js/blob/main/EXAMPLES.md) document.
 
 ## API Reference
 

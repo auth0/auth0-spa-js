@@ -38,6 +38,7 @@ export async function oauthToken(
     useFormData,
     useMrrt,
     dpop,
+    preserveRefreshToken,
     ...options
   }: TokenEndpointOptions,
   worker?: Worker,
@@ -90,7 +91,8 @@ export async function oauthToken(
     useMrrt,
     isDpopSupported ? dpop : undefined,
     undefined,
-    skipTokenStorage
+    skipTokenStorage,
+    preserveRefreshToken
   );
 }
 

@@ -60,6 +60,12 @@ export const DEFAULT_SCOPE = 'openid profile email';
 
 /**
  * @ignore
+ * The scope that requests an Online Refresh Token (non-rotating, session-bound).
+ */
+export const ONLINE_ACCESS_SCOPE = 'online_access';
+
+/**
+ * @ignore
  */
 export const DEFAULT_SESSION_CHECK_EXPIRY_DAYS = 1;
 
@@ -72,5 +78,8 @@ export const DEFAULT_AUTH0_CLIENT = {
 };
 
 export const DEFAULT_NOW_PROVIDER = () => Date.now();
+
+/** @ignore */
+export const SESSION_EXPIRY_LEEWAY_SECONDS = 30;
 
 export const DEFAULT_AUDIENCE = 'default';

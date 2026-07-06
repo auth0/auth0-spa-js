@@ -3,7 +3,7 @@
   "name": "@auth0/auth0-spa-js",
   "description": "Auth0 SDK for Single Page Applications using Authorization Code Grant Flow with PKCE",
   "license": "MIT",
-  "version": "2.21.2",
+  "version": "2.23.0",
   "main": "dist/lib/auth0-spa-js.cjs.js",
   "types": "dist/typings/index.d.ts",
   "module": "dist/auth0-spa-js.production.esm.js",
@@ -23,10 +23,10 @@
     }
   },
   "dependencies": {
-    "@auth0/auth0-auth-js": "1.10.0",
-    "browser-tabs-lock": "1.3.0",
-    "dpop": "2.1.1",
-    "es-cookie": "1.3.2"
+    "@auth0/auth0-auth-js": "^1.10.0",
+    "browser-tabs-lock": "^1.3.0",
+    "dpop": "^2.1.1",
+    "es-cookie": "~1.3.2"
   },
   "scripts": {
     "dev": "rimraf dist && rollup -c --watch",
@@ -67,7 +67,7 @@
     "@typescript-eslint/parser": "^5.33.1",
     "cli-table": "^0.3.6",
     "concurrently": "^7.3.0",
-    "cypress": "^14.5.4",
+    "cypress": "^15.18.0",
     "es-check": "^7.0.1",
     "eslint": "^8.22.0",
     "eslint-plugin-security": "^1.5.0",
@@ -78,7 +78,7 @@
     "jest": "^28.1.3",
     "jest-environment-jsdom": "^28.1.3",
     "jest-fetch-mock": "^3.0.3",
-    "jest-junit": "^14.0.0",
+    "jest-junit": "^17.0.0",
     "jest-localstorage-mock": "^2.4.22",
     "jsonwebtoken": "^9.0.0",
     "oidc-provider": "^9.6.0",
@@ -99,7 +99,7 @@
     "tslib": "^2.4.0",
     "typedoc": "^0.25.1",
     "typescript": "^4.7.4",
-    "wait-on": "^7.2.0"
+    "wait-on": "^9.0.0"
   },
   "files": [
     "src",

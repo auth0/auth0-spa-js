@@ -179,6 +179,64 @@ describe('token worker', () => {
     });
   });
 
+  it(`keeps a non-rotating token when the refresh response carries no refresh_token`, async () => {
+    // Seed a non-rotating (online) refresh token via the initial code exchange.
+    mockFetch.mockReturnValueOnce(
+      Promise.resolve({
+        ok: true,
+        json: () => ({ refresh_token: 'ort' }),
+        headers: new Headers()
+      })
+    );
+    await messageHandlerAsync({
+      fetchUrl: TOKEN_ENDPOINT,
+      fetchOptions: {
+        method: 'POST',
+        body: JSON.stringify({ grant_type: 'authorization_code' })
+      }
+    });
+
+    // First refresh: server exchanges the ORT but returns no new refresh_token.
+    mockFetch.mockReturnValueOnce(
+      Promise.resolve({
+        ok: true,
+        json: () => ({ access_token: 'at' }),
+        headers: new Headers()
+      })
+    );
+    await messageHandlerAsync({
+      fetchUrl: TOKEN_ENDPOINT,
+      fetchOptions: {
+        method: 'POST',
+        body: JSON.stringify({ grant_type: 'refresh_token' })
+      },
+      preserveRefreshToken: true
+    });
+
+    // Second refresh: the stored ORT must still be injected (not evicted).
+    mockFetch.mockReturnValueOnce(
+      Promise.resolve({
+        ok: true,
+        json: () => ({ access_token: 'at2' }),
+        headers: new Headers()
+      })
+    );
+    const response = await messageHandlerAsync({
+      fetchUrl: TOKEN_ENDPOINT,
+      fetchOptions: {
+        method: 'POST',
+        body: JSON.stringify({ grant_type: 'refresh_token' })
+      },
+      preserveRefreshToken: true
+    });
+
+    expect(response.json.error).toBeUndefined();
+    expect(JSON.parse(mockFetch.mock.calls[2][1].body)).toEqual({
+      grant_type: 'refresh_token',
+      refresh_token: 'ort'
+    });
+  });
+
   it(`errors with grant_type='refresh_token' and no token is stored`, async () => {
     const response = await messageHandlerAsync({
       fetchUrl: TOKEN_ENDPOINT,

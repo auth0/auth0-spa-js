@@ -82,7 +82,7 @@ const checkDownscoping = (scope: string, audience: string): boolean => {
 }
 
 const messageHandler = async ({
-  data: { timeout, auth, fetchUrl, fetchOptions, useFormData, useMrrt, skipTokenStorage },
+  data: { timeout, auth, fetchUrl, fetchOptions, useFormData, useMrrt, skipTokenStorage, preserveRefreshToken },
   ports: [port]
 }: MessageEvent<WorkerRefreshTokenMessage>) => {
   let headers: FetchResponse['headers'] = {};
@@ -188,7 +188,10 @@ const messageHandler = async ({
 
       setRefreshToken(json.refresh_token, audience, scope);
       delete json.refresh_token;
-    } else {
+    } else if (!preserveRefreshToken) {
+      // Offline rotating tokens: evict the stored RT so it can't be reused.
+      // Online (preserveRefreshToken=true) skips this — the ORT is non-rotating
+      // and the server never returns a replacement.
       deleteRefreshToken(audience, scope);
     }
 

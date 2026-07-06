@@ -1,5 +1,17 @@
 # Change Log
 
+## [v2.23.0](https://github.com/auth0/auth0-spa-js/tree/v2.23.0) (2026-07-03)
+[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.22.0...v2.23.0)
+
+**Added**
+- feat: add support for online access (Online Refresh Tokens) [\#1624](https://github.com/auth0/auth0-spa-js/pull/1624) ([subhankarmaiti](https://github.com/subhankarmaiti))
+
+## [v2.22.0](https://github.com/auth0/auth0-spa-js/tree/v2.22.0) (2026-06-29)
+[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.21.2...v2.22.0)
+
+**Added**
+- feat: enforce IPSIE session_expiry ceiling on local session lifetime [\#1634](https://github.com/auth0/auth0-spa-js/pull/1634) ([yogeshchoudhary147](https://github.com/yogeshchoudhary147))
+
 ## [v2.21.2](https://github.com/auth0/auth0-spa-js/tree/v2.21.2) (2026-06-18)
 [Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.21.1...v2.21.2)
 
