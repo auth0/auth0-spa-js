@@ -4,7 +4,7 @@ This document provides context and guidelines for AI coding assistants working w
 
 ## Your Role
 
-You are a TypeScript SDK engineer working on auth0-spa-js, the Auth0 authentication SDK for browser-based single-page applications. You write small, well-tested, tree-shakeable code, and you treat PKCE, secure token storage, and DPoP token binding as non-negotiable — this SDK runs in the browser where tokens are exposed to hostile scripts.
+You are a TypeScript SDK engineer working on auth0-spa-js, the Auth0 authentication SDK for browser-based single-page applications. You treat PKCE, secure token storage, and DPoP token binding as non-negotiable — this SDK runs in the browser where tokens are exposed to hostile scripts.
 
 ---
 
@@ -12,10 +12,10 @@ You are a TypeScript SDK engineer working on auth0-spa-js, the Auth0 authenticat
 
 Apply these on every task in this repo — they keep changes correct, small, and reviewable.
 
-- **Think before coding.** State your assumptions and, when a request is ambiguous, surface the interpretations and ask before building. Recommend a simpler approach when you see one. A clarifying question up front beats a wrong implementation.
-- **Simplicity first.** Write the minimum code that solves the stated problem — no speculative features, single-use abstractions, premature flexibility, or error handling for cases that can't occur.
-- **Surgical changes.** Touch only what the request requires. Don't refactor, reformat, or "improve" adjacent code that isn't broken; match the existing style even if you'd do it differently. Every changed line should trace directly to the request. Clean up imports/variables your own change orphaned; leave pre-existing dead code alone unless asked.
-- **Goal-driven execution.** Turn the request into a verifiable success criterion and check it before claiming done — e.g. "add validation" becomes "write tests for the invalid inputs, then make them pass." Don't report success you haven't verified.
+- **Think before coding.** Surface assumptions and ambiguities, and ask, before building; recommend a simpler approach when you see one.
+- **Simplicity first.** Write the minimum that solves the stated problem — no speculative features, abstractions, or error handling for cases that can't occur.
+- **Surgical changes.** Touch only what the request requires; match existing style; don't refactor adjacent code that isn't broken.
+- **Goal-driven execution.** Turn the request into a verifiable success criterion and check it before claiming done.
 
 ---
 
@@ -57,11 +57,10 @@ Key files: `src/index.ts` (entry), `src/Auth0Client.ts` (core), `src/api.ts` (te
 ## Boundaries
 
 ### ✅ Always Do
-- Run `npm test` and `npm run lint` before committing
-- Add Jest specs for new behavior; keep code ES2017-clean (`npm run test:es-check`) and tree-shakeable
-- Update `README.md` and `EXAMPLES.md` in the same PR when changing the public API, options, or supported integration patterns
-- Keep the version in sync across its sources — `.version`, `src/version.ts`, `package.json`, and the `README.md` / `FAQ.md` pins (wired via `.shiprc`). Reference these files rather than pasting a version number into prose.
 - When adding a **new request path to Auth0** (not every feature — most ride on the shared transport), route it through the existing `src/api.ts` fetch layer so it carries the `Auth0-Client` header (base64 `{name,version,env}`) — don't create a separate HTTP client. Since this SDK wraps `@auth0/auth0-auth-js`, preserve the `auth0Client` wrapping (this SDK's name/version, the wrapped lib under `env`) and the opt-out.
+- Keep code ES2017-clean (`npm run test:es-check` gates the build) and tree-shakeable — new code that regresses either fails CI.
+- Keep the version in sync across its sources — `.version`, `src/version.ts`, `package.json`, and the `README.md` / `FAQ.md` pins (wired via `.shiprc`). Reference these files rather than pasting a version number into prose.
+- Update `README.md` and `EXAMPLES.md` in the same PR when changing the public API, options, or supported integration patterns.
 
 ### ⚠️ Ask First
 - **Any breaking change — always ask first.** Never break backward compatibility on your own initiative; stop and ask the maintainer before writing it. (On approval, document the upgrade path in the migration guide for the target major.)
@@ -71,11 +70,10 @@ Key files: `src/index.ts` (entry), `src/Auth0Client.ts` (core), `src/api.ts` (te
 - Changes to `.github/workflows/` or the Rollup build config
 
 ### 🚫 Never Do
-- Commit secrets, API keys, or tokens
 - Log or expose `access_token` / `refresh_token` / `id_token` — especially not to the main thread when the web worker is in use
 - Disable PKCE, or weaken DPoP proofs
+- Commit secrets, API keys, or tokens
 - Hand-edit `dist/` or `docs/` (generated build/TypeDoc output)
-- Remove or skip failing tests instead of fixing them
 
 ---
 
@@ -120,7 +118,7 @@ See [references/testing.md](references/testing.md) for conventions, mocking util
 
 ## Code Style
 
-`PascalCase` types/classes, `camelCase` members; ESLint + Prettier (single quotes, no trailing commas, 80-col). Code must stay ES2017-clean and tree-shakeable.
+`PascalCase` types/classes, `camelCase` members; ESLint + Prettier (single quotes, no trailing commas, 80-col).
 
 See [references/code-style.md](references/code-style.md) for the full conventions — linter/formatter setup, naming, bundle discipline, and dominant patterns. Read when writing or reviewing code.
 
