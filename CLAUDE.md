@@ -140,6 +140,8 @@ The high-frequency traps: **don't move worker-side token refresh onto the main t
 
 See [references/pitfalls.md](references/pitfalls.md) for the full list with fixes (web-worker token exposure, third-party-cookie silent auth, bundle/ES level, DPoP online-mode dual checks, wrapping `@auth0/auth0-auth-js`). Read when touching token handling, the web worker, DPoP, bundling, or the auth-js wrapping.
 
+**Team learnings:** recurring mistakes surfaced in PR review are recorded in [references/learnings.md](references/learnings.md) — read it before non-trivial changes.
+
 ---
 
 ## Docs Update Rules
