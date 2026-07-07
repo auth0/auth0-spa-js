@@ -32,7 +32,7 @@ Apply these on every task in this repo — they keep changes correct, small, and
 
 ## Project Structure
 
-```
+```text
 src/
   ├─ index.ts             # entry point — createAuth0Client() factory + re-exports
   ├─ Auth0Client.ts       # main client; orchestrates PKCE authorization-code flow
