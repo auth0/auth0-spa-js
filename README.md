@@ -119,6 +119,9 @@ window.addEventListener('load', async () => {
 > [!NOTE]
 > Online Access (Online Refresh Tokens) support via SDKs is currently in Early Access. To request access to this feature, contact your Auth0 representative.
 
+> [!WARNING]
+> Online Refresh Tokens do not currently support resource servers with **Ephemeral Sessions** enabled. Enabling both `allow_online_access` and "Allow for Ephemeral Sessions" on the same resource server results in the authorization server issuing an Online Refresh Token that is then rejected (`invalid_grant`) on the very next refresh. Until Ephemeral Sessions support is added for Online Refresh Tokens, disable "Allow for Ephemeral Sessions" on any resource server used with `refreshTokenMode: RefreshTokenMode.Online`.
+
 Set `refreshTokenMode` to `RefreshTokenMode.Online` (together with the required `useRefreshTokens: true` and `useDpop: true`) to use **Online Refresh Tokens** — non-rotating refresh tokens bound to the Auth0 session lifetime. The SDK injects the `online_access` scope and routes renewal through the refresh-token grant.
 
 ```js

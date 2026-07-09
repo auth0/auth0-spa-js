@@ -225,6 +225,9 @@ await auth0.revokeRefreshToken();
 > [!NOTE]
 > Online Access (Online Refresh Tokens) support via SDKs is currently in Early Access. To request access to this feature, contact your Auth0 representative.
 
+> [!WARNING]
+> Online Refresh Tokens do not currently support resource servers with **Ephemeral Sessions** enabled. If a resource server has both `allow_online_access` and "Allow for Ephemeral Sessions" enabled, the authorization server issues an Online Refresh Token at login that is then rejected with `invalid_grant` (`"Unknown or invalid refresh token"`) on the very next refresh — this is a known backend limitation, not a client-side defect. Until Ephemeral Sessions support is added for Online Refresh Tokens, disable "Allow for Ephemeral Sessions" on any resource server used with `refreshTokenMode: RefreshTokenMode.Online`.
+
 **Online Refresh Tokens (ORTs)** are a refresh token type bound to the lifetime of the user's Auth0 session. See the [Auth0 documentation on Online Refresh Tokens](https://auth0.com/docs/secure/tokens/refresh-tokens/online-refresh-tokens/online-refresh-tokens) for the full conceptual overview. Unlike the rotating [offline refresh tokens](#refresh-tokens) described above, an ORT is:
 
 - **Session-bound** — it is valid only while the underlying Auth0 session is active. When the session ends (logout, idle/absolute session expiry, or an admin revoking the session), the ORT stops working.
