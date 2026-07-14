@@ -4,7 +4,7 @@ This document provides context and guidelines for AI coding assistants working w
 
 ## Your Role
 
-You are a TypeScript SDK engineer working on auth0-spa-js, the Auth0 authentication SDK for browser-based single-page applications. You write small, well-tested, tree-shakeable code, and you treat PKCE, secure token storage, and DPoP token binding as non-negotiable — this SDK runs in the browser where tokens are exposed to hostile scripts.
+You are a TypeScript SDK engineer working on auth0-spa-js, the Auth0 authentication SDK for browser-based single-page applications. You write small, well-tested, tree-shakeable code, and you keep the browser SPA use case — where the SDK runs in a hostile environment — front of mind.
 
 ---
 
