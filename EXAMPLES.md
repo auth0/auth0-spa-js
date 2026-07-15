@@ -1087,6 +1087,7 @@ Passkeys provide password-less authentication using platform biometrics (Face ID
 - [Important: Use Refresh Tokens with Passkeys](#important-use-refresh-tokens-with-passkeys)
 - [Signup with Passkey](#signup-with-passkey)
 - [Login with Passkey](#login-with-passkey)
+- [Granular Passkey APIs](#granular-passkey-apis)
 - [Complete Passkey Flow Example](#complete-passkey-flow-example)
 - [Error Handling](#passkey-error-handling)
 
@@ -1233,6 +1234,113 @@ const tokens = await auth0.passkey.login({
   organization: 'org_abc123'
 });
 ```
+
+### Granular Passkey APIs
+
+For advanced use cases where you need fine-grained control, you can use the individual API methods to handle each step of the passkey flow separately.
+
+#### Get Signup Challenge
+
+Request a passkey signup challenge to start the granular signup flow:
+
+```js
+const challenge = await auth0.passkey.getSignupChallenge({
+  email: 'user@example.com',
+  name: 'Jane Doe' // optional display name
+});
+
+// challenge.authSession — save this to complete signup later
+// challenge.publicKey — pass to navigator.credentials.create()
+```
+
+#### Get Login Challenge
+
+Request a passkey login challenge to start the granular login flow:
+
+```js
+const challenge = await auth0.passkey.getLoginChallenge({
+  realm: 'Username-Password-Authentication' // optional
+});
+
+// challenge.authSession — save this to complete login later
+// challenge.publicKey — pass to navigator.credentials.get()
+```
+
+#### Get Token with Passkey
+
+Exchange a signed credential for tokens. This is the final step after running the WebAuthn ceremony:
+
+```js
+// After navigator.credentials.create() or navigator.credentials.get()
+const credential = await navigator.credentials.create({
+  publicKey: challenge.publicKey
+});
+
+const tokens = await auth0.passkey.getTokenWithPasskey({
+  authSession: challenge.authSession,
+  credential: credential, // the raw PublicKeyCredential
+  scope: 'openid profile email',
+  audience: 'https://api.example.com'
+});
+```
+
+#### Complete Granular Signup Example
+
+```js
+async function granularSignup(email, displayName) {
+  // Step 1: Get challenge
+  const challenge = await auth0.passkey.getSignupChallenge({
+    email,
+    name: displayName
+  });
+
+  // Step 2: Create credential
+  const credential = await navigator.credentials.create({
+    publicKey: challenge.publicKey
+  });
+
+  if (!credential) {
+    throw new Error('Credential creation cancelled');
+  }
+
+  // Step 3: Exchange for tokens
+  const tokens = await auth0.passkey.getTokenWithPasskey({
+    authSession: challenge.authSession,
+    credential
+  });
+
+  return tokens;
+}
+```
+
+#### Complete Granular Login Example
+
+```js
+async function granularLogin() {
+  // Step 1: Get challenge
+  const challenge = await auth0.passkey.getLoginChallenge();
+
+  // Step 2: Get credential
+  const credential = await navigator.credentials.get({
+    publicKey: challenge.publicKey
+  });
+
+  if (!credential) {
+    throw new Error('Credential assertion cancelled');
+  }
+
+  // Step 3: Exchange for tokens
+  const tokens = await auth0.passkey.getTokenWithPasskey({
+    authSession: challenge.authSession,
+    credential
+  });
+
+  return tokens;
+}
+```
+
+> [!NOTE]
+> The granular APIs (`getSignupChallenge`, `getLoginChallenge`, `getTokenWithPasskey`) provide the same automatic token caching and session establishment as the simplified `signup()` and `login()` methods. After successful completion, `isAuthenticated()`, `getUser()`, and `getTokenSilently()` work as expected.
 
 ### Complete Passkey Flow Example
 

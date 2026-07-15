@@ -163,7 +163,10 @@ export type {
   PasskeyCreationOptions,
   PasskeyRequestOptions,
   PasskeySignupOptions,
-  PasskeyLoginOptions
+  PasskeyLoginOptions,
+  PasskeySignupChallenge,
+  PasskeyLoginChallenge,
+  PasskeyGetTokenOptions
 } from './passkey';
 
 export type { CustomTokenExchangeOptions } from './TokenExchange';
