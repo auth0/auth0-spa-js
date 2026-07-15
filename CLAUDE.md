@@ -130,7 +130,7 @@ See [references/code-style.md](references/code-style.md) for the full convention
 
 Conventional Commits, **enforced by commitlint** — a non-conforming message (or PR title) fails CI. Allowed types: `feat, fix, docs, chore, build, refactor, test, ci, perf, revert`.
 
-See [references/git-workflow.md](references/git-workflow.md) for branch naming, PR requirements (template + required checks), and changelog conventions. Read when committing or opening a PR.
+See [references/git-workflow.md](references/git-workflow.md) for branch naming and PR requirements (template + required checks). Read when committing or opening a PR.
 
 ---
 
