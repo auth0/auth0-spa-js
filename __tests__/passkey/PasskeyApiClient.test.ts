@@ -982,6 +982,23 @@ describe('PasskeyApiClient', () => {
   });
 
   describe('getTokenWithPasskey', () => {
+    it('should throw if WebAuthn is not supported', async () => {
+      Object.defineProperty(window, 'PublicKeyCredential', {
+        value: undefined,
+        writable: true,
+        configurable: true
+      });
+
+      await expect(
+        passkeyClient.getTokenWithPasskey({
+          authSession: TEST_AUTH_SESSION,
+          credential: createTypedPublicKeyCredential('create')
+        })
+      ).rejects.toThrow(
+        'WebAuthn is not supported in this browser.'
+      );
+    });
+
     it('should serialize an attestation credential and exchange it for tokens', async () => {
       const mockTokenResponse = {
         id_token: 'eyJ...',
