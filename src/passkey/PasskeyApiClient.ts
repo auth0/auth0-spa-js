@@ -5,7 +5,12 @@ import type {
   PasskeyLoginOptions,
   PasskeyCredentialResponse,
   PasskeyCreationOptions,
-  PasskeyRequestOptions
+  PasskeyRequestOptions,
+  PasskeySignupChallengeOptions,
+  PasskeyLoginChallengeOptions,
+  PasskeySignupChallenge,
+  PasskeyLoginChallenge,
+  PasskeyGetTokenOptions
 } from './types';
 import type { PasskeyClient } from '@auth0/auth0-auth-js';
 import { PasskeyError } from './errors';
@@ -138,6 +143,108 @@ export class PasskeyApiClient {
       credential: serialized,
       realm: challengeOptions.realm,
       organization: challengeOptions.organization,
+      scope,
+      audience
+    });
+  }
+
+  /**
+   * Request a passkey signup challenge.
+   *
+   * Step 1 of the granular signup flow. Returns the auth session and a
+   * decoded `PublicKeyCredentialCreationOptions`. Run the WebAuthn credential
+   * creation ceremony with `publicKey`, then hand the resulting credential and `authSession` to
+   * `getTokenWithPasskey()`.
+   *
+   * @param options - Signup challenge options (user identifier, optional realm/organization/metadata)
+   * @returns A promise resolving to `{ authSession, publicKey }`
+   * @throws {PasskeyError} If WebAuthn is not supported in the browser
+   * @throws {PasskeyRegisterError} If the challenge request fails
+   */
+  async getSignupChallenge(
+    options: PasskeySignupChallengeOptions
+  ): Promise<PasskeySignupChallenge> {
+    if (!window.PublicKeyCredential) {
+      throw new PasskeyError('passkey_not_supported', 'WebAuthn is not supported in this browser.');
+    }
+
+    const challenge = await this.#passkeyClient.register(options);
+    return {
+      authSession: challenge.authSession,
+      publicKey: prepareCreationOptions(challenge.authnParamsPublicKey)
+    };
+  }
+
+  /**
+   * Request a passkey login challenge.
+   *
+   * Step 1 of the granular login flow. Returns the auth session and a
+   * decoded `PublicKeyCredentialRequestOptions`. Run the WebAuthn assertion
+   * ceremony with `publicKey`, then hand the resulting credential and `authSession` to
+   * `getTokenWithPasskey()`.
+   *
+   * @param options - Optional login challenge options (realm/organization)
+   * @returns A promise resolving to `{ authSession, publicKey }`
+   * @throws {PasskeyError} If WebAuthn is not supported in the browser
+   * @throws {PasskeyChallengeError} If the challenge request fails
+   */
+  async getLoginChallenge(
+    options?: PasskeyLoginChallengeOptions
+  ): Promise<PasskeyLoginChallenge> {
+    if (!window.PublicKeyCredential) {
+      throw new PasskeyError('passkey_not_supported', 'WebAuthn is not supported in this browser.');
+    }
+
+    const challenge = await this.#passkeyClient.challenge(options);
+
+    return {
+      authSession: challenge.authSession,
+      publicKey: prepareRequestOptions(challenge.authnParamsPublicKey)
+    };
+  }
+
+  /**
+   * Exchange a signed passkey credential for tokens.
+   *
+   * Step 2 of the granular flow. Serializes the raw `PublicKeyCredential`
+   * produced by the WebAuthn ceremony — either a creation (signup) or an
+   * assertion (login) credential — and exchanges it for tokens. The credential
+   * type (attestation vs assertion) is detected automatically.
+   *
+   * @param options - The auth session, raw credential, and optional realm/organization/scope/audience
+   * @returns A promise resolving to the token endpoint response
+   * @throws {PasskeyError} If WebAuthn is not supported in the browser
+   * @throws {PasskeyError} If the credential is not a valid attestation or assertion response
+   * @throws {GenericError} If the token exchange fails
+   */
+  async getTokenWithPasskey(
+    options: PasskeyGetTokenOptions
+  ): Promise<TokenEndpointResponse> {
+    if (!window.PublicKeyCredential) {
+      throw new PasskeyError('passkey_not_supported', 'WebAuthn is not supported in this browser.');
+    }
+
+    const { authSession, credential, realm, organization, scope, audience } = options;
+    const response = credential.response;
+
+    let serialized: PasskeyCredentialResponse;
+
+    if (response instanceof AuthenticatorAttestationResponse) {
+      serialized = serializeCreationCredential(credential);
+    } else if (response instanceof AuthenticatorAssertionResponse) {
+      serialized = serializeAssertionCredential(credential);
+    } else {
+      throw new PasskeyError(
+        'passkey_invalid_credential',
+        'The provided credential is not a valid attestation or assertion response.'
+      );
+    }
+
+    return this.#auth0Client._requestTokenForPasskey({
+      authSession,
+      credential: serialized,
+      realm,
+      organization,
       scope,
       audience
     });
