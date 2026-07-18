@@ -5,6 +5,7 @@ on:
     types:
       - opened
       - edited
+      - reopened
 
 permissions:
   contents: read
@@ -30,7 +31,7 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
 
       - name: Install action dependencies
-        run: npm install --ignore-scripts
+        run: npm ci
         working-directory: .github/actions/lint-pr-title
 
       - name: Lint PR Title
