@@ -100,7 +100,7 @@ import {
 // @ts-ignore
 import TokenWorker from './worker/token.worker.ts';
 import { sendMessage } from './worker/worker.utils';
-import { singlePromise, retryPromise } from './promise-utils';
+import { retryPromise } from './promise-utils';
 import { CacheKeyManifest } from './cache/key-manifest';
 import {
   buildIsAuthenticatedCookieName,
@@ -965,10 +965,7 @@ export class Auth0Client {
       }
     };
 
-    const result = await singlePromise(
-      () => this._getTokenSilently(localOptions),
-      `${this.options.clientId}::${localOptions.authorizationParams.audience}::${localOptions.authorizationParams.scope}`
-    );
+    const result = await this._getTokenSilently(localOptions);
 
     return options.detailedResponse ? result : result?.access_token;
   }
