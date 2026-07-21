@@ -1,5 +1,11 @@
 # Change Log
 
+## [v2.24.0](https://github.com/auth0/auth0-spa-js/tree/v2.24.0) (2026-07-21)
+[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.23.0...v2.24.0)
+
+**Added**
+- feat: Add granular passkey APIs (getSignupChallenge, getLoginChallenge, getTokenWithPasskey) [\#1678](https://github.com/auth0/auth0-spa-js/pull/1678) ([pmathew92](https://github.com/pmathew92))
+
 ## [v2.23.0](https://github.com/auth0/auth0-spa-js/tree/v2.23.0) (2026-07-03)
 [Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.22.0...v2.23.0)
 
