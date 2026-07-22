@@ -4,7 +4,6 @@ import { MessageChannel } from 'worker_threads';
 import * as api from '../../src/api';
 import * as http from '../../src/http';
 import { verify } from '../../src/jwt';
-import * as promiseUtils from '../../src/promise-utils';
 import * as scope from '../../src/scope';
 import * as utils from '../../src/utils';
 
@@ -1031,7 +1030,7 @@ describe('Auth0Client', () => {
         expect(client['_getTokenSilently']).toHaveBeenCalledTimes(2);
       });
 
-      it('should not call _getTokenSilently if a call is already in flight', async () => {
+      it('should call _getTokenSilently for each concurrent caller but only make one network request', async () => {
         const client = setup();
 
         jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
@@ -1047,11 +1046,11 @@ describe('Auth0Client', () => {
           getTokenSilently(client)
         ]);
 
-        expect(client['_getTokenSilently']).toHaveBeenCalledTimes(1);
+        expect(client['_getTokenSilently']).toHaveBeenCalledTimes(2);
         expect(tokens[0]).toEqual(tokens[1]);
       });
 
-      it('should not call _getTokenSilently if a call is already in flight (cross instance)', async () => {
+      it('should call _getTokenSilently on each instance but only make one network request across instances', async () => {
         const client1 = setup();
         const client2 = setup();
 
@@ -1070,8 +1069,25 @@ describe('Auth0Client', () => {
         ]);
 
         expect(client1['_getTokenSilently']).toHaveBeenCalledTimes(1);
-        expect(client2['_getTokenSilently']).not.toHaveBeenCalled();
+        expect(client2['_getTokenSilently']).toHaveBeenCalledTimes(1);
         expect(tokens[0]).toEqual(tokens[1]);
+      });
+
+      it('should make its own network request when cacheMode is off and a cacheMode on call is in flight', async () => {
+        const client = setup();
+
+        jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
+          access_token: TEST_ACCESS_TOKEN,
+          state: TEST_STATE,
+          code: TEST_CODE
+        });
+
+        await Promise.all([
+          getTokenSilently(client),
+          getTokenSilently(client, { cacheMode: 'off' })
+        ]);
+
+        expect(utils.runIframe).toHaveBeenCalledTimes(2);
       });
     });
 
@@ -1357,39 +1373,31 @@ describe('Auth0Client', () => {
     });
 
     it('uses the cache for subsequent requests that occur before the response', async () => {
-      let singlePromiseSpy = jest
-        .spyOn(promiseUtils, 'singlePromise')
-        .mockImplementation(cb => cb());
+      const auth0 = setup();
+      await loginWithRedirect(auth0);
+      await (auth0 as any).cacheManager.clear();
 
-      try {
-        const auth0 = setup();
-        await loginWithRedirect(auth0);
-        await (auth0 as any).cacheManager.clear();
+      jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
+        access_token: TEST_ACCESS_TOKEN,
+        state: TEST_STATE
+      });
 
-        jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
+      mockFetch.mockResolvedValue(
+        fetchResponse(true, {
+          id_token: TEST_ID_TOKEN,
           access_token: TEST_ACCESS_TOKEN,
-          state: TEST_STATE
-        });
+          expires_in: 86400
+        })
+      );
 
-        mockFetch.mockResolvedValue(
-          fetchResponse(true, {
-            id_token: TEST_ID_TOKEN,
-            access_token: TEST_ACCESS_TOKEN,
-            expires_in: 86400
-          })
-        );
+      const [access_token] = await Promise.all([
+        auth0.getTokenSilently(),
+        auth0.getTokenSilently(),
+        auth0.getTokenSilently()
+      ]);
 
-        const [access_token] = await Promise.all([
-          auth0.getTokenSilently(),
-          auth0.getTokenSilently(),
-          auth0.getTokenSilently()
-        ]);
-
-        expect(access_token).toEqual(TEST_ACCESS_TOKEN);
-        expect(utils.runIframe).toHaveBeenCalledTimes(1);
-      } finally {
-        singlePromiseSpy.mockRestore();
-      }
+      expect(access_token).toEqual(TEST_ACCESS_TOKEN);
+      expect(utils.runIframe).toHaveBeenCalledTimes(1);
     });
 
     it('uses the correct response type for subsequent requests that occur before the response', async () => {
@@ -1927,13 +1935,13 @@ describe('Auth0Client', () => {
           })
         ]);
 
-        // Both should return the same token due to locking
-        expect(token1).toEqual(token2);
+        // cacheMode: 'off' calls each make their own request, so they get different tokens
+        expect(token1).not.toEqual(token2);
         expect(token1).toMatch(/^access_token_\d+$/);
-        expect(mockFetch).toHaveBeenCalledTimes(1);
-        expect(utils.runIframe).toHaveBeenCalledTimes(1);
+        expect(mockFetch).toHaveBeenCalledTimes(2);
+        expect(utils.runIframe).toHaveBeenCalledTimes(2);
 
-        // Make subsequent simultaneous calls - should get a different token since lock was released
+        // Make subsequent simultaneous calls - lock is released so new requests go through
         const [token3, token4] = await Promise.all([
           auth0.getTokenSilently({
             authorizationParams: { audience: 'api1' },
@@ -1945,12 +1953,11 @@ describe('Auth0Client', () => {
           })
         ]);
 
-        // Both should return the same token (but different from first pair)
-        expect(token3).toEqual(token4);
-        expect(token3).not.toEqual(token1);
+        // Each call still makes its own request
+        expect(token3).not.toEqual(token4);
         expect(token3).toMatch(/^access_token_\d+$/);
-        expect(mockFetch).toHaveBeenCalledTimes(2);
-        expect(utils.runIframe).toHaveBeenCalledTimes(2);
+        expect(mockFetch).toHaveBeenCalledTimes(4);
+        expect(utils.runIframe).toHaveBeenCalledTimes(4);
       });
     });
 
