@@ -100,7 +100,6 @@ import {
 // @ts-ignore
 import TokenWorker from './worker/token.worker.ts';
 import { sendMessage } from './worker/worker.utils';
-import { retryPromise } from './promise-utils';
 import { CacheKeyManifest } from './cache/key-manifest';
 import {
   buildIsAuthenticatedCookieName,
