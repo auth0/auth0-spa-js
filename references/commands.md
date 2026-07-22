@@ -11,7 +11,7 @@ npm run build
 # Same build plus a bundle-size stats report (opens bundle-stats/index.html)
 npm run build:stats
 
-# Dev server with live reload at http://localhost:3000 (alias: npm start)
+# Dev server with live reload at http://localhost:3000 (npm start also works)
 npm run dev
 
 # Generate TypeDoc API docs into docs/ (generated output — do not hand-edit)
@@ -45,7 +45,9 @@ Runs against a **local** mock OIDC provider (`scripts/oidc-provider.mjs`) via th
 # Headless: starts the dev server + waits on :3000, then runs Cypress
 npm run test:integration
 
-# Interactive Cypress runner
+# Interactive Cypress runner — bare `cypress open`, no dev server.
+# Start the dev server separately first (npm run dev), or use
+# test:watch:integration below to launch both together.
 npm run test:open:integration
 
 # Watch mode (dev server + interactive runner concurrently)
@@ -55,10 +57,13 @@ npm run test:watch:integration
 ## Lint
 
 ```bash
-# ESLint over src/
+# ESLint over src/ — covers .jsx and .js ONLY (eslint --ext .jsx,.js src/).
+# TypeScript files are NOT linted here: editing a .ts file and running
+# `npm run lint` passes regardless of errors in it.
 npm run lint
 
-# Security lint (eslint-plugin-security, separate config)
+# Security lint (eslint-plugin-security, separate config) — this is the
+# run that covers .ts files (eslint ./src --ext ts).
 npm run lint:security
 ```
 

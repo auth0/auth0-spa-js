@@ -4,7 +4,7 @@ Read when writing or reviewing code so it matches the project's conventions.
 
 ## Linter & formatter
 
-- **ESLint** over `src/`: `npm run lint`. A separate security config runs via `npm run lint:security` (eslint-plugin-security).
+- **ESLint** over `src/`: `npm run lint` — but this covers `.jsx` and `.js` only (`eslint --ext .jsx,.js src/`). TypeScript files are **not** linted by it; editing a `.ts` file and running `npm run lint` passes regardless. `.ts` coverage comes from `npm run lint:security` (eslint-plugin-security, `eslint ./src --ext ts`).
 - **Prettier** (`.prettierrc`): single quotes, no trailing commas, arrow-parens avoided, 80-column width.
 
 ## Naming

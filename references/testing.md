@@ -13,7 +13,8 @@ Read when writing or debugging tests, wiring mocks, or running the integration t
 
 - Location: `cypress/e2e/`.
 - Run against a **local** mock OIDC provider (`scripts/oidc-provider.mjs`) via the dev server — **not a live tenant, no credentials**.
-- Headless: `npm run test:integration` (starts the dev server, waits on `:3000`, runs Cypress). Interactive: `npm run test:open:integration`.
+- Headless: `npm run test:integration` (starts the dev server, waits on `:3000`, runs Cypress).
+- Interactive: `npm run test:open:integration` is bare `cypress open` with **no dev server** — start `npm run dev` separately first, or use `npm run test:watch:integration` to launch both together.
 
 ## Coverage
 
@@ -22,6 +23,8 @@ Read when writing or debugging tests, wiring mocks, or running the integration t
 
 ## Mocking & test utilities
 
+- Custom Jest environment: `jest.environment.js` (a JSDOM subclass) adds `TextEncoder`, `TextDecoder`, and `structuredClone` to the global scope. Tests using these globals rely on it — without it you get cryptic "not defined" failures.
+- Manual mocks in `__mocks__/`: `browser-tabs-lock`, `lock.ts`, and `promise-polyfill`. When testing the cross-tab locking or worker path, reuse these rather than duplicating or hand-rolling your own.
 - Network: `jest-fetch-mock` — **don't hit real endpoints in unit tests.**
-- Storage: `jest-localstorage-mock` and `fake-indexeddb` for cache backends.
+- Storage: `jest-localstorage-mock` for `localStorage`; `fake-indexeddb` backs the **DPoP key store** (`src/dpop/storage.ts`), not the token cache. Token caches are `InMemoryCache` (in-memory) and `LocalStorageCache` (localStorage).
 - Keep tests deterministic; the web-worker refresh path is tested without a real worker thread where possible.

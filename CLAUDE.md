@@ -44,6 +44,7 @@ src/
   ├─ mfa/                 # MFA client (wraps @auth0/auth0-auth-js)
   ├─ myaccount/           # MyAccount API client
   ├─ passkey/             # passkey (WebAuthn) enrollment + login
+  ├─ http.ts              # low-level fetch: timeout, retry, DPoP; switchFetch() worker/non-worker routing
   ├─ fetcher.ts           # HTTP wrapper: auth header + DPoP injection
   └─ worker/token.worker.ts  # refreshes tokens off the main thread
 __tests__/   # Jest unit specs (mirror src/)     cypress/   # e2e
@@ -57,6 +58,7 @@ Key files: `src/index.ts` (entry), `src/Auth0Client.ts` (core), `src/api.ts` (te
 ## Boundaries
 
 ### ✅ Always Do
+
 - Run `npm test` and `npm run lint` before committing
 - Add Jest specs for new behavior; keep code ES2017-clean (`npm run test:es-check`) and tree-shakeable
 - Update `README.md` and `EXAMPLES.md` in the same PR when changing the public API, options, or supported integration patterns
@@ -64,6 +66,7 @@ Key files: `src/index.ts` (entry), `src/Auth0Client.ts` (core), `src/api.ts` (te
 - When adding a **new request path to Auth0** (not every feature — most ride on the shared transport), route it through the existing `src/api.ts` fetch layer so it carries the `Auth0-Client` header (base64 `{name,version,env}`) — don't create a separate HTTP client. Since this SDK wraps `@auth0/auth0-auth-js`, preserve the `auth0Client` wrapping (this SDK's name/version, the wrapped lib under `env`) and the opt-out.
 
 ### ⚠️ Ask First
+
 - **Any breaking change — always ask first.** Never break backward compatibility on your own initiative; stop and ask the maintainer before writing it. (On approval, document the upgrade path in the migration guide for the target major.)
 - Adding/bumping runtime dependencies (they ship in the browser bundle — watch bundle size)
 - Modifying the public API on `Auth0Client` / `createAuth0Client` / `global.ts`
@@ -71,6 +74,7 @@ Key files: `src/index.ts` (entry), `src/Auth0Client.ts` (core), `src/api.ts` (te
 - Changes to `.github/workflows/` or the Rollup build config
 
 ### 🚫 Never Do
+
 - Commit secrets, API keys, or tokens
 - Log or expose `access_token` / `refresh_token` / `id_token` — especially not to the main thread when the web worker is in use
 - Disable PKCE, or weaken DPoP proofs
