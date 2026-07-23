@@ -1076,16 +1076,36 @@ describe('Auth0Client', () => {
       it('should make its own network request when cacheMode is off and a cacheMode on call is in flight', async () => {
         const client = setup();
 
-        jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
+        const runIframeResponse = {
           access_token: TEST_ACCESS_TOKEN,
           state: TEST_STATE,
           code: TEST_CODE
+        };
+
+        // Block the first (cacheMode:'on') call at runIframe so it is
+        // definitively in-flight — and hasn't stored anything to cache yet —
+        // when the second (cacheMode:'off') call starts.
+        let unfreezeFirstCall: (() => void) | undefined;
+        const firstCallAtIframe = new Promise<void>(resolve => {
+          jest.spyOn(<any>utils, 'runIframe')
+            .mockImplementationOnce(
+              () => new Promise(res => {
+                resolve(); // signal: first call is now blocked at runIframe
+                unfreezeFirstCall = () => res(runIframeResponse);
+              })
+            )
+            .mockResolvedValue(runIframeResponse);
         });
 
-        await Promise.all([
-          getTokenSilently(client),
-          getTokenSilently(client, { cacheMode: 'off' })
-        ]);
+        const onCallPromise = getTokenSilently(client);
+
+        // Wait until cacheMode:'on' is blocked at runIframe before launching
+        // cacheMode:'off', guaranteeing it is in-flight with no cached result yet.
+        await firstCallAtIframe;
+        const offCallPromise = getTokenSilently(client, { cacheMode: 'off' });
+
+        unfreezeFirstCall?.();
+        await Promise.all([onCallPromise, offCallPromise]);
 
         expect(utils.runIframe).toHaveBeenCalledTimes(2);
       });
