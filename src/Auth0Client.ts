@@ -1509,7 +1509,9 @@ export class Auth0Client {
       ) {
         await this.cacheManager.updateEntry(
           cache.refresh_token,
-          tokenResult.refresh_token
+          tokenResult.refresh_token,
+          this.options.clientId,
+          this.options.useMrrt
         );
       }
 

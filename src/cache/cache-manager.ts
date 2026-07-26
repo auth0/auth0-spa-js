@@ -346,27 +346,41 @@ export class CacheManager {
   }
 
   /**
-   * Updates the refresh token in all cache entries that contain the old refresh token.
+   * Updates the refresh token in cache entries after a rotation.
    *
    * When a refresh token is rotated, multiple cache entries (for different audiences/scopes)
    * may share the same refresh token. This method propagates the new refresh token to all
    * matching entries.
    *
+   * With MRRT enabled, concurrent `getTokenSilently()` calls for different audiences all
+   * read the same RT and exchange it in parallel. Each exchange returns a different rotated
+   * RT, which would leave the client with a diverged set of forked tokens per audience.
+   * Passing `useMrrt = true` unconditionally overwrites every entry that has *any*
+   * refresh token, so the last concurrent call to complete always wins and the client
+   * converges to a single shared RT.
+   *
    * @param oldRefreshToken The refresh token that was used and is now invalid
    * @param newRefreshToken The new refresh token received from the server
+   * @param clientId The client ID whose entries should be updated
+   * @param useMrrt When true, update all entries regardless of their current RT value
    */
   async updateEntry(
     oldRefreshToken: string,
     newRefreshToken: string,
+    clientId: string,
+    useMrrt = false
   ): Promise<void> {
     const allKeys = await this.getCacheKeys();
-
     if (!allKeys) return;
 
     for (const key of allKeys) {
-      const entry = await this.cache.get<WrappedCacheEntry>(key);
+      if (CacheKey.fromKey(key).clientId !== clientId) continue;
 
-      if (entry?.body?.refresh_token === oldRefreshToken) {
+      const entry = await this.cache.get<WrappedCacheEntry>(key);
+      if (!entry?.body) continue;
+
+      const rt = entry.body.refresh_token;
+      if (rt && (useMrrt || rt === oldRefreshToken)) {
         entry.body.refresh_token = newRefreshToken;
         await this.cache.set(key, entry);
       }
