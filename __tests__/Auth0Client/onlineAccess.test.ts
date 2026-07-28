@@ -13,6 +13,7 @@ import {
 
 import {
   TEST_CODE_CHALLENGE,
+  TEST_CLIENT_ID,
   TEST_REFRESH_TOKEN,
   TEST_ACCESS_TOKEN,
   TEST_ID_TOKEN
@@ -317,7 +318,9 @@ describe('Auth0Client', () => {
 
       expect(updateEntrySpy).toHaveBeenCalledWith(
         TEST_REFRESH_TOKEN,
-        'new_refresh_token'
+        'new_refresh_token',
+        TEST_CLIENT_ID,
+        undefined
       );
     });
   });

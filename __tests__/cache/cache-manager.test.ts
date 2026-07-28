@@ -915,7 +915,7 @@ cacheFactories.forEach(cacheFactory => {
         }
 
         // Act
-        await manager.updateEntry(OLD_REFRESH_TOKEN, NEW_REFRESH_TOKEN);
+        await manager.updateEntry(OLD_REFRESH_TOKEN, NEW_REFRESH_TOKEN, TEST_CLIENT_ID);
 
         // Assert: All entries have new refresh token
         for (const entry of entries) {
@@ -948,7 +948,7 @@ cacheFactories.forEach(cacheFactory => {
         global.Date.now = jest.fn(() => laterTime);
 
         // Act: Update refresh token 22 hours later
-        await manager.updateEntry(OLD_REFRESH_TOKEN, NEW_REFRESH_TOKEN);
+        await manager.updateEntry(OLD_REFRESH_TOKEN, NEW_REFRESH_TOKEN, TEST_CLIENT_ID);
 
         // Assert: Get raw cache entry to check expiresAt
         const cacheKey = CacheKey.fromCacheEntry(entry).toKey();
@@ -973,7 +973,7 @@ cacheFactories.forEach(cacheFactory => {
 
         await manager.set(entry);
 
-        await manager.updateEntry(OLD_REFRESH_TOKEN, NEW_REFRESH_TOKEN);
+        await manager.updateEntry(OLD_REFRESH_TOKEN, NEW_REFRESH_TOKEN, TEST_CLIENT_ID);
 
         const result = await manager.get(CacheKey.fromCacheEntry(entry));
         expect(result?.access_token).toBe(TEST_ACCESS_TOKEN);
@@ -996,7 +996,7 @@ cacheFactories.forEach(cacheFactory => {
         await manager.set(entryA);
         await manager.set(entryB);
 
-        await manager.updateEntry(OLD_REFRESH_TOKEN, NEW_REFRESH_TOKEN);
+        await manager.updateEntry(OLD_REFRESH_TOKEN, NEW_REFRESH_TOKEN, TEST_CLIENT_ID);
 
         const resultA = await manager.get(CacheKey.fromCacheEntry(entryA));
         const resultB = await manager.get(CacheKey.fromCacheEntry(entryB));
@@ -1005,9 +1005,72 @@ cacheFactories.forEach(cacheFactory => {
         expect(resultB?.refresh_token).toBe('different_refresh_token');
       });
 
+      it('should update all entries unconditionally when useMrrt is true', async () => {
+        const entryA = {
+          ...defaultData,
+          audience: 'https://api-a.com',
+          refresh_token: OLD_REFRESH_TOKEN
+        };
+
+        const entryB = {
+          ...defaultData,
+          audience: 'https://api-b.com',
+          refresh_token: 'forked_refresh_token'
+        };
+
+        await manager.set(entryA);
+        await manager.set(entryB);
+
+        await manager.updateEntry(OLD_REFRESH_TOKEN, NEW_REFRESH_TOKEN, TEST_CLIENT_ID, true);
+
+        const resultA = await manager.get(CacheKey.fromCacheEntry(entryA));
+        const resultB = await manager.get(CacheKey.fromCacheEntry(entryB));
+
+        expect(resultA?.refresh_token).toBe(NEW_REFRESH_TOKEN);
+        expect(resultB?.refresh_token).toBe(NEW_REFRESH_TOKEN);
+      });
+
+      it('should not update entries for other clients when useMrrt is true', async () => {
+        const OTHER_CLIENT_ID = 'other_client_id';
+
+        const entryThisClient = {
+          ...defaultData,
+          audience: 'https://api-a.com',
+          refresh_token: OLD_REFRESH_TOKEN
+        };
+
+        const entryOtherClient = {
+          ...defaultData,
+          client_id: OTHER_CLIENT_ID,
+          audience: 'https://api-a.com',
+          refresh_token: OLD_REFRESH_TOKEN
+        };
+
+        await manager.set(entryThisClient);
+        await manager.set(entryOtherClient);
+
+        await manager.updateEntry(OLD_REFRESH_TOKEN, NEW_REFRESH_TOKEN, TEST_CLIENT_ID, true);
+
+        const resultThisClient = await manager.get(CacheKey.fromCacheEntry(entryThisClient));
+        const resultOtherClient = await manager.get(CacheKey.fromCacheEntry(entryOtherClient));
+
+        expect(resultThisClient?.refresh_token).toBe(NEW_REFRESH_TOKEN);
+        expect(resultOtherClient?.refresh_token).toBe(OLD_REFRESH_TOKEN);
+      });
+
+      it('should skip entries that have been evicted from the cache', async () => {
+        jest.spyOn(manager as any, 'getCacheKeys').mockResolvedValueOnce([
+          new CacheKey({ clientId: TEST_CLIENT_ID, audience: TEST_AUDIENCE, scope: TEST_SCOPES }).toKey()
+        ]);
+
+        await expect(
+          manager.updateEntry(OLD_REFRESH_TOKEN, NEW_REFRESH_TOKEN, TEST_CLIENT_ID)
+        ).resolves.not.toThrow();
+      });
+
       it('should handle empty cache gracefully', async () => {
         await expect(
-          manager.updateEntry(OLD_REFRESH_TOKEN, NEW_REFRESH_TOKEN)
+          manager.updateEntry(OLD_REFRESH_TOKEN, NEW_REFRESH_TOKEN, TEST_CLIENT_ID)
         ).resolves.not.toThrow();
       });
 
@@ -1020,7 +1083,7 @@ cacheFactories.forEach(cacheFactory => {
         await manager.set(entry);
 
         await expect(
-          manager.updateEntry(OLD_REFRESH_TOKEN, NEW_REFRESH_TOKEN)
+          manager.updateEntry(OLD_REFRESH_TOKEN, NEW_REFRESH_TOKEN, TEST_CLIENT_ID)
         ).resolves.not.toThrow();
 
         const result = await manager.get(CacheKey.fromCacheEntry(entry));
@@ -1058,7 +1121,7 @@ cacheFactories.forEach(cacheFactory => {
         global.Date.now = jest.fn(() => laterTime);
 
         // Act: Simulate refresh token rotation
-        await manager.updateEntry(OLD_REFRESH_TOKEN, NEW_REFRESH_TOKEN);
+        await manager.updateEntry(OLD_REFRESH_TOKEN, NEW_REFRESH_TOKEN, TEST_CLIENT_ID);
 
         // Assert: All entries still expire at original time
         for (const audience of audiences) {
