@@ -1,5 +1,15 @@
 # Change Log
 
+## [v2.24.1](https://github.com/auth0/auth0-spa-js/tree/v2.24.1) (2026-07-28)
+[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.24.0...v2.24.1)
+
+**Added**
+- docs: add CLAUDE.md agent guidelines for auth0-spa-js [\#1651](https://github.com/auth0/auth0-spa-js/pull/1651) ([sanchitmehtagit](https://github.com/sanchitmehtagit))
+
+**Fixed**
+- fix: converge MRRT cache to single RT on concurrent refresh [\#1702](https://github.com/auth0/auth0-spa-js/pull/1702) ([yogeshchoudhary147](https://github.com/yogeshchoudhary147))
+- fix: remove singlePromise from getTokenSilently to respect cacheMode: 'off' [\#1693](https://github.com/auth0/auth0-spa-js/pull/1693) ([yogeshchoudhary147](https://github.com/yogeshchoudhary147))
+
 ## [v2.24.0](https://github.com/auth0/auth0-spa-js/tree/v2.24.0) (2026-07-21)
 [Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.23.0...v2.24.0)
 
