@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Anonymous Sessions POC</title>
+    <meta charset="utf-8" />
+    <link
+      rel="stylesheet"
+      href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
+    />
+    <style>
+      pre { background: #f4f4f4; padding: 12px; border-radius: 4px; font-size: 12px; white-space: pre-wrap; word-break: break-all; }
+      .section { margin-bottom: 24px; }
+      .badge-token { font-size: 11px; word-break: break-all; white-space: normal; }
+    </style>
+  </head>
+  <body>
+    <div class="container mt-4">
+      <h3 class="mb-4">Anonymous Sessions POC</h3>
+
+      <div class="section">
+        <h6>Config</h6>
+        <pre id="config"></pre>
+      </div>
+
+      <div class="section">
+        <h6>State</h6>
+        <pre id="state">No session yet.</pre>
+      </div>
+
+      <div class="btn-toolbar mb-4">
+        <div class="btn-group mr-2">
+          <button class="btn btn-primary" onclick="createSession()">1. Create Session</button>
+        </div>
+        <div class="btn-group mr-2">
+          <button class="btn btn-secondary" onclick="refreshSession()">2. Refresh Token</button>
+        </div>
+        <div class="btn-group mr-2">
+          <button class="btn btn-success" onclick="loginWithSession()">3. Login with Session</button>
+        </div>
+        <div class="btn-group mr-2">
+          <button class="btn btn-warning" onclick="logoutSession()">4. Anonymous Logout</button>
+        </div>
+        <div class="btn-group mr-2">
+          <button class="btn btn-danger" onclick="logoutAuth0()">5. Auth0 Logout</button>
+        </div>
+        <div class="btn-group">
+          <button class="btn btn-outline-danger" onclick="clearLocal()">Clear Local</button>
+        </div>
+      </div>
+
+      <div class="section">
+        <h6>Last Request</h6>
+        <pre id="last-request">-</pre>
+      </div>
+
+      <div class="section">
+        <h6>Last Response</h6>
+        <pre id="last-response">-</pre>
+      </div>
+    </div>
+
+    <script src="/auth0-spa-js.development.js"></script>
+    <script>
+      const DOMAIN = 'dev-ozu7d607ak40d5un.us.auth0.com';
+      const CLIENT_ID = '4SAov6dsh4lAdADB3MHu2YaQj6WRFw0E';
+      const AUDIENCE = 'https://api.customers';
+      const BASE_URL = 'https://' + DOMAIN;
+
+      // in-memory store
+      let sessionToken = null;
+      let accessToken = null;
+      let auth0Client = null;
+      let authenticatedUser = null;
+
+      document.getElementById('config').textContent = JSON.stringify(
+        { domain: DOMAIN, client_id: CLIENT_ID, audience: AUDIENCE },
+        null, 2
+      );
+
+      function renderState() {
+        const decoded = accessToken ? parseJwt(accessToken) : null;
+        document.getElementById('state').textContent = JSON.stringify({
+          anonymous: {
+            session_token: sessionToken ? sessionToken.slice(0, 40) + '...' : null,
+            access_token: accessToken ? accessToken.slice(0, 40) + '...' : null,
+            sub: decoded?.sub ?? null,
+            exp: decoded?.exp ? new Date(decoded.exp * 1000).toISOString() : null,
+          },
+          authenticated: authenticatedUser ? {
+            sub: authenticatedUser.sub,
+            email: authenticatedUser.email ?? null,
+            name: authenticatedUser.name ?? null,
+          } : null,
+        }, null, 2);
+      }
+
+      function showRequest(method, url, body) {
+        document.getElementById('last-request').textContent =
+          method + ' ' + url + '\n\n' + (body ? JSON.stringify(body, null, 2) : '(no body)');
+      }
+
+      function showResponse(data) {
+        document.getElementById('last-response').textContent =
+          typeof data === 'string' ? data : JSON.stringify(data, null, 2);
+      }
+
+      function parseJwt(token) {
+        try {
+          return JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+        } catch {
+          return null;
+        }
+      }
+
+      async function createSession() {
+        const url = BASE_URL + '/anonymous/token';
+        const body = { client_id: CLIENT_ID, audience: AUDIENCE, metadata: { cart_id: 'cart_123', items: 3 } };
+        showRequest('POST', url, body);
+        try {
+          const res = await fetch(url, {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+          });
+          const data = await res.json();
+          showResponse(data);
+          if (data.session_token) {
+            sessionToken = data.session_token;
+            accessToken = data.access_token;
+          }
+          renderState();
+        } catch (e) {
+          showResponse('Error: ' + e.message);
+        }
+      }
+
+      async function refreshSession() {
+        if (!sessionToken) { showResponse('No session token. Run Create Session first.'); return; }
+        const url = BASE_URL + '/anonymous/token';
+        const body = { client_id: CLIENT_ID, audience: AUDIENCE, session_token: sessionToken };
+        showRequest('POST', url, body);
+        try {
+          const res = await fetch(url, {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+          });
+          const data = await res.json();
+          showResponse(data);
+          if (data.session_token) {
+            sessionToken = data.session_token;
+            accessToken = data.access_token;
+          }
+          renderState();
+        } catch (e) {
+          showResponse('Error: ' + e.message);
+        }
+      }
+
+      async function loginWithSession() {
+        if (!auth0Client) {
+          auth0Client = await auth0.createAuth0Client({
+            domain: DOMAIN,
+            clientId: CLIENT_ID,
+          });
+        }
+        const params = { audience: AUDIENCE, redirect_uri: window.location.origin };
+        if (sessionToken) params.session_token = sessionToken;
+        showRequest('loginWithRedirect', '/authorize', params);
+        await auth0Client.loginWithRedirect({
+          authorizationParams: params
+        });
+      }
+
+      async function logoutSession() {
+        const url = BASE_URL + '/anonymous/logout';
+        const body = { client_id: CLIENT_ID };
+        showRequest('POST', url, body);
+        try {
+          const res = await fetch(url, {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+          });
+          const text = await res.text();
+          showResponse('HTTP ' + res.status + '\n' + (text || '(empty body)'));
+          sessionToken = null;
+          accessToken = null;
+          renderState();
+        } catch (e) {
+          showResponse('Error: ' + e.message);
+        }
+      }
+
+      async function logoutAuth0() {
+        if (!auth0Client) {
+          auth0Client = await auth0.createAuth0Client({
+            domain: DOMAIN,
+            clientId: CLIENT_ID,
+          });
+        }
+        showRequest('logout', '/v2/logout', { returnTo: window.location.origin });
+        await auth0Client.logout({
+          logoutParams: { returnTo: window.location.origin }
+        });
+      }
+
+      function clearLocal() {
+        sessionToken = null;
+        accessToken = null;
+        authenticatedUser = null;
+        renderState();
+        showResponse('Local state cleared.');
+      }
+
+      // handle redirect callback on page load
+      (async () => {
+        if (window.location.search.includes('code=') && window.location.search.includes('state=')) {
+          if (!auth0Client) {
+            auth0Client = await auth0.createAuth0Client({
+              domain: DOMAIN,
+              clientId: CLIENT_ID,
+            });
+          }
+          try {
+            const result = await auth0Client.handleRedirectCallback();
+            showResponse({ message: 'Redirect callback handled', appState: result.appState });
+            window.history.replaceState({}, document.title, window.location.pathname);
+            authenticatedUser = await auth0Client.getUser();
+            showResponse({ message: 'Logged in', user: authenticatedUser });
+            renderState();
+          } catch (e) {
+            showResponse('Callback error: ' + e.message);
+          }
+        }
+        renderState();
+      })();
+    </script>
+  </body>
+</html>
