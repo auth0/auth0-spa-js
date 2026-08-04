@@ -1,5 +1,11 @@
 # Change Log
 
+## [v2.24.2](https://github.com/auth0/auth0-spa-js/tree/v2.24.2) (2026-08-04)
+[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.24.1...v2.24.2)
+
+**Added**
+- chore: enable conventionalCommits in .shiprc [\#1708](https://github.com/auth0/auth0-spa-js/pull/1708) ([yogeshchoudhary147](https://github.com/yogeshchoudhary147))
+
 ## [v2.24.1](https://github.com/auth0/auth0-spa-js/tree/v2.24.1) (2026-07-28)
 [Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.24.0...v2.24.1)
 
