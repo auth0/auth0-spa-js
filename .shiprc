@@ -1,4 +1,5 @@
 {
+    "conventionalCommits": true,
     "files": {
         "src/version.ts": [],
         ".version": [],
