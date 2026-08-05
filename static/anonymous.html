@@ -166,7 +166,7 @@
             clientId: CLIENT_ID,
           });
         }
-        const params = { audience: AUDIENCE, redirect_uri: window.location.origin };
+        const params = { audience: AUDIENCE, redirect_uri: window.location.href };
         if (sessionToken) params.session_token = sessionToken;
         showRequest('loginWithRedirect', '/authorize', params);
         await auth0Client.loginWithRedirect({
@@ -202,9 +202,9 @@
             clientId: CLIENT_ID,
           });
         }
-        showRequest('logout', '/v2/logout', { returnTo: window.location.origin });
+        showRequest('logout', '/v2/logout', { returnTo: window.location.href });
         await auth0Client.logout({
-          logoutParams: { returnTo: window.location.origin }
+          logoutParams: { returnTo: window.location.href }
         });
       }
 
