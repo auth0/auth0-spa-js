@@ -401,7 +401,7 @@ export interface Auth0ClientOptions {
 /**
  * Configuration details exposed by the Auth0Client after initialization.
  *
- * @category Main
+ * @category Configuration
  */
 export interface ClientConfiguration {
   /**
