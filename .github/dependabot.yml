@@ -12,6 +12,10 @@ updates:
     directory: "/"
     schedule:
       interval: "daily"
+    groups:
+      typescript-eslint:
+        patterns:
+          - "@typescript-eslint/*"
     ignore:
       - dependency-name: "*"
         update-types: ["version-update:semver-major"]
