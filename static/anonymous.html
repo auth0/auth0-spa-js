@@ -167,7 +167,6 @@
           });
         }
         const params = { audience: AUDIENCE, redirect_uri: window.location.href };
-        if (sessionToken) params.session_token = sessionToken;
         showRequest('loginWithRedirect', '/authorize', params);
         await auth0Client.loginWithRedirect({
           authorizationParams: params
