@@ -1,7 +1,9 @@
 reviews:
   auto_review:
-    base_branches:
-      - '^(?!release/).*'
+    ignore_title_keywords:
+      - 'build(deps)'
+      - 'build(deps-dev)'
+      - 'chore(release)'
   path_filters:
     - '!dist/**'
     - '!CHANGELOG.md'
