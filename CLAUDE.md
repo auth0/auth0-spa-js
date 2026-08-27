@@ -61,7 +61,7 @@ Key files: `src/index.ts` (entry), `src/Auth0Client.ts` (core), `src/api.ts` (te
 
 - Run `npm test` and `npm run lint` before committing
 - Add Jest specs for new behavior; keep code ES2017-clean (`npm run test:es-check`) and tree-shakeable
-- Update `README.md` and `EXAMPLES.md` in the same PR when changing the public API, options, or supported integration patterns
+- Update `README.md` and the relevant file under `examples/` in the same PR when changing the public API, options, or supported integration patterns
 - Keep the version in sync across its sources — `.version`, `src/version.ts`, `package.json`, and the `README.md` / `FAQ.md` pins (wired via `.shiprc`). Reference these files rather than pasting a version number into prose.
 - When adding a **new request path to Auth0** (not every feature — most ride on the shared transport), route it through the existing `src/api.ts` fetch layer so it carries the `Auth0-Client` header (base64 `{name,version,env}`) — don't create a separate HTTP client. Since this SDK wraps `@auth0/auth0-auth-js`, preserve the `auth0Client` wrapping (this SDK's name/version, the wrapped lib under `env`) and the opt-out.
 
@@ -148,6 +148,6 @@ See [references/pitfalls.md](references/pitfalls.md) for the full list with fixe
 
 ## Docs Update Rules
 
-Tracked docs are `README.md` and `EXAMPLES.md`. A PR that changes the public API, configuration, or supported patterns is **not complete** until they're updated in the same PR (enforced by the Always Do boundary above).
+Tracked docs are `README.md` and the per-feature files under `examples/` (`EXAMPLES.md` is just their index). A PR that changes the public API, configuration, or supported patterns is **not complete** until they're updated in the same PR (enforced by the Always Do boundary above).
 
 See [references/docs-update.md](references/docs-update.md) for the full code-to-docs mapping — which doc to touch for each kind of change. Read when changing the public API, config, install requirements, token/cache/DPoP behavior, or adding an integration pattern.
