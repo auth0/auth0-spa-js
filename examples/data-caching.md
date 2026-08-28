@@ -7,8 +7,8 @@ To use the in-memory mode, no additional options need are required as this is th
 ```js
 await createAuth0Client({
   domain: '<AUTH0_DOMAIN>',
-  clientId: '<AUTH0_CLIENT_ID>',,
-  cacheLocation: 'localstorage' // valid values are: 'memory' or 'localstorage',
+  clientId: '<AUTH0_CLIENT_ID>',
+  cacheLocation: 'localstorage', // valid values are: 'memory' or 'localstorage'
   authorizationParams: {
     redirect_uri: '<MY_CALLBACK_URL>'
   }
@@ -37,7 +37,9 @@ Here's an example of a custom cache implementation that uses `sessionStorage` to
 ```js
 const sessionStorageCache = {
   get: function (key) {
-    return JSON.parse(sessionStorage.getItem(key));
+    const value = sessionStorage.getItem(key);
+
+    return value ? JSON.parse(value) : undefined;
   },
 
   set: function (key, value) {

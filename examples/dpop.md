@@ -78,7 +78,7 @@ The `fetchWithAuth()` method is a drop-in replacement for the native `fetch()` f
 For example, if you had this code:
 
 ```js
-await fetch('https://api.example.com/foo', {
+const response = await fetch('https://api.example.com/foo', {
   method: 'GET',
   headers: { 'user-agent': 'My Client 1.0' }
 });
@@ -95,7 +95,7 @@ const fetcher = client.createFetcher({
   dpopNonceId: 'my_api_request'
 });
 
-await fetcher.fetchWithAuth('https://api.example.com/foo', {
+const response = await fetcher.fetchWithAuth('https://api.example.com/foo', {
   method: 'GET',
   headers: { 'user-agent': 'My Client 1.0' }
 });
@@ -144,8 +144,7 @@ const fetcher = client.createFetcher({
       headers: Object.fromEntries(request.headers),
       timeout: 2000,
       // etc.
-    }),
-  },
+    })
 });
 
 const response = await fetcher.fetchWithAuth('https://api.example.com/foo', {

@@ -49,9 +49,12 @@ const updated = await auth0.myAccount.updateAuthenticationMethod('am_abc123', {
 });
 
 // Change preferred delivery method for phone
-const updated = await auth0.myAccount.updateAuthenticationMethod('am_abc123', {
-  preferred_authentication_method: 'voice'
-});
+const updatedPhone = await auth0.myAccount.updateAuthenticationMethod(
+  'am_abc123',
+  {
+    preferred_authentication_method: 'voice'
+  }
+);
 ```
 
 ### Enrollment

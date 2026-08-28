@@ -60,7 +60,7 @@ Use the new `connectAccountWithRedirect` method to redirect the user to the thir
 await auth0.connectAccountWithRedirect({
   connection: '<CONNECTION eg, google-apps-connection>',
   scopes: ['<SCOPE eg https://www.googleapis.com/auth/calendar.acls.readonly>'],
-  authorizationParams: {
+  authorization_params: {
     // additional authorization params to forward to the authorization server
   }
 });

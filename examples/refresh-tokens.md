@@ -49,7 +49,7 @@ Using this setting will make the SDK able to reuse the refresh token not only fo
 
 **Note**: This configuration option requires the refresh token policies of your application [to be configured](https://auth0.com/docs/secure/tokens/refresh-tokens/multi-resource-refresh-token/configure-and-implement-multi-resource-refresh-token).
 
-##### Configuring Scopes Per Audience
+#### Configuring Scopes Per Audience
 
 When working with multiple APIs, you can define different default scopes for each audience by passing an object instead of a string. This is particularly useful when different APIs require different default scopes:
 

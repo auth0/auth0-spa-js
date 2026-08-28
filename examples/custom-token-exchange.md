@@ -71,7 +71,7 @@ await managementClient.tokenExchangeProfiles.create({
 
 2. **Add Required Scopes** to your API in Auth0:
 
-```
+```text
 urn:auth0:oauth2:grant-type:token-exchange
 ```
 
@@ -92,15 +92,19 @@ async function safeTokenExchange() {
       // Handle token validation errors
       await auth0.logout();
       window.location.reload();
+      return;
     }
     if (error.error === 'insufficient_scope') {
       // Request additional scopes
-      await auth0.loginWithPopup({
+      return await auth0.loginWithPopup({
         authorizationParams: {
           scope: 'additional_scope_required'
         }
       });
     }
+
+    // Network and server failures are not handled here
+    throw error;
   }
 }
 ```

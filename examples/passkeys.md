@@ -56,6 +56,7 @@ import { createAuth0Client } from '@auth0/auth0-spa-js';
 const auth0 = await createAuth0Client({
   domain: '<AUTH0_DOMAIN>',
   clientId: '<AUTH0_CLIENT_ID>',
+  useRefreshTokens: true, // Required for passkey-based sessions
   authorizationParams: {
     redirect_uri: '<MY_CALLBACK_URL>'
   }

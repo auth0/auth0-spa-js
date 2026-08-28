@@ -20,7 +20,7 @@ The MFA API allows you to manage multi-factor authentication for users. The SDK 
   - [Challenge with Push Notification](#challenge-with-push-notification)
   - [Challenge with OTP](#challenge-with-otp)
 - [Verify](#verify)
-  - [Verify with OOB](#verify-with-oob)
+  - [Verify with OOB (SMS or email)](#verify-with-oob-sms-or-email)
   - [Verify with OTP](#verify-with-otp)
   - [Verify with Push Notification](#verify-with-push-notification)
   - [Verify with Recovery Code](#verify-with-recovery-code)
@@ -140,7 +140,7 @@ try {
 
 ### Enrollment
 
-#### Enrolling OTP (Authenticator App) [auth0-docs](enrolment)
+#### Enrolling OTP (Authenticator App)
 
 ```js
 // Enroll OTP authenticator (Google Authenticator, Microsoft Authenticator, etc.)
@@ -332,7 +332,7 @@ const idToken = tokens.id_token;
 Here's a complete example showing enrollment and challenge flows:
 
 > [!TIP]
-> See a complete MFA implementation in [static/mfa_flow.html](static/mfa_flow.html) that demonstrates enrollment, challenge, and verification flows.
+> See a complete MFA implementation in [static/mfa_flow.html](../static/mfa_flow.html) that demonstrates enrollment, challenge, and verification flows.
 
 ```js
 async function handleMfaFlow() {
