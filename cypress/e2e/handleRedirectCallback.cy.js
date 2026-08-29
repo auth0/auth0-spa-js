@@ -1,8 +1,11 @@
+import { whenReady } from '../support/utils';
+
 describe('handleRedirectCallback', function () {
   beforeEach(cy.resetTests);
   afterEach(cy.fixCookies);
 
   it('caches token and user', function () {
+    whenReady();
     cy.loginNoCallback();
     cy.handleRedirectCallback();
     cy.isAuthenticated().should('contain', 'true');

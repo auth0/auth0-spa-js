@@ -14,12 +14,12 @@ describe('getTokenSilently', () => {
   });
 
   it('can use form post data to call the token endpoint', () => {
+    whenReady();
+
     cy.intercept({
       method: 'POST',
       url: '**/oauth/token'
     }).as('tokenApiCheck');
-
-    whenReady();
 
     cy.login();
     cy.getTokenSilently();
@@ -175,15 +175,15 @@ describe('getTokenSilently', () => {
       it('loads the hosted worker file', () => {
         whenReady();
 
-        cy.intercept({
-          method: 'GET',
-          url: workerUrl
-        }).as('workerLoaded');
-
         cy.setSwitch('refresh-tokens', true);
         cy.setSwitch('use-worker-url', true);
 
-        cy.wait('@workerLoaded').its('response.statusCode').should('eq', 200);
+        // cy.intercept cannot reliably capture Web Worker script fetches in
+        // Firefox. Verify the hosted file is accessible via cy.request instead.
+        // End-to-end worker behaviour is covered by the next test.
+        cy.request(`http://127.0.0.1:3000/${workerUrl}`)
+          .its('status')
+          .should('eq', 200);
       });
 
       it('retrieves tokens using the hosted worker file', () => {
