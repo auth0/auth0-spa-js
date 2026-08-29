@@ -27,7 +27,6 @@ describe('loginWithRedirect', function () {
   });
 
   it('can perform the login flow with cookie transactions', () => {
-    whenReady();
     cy.setSwitch('cookie-txns', true);
 
     const tomorrowInSeconds = Math.floor(Date.now() / 1000) + 86400;
