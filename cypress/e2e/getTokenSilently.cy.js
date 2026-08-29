@@ -1,12 +1,8 @@
-import { whenReady } from '../support/utils';
-
 describe('getTokenSilently', () => {
   beforeEach(cy.resetTests);
   afterEach(cy.fixCookies);
 
   it('returns an error when not logged in', () => {
-    whenReady();
-
     cy.getTokenSilently();
 
     cy.getError().should('exist');
@@ -18,8 +14,6 @@ describe('getTokenSilently', () => {
       method: 'POST',
       url: '**/oauth/token'
     }).as('tokenApiCheck');
-
-    whenReady();
 
     cy.login();
     cy.getTokenSilently();
@@ -37,8 +31,6 @@ describe('getTokenSilently', () => {
   describe('when using an iframe', () => {
     describe('using an in-memory store', () => {
       it('gets a new access token', () => {
-        whenReady();
-
         cy.login();
         cy.getTokenSilently();
 
@@ -47,8 +39,6 @@ describe('getTokenSilently', () => {
       });
 
       it('can get the access token after refreshing the page', () => {
-        whenReady();
-
         cy.login();
         cy.reload();
         cy.getTokenSilently();
@@ -60,8 +50,6 @@ describe('getTokenSilently', () => {
 
     describe('using local storage', () => {
       it('can get the access token after refreshing the page', () => {
-        whenReady();
-
         cy.setSwitch('local-storage', true);
         cy.login();
         cy.reload();
@@ -94,8 +82,6 @@ describe('getTokenSilently', () => {
 
   describe('when using refresh tokens', () => {
     it('retrieves an access token using a refresh token', () => {
-      whenReady();
-
       cy.setSwitch('local-storage', true);
       cy.setSwitch('use-cache', false);
       cy.setSwitch('refresh-tokens', true);
@@ -121,8 +107,6 @@ describe('getTokenSilently', () => {
     });
 
     it('retrieves an access token for another audience using a refresh token', () => {
-      whenReady();
-
       cy.setSwitch('local-storage', true);
       cy.setSwitch('use-cache', false);
       cy.setSwitch('refresh-tokens', true);
@@ -173,22 +157,18 @@ describe('getTokenSilently', () => {
       const workerUrl = 'auth0-spa-js.worker.development.js';
 
       it('loads the hosted worker file', () => {
-        whenReady();
-
-        cy.intercept({
-          method: 'GET',
-          url: workerUrl
-        }).as('workerLoaded');
-
         cy.setSwitch('refresh-tokens', true);
         cy.setSwitch('use-worker-url', true);
 
-        cy.wait('@workerLoaded').its('response.statusCode').should('eq', 200);
+        // cy.intercept cannot reliably capture Web Worker script fetches in
+        // Firefox. Verify the hosted file is accessible via cy.request instead.
+        // End-to-end worker behaviour is covered by the next test.
+        cy.request(`http://127.0.0.1:3000/${workerUrl}`)
+          .its('status')
+          .should('eq', 200);
       });
 
       it('retrieves tokens using the hosted worker file', () => {
-        whenReady();
-
         cy.setSwitch('refresh-tokens', true);
         cy.setSwitch('use-worker-url', true);
         cy.setSwitch('use-cache', false);

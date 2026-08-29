@@ -99,6 +99,10 @@ Cypress.Commands.add('resetTests', () => {
   cy.window().then(win => win.localStorage.clear());
   cy.get('[data-cy=use-node-oidc-provider]').click();
   cy.get('#logout').click();
+  // Firefox 154 takes longer to complete the logout redirect chain
+  // (/v2/logout → returnTo). Wait for the app to fully reload and
+  // reinitialise before handing control to the test body.
+  whenReady();
 });
 
 Cypress.Commands.add('fixCookies', () => {
