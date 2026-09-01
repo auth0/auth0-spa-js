@@ -10,7 +10,7 @@ export type { IsFederatedDomainOptions };
  * Checks whether an email domain is managed for enterprise SSO on the given Auth0 tenant.
  * Wraps the auth-js primitive to inject spa-js telemetry by default.
  *
- * @param auth0Domain - Bare tenant domain, e.g. 'tenant.auth0.com' (no https://).
+ * @param auth0Domain - Tenant domain, e.g. 'tenant.auth0.com'. A leading 'https://' or 'http://' is stripped automatically.
  * @param emailDomain - The email domain to check, e.g. 'acme.com'.
  */
 export function isFederatedDomain(

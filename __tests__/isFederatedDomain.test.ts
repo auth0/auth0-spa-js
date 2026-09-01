@@ -52,7 +52,7 @@ describe('isFederatedDomain wrapper', () => {
     expect(mockInner).toHaveBeenCalledWith(
       'tenant.auth0.com',
       'acme.com',
-      expect.anything()
+      expect.objectContaining({ telemetry: DEFAULT_AUTH0_CLIENT })
     );
   });
 });
