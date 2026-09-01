@@ -139,7 +139,7 @@ const auth0 = await createAuth0Client({
 });
 ```
 
-`refreshTokenMode` is a sub-option of `useRefreshTokens`: it defaults to `RefreshTokenMode.Offline` (the rotating refresh tokens described above) and must be set to `RefreshTokenMode.Online` for Online Refresh Tokens. Online mode requires both `useRefreshTokens: true` and `useDpop: true`. See [Online Access](https://github.com/auth0/auth0-spa-js/blob/main/EXAMPLES.md#online-access-online-refresh-tokens) in EXAMPLES.md for the full guide.
+`refreshTokenMode` is a sub-option of `useRefreshTokens`: it defaults to `RefreshTokenMode.Offline` (the rotating refresh tokens described above) and must be set to `RefreshTokenMode.Online` for Online Refresh Tokens. Online mode requires both `useRefreshTokens: true` and `useDpop: true`. See [Online Access](https://github.com/auth0/auth0-spa-js/blob/main/examples/online-access.md) for the full guide.
 
 ### More Examples
 

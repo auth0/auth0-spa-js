@@ -49,7 +49,7 @@ jobs:
         run: npm ci
 
       - name: Run cross-browser tests
-        uses: cypress-io/github-action@fa4a118725a8f001170d49631ea89e5d66fee626 # v7.4.1
+        uses: cypress-io/github-action@09090944bd8aaa2a517cefb6e38bf1aae336b42b # v7.4.3
         with:
           browser: ${{ matrix.browser }}
           start: npm run dev
