@@ -2227,7 +2227,37 @@ export class Auth0Client {
   ): Promise<TokenEndpointResponse> {
     // Need to add better typing here
     const { mfaToken, ...restOptions } = options;
-    return this._requestToken({ ...restOptions, mfa_token: mfaToken } as any, additionalParameters);
+
+    // The refresh exchange that was refused with mfa_required consumed the refresh
+    // token some cache entry holds, and the completion grant below rotates it. Read
+    // that entry first so the rotated token can be propagated to every entry
+    // afterwards, as _getTokenUsingRefreshToken does; otherwise the other entries
+    // keep the rotated-away token and their next refresh trips reuse detection.
+    const previous = await this.cacheManager.get(
+      new CacheKey({
+        scope: restOptions.scope,
+        audience: restOptions.audience || DEFAULT_AUDIENCE,
+        clientId: this.options.clientId
+      }),
+      undefined,
+      this.options.useMrrt
+    );
+
+    const result = await this._requestToken(
+      { ...restOptions, mfa_token: mfaToken } as any,
+      additionalParameters
+    );
+
+    if (!this.onlineAccess && result.refresh_token && previous?.refresh_token) {
+      await this.cacheManager.updateEntry(
+        previous.refresh_token,
+        result.refresh_token,
+        this.options.clientId,
+        this.options.useMrrt
+      );
+    }
+
+    return result;
   }
 }
 
