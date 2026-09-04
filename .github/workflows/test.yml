@@ -193,9 +193,9 @@ jobs:
         with:
           node: ${{ env.NODE_VERSION }}
           cache: ${{ env.CACHE_KEY }}
-          ignore-scripts: false
           install: |
-            npx -p @angular/cli ng new my-app --defaults=true < /dev/null
+            npx -p @angular/cli ng new my-app --defaults=true --skip-install < /dev/null
+            npm install --prefix my-app
           content: |
             echo -e "${{ env.AUTH0_CONTENT }}" > src/auth0.js;
           import: |
