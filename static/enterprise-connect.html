@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link
+      href="https://unpkg.com/tailwindcss@^2/dist/tailwind.min.css"
+      rel="stylesheet"
+    />
+    <title>Enterprise Connect</title>
+  </head>
+  <body>
+    <div class="container mx-auto p-5">
+      <header class="mb-10">
+        <h1 class="text-4xl mb-2">Enterprise Connect</h1>
+        <p class="text-gray-400">
+          Enter a work email. The app checks whether its domain is managed for
+          enterprise SSO with <code>isFederatedDomain</code>, and if so starts a
+          login with the email as <code>login_hint</code>.
+        </p>
+        <p class="text-gray-400 mt-2">
+          <a href="/enterprise-connect.html" class="underline">Reset URL</a>
+        </p>
+      </header>
+
+      <!-- Configuration: user provides their own tenant domain and client id -->
+      <div id="config" class="mb-8">
+        <div class="mb-3">
+          <label for="domain" class="block mb-1">Domain</label>
+          <input
+            id="domain"
+            type="text"
+            placeholder="dev-xxx.us.auth0.com"
+            class="p-2 border rounded w-80"
+            data-cy="domain"
+          />
+          <p class="text-gray-400 text-sm">
+            Your Auth0 tenant domain (e.g., dev-xxx.us.auth0.com)
+          </p>
+        </div>
+        <div class="mb-3">
+          <label for="clientId" class="block mb-1">Client ID</label>
+          <input
+            id="clientId"
+            type="text"
+            placeholder="your-client-id"
+            class="p-2 border rounded w-80"
+            data-cy="clientId"
+          />
+        </div>
+        <button
+          id="save"
+          class="p-2 rounded bg-gray-700 text-white"
+          data-cy="save"
+        >
+          Save configuration
+        </button>
+      </div>
+
+      <div id="app" class="mb-5" style="display: none">
+        <input
+          id="email"
+          type="email"
+          placeholder="jane@acme.com"
+          class="p-2 border rounded w-80"
+          data-cy="email"
+        />
+        <button
+          id="login"
+          class="p-2 rounded bg-blue-700 text-white"
+          data-cy="login"
+        >
+          Continue
+        </button>
+      </div>
+
+      <p id="result" class="text-gray-700" data-cy="result"></p>
+
+      <div class="mt-5">
+        <p id="user" data-cy="user"></p>
+        <button
+          id="logout"
+          class="mt-3 p-2 rounded bg-gray-700 text-white"
+          style="display: none"
+          data-cy="logout"
+        >
+          Log out
+        </button>
+      </div>
+    </div>
+
+    <script src="/auth0-spa-js.development.js"></script>
+    <script>
+      (async () => {
+        const STORAGE_KEY = 'enterprise-connect-settings';
+
+        const configEl = document.getElementById('config');
+        const appEl = document.getElementById('app');
+        const domainInput = document.getElementById('domain');
+        const clientIdInput = document.getElementById('clientId');
+        const result = document.getElementById('result');
+        const userEl = document.getElementById('user');
+        const logoutEl = document.getElementById('logout');
+
+        let auth0Client;
+
+        function loadSettings() {
+          const raw = localStorage.getItem(STORAGE_KEY);
+          return raw ? JSON.parse(raw) : null;
+        }
+
+        function initClient(domain, clientId) {
+          const origin = `https://${domain.replace(/^https?:\/\//, '')}`;
+          auth0Client = new auth0.Auth0Client({
+            domain,
+            clientId,
+            authorizationParams: {
+              redirect_uri: `${window.location.origin}/enterprise-connect.html`,
+              scope: 'openid profile email' // no offline_access -- EC issues no refresh token
+            }
+          });
+          configEl.style.display = 'none';
+          appEl.style.display = 'block';
+        }
+
+        // Restore saved config so the demo survives the redirect round-trip.
+        const saved = loadSettings();
+        if (saved) {
+          domainInput.value = saved.domain;
+          clientIdInput.value = saved.clientId;
+          initClient(saved.domain, saved.clientId);
+        }
+
+        document.getElementById('save').addEventListener('click', () => {
+          const domain = domainInput.value.trim();
+          const clientId = clientIdInput.value.trim();
+
+          if (!domain || !clientId) {
+            result.textContent = 'Enter both a domain and a client id.';
+            return;
+          }
+
+          localStorage.setItem(STORAGE_KEY, JSON.stringify({ domain, clientId }));
+          result.textContent = '';
+          initClient(domain, clientId);
+        });
+
+        // Handle the redirect back from Auth0
+        if (
+          auth0Client &&
+          location.search.includes('code=') &&
+          location.search.includes('state=')
+        ) {
+          await auth0Client.handleRedirectCallback();
+          history.pushState({}, '', '/enterprise-connect.html');
+          const claims = await auth0Client.getIdTokenClaims();
+          // Validate org_id against the customers you serve before trusting the session.
+          userEl.textContent = `Logged in as ${claims.email} in org ${claims.org_id}`;
+          appEl.style.display = 'none';
+          logoutEl.style.display = 'inline-block';
+        }
+
+        logoutEl.addEventListener('click', () => {
+          // federated: true also ends the session at the upstream enterprise IdP.
+          auth0Client.logout({
+            logoutParams: {
+              federated: true,
+              returnTo: `${window.location.origin}/enterprise-connect.html`
+            }
+          });
+        });
+
+        document.getElementById('login').addEventListener('click', async () => {
+          const email = document.getElementById('email').value;
+          const emailDomain = email.split('@')[1];
+
+          if (!emailDomain) {
+            result.textContent = 'Enter a valid email address.';
+            return;
+          }
+
+          const federated = await auth0.isFederatedDomain(
+            domainInput.value.trim(),
+            emailDomain
+          );
+
+          if (!federated) {
+            // Domain is not managed by Auth0; fall back to your own login.
+            result.textContent = `${emailDomain} is not a federated domain -- fall back to your own login.`;
+            return;
+          }
+
+          // Home Realm Discovery resolves the connection and organization from
+          // the domain -- do not pass organization yourself.
+          await auth0Client.loginWithRedirect({
+            authorizationParams: { login_hint: email }
+          });
+        });
+      })();
+    </script>
+  </body>
+</html>
