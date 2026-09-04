@@ -14,6 +14,15 @@ yarn.lock
 release-tmp*
 bundle-stats
 
+# Staging area for the two files published to the docs-v2 repo. Rebuilt by
+# `npm run docs:docsv2`; both are generated, so neither is tracked here.
+mintlify/
+
+# TypeDoc auto-discovers `typedoc.json` as a config file, so writing an artifact
+# there breaks the next run. Ignored to catch a stray
+# `npx typedoc --json typedoc.json`.
+/typedoc.json
+
 # BrowserStack
 log/
 *.log
