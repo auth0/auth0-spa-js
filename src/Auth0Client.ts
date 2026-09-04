@@ -1500,20 +1500,10 @@ export class Auth0Client {
         }
       );
 
-      // Propagate a rotated RT to all MRRT entries. Skipped for online mode,
-      // where ORTs are non-rotating.
-      if (
-        !this.onlineAccess &&
-        tokenResult.refresh_token &&
-        cache?.refresh_token
-      ) {
-        await this.cacheManager.updateEntry(
-          cache.refresh_token,
-          tokenResult.refresh_token,
-          this.options.clientId,
-          this.options.useMrrt
-        );
-      }
+      await this._propagateRotatedRefreshToken(
+        cache?.refresh_token,
+        tokenResult.refresh_token
+      );
 
       // Some scopes requested to the server might not be inside the refresh policies
       // In order to return a token with all requested scopes when using MRRT we should
@@ -1583,6 +1573,27 @@ export class Auth0Client {
 
       throw e;
     }
+  }
+
+  /**
+   * Propagates a rotated refresh token to every cache entry that still holds
+   * the previous one (all MRRT entries when MRRT is on). Skipped for online
+   * mode, where ORTs are non-rotating.
+   */
+  private async _propagateRotatedRefreshToken(
+    previousRefreshToken: string | undefined,
+    newRefreshToken: string | undefined
+  ): Promise<void> {
+    if (this.onlineAccess || !newRefreshToken || !previousRefreshToken) {
+      return;
+    }
+
+    await this.cacheManager.updateEntry(
+      previousRefreshToken,
+      newRefreshToken,
+      this.options.clientId,
+      this.options.useMrrt
+    );
   }
 
   private async _saveEntryInCache(
@@ -2248,14 +2259,10 @@ export class Auth0Client {
       additionalParameters
     );
 
-    if (!this.onlineAccess && result.refresh_token && previous?.refresh_token) {
-      await this.cacheManager.updateEntry(
-        previous.refresh_token,
-        result.refresh_token,
-        this.options.clientId,
-        this.options.useMrrt
-      );
-    }
+    await this._propagateRotatedRefreshToken(
+      previous?.refresh_token,
+      result.refresh_token
+    );
 
     return result;
   }
