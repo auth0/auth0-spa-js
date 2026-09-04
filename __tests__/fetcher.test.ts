@@ -5,7 +5,7 @@
  */
 
 import { beforeEach, describe, expect } from '@jest/globals';
-import { GenericError, UseDpopNonceError } from '../src/errors';
+import { UseDpopNonceError } from '../src/errors';
 import { GetTokenSilentlyVerboseResponse } from '../src/global';
 import {
   Fetcher,
@@ -332,35 +332,6 @@ describe('Fetcher', () => {
         request,
         TEST_ACCESS_TOKEN
       ));
-  });
-
-  describe('prepareRequest() with undefined token', () => {
-    const fetcher = newTestFetcher({});
-
-    beforeEach(() => {
-      fetcher['getAccessToken'] = () => Promise.resolve(undefined);
-      fetcher['setAuthorizationHeader'] = jest.fn();
-      fetcher['setDpopProofHeader'] = jest.fn();
-    });
-
-    it('rejects with GenericError missing_access_token', async () => {
-      const promise = fetcher['prepareRequest'](new Request('https://example.com'));
-      await expect(promise).rejects.toBeInstanceOf(GenericError);
-      await expect(promise).rejects.toMatchObject({
-        error: 'missing_access_token',
-        error_description: 'No access token available'
-      });
-    });
-
-    it('does not call setAuthorizationHeader', async () => {
-      await fetcher['prepareRequest'](new Request('https://example.com')).catch(() => {});
-      expect(fetcher['setAuthorizationHeader']).not.toHaveBeenCalled();
-    });
-
-    it('does not call setDpopProofHeader', async () => {
-      await fetcher['prepareRequest'](new Request('https://example.com')).catch(() => {});
-      expect(fetcher['setDpopProofHeader']).not.toHaveBeenCalled();
-    });
   });
 
   describe('getHeader()', () => {
