@@ -170,3 +170,19 @@ export type {
 } from './passkey';
 
 export type { CustomTokenExchangeOptions } from './TokenExchange';
+
+export { AnonymousSessionApiClient } from './anonymous';
+export type { AnonymousGetTokenSilentlyOptions } from './anonymous';
+
+export {
+  AnonymousSessionClient,
+  AnonymousSessionError
+} from '@auth0/auth0-auth-js';
+
+export type {
+  AnonymousSession,
+  AnonymousSessionClaims,
+  AnonymousSessionErrorCode,
+  CreateAnonymousSessionOptions,
+  GetAnonymousAccessTokenOptions
+} from '@auth0/auth0-auth-js';

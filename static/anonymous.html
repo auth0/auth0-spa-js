@@ -10,7 +10,6 @@
     <style>
       pre { background: #f4f4f4; padding: 12px; border-radius: 4px; font-size: 12px; white-space: pre-wrap; word-break: break-all; }
       .section { margin-bottom: 24px; }
-      .badge-token { font-size: 11px; word-break: break-all; white-space: normal; }
     </style>
   </head>
   <body>
@@ -32,7 +31,10 @@
           <button class="btn btn-primary" onclick="createSession()">1. Create Session</button>
         </div>
         <div class="btn-group mr-2">
-          <button class="btn btn-secondary" onclick="refreshSession()">2. Refresh Token</button>
+          <button class="btn btn-secondary" onclick="getAccessToken(AUDIENCE)">2. Get Token (customers)</button>
+        </div>
+        <div class="btn-group mr-2">
+          <button class="btn btn-info" onclick="getAccessToken(AUDIENCE_2)">2b. Get Token (orders)</button>
         </div>
         <div class="btn-group mr-2">
           <button class="btn btn-success" onclick="loginWithSession()">3. Login with Session</button>
@@ -49,12 +51,12 @@
       </div>
 
       <div class="section">
-        <h6>Last Request</h6>
-        <pre id="last-request">-</pre>
+        <h6>Last Operation</h6>
+        <pre id="last-operation">-</pre>
       </div>
 
       <div class="section">
-        <h6>Last Response</h6>
+        <h6>Result</h6>
         <pre id="last-response">-</pre>
       </div>
     </div>
@@ -64,11 +66,10 @@
       const DOMAIN = 'dev-ozu7d607ak40d5un.us.auth0.com';
       const CLIENT_ID = '4SAov6dsh4lAdADB3MHu2YaQj6WRFw0E';
       const AUDIENCE = 'https://api.customers';
-      const BASE_URL = 'https://' + DOMAIN;
+      const AUDIENCE_2 = 'https://api.orders';
 
       // in-memory store
-      let sessionToken = null;
-      let accessToken = null;
+      let anonSession = null; // { sessionToken, accessToken, expiresAt, sessionTokenExpiresAt, scope }
       let auth0Client = null;
       let authenticatedUser = null;
 
@@ -77,15 +78,30 @@
         null, 2
       );
 
+      async function getClient() {
+        if (!auth0Client) {
+          auth0Client = await auth0.createAuth0Client({
+            domain: DOMAIN,
+            clientId: CLIENT_ID,
+          });
+        }
+        return auth0Client;
+      }
+
       function renderState() {
-        const decoded = accessToken ? parseJwt(accessToken) : null;
+        const decoded = anonSession?.accessToken ? parseJwt(anonSession.accessToken) : null;
         document.getElementById('state').textContent = JSON.stringify({
-          anonymous: {
-            session_token: sessionToken ? sessionToken.slice(0, 40) + '...' : null,
-            access_token: accessToken ? accessToken.slice(0, 40) + '...' : null,
+          anonymous: anonSession ? {
+            session_token: anonSession.sessionToken.slice(0, 40) + '...',
+            access_token: anonSession.accessToken.slice(0, 40) + '...',
             sub: decoded?.sub ?? null,
-            exp: decoded?.exp ? new Date(decoded.exp * 1000).toISOString() : null,
-          },
+            aud: decoded?.aud ?? null,
+            scope: decoded?.scope ?? anonSession.scope ?? null,
+            expires_at: new Date(anonSession.expiresAt * 1000).toISOString(),
+            session_expires_at: anonSession.sessionTokenExpiresAt
+              ? new Date(anonSession.sessionTokenExpiresAt * 1000).toISOString()
+              : null,
+          } : null,
           authenticated: authenticatedUser ? {
             sub: authenticatedUser.sub,
             email: authenticatedUser.email ?? null,
@@ -94,9 +110,8 @@
         }, null, 2);
       }
 
-      function showRequest(method, url, body) {
-        document.getElementById('last-request').textContent =
-          method + ' ' + url + '\n\n' + (body ? JSON.stringify(body, null, 2) : '(no body)');
+      function showOp(label) {
+        document.getElementById('last-operation').textContent = label;
       }
 
       function showResponse(data) {
@@ -113,123 +128,122 @@
       }
 
       async function createSession() {
-        const url = BASE_URL + '/anonymous/token';
-        const body = { client_id: CLIENT_ID, audience: AUDIENCE, metadata: { cart_id: 'cart_123', items: 3 } };
-        showRequest('POST', url, body);
+        showOp('anonymous.createSession({ audience, metadata })');
         try {
-          const res = await fetch(url, {
-            method: 'POST',
-            credentials: 'include',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(body)
+          const client = await getClient();
+          const session = await client.anonymous.createSession({
+            audience: AUDIENCE,
+            scope: 'read:customers',
+            metadata: { cart_id: 'cart_123', source: 'homepage' },
           });
-          const data = await res.json();
-          showResponse(data);
-          if (data.session_token) {
-            sessionToken = data.session_token;
-            accessToken = data.access_token;
-          }
+          anonSession = session;
+          showResponse(serializeSession(session));
           renderState();
         } catch (e) {
-          showResponse('Error: ' + e.message);
+          showResponse('Error [' + (e.code ?? e.name) + ']: ' + e.message);
         }
       }
 
-      async function refreshSession() {
-        if (!sessionToken) { showResponse('No session token. Run Create Session first.'); return; }
-        const url = BASE_URL + '/anonymous/token';
-        const body = { client_id: CLIENT_ID, audience: AUDIENCE, session_token: sessionToken };
-        showRequest('POST', url, body);
+      async function getAccessToken(audience) {
+        if (!anonSession) { showResponse('No session. Run Create Session first.'); return; }
+        showOp('anonymous.getAccessToken({ sessionToken, audience: "' + audience + '" })');
         try {
-          const res = await fetch(url, {
-            method: 'POST',
-            credentials: 'include',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(body)
+          const client = await getClient();
+          const session = await client.anonymous.getAccessToken({
+            sessionToken: anonSession.sessionToken,
+            audience,
           });
-          const data = await res.json();
-          showResponse(data);
-          if (data.session_token) {
-            sessionToken = data.session_token;
-            accessToken = data.access_token;
+          const decoded = parseJwt(session.accessToken);
+          const result = {
+            ...serializeSession(session),
+            accessTokenClaims: { sub: decoded?.sub, aud: decoded?.aud, scope: decoded?.scope },
+          };
+          if (session.sessionReplaced) {
+            showResponse('⚠️ Session was silently replaced.\n\n' + JSON.stringify(result, null, 2));
+          } else {
+            showResponse(result);
           }
+          anonSession = session;
           renderState();
         } catch (e) {
-          showResponse('Error: ' + e.message);
+          showResponse('Error [' + (e.code ?? e.name) + ']: ' + e.message);
         }
       }
 
       async function loginWithSession() {
-        if (!auth0Client) {
-          auth0Client = await auth0.createAuth0Client({
-            domain: DOMAIN,
-            clientId: CLIENT_ID,
-          });
-        }
-        const params = { audience: AUDIENCE, redirect_uri: window.location.href };
-        showRequest('loginWithRedirect', '/authorize', params);
-        await auth0Client.loginWithRedirect({
-          authorizationParams: params
-        });
-      }
-
-      async function logoutSession() {
-        const url = BASE_URL + '/anonymous/logout';
-        const body = { client_id: CLIENT_ID };
-        showRequest('POST', url, body);
+        showOp('loginWithRedirect (anonymous session cookie rides along automatically)');
         try {
-          const res = await fetch(url, {
-            method: 'POST',
-            credentials: 'include',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(body)
+          const client = await getClient();
+          await client.loginWithRedirect({
+            authorizationParams: { audience: AUDIENCE, redirect_uri: window.location.href },
           });
-          const text = await res.text();
-          showResponse('HTTP ' + res.status + '\n' + (text || '(empty body)'));
-          sessionToken = null;
-          accessToken = null;
-          renderState();
         } catch (e) {
           showResponse('Error: ' + e.message);
         }
       }
 
-      async function logoutAuth0() {
-        if (!auth0Client) {
-          auth0Client = await auth0.createAuth0Client({
-            domain: DOMAIN,
-            clientId: CLIENT_ID,
-          });
+      async function logoutSession() {
+        showOp('anonymous.logout()');
+        try {
+          const client = await getClient();
+          await client.anonymous.logout();
+          anonSession = null;
+          showResponse('Anonymous session ended. auth0_anon cookie cleared on tenant domain.');
+          renderState();
+        } catch (e) {
+          showResponse('Error [' + (e.code ?? e.name) + ']: ' + e.message);
         }
-        showRequest('logout', '/v2/logout', { returnTo: window.location.href });
-        await auth0Client.logout({
-          logoutParams: { returnTo: window.location.href }
-        });
+      }
+
+      async function logoutAuth0() {
+        showOp('logout({ returnTo })');
+        try {
+          const client = await getClient();
+          await client.logout({
+            logoutParams: { returnTo: window.location.href },
+          });
+        } catch (e) {
+          showResponse('Error: ' + e.message);
+        }
       }
 
       function clearLocal() {
-        sessionToken = null;
-        accessToken = null;
+        anonSession = null;
         authenticatedUser = null;
         renderState();
         showResponse('Local state cleared.');
       }
 
+      function serializeSession(s) {
+        return {
+          sessionToken: s.sessionToken ? s.sessionToken.slice(0, 40) + '...' : null,
+          accessToken: s.accessToken ? s.accessToken.slice(0, 40) + '...' : null,
+          expiresAt: s.expiresAt,
+          sessionTokenExpiresAt: s.sessionTokenExpiresAt ?? null,
+          scope: s.scope ?? null,
+          sessionReplaced: s.sessionReplaced ?? null,
+        };
+      }
+
       // handle redirect callback on page load
       (async () => {
+        const client = await getClient();
         if (window.location.search.includes('code=') && window.location.search.includes('state=')) {
-          if (!auth0Client) {
-            auth0Client = await auth0.createAuth0Client({
-              domain: DOMAIN,
-              clientId: CLIENT_ID,
-            });
-          }
           try {
-            const result = await auth0Client.handleRedirectCallback();
-            showResponse({ message: 'Redirect callback handled', appState: result.appState });
+            const result = await client.handleRedirectCallback();
             window.history.replaceState({}, document.title, window.location.pathname);
-            authenticatedUser = await auth0Client.getUser();
-            showResponse({ message: 'Logged in', user: authenticatedUser });
+            authenticatedUser = await client.getUser();
+            const claims = await client.getIdTokenClaims();
+            showResponse({
+              message: 'Logged in',
+              appState: result.appState,
+              user: authenticatedUser,
+              idTokenClaims: {
+                sub: claims?.sub,
+                'https://anon/user_id': claims?.['https://anon/user_id'] ?? '(not set)',
+                'https://anon/metadata': claims?.['https://anon/metadata'] ?? '(not set)',
+              },
+            });
             renderState();
           } catch (e) {
             showResponse('Callback error: ' + e.message);
