@@ -127,6 +127,7 @@ import { MfaApiClient } from './mfa';
 import { PasskeyApiClient } from './passkey';
 import type { PasskeyCredentialResponse } from './passkey/types';
 import { AuthClient as Auth0AuthJsClient } from '@auth0/auth0-auth-js';
+import { AnonymousSessionApiClient } from './anonymous';
 
 /**
  * @ignore
@@ -172,6 +173,16 @@ export class Auth0Client {
    * - Verifying MFA challenges
    */
   public readonly mfa: MfaApiClient;
+
+  /**
+   * Anonymous Sessions client.
+   *
+   * Use `anonymous.createSession()` to establish an anonymous identity before the user logs in.
+   * Use `anonymous.getTokenSilently()` to obtain or silently renew the access token.
+   * Use `anonymous.logout()` to end the anonymous session.
+   * Use `anonymous.getClaims()` to read decoded session token claims (always `null` in EA).
+   */
+  public readonly anonymous: AnonymousSessionApiClient;
 
   /**
    * Passkey API client for passwordless authentication.
@@ -338,6 +349,11 @@ export class Auth0Client {
       clientId: this.options.clientId,
     });
     this.mfa = new MfaApiClient(this.authJsClient.mfa, this);
+    this.anonymous = new AnonymousSessionApiClient(
+      this.authJsClient.anonymous,
+      this.options.clientId,
+      this.options.anonymousSessionsCacheMode ?? 'localStorage'
+    );
     this.passkey = new PasskeyApiClient(
       this.authJsClient.passkey,
       this
@@ -871,9 +887,18 @@ export class Auth0Client {
    *
    * @param options
    */
+  private async _maybeCreateAnonymousSession() {
+    if (this.options.createAnonymousSessionOnFailedSilentAuth) {
+      try {
+        await this.anonymous.getTokenSilently();
+      } catch (_) {}
+    }
+  }
+
   public async checkSession(options?: GetTokenSilentlyOptions) {
     if (!this.cookieStorage.get(this.isAuthenticatedCookieName)) {
       if (!this.cookieStorage.get(OLD_IS_AUTHENTICATED_COOKIE_NAME)) {
+        await this._maybeCreateAnonymousSession();
         return;
       } else {
         // Migrate the existing cookie to the new name scoped by client ID
@@ -888,7 +913,9 @@ export class Auth0Client {
 
     try {
       await this.getTokenSilently(options);
-    } catch (_) { }
+    } catch (_) {
+      await this._maybeCreateAnonymousSession();
+    }
   }
 
   /**
