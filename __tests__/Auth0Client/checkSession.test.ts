@@ -3,6 +3,7 @@ import { verify } from '../../src/jwt';
 import { MessageChannel } from 'worker_threads';
 import * as utils from '../../src/utils';
 import * as scope from '../../src/scope';
+import { GenericError } from '../../src/errors';
 import { expect } from '@jest/globals';
 
 // @ts-ignore
@@ -179,6 +180,12 @@ describe('Auth0Client', () => {
         expiresAt: Math.floor(Date.now() / 1000) + 3600
       };
 
+      beforeEach(() => {
+        // Outer tests use persistent mockReturnValue(true) which survives clearAllMocks.
+        // Reset here so each test starts with no auth cookie by default.
+        (<jest.Mock>esCookie.get).mockReset();
+      });
+
       it('creates an anonymous session when there is no auth cookie', async () => {
         const auth0 = setup({ createAnonymousSessionOnFailedSilentAuth: true });
         jest.spyOn(auth0.anonymous, 'getTokenSilently').mockResolvedValue(mockAnonSession);
@@ -209,8 +216,8 @@ describe('Auth0Client', () => {
       it('creates an anonymous session when auth cookie exists but silent auth fails', async () => {
         const auth0 = setup({ createAnonymousSessionOnFailedSilentAuth: true });
         jest.spyOn(auth0.anonymous, 'getTokenSilently').mockResolvedValue(mockAnonSession);
-        jest.spyOn(<any>utils, 'runIframe').mockRejectedValue(new Error('login_required'));
-        (<jest.Mock>esCookie.get).mockReturnValue(true);
+        jest.spyOn(<any>utils, 'runIframe').mockRejectedValueOnce(new GenericError('login_required', 'Login required'));
+        (<jest.Mock>esCookie.get).mockReturnValueOnce(true);
 
         await auth0.checkSession();
 
@@ -222,6 +229,7 @@ describe('Auth0Client', () => {
         jest.spyOn(auth0.anonymous, 'getTokenSilently').mockRejectedValue(new Error('feature_not_enabled'));
 
         await expect(auth0.checkSession()).resolves.toBeUndefined();
+        expect(auth0.anonymous.getTokenSilently).toHaveBeenCalled();
       });
     });
 

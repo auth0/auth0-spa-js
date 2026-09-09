@@ -19,6 +19,9 @@ const STORAGE_KEY = '@@auth0spajs@@::test_client::anonymous';
 describe('AnonymousSessionApiClient', () => {
   let authJsClient: ReturnType<typeof makeAuthJsClient>;
 
+  const makeClient = (cacheMode?: 'localStorage' | 'memory') =>
+    new AnonymousSessionApiClient(authJsClient as any, 'test_client', cacheMode);
+
   beforeEach(() => {
     authJsClient = makeAuthJsClient();
     localStorage.clear();
@@ -27,7 +30,7 @@ describe('AnonymousSessionApiClient', () => {
 
   describe('constructor', () => {
     it('uses localStorage when cacheMode is localStorage', () => {
-      const client = new AnonymousSessionApiClient(authJsClient as any, 'test_client', 'localStorage');
+      const client = makeClient('localStorage');
       // Verify by storing a session and checking localStorage
       authJsClient.createSession.mockResolvedValue(mockSession());
       return client.createSession().then(() => {
@@ -36,7 +39,7 @@ describe('AnonymousSessionApiClient', () => {
     });
 
     it('uses memory store when cacheMode is memory', () => {
-      const client = new AnonymousSessionApiClient(authJsClient as any, 'test_client', 'memory');
+      const client = makeClient('memory');
       authJsClient.createSession.mockResolvedValue(mockSession());
       return client.createSession().then(() => {
         expect(localStorage.setItem).not.toHaveBeenCalled();
@@ -44,7 +47,7 @@ describe('AnonymousSessionApiClient', () => {
     });
 
     it('defaults to localStorage', () => {
-      const client = new AnonymousSessionApiClient(authJsClient as any, 'test_client');
+      const client = makeClient();
       authJsClient.createSession.mockResolvedValue(mockSession());
       return client.createSession().then(() => {
         expect(localStorage.setItem).toHaveBeenCalledWith(STORAGE_KEY, expect.any(String));
@@ -54,7 +57,7 @@ describe('AnonymousSessionApiClient', () => {
 
   describe('createSession', () => {
     it('calls authJsClient.createSession with options', async () => {
-      const client = new AnonymousSessionApiClient(authJsClient as any, 'test_client', 'memory');
+      const client = makeClient('memory');
       const options = { audience: 'https://api.example.com', metadata: { cart: '123' } };
       const session = mockSession();
       authJsClient.createSession.mockResolvedValue(session);
@@ -66,7 +69,7 @@ describe('AnonymousSessionApiClient', () => {
     });
 
     it('stores the returned session', async () => {
-      const client = new AnonymousSessionApiClient(authJsClient as any, 'test_client', 'localStorage');
+      const client = makeClient('localStorage');
       const session = mockSession();
       authJsClient.createSession.mockResolvedValue(session);
 
@@ -76,7 +79,7 @@ describe('AnonymousSessionApiClient', () => {
     });
 
     it('works without options', async () => {
-      const client = new AnonymousSessionApiClient(authJsClient as any, 'test_client', 'memory');
+      const client = makeClient('memory');
       authJsClient.createSession.mockResolvedValue(mockSession());
 
       await client.createSession();
@@ -87,7 +90,7 @@ describe('AnonymousSessionApiClient', () => {
 
   describe('getTokenSilently', () => {
     it('returns cached session when access token is still fresh', async () => {
-      const client = new AnonymousSessionApiClient(authJsClient as any, 'test_client', 'memory');
+      const client = makeClient('memory');
       const freshSession = mockSession({ expiresAt: Math.floor(Date.now() / 1000) + 3600 });
       authJsClient.createSession.mockResolvedValue(freshSession);
       await client.createSession();
@@ -100,7 +103,7 @@ describe('AnonymousSessionApiClient', () => {
     });
 
     it('renews via session token when access token is expired', async () => {
-      const client = new AnonymousSessionApiClient(authJsClient as any, 'test_client', 'memory');
+      const client = makeClient('memory');
       const expiredSession = mockSession({
         sessionToken: 'stored_session_token',
         expiresAt: Math.floor(Date.now() / 1000) - 10
@@ -121,7 +124,7 @@ describe('AnonymousSessionApiClient', () => {
     });
 
     it('creates a new session when no session is stored', async () => {
-      const client = new AnonymousSessionApiClient(authJsClient as any, 'test_client', 'memory');
+      const client = makeClient('memory');
       const newSession = mockSession();
       authJsClient.getAccessToken.mockResolvedValue(newSession);
 
@@ -134,7 +137,7 @@ describe('AnonymousSessionApiClient', () => {
     });
 
     it('stores the renewed session', async () => {
-      const client = new AnonymousSessionApiClient(authJsClient as any, 'test_client', 'localStorage');
+      const client = makeClient('localStorage');
       const expiredSession = mockSession({ expiresAt: Math.floor(Date.now() / 1000) - 10 });
       authJsClient.createSession.mockResolvedValue(expiredSession);
       await client.createSession();
@@ -147,7 +150,7 @@ describe('AnonymousSessionApiClient', () => {
     });
 
     it('treats a session expiring within the 60s leeway as expired', async () => {
-      const client = new AnonymousSessionApiClient(authJsClient as any, 'test_client', 'memory');
+      const client = makeClient('memory');
       const almostExpiredSession = mockSession({
         sessionToken: 'stored_session_token',
         expiresAt: Math.floor(Date.now() / 1000) + 30 // within leeway
@@ -166,7 +169,7 @@ describe('AnonymousSessionApiClient', () => {
 
   describe('logout', () => {
     it('calls authJsClient.logout', async () => {
-      const client = new AnonymousSessionApiClient(authJsClient as any, 'test_client', 'memory');
+      const client = makeClient('memory');
       authJsClient.logout.mockResolvedValue(undefined);
 
       await client.logout();
@@ -175,7 +178,7 @@ describe('AnonymousSessionApiClient', () => {
     });
 
     it('clears the stored session', async () => {
-      const client = new AnonymousSessionApiClient(authJsClient as any, 'test_client', 'memory');
+      const client = makeClient('memory');
       const session = mockSession();
       authJsClient.createSession.mockResolvedValue(session);
       await client.createSession();
@@ -190,7 +193,7 @@ describe('AnonymousSessionApiClient', () => {
     });
 
     it('clears localStorage on logout', async () => {
-      const client = new AnonymousSessionApiClient(authJsClient as any, 'test_client', 'localStorage');
+      const client = makeClient('localStorage');
       authJsClient.createSession.mockResolvedValue(mockSession());
       await client.createSession();
       authJsClient.logout.mockResolvedValue(undefined);
@@ -203,14 +206,14 @@ describe('AnonymousSessionApiClient', () => {
 
   describe('getClaims', () => {
     it('always returns null in EA', () => {
-      const client = new AnonymousSessionApiClient(authJsClient as any, 'test_client', 'memory');
+      const client = makeClient('memory');
       expect(client.getClaims()).toBeNull();
     });
   });
 
   describe('localStorage store', () => {
     it('returns null from get when key is not set', async () => {
-      const client = new AnonymousSessionApiClient(authJsClient as any, 'test_client', 'localStorage');
+      const client = makeClient('localStorage');
       const newSession = mockSession();
       authJsClient.getAccessToken.mockResolvedValue(newSession);
 
@@ -226,7 +229,7 @@ describe('AnonymousSessionApiClient', () => {
       (localStorage.getItem as jest.Mock).mockImplementationOnce(() => {
         throw new Error('storage error');
       });
-      const client = new AnonymousSessionApiClient(authJsClient as any, 'test_client', 'localStorage');
+      const client = makeClient('localStorage');
       const newSession = mockSession();
       authJsClient.getAccessToken.mockResolvedValue(newSession);
 
@@ -235,7 +238,7 @@ describe('AnonymousSessionApiClient', () => {
     });
 
     it('silently swallows localStorage.setItem errors', async () => {
-      const client = new AnonymousSessionApiClient(authJsClient as any, 'test_client', 'localStorage');
+      const client = makeClient('localStorage');
       (localStorage.setItem as jest.Mock).mockImplementationOnce(() => {
         throw new Error('quota exceeded');
       });
@@ -245,7 +248,7 @@ describe('AnonymousSessionApiClient', () => {
     });
 
     it('silently swallows localStorage.removeItem errors', async () => {
-      const client = new AnonymousSessionApiClient(authJsClient as any, 'test_client', 'localStorage');
+      const client = makeClient('localStorage');
       (localStorage.removeItem as jest.Mock).mockImplementationOnce(() => {
         throw new Error('storage error');
       });
