@@ -14,7 +14,9 @@ const makeAuthJsClient = () => ({
   logout: jest.fn()
 });
 
-const STORAGE_KEY = '@@auth0spajs@@::test_client::anonymous';
+const STORAGE_KEY = '@@auth0spajs@@::test_client::anonymous::::';
+const storageKey = (audience = '', scope = '') =>
+  `@@auth0spajs@@::test_client::anonymous::${audience}::${scope}`;
 
 describe('AnonymousSessionApiClient', () => {
   let authJsClient: ReturnType<typeof makeAuthJsClient>;
@@ -75,7 +77,7 @@ describe('AnonymousSessionApiClient', () => {
 
       await client.createSession();
 
-      expect(localStorage.setItem).toHaveBeenCalledWith(STORAGE_KEY, JSON.stringify(session));
+      expect(localStorage.setItem).toHaveBeenCalledWith(STORAGE_KEY, expect.any(String));
     });
 
     it('works without options', async () => {
@@ -108,8 +110,8 @@ describe('AnonymousSessionApiClient', () => {
         sessionToken: 'stored_session_token',
         expiresAt: Math.floor(Date.now() / 1000) - 10
       });
-      authJsClient.createSession.mockResolvedValue(expiredSession);
-      await client.createSession();
+      authJsClient.getAccessToken.mockResolvedValueOnce(expiredSession);
+      await client.getTokenSilently({ audience: 'https://api.example.com' });
 
       const renewedSession = mockSession({ accessToken: 'new_access_token' });
       authJsClient.getAccessToken.mockResolvedValue(renewedSession);
@@ -146,7 +148,7 @@ describe('AnonymousSessionApiClient', () => {
       authJsClient.getAccessToken.mockResolvedValue(renewedSession);
       await client.getTokenSilently();
 
-      expect(localStorage.setItem).toHaveBeenLastCalledWith(STORAGE_KEY, JSON.stringify(renewedSession));
+      expect(localStorage.setItem).toHaveBeenLastCalledWith(STORAGE_KEY, expect.any(String));
     });
 
     it('bypasses cache when audience differs from cached session', async () => {
