@@ -4,6 +4,7 @@ import type {
   CreateAnonymousSessionOptions,
   GetAnonymousAccessTokenOptions
 } from '@auth0/auth0-auth-js';
+import { AnonymousSessionCacheManager } from './AnonymousSessionCacheManager';
 
 export type AnonymousGetTokenSilentlyOptions = Omit<
   GetAnonymousAccessTokenOptions,
@@ -11,49 +12,6 @@ export type AnonymousGetTokenSilentlyOptions = Omit<
 >;
 
 const EXPIRY_LEEWAY_SECONDS = 60;
-const STORAGE_KEY_PREFIX = '@@auth0spajs@@';
-
-type SessionStore = {
-  get(): AnonymousSession | null;
-  set(session: AnonymousSession): void;
-  remove(): void;
-};
-
-function makeLocalStore(key: string): SessionStore {
-  return {
-    get() {
-      try {
-        const raw = window.localStorage.getItem(key);
-        return raw ? (JSON.parse(raw) as AnonymousSession) : null;
-      } catch {
-        return null;
-      }
-    },
-    set(session) {
-      try {
-        window.localStorage.setItem(key, JSON.stringify(session));
-      } catch {}
-    },
-    remove() {
-      try {
-        window.localStorage.removeItem(key);
-      } catch {}
-    }
-  };
-}
-
-function makeMemoryStore(): SessionStore {
-  let stored: AnonymousSession | null = null;
-  return {
-    get: () => stored,
-    set: s => {
-      stored = s;
-    },
-    remove: () => {
-      stored = null;
-    }
-  };
-}
 
 /**
  * Browser-layer wrapper around auth0-auth-js `AnonymousSessionClient`.
@@ -68,59 +26,14 @@ function makeMemoryStore(): SessionStore {
  * Exposed on `Auth0Client` as `auth0.anonymous`.
  */
 export class AnonymousSessionApiClient {
-  private readonly baseKey: string;
-  private readonly useLocalStorage: boolean;
-  private readonly stores = new Map<string, SessionStore>();
+  private readonly cache: AnonymousSessionCacheManager;
 
   constructor(
     private authJsClient: AnonymousSessionClient,
     clientId: string,
     cacheMode: 'localStorage' | 'memory' = 'localStorage'
   ) {
-    this.baseKey = `${STORAGE_KEY_PREFIX}::${clientId}::anonymous`;
-    this.useLocalStorage =
-      cacheMode === 'localStorage' &&
-      typeof window !== 'undefined' &&
-      !!window.localStorage;
-  }
-
-  private getStore(audience?: string, scope?: string): SessionStore {
-    const key = `${this.baseKey}::${audience ?? ''}::${scope ?? ''}`;
-    if (!this.stores.has(key)) {
-      this.stores.set(
-        key,
-        this.useLocalStorage ? makeLocalStore(key) : makeMemoryStore()
-      );
-    }
-    return this.stores.get(key)!;
-  }
-
-  // Returns the sessionToken from any stored slot so the same anonymous identity
-  // is reused when fetching a token for a new audience or scope.
-  // In localStorage mode, scans localStorage directly so the token survives page reloads.
-  private getAnySessionToken(): string | undefined {
-    if (this.useLocalStorage) {
-      try {
-        for (let i = 0; i < window.localStorage.length; i++) {
-          const key = window.localStorage.key(i);
-          if (key?.startsWith(this.baseKey + '::')) {
-            try {
-              const raw = window.localStorage.getItem(key);
-              if (raw) {
-                const session = JSON.parse(raw) as AnonymousSession;
-                if (session?.sessionToken) return session.sessionToken;
-              }
-            } catch {}
-          }
-        }
-      } catch {}
-      return undefined;
-    }
-    for (const store of this.stores.values()) {
-      const session = store.get();
-      if (session?.sessionToken) return session.sessionToken;
-    }
-    return undefined;
+    this.cache = new AnonymousSessionCacheManager(clientId, cacheMode);
   }
 
   /**
@@ -130,10 +43,12 @@ export class AnonymousSessionApiClient {
     options?: CreateAnonymousSessionOptions
   ): Promise<AnonymousSession> {
     const session = await this.authJsClient.createSession(options);
-    this.getStore(
-      (options as AnonymousGetTokenSilentlyOptions)?.audience,
-      (options as AnonymousGetTokenSilentlyOptions)?.scope
-    ).set(session);
+    this.cache
+      .getStore(
+        (options as AnonymousGetTokenSilentlyOptions)?.audience,
+        (options as AnonymousGetTokenSilentlyOptions)?.scope
+      )
+      .set(session);
     return session;
   }
 
@@ -148,7 +63,7 @@ export class AnonymousSessionApiClient {
   async getTokenSilently(
     options?: AnonymousGetTokenSilentlyOptions
   ): Promise<AnonymousSession> {
-    const store = this.getStore(options?.audience, options?.scope);
+    const store = this.cache.getStore(options?.audience, options?.scope);
     const stored = store.get();
     const nowSeconds = Date.now() / 1000;
 
@@ -158,7 +73,7 @@ export class AnonymousSessionApiClient {
 
     const session = await this.authJsClient.getAccessToken({
       ...options,
-      sessionToken: stored?.sessionToken ?? this.getAnySessionToken()
+      sessionToken: stored?.sessionToken ?? this.cache.getAnySessionToken()
     });
     store.set(session);
     return session;
@@ -169,18 +84,7 @@ export class AnonymousSessionApiClient {
    */
   async logout(): Promise<void> {
     await this.authJsClient.logout();
-    if (this.useLocalStorage) {
-      const keysToRemove: string[] = [];
-      try {
-        for (let i = 0; i < window.localStorage.length; i++) {
-          const key = window.localStorage.key(i);
-          if (key?.startsWith(this.baseKey + '::')) keysToRemove.push(key);
-        }
-      } catch {}
-      keysToRemove.forEach(key => { try { window.localStorage.removeItem(key); } catch {} });
-    }
-    this.stores.forEach(store => store.remove());
-    this.stores.clear();
+    this.cache.removeAll();
   }
 
   /**
