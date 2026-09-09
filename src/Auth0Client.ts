@@ -915,7 +915,11 @@ export class Auth0Client {
     try {
       await this.getTokenSilently(options);
     } catch (e) {
-      if (e instanceof GenericError && e.error === 'login_required') {
+      if (
+        e instanceof GenericError &&
+        e.error === 'login_required' &&
+        e.error_description !== MFA_STEP_UP_ERROR_DESCRIPTION
+      ) {
         await this._maybeCreateAnonymousSession();
       }
     }

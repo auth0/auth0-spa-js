@@ -4,6 +4,7 @@ import { MessageChannel } from 'worker_threads';
 import * as utils from '../../src/utils';
 import * as scope from '../../src/scope';
 import { GenericError } from '../../src/errors';
+import { MFA_STEP_UP_ERROR_DESCRIPTION } from '../../src/constants';
 import { expect } from '@jest/globals';
 
 // @ts-ignore
@@ -222,6 +223,19 @@ describe('Auth0Client', () => {
         await auth0.checkSession();
 
         expect(auth0.anonymous.getTokenSilently).toHaveBeenCalled();
+      });
+
+      it('does not create an anonymous session when silent auth fails with MFA step-up', async () => {
+        const auth0 = setup({ createAnonymousSessionOnFailedSilentAuth: true });
+        jest.spyOn(auth0.anonymous, 'getTokenSilently').mockResolvedValue(mockAnonSession);
+        jest.spyOn(<any>utils, 'runIframe').mockRejectedValueOnce(
+          new GenericError('login_required', MFA_STEP_UP_ERROR_DESCRIPTION)
+        );
+        (<jest.Mock>esCookie.get).mockReturnValueOnce(true);
+
+        await auth0.checkSession();
+
+        expect(auth0.anonymous.getTokenSilently).not.toHaveBeenCalled();
       });
 
       it('swallows anonymous session creation errors silently', async () => {
