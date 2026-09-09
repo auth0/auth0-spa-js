@@ -13,11 +13,9 @@ export type AnonymousGetTokenSilentlyOptions = Omit<
 const EXPIRY_LEEWAY_SECONDS = 60;
 const STORAGE_KEY_PREFIX = '@@auth0spajs@@';
 
-type StoredSession = AnonymousSession & { _audience?: string; _scope?: string };
-
 type SessionStore = {
-  get(): StoredSession | null;
-  set(session: StoredSession): void;
+  get(): AnonymousSession | null;
+  set(session: AnonymousSession): void;
   remove(): void;
 };
 
@@ -64,25 +62,65 @@ function makeMemoryStore(): SessionStore {
  * manage the session token themselves. `getTokenSilently()` returns a cached
  * access token when still valid and renews it transparently when expired.
  *
+ * Each unique audience+scope combination gets its own cache slot so tokens are
+ * never returned for the wrong resource server or scope.
+ *
  * Exposed on `Auth0Client` as `auth0.anonymous`.
  */
 export class AnonymousSessionApiClient {
-  private store: SessionStore;
+  private readonly baseKey: string;
+  private readonly useLocalStorage: boolean;
+  private readonly stores = new Map<string, SessionStore>();
 
   constructor(
     private authJsClient: AnonymousSessionClient,
     clientId: string,
     cacheMode: 'localStorage' | 'memory' = 'localStorage'
   ) {
-    const canUseLocalStorage =
+    this.baseKey = `${STORAGE_KEY_PREFIX}::${clientId}::anonymous`;
+    this.useLocalStorage =
       cacheMode === 'localStorage' &&
       typeof window !== 'undefined' &&
       !!window.localStorage;
+  }
 
-    const storageKey = `${STORAGE_KEY_PREFIX}::${clientId}::anonymous`;
-    this.store = canUseLocalStorage
-      ? makeLocalStore(storageKey)
-      : makeMemoryStore();
+  private getStore(audience?: string, scope?: string): SessionStore {
+    const key = `${this.baseKey}::${audience ?? ''}::${scope ?? ''}`;
+    if (!this.stores.has(key)) {
+      this.stores.set(
+        key,
+        this.useLocalStorage ? makeLocalStore(key) : makeMemoryStore()
+      );
+    }
+    return this.stores.get(key)!;
+  }
+
+  // Returns the sessionToken from any stored slot so the same anonymous identity
+  // is reused when fetching a token for a new audience or scope.
+  // In localStorage mode, scans localStorage directly so the token survives page reloads.
+  private getAnySessionToken(): string | undefined {
+    if (this.useLocalStorage) {
+      try {
+        for (let i = 0; i < window.localStorage.length; i++) {
+          const key = window.localStorage.key(i);
+          if (key?.startsWith(this.baseKey + '::')) {
+            try {
+              const raw = window.localStorage.getItem(key);
+              if (raw) {
+                const session = JSON.parse(raw) as AnonymousSession;
+                if (session?.sessionToken) return session.sessionToken;
+              }
+            } catch {}
+          }
+        }
+      } catch {}
+      return undefined;
+    }
+    for (const store of this.stores.values()) {
+      const session = store.get();
+      if (session?.sessionToken) return session.sessionToken;
+    }
+    return undefined;
   }
 
   /**
@@ -92,7 +130,10 @@ export class AnonymousSessionApiClient {
     options?: CreateAnonymousSessionOptions
   ): Promise<AnonymousSession> {
     const session = await this.authJsClient.createSession(options);
-    this.store.set(session as StoredSession);
+    this.getStore(
+      (options as AnonymousGetTokenSilentlyOptions)?.audience,
+      (options as AnonymousGetTokenSilentlyOptions)?.scope
+    ).set(session);
     return session;
   }
 
@@ -107,39 +148,29 @@ export class AnonymousSessionApiClient {
   async getTokenSilently(
     options?: AnonymousGetTokenSilentlyOptions
   ): Promise<AnonymousSession> {
-    const stored = this.store.get();
+    const store = this.getStore(options?.audience, options?.scope);
+    const stored = store.get();
     const nowSeconds = Date.now() / 1000;
-    const requestedAudience = options?.audience;
-    const requestedScope = options?.scope;
 
-    if (
-      stored &&
-      stored.expiresAt - EXPIRY_LEEWAY_SECONDS > nowSeconds &&
-      stored._audience === requestedAudience &&
-      (!requestedScope || stored._scope === requestedScope)
-    ) {
+    if (stored && stored.expiresAt - EXPIRY_LEEWAY_SECONDS > nowSeconds) {
       return stored;
     }
 
     const session = await this.authJsClient.getAccessToken({
       ...options,
-      sessionToken: stored?.sessionToken
+      sessionToken: stored?.sessionToken ?? this.getAnySessionToken()
     });
-    const storedSession: StoredSession = {
-      ...session,
-      _audience: requestedAudience,
-      _scope: requestedScope
-    };
-    this.store.set(storedSession);
+    store.set(session);
     return session;
   }
 
   /**
-   * Ends the anonymous session and clears locally stored tokens.
+   * Ends the anonymous session and clears all locally stored tokens.
    */
   async logout(): Promise<void> {
     await this.authJsClient.logout();
-    this.store.remove();
+    this.stores.forEach(store => store.remove());
+    this.stores.clear();
   }
 
   /**
