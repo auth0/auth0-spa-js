@@ -15,8 +15,7 @@ const makeAuthJsClient = () => ({
 });
 
 const STORAGE_KEY = '@@auth0spajs@@::test_client::anonymous::::';
-const storageKey = (audience = '', scope = '') =>
-  `@@auth0spajs@@::test_client::anonymous::${audience}::${scope}`;
+
 
 describe('AnonymousSessionApiClient', () => {
   let authJsClient: ReturnType<typeof makeAuthJsClient>;
@@ -168,6 +167,28 @@ describe('AnonymousSessionApiClient', () => {
         sessionToken: freshSession.sessionToken
       });
       expect(result).toBe(newSession);
+    });
+
+    it('reuses sessionToken from localStorage on page reload when fetching a new audience', async () => {
+      // Simulate a previous session stored in localStorage (e.g. from a prior page load)
+      const previousSession = mockSession({
+        sessionToken: 'persisted_session_token',
+        expiresAt: Math.floor(Date.now() / 1000) + 3600
+      });
+      const existingKey = '@@auth0spajs@@::test_client::anonymous::https://api-a.example.com::';
+      localStorage.setItem(existingKey, JSON.stringify(previousSession));
+
+      // New client instance (simulates page reload — stores Map is empty)
+      const freshClient = makeClient('localStorage');
+      const newSession = mockSession({ accessToken: 'new_access_token' });
+      authJsClient.getAccessToken.mockResolvedValue(newSession);
+
+      await freshClient.getTokenSilently({ audience: 'https://api-b.example.com' });
+
+      expect(authJsClient.getAccessToken).toHaveBeenCalledWith({
+        audience: 'https://api-b.example.com',
+        sessionToken: 'persisted_session_token'
+      });
     });
 
     it('bypasses cache when scope differs from cached session', async () => {
