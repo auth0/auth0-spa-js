@@ -13,9 +13,11 @@ export type AnonymousGetTokenSilentlyOptions = Omit<
 const EXPIRY_LEEWAY_SECONDS = 60;
 const STORAGE_KEY_PREFIX = '@@auth0spajs@@';
 
+type StoredSession = AnonymousSession & { _audience?: string; _scope?: string };
+
 type SessionStore = {
-  get(): AnonymousSession | null;
-  set(session: AnonymousSession): void;
+  get(): StoredSession | null;
+  set(session: StoredSession): void;
   remove(): void;
 };
 
@@ -90,7 +92,7 @@ export class AnonymousSessionApiClient {
     options?: CreateAnonymousSessionOptions
   ): Promise<AnonymousSession> {
     const session = await this.authJsClient.createSession(options);
-    this.store.set(session);
+    this.store.set(session as StoredSession);
     return session;
   }
 
@@ -107,8 +109,15 @@ export class AnonymousSessionApiClient {
   ): Promise<AnonymousSession> {
     const stored = this.store.get();
     const nowSeconds = Date.now() / 1000;
+    const requestedAudience = options?.audience;
+    const requestedScope = options?.scope;
 
-    if (stored && stored.expiresAt - EXPIRY_LEEWAY_SECONDS > nowSeconds) {
+    if (
+      stored &&
+      stored.expiresAt - EXPIRY_LEEWAY_SECONDS > nowSeconds &&
+      stored._audience === requestedAudience &&
+      (!requestedScope || stored._scope === requestedScope)
+    ) {
       return stored;
     }
 
@@ -116,7 +125,12 @@ export class AnonymousSessionApiClient {
       ...options,
       sessionToken: stored?.sessionToken
     });
-    this.store.set(session);
+    const storedSession: StoredSession = {
+      ...session,
+      _audience: requestedAudience,
+      _scope: requestedScope
+    };
+    this.store.set(storedSession);
     return session;
   }
 

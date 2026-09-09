@@ -149,6 +149,54 @@ describe('AnonymousSessionApiClient', () => {
       expect(localStorage.setItem).toHaveBeenLastCalledWith(STORAGE_KEY, JSON.stringify(renewedSession));
     });
 
+    it('bypasses cache when audience differs from cached session', async () => {
+      const client = makeClient('memory');
+      const freshSession = mockSession({ expiresAt: Math.floor(Date.now() / 1000) + 3600 });
+      authJsClient.getAccessToken.mockResolvedValueOnce(freshSession);
+      await client.getTokenSilently({ audience: 'https://api-a.example.com' });
+      authJsClient.getAccessToken.mockClear();
+
+      const newSession = mockSession({ accessToken: 'new_access_token' });
+      authJsClient.getAccessToken.mockResolvedValue(newSession);
+
+      const result = await client.getTokenSilently({ audience: 'https://api-b.example.com' });
+
+      expect(authJsClient.getAccessToken).toHaveBeenCalledWith({
+        audience: 'https://api-b.example.com',
+        sessionToken: freshSession.sessionToken
+      });
+      expect(result).toBe(newSession);
+    });
+
+    it('bypasses cache when scope differs from cached session', async () => {
+      const client = makeClient('memory');
+      const freshSession = mockSession({ expiresAt: Math.floor(Date.now() / 1000) + 3600 });
+      authJsClient.getAccessToken.mockResolvedValueOnce(freshSession);
+      await client.getTokenSilently({ scope: 'openid' });
+      authJsClient.getAccessToken.mockClear();
+
+      const newSession = mockSession({ accessToken: 'new_access_token' });
+      authJsClient.getAccessToken.mockResolvedValue(newSession);
+
+      const result = await client.getTokenSilently({ scope: 'openid profile' });
+
+      expect(authJsClient.getAccessToken).toHaveBeenCalled();
+      expect(result).toBe(newSession);
+    });
+
+    it('returns cached session when audience and scope both match', async () => {
+      const client = makeClient('memory');
+      const freshSession = mockSession({ expiresAt: Math.floor(Date.now() / 1000) + 3600 });
+      authJsClient.getAccessToken.mockResolvedValueOnce(freshSession);
+      await client.getTokenSilently({ audience: 'https://api.example.com', scope: 'openid' });
+      authJsClient.getAccessToken.mockClear();
+
+      const result = await client.getTokenSilently({ audience: 'https://api.example.com', scope: 'openid' });
+
+      expect(authJsClient.getAccessToken).not.toHaveBeenCalled();
+      expect(result).toMatchObject(freshSession);
+    });
+
     it('treats a session expiring within the 60s leeway as expired', async () => {
       const client = makeClient('memory');
       const almostExpiredSession = mockSession({
