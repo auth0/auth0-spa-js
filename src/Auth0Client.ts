@@ -203,6 +203,7 @@ export class Auth0Client {
     useRefreshTokensFallback: false,
     useFormData: true,
     refreshTokenMode: 'offline',
+    anonymousSessionsCacheMode: 'localStorage',
   };
 
   /** Validates online-access config and returns whether online mode is enabled. */
@@ -352,7 +353,7 @@ export class Auth0Client {
     this.anonymous = new AnonymousSessionApiClient(
       this.authJsClient.anonymous,
       this.options.clientId,
-      this.options.anonymousSessionsCacheMode ?? 'localStorage'
+      this.options.anonymousSessionsCacheMode
     );
     this.passkey = new PasskeyApiClient(
       this.authJsClient.passkey,
@@ -913,8 +914,10 @@ export class Auth0Client {
 
     try {
       await this.getTokenSilently(options);
-    } catch (_) {
-      await this._maybeCreateAnonymousSession();
+    } catch (e) {
+      if (e instanceof GenericError && e.error === 'login_required') {
+        await this._maybeCreateAnonymousSession();
+      }
     }
   }
 
