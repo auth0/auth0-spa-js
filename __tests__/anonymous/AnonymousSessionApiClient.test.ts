@@ -273,6 +273,23 @@ describe('AnonymousSessionApiClient', () => {
 
       expect(localStorage.removeItem).toHaveBeenCalledWith(STORAGE_KEY);
     });
+
+    it('clears localStorage slots written before page reload on logout', async () => {
+      // Simulate slots persisted from a previous session
+      const keyA = '@@auth0spajs@@::test_client::anonymous::https://api-a.example.com::';
+      const keyB = '@@auth0spajs@@::test_client::anonymous::https://api-b.example.com::';
+      localStorage.setItem(keyA, JSON.stringify(mockSession()));
+      localStorage.setItem(keyB, JSON.stringify(mockSession()));
+
+      // New client instance (stores Map is empty)
+      const freshClient = makeClient('localStorage');
+      authJsClient.logout.mockResolvedValue(undefined);
+
+      await freshClient.logout();
+
+      expect(localStorage.removeItem).toHaveBeenCalledWith(keyA);
+      expect(localStorage.removeItem).toHaveBeenCalledWith(keyB);
+    });
   });
 
   describe('getClaims', () => {

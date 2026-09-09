@@ -169,6 +169,16 @@ export class AnonymousSessionApiClient {
    */
   async logout(): Promise<void> {
     await this.authJsClient.logout();
+    if (this.useLocalStorage) {
+      const keysToRemove: string[] = [];
+      try {
+        for (let i = 0; i < window.localStorage.length; i++) {
+          const key = window.localStorage.key(i);
+          if (key?.startsWith(this.baseKey + '::')) keysToRemove.push(key);
+        }
+      } catch {}
+      keysToRemove.forEach(key => { try { window.localStorage.removeItem(key); } catch {} });
+    }
     this.stores.forEach(store => store.remove());
     this.stores.clear();
   }
