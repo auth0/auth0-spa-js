@@ -353,7 +353,8 @@ export class Auth0Client {
     this.anonymous = new AnonymousSessionApiClient(
       this.authJsClient.anonymous,
       this.options.clientId,
-      this.options.anonymousSessionsCacheMode
+      this.options.anonymousSessionsCacheMode,
+      this.lockManager
     );
     this.passkey = new PasskeyApiClient(
       this.authJsClient.passkey,

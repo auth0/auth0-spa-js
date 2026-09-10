@@ -4,6 +4,8 @@ import type {
   CreateAnonymousSessionOptions,
   GetAnonymousAccessTokenOptions
 } from '@auth0/auth0-auth-js';
+import type { ILockManager } from '../lock';
+import { getLockManager } from '../lock';
 import { AnonymousSessionCacheManager } from './AnonymousSessionCacheManager';
 
 export type AnonymousGetTokenSilentlyOptions = Omit<
@@ -27,13 +29,18 @@ const EXPIRY_LEEWAY_SECONDS = 60;
  */
 export class AnonymousSessionApiClient {
   private readonly cache: AnonymousSessionCacheManager;
+  private readonly lockManager: ILockManager;
+  private readonly clientId: string;
 
   constructor(
     private authJsClient: AnonymousSessionClient,
     clientId: string,
-    cacheMode: 'localStorage' | 'memory' = 'localStorage'
+    cacheMode: 'localStorage' | 'memory' = 'localStorage',
+    lockManager?: ILockManager
   ) {
+    this.clientId = clientId;
     this.cache = new AnonymousSessionCacheManager(clientId, cacheMode);
+    this.lockManager = lockManager ?? getLockManager();
   }
 
   /**
@@ -65,18 +72,39 @@ export class AnonymousSessionApiClient {
   ): Promise<AnonymousSession> {
     const store = this.cache.getStore(options?.audience, options?.scope);
     const stored = store.get();
-    const nowSeconds = Date.now() / 1000;
 
-    if (stored && stored.expiresAt - EXPIRY_LEEWAY_SECONDS > nowSeconds) {
+    if (stored && stored.expiresAt - EXPIRY_LEEWAY_SECONDS > Date.now() / 1000) {
       return stored;
     }
 
-    const session = await this.authJsClient.getAccessToken({
-      ...options,
-      sessionToken: stored?.sessionToken ?? this.cache.getAnySessionToken()
-    });
-    store.set(session);
-    return session;
+    const sessionToken = stored?.sessionToken ?? this.cache.getAnySessionToken();
+
+    if (sessionToken) {
+      const session = await this.authJsClient.getAccessToken({
+        ...options,
+        sessionToken
+      });
+      store.set(session);
+      return session;
+    }
+
+    // No session token anywhere — lock to ensure only one anonymous identity is created
+    // even when concurrent calls race across different audience+scope slots.
+    return this.lockManager.runWithLock(
+      `anonymous::${this.clientId}`,
+      5000,
+      async () => {
+        // Double-check: another call may have created a session while we waited for the lock.
+        const tokenAfterLock =
+          store.get()?.sessionToken ?? this.cache.getAnySessionToken();
+        const session = await this.authJsClient.getAccessToken({
+          ...options,
+          sessionToken: tokenAfterLock
+        });
+        store.set(session);
+        return session;
+      }
+    );
   }
 
   /**

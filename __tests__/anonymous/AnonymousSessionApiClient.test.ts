@@ -1,4 +1,5 @@
 import { AnonymousSessionApiClient } from '../../src/anonymous/AnonymousSessionApiClient';
+import type { ILockManager } from '../../src/lock';
 import type { AnonymousSession } from '@auth0/auth0-auth-js';
 
 const mockSession = (overrides: Partial<AnonymousSession> = {}): AnonymousSession => ({
@@ -14,14 +15,18 @@ const makeAuthJsClient = () => ({
   logout: jest.fn()
 });
 
-const STORAGE_KEY = '@@auth0spajs@@::test_client::anonymous::::';
+const makeLockManager = (): jest.Mocked<ILockManager> => ({
+  runWithLock: jest.fn().mockImplementation((_key, _timeout, cb) => cb())
+});
+
+const STORAGE_KEY = '@@auth0spajs@@::test_client::anonymous::["",""]';
 
 
 describe('AnonymousSessionApiClient', () => {
   let authJsClient: ReturnType<typeof makeAuthJsClient>;
 
-  const makeClient = (cacheMode?: 'localStorage' | 'memory') =>
-    new AnonymousSessionApiClient(authJsClient as any, 'test_client', cacheMode);
+  const makeClient = (cacheMode?: 'localStorage' | 'memory', lockManager?: ILockManager) =>
+    new AnonymousSessionApiClient(authJsClient as any, 'test_client', cacheMode, lockManager);
 
   beforeEach(() => {
     authJsClient = makeAuthJsClient();
@@ -312,6 +317,58 @@ describe('AnonymousSessionApiClient', () => {
     });
   });
 
+  describe('locking', () => {
+    it('acquires a lock when no session token exists', async () => {
+      const lockManager = makeLockManager();
+      const client = makeClient('memory', lockManager);
+      authJsClient.getAccessToken.mockResolvedValue(mockSession());
+
+      await client.getTokenSilently();
+
+      expect(lockManager.runWithLock).toHaveBeenCalledWith(
+        'anonymous::test_client',
+        5000,
+        expect.any(Function)
+      );
+    });
+
+    it('does not acquire a lock when a session token is already stored', async () => {
+      const lockManager = makeLockManager();
+      const client = makeClient('memory', lockManager);
+      const expiredSession = mockSession({
+        sessionToken: 'existing_token',
+        expiresAt: Math.floor(Date.now() / 1000) - 10
+      });
+      authJsClient.getAccessToken.mockResolvedValueOnce(expiredSession).mockResolvedValue(mockSession());
+      // First call stores a session with a sessionToken (goes through the lock)
+      await client.getTokenSilently();
+      lockManager.runWithLock.mockClear();
+
+      // Second call: access token expired but sessionToken present — no lock needed
+      await client.getTokenSilently();
+
+      expect(lockManager.runWithLock).not.toHaveBeenCalled();
+    });
+
+    it('uses a session token created by another call while waiting for the lock', async () => {
+      const lockManager: ILockManager = {
+        runWithLock: jest.fn().mockImplementation((_key, _timeout, cb) => {
+          // Simulate another tab/call writing a session to localStorage before we run
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(mockSession({ sessionToken: 'concurrent_token' })));
+          return cb();
+        })
+      };
+      const client = makeClient('localStorage', lockManager);
+      authJsClient.getAccessToken.mockResolvedValue(mockSession({ accessToken: 'renewed_token' }));
+
+      await client.getTokenSilently();
+
+      expect(authJsClient.getAccessToken).toHaveBeenCalledWith({
+        sessionToken: 'concurrent_token'
+      });
+    });
+  });
+
   describe('localStorage store error handling', () => {
     it('returns null when localStorage.getItem throws', async () => {
       (localStorage.getItem as jest.Mock).mockImplementationOnce(() => {
@@ -335,9 +392,97 @@ describe('AnonymousSessionApiClient', () => {
       await expect(client.createSession()).resolves.toBeDefined();
     });
 
-    it('silently swallows localStorage.removeItem errors', async () => {
+    it('silently swallows localStorage.removeItem errors during logout', async () => {
       const client = makeClient('localStorage');
+      authJsClient.createSession.mockResolvedValue(mockSession());
+      await client.createSession();
       (localStorage.removeItem as jest.Mock).mockImplementationOnce(() => {
+        throw new Error('storage error');
+      });
+      authJsClient.logout.mockResolvedValue(undefined);
+
+      await expect(client.logout()).resolves.toBeUndefined();
+    });
+
+    it('returns undefined from getAnySessionToken when scan throws', async () => {
+      const lockManager = makeLockManager();
+      const client = makeClient('localStorage', lockManager);
+      (localStorage.key as jest.Mock).mockImplementationOnce(() => {
+        throw new Error('storage error');
+      });
+      authJsClient.getAccessToken.mockResolvedValue(mockSession());
+
+      await client.getTokenSilently();
+
+      expect(authJsClient.getAccessToken).toHaveBeenCalledWith({ sessionToken: undefined });
+    });
+
+    it('skips malformed localStorage entries in getAnySessionToken', async () => {
+      const existingKey = '@@auth0spajs@@::test_client::anonymous::["https://api-a.example.com",""]';
+      localStorage.setItem(existingKey, 'not-valid-json');
+
+      const lockManager = makeLockManager();
+      const client = makeClient('localStorage', lockManager);
+      authJsClient.getAccessToken.mockResolvedValue(mockSession());
+
+      await client.getTokenSilently({ audience: 'https://api-b.example.com' });
+
+      expect(authJsClient.getAccessToken).toHaveBeenCalledWith({
+        audience: 'https://api-b.example.com',
+        sessionToken: undefined
+      });
+    });
+
+    it('ignores non-matching keys in localStorage scan', async () => {
+      localStorage.setItem('unrelated-key', 'some-value');
+      const lockManager = makeLockManager();
+      const client = makeClient('localStorage', lockManager);
+      authJsClient.getAccessToken.mockResolvedValue(mockSession());
+
+      await client.getTokenSilently();
+
+      // Non-matching key is skipped — getAnySessionToken returns undefined
+      expect(authJsClient.getAccessToken).toHaveBeenCalledWith({ sessionToken: undefined });
+    });
+
+    it('ignores entries without a sessionToken in getAnySessionToken', async () => {
+      const existingKey = '@@auth0spajs@@::test_client::anonymous::["https://api-a.example.com",""]';
+      localStorage.setItem(existingKey, JSON.stringify({ accessToken: 'abc', expiresAt: 9999 }));
+
+      const lockManager = makeLockManager();
+      const client = makeClient('localStorage', lockManager);
+      authJsClient.getAccessToken.mockResolvedValue(mockSession());
+
+      await client.getTokenSilently({ audience: 'https://api-b.example.com' });
+
+      // Entry without sessionToken is skipped
+      expect(authJsClient.getAccessToken).toHaveBeenCalledWith({
+        audience: 'https://api-b.example.com',
+        sessionToken: undefined
+      });
+    });
+
+    it('silently swallows store.remove() errors on logout', async () => {
+      const client = makeClient('localStorage');
+      authJsClient.createSession.mockResolvedValue(mockSession());
+      await client.createSession(); // stores session in Map AND localStorage
+
+      // Clear localStorage so keysToRemove scan finds nothing
+      // but stores Map still has the entry — store.remove() will be called
+      localStorage.clear();
+      (localStorage.removeItem as jest.Mock).mockImplementationOnce(() => {
+        throw new Error('storage error');
+      });
+      authJsClient.logout.mockResolvedValue(undefined);
+
+      await expect(client.logout()).resolves.toBeUndefined();
+    });
+
+    it('silently swallows localStorage scan errors during removeAll', async () => {
+      authJsClient.createSession.mockResolvedValue(mockSession());
+      const client = makeClient('localStorage');
+      await client.createSession(); // ensure length > 0 so the loop runs
+      (localStorage.key as jest.Mock).mockImplementationOnce(() => {
         throw new Error('storage error');
       });
       authJsClient.logout.mockResolvedValue(undefined);
