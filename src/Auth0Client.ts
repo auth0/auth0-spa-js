@@ -1500,20 +1500,10 @@ export class Auth0Client {
         }
       );
 
-      // Propagate a rotated RT to all MRRT entries. Skipped for online mode,
-      // where ORTs are non-rotating.
-      if (
-        !this.onlineAccess &&
-        tokenResult.refresh_token &&
-        cache?.refresh_token
-      ) {
-        await this.cacheManager.updateEntry(
-          cache.refresh_token,
-          tokenResult.refresh_token,
-          this.options.clientId,
-          this.options.useMrrt
-        );
-      }
+      await this._propagateRotatedRefreshToken(
+        cache?.refresh_token,
+        tokenResult.refresh_token
+      );
 
       // Some scopes requested to the server might not be inside the refresh policies
       // In order to return a token with all requested scopes when using MRRT we should
@@ -1583,6 +1573,27 @@ export class Auth0Client {
 
       throw e;
     }
+  }
+
+  /**
+   * Propagates a rotated refresh token to every cache entry that still holds
+   * the previous one (all MRRT entries when MRRT is on). Skipped for online
+   * mode, where ORTs are non-rotating.
+   */
+  private async _propagateRotatedRefreshToken(
+    previousRefreshToken: string | undefined,
+    newRefreshToken: string | undefined
+  ): Promise<void> {
+    if (this.onlineAccess || !newRefreshToken || !previousRefreshToken) {
+      return;
+    }
+
+    await this.cacheManager.updateEntry(
+      previousRefreshToken,
+      newRefreshToken,
+      this.options.clientId,
+      this.options.useMrrt
+    );
   }
 
   private async _saveEntryInCache(
@@ -2227,7 +2238,33 @@ export class Auth0Client {
   ): Promise<TokenEndpointResponse> {
     // Need to add better typing here
     const { mfaToken, ...restOptions } = options;
-    return this._requestToken({ ...restOptions, mfa_token: mfaToken } as any, additionalParameters);
+
+    // The refresh exchange that was refused with mfa_required consumed the refresh
+    // token some cache entry holds, and the completion grant below rotates it. Read
+    // that entry first so the rotated token can be propagated to every entry
+    // afterwards, as _getTokenUsingRefreshToken does; otherwise the other entries
+    // keep the rotated-away token and their next refresh trips reuse detection.
+    const previous = await this.cacheManager.get(
+      new CacheKey({
+        scope: restOptions.scope,
+        audience: restOptions.audience || DEFAULT_AUDIENCE,
+        clientId: this.options.clientId
+      }),
+      undefined,
+      this.options.useMrrt
+    );
+
+    const result = await this._requestToken(
+      { ...restOptions, mfa_token: mfaToken } as any,
+      additionalParameters
+    );
+
+    await this._propagateRotatedRefreshToken(
+      previous?.refresh_token,
+      result.refresh_token
+    );
+
+    return result;
   }
 }
 
