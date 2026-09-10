@@ -174,6 +174,8 @@ describe('Auth0Client', () => {
         cacheLocation: 'localstorage'
       });
 
+      const updateEntrySpy = jest.spyOn(auth0['cacheManager'], 'updateEntry');
+
       // Call _requestTokenForMfa directly with no prior cache entry so
       // previous?.refresh_token is undefined and _propagateRotatedRefreshToken
       // takes the early-return path without calling cacheManager.updateEntry.
@@ -198,8 +200,8 @@ describe('Auth0Client', () => {
         })
       ).resolves.toMatchObject({ refresh_token: 'rt-new' });
 
-      // Only the one token call; no extra fetch from updateEntry propagation.
       expect(mockFetch).toHaveBeenCalledTimes(1);
+      expect(updateEntrySpy).not.toHaveBeenCalled();
     });
 
     it('propagates the rotated refresh token to entries sharing it without MRRT', async () => {
