@@ -59,7 +59,7 @@ export class AnonymousSessionCacheManager {
   }
 
   getStore(audience?: string, scope?: string): SessionStore {
-    const key = `${this.baseKey}::${audience ?? ''}::${scope ?? ''}`;
+    const key = `${this.baseKey}::${JSON.stringify([audience ?? '', scope ?? ''])}`;
     if (!this.stores.has(key)) {
       this.stores.set(
         key,
