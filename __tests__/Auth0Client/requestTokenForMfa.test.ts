@@ -167,6 +167,41 @@ describe('Auth0Client', () => {
       expect(refreshTokenSentInCall(3)).toBe('rt3');
     });
 
+    it('skips propagation when no prior cache entry holds a refresh token', async () => {
+      const auth0 = setup({
+        useRefreshTokens: true,
+        useMrrt: true,
+        cacheLocation: 'localstorage'
+      });
+
+      // Call _requestTokenForMfa directly with no prior cache entry so
+      // previous?.refresh_token is undefined and _propagateRotatedRefreshToken
+      // takes the early-return path without calling cacheManager.updateEntry.
+      mockFetch.mockImplementationOnce((_url: string, init: { body: string }) =>
+        fetchResponse(true, {
+          id_token: TEST_ID_TOKEN,
+          access_token: 'access-token',
+          refresh_token: 'rt-new',
+          token_type: 'Bearer',
+          expires_in: 86400,
+          scope: requestBody(init.body).scope ?? 'openid'
+        })
+      );
+
+      await expect(
+        auth0._requestTokenForMfa({
+          grant_type: 'http://auth0.com/oauth/grant-type/mfa-otp',
+          mfaToken: MFA_TOKEN,
+          otp: '123456',
+          scope: 'openid',
+          audience: API_AUDIENCE
+        })
+      ).resolves.toMatchObject({ refresh_token: 'rt-new' });
+
+      // Only the one token call; no extra fetch from updateEntry propagation.
+      expect(mockFetch).toHaveBeenCalledTimes(1);
+    });
+
     it('propagates the rotated refresh token to entries sharing it without MRRT', async () => {
       const auth0 = setup({
         useRefreshTokens: true,
