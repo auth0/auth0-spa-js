@@ -146,7 +146,7 @@ const auth0 = await createAuth0Client({
 > [!NOTE]
 > Experiment Center support via SDKs is currently in Early Access. To request access to this feature, contact your Auth0 representative.
 
-[Experiment Center](https://auth0.com/docs/customize/universal-login-pages/experiment-center) lets you A/B test your login flow. Auth0 assigns each user to a variant server-side. When you need to force a specific variant — for testing or to apply a decision from a feature-flag tool — pass `experiment_id` and `variation_id` on the login call:
+[Experiment Center](https://auth0.com/docs/customize/experiment-center/overview) lets you A/B test your login flow. Auth0 assigns each user to a variant server-side. When you need to force a specific variant — for testing or to apply a decision from a feature-flag tool — pass `experiment_id` and `variation_id` on the login call:
 
 ```js
 await auth0.loginWithRedirect({
