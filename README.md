@@ -154,6 +154,12 @@ Explore API Methods available in auth0-spa-js.
 - [Auth0Client](https://auth0.github.io/auth0-spa-js/classes/Auth0Client.html)
 - [createAuth0Client](https://auth0.github.io/auth0-spa-js/functions/createAuth0Client.html)
 
+## Enterprise Connect
+
+Enterprise Connect lets B2B SaaS applications add enterprise SSO without replacing their existing auth stack.
+The SDK exports `isFederatedDomain` for email-domain discovery; you then start the login with `loginWithRedirect` using the email as `login_hint`. 
+See [EXAMPLES.md#enterprise-connect](EXAMPLES.md#enterprise-connect) for the full setup and flow.
+
 ## Feedback
 
 ### Contributing

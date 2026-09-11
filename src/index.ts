@@ -1,5 +1,9 @@
 import { Auth0Client } from './Auth0Client';
 import { Auth0ClientOptions } from './global';
+import {
+  isFederatedDomain,
+  IsFederatedDomainOptions
+} from './domain-discovery';
 
 import './global';
 
@@ -36,6 +40,9 @@ export async function createAuth0Client(options: Auth0ClientOptions) {
 }
 
 export { Auth0Client };
+
+export { isFederatedDomain };
+export type { IsFederatedDomainOptions };
 
 export {
   ConnectError,
