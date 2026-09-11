@@ -33,6 +33,6 @@ Pass these **per-call** rather than in `authorizationParams` at client construct
 
 ## Callers
 
-**For testing:** drive from test automation (e.g. Cypress, Playwright) with IDs read from a CI environment variable against a staging tenant. Do not hard-code variant IDs in shipped application code.
+**For testing:** drive from test automation (e.g. Cypress, Playwright) with IDs read from a CI environment variable against a development tenant. Do not hard-code variant IDs in shipped application code.
 
 **For production:** pass the variant decision from a feature-flag tool (e.g. LaunchDarkly) that has already decided which variant the user should see for this request.
