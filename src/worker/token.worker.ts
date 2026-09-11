@@ -129,6 +129,13 @@ const messageHandler = async ({
           ...body,
           refresh_token: refreshToken
         });
+    } else if (body.mfa_token) {
+      // Capture the old RT so updateRefreshTokens can fan out the rotation
+      // to all MRRT entries after the completion grant rotates it.
+      refreshToken = getRefreshToken(audience, scope);
+      if (!refreshToken && useMrrt) {
+        refreshToken = refreshTokens['latest_refresh_token'];
+      }
     }
 
     let abortController: AbortController | undefined;
