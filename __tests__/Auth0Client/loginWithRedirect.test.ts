@@ -340,6 +340,58 @@ describe('Auth0Client', () => {
       );
     });
 
+    it('should include experiment override params on the authorize url', async () => {
+      const auth0 = setup();
+
+      await loginWithRedirect(auth0, {
+        authorizationParams: {
+          experiment_id: 'exp_passkeys_onboarding',
+          variation_id: 'var_passkey_enabled',
+          segment_id: 'seg_enterprise'
+        }
+      });
+
+      const url = new URL(mockWindow.location.assign.mock.calls[0][0]);
+
+      assertUrlEquals(
+        url,
+        TEST_DOMAIN,
+        '/authorize',
+        {
+          experiment_id: 'exp_passkeys_onboarding',
+          variation_id: 'var_passkey_enabled',
+          segment_id: 'seg_enterprise'
+        },
+        false
+      );
+    });
+
+    it('should include experiment override params without segment_id on the authorize url', async () => {
+      const auth0 = setup();
+
+      await loginWithRedirect(auth0, {
+        authorizationParams: {
+          experiment_id: 'exp_passkeys_onboarding',
+          variation_id: 'var_passkey_enabled'
+        }
+      });
+
+      const url = new URL(mockWindow.location.assign.mock.calls[0][0]);
+
+      assertUrlEquals(
+        url,
+        TEST_DOMAIN,
+        '/authorize',
+        {
+          experiment_id: 'exp_passkeys_onboarding',
+          variation_id: 'var_passkey_enabled'
+        },
+        false
+      );
+
+      expect(url.searchParams.has('segment_id')).toBe(false);
+    });
+
     it('should log the user in using offline_access when using refresh tokens', async () => {
       const auth0 = setup({
         useRefreshTokens: true
