@@ -363,6 +363,28 @@ export interface Auth0ClientOptions {
   authorizationParams?: ClientAuthorizationParams;
 
   /**
+   * Where to store the anonymous session token.
+   *
+   * - `'localStorage'` (default): the session token survives page reloads. Suitable for most SPAs.
+   * - `'memory'`: the session token lives only for the current page load. Use this if you do not
+   *   want anonymous session data written to disk.
+   *
+   * @default 'localStorage'
+   */
+  anonymousSessionsCacheMode?: 'localStorage' | 'memory';
+
+  /**
+   * When `true`, automatically creates (or restores) an anonymous session whenever
+   * `getTokenSilently()` fails because the user is not authenticated.
+   *
+   * The anonymous session is available via `auth0.anonymous.getTokenSilently()` after
+   * the call returns. The original error from `getTokenSilently()` is still thrown.
+   *
+   * @default false
+   */
+  createAnonymousSessionOnFailedSilentAuth?: boolean;
+
+  /**
    * Query parameter name to extract the session transfer token from for Native to Web SSO.
    *
    * When set, the SDK automatically extracts the token from the specified URL query
