@@ -1,5 +1,18 @@
 # Change Log
 
+## [v2.25.0](https://github.com/auth0/auth0-spa-js/tree/v2.25.0) (2026-09-11)
+[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.24.1...v2.25.0)
+
+**⚠️ BREAKING CHANGES**
+- fix: widen getTokenSilently overload return types to include undefined [\#1733](https://github.com/auth0/auth0-spa-js/pull/1733) ([yogeshchoudhary147](https://github.com/yogeshchoudhary147))
+
+**Changed**
+- docs: split EXAMPLES.md into examples/ folder by feature [\#1730](https://github.com/auth0/auth0-spa-js/pull/1730) ([subhankarmaiti](https://github.com/subhankarmaiti))
+
+**Fixed**
+- fix: propagate rotated RT across MRRT entries after MFA completion in worker [\#1753](https://github.com/auth0/auth0-spa-js/pull/1753) ([yogeshchoudhary147](https://github.com/yogeshchoudhary147))
+- fix: converge MRRT cache after MFA completion grant [\#1752](https://github.com/auth0/auth0-spa-js/pull/1752) ([yogeshchoudhary147](https://github.com/yogeshchoudhary147))
+
 ## [v2.24.1](https://github.com/auth0/auth0-spa-js/tree/v2.24.1) (2026-07-28)
 [Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.24.0...v2.24.1)
 
