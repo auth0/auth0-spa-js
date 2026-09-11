@@ -147,12 +147,20 @@ For comprehensive examples covering various scenarios including logging out, cal
 
 ## API Reference
 
-Explore API Methods available in auth0-spa-js.
+Explore API Methods available in auth0-spa-js. The full reference is at [auth0.github.io/auth0-spa-js](https://auth0.github.io/auth0-spa-js/).
 
-- [Configuration Options](https://auth0.github.io/auth0-spa-js/interfaces/Auth0ClientOptions.html)
+**Getting started**
 
-- [Auth0Client](https://auth0.github.io/auth0-spa-js/classes/Auth0Client.html)
-- [createAuth0Client](https://auth0.github.io/auth0-spa-js/functions/createAuth0Client.html)
+- [createAuth0Client](https://auth0.github.io/auth0-spa-js/functions/createAuth0Client.html) - create and initialize a client
+- [Auth0ClientOptions](https://auth0.github.io/auth0-spa-js/interfaces/Auth0ClientOptions.html) - configuration options
+
+**Clients**
+
+- [Auth0Client](https://auth0.github.io/auth0-spa-js/classes/Auth0Client.html) - login, logout, tokens and user profile
+- [MfaApiClient](https://auth0.github.io/auth0-spa-js/classes/MfaApiClient.html) - `auth0.mfa`: enroll, challenge and verify authenticators
+- [PasskeyApiClient](https://auth0.github.io/auth0-spa-js/classes/PasskeyApiClient.html) - `auth0.passkey`: passkey signup and login
+- [MyAccountApiClient](https://auth0.github.io/auth0-spa-js/classes/MyAccountApiClient.html) - `auth0.myAccount`: manage the user's own authentication methods
+- [Fetcher](https://auth0.github.io/auth0-spa-js/classes/Fetcher.html) - call your APIs with tokens attached automatically
 
 ## Feedback
 
