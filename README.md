@@ -151,8 +151,8 @@ const auth0 = await createAuth0Client({
 ```js
 await auth0.loginWithRedirect({
   authorizationParams: {
-    experiment_id: 'exp_passkeys_onboarding',
-    variation_id: 'var_passkey_enabled'
+    experiment_id: '<EXPERIMENT_ID>',
+    variation_id: '<VARIATION_ID>'
   }
 });
 ```
