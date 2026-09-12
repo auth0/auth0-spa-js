@@ -141,6 +141,30 @@ const auth0 = await createAuth0Client({
 
 `refreshTokenMode` is a sub-option of `useRefreshTokens`: it defaults to `RefreshTokenMode.Offline` (the rotating refresh tokens described above) and must be set to `RefreshTokenMode.Online` for Online Refresh Tokens. Online mode requires both `useRefreshTokens: true` and `useDpop: true`. See [Online Access](https://github.com/auth0/auth0-spa-js/blob/main/examples/online-access.md) for the full guide.
 
+### Experiment Center
+
+> [!NOTE]
+> Experiment Center support via SDKs is currently in Early Access. To request access to this feature, contact your Auth0 representative.
+
+[Experiment Center](https://auth0.com/docs/customize/experiment-center/overview) lets you A/B test your login flow. Auth0 assigns each user to a variant server-side. When you need to force a specific variant — for testing or to apply a decision from a feature-flag tool — pass `experiment_id` and `variation_id` on the login call:
+
+```js
+await auth0.loginWithRedirect({
+  authorizationParams: {
+    experiment_id: '<EXPERIMENT_ID>',
+    variation_id: '<VARIATION_ID>'
+  }
+});
+```
+
+The override applies to that request only. The next login without these params reverts to normal server-side assignment.
+
+Pass these **per-call** rather than in the `authorizationParams` at client construction time, so the override does not affect silent `prompt=none` token-renewal calls (Experiment Center does not run on those).
+
+**For testing:** drive from test automation (e.g. Cypress, Playwright) with IDs read from a CI environment variable against a staging tenant. Do not hard-code variant IDs in shipped application code.
+
+**For production:** pass the variant decision from a feature-flag tool (e.g. LaunchDarkly) that has already decided which variant the user should see.
+
 ### More Examples
 
 For comprehensive examples covering various scenarios including logging out, calling APIs, refresh tokens, online access, organizations, passkeys, MFA, DPoP, and more, see the [EXAMPLES.md](https://github.com/auth0/auth0-spa-js/blob/main/EXAMPLES.md) document.
