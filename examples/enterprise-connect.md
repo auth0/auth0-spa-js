@@ -34,7 +34,8 @@ const auth0 = await createAuth0Client({
 ```
 
 Set `enterpriseConnect: true` so the SDK warns at initialization if the config
-contradicts EC's constraints (`offline_access` in scope, or a static `organization`).
+contradicts EC's constraints (`useRefreshTokens: true` or `offline_access` in scope,
+or a static `organization`).
 
 Enterprise Connect issues no refresh token, so the access token expires (24h by
 default) with no silent renewal. Plan to re-authenticate the user through the
@@ -114,4 +115,7 @@ await auth0.logout({
 ```
 
 The `returnTo` URL must be registered in your application's **Allowed Logout URLs**
-in the Auth0 Dashboard, otherwise Auth0 ignores it and falls back to the tenant default.
+in the Auth0 Dashboard. The SDK sends the client ID to the logout endpoint, so Auth0
+validates `returnTo` against that application's list; an unregistered value fails
+validation rather than falling back. If you omit `returnTo`, Auth0 uses the first
+allowed logout URL.

@@ -26,7 +26,20 @@ describe('Auth0Client - enterpriseConnect init warnings', () => {
     warnSpy.mockRestore();
   });
 
-  it('warns when offline_access is in scope', () => {
+  it('warns when useRefreshTokens is enabled', () => {
+    new Auth0Client({
+      domain: TEST_DOMAIN,
+      clientId: TEST_CLIENT_ID,
+      enterpriseConnect: true,
+      useRefreshTokens: true
+    });
+
+    expect(warnSpy).toHaveBeenCalledWith(
+      expect.stringContaining('useRefreshTokens')
+    );
+  });
+
+  it('warns when offline_access is in the scope string', () => {
     new Auth0Client({
       domain: TEST_DOMAIN,
       clientId: TEST_CLIENT_ID,
@@ -77,7 +90,8 @@ describe('Auth0Client - enterpriseConnect init warnings', () => {
     new Auth0Client({
       domain: TEST_DOMAIN,
       clientId: TEST_CLIENT_ID,
-      authorizationParams: { scope: 'openid profile offline_access', organization: 'org_123' }
+      useRefreshTokens: true,
+      authorizationParams: { organization: 'org_123' }
     });
 
     expect(warnSpy).not.toHaveBeenCalled();

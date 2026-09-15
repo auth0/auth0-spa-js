@@ -145,18 +145,20 @@
         });
 
         // Handle the redirect back from Auth0
-        if (
-          auth0Client &&
-          location.search.includes('code=') &&
-          location.search.includes('state=')
-        ) {
-          await auth0Client.handleRedirectCallback();
-          history.pushState({}, '', '/enterprise-connect.html');
-          const claims = await auth0Client.getIdTokenClaims();
-          // Validate org_id against the customers you serve before trusting the session.
-          userEl.textContent = `Logged in as ${claims.email} in org ${claims.org_id}`;
-          appEl.style.display = 'none';
-          logoutEl.style.display = 'inline-block';
+        if (auth0Client && location.search.includes('state=')) {
+          try {
+            await auth0Client.handleRedirectCallback();
+            history.pushState({}, '', '/enterprise-connect.html');
+            const claims = await auth0Client.getIdTokenClaims();
+            // Validate org_id against the customers you serve before trusting the session.
+            userEl.textContent = `Logged in as ${claims.email} in org ${claims.org_id}`;
+            appEl.style.display = 'none';
+            logoutEl.style.display = 'inline-block';
+          } catch (e) {
+            // Authorization errors (e.g. access_denied) throw here.
+            history.pushState({}, '', '/enterprise-connect.html');
+            result.textContent = `Login failed: ${e.message}`;
+          }
         }
 
         logoutEl.addEventListener('click', () => {

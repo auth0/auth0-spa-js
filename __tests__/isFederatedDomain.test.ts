@@ -64,4 +64,13 @@ describe('isFederatedDomain wrapper', () => {
       expect.objectContaining({ telemetry: DEFAULT_AUTH0_CLIENT })
     );
   });
+
+  it('strips an uppercase scheme and lowercases the auth0Domain', async () => {
+    await isFederatedDomain('HTTPS://TENANT.AUTH0.COM', 'acme.com');
+    expect(mockInner).toHaveBeenCalledWith(
+      'tenant.auth0.com',
+      'acme.com',
+      expect.objectContaining({ telemetry: DEFAULT_AUTH0_CLIENT })
+    );
+  });
 });

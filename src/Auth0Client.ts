@@ -224,9 +224,12 @@ export class Auth0Client {
     }
 
     const scope = options.authorizationParams?.scope;
-    if (typeof scope === 'string' && scope.includes('offline_access')) {
+    if (
+      options.useRefreshTokens === true ||
+      (typeof scope === 'string' && scope.includes('offline_access'))
+    ) {
       console.warn(
-        'Enterprise Connect issues no refresh token; `offline_access` in `scope` has no effect.'
+        'Enterprise Connect issues no refresh token; `useRefreshTokens` and `offline_access` in `scope` have no effect.'
       );
     }
 
