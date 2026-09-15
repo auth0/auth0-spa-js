@@ -110,7 +110,6 @@
         }
 
         function initClient(domain, clientId) {
-          const origin = `https://${domain.replace(/^https?:\/\//, '')}`;
           auth0Client = new auth0.Auth0Client({
             domain,
             clientId,

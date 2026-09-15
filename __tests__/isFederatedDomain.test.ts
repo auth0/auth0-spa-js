@@ -55,4 +55,13 @@ describe('isFederatedDomain wrapper', () => {
       expect.objectContaining({ telemetry: DEFAULT_AUTH0_CLIENT })
     );
   });
+
+  it('lowercases the email domain before passing to auth-js', async () => {
+    await isFederatedDomain('tenant.auth0.com', 'ACME.COM');
+    expect(mockInner).toHaveBeenCalledWith(
+      'tenant.auth0.com',
+      'acme.com',
+      expect.objectContaining({ telemetry: DEFAULT_AUTH0_CLIENT })
+    );
+  });
 });

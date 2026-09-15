@@ -217,8 +217,29 @@ export class Auth0Client {
     return true;
   }
 
+  /** Warns when the config contradicts Enterprise Connect's constraints. */
+  private warnEnterpriseConnectConfig(options: Auth0ClientOptions): void {
+    if (options.enterpriseConnect !== true) {
+      return;
+    }
+
+    const scope = options.authorizationParams?.scope;
+    if (typeof scope === 'string' && scope.includes('offline_access')) {
+      console.warn(
+        'Enterprise Connect issues no refresh token; `offline_access` in `scope` has no effect.'
+      );
+    }
+
+    if (options.authorizationParams?.organization) {
+      console.warn(
+        'Enterprise Connect resolves the organization from the email domain (Home Realm Discovery); a static `organization` breaks multi-customer setups.'
+      );
+    }
+  }
+
   constructor(options: Auth0ClientOptions) {
     this.onlineAccess = this.resolveOnlineAccess(options);
+    this.warnEnterpriseConnectConfig(options);
 
     this.options = {
       ...this.defaultOptions,

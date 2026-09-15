@@ -19,7 +19,7 @@ export function isFederatedDomain(
   options?: IsFederatedDomainOptions
 ): Promise<boolean> {
   const bare = auth0Domain.replace(/^https?:\/\//, '');
-  return _isFederatedDomain(bare, emailDomain, {
+  return _isFederatedDomain(bare, emailDomain.toLowerCase(), {
     ...options,
     telemetry: options?.telemetry ?? DEFAULT_AUTH0_CLIENT
   });

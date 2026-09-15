@@ -158,6 +158,7 @@ Explore API Methods available in auth0-spa-js.
 
 Enterprise Connect lets B2B SaaS applications add enterprise SSO without replacing their existing auth stack.
 The SDK exports `isFederatedDomain` for email-domain discovery; you then start the login with `loginWithRedirect` using the email as `login_hint`. 
+Set `enterpriseConnect: true` on `createAuth0Client` so the SDK warns at initialization if the config contradicts EC's constraints (`offline_access` in scope, or a static `organization`).
 See [EXAMPLES.md#enterprise-connect](EXAMPLES.md#enterprise-connect) for the full setup and flow.
 
 ## Feedback

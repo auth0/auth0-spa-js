@@ -24,6 +24,7 @@ import { createAuth0Client } from '@auth0/auth0-spa-js';
 const auth0 = await createAuth0Client({
   domain: 'YOUR_DOMAIN',
   clientId: 'YOUR_CLIENT_ID',
+  enterpriseConnect: true,
   authorizationParams: {
     redirect_uri: window.location.origin,
     scope: 'openid profile email' // no offline_access -- EC issues no refresh token
@@ -31,6 +32,13 @@ const auth0 = await createAuth0Client({
   }
 });
 ```
+
+Set `enterpriseConnect: true` so the SDK warns at initialization if the config
+contradicts EC's constraints (`offline_access` in scope, or a static `organization`).
+
+Enterprise Connect issues no refresh token, so the access token expires (24h by
+default) with no silent renewal. Plan to re-authenticate the user through the
+login flow when the token expires; `getTokenSilently` will not refresh it.
 
 ### Login
 
@@ -41,6 +49,10 @@ import { isFederatedDomain } from '@auth0/auth0-spa-js';
 
 const email = document.querySelector('#email').value;
 const emailDomain = email.split('@')[1];
+if (!emailDomain) {
+  // Not a valid email; prompt again or fall back to your own login
+  return;
+}
 
 // 1. Discover whether the domain is managed for enterprise SSO
 const federated = await isFederatedDomain('YOUR_DOMAIN', emailDomain);
@@ -72,8 +84,8 @@ console.log('Logged in as', claims.email, 'in org', claims.org_id);
 
 ### Validate the organization
 
-> [!WARNING]
-> Validate `org_id` after every callback. WebFinger discovery and `login_hint` are routing mechanisms, not proof that the user belongs to a customer you serve - on their own they do not authorize anyone. Read `org_id` from the ID token claims and check it against your own list of known organizations before treating the user as signed in for that customer. Without this check, a user authenticating through any managed connection could obtain a session in a context you did not intend.
+> [!NOTE]
+> We recommend validating `org_id` after the callback. WebFinger discovery and `login_hint` route the login; they do not, on their own, establish which customer the user belongs to. If your app serves multiple organizations, read `org_id` from the ID token claims and check it against your own list of known organizations. This is an application-level authorization decision, not a check the SDK enforces.
 
 ```ts
 const claims = await auth0.getIdTokenClaims();
@@ -100,3 +112,6 @@ await auth0.logout({
   }
 });
 ```
+
+The `returnTo` URL must be registered in your application's **Allowed Logout URLs**
+in the Auth0 Dashboard, otherwise Auth0 ignores it and falls back to the tenant default.
