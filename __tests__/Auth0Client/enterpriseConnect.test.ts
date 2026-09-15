@@ -63,6 +63,16 @@ describe('Auth0Client - enterpriseConnect init warnings', () => {
     expect(warnSpy).not.toHaveBeenCalled();
   });
 
+  it('does not warn when enterpriseConnect is set with no authorizationParams', () => {
+    new Auth0Client({
+      domain: TEST_DOMAIN,
+      clientId: TEST_CLIENT_ID,
+      enterpriseConnect: true
+    });
+
+    expect(warnSpy).not.toHaveBeenCalled();
+  });
+
   it('does not warn when enterpriseConnect is not set', () => {
     new Auth0Client({
       domain: TEST_DOMAIN,
