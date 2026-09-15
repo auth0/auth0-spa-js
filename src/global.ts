@@ -396,6 +396,22 @@ export interface Auth0ClientOptions {
    * @see https://auth0.com/docs/authenticate/single-sign-on/native-to-web
    */
   sessionTransferTokenQueryParamName?: string;
+
+  /**
+   * Set to `true` when this client drives an Enterprise Connect login (enterprise
+   * SSO resolved from the email domain via {@link isFederatedDomain} and `login_hint`).
+   *
+   * Enterprise Connect issues no refresh token and resolves the organization from
+   * Home Realm Discovery at login. When enabled, the SDK warns at initialization if
+   * the configuration contradicts that: `useRefreshTokens: true` or `offline_access`
+   * in `scope` (no refresh token is issued) or a static `organization` (HRD resolves
+   * it, and a static value breaks multi-customer setups).
+   *
+   * This is a routing/telemetry flag only; it does not by itself change the login flow.
+   *
+   * **Default:** `false`
+   */
+  enterpriseConnect?: boolean;
 }
 
 /**

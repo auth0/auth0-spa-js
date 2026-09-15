@@ -217,8 +217,32 @@ export class Auth0Client {
     return true;
   }
 
+  /** Warns when the config contradicts Enterprise Connect's constraints. */
+  private warnEnterpriseConnectConfig(options: Auth0ClientOptions): void {
+    if (options.enterpriseConnect !== true) {
+      return;
+    }
+
+    const scope = options.authorizationParams?.scope;
+    if (
+      options.useRefreshTokens === true ||
+      (typeof scope === 'string' && scope.includes('offline_access'))
+    ) {
+      console.warn(
+        'Enterprise Connect issues no refresh token; `useRefreshTokens` and `offline_access` in `scope` have no effect.'
+      );
+    }
+
+    if (options.authorizationParams?.organization) {
+      console.warn(
+        'Enterprise Connect resolves the organization from the email domain (Home Realm Discovery); a static `organization` breaks multi-customer setups.'
+      );
+    }
+  }
+
   constructor(options: Auth0ClientOptions) {
     this.onlineAccess = this.resolveOnlineAccess(options);
+    this.warnEnterpriseConnectConfig(options);
 
     this.options = {
       ...this.defaultOptions,
@@ -1304,6 +1328,15 @@ export class Auth0Client {
    * @param options
    */
   public async logout(options: LogoutOptions = {}): Promise<void> {
+    if (
+      this.options.enterpriseConnect &&
+      options.logoutParams?.federated !== true
+    ) {
+      console.warn(
+        'Enterprise Connect logout without `federated: true` leaves the enterprise IdP session alive; the next login may silently reuse the previous user.'
+      );
+    }
+
     const { openUrl, ...logoutOptions } = patchOpenUrlWithOnRedirect(options);
 
     await this._clearLocalSession(options.clientId);
