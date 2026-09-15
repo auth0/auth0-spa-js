@@ -181,15 +181,20 @@ await auth0.myAccount.enrollmentVerify({
 
 ### Error Handling
 
-All MyAccount API errors throw `MyAccountApiError` with RFC 7807 fields.
+Every MyAccount API call can throw one of two errors — wrap them all the same way:
+
+- **`GenericError` (`error === 'missing_access_token'`)** — thrown before the request is made when no access token is available (e.g. `cacheMode: 'cache-only'` cache miss or session ceiling reached). Redirect the user to log in.
+- **`MyAccountApiError`** — thrown when the API responds with an error. Contains RFC 7807 fields (`status`, `title`, `detail`, and optionally `validation_errors`).
 
 ```js
-import { MyAccountApiError } from '@auth0/auth0-spa-js';
+import { GenericError, MyAccountApiError } from '@auth0/auth0-spa-js';
 
 try {
   await auth0.myAccount.enrollmentChallenge({ type: 'passkey' });
 } catch (err) {
-  if (err instanceof MyAccountApiError) {
+  if (err instanceof GenericError && err.error === 'missing_access_token') {
+    // No token available — redirect the user to log in.
+  } else if (err instanceof MyAccountApiError) {
     console.error(err.status, err.title, err.detail);
     if (err.validation_errors) {
       err.validation_errors.forEach(e => console.error(e.field, e.detail));

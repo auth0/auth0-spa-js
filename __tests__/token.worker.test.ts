@@ -1527,6 +1527,83 @@ describe('token worker', () => {
         refresh_token: 'foo'
       });
     });
+
+    it('propagates the rotated RT to all MRRT entries after MFA completion', async () => {
+      const { messageRouter } = require('../src/worker/token.worker');
+
+      const sendAs = (audience: string, scope: string, opts: any) =>
+        new Promise(resolve =>
+          messageRouter({
+            data: { ...opts, useMrrt: true, auth: { audience, scope } },
+            ports: [{ postMessage: resolve }]
+          })
+        );
+
+      // Login: audience1 entry seeded with RT1.
+      mockFetch.mockReturnValueOnce(Promise.resolve({
+        ok: true,
+        json: () => ({ refresh_token: 'rt1' }),
+        headers: new Headers()
+      }));
+      await sendAs('audience1', 'scope1', {
+        fetchUrl: TOKEN_ENDPOINT,
+        fetchOptions: { method: 'POST', body: JSON.stringify({ grant_type: 'authorization_code' }) }
+      });
+
+      // MRRT refresh for audience2: both entries converge on RT2.
+      mockFetch.mockReturnValueOnce(Promise.resolve({
+        ok: true,
+        json: () => ({ refresh_token: 'rt2' }),
+        headers: new Headers()
+      }));
+      await sendAs('audience2', 'scope2', {
+        fetchUrl: TOKEN_ENDPOINT,
+        fetchOptions: { method: 'POST', body: JSON.stringify({ grant_type: 'refresh_token' }) }
+      });
+
+      // audience1 refresh is refused with mfa_required: RT2 consumed, audience1 entry evicted.
+      mockFetch.mockReturnValueOnce(Promise.resolve({
+        ok: false,
+        json: () => ({ error: 'mfa_required', mfa_token: 'mfa-token' }),
+        headers: new Headers()
+      }));
+      await sendAs('audience1', 'scope1', {
+        fetchUrl: TOKEN_ENDPOINT,
+        fetchOptions: { method: 'POST', body: JSON.stringify({ grant_type: 'refresh_token' }) }
+      });
+
+      // MFA completion grant: server rotates RT2 → RT3.
+      mockFetch.mockReturnValueOnce(Promise.resolve({
+        ok: true,
+        json: () => ({ refresh_token: 'rt3', access_token: 'at3' }),
+        headers: new Headers()
+      }));
+      await sendAs('audience1', 'scope1', {
+        fetchUrl: TOKEN_ENDPOINT,
+        fetchOptions: {
+          method: 'POST',
+          body: JSON.stringify({
+            grant_type: 'http://auth0.com/oauth/grant-type/mfa-otp',
+            mfa_token: 'mfa-token',
+            otp: '123456'
+          })
+        }
+      });
+
+      // audience2 must now refresh with RT3; presenting RT2 would trip reuse detection.
+      mockFetch.mockReturnValueOnce(Promise.resolve({
+        ok: true,
+        json: () => ({ refresh_token: 'rt4' }),
+        headers: new Headers()
+      }));
+      await sendAs('audience2', 'scope2', {
+        fetchUrl: TOKEN_ENDPOINT,
+        fetchOptions: { method: 'POST', body: JSON.stringify({ grant_type: 'refresh_token' }) }
+      });
+
+      const lastCallBody = JSON.parse(mockFetch.mock.calls[4][1].body);
+      expect(lastCallBody.refresh_token).toBe('rt3');
+    });
   });
 
   describe("useMrrt with default audience", () => {
