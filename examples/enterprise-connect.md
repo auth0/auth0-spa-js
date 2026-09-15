@@ -41,6 +41,10 @@ Enterprise Connect issues no refresh token, so the access token expires (24h by
 default) with no silent renewal. Plan to re-authenticate the user through the
 login flow when the token expires; `getTokenSilently` will not refresh it.
 
+Treat Enterprise Connect as identity only: extract the ID token claims after login
+and issue your own application session or API tokens from them. Do not rely on the
+Auth0 access token for long-lived API authorization.
+
 ### Login
 
 Check the email domain with `isFederatedDomain`, then start the redirect with the email as `login_hint`:

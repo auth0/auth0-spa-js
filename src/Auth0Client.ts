@@ -1328,6 +1328,15 @@ export class Auth0Client {
    * @param options
    */
   public async logout(options: LogoutOptions = {}): Promise<void> {
+    if (
+      this.options.enterpriseConnect &&
+      options.logoutParams?.federated !== true
+    ) {
+      console.warn(
+        'Enterprise Connect logout without `federated: true` leaves the enterprise IdP session alive; the next login may silently reuse the previous user.'
+      );
+    }
+
     const { openUrl, ...logoutOptions } = patchOpenUrlWithOnRedirect(options);
 
     await this._clearLocalSession(options.clientId);

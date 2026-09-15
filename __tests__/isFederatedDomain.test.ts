@@ -73,4 +73,19 @@ describe('isFederatedDomain wrapper', () => {
       expect.objectContaining({ telemetry: DEFAULT_AUTH0_CLIENT })
     );
   });
+
+  it('strips an http:// prefix from auth0Domain', async () => {
+    await isFederatedDomain('http://tenant.auth0.com', 'acme.com');
+    expect(mockInner).toHaveBeenCalledWith(
+      'tenant.auth0.com',
+      'acme.com',
+      expect.objectContaining({ telemetry: DEFAULT_AUTH0_CLIENT })
+    );
+  });
+
+  it('returns the false result from auth-js for an unmanaged domain', async () => {
+    mockInner.mockResolvedValueOnce(false);
+    const result = await isFederatedDomain('tenant.auth0.com', 'acme.com');
+    expect(result).toBe(false);
+  });
 });

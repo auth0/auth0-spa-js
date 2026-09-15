@@ -97,3 +97,61 @@ describe('Auth0Client - enterpriseConnect init warnings', () => {
     expect(warnSpy).not.toHaveBeenCalled();
   });
 });
+
+describe('Auth0Client - enterpriseConnect logout warning', () => {
+  let warnSpy: jest.SpyInstance;
+
+  beforeEach(() => {
+    mockWindow.crypto = {
+      subtle: { digest: () => 'foo' },
+      getRandomValues: () => '123'
+    };
+    mockWindow.MessageChannel = MessageChannel;
+    mockWindow.Worker = {};
+    mockWindow.location = { assign: jest.fn() };
+    warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    jest.clearAllMocks();
+    warnSpy.mockRestore();
+  });
+
+  it('warns on logout without federated: true', async () => {
+    const client = new Auth0Client({
+      domain: TEST_DOMAIN,
+      clientId: TEST_CLIENT_ID,
+      enterpriseConnect: true
+    });
+
+    await client.logout({ openUrl: () => {} });
+
+    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('federated'));
+  });
+
+  it('does not warn on logout with federated: true', async () => {
+    const client = new Auth0Client({
+      domain: TEST_DOMAIN,
+      clientId: TEST_CLIENT_ID,
+      enterpriseConnect: true
+    });
+
+    await client.logout({
+      openUrl: () => {},
+      logoutParams: { federated: true }
+    });
+
+    expect(warnSpy).not.toHaveBeenCalled();
+  });
+
+  it('does not warn on logout when enterpriseConnect is not set', async () => {
+    const client = new Auth0Client({
+      domain: TEST_DOMAIN,
+      clientId: TEST_CLIENT_ID
+    });
+
+    await client.logout({ openUrl: () => {} });
+
+    expect(warnSpy).not.toHaveBeenCalled();
+  });
+});
