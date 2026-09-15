@@ -1,5 +1,11 @@
 # Change Log
 
+## [v2.26.0](https://github.com/auth0/auth0-spa-js/tree/v2.26.0) (2026-09-15)
+[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.25.0...v2.26.0)
+
+**Added**
+- feat: add Enterprise Connect support [\#1738](https://github.com/auth0/auth0-spa-js/pull/1738) ([gyaneshgouraw](https://github.com/gyaneshgouraw))
+
 ## [v2.25.0](https://github.com/auth0/auth0-spa-js/tree/v2.25.0) (2026-09-11)
 [Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.24.1...v2.25.0)
 
