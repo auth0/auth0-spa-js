@@ -77,29 +77,28 @@ export class AnonymousSessionApiClient {
       return stored;
     }
 
-    const sessionToken = stored?.sessionToken ?? this.cache.getAnySessionToken();
-
-    if (sessionToken) {
-      const session = await this.authJsClient.getAccessToken({
-        ...options,
-        sessionToken
-      });
-      store.set(session);
-      return session;
-    }
-
-    // No session token anywhere — lock to ensure only one anonymous identity is created
-    // even when concurrent calls race across different audience+scope slots.
+    // Access token expired or absent — acquire lock so concurrent callers (same tab or
+    // cross-tab) don't each trigger a renewal that may mint a new anonymous identity
+    // when the session token is also expired. Known cost: lock uses localStorage polling,
+    // so even zero-contention renewals pay I/O overhead.
     return this.lockManager.runWithLock(
       `anonymous::${this.clientId}`,
       5000,
       async () => {
-        // Double-check: another call may have created a session while we waited for the lock.
-        const tokenAfterLock =
-          store.get()?.sessionToken ?? this.cache.getAnySessionToken();
+        // Re-check inside the lock: a concurrent caller may have already renewed.
+        const afterLock = store.get();
+        if (
+          afterLock &&
+          afterLock.expiresAt - EXPIRY_LEEWAY_SECONDS > Date.now() / 1000
+        ) {
+          return afterLock;
+        }
+
+        const sessionToken =
+          afterLock?.sessionToken ?? this.cache.getAnySessionToken();
         const session = await this.authJsClient.getAccessToken({
           ...options,
-          sessionToken: tokenAfterLock
+          sessionToken
         });
         store.set(session);
         return session;

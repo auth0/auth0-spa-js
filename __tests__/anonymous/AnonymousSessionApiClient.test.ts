@@ -332,7 +332,7 @@ describe('AnonymousSessionApiClient', () => {
       );
     });
 
-    it('does not acquire a lock when a session token is already stored', async () => {
+    it('acquires a lock when access token is expired, even if a session token is stored', async () => {
       const lockManager = makeLockManager();
       const client = makeClient('memory', lockManager);
       const expiredSession = mockSession({
@@ -344,28 +344,74 @@ describe('AnonymousSessionApiClient', () => {
       await client.getTokenSilently();
       lockManager.runWithLock.mockClear();
 
-      // Second call: access token expired but sessionToken present — no lock needed
+      // Second call: access token expired — lock is acquired even though sessionToken is present
       await client.getTokenSilently();
 
-      expect(lockManager.runWithLock).not.toHaveBeenCalled();
+      expect(lockManager.runWithLock).toHaveBeenCalledWith(
+        'anonymous::test_client',
+        5000,
+        expect.any(Function)
+      );
     });
 
-    it('uses a session token created by another call while waiting for the lock', async () => {
+    it('returns a fresh token written by a concurrent call without a network request', async () => {
+      const concurrentSession = mockSession({
+        sessionToken: 'concurrent_token',
+        expiresAt: Math.floor(Date.now() / 1000) + 3600
+      });
       const lockManager: ILockManager = {
         runWithLock: jest.fn().mockImplementation((_key, _timeout, cb) => {
-          // Simulate another tab/call writing a session to localStorage before we run
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(mockSession({ sessionToken: 'concurrent_token' })));
+          // Simulate another tab/call writing a fresh session to localStorage before we run
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(concurrentSession));
           return cb();
         })
       };
       const client = makeClient('localStorage', lockManager);
-      authJsClient.getAccessToken.mockResolvedValue(mockSession({ accessToken: 'renewed_token' }));
 
-      await client.getTokenSilently();
+      const result = await client.getTokenSilently();
 
-      expect(authJsClient.getAccessToken).toHaveBeenCalledWith({
-        sessionToken: 'concurrent_token'
+      expect(authJsClient.getAccessToken).not.toHaveBeenCalled();
+      expect(result).toEqual(concurrentSession);
+    });
+
+    it('makes only one network call when two concurrent calls find an expired access token', async () => {
+      // A serializing lock: the second callback only runs after the first resolves.
+      // This mirrors what the real ILockManager does across tabs/calls.
+      let queue = Promise.resolve<unknown>(undefined);
+      const serializingLockManager: ILockManager = {
+        runWithLock: jest.fn().mockImplementation((_key, _timeout, cb) => {
+          const result = queue.then(() => cb());
+          queue = result.then(
+            () => {},
+            () => {}
+          );
+          return result;
+        })
+      };
+
+      const client = makeClient('memory', serializingLockManager);
+      const expiredSession = mockSession({
+        sessionToken: 'existing_token',
+        expiresAt: Math.floor(Date.now() / 1000) - 10
       });
+      const renewedSession = mockSession({ accessToken: 'renewed_token' });
+
+      // Populate cache with an expired access token
+      authJsClient.getAccessToken.mockResolvedValueOnce(expiredSession);
+      await client.getTokenSilently();
+      authJsClient.getAccessToken.mockClear();
+
+      // Two concurrent calls both see the expired access token
+      authJsClient.getAccessToken.mockResolvedValue(renewedSession);
+      const [result1, result2] = await Promise.all([
+        client.getTokenSilently(),
+        client.getTokenSilently()
+      ]);
+
+      // Only one network call — the second caller found the fresh token via the double-check
+      expect(authJsClient.getAccessToken).toHaveBeenCalledTimes(1);
+      expect(result1).toEqual(renewedSession);
+      expect(result2).toEqual(renewedSession);
     });
   });
 

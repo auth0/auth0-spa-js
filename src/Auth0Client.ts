@@ -917,7 +917,10 @@ export class Auth0Client {
     if (this.options.createAnonymousSessionOnFailedSilentAuth) {
       try {
         await this.anonymous.getTokenSilently();
-      } catch (_) {}
+      } catch (e) {
+        // eslint-disable-next-line no-console
+        console.debug('[auth0-spa-js] Anonymous session creation failed', e);
+      }
     }
   }
 
