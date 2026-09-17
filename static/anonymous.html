@@ -35,13 +35,16 @@
           <button class="btn btn-secondary" onclick="refreshSession()">2. Refresh Token</button>
         </div>
         <div class="btn-group mr-2">
-          <button class="btn btn-success" onclick="loginWithSession()">3. Login with Session</button>
+          <button class="btn btn-dark" onclick="mintTransferToken()">3. Mint Transfer Token</button>
         </div>
         <div class="btn-group mr-2">
-          <button class="btn btn-warning" onclick="logoutSession()">4. Anonymous Logout</button>
+          <button class="btn btn-success" onclick="loginWithSession()">4. Login with Session</button>
         </div>
         <div class="btn-group mr-2">
-          <button class="btn btn-danger" onclick="logoutAuth0()">5. Auth0 Logout</button>
+          <button class="btn btn-warning" onclick="logoutSession()">5. Anonymous Logout</button>
+        </div>
+        <div class="btn-group mr-2">
+          <button class="btn btn-danger" onclick="logoutAuth0()">6. Auth0 Logout</button>
         </div>
         <div class="btn-group">
           <button class="btn btn-outline-danger" onclick="clearLocal()">Clear Local</button>
@@ -159,18 +162,31 @@
         }
       }
 
-      async function loginWithSession() {
-        if (!auth0Client) {
-          auth0Client = await auth0.createAuth0Client({
-            domain: DOMAIN,
-            clientId: CLIENT_ID,
-          });
+      async function mintTransferToken() {
+        showOp('anonymous.mintTransferToken() → POST /anonymous/token { audience: "urn:auth0:anon_transfer" }');
+        try {
+          const client = await getClient();
+          const token = await client.anonymous.mintTransferToken();
+          if (!token) {
+            showResponse('No session active or request failed.');
+            return;
+          }
+          showResponse({ anon_transfer_token: token.slice(0, 60) + '...' });
+        } catch (e) {
+          showResponse('Error: ' + e.message);
         }
-        const params = { audience: AUDIENCE, redirect_uri: window.location.href };
-        showRequest('loginWithRedirect', '/authorize', params);
-        await auth0Client.loginWithRedirect({
-          authorizationParams: params
-        });
+      }
+
+      async function loginWithSession() {
+        showOp('loginWithRedirect (mints anon_transfer_token and appends to /authorize)');
+        try {
+          const client = await getClient();
+          await client.loginWithRedirect({
+            authorizationParams: { audience: AUDIENCE, redirect_uri: window.location.href },
+          });
+        } catch (e) {
+          showResponse('Error: ' + e.message);
+        }
       }
 
       async function logoutSession() {

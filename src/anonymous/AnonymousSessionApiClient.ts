@@ -37,14 +37,17 @@ export class AnonymousSessionApiClient {
   private readonly cache: AnonymousSessionCacheManager;
   private readonly lockManager: ILockManager;
   private readonly clientId: string;
+  private readonly domain: string;
 
   constructor(
     private authJsClient: AnonymousSessionClient,
     clientId: string,
     cacheMode: 'localStorage' | 'memory' = 'localStorage',
-    lockManager?: ILockManager
+    lockManager?: ILockManager,
+    domain: string = ''
   ) {
     this.clientId = clientId;
+    this.domain = domain;
     this.cache = new AnonymousSessionCacheManager(clientId, cacheMode);
     this.lockManager = lockManager ?? getLockManager();
   }
@@ -131,6 +134,35 @@ export class AnonymousSessionApiClient {
   /**
    * Ends the anonymous session and clears all locally stored tokens.
    */
+  /**
+   * Mints a short-lived session transfer ticket (30s JWE) for linking the
+   * anonymous session during `loginWithRedirect()`. Returns `null` if no
+   * session is active or the request fails.
+   */
+  async mintTransferToken(): Promise<string | null> {
+    const stored = this.cache.getSessionToken();
+    if (!stored?.sessionToken || !this.domain) return null;
+    try {
+      const response = await fetch(`https://${this.domain}/anonymous/token`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          client_id: this.clientId,
+          session_token: stored.sessionToken,
+          audience: 'urn:auth0:anon_transfer'
+        })
+      });
+      if (!response.ok) return null;
+      const data = await response.json();
+      return typeof data.anon_transfer_token === 'string'
+        ? data.anon_transfer_token
+        : null;
+    } catch {
+      return null;
+    }
+  }
+
   async logout(): Promise<void> {
     await this.authJsClient.logout();
     this.cache.removeAll();

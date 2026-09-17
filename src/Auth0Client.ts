@@ -378,7 +378,8 @@ export class Auth0Client {
       this.authJsClient.anonymous,
       this.options.clientId,
       this.options.anonymousSessionsCacheMode,
-      this.lockManager
+      this.lockManager,
+      this.options.domain
     );
     this.passkey = new PasskeyApiClient(
       this.authJsClient.passkey,
@@ -713,7 +714,11 @@ export class Auth0Client {
       urlOptions.authorizationParams?.organization ||
       this.options.authorizationParams.organization;
 
-    const authorizationParams = this._applySessionTransferToken(urlOptions.authorizationParams || {});
+    const baseParams = this._applySessionTransferToken(urlOptions.authorizationParams || {});
+    const anonTransferToken = await this.anonymous.mintTransferToken();
+    const authorizationParams = anonTransferToken
+      ? { ...baseParams, anon_transfer_token: anonTransferToken }
+      : baseParams;
 
     const { url, ...transaction } = await this._prepareAuthorizeUrl(
       authorizationParams

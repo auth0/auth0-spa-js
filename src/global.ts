@@ -172,6 +172,14 @@ export interface AuthorizationParams {
   segment_id?: string;
 
   /**
+   * Short-lived session transfer ticket (JWE) for linking an anonymous session
+   * during login. Minted via `POST /anonymous/token` with
+   * `audience: "urn:auth0:anon_transfer"` and valid for 30 seconds.
+   * Set automatically by `loginWithRedirect()` when an anonymous session is active.
+   */
+  anon_transfer_token?: string;
+
+  /**
    * If you need to send custom parameters to the Authorization Server,
    * make sure to use the original parameter name.
    */
