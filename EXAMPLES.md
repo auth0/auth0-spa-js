@@ -20,3 +20,4 @@ Each topic lives in its own file under [`examples/`](examples).
 - [Session Expiry from Upstream IdP (IPSIE)](examples/session-expiry-ipsie.md)
 - [Enterprise Connect](examples/enterprise-connect.md)
 - [Experiment Center](examples/experiment-center.md)
+- [Anonymous Sessions](examples/anonymous-sessions.md)
