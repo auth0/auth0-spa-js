@@ -180,7 +180,7 @@ describe('AnonymousSessionApiClient', () => {
         sessionToken: 'persisted_session_token',
         expiresAt: Math.floor(Date.now() / 1000) + 3600
       });
-      const existingKey = '@@auth0spajs@@::test_client::anonymous::https://api-a.example.com::';
+      const existingKey = '@@auth0spajs@@::test_client::anonymous::["https://api-a.example.com",""]';
       localStorage.setItem(existingKey, JSON.stringify(previousSession));
 
       // New client instance (simulates page reload — stores Map is empty)
@@ -281,8 +281,8 @@ describe('AnonymousSessionApiClient', () => {
 
     it('clears localStorage slots written before page reload on logout', async () => {
       // Simulate slots persisted from a previous session
-      const keyA = '@@auth0spajs@@::test_client::anonymous::https://api-a.example.com::';
-      const keyB = '@@auth0spajs@@::test_client::anonymous::https://api-b.example.com::';
+      const keyA = '@@auth0spajs@@::test_client::anonymous::["https://api-a.example.com",""]';
+      const keyB = '@@auth0spajs@@::test_client::anonymous::["https://api-b.example.com",""]';
       localStorage.setItem(keyA, JSON.stringify(mockSession()));
       localStorage.setItem(keyB, JSON.stringify(mockSession()));
 

@@ -407,11 +407,13 @@ export interface Auth0ClientOptions {
   anonymousSessionsCacheMode?: 'localStorage' | 'memory';
 
   /**
-   * When `true`, automatically creates (or restores) an anonymous session whenever
-   * `getTokenSilently()` fails because the user is not authenticated.
+   * When `true`, `checkSession()` automatically creates (or restores) an anonymous
+   * session when the user is not authenticated. This does not affect standalone
+   * `getTokenSilently()` calls. `checkSession()` does not throw in this case.
    *
-   * The anonymous session is available via `auth0.anonymous.getTokenSilently()` after
-   * the call returns. The original error from `getTokenSilently()` is still thrown.
+   * **Metadata limitation:** the session is created without metadata. If you need
+   * to attach metadata to the anonymous identity, do not use this option. Call
+   * `auth0.anonymous.createSession({ metadata })` explicitly instead.
    *
    * @default false
    */

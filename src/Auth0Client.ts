@@ -916,6 +916,10 @@ export class Auth0Client {
   private async _maybeCreateAnonymousSession() {
     if (this.options.createAnonymousSessionOnFailedSilentAuth) {
       try {
+        // No audience is requested here. This establishes the session token only.
+        // The app calls anonymous.getTokenSilently({ audience }) separately for each
+        // resource server and those calls reuse the session token without creating a
+        // new identity.
         await this.anonymous.getTokenSilently();
       } catch (e) {
         // eslint-disable-next-line no-console

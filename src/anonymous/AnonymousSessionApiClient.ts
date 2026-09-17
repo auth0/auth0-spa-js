@@ -50,12 +50,7 @@ export class AnonymousSessionApiClient {
     options?: CreateAnonymousSessionOptions
   ): Promise<AnonymousSession> {
     const session = await this.authJsClient.createSession(options);
-    this.cache
-      .getStore(
-        (options as AnonymousGetTokenSilentlyOptions)?.audience,
-        (options as AnonymousGetTokenSilentlyOptions)?.scope
-      )
-      .set(session);
+    this.cache.getStore(options?.audience, options?.scope).set(session);
     return session;
   }
 
