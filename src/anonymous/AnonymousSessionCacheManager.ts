@@ -1,26 +1,36 @@
-import type { AnonymousSession } from '@auth0/auth0-auth-js';
-
 const STORAGE_KEY_PREFIX = '@@auth0spajs@@';
+const SESSION_TOKEN_SUFFIX = 'session';
 
-type SessionStore = {
-  get(): AnonymousSession | null;
-  set(session: AnonymousSession): void;
+type SharedSession = {
+  sessionToken: string;
+  sessionTokenExpiresAt?: number;
+};
+
+type AccessTokenSlot = {
+  accessToken: string;
+  expiresAt: number;
+  scope?: string;
+};
+
+type Store<T> = {
+  get(): T | null;
+  set(value: T): void;
   remove(): void;
 };
 
-function makeLocalStore(key: string): SessionStore {
+function makeLocalStore<T>(key: string): Store<T> {
   return {
     get() {
       try {
         const raw = window.localStorage.getItem(key);
-        return raw ? (JSON.parse(raw) as AnonymousSession) : null;
+        return raw ? (JSON.parse(raw) as T) : null;
       } catch {
         return null;
       }
     },
-    set(session) {
+    set(value) {
       try {
-        window.localStorage.setItem(key, JSON.stringify(session));
+        window.localStorage.setItem(key, JSON.stringify(value));
       } catch {}
     },
     remove() {
@@ -31,21 +41,20 @@ function makeLocalStore(key: string): SessionStore {
   };
 }
 
-function makeMemoryStore(): SessionStore {
-  let stored: AnonymousSession | null = null;
+function makeMemoryStore<T>(): Store<T> {
+  let stored: T | null = null;
   return {
     get: () => stored,
-    set: s => {
-      stored = s;
-    },
-    remove: () => {
-      stored = null;
-    }
+    set: v => { stored = v; },
+    remove: () => { stored = null; }
   };
 }
 
+export type { AccessTokenSlot, SharedSession };
+
 export class AnonymousSessionCacheManager {
-  private readonly stores = new Map<string, SessionStore>();
+  private readonly slots = new Map<string, Store<AccessTokenSlot>>();
+  private readonly sessionStore: Store<SharedSession>;
 
   private readonly baseKey: string;
   private readonly useLocalStorage: boolean;
@@ -56,63 +65,46 @@ export class AnonymousSessionCacheManager {
       cacheMode === 'localStorage' &&
       typeof window !== 'undefined' &&
       !!window.localStorage;
-  }
 
-  getStore(audience?: string, scope?: string): SessionStore {
-    const key = `${this.baseKey}::${JSON.stringify([audience ?? '', scope ?? ''])}`;
-    if (!this.stores.has(key)) {
-      this.stores.set(
-        key,
-        this.useLocalStorage ? makeLocalStore(key) : makeMemoryStore()
-      );
-    }
-    return this.stores.get(key)!;
-  }
+    const sessionKey = `${this.baseKey}::${SESSION_TOKEN_SUFFIX}`;
+    this.sessionStore = this.useLocalStorage
+      ? makeLocalStore<SharedSession>(sessionKey)
+      : makeMemoryStore<SharedSession>();
 
-  // Returns the sessionToken from any stored slot so the same anonymous identity
-  // is reused when fetching a token for a new audience or scope.
-  // In localStorage mode, scans localStorage directly so the token survives page reloads.
-  getAnySessionToken(): string | undefined {
     if (this.useLocalStorage) {
       try {
         for (let i = 0; i < window.localStorage.length; i++) {
           const key = window.localStorage.key(i);
-          if (key?.startsWith(this.baseKey + '::')) {
-            try {
-              const raw = window.localStorage.getItem(key);
-              if (raw) {
-                const session = JSON.parse(raw) as AnonymousSession;
-                if (session?.sessionToken) return session.sessionToken;
-              }
-            } catch {}
+          if (key?.startsWith(this.baseKey + '::') && key !== sessionKey) {
+            this.slots.set(key, makeLocalStore<AccessTokenSlot>(key));
           }
         }
       } catch {}
-      return undefined;
     }
-    for (const store of this.stores.values()) {
-      const session = store.get();
-      if (session?.sessionToken) return session.sessionToken;
+  }
+
+  getStore(audience?: string, scope?: string): Store<AccessTokenSlot> {
+    const key = `${this.baseKey}::${JSON.stringify([audience ?? '', scope ?? ''])}`;
+    if (!this.slots.has(key)) {
+      this.slots.set(
+        key,
+        this.useLocalStorage ? makeLocalStore<AccessTokenSlot>(key) : makeMemoryStore<AccessTokenSlot>()
+      );
     }
-    return undefined;
+    return this.slots.get(key)!;
+  }
+
+  getSessionToken(): SharedSession | null {
+    return this.sessionStore.get();
+  }
+
+  setSessionToken(session: SharedSession): void {
+    this.sessionStore.set(session);
   }
 
   removeAll(): void {
-    if (this.useLocalStorage) {
-      const keysToRemove: string[] = [];
-      try {
-        for (let i = 0; i < window.localStorage.length; i++) {
-          const key = window.localStorage.key(i);
-          if (key?.startsWith(this.baseKey + '::')) keysToRemove.push(key);
-        }
-      } catch {}
-      keysToRemove.forEach(key => {
-        try {
-          window.localStorage.removeItem(key);
-        } catch {}
-      });
-    }
-    this.stores.forEach(store => store.remove());
-    this.stores.clear();
+    this.sessionStore.remove();
+    this.slots.forEach(store => store.remove());
+    this.slots.clear();
   }
 }

@@ -19,7 +19,8 @@ const makeLockManager = (): jest.Mocked<ILockManager> => ({
   runWithLock: jest.fn().mockImplementation((_key, _timeout, cb) => cb())
 });
 
-const STORAGE_KEY = '@@auth0spajs@@::test_client::anonymous::["",""]';
+const SESSION_TOKEN_KEY = '@@auth0spajs@@::test_client::anonymous::session';
+const SLOT_KEY = '@@auth0spajs@@::test_client::anonymous::["",""]';
 
 
 describe('AnonymousSessionApiClient', () => {
@@ -40,7 +41,7 @@ describe('AnonymousSessionApiClient', () => {
       // Verify by storing a session and checking localStorage
       authJsClient.createSession.mockResolvedValue(mockSession());
       return client.createSession().then(() => {
-        expect(localStorage.setItem).toHaveBeenCalledWith(STORAGE_KEY, expect.any(String));
+        expect(localStorage.setItem).toHaveBeenCalledWith(SESSION_TOKEN_KEY, expect.any(String));
       });
     });
 
@@ -56,7 +57,7 @@ describe('AnonymousSessionApiClient', () => {
       const client = makeClient();
       authJsClient.createSession.mockResolvedValue(mockSession());
       return client.createSession().then(() => {
-        expect(localStorage.setItem).toHaveBeenCalledWith(STORAGE_KEY, expect.any(String));
+        expect(localStorage.setItem).toHaveBeenCalledWith(SESSION_TOKEN_KEY, expect.any(String));
       });
     });
   });
@@ -81,7 +82,7 @@ describe('AnonymousSessionApiClient', () => {
 
       await client.createSession();
 
-      expect(localStorage.setItem).toHaveBeenCalledWith(STORAGE_KEY, expect.any(String));
+      expect(localStorage.setItem).toHaveBeenCalledWith(SESSION_TOKEN_KEY, expect.any(String));
     });
 
     it('works without options', async () => {
@@ -105,7 +106,7 @@ describe('AnonymousSessionApiClient', () => {
       const result = await client.getTokenSilently();
 
       expect(authJsClient.getAccessToken).not.toHaveBeenCalled();
-      expect(result).toBe(freshSession);
+      expect(result).toEqual({ accessToken: freshSession.accessToken, expiresAt: freshSession.expiresAt });
     });
 
     it('renews via session token when access token is expired', async () => {
@@ -126,7 +127,7 @@ describe('AnonymousSessionApiClient', () => {
         audience: 'https://api.example.com',
         sessionToken: 'stored_session_token'
       });
-      expect(result).toBe(renewedSession);
+      expect(result).toEqual({ accessToken: renewedSession.accessToken, expiresAt: renewedSession.expiresAt });
     });
 
     it('creates a new session when no session is stored', async () => {
@@ -139,7 +140,7 @@ describe('AnonymousSessionApiClient', () => {
       expect(authJsClient.getAccessToken).toHaveBeenCalledWith({
         sessionToken: undefined
       });
-      expect(result).toBe(newSession);
+      expect(result).toEqual({ accessToken: newSession.accessToken, expiresAt: newSession.expiresAt });
     });
 
     it('stores the renewed session', async () => {
@@ -152,7 +153,7 @@ describe('AnonymousSessionApiClient', () => {
       authJsClient.getAccessToken.mockResolvedValue(renewedSession);
       await client.getTokenSilently();
 
-      expect(localStorage.setItem).toHaveBeenLastCalledWith(STORAGE_KEY, expect.any(String));
+      expect(localStorage.setItem).toHaveBeenLastCalledWith(SLOT_KEY, expect.any(String));
     });
 
     it('bypasses cache when audience differs from cached session', async () => {
@@ -171,17 +172,20 @@ describe('AnonymousSessionApiClient', () => {
         audience: 'https://api-b.example.com',
         sessionToken: freshSession.sessionToken
       });
-      expect(result).toBe(newSession);
+      expect(result).toEqual({ accessToken: newSession.accessToken, expiresAt: newSession.expiresAt });
     });
 
     it('reuses sessionToken from localStorage on page reload when fetching a new audience', async () => {
       // Simulate a previous session stored in localStorage (e.g. from a prior page load)
-      const previousSession = mockSession({
-        sessionToken: 'persisted_session_token',
-        expiresAt: Math.floor(Date.now() / 1000) + 3600
-      });
-      const existingKey = '@@auth0spajs@@::test_client::anonymous::["https://api-a.example.com",""]';
-      localStorage.setItem(existingKey, JSON.stringify(previousSession));
+      // Session token is in the shared key; access token is in the audience slot.
+      localStorage.setItem(
+        '@@auth0spajs@@::test_client::anonymous::session',
+        JSON.stringify({ sessionToken: 'persisted_session_token' })
+      );
+      localStorage.setItem(
+        '@@auth0spajs@@::test_client::anonymous::["https://api-a.example.com",""]',
+        JSON.stringify({ accessToken: 'old_access_token', expiresAt: Math.floor(Date.now() / 1000) + 3600 })
+      );
 
       // New client instance (simulates page reload — stores Map is empty)
       const freshClient = makeClient('localStorage');
@@ -209,7 +213,7 @@ describe('AnonymousSessionApiClient', () => {
       const result = await client.getTokenSilently({ scope: 'openid profile' });
 
       expect(authJsClient.getAccessToken).toHaveBeenCalled();
-      expect(result).toBe(newSession);
+      expect(result).toEqual({ accessToken: newSession.accessToken, expiresAt: newSession.expiresAt });
     });
 
     it('returns cached session when audience and scope both match', async () => {
@@ -222,7 +226,7 @@ describe('AnonymousSessionApiClient', () => {
       const result = await client.getTokenSilently({ audience: 'https://api.example.com', scope: 'openid' });
 
       expect(authJsClient.getAccessToken).not.toHaveBeenCalled();
-      expect(result).toMatchObject(freshSession);
+      expect(result).toEqual({ accessToken: freshSession.accessToken, expiresAt: freshSession.expiresAt });
     });
 
     it('treats a session expiring within the 60s leeway as expired', async () => {
@@ -276,7 +280,7 @@ describe('AnonymousSessionApiClient', () => {
 
       await client.logout();
 
-      expect(localStorage.removeItem).toHaveBeenCalledWith(STORAGE_KEY);
+      expect(localStorage.removeItem).toHaveBeenCalledWith(SESSION_TOKEN_KEY);
     });
 
     it('clears localStorage slots written before page reload on logout', async () => {
@@ -361,8 +365,9 @@ describe('AnonymousSessionApiClient', () => {
       });
       const lockManager: ILockManager = {
         runWithLock: jest.fn().mockImplementation((_key, _timeout, cb) => {
-          // Simulate another tab/call writing a fresh session to localStorage before we run
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(concurrentSession));
+          // Simulate another tab writing a fresh session to localStorage (split format)
+          localStorage.setItem(SESSION_TOKEN_KEY, JSON.stringify({ sessionToken: concurrentSession.sessionToken }));
+          localStorage.setItem(SLOT_KEY, JSON.stringify({ accessToken: concurrentSession.accessToken, expiresAt: concurrentSession.expiresAt }));
           return cb();
         })
       };
@@ -371,7 +376,7 @@ describe('AnonymousSessionApiClient', () => {
       const result = await client.getTokenSilently();
 
       expect(authJsClient.getAccessToken).not.toHaveBeenCalled();
-      expect(result).toEqual(concurrentSession);
+      expect(result).toEqual({ accessToken: concurrentSession.accessToken, expiresAt: concurrentSession.expiresAt });
     });
 
     it('makes only one network call when two concurrent calls find an expired access token', async () => {
@@ -410,8 +415,8 @@ describe('AnonymousSessionApiClient', () => {
 
       // Only one network call — the second caller found the fresh token via the double-check
       expect(authJsClient.getAccessToken).toHaveBeenCalledTimes(1);
-      expect(result1).toEqual(renewedSession);
-      expect(result2).toEqual(renewedSession);
+      expect(result1).toEqual({ accessToken: renewedSession.accessToken, expiresAt: renewedSession.expiresAt });
+      expect(result2).toEqual({ accessToken: renewedSession.accessToken, expiresAt: renewedSession.expiresAt });
     });
   });
 
@@ -425,7 +430,7 @@ describe('AnonymousSessionApiClient', () => {
       authJsClient.getAccessToken.mockResolvedValue(newSession);
 
       // Should not throw — falls back to creating a new session
-      await expect(client.getTokenSilently()).resolves.toBe(newSession);
+      await expect(client.getTokenSilently()).resolves.toEqual({ accessToken: newSession.accessToken, expiresAt: newSession.expiresAt });
     });
 
     it('silently swallows localStorage.setItem errors', async () => {

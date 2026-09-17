@@ -13,6 +13,12 @@ export type AnonymousGetTokenSilentlyOptions = Omit<
   'sessionToken'
 >;
 
+export type AnonymousTokenResult = {
+  accessToken: string;
+  expiresAt: number;
+  scope?: string;
+};
+
 const EXPIRY_LEEWAY_SECONDS = 60;
 
 /**
@@ -22,8 +28,8 @@ const EXPIRY_LEEWAY_SECONDS = 60;
  * manage the session token themselves. `getTokenSilently()` returns a cached
  * access token when still valid and renews it transparently when expired.
  *
- * Each unique audience+scope combination gets its own cache slot so tokens are
- * never returned for the wrong resource server or scope.
+ * The session token is stored once and shared across all audience/scope slots.
+ * Each slot stores only its own access token and expiry.
  *
  * Exposed on `Auth0Client` as `auth0.anonymous`.
  */
@@ -50,7 +56,15 @@ export class AnonymousSessionApiClient {
     options?: CreateAnonymousSessionOptions
   ): Promise<AnonymousSession> {
     const session = await this.authJsClient.createSession(options);
-    this.cache.getStore(options?.audience, options?.scope).set(session);
+    this.cache.setSessionToken({
+      sessionToken: session.sessionToken,
+      ...(session.sessionTokenExpiresAt !== undefined && { sessionTokenExpiresAt: session.sessionTokenExpiresAt })
+    });
+    this.cache.getStore(options?.audience, options?.scope).set({
+      accessToken: session.accessToken,
+      expiresAt: session.expiresAt,
+      ...(session.scope !== undefined && { scope: session.scope })
+    });
     return session;
   }
 
@@ -64,12 +78,12 @@ export class AnonymousSessionApiClient {
    */
   async getTokenSilently(
     options?: AnonymousGetTokenSilentlyOptions
-  ): Promise<AnonymousSession> {
+  ): Promise<AnonymousTokenResult> {
     const store = this.cache.getStore(options?.audience, options?.scope);
-    const stored = store.get();
+    const slot = store.get();
 
-    if (stored && stored.expiresAt - EXPIRY_LEEWAY_SECONDS > Date.now() / 1000) {
-      return stored;
+    if (slot && slot.expiresAt - EXPIRY_LEEWAY_SECONDS > Date.now() / 1000) {
+      return slot;
     }
 
     // Access token expired or absent — acquire lock so concurrent callers (same tab or
@@ -89,14 +103,27 @@ export class AnonymousSessionApiClient {
           return afterLock;
         }
 
-        const sessionToken =
-          afterLock?.sessionToken ?? this.cache.getAnySessionToken();
+        const sessionToken = this.cache.getSessionToken()?.sessionToken;
         const session = await this.authJsClient.getAccessToken({
           ...options,
           sessionToken
         });
-        store.set(session);
-        return session;
+        this.cache.getStore(options?.audience, options?.scope).set({
+          accessToken: session.accessToken,
+          expiresAt: session.expiresAt,
+          ...(session.scope !== undefined && { scope: session.scope })
+        });
+        if (session.sessionReplaced || !this.cache.getSessionToken()) {
+          this.cache.setSessionToken({
+            sessionToken: session.sessionToken,
+            ...(session.sessionTokenExpiresAt !== undefined && { sessionTokenExpiresAt: session.sessionTokenExpiresAt })
+          });
+        }
+        return {
+          accessToken: session.accessToken,
+          expiresAt: session.expiresAt,
+          ...(session.scope !== undefined && { scope: session.scope })
+        };
       }
     );
   }
@@ -116,4 +143,5 @@ export class AnonymousSessionApiClient {
   getClaims(): null {
     return null;
   }
+
 }
