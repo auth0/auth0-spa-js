@@ -55,6 +55,7 @@ export type { AccessTokenSlot, SharedSession };
 export class AnonymousSessionCacheManager {
   private readonly slots = new Map<string, Store<AccessTokenSlot>>();
   private readonly sessionStore: Store<SharedSession>;
+  private readonly sessionKey: string;
 
   private readonly baseKey: string;
   private readonly useLocalStorage: boolean;
@@ -66,21 +67,10 @@ export class AnonymousSessionCacheManager {
       typeof window !== 'undefined' &&
       !!window.localStorage;
 
-    const sessionKey = `${this.baseKey}::${SESSION_TOKEN_SUFFIX}`;
+    this.sessionKey = `${this.baseKey}::${SESSION_TOKEN_SUFFIX}`;
     this.sessionStore = this.useLocalStorage
-      ? makeLocalStore<SharedSession>(sessionKey)
+      ? makeLocalStore<SharedSession>(this.sessionKey)
       : makeMemoryStore<SharedSession>();
-
-    if (this.useLocalStorage) {
-      try {
-        for (let i = 0; i < window.localStorage.length; i++) {
-          const key = window.localStorage.key(i);
-          if (key?.startsWith(this.baseKey + '::') && key !== sessionKey) {
-            this.slots.set(key, makeLocalStore<AccessTokenSlot>(key));
-          }
-        }
-      } catch {}
-    }
   }
 
   getStore(audience?: string, scope?: string): Store<AccessTokenSlot> {
@@ -106,5 +96,17 @@ export class AnonymousSessionCacheManager {
     this.sessionStore.remove();
     this.slots.forEach(store => store.remove());
     this.slots.clear();
+
+    if (this.useLocalStorage) {
+      try {
+        const prefix = this.baseKey + '::';
+        const stale: string[] = [];
+        for (let i = 0; i < window.localStorage.length; i++) {
+          const key = window.localStorage.key(i);
+          if (key?.startsWith(prefix)) stale.push(key);
+        }
+        stale.forEach(key => window.localStorage.removeItem(key));
+      } catch {}
+    }
   }
 }
