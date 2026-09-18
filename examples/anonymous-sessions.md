@@ -1,6 +1,6 @@
 # Anonymous Sessions
 
-Anonymous sessions let you assign a persistent identity to a visitor before they log in. The visitor gets an access token tied to an opaque anonymous identity. When they eventually log in, the anonymous identity can be linked to their real account.
+Anonymous sessions assign a persistent identity to a visitor before they log in. The visitor gets an access token tied to an anonymous identity, which Auth0 exposes as `event.anonymous_session` in Post-Login Actions. You can write a Post-Login Action to link the anonymous identity to the authenticated user after login. Nothing is linked automatically.
 
 > **Note:** Anonymous Sessions is a feature currently in Early Access. Contact your Auth0 representative to request access.
 
@@ -22,7 +22,7 @@ const auth0 = await createAuth0Client({
   createAnonymousSessionOnFailedSilentAuth: true
 });
 
-// Anonymous session already created — call getTokenSilently when you need to call an API
+// Anonymous session already created. Call getTokenSilently when you need to call an API
 const { accessToken } = await auth0.anonymous.getTokenSilently({
   audience: 'https://api.example.com'
 });
@@ -40,9 +40,9 @@ Call `auth0.anonymous.createSession()` directly to create an anonymous session w
 const session = await auth0.anonymous.createSession({
   metadata: { cart: 'cart-123' }
 });
-
-console.log(session.sessionToken); // opaque JWE — managed by the SDK
 ```
+
+> **Note:** Metadata can only be set at creation time. Calling `createSession()` again creates a new anonymous identity rather than updating the existing one.
 
 ## Getting an access token
 
@@ -74,6 +74,8 @@ const { accessToken: tokenB } = await auth0.anonymous.getTokenSilently({
 
 ## Ending the session
 
+> **Note:** If you want the anonymous identity to be available for linking during login, call `loginWithRedirect()` before `logout()`. Auth0 reads the anonymous session cookie during the login flow. Clearing it first means the identity will not be available in Post-Login Actions.
+
 Call `auth0.anonymous.logout()` to end the anonymous session and clear all locally stored tokens.
 
 ```js
@@ -82,7 +84,7 @@ await auth0.anonymous.logout();
 
 ## Storage modes
 
-By default, the anonymous session is stored in `localStorage` and survives page reloads. Set `anonymousSessionsCacheMode: 'memory'` for stricter security — the session is lost on page reload.
+By default, the anonymous session is stored in `localStorage` and survives page reloads. Set `anonymousSessionsCacheMode: 'memory'` for stricter security. The session will not persist across page reloads in this mode.
 
 ```js
 const auth0 = await createAuth0Client({
