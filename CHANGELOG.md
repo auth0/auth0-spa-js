@@ -1,5 +1,12 @@
 # Change Log
 
+## [v2.27.0](https://github.com/auth0/auth0-spa-js/tree/v2.27.0) (2026-09-18)
+[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.26.0...v2.27.0)
+
+**Added**
+- feat(anonymous): add anonymous sessions support [\#1750](https://github.com/auth0/auth0-spa-js/pull/1750) ([yogeshchoudhary147](https://github.com/yogeshchoudhary147))
+- feat: add typed Experiment Center override params to AuthorizationParams [\#1756](https://github.com/auth0/auth0-spa-js/pull/1756) ([yogeshchoudhary147](https://github.com/yogeshchoudhary147))
+
 ## [v2.26.0](https://github.com/auth0/auth0-spa-js/tree/v2.26.0) (2026-09-15)
 [Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.25.0...v2.26.0)
 
