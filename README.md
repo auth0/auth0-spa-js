@@ -165,6 +165,31 @@ Pass these **per-call** rather than in the `authorizationParams` at client const
 
 **For production:** pass the variant decision from a feature-flag tool (e.g. LaunchDarkly) that has already decided which variant the user should see.
 
+### Anonymous Sessions
+
+> [!NOTE]
+> Anonymous Sessions support via SDKs is currently in Early Access. To request access to this feature, contact your Auth0 representative.
+
+Anonymous sessions assign a persistent identity to a visitor before they log in. Set `createAnonymousSessionOnFailedSilentAuth: true` to have the SDK create an anonymous session automatically when `checkSession()` finds no authenticated user.
+
+```js
+// createAuth0Client calls checkSession() internally — the anonymous session is ready on init
+const auth0 = await createAuth0Client({
+  domain: '<AUTH0_DOMAIN>',
+  clientId: '<AUTH0_CLIENT_ID>',
+  createAnonymousSessionOnFailedSilentAuth: true,
+
+  // default is 'localStorage'; use 'memory' if you don't want persistence
+  anonymousSessionsCacheMode: 'localStorage'
+});
+
+const { accessToken } = await auth0.anonymous.getTokenSilently({
+  audience: 'https://api.example.com'
+});
+```
+
+See [Anonymous Sessions](https://github.com/auth0/auth0-spa-js/blob/main/examples/anonymous-sessions.md) for the full guide including explicit session creation with metadata, multiple audiences, and logout.
+
 ### More Examples
 
 For comprehensive examples covering various scenarios including logging out, calling APIs, refresh tokens, online access, organizations, passkeys, MFA, DPoP, and more, see the [EXAMPLES.md](https://github.com/auth0/auth0-spa-js/blob/main/EXAMPLES.md) document.
