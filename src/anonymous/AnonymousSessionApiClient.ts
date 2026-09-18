@@ -137,6 +137,13 @@ export class AnonymousSessionApiClient {
   }
 
   /**
+   * Returns true if a session token exists in the local cache.
+   */
+  hasSession(): boolean {
+    return !!this.cache.getSessionToken()?.sessionToken;
+  }
+
+  /**
    * Always returns `null` in EA — session tokens are issued as opaque JWEs and
    * cannot be decoded client-side. Reserved for future JWT format support.
    */

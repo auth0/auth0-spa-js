@@ -915,6 +915,9 @@ export class Auth0Client {
    */
   private async _maybeCreateAnonymousSession() {
     if (this.options.createAnonymousSessionOnFailedSilentAuth) {
+      if (this.anonymous.hasSession()) {
+        return;
+      }
       try {
         // No audience is requested here. This establishes the session token only.
         // The app calls anonymous.getTokenSilently({ audience }) separately for each
