@@ -1,0 +1,20 @@
+/*
+ * Tweaks on top of TypeDoc's default theme.
+ *
+ * The sidebar now lists client methods and long option interfaces, and names
+ * like `loginWithCustomTokenExchange` or `PushNotificationEnrollmentChallengeOptions`
+ * are single unbreakable words. The default theme leaves them clipped behind a
+ * horizontal scrollbar, so allow a break anywhere and let the entry wrap.
+ */
+.site-menu a {
+  align-items: flex-start;
+}
+
+.site-menu a > span {
+  overflow-wrap: anywhere;
+}
+
+/* Keep the kind icon on the first line of a wrapped entry. */
+.site-menu a > svg.tsd-kind-icon {
+  flex: 0 0 auto;
+}

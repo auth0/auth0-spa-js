@@ -31,7 +31,8 @@
   "scripts": {
     "dev": "rimraf dist && rollup -c --watch",
     "start": "npm run dev",
-    "docs": "typedoc --options ./typedoc.js src",
+    "docs": "typedoc --options ./typedoc.js",
+    "docs:docsv2": "typedoc --options ./typedoc.docsv2.js && node ./scripts/build-mintlify-nav.mjs",
     "build": "rimraf dist && rollup -m -c --environment NODE_ENV:production && npm run test:es-check",
     "build:stats": "rimraf dist && rollup -m -c --environment NODE_ENV:production --environment WITH_STATS:true && npm run test:es-check && open bundle-stats/index.html",
     "lint": "eslint --ext .jsx,.js src/",
