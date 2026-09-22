@@ -13,6 +13,8 @@ export * from './global';
  * Online mode requires `useRefreshTokens: true` and `useDpop: true`, enforced here at
  * compile time. Dynamic values, casts, and plain JS are covered by the runtime check in
  * the `Auth0Client` constructor.
+ *
+ * @category Getting Started
  */
 export async function createAuth0Client(
   options: Auth0ClientOptions & {
@@ -32,6 +34,8 @@ export async function createAuth0Client(
  *
  * @param options The client options
  * @returns An instance of Auth0Client
+ *
+ * @category Getting Started
  */
 export async function createAuth0Client(options: Auth0ClientOptions) {
   const auth0 = new Auth0Client(options);

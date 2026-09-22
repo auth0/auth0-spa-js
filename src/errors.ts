@@ -1,5 +1,7 @@
 /**
  * MFA requirements from an mfa_required error response
+ *
+ * @category Errors
  */
 export interface MfaRequirements {
   /** Required enrollment types */
@@ -10,6 +12,8 @@ export interface MfaRequirements {
 
 /**
  * Thrown when network requests to the Auth server fail.
+ *
+ * @category Errors
  */
 export class GenericError extends Error {
   constructor(public error: string, public error_description: string) {
@@ -31,6 +35,8 @@ export class GenericError extends Error {
 /**
  * Thrown at construction time for an invalid option combination (e.g.
  * `refreshTokenMode: 'online'` without `useDpop: true`). The `suggestion` names the fix.
+ *
+ * @category Errors
  */
 export class InvalidConfigurationError extends GenericError {
   constructor(message: string, public suggestion: string) {
@@ -42,6 +48,8 @@ export class InvalidConfigurationError extends GenericError {
 /**
  * Thrown when handling the redirect callback fails, will be one of Auth0's
  * Authentication API's Standard Error Responses: https://auth0.com/docs/api/authentication?javascript#standard-error-responses
+ *
+ * @category Errors
  */
 export class AuthenticationError extends GenericError {
   constructor(
@@ -59,6 +67,8 @@ export class AuthenticationError extends GenericError {
 /**
  * Thrown when handling the redirect callback for the connect flow fails, will be one of Auth0's
  * Authentication API's Standard Error Responses: https://auth0.com/docs/api/authentication?javascript#standard-error-responses
+ *
+ * @category Errors
  */
 export class ConnectError extends GenericError {
   constructor(
@@ -77,6 +87,8 @@ export class ConnectError extends GenericError {
 /**
  * Thrown when silent auth times out (usually due to a configuration issue) or
  * when network requests to the Auth server timeout.
+ *
+ * @category Errors
  */
 export class TimeoutError extends GenericError {
   constructor() {
@@ -88,6 +100,8 @@ export class TimeoutError extends GenericError {
 
 /**
  * Error thrown when the login popup times out (if the user does not complete auth)
+ *
+ * @category Errors
  */
 export class PopupTimeoutError extends TimeoutError {
   constructor(public popup: Window) {
@@ -97,6 +111,11 @@ export class PopupTimeoutError extends TimeoutError {
   }
 }
 
+/**
+ * Error thrown when the login popup is closed before auth completes.
+ *
+ * @category Errors
+ */
 export class PopupCancelledError extends GenericError {
   constructor(public popup: Window) {
     super('cancelled', 'Popup closed');
@@ -105,6 +124,11 @@ export class PopupCancelledError extends GenericError {
   }
 }
 
+/**
+ * Error thrown when a popup cannot be opened (`window.open` returned `null`).
+ *
+ * @category Errors
+ */
 export class PopupOpenError extends GenericError {
   constructor() {
     super('popup_open', 'Unable to open a popup for loginWithPopup - window.open returned `null`');
@@ -115,6 +139,8 @@ export class PopupOpenError extends GenericError {
 
 /**
  * Error thrown when the token exchange results in a `mfa_required` error
+ *
+ * @category Errors
  */
 export class MfaRequiredError extends GenericError {
   constructor(
@@ -131,6 +157,8 @@ export class MfaRequiredError extends GenericError {
 
 /**
  * Error thrown when there is no refresh token to use
+ *
+ * @category Errors
  */
 export class MissingRefreshTokenError extends GenericError {
   constructor(public audience: string, public scope: string) {
@@ -146,6 +174,8 @@ export class MissingRefreshTokenError extends GenericError {
 
 /**
  * Error thrown when there are missing scopes after refreshing a token
+ *
+ * @category Errors
  */
 export class MissingScopesError extends GenericError {
   constructor(public audience: string, public scope: string) {
@@ -161,6 +191,8 @@ export class MissingScopesError extends GenericError {
 
 /**
  * Error thrown when the wrong DPoP nonce is used and a potential subsequent retry wasn't able to fix it.
+ *
+ * @category Errors
  */
 export class UseDpopNonceError extends GenericError {
   constructor(public newDpopNonce: string | undefined) {

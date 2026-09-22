@@ -55,6 +55,8 @@ import { MfaContextManager } from './MfaContextManager';
  *   }
  * }
  * ```
+ *
+ * @category Clients
  */
 export class MfaApiClient {
   private authJsMfaClient: Auth0AuthJsMfaClient;

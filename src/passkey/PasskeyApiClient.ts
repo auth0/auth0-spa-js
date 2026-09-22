@@ -30,6 +30,8 @@ import { PasskeyError } from './errors';
  * // Login — single call handles everything
  * const tokens = await auth0.passkey.login();
  * ```
+ *
+ * @category Clients
  */
 export class PasskeyApiClient {
   #passkeyClient: PasskeyClient;

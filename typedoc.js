@@ -1,4 +1,7 @@
-const { CATEGORY_ORDER } = require('./scripts/typedoc-plugin.js');
+const {
+  CATEGORY_ORDER,
+  DEFAULT_CATEGORY
+} = require('./scripts/typedoc-plugin.js');
 
 module.exports = {
   // Document what the package actually exports. Pointing TypeDoc at `src/`
@@ -8,13 +11,11 @@ module.exports = {
   entryPointStrategy: 'resolve',
 
   out: './docs/',
-  readme: './README.MD',
+  readme: './README.md',
   name: 'Auth0 SPA SDK',
   cleanOutputDir: true,
 
   plugin: ['./scripts/typedoc-plugin.js'],
-  theme: 'auth0',
-  customCss: './scripts/typedoc.css',
 
   // Keep the reference to the public surface.
   excludePrivate: true,
@@ -40,10 +41,11 @@ module.exports = {
   ],
 
   // Group the landing page and sidebar by category rather than by TypeScript
-  // kind, so readers see "Clients" before a wall of interfaces.
+  // kind, so readers see "Clients" before a wall of interfaces. Categories come
+  // from `@category` tags in `src/`; see `scripts/typedoc-plugin.js`.
   categorizeByGroup: false,
   categoryOrder: CATEGORY_ORDER,
-  defaultCategory: 'Other Types',
+  defaultCategory: DEFAULT_CATEGORY,
   navigation: {
     includeCategories: true,
     includeGroups: false
