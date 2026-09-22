@@ -30,7 +30,7 @@ npm install @auth0/auth0-spa-js
 From the CDN:
 
 ```html
-<script src="https://cdn.auth0.com/js/auth0-spa-js/2.25/auth0-spa-js.production.js"></script>
+<script src="https://cdn.auth0.com/js/auth0-spa-js/2.27/auth0-spa-js.production.js"></script>
 ```
 
 ### Configure Auth0
@@ -141,6 +141,55 @@ const auth0 = await createAuth0Client({
 
 `refreshTokenMode` is a sub-option of `useRefreshTokens`: it defaults to `RefreshTokenMode.Offline` (the rotating refresh tokens described above) and must be set to `RefreshTokenMode.Online` for Online Refresh Tokens. Online mode requires both `useRefreshTokens: true` and `useDpop: true`. See [Online Access](https://github.com/auth0/auth0-spa-js/blob/main/examples/online-access.md) for the full guide.
 
+### Experiment Center
+
+> [!NOTE]
+> Experiment Center support via SDKs is currently in Early Access. To request access to this feature, contact your Auth0 representative.
+
+[Experiment Center](https://auth0.com/docs/customize/experiment-center/overview) lets you A/B test your login flow. Auth0 assigns each user to a variant server-side. When you need to force a specific variant — for testing or to apply a decision from a feature-flag tool — pass `experiment_id` and `variation_id` on the login call:
+
+```js
+await auth0.loginWithRedirect({
+  authorizationParams: {
+    experiment_id: '<EXPERIMENT_ID>',
+    variation_id: '<VARIATION_ID>'
+  }
+});
+```
+
+The override applies to that request only. The next login without these params reverts to normal server-side assignment.
+
+Pass these **per-call** rather than in the `authorizationParams` at client construction time, so the override does not affect silent `prompt=none` token-renewal calls (Experiment Center does not run on those).
+
+**For testing:** drive from test automation (e.g. Cypress, Playwright) with IDs read from a CI environment variable against a staging tenant. Do not hard-code variant IDs in shipped application code.
+
+**For production:** pass the variant decision from a feature-flag tool (e.g. LaunchDarkly) that has already decided which variant the user should see.
+
+### Anonymous Sessions
+
+> [!NOTE]
+> Anonymous Sessions support via SDKs is currently in Early Access. To request access to this feature, contact your Auth0 representative.
+
+Anonymous sessions assign a persistent identity to a visitor before they log in. Set `createAnonymousSessionOnFailedSilentAuth: true` to have the SDK create an anonymous session automatically when `checkSession()` finds no authenticated user.
+
+```js
+// createAuth0Client calls checkSession() internally — the anonymous session is ready on init
+const auth0 = await createAuth0Client({
+  domain: '<AUTH0_DOMAIN>',
+  clientId: '<AUTH0_CLIENT_ID>',
+  createAnonymousSessionOnFailedSilentAuth: true,
+
+  // default is 'localStorage'; use 'memory' if you don't want persistence
+  anonymousSessionsCacheMode: 'localStorage'
+});
+
+const { accessToken } = await auth0.anonymous.getTokenSilently({
+  audience: 'https://api.example.com'
+});
+```
+
+See [Anonymous Sessions](https://github.com/auth0/auth0-spa-js/blob/main/examples/anonymous-sessions.md) for the full guide including explicit session creation with metadata, multiple audiences, and logout.
+
 ### More Examples
 
 For comprehensive examples covering various scenarios including logging out, calling APIs, refresh tokens, online access, organizations, passkeys, MFA, DPoP, and more, see the [EXAMPLES.md](https://github.com/auth0/auth0-spa-js/blob/main/EXAMPLES.md) document.
@@ -153,6 +202,12 @@ Explore API Methods available in auth0-spa-js.
 
 - [Auth0Client](https://auth0.github.io/auth0-spa-js/classes/Auth0Client.html)
 - [createAuth0Client](https://auth0.github.io/auth0-spa-js/functions/createAuth0Client.html)
+
+## Enterprise Connect
+
+Enterprise Connect lets B2B SaaS applications add enterprise SSO without replacing their existing auth stack.
+The SDK exports `isFederatedDomain` for email-domain discovery; you then start the login with `loginWithRedirect` using the email as `login_hint`. 
+See [EXAMPLES.md#enterprise-connect](EXAMPLES.md#enterprise-connect) for the full setup and flow.
 
 ## Feedback
 

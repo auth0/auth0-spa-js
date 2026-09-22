@@ -18,3 +18,6 @@ Each topic lives in its own file under [`examples/`](examples).
 - [Step-Up Authentication](examples/step-up-authentication.md)
 - [MyAccount API](examples/myaccount-api.md)
 - [Session Expiry from Upstream IdP (IPSIE)](examples/session-expiry-ipsie.md)
+- [Enterprise Connect](examples/enterprise-connect.md)
+- [Experiment Center](examples/experiment-center.md)
+- [Anonymous Sessions](examples/anonymous-sessions.md)

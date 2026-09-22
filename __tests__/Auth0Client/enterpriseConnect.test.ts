@@ -1,0 +1,157 @@
+import { MessageChannel } from 'worker_threads';
+import { Auth0Client } from '../../src/Auth0Client';
+import { TEST_CLIENT_ID, TEST_DOMAIN } from '../constants';
+
+jest.mock('es-cookie');
+jest.mock('../../src/jwt');
+jest.mock('../../src/worker/token.worker');
+
+const mockWindow = <any>global;
+
+describe('Auth0Client - enterpriseConnect init warnings', () => {
+  let warnSpy: jest.SpyInstance;
+
+  beforeEach(() => {
+    mockWindow.crypto = {
+      subtle: { digest: () => 'foo' },
+      getRandomValues: () => '123'
+    };
+    mockWindow.MessageChannel = MessageChannel;
+    mockWindow.Worker = {};
+    warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    jest.clearAllMocks();
+    warnSpy.mockRestore();
+  });
+
+  it('warns when useRefreshTokens is enabled', () => {
+    new Auth0Client({
+      domain: TEST_DOMAIN,
+      clientId: TEST_CLIENT_ID,
+      enterpriseConnect: true,
+      useRefreshTokens: true
+    });
+
+    expect(warnSpy).toHaveBeenCalledWith(
+      expect.stringContaining('useRefreshTokens')
+    );
+  });
+
+  it('warns when offline_access is in the scope string', () => {
+    new Auth0Client({
+      domain: TEST_DOMAIN,
+      clientId: TEST_CLIENT_ID,
+      enterpriseConnect: true,
+      authorizationParams: { scope: 'openid profile offline_access' }
+    });
+
+    expect(warnSpy).toHaveBeenCalledWith(
+      expect.stringContaining('offline_access')
+    );
+  });
+
+  it('warns when a static organization is set', () => {
+    new Auth0Client({
+      domain: TEST_DOMAIN,
+      clientId: TEST_CLIENT_ID,
+      enterpriseConnect: true,
+      authorizationParams: { organization: 'org_123' }
+    });
+
+    expect(warnSpy).toHaveBeenCalledWith(
+      expect.stringContaining('organization')
+    );
+  });
+
+  it('does not warn when scope and organization are clean', () => {
+    new Auth0Client({
+      domain: TEST_DOMAIN,
+      clientId: TEST_CLIENT_ID,
+      enterpriseConnect: true,
+      authorizationParams: { scope: 'openid profile email' }
+    });
+
+    expect(warnSpy).not.toHaveBeenCalled();
+  });
+
+  it('does not warn when enterpriseConnect is set with no authorizationParams', () => {
+    new Auth0Client({
+      domain: TEST_DOMAIN,
+      clientId: TEST_CLIENT_ID,
+      enterpriseConnect: true
+    });
+
+    expect(warnSpy).not.toHaveBeenCalled();
+  });
+
+  it('does not warn when enterpriseConnect is not set', () => {
+    new Auth0Client({
+      domain: TEST_DOMAIN,
+      clientId: TEST_CLIENT_ID,
+      useRefreshTokens: true,
+      authorizationParams: { organization: 'org_123' }
+    });
+
+    expect(warnSpy).not.toHaveBeenCalled();
+  });
+});
+
+describe('Auth0Client - enterpriseConnect logout warning', () => {
+  let warnSpy: jest.SpyInstance;
+
+  beforeEach(() => {
+    mockWindow.crypto = {
+      subtle: { digest: () => 'foo' },
+      getRandomValues: () => '123'
+    };
+    mockWindow.MessageChannel = MessageChannel;
+    mockWindow.Worker = {};
+    mockWindow.location = { assign: jest.fn() };
+    warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    jest.clearAllMocks();
+    warnSpy.mockRestore();
+  });
+
+  it('warns on logout without federated: true', async () => {
+    const client = new Auth0Client({
+      domain: TEST_DOMAIN,
+      clientId: TEST_CLIENT_ID,
+      enterpriseConnect: true
+    });
+
+    await client.logout({ openUrl: () => {} });
+
+    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('federated'));
+  });
+
+  it('does not warn on logout with federated: true', async () => {
+    const client = new Auth0Client({
+      domain: TEST_DOMAIN,
+      clientId: TEST_CLIENT_ID,
+      enterpriseConnect: true
+    });
+
+    await client.logout({
+      openUrl: () => {},
+      logoutParams: { federated: true }
+    });
+
+    expect(warnSpy).not.toHaveBeenCalled();
+  });
+
+  it('does not warn on logout when enterpriseConnect is not set', async () => {
+    const client = new Auth0Client({
+      domain: TEST_DOMAIN,
+      clientId: TEST_CLIENT_ID
+    });
+
+    await client.logout({ openUrl: () => {} });
+
+    expect(warnSpy).not.toHaveBeenCalled();
+  });
+});

@@ -3,6 +3,8 @@ import { verify } from '../../src/jwt';
 import { MessageChannel } from 'worker_threads';
 import * as utils from '../../src/utils';
 import * as scope from '../../src/scope';
+import { GenericError } from '../../src/errors';
+import { MFA_STEP_UP_ERROR_DESCRIPTION } from '../../src/constants';
 import { expect } from '@jest/globals';
 
 // @ts-ignore
@@ -170,6 +172,79 @@ describe('Auth0Client', () => {
       );
 
       expect(esCookie.remove).toHaveBeenCalledWith('auth0.is.authenticated', {});
+    });
+
+    describe('createAnonymousSessionOnFailedSilentAuth', () => {
+      const mockAnonSession = {
+        sessionToken: 'anon_session_token',
+        accessToken: 'anon_access_token',
+        expiresAt: Math.floor(Date.now() / 1000) + 3600
+      };
+
+      beforeEach(() => {
+        // Outer tests use persistent mockReturnValue(true) which survives clearAllMocks.
+        // Reset here so each test starts with no auth cookie by default.
+        (<jest.Mock>esCookie.get).mockReset();
+      });
+
+      it('creates an anonymous session when there is no auth cookie', async () => {
+        const auth0 = setup({ createAnonymousSessionOnFailedSilentAuth: true });
+        jest.spyOn(auth0.anonymous, 'getTokenSilently').mockResolvedValue(mockAnonSession);
+
+        await auth0.checkSession();
+
+        expect(auth0.anonymous.getTokenSilently).toHaveBeenCalled();
+      });
+
+      it('does not create an anonymous session when the option is false', async () => {
+        const auth0 = setup({ createAnonymousSessionOnFailedSilentAuth: false });
+        jest.spyOn(auth0.anonymous, 'getTokenSilently').mockResolvedValue(mockAnonSession);
+
+        await auth0.checkSession();
+
+        expect(auth0.anonymous.getTokenSilently).not.toHaveBeenCalled();
+      });
+
+      it('does not create an anonymous session by default', async () => {
+        const auth0 = setup();
+        jest.spyOn(auth0.anonymous, 'getTokenSilently').mockResolvedValue(mockAnonSession);
+
+        await auth0.checkSession();
+
+        expect(auth0.anonymous.getTokenSilently).not.toHaveBeenCalled();
+      });
+
+      it('creates an anonymous session when auth cookie exists but silent auth fails', async () => {
+        const auth0 = setup({ createAnonymousSessionOnFailedSilentAuth: true });
+        jest.spyOn(auth0.anonymous, 'getTokenSilently').mockResolvedValue(mockAnonSession);
+        jest.spyOn(<any>utils, 'runIframe').mockRejectedValueOnce(new GenericError('login_required', 'Login required'));
+        (<jest.Mock>esCookie.get).mockReturnValueOnce(true);
+
+        await auth0.checkSession();
+
+        expect(auth0.anonymous.getTokenSilently).toHaveBeenCalled();
+      });
+
+      it('does not create an anonymous session when silent auth fails with MFA step-up', async () => {
+        const auth0 = setup({ createAnonymousSessionOnFailedSilentAuth: true });
+        jest.spyOn(auth0.anonymous, 'getTokenSilently').mockResolvedValue(mockAnonSession);
+        jest.spyOn(<any>utils, 'runIframe').mockRejectedValueOnce(
+          new GenericError('login_required', MFA_STEP_UP_ERROR_DESCRIPTION)
+        );
+        (<jest.Mock>esCookie.get).mockReturnValueOnce(true);
+
+        await auth0.checkSession();
+
+        expect(auth0.anonymous.getTokenSilently).not.toHaveBeenCalled();
+      });
+
+      it('swallows anonymous session creation errors silently', async () => {
+        const auth0 = setup({ createAnonymousSessionOnFailedSilentAuth: true });
+        jest.spyOn(auth0.anonymous, 'getTokenSilently').mockRejectedValue(new Error('feature_not_enabled'));
+
+        await expect(auth0.checkSession()).resolves.toBeUndefined();
+        expect(auth0.anonymous.getTokenSilently).toHaveBeenCalled();
+      });
     });
 
     it('uses the organization hint cookie if available', async () => {

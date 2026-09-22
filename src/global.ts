@@ -139,6 +139,39 @@ export interface AuthorizationParams {
   session_transfer_token?: string;
 
   /**
+   * Forces a specific Experiment Center variant for this `/authorize` request
+   * instead of letting Auth0 assign one via its hash. Use together with
+   * `variation_id`.
+   *
+   * Pass per-call (on `loginWithRedirect`/`loginWithPopup`) rather than at
+   * client construction time so the override does not bleed into silent
+   * `prompt=none` token-renewal calls, where Experiment Center does not run.
+   *
+   * **Testing:** drive from test automation (e.g. Cypress/Playwright) with IDs
+   * from a CI environment variable against a staging tenant. Do not hard-code
+   * this in shipped app code.
+   *
+   * **Production:** pass the variant decision from a feature-flag tool
+   * (e.g. LaunchDarkly) that has already decided which variant the user should
+   * see for this request.
+   */
+  experiment_id?: string;
+
+  /**
+   * The variation to force within the experiment identified by `experiment_id`.
+   * Auth0 uses this value instead of computing an assignment for the current
+   * request. The override applies to this request only; the next login without
+   * these params reverts to normal server-side assignment.
+   */
+  variation_id?: string;
+
+  /**
+   * An optional segment identifier to pass alongside `experiment_id` and
+   * `variation_id` when forcing a variant.
+   */
+  segment_id?: string;
+
+  /**
    * If you need to send custom parameters to the Authorization Server,
    * make sure to use the original parameter name.
    */
@@ -363,6 +396,30 @@ export interface Auth0ClientOptions {
   authorizationParams?: ClientAuthorizationParams;
 
   /**
+   * Where to store the anonymous session token.
+   *
+   * - `'localStorage'` (default): the session token survives page reloads. Suitable for most SPAs.
+   * - `'memory'`: the session token lives only for the current page load. Use this if you do not
+   *   want anonymous session data written to disk.
+   *
+   * @default 'localStorage'
+   */
+  anonymousSessionsCacheMode?: 'localStorage' | 'memory';
+
+  /**
+   * When `true`, `checkSession()` automatically creates (or restores) an anonymous
+   * session when the user is not authenticated. This does not affect standalone
+   * `getTokenSilently()` calls. `checkSession()` does not throw in this case.
+   *
+   * **Metadata limitation:** the session is created without metadata. If you need
+   * to attach metadata to the anonymous identity, do not use this option. Call
+   * `auth0.anonymous.createSession({ metadata })` explicitly instead.
+   *
+   * @default false
+   */
+  createAnonymousSessionOnFailedSilentAuth?: boolean;
+
+  /**
    * Query parameter name to extract the session transfer token from for Native to Web SSO.
    *
    * When set, the SDK automatically extracts the token from the specified URL query
@@ -396,6 +453,22 @@ export interface Auth0ClientOptions {
    * @see https://auth0.com/docs/authenticate/single-sign-on/native-to-web
    */
   sessionTransferTokenQueryParamName?: string;
+
+  /**
+   * Set to `true` when this client drives an Enterprise Connect login (enterprise
+   * SSO resolved from the email domain via {@link isFederatedDomain} and `login_hint`).
+   *
+   * Enterprise Connect issues no refresh token and resolves the organization from
+   * Home Realm Discovery at login. When enabled, the SDK warns at initialization if
+   * the configuration contradicts that: `useRefreshTokens: true` or `offline_access`
+   * in `scope` (no refresh token is issued) or a static `organization` (HRD resolves
+   * it, and a static value breaks multi-customer setups).
+   *
+   * This is a routing/telemetry flag only; it does not by itself change the login flow.
+   *
+   * **Default:** `false`
+   */
+  enterpriseConnect?: boolean;
 }
 
 /**
