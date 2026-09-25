@@ -915,6 +915,24 @@ export class Auth0Client {
     };
   }
 
+  private async _maybeCreateAnonymousSession() {
+    if (this.options.createAnonymousSessionOnFailedSilentAuth) {
+      if (this.anonymous.hasSession()) {
+        return;
+      }
+      try {
+        // No audience is requested here. This establishes the session token only.
+        // The app calls anonymous.getTokenSilently({ audience }) separately for each
+        // resource server and those calls reuse the session token without creating a
+        // new identity.
+        await this.anonymous.getTokenSilently();
+      } catch (e) {
+        // eslint-disable-next-line no-console
+        console.debug('[auth0-spa-js] Anonymous session creation failed', e);
+      }
+    }
+  }
+
   /**
    * ```js
    * await auth0.checkSession();
@@ -939,26 +957,7 @@ export class Auth0Client {
    * and handle the possible `login_required` error [as shown in the readme](https://github.com/auth0/auth0-spa-js#creating-the-client).
    *
    * @param options
-   */
-  private async _maybeCreateAnonymousSession() {
-    if (this.options.createAnonymousSessionOnFailedSilentAuth) {
-      if (this.anonymous.hasSession()) {
-        return;
-      }
-      try {
-        // No audience is requested here. This establishes the session token only.
-        // The app calls anonymous.getTokenSilently({ audience }) separately for each
-        // resource server and those calls reuse the session token without creating a
-        // new identity.
-        await this.anonymous.getTokenSilently();
-      } catch (e) {
-        // eslint-disable-next-line no-console
-        console.debug('[auth0-spa-js] Anonymous session creation failed', e);
-      }
-    }
-  }
-
-  /**
+   *
    * @category Authentication
    */
   public async checkSession(options?: GetTokenSilentlyOptions) {
@@ -1994,6 +1993,26 @@ export class Auth0Client {
   *   - `_requestToken` performs the actual HTTP request to the token endpoint.
   */
 
+  private _buildTokenExchangeParams(
+    options: CustomTokenExchangeOptions
+  ): TokenExchangeRequestOptions {
+    return {
+      ...options,
+      grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
+      subject_token: options.subject_token,
+      subject_token_type: options.subject_token_type,
+      ...(options.actor_token && { actor_token: options.actor_token }),
+      ...(options.actor_token_type && { actor_token_type: options.actor_token_type }),
+      scope: scopesToRequest(
+        this.scope,
+        options.scope,
+        options.audience || this.options.authorizationParams.audience
+      ),
+      audience: options.audience || this.options.authorizationParams.audience,
+      organization: options.organization || this.options.authorizationParams.organization
+    };
+  }
+
   /**
    * ```js
    * await auth0.loginWithCustomTokenExchange(options);
@@ -2041,28 +2060,7 @@ export class Auth0Client {
    *   console.error('Token exchange failed:', error);
    * }
    * ```
-   */
-  private _buildTokenExchangeParams(
-    options: CustomTokenExchangeOptions
-  ): TokenExchangeRequestOptions {
-    return {
-      ...options,
-      grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
-      subject_token: options.subject_token,
-      subject_token_type: options.subject_token_type,
-      ...(options.actor_token && { actor_token: options.actor_token }),
-      ...(options.actor_token_type && { actor_token_type: options.actor_token_type }),
-      scope: scopesToRequest(
-        this.scope,
-        options.scope,
-        options.audience || this.options.authorizationParams.audience
-      ),
-      audience: options.audience || this.options.authorizationParams.audience,
-      organization: options.organization || this.options.authorizationParams.organization
-    };
-  }
-
-  /**
+   *
    * @category Tokens
    */
   async loginWithCustomTokenExchange(
