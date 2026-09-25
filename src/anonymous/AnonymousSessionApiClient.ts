@@ -8,6 +8,9 @@ import type { ILockManager } from '../lock';
 import { getLockManager } from '../lock';
 import { AnonymousSessionCacheManager } from './AnonymousSessionCacheManager';
 
+/**
+ * @category Tokens & Users
+ */
 export type AnonymousGetTokenSilentlyOptions = Omit<
   GetAnonymousAccessTokenOptions,
   'sessionToken'
@@ -32,6 +35,8 @@ const EXPIRY_LEEWAY_SECONDS = 60;
  * Each slot stores only its own access token and expiry.
  *
  * Exposed on `Auth0Client` as `auth0.anonymous`.
+ *
+ * @category Clients
  */
 export class AnonymousSessionApiClient {
   private readonly cache: AnonymousSessionCacheManager;
