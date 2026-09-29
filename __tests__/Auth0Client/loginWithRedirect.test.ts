@@ -736,5 +736,33 @@ describe('Auth0Client', () => {
         code_challenge_method: 'S256'
       });
     });
+
+    describe('anonymous session transfer ticket', () => {
+      it('appends anon_transfer_token when an anonymous session is active', async () => {
+        const auth0 = setup();
+        jest
+          .spyOn(auth0.anonymous, 'mintTransferToken')
+          .mockResolvedValue('transfer_ticket_jwe');
+
+        await auth0.loginWithRedirect();
+
+        const url = new URL(mockWindow.location.assign.mock.calls[0][0]);
+        expect(url.searchParams.get('anon_transfer_token')).toBe(
+          'transfer_ticket_jwe'
+        );
+      });
+
+      it('does not append anon_transfer_token when no session is active', async () => {
+        const auth0 = setup();
+        jest
+          .spyOn(auth0.anonymous, 'mintTransferToken')
+          .mockResolvedValue(null);
+
+        await auth0.loginWithRedirect();
+
+        const url = new URL(mockWindow.location.assign.mock.calls[0][0]);
+        expect(url.searchParams.has('anon_transfer_token')).toBe(false);
+      });
+    });
   });
 });

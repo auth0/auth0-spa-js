@@ -12,7 +12,8 @@ const mockSession = (overrides: Partial<AnonymousSession> = {}): AnonymousSessio
 const makeAuthJsClient = () => ({
   createSession: jest.fn(),
   getAccessToken: jest.fn(),
-  logout: jest.fn()
+  logout: jest.fn(),
+  mintTransferToken: jest.fn()
 });
 
 const makeLockManager = (): jest.Mocked<ILockManager> => ({
@@ -244,6 +245,40 @@ describe('AnonymousSessionApiClient', () => {
       await client.getTokenSilently();
 
       expect(authJsClient.getAccessToken).toHaveBeenCalled();
+    });
+  });
+
+  describe('mintTransferToken', () => {
+    it('returns null and skips authJsClient when no session is stored', async () => {
+      const client = makeClient('memory');
+
+      const result = await client.mintTransferToken();
+
+      expect(result).toBeNull();
+      expect(authJsClient.mintTransferToken).not.toHaveBeenCalled();
+    });
+
+    it('delegates to authJsClient.mintTransferToken with the stored session token', async () => {
+      const client = makeClient('memory');
+      authJsClient.createSession.mockResolvedValue(mockSession({ sessionToken: 'my_session_token' }));
+      await client.createSession();
+      authJsClient.mintTransferToken.mockResolvedValue('transfer_ticket_jwe');
+
+      const result = await client.mintTransferToken();
+
+      expect(authJsClient.mintTransferToken).toHaveBeenCalledWith('my_session_token');
+      expect(result).toBe('transfer_ticket_jwe');
+    });
+
+    it('returns null when authJsClient.mintTransferToken returns null', async () => {
+      const client = makeClient('memory');
+      authJsClient.createSession.mockResolvedValue(mockSession());
+      await client.createSession();
+      authJsClient.mintTransferToken.mockResolvedValue(null);
+
+      const result = await client.mintTransferToken();
+
+      expect(result).toBeNull();
     });
   });
 
