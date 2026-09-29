@@ -81,8 +81,7 @@ function declarations(parent) {
 
 /** @param {import('typedoc').Application} app */
 function load(app) {
-  // Priority 1000: run before the built-in CategoryPlugin, which reads and
-  // strips `@category` tags on the same RESOLVE_END event.
+  // Priority 1000: run before CategoryPlugin strips `@category` tags.
   app.converter.on(
     Converter.EVENT_RESOLVE_END,
     context => {
@@ -97,7 +96,6 @@ function load(app) {
         const allowed = isTopLevel ? TOP_LEVEL_CATEGORIES : MEMBER_CATEGORIES;
 
         if (!allowed.includes(category)) {
-          // `error` not `warn`: TypeDoc then exits non-zero, so CI catches it.
           app.logger.error(
             `Unknown @category "${category}" on ${reflection.getFullName()}. ` +
               `${isTopLevel ? 'Top-level exports' : 'Class members'} take one ` +
