@@ -196,6 +196,16 @@ describe('Auth0Client', () => {
         expect(auth0.anonymous.getTokenSilently).toHaveBeenCalled();
       });
 
+      it('does not create an anonymous session when one already exists', async () => {
+        const auth0 = setup({ createAnonymousSessionOnFailedSilentAuth: true });
+        jest.spyOn(auth0.anonymous, 'hasSession').mockReturnValue(true);
+        jest.spyOn(auth0.anonymous, 'getTokenSilently').mockResolvedValue(mockAnonSession);
+
+        await auth0.checkSession();
+
+        expect(auth0.anonymous.getTokenSilently).not.toHaveBeenCalled();
+      });
+
       it('does not create an anonymous session when the option is false', async () => {
         const auth0 = setup({ createAnonymousSessionOnFailedSilentAuth: false });
         jest.spyOn(auth0.anonymous, 'getTokenSilently').mockResolvedValue(mockAnonSession);

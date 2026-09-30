@@ -37,6 +37,8 @@ export type {
  * - MFA factors
  * - Authentication methods (passkeys, phone, email, TOTP) - list, get, update, delete
  * - Authentication method enrollment (challenge and verify)
+ *
+ * @category Clients
  */
 export class MyAccountApiClient {
   constructor(

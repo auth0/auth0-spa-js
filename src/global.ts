@@ -6,6 +6,8 @@ import { CompleteResponse } from './myaccount';
  * Configuration option for automatic interactive error handling.
  *
  * - `'popup'`: SDK automatically opens Universal Login popup on MFA error
+ *
+ * @category Configuration
  */
 export type InteractiveErrorHandler = 'popup';
 
@@ -14,6 +16,8 @@ export type InteractiveErrorHandler = 'popup';
  *
  * - {@link RefreshTokenMode.Offline} (default): rotating offline refresh tokens.
  * - {@link RefreshTokenMode.Online}: non-rotating Online Refresh Tokens (ORTs).
+ *
+ * @category Configuration
  */
 // `const` object, not a TS `enum`, so members stay string-literal types and
 // remain assignable to the `createAuth0Client` overloads.
@@ -22,9 +26,15 @@ export const RefreshTokenMode = {
   Online: 'online'
 } as const;
 
+/**
+ * @category Configuration
+ */
 export type RefreshTokenMode =
   (typeof RefreshTokenMode)[keyof typeof RefreshTokenMode];
 
+/**
+ * @category Configuration
+ */
 export interface AuthorizationParams {
   /**
    * - `'page'`: displays the UI with a full page view
@@ -178,6 +188,9 @@ export interface AuthorizationParams {
   [key: string]: any;
 }
 
+/**
+ * @category Configuration
+ */
 export interface ClientAuthorizationParams extends Omit<AuthorizationParams, 'scope'> {
   scope?: string | Record<string, string>
 };
@@ -190,6 +203,9 @@ interface BaseLoginOptions {
   authorizationParams?: AuthorizationParams;
 }
 
+/**
+ * @category Configuration
+ */
 export interface Auth0ClientOptions {
   /**
    * Your Auth0 account domain such as `'example.auth0.com'`,
@@ -474,7 +490,7 @@ export interface Auth0ClientOptions {
 /**
  * Configuration details exposed by the Auth0Client after initialization.
  *
- * @category Main
+ * @category Configuration
  */
 export interface ClientConfiguration {
   /**
@@ -490,6 +506,8 @@ export interface ClientConfiguration {
 
 /**
  * The possible locations where tokens can be stored
+ *
+ * @category Configuration
  */
 export type CacheLocation = 'memory' | 'localstorage';
 
@@ -507,6 +525,9 @@ export interface AuthorizeOptions extends AuthorizationParams {
   code_challenge_method: string;
 }
 
+/**
+ * @category Login & Logout
+ */
 export interface RedirectLoginOptions<TAppState = any>
   extends BaseLoginOptions {
   /**
@@ -556,12 +577,17 @@ export interface RedirectLoginOptions<TAppState = any>
  * The types of responses expected from the authorization server.
  * - `code`: used for the standard login flow.
  * - `connect_code`: used for the connect account flow.
+ *
+ * @category Login & Logout
  */
 export enum ResponseType {
   Code = 'code',
   ConnectCode = 'connect_code'
 }
 
+/**
+ * @category Login & Logout
+ */
 export interface RedirectLoginResult<TAppState = any> {
   /**
    * State stored when the redirect request was made
@@ -574,8 +600,14 @@ export interface RedirectLoginResult<TAppState = any> {
   response_type: ResponseType.Code;
 }
 
+/**
+ * @category Login & Logout
+ */
 export interface PopupLoginOptions extends BaseLoginOptions { }
 
+/**
+ * @category Login & Logout
+ */
 export interface PopupConfigOptions {
   /**
    * The number of seconds to wait for a popup response before
@@ -615,6 +647,9 @@ export interface PopupConfigOptions {
   closePopup?: boolean;
 }
 
+/**
+ * @category Tokens & Users
+ */
 export interface GetTokenSilentlyOptions {
   /**
    * When `off`, ignores the cache and always sends a
@@ -669,6 +704,9 @@ export interface GetTokenSilentlyOptions {
   detailedResponse?: boolean;
 }
 
+/**
+ * @category Tokens & Users
+ */
 export interface GetTokenWithPopupOptions extends PopupLoginOptions {
   /**
    * When `off`, ignores the cache and always sends a request to Auth0.
@@ -678,6 +716,9 @@ export interface GetTokenWithPopupOptions extends PopupLoginOptions {
   cacheMode?: 'on' | 'off' | 'cache-only';
 }
 
+/**
+ * @category Login & Logout
+ */
 export interface LogoutUrlOptions {
   /**
    * The `clientId` of your application.
@@ -723,6 +764,9 @@ export interface LogoutUrlOptions {
   };
 }
 
+/**
+ * @category Login & Logout
+ */
 export interface LogoutOptions extends LogoutUrlOptions {
   /**
    * Used to control the redirect and not rely on the SDK to do the actual redirect.
@@ -761,6 +805,9 @@ export interface LogoutOptions extends LogoutUrlOptions {
   openUrl?: false | ((url: string) => Promise<void> | void);
 }
 
+/**
+ * @category Login & Logout
+ */
 export interface RedirectConnectAccountOptions<TAppState = any> {
   /**
    * The name of the connection to link (e.g. 'google-oauth2').
@@ -831,6 +878,8 @@ export interface RedirectConnectAccountOptions<TAppState = any> {
  * console.log(result.appState); // Access persisted app state
  * console.log(result.connection);   // The connection of the account you connected to.
  * console.log(result.response_type === 'connect_code');   // The response type will be 'connect_code'
+ *
+ * @category Login & Logout
  */
 export type ConnectAccountRedirectResult<TAppState = any> = CompleteResponse & {
   /**
@@ -872,6 +921,9 @@ export interface TokenEndpointOptions {
   [key: string]: any;
 }
 
+/**
+ * @category Tokens & Users
+ */
 export type TokenEndpointResponse = {
   id_token: string;
   token_type: string;
@@ -920,6 +972,8 @@ export interface JWTVerifyOptions {
  * to act on behalf of the subject. It is set via Auth0 Actions using the `setActor` command.
  *
  * @see {@link https://www.rfc-editor.org/rfc/rfc8693#section-4.1 | RFC 8693 Section 4.1}
+ *
+ * @category Tokens & Users
  */
 export interface ActClaim {
   /** The identifier of the acting party. */
@@ -927,6 +981,9 @@ export interface ActClaim {
   [key: string]: any;
 }
 
+/**
+ * @category Tokens & Users
+ */
 export interface IdToken {
   __raw: string;
   name?: string;
@@ -980,6 +1037,9 @@ export interface IdToken {
   [key: string]: any;
 }
 
+/**
+ * @category Tokens & Users
+ */
 export class User {
   name?: string;
   given_name?: string;
@@ -1025,6 +1085,9 @@ export type FetchResponse = {
   json: any;
 };
 
+/**
+ * @category Tokens & Users
+ */
 export type GetTokenSilentlyVerboseResponse = Omit<
   TokenEndpointResponse,
   'refresh_token'
@@ -1032,6 +1095,8 @@ export type GetTokenSilentlyVerboseResponse = Omit<
 
 /**
  * Options for revoking a refresh token
+ *
+ * @category Tokens & Users
  */
 export interface RevokeRefreshTokenOptions {
   /** Audience to identify which refresh token to revoke. Omit for default audience. */

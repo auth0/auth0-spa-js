@@ -7,6 +7,9 @@ export type ResponseHeaders =
   | [string, string][]
   | { get(name: string): string | null | undefined };
 
+/**
+ * @category Tokens & Users
+ */
 export type CustomFetchMinimalOutput = {
   status: number;
   headers: ResponseHeaders;
@@ -28,6 +31,9 @@ enum TokenType {
   DPoP = 'DPoP'
 }
 
+/**
+ * @category Tokens & Users
+ */
 export type FetcherConfig<TOutput extends CustomFetchMinimalOutput> = {
   getAccessToken?: AccessTokenFactory;
   baseUrl?: string;
@@ -52,6 +58,11 @@ export type FetchWithAuthCallbacks<TOutput> = {
   onUseDpopNonceError?(): Promise<TOutput>;
 };
 
+/**
+ * Calls your APIs with an Auth0 access token attached automatically.
+ *
+ * @category Clients
+ */
 export class Fetcher<TOutput extends CustomFetchMinimalOutput> {
   protected readonly config: Omit<FetcherConfig<TOutput>, 'fetch'> &
     Required<Pick<FetcherConfig<TOutput>, 'fetch'>>;
