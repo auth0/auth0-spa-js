@@ -101,7 +101,12 @@ export class AnonymousSessionApiClient {
       `anonymous::${this.clientId}`,
       5000,
       async () => {
-        // Re-check inside the lock: a concurrent caller may have already renewed.
+        // Re-check inside the lock: a concurrent caller may have already renewed,
+        // or may have marked the session expired — stop queued callers immediately.
+        if (this.cache.isSessionExpired()) {
+          throw new AnonymousSessionError('session_expired', 'The anonymous session has expired. Call createSession() to start a new one.');
+        }
+
         const afterLock = store.get();
         if (
           afterLock &&
@@ -121,6 +126,7 @@ export class AnonymousSessionApiClient {
         // recreate the session with the original metadata rather than silently losing it.
         if (session.sessionReplaced) {
           this.cache.removeAll();
+          this.cache.markSessionExpired();
           throw new AnonymousSessionError('session_expired', 'The anonymous session has expired. Call createSession() to start a new one.');
         }
 

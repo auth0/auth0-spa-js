@@ -1,5 +1,6 @@
 import { AnonymousSessionApiClient } from '../../src/anonymous/AnonymousSessionApiClient';
 import type { ILockManager } from '../../src/lock';
+import { AnonymousSessionError } from '@auth0/auth0-auth-js';
 import type { AnonymousSession } from '@auth0/auth0-auth-js';
 
 const mockSession = (overrides: Partial<AnonymousSession> = {}): AnonymousSession => ({
@@ -230,6 +231,87 @@ describe('AnonymousSessionApiClient', () => {
       expect(result).toEqual({ accessToken: freshSession.accessToken, expiresAt: freshSession.expiresAt });
     });
 
+    describe('session expiry surfacing', () => {
+      const makeExpiredSession = (overrides = {}) =>
+        mockSession({ expiresAt: Math.floor(Date.now() / 1000) - 10, ...overrides });
+
+      it('throws AnonymousSessionError with session_expired when auth-js replaces the session', async () => {
+        const client = makeClient('memory');
+        authJsClient.createSession.mockResolvedValue(makeExpiredSession({ sessionToken: 'old_token' }));
+        await client.createSession();
+
+        authJsClient.getAccessToken.mockResolvedValue(
+          mockSession({ sessionToken: 'new_token', sessionReplaced: true })
+        );
+
+        await expect(client.getTokenSilently()).rejects.toThrow(AnonymousSessionError);
+        await expect(client.getTokenSilently()).rejects.toMatchObject({ code: 'session_expired' });
+      });
+
+      it('clears the cache when the session is replaced', async () => {
+        const client = makeClient('memory');
+        authJsClient.createSession.mockResolvedValue(makeExpiredSession({ sessionToken: 'old_token' }));
+        await client.createSession();
+
+        authJsClient.getAccessToken.mockResolvedValue(
+          mockSession({ sessionToken: 'new_token', sessionReplaced: true })
+        );
+
+        await expect(client.getTokenSilently()).rejects.toThrow(AnonymousSessionError);
+        expect(client.hasSession()).toBe(false);
+      });
+
+      it('throws for queued callers without a network call after session is marked expired', async () => {
+        const client = makeClient('memory');
+        authJsClient.createSession.mockResolvedValue(makeExpiredSession({ sessionToken: 'old_token' }));
+        await client.createSession();
+
+        // Serializing lock: second callback runs after first resolves
+        let firstResolve: () => void;
+        const firstLockDone = new Promise<void>(r => { firstResolve = r; });
+        const lockManager: ILockManager = {
+          runWithLock: jest.fn()
+            .mockImplementationOnce((_k, _t, cb) => cb().finally(() => firstResolve()))
+            .mockImplementationOnce((_k, _t, cb) => firstLockDone.then(() => cb()))
+        };
+        const clientWithLock = makeClient('memory', lockManager);
+        authJsClient.createSession.mockResolvedValue(makeExpiredSession({ sessionToken: 'old_token' }));
+        await clientWithLock.createSession();
+
+        authJsClient.getAccessToken.mockResolvedValue(
+          mockSession({ sessionToken: 'new_token', sessionReplaced: true })
+        );
+
+        const [first, second] = await Promise.allSettled([
+          clientWithLock.getTokenSilently(),
+          clientWithLock.getTokenSilently()
+        ]);
+
+        expect(first.status).toBe('rejected');
+        expect(second.status).toBe('rejected');
+        // auth-js called only once — second caller threw from the marker, not the network
+        expect(authJsClient.getAccessToken).toHaveBeenCalledTimes(1);
+      });
+
+      it('recovers after createSession() is called', async () => {
+        const client = makeClient('memory');
+        authJsClient.createSession.mockResolvedValue(makeExpiredSession({ sessionToken: 'old_token' }));
+        await client.createSession();
+
+        authJsClient.getAccessToken.mockResolvedValue(
+          mockSession({ sessionToken: 'new_token', sessionReplaced: true })
+        );
+        await expect(client.getTokenSilently()).rejects.toThrow(AnonymousSessionError);
+
+        const freshSession = mockSession({ sessionToken: 'fresh_token' });
+        authJsClient.createSession.mockResolvedValue(freshSession);
+        await client.createSession();
+
+        authJsClient.getAccessToken.mockResolvedValue(mockSession());
+        await expect(client.getTokenSilently()).resolves.toBeDefined();
+      });
+    });
+
     it('treats a session expiring within the 60s leeway as expired', async () => {
       const client = makeClient('memory');
       const almostExpiredSession = mockSession({
@@ -245,6 +327,36 @@ describe('AnonymousSessionApiClient', () => {
       await client.getTokenSilently();
 
       expect(authJsClient.getAccessToken).toHaveBeenCalled();
+    });
+
+    it('throws AnonymousSessionError with session_expired when auth-js replaces the session', async () => {
+      const client = makeClient('memory');
+      authJsClient.createSession.mockResolvedValue(
+        mockSession({ sessionToken: 'old_token', expiresAt: Math.floor(Date.now() / 1000) - 10 })
+      );
+      await client.createSession();
+
+      authJsClient.getAccessToken.mockResolvedValue(
+        mockSession({ sessionToken: 'new_token', sessionReplaced: true })
+      );
+
+      await expect(client.getTokenSilently()).rejects.toThrow(AnonymousSessionError);
+      await expect(client.getTokenSilently()).rejects.toMatchObject({ code: 'session_expired' });
+    });
+
+    it('clears the cache when auth-js replaces the session', async () => {
+      const client = makeClient('memory');
+      authJsClient.createSession.mockResolvedValue(
+        mockSession({ sessionToken: 'old_token', expiresAt: Math.floor(Date.now() / 1000) - 10 })
+      );
+      await client.createSession();
+
+      authJsClient.getAccessToken.mockResolvedValue(
+        mockSession({ sessionToken: 'new_token', sessionReplaced: true })
+      );
+
+      await expect(client.getTokenSilently()).rejects.toThrow(AnonymousSessionError);
+      expect(client.hasSession()).toBe(false);
     });
   });
 

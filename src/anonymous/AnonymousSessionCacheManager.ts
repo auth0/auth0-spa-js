@@ -1,5 +1,6 @@
 const STORAGE_KEY_PREFIX = '@@auth0spajs@@';
 const SESSION_TOKEN_SUFFIX = 'session';
+const SESSION_EXPIRED_SUFFIX = 'session_expired';
 
 type SharedSession = {
   sessionToken: string;
@@ -55,6 +56,7 @@ export type { AccessTokenSlot, SharedSession };
 export class AnonymousSessionCacheManager {
   private readonly slots = new Map<string, Store<AccessTokenSlot>>();
   private readonly sessionStore: Store<SharedSession>;
+  private readonly expiredStore: Store<boolean>;
   private readonly sessionKey: string;
 
   private readonly baseKey: string;
@@ -71,6 +73,11 @@ export class AnonymousSessionCacheManager {
     this.sessionStore = this.useLocalStorage
       ? makeLocalStore<SharedSession>(this.sessionKey)
       : makeMemoryStore<SharedSession>();
+
+    const expiredKey = `${this.baseKey}::${SESSION_EXPIRED_SUFFIX}`;
+    this.expiredStore = this.useLocalStorage
+      ? makeLocalStore<boolean>(expiredKey)
+      : makeMemoryStore<boolean>();
   }
 
   getStore(audience?: string, scope?: string): Store<AccessTokenSlot> {
@@ -90,10 +97,20 @@ export class AnonymousSessionCacheManager {
 
   setSessionToken(session: SharedSession): void {
     this.sessionStore.set(session);
+    this.expiredStore.remove();
+  }
+
+  isSessionExpired(): boolean {
+    return !!this.expiredStore.get();
+  }
+
+  markSessionExpired(): void {
+    this.expiredStore.set(true);
   }
 
   removeAll(): void {
     this.sessionStore.remove();
+    this.expiredStore.remove();
     this.slots.forEach(store => store.remove());
     this.slots.clear();
 
