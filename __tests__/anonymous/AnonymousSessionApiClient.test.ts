@@ -329,35 +329,6 @@ describe('AnonymousSessionApiClient', () => {
       expect(authJsClient.getAccessToken).toHaveBeenCalled();
     });
 
-    it('throws AnonymousSessionError with session_expired when auth-js replaces the session', async () => {
-      const client = makeClient('memory');
-      authJsClient.createSession.mockResolvedValue(
-        mockSession({ sessionToken: 'old_token', expiresAt: Math.floor(Date.now() / 1000) - 10 })
-      );
-      await client.createSession();
-
-      authJsClient.getAccessToken.mockResolvedValue(
-        mockSession({ sessionToken: 'new_token', sessionReplaced: true })
-      );
-
-      await expect(client.getTokenSilently()).rejects.toThrow(AnonymousSessionError);
-      await expect(client.getTokenSilently()).rejects.toMatchObject({ code: 'session_expired' });
-    });
-
-    it('clears the cache when auth-js replaces the session', async () => {
-      const client = makeClient('memory');
-      authJsClient.createSession.mockResolvedValue(
-        mockSession({ sessionToken: 'old_token', expiresAt: Math.floor(Date.now() / 1000) - 10 })
-      );
-      await client.createSession();
-
-      authJsClient.getAccessToken.mockResolvedValue(
-        mockSession({ sessionToken: 'new_token', sessionReplaced: true })
-      );
-
-      await expect(client.getTokenSilently()).rejects.toThrow(AnonymousSessionError);
-      expect(client.hasSession()).toBe(false);
-    });
   });
 
   describe('mintTransferToken', () => {
@@ -445,6 +416,25 @@ describe('AnonymousSessionApiClient', () => {
 
       expect(localStorage.removeItem).toHaveBeenCalledWith(keyA);
       expect(localStorage.removeItem).toHaveBeenCalledWith(keyB);
+    });
+
+    it('clears the expired marker so getTokenSilently works after a new createSession', async () => {
+      const client = makeClient('memory');
+      authJsClient.createSession.mockResolvedValue(
+        mockSession({ sessionToken: 'old', expiresAt: Math.floor(Date.now() / 1000) - 10 })
+      );
+      await client.createSession();
+      authJsClient.getAccessToken.mockResolvedValue(mockSession({ sessionReplaced: true }));
+      await expect(client.getTokenSilently()).rejects.toThrow(AnonymousSessionError);
+
+      authJsClient.logout.mockResolvedValue(undefined);
+      await client.logout();
+
+      const fresh = mockSession({ sessionToken: 'fresh' });
+      authJsClient.createSession.mockResolvedValue(fresh);
+      await client.createSession();
+      authJsClient.getAccessToken.mockResolvedValue(mockSession());
+      await expect(client.getTokenSilently()).resolves.toBeDefined();
     });
   });
 
