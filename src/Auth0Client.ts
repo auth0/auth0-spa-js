@@ -141,6 +141,8 @@ type GetTokenSilentlyResult = TokenEndpointResponse & {
 
 /**
  * Auth0 SDK for Single Page Applications using [Authorization Code Grant Flow with PKCE](https://auth0.com/docs/api-auth/tutorials/authorization-code-grant-pkce).
+ *
+ * @category Clients
  */
 export class Auth0Client {
   private readonly transactionManager: TransactionManager;
@@ -161,6 +163,10 @@ export class Auth0Client {
     authorizationParams: ClientAuthorizationParams,
   };
   private readonly userCache: ICache = new InMemoryCache().enclosedCache;
+
+  /**
+   * @category Sub-clients
+   */
   public readonly myAccount: MyAccountApiClient;
 
   /**
@@ -171,6 +177,8 @@ export class Auth0Client {
    * - Enrolling new authenticators (OTP, SMS, Voice, Push, Email)
    * - Initiating MFA challenges
    * - Verifying MFA challenges
+   *
+   * @category Sub-clients
    */
   public readonly mfa: MfaApiClient;
 
@@ -181,6 +189,8 @@ export class Auth0Client {
    * Use `anonymous.getTokenSilently()` to obtain or silently renew the access token.
    * Use `anonymous.logout()` to end the anonymous session.
    * Use `anonymous.getClaims()` to read decoded session token claims (always `null` in EA).
+   *
+   * @category Sub-clients
    */
   public readonly anonymous: AnonymousSessionApiClient;
 
@@ -190,6 +200,8 @@ export class Auth0Client {
    * Provides two single-call methods that handle the full WebAuthn flow internally:
    * - `signup(options)` — register a new user with a passkey
    * - `login(options?)` — authenticate an existing user with a passkey
+   *
+   * @category Sub-clients
    */
   public readonly passkey: PasskeyApiClient;
 
@@ -252,6 +264,9 @@ export class Auth0Client {
     }
   }
 
+  /**
+   * @category Constructor
+   */
   constructor(options: Auth0ClientOptions) {
     this.onlineAccess = this.resolveOnlineAccess(options);
     this.warnEnterpriseConnectConfig(options);
@@ -420,6 +435,8 @@ export class Auth0Client {
    * const config = auth0.getConfiguration();
    * // { domain: 'tenant.auth0.com', clientId: 'abc123' }
    * ```
+   *
+   * @category Advanced
    */
   public getConfiguration(): Readonly<ClientConfiguration> {
     return Object.freeze({
@@ -601,6 +618,8 @@ export class Auth0Client {
    *
    * @param options
    * @param config
+   *
+   * @category Authentication
    */
   public async loginWithPopup(
     options?: PopupLoginOptions,
@@ -673,6 +692,8 @@ export class Auth0Client {
    * from the `id_token`).
    *
    * @typeparam TUser The type to return, has to extend {@link User}.
+   *
+   * @category User Profile
    */
   public async getUser<TUser extends User>(): Promise<TUser | undefined> {
     if (await this._isSessionCeilingReached()) {
@@ -690,6 +711,8 @@ export class Auth0Client {
    * ```
    *
    * Returns all claims from the id_token if available.
+   *
+   * @category User Profile
    */
   public async getIdTokenClaims(): Promise<IdToken | undefined> {
     if (await this._isSessionCeilingReached()) {
@@ -711,6 +734,8 @@ export class Auth0Client {
    * parameters will be auto-generated.
    *
    * @param options
+   *
+   * @category Authentication
    */
   public async loginWithRedirect<TAppState = any>(
     options: RedirectLoginOptions<TAppState> = {}
@@ -751,6 +776,8 @@ export class Auth0Client {
    * call `handleRedirectCallback` to handle success and error
    * responses from Auth0. If the response is successful, results
    * will be valid according to their expiration times.
+   *
+   * @category Authentication
    */
   public async handleRedirectCallback<TAppState = any>(
     url: string = window.location.href
@@ -899,6 +926,24 @@ export class Auth0Client {
     };
   }
 
+  private async _maybeCreateAnonymousSession() {
+    if (this.options.createAnonymousSessionOnFailedSilentAuth) {
+      if (this.anonymous.hasSession()) {
+        return;
+      }
+      try {
+        // No audience is requested here. This establishes the session token only.
+        // The app calls anonymous.getTokenSilently({ audience }) separately for each
+        // resource server and those calls reuse the session token without creating a
+        // new identity.
+        await this.anonymous.getTokenSilently();
+      } catch (e) {
+        // eslint-disable-next-line no-console
+        console.debug('[auth0-spa-js] Anonymous session creation failed', e);
+      }
+    }
+  }
+
   /**
    * ```js
    * await auth0.checkSession();
@@ -923,25 +968,9 @@ export class Auth0Client {
    * and handle the possible `login_required` error [as shown in the readme](https://github.com/auth0/auth0-spa-js#creating-the-client).
    *
    * @param options
+   *
+   * @category Authentication
    */
-  private async _maybeCreateAnonymousSession() {
-    if (this.options.createAnonymousSessionOnFailedSilentAuth) {
-      if (this.anonymous.hasSession()) {
-        return;
-      }
-      try {
-        // No audience is requested here. This establishes the session token only.
-        // The app calls anonymous.getTokenSilently({ audience }) separately for each
-        // resource server and those calls reuse the session token without creating a
-        // new identity.
-        await this.anonymous.getTokenSilently();
-      } catch (e) {
-        // eslint-disable-next-line no-console
-        console.debug('[auth0-spa-js] Anonymous session creation failed', e);
-      }
-    }
-  }
-
   public async checkSession(options?: GetTokenSilentlyOptions) {
     if (!this.cookieStorage.get(this.isAuthenticatedCookieName)) {
       if (!this.cookieStorage.get(OLD_IS_AUTHENTICATED_COOKIE_NAME)) {
@@ -975,6 +1004,8 @@ export class Auth0Client {
    * Fetches a new access token and returns the response from the /oauth/token endpoint, omitting the refresh token.
    *
    * @param options
+   *
+   * @category Tokens
    */
   public async getTokenSilently(
     options: GetTokenSilentlyOptions & { detailedResponse: true }
@@ -984,6 +1015,8 @@ export class Auth0Client {
    * Fetches a new access token and returns it.
    *
    * @param options
+   *
+   * @category Tokens
    */
   public async getTokenSilently(
     options?: GetTokenSilentlyOptions
@@ -1024,6 +1057,8 @@ export class Auth0Client {
    * the `auth0` cookie.
    *
    * @param options
+   *
+   * @category Tokens
    */
   public async getTokenSilently(
     options: GetTokenSilentlyOptions = {}
@@ -1203,6 +1238,8 @@ export class Auth0Client {
    *
    * @param options
    * @param config
+   *
+   * @category Tokens
    */
   public async getTokenWithPopup(
     options: GetTokenWithPopupOptions = {},
@@ -1249,6 +1286,7 @@ export class Auth0Client {
    * Returns `true` if there's valid information stored,
    * otherwise returns `false`.
    *
+   * @category Authentication
    */
   public async isAuthenticated() {
     const user = await this.getUser();
@@ -1327,6 +1365,8 @@ export class Auth0Client {
    * // Revoke refresh tokens for each audience individually
    * await auth0.revokeRefreshToken({ audience: 'https://api.example.com' });
    * await auth0.revokeRefreshToken({ audience: 'https://api2.example.com' });
+   *
+   * @category Tokens
    */
   public async revokeRefreshToken(options: RevokeRefreshTokenOptions = {}): Promise<void> {
     if (!this.options.useRefreshTokens) {
@@ -1382,6 +1422,8 @@ export class Auth0Client {
    * [Read more about how Logout works at Auth0](https://auth0.com/docs/logout).
    *
    * @param options
+   *
+   * @category Authentication
    */
   public async logout(options: LogoutOptions = {}): Promise<void> {
     if (
@@ -1962,6 +2004,26 @@ export class Auth0Client {
   *   - `_requestToken` performs the actual HTTP request to the token endpoint.
   */
 
+  private _buildTokenExchangeParams(
+    options: CustomTokenExchangeOptions
+  ): TokenExchangeRequestOptions {
+    return {
+      ...options,
+      grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
+      subject_token: options.subject_token,
+      subject_token_type: options.subject_token_type,
+      ...(options.actor_token && { actor_token: options.actor_token }),
+      ...(options.actor_token_type && { actor_token_type: options.actor_token_type }),
+      scope: scopesToRequest(
+        this.scope,
+        options.scope,
+        options.audience || this.options.authorizationParams.audience
+      ),
+      audience: options.audience || this.options.authorizationParams.audience,
+      organization: options.organization || this.options.authorizationParams.organization
+    };
+  }
+
   /**
    * ```js
    * await auth0.loginWithCustomTokenExchange(options);
@@ -2009,27 +2071,9 @@ export class Auth0Client {
    *   console.error('Token exchange failed:', error);
    * }
    * ```
+   *
+   * @category Tokens
    */
-  private _buildTokenExchangeParams(
-    options: CustomTokenExchangeOptions
-  ): TokenExchangeRequestOptions {
-    return {
-      ...options,
-      grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
-      subject_token: options.subject_token,
-      subject_token_type: options.subject_token_type,
-      ...(options.actor_token && { actor_token: options.actor_token }),
-      ...(options.actor_token_type && { actor_token_type: options.actor_token_type }),
-      scope: scopesToRequest(
-        this.scope,
-        options.scope,
-        options.audience || this.options.authorizationParams.audience
-      ),
-      audience: options.audience || this.options.authorizationParams.audience,
-      organization: options.organization || this.options.authorizationParams.organization
-    };
-  }
-
   async loginWithCustomTokenExchange(
     options: CustomTokenExchangeOptions
   ): Promise<TokenEndpointResponse> {
@@ -2069,6 +2113,8 @@ export class Auth0Client {
    * // Use tokenResponse.access_token to call downstream API
    * // Current user session is unchanged
    * ```
+   *
+   * @category Tokens
    */
   async customTokenExchange(
     options: CustomTokenExchangeOptions
@@ -2116,6 +2162,8 @@ export class Auth0Client {
    * // Use:
    * const tokens = await auth0.loginWithCustomTokenExchange(options);
    * ```
+   *
+   * @category Tokens
    */
   async exchangeToken(
     options: CustomTokenExchangeOptions
@@ -2141,6 +2189,8 @@ export class Auth0Client {
    * @param id    The identifier of a nonce: if absent, it will get the nonce
    *              used for requests to Auth0. Otherwise, it will be used to
    *              select a specific non-Auth0 nonce.
+   *
+   * @category Advanced
    */
   public getDpopNonce(id?: string): Promise<string | undefined> {
     this._assertDpop(this.dpop);
@@ -2157,6 +2207,8 @@ export class Auth0Client {
    * @param id    The identifier of a nonce: if absent, it will set the nonce
    *              used for requests to Auth0. Otherwise, it will be used to
    *              select a specific non-Auth0 nonce.
+   *
+   * @category Advanced
    */
   public setDpopNonce(nonce: string, id?: string): Promise<void> {
     this._assertDpop(this.dpop);
@@ -2169,6 +2221,8 @@ export class Auth0Client {
    * key used to cryptographically bind access tokens with DPoP.
    *
    * It requires enabling the {@link Auth0ClientOptions.useDpop} option.
+   *
+   * @category Advanced
    */
   public generateDpopProof(params: {
     url: string;
@@ -2188,6 +2242,8 @@ export class Auth0Client {
    * headers or managing DPoP nonces and retries automatically.
    *
    * Check the `EXAMPLES.md` file for a deeper look into this method.
+   *
+   * @category Advanced
    */
   public createFetcher<TOutput extends CustomFetchMinimalOutput = Response>(
     config: FetcherConfig<TOutput> = {}
@@ -2226,6 +2282,8 @@ export class Auth0Client {
    *
    * @returns {Promise<void>} Resolves when the redirect is initiated.
    * @throws {MyAccountApiError} If the connect request to the My Account API fails.
+   *
+   * @category Connected Accounts
    */
   public async connectAccountWithRedirect<TAppState = any>(
     options: RedirectConnectAccountOptions<TAppState>

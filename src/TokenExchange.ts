@@ -3,6 +3,8 @@
  * following RFC 8693 specifications.
  *
  * @see {@link https://www.rfc-editor.org/rfc/rfc8693 | RFC 8693: OAuth 2.0 Token Exchange}
+ *
+ * @category Tokens & Users
  */
 export type CustomTokenExchangeOptions = {
   /**
