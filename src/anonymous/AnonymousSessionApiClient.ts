@@ -4,6 +4,7 @@ import type {
   CreateAnonymousSessionOptions,
   GetAnonymousAccessTokenOptions
 } from '@auth0/auth0-auth-js';
+import { AnonymousSessionError } from '@auth0/auth0-auth-js';
 import type { ILockManager } from '../lock';
 import { getLockManager } from '../lock';
 import { AnonymousSessionCacheManager } from './AnonymousSessionCacheManager';
@@ -23,6 +24,7 @@ export type AnonymousTokenResult = {
 };
 
 const EXPIRY_LEEWAY_SECONDS = 60;
+const SESSION_EXPIRED_MESSAGE = 'The anonymous session has expired. Call createSession() to start a new one.';
 
 /**
  * Browser-layer wrapper around auth0-auth-js `AnonymousSessionClient`.
@@ -74,12 +76,15 @@ export class AnonymousSessionApiClient {
   }
 
   /**
-   * Returns a valid anonymous access token, creating or renewing the session as needed.
+   * Returns a valid anonymous access token, renewing it when expired.
    *
    * If the stored access token is still fresh (more than 60 s remaining), it is
    * returned directly without a network call. Otherwise the session token is used
-   * to re-mint the access token. If the session token has also expired, auth0-auth-js
-   * silently creates a fresh identity (any previously set metadata is lost).
+   * to re-mint the access token. If the session token has also expired, the local
+   * cache is cleared and an `AnonymousSessionError` with code `session_expired` is
+   * thrown — call `createSession()` to start a new session.
+   *
+   * @throws {AnonymousSessionError} with code `session_expired` if the session token has expired.
    */
   async getTokenSilently(
     options?: AnonymousGetTokenSilentlyOptions
@@ -99,7 +104,12 @@ export class AnonymousSessionApiClient {
       `anonymous::${this.clientId}`,
       5000,
       async () => {
-        // Re-check inside the lock: a concurrent caller may have already renewed.
+        // Re-check inside the lock: a concurrent caller may have already renewed,
+        // or may have marked the session expired — stop queued callers immediately.
+        if (this.cache.isSessionExpired()) {
+          throw new AnonymousSessionError('session_expired', SESSION_EXPIRED_MESSAGE);
+        }
+
         const afterLock = store.get();
         if (
           afterLock &&
@@ -113,12 +123,22 @@ export class AnonymousSessionApiClient {
           ...options,
           sessionToken
         });
+
+        // auth0-auth-js silently creates a fresh identity when the session token
+        // expires. Surface this as an error so the developer can decide whether to
+        // recreate the session with the original metadata rather than silently losing it.
+        if (session.sessionReplaced) {
+          this.cache.removeAll();
+          this.cache.markSessionExpired();
+          throw new AnonymousSessionError('session_expired', SESSION_EXPIRED_MESSAGE);
+        }
+
         this.cache.getStore(options?.audience, options?.scope).set({
           accessToken: session.accessToken,
           expiresAt: session.expiresAt,
           ...(session.scope !== undefined && { scope: session.scope })
         });
-        if (session.sessionReplaced || !this.cache.getSessionToken()) {
+        if (!this.cache.getSessionToken()) {
           this.cache.setSessionToken({
             sessionToken: session.sessionToken,
             ...(session.sessionTokenExpiresAt !== undefined && { sessionTokenExpiresAt: session.sessionTokenExpiresAt })
