@@ -853,5 +853,37 @@ describe('Auth0Client', () => {
       // User is responsible for cleanup
       expect(popup.close).not.toHaveBeenCalled();
     });
+
+    describe('anonymous session transfer ticket', () => {
+      it('appends anon_transfer_token when an anonymous session is active', async () => {
+        const auth0 = setup();
+        jest
+          .spyOn(auth0.anonymous, 'mintTransferToken')
+          .mockResolvedValue('transfer_ticket_jwe');
+
+        await loginWithPopup(auth0);
+
+        const url = (utils.runPopup as jest.Mock).mock.calls[0][0].popup
+          .location.href;
+        expect(new URL(url).searchParams.get('anon_transfer_token')).toBe(
+          'transfer_ticket_jwe'
+        );
+      });
+
+      it('does not append anon_transfer_token when no session is active', async () => {
+        const auth0 = setup();
+        jest
+          .spyOn(auth0.anonymous, 'mintTransferToken')
+          .mockResolvedValue(null);
+
+        await loginWithPopup(auth0);
+
+        const url = (utils.runPopup as jest.Mock).mock.calls[0][0].popup
+          .location.href;
+        expect(new URL(url).searchParams.has('anon_transfer_token')).toBe(
+          false
+        );
+      });
+    });
   });
 });
