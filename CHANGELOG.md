@@ -1,5 +1,11 @@
 # Change Log
 
+## [v2.28.1](https://github.com/auth0/auth0-spa-js/tree/v2.28.1) (2026-10-01)
+[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.28.0...v2.28.1)
+
+**Fixed**
+- fix(anonymous): surface session expiry instead of silently rotating [\#1777](https://github.com/auth0/auth0-spa-js/pull/1777) ([yogeshchoudhary147](https://github.com/yogeshchoudhary147))
+
 ## [v2.28.0](https://github.com/auth0/auth0-spa-js/tree/v2.28.0) (2026-10-01)
 [Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.27.0...v2.28.0)
 
