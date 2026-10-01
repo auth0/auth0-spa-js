@@ -134,6 +134,17 @@ export class AnonymousSessionApiClient {
   }
 
   /**
+   * Mints a short-lived transfer ticket (30s single-use JWE) for linking the
+   * anonymous session during `loginWithRedirect()`. Returns `null` if no session
+   * is active or the request fails — callers must never be blocked from login.
+   */
+  async mintTransferToken(): Promise<string | null> {
+    const stored = this.cache.getSessionToken();
+    if (!stored?.sessionToken) return null;
+    return this.authJsClient.mintTransferToken(stored.sessionToken);
+  }
+
+  /**
    * Ends the anonymous session and clears all locally stored tokens.
    */
   async logout(): Promise<void> {

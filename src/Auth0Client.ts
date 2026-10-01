@@ -542,6 +542,13 @@ export class Auth0Client {
     return { ...authorizationParams, session_transfer_token: token };
   }
 
+  private async _applyAnonTransferToken(
+    authorizationParams: AuthorizationParams
+  ): Promise<AuthorizationParams> {
+    const token = await this.anonymous.mintTransferToken();
+    return token ? { ...authorizationParams, anon_transfer_token: token } : authorizationParams;
+  }
+
   private async _prepareAuthorizeUrl(
     authorizationParams: AuthorizationParams,
     authorizeOptions?: Partial<AuthorizeOptions>,
@@ -629,7 +636,9 @@ export class Auth0Client {
       }
     }
 
-    const authorizationParams = this._applySessionTransferToken(options.authorizationParams || {});
+    const authorizationParams = await this._applyAnonTransferToken(
+      this._applySessionTransferToken(options.authorizationParams || {})
+    );
 
     const params = await this._prepareAuthorizeUrl(
       authorizationParams,
@@ -738,7 +747,9 @@ export class Auth0Client {
       urlOptions.authorizationParams?.organization ||
       this.options.authorizationParams.organization;
 
-    const authorizationParams = this._applySessionTransferToken(urlOptions.authorizationParams || {});
+    const authorizationParams = await this._applyAnonTransferToken(
+      this._applySessionTransferToken(urlOptions.authorizationParams || {})
+    );
 
     const { url, ...transaction } = await this._prepareAuthorizeUrl(
       authorizationParams
