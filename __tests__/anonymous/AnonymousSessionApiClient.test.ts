@@ -235,30 +235,45 @@ describe('AnonymousSessionApiClient', () => {
       const makeExpiredSession = (overrides = {}) =>
         mockSession({ expiresAt: Math.floor(Date.now() / 1000) - 10, ...overrides });
 
-      it('throws AnonymousSessionError with session_expired when auth-js replaces the session', async () => {
+      it('throws AnonymousSessionError with session_expired when auth-js throws session_expired', async () => {
         const client = makeClient('memory');
         authJsClient.createSession.mockResolvedValue(makeExpiredSession({ sessionToken: 'old_token' }));
         await client.createSession();
 
-        authJsClient.getAccessToken.mockResolvedValue(
-          mockSession({ sessionToken: 'new_token', sessionReplaced: true })
+        authJsClient.getAccessToken.mockRejectedValue(
+          new AnonymousSessionError('session_expired', 'Session expired')
         );
 
         await expect(client.getTokenSilently()).rejects.toThrow(AnonymousSessionError);
         await expect(client.getTokenSilently()).rejects.toMatchObject({ code: 'session_expired' });
       });
 
-      it('clears the cache when the session is replaced', async () => {
+      it('clears the cache when auth-js throws session_expired', async () => {
         const client = makeClient('memory');
         authJsClient.createSession.mockResolvedValue(makeExpiredSession({ sessionToken: 'old_token' }));
         await client.createSession();
 
-        authJsClient.getAccessToken.mockResolvedValue(
-          mockSession({ sessionToken: 'new_token', sessionReplaced: true })
+        authJsClient.getAccessToken.mockRejectedValue(
+          new AnonymousSessionError('session_expired', 'Session expired')
         );
 
         await expect(client.getTokenSilently()).rejects.toThrow(AnonymousSessionError);
         expect(client.hasSession()).toBe(false);
+      });
+
+      it('clears the cache and marks session expired when auth-js throws invalid_session_token', async () => {
+        const client = makeClient('memory');
+        authJsClient.createSession.mockResolvedValue(makeExpiredSession({ sessionToken: 'old_token' }));
+        await client.createSession();
+
+        authJsClient.getAccessToken.mockRejectedValue(
+          new AnonymousSessionError('invalid_session_token', 'Invalid session token')
+        );
+
+        await expect(client.getTokenSilently()).rejects.toMatchObject({ code: 'invalid_session_token' });
+        expect(client.hasSession()).toBe(false);
+        // queued callers should also short-circuit
+        await expect(client.getTokenSilently()).rejects.toMatchObject({ code: 'session_expired' });
       });
 
       it('throws for queued callers without a network call after session is marked expired', async () => {
@@ -278,8 +293,8 @@ describe('AnonymousSessionApiClient', () => {
         authJsClient.createSession.mockResolvedValue(makeExpiredSession({ sessionToken: 'old_token' }));
         await clientWithLock.createSession();
 
-        authJsClient.getAccessToken.mockResolvedValue(
-          mockSession({ sessionToken: 'new_token', sessionReplaced: true })
+        authJsClient.getAccessToken.mockRejectedValue(
+          new AnonymousSessionError('session_expired', 'Session expired')
         );
 
         const [first, second] = await Promise.allSettled([
@@ -298,8 +313,8 @@ describe('AnonymousSessionApiClient', () => {
         authJsClient.createSession.mockResolvedValue(makeExpiredSession({ sessionToken: 'old_token' }));
         await client.createSession();
 
-        authJsClient.getAccessToken.mockResolvedValue(
-          mockSession({ sessionToken: 'new_token', sessionReplaced: true })
+        authJsClient.getAccessToken.mockRejectedValue(
+          new AnonymousSessionError('session_expired', 'Session expired')
         );
         await expect(client.getTokenSilently()).rejects.toThrow(AnonymousSessionError);
 
@@ -424,7 +439,7 @@ describe('AnonymousSessionApiClient', () => {
         mockSession({ sessionToken: 'old', expiresAt: Math.floor(Date.now() / 1000) - 10 })
       );
       await client.createSession();
-      authJsClient.getAccessToken.mockResolvedValue(mockSession({ sessionReplaced: true }));
+      authJsClient.getAccessToken.mockRejectedValue(new AnonymousSessionError('session_expired', 'Session expired'));
       await expect(client.getTokenSilently()).rejects.toThrow(AnonymousSessionError);
 
       authJsClient.logout.mockResolvedValue(undefined);
