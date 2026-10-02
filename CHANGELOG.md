@@ -1,5 +1,11 @@
 # Change Log
 
+## [v2.28.2](https://github.com/auth0/auth0-spa-js/tree/v2.28.2) (2026-10-02)
+[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.28.1...v2.28.2)
+
+**Fixed**
+- fix(anonymous): bump auth0-auth-js to v1.16.1 and handle new session expiry errors [\#1779](https://github.com/auth0/auth0-spa-js/pull/1779) ([yogeshchoudhary147](https://github.com/yogeshchoudhary147))
+
 ## [v2.28.1](https://github.com/auth0/auth0-spa-js/tree/v2.28.1) (2026-10-01)
 [Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.28.0...v2.28.1)
 
