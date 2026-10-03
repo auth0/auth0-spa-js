@@ -67,6 +67,8 @@ try {
   ) {
     // Session is permanently gone. Start a new one.
     await auth0.anonymous.createSession();
+  } else {
+    throw e;
   }
 }
 ```
