@@ -139,6 +139,7 @@ describe('lock', () => {
     let mockLocks: any;
 
     beforeEach(() => {
+      jest.useFakeTimers();
       // Save original navigator
       originalNavigator = global.navigator;
 
@@ -155,6 +156,7 @@ describe('lock', () => {
     });
 
     afterEach(() => {
+      jest.useRealTimers();
       // Restore original navigator
       Object.defineProperty(global, 'navigator', {
         value: originalNavigator,
@@ -188,19 +190,75 @@ describe('lock', () => {
 
     it('should throw TimeoutError when aborted', async () => {
       const manager = new WebLocksApiManager();
+      const callback = jest.fn();
+
+      mockLocks.request.mockImplementation(
+        (_key: string, options: any) =>
+          new Promise((_, reject) => {
+            options.signal.addEventListener('abort', () => {
+              reject(new DOMException('Aborted', 'AbortError'));
+            });
+          })
+      );
+
+      const result = manager.runWithLock('test-key', 100, callback);
+      const rejection = expect(result).rejects.toThrow(TimeoutError);
+
+      jest.advanceTimersByTime(100);
+
+      await rejection;
+      expect(callback).not.toHaveBeenCalled();
+      expect(jest.getTimerCount()).toBe(0);
+    });
+
+    it.each(['throw', 'reject'])(
+      'should preserve callback AbortError on %s',
+      async failure => {
+        const manager = new WebLocksApiManager();
+        const error = new DOMException('Callback aborted', 'AbortError');
+
+        mockLocks.request.mockImplementation(
+          async (key: string, _options: any, callback: any) =>
+            callback({ name: key })
+        );
+
+        await expect(
+          manager.runWithLock('test-key', 100, () => {
+            if (failure === 'throw') {
+              throw error;
+            }
+            return Promise.reject(error);
+          })
+        ).rejects.toBe(error);
+
+        expect(jest.getTimerCount()).toBe(0);
+      }
+    );
+
+    it('should clear the acquisition timeout before the callback completes', async () => {
+      const manager = new WebLocksApiManager();
+      let signal: AbortSignal;
+      let resolveCallback: (value: string) => void;
 
       mockLocks.request.mockImplementation(
         async (key: string, options: any, callback: any) => {
-          // Simulate abort
-          const error: any = new Error('Aborted');
-          error.name = 'AbortError';
-          throw error;
+          signal = options.signal;
+          return callback({ name: key });
         }
       );
 
-      await expect(
-        manager.runWithLock('test-key', 100, async () => 'should-not-execute')
-      ).rejects.toThrow(TimeoutError);
+      const result = manager.runWithLock(
+        'test-key',
+        100,
+        () => new Promise<string>(resolve => (resolveCallback = resolve))
+      );
+
+      jest.advanceTimersByTime(200);
+
+      expect(signal.aborted).toBe(false);
+      expect(jest.getTimerCount()).toBe(0);
+      resolveCallback('success');
+      await expect(result).resolves.toBe('success');
     });
 
     it('should propagate non-abort errors', async () => {
