@@ -47,7 +47,9 @@ export class WebLocksApiManager implements ILockManager {
       );
     } catch (error: any) {
       clearTimeout(timeoutId);
-      if (error?.name === 'AbortError') throw new TimeoutError();
+      if (controller.signal.aborted && error?.name === 'AbortError') {
+        throw new TimeoutError();
+      }
       throw error;
     }
   }
