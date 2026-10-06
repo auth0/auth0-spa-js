@@ -1,4 +1,4 @@
-export { MyAccountApiClient, MyAccountApiError } from './MyAccountApiClient';
+export { MyAccountApiClient, MyAccountApiError, ProfileFeatureNotEnabledError } from './MyAccountApiClient';
 export type {
   ConnectRequest,
   ConnectResponse,
@@ -42,5 +42,9 @@ export type {
   TotpEnrollmentVerifyOptions,
   PushNotificationEnrollmentVerifyOptions,
   RecoveryCodeEnrollmentVerifyOptions,
-  PasswordEnrollmentVerifyOptions
+  PasswordEnrollmentVerifyOptions,
+  UserProfile,
+  ProfileFieldPolicy,
+  GetUserProfileOptions,
+  UpdateUserProfileRequest
 } from './types';

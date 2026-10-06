@@ -1,6 +1,7 @@
 import {
   MyAccountApiClient,
-  MyAccountApiError
+  MyAccountApiError,
+  ProfileFeatureNotEnabledError
 } from '../src/myaccount';
 import { Fetcher } from '../src/fetcher';
 
@@ -409,6 +410,192 @@ describe('MyAccountApiClient', () => {
       });
 
       await expect(api.enrollmentChallenge({ type: 'phone', phone_number: 'bad' })).rejects.toThrow(MyAccountApiError);
+    });
+  });
+
+  describe('getUserProfile', () => {
+    const profile = {
+      user_id: 'auth0|123',
+      created_at: '2026-01-01T00:00:00.000Z',
+      updated_at: '2026-01-01T00:00:00.000Z',
+      given_name: 'Alice',
+      email: 'alice@example.com',
+      profile_policy: {
+        '/given_name': { label: 'First name', access: 'read_write', source: 'user' }
+      }
+    };
+
+    it('returns profile on success with no options', async () => {
+      mockFetcher.fetchWithAuth = jest.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        text: jest.fn().mockResolvedValue(JSON.stringify(profile))
+      });
+
+      const result = await api.getUserProfile();
+
+      expect(mockFetcher.fetchWithAuth).toHaveBeenCalledWith(
+        `${apiBase}v1/profile`,
+        { method: 'GET' },
+        { scope: ['read:me:profile'] }
+      );
+      expect(result.user_id).toBe('auth0|123');
+      expect(result.profile_policy).toBeDefined();
+    });
+
+    it('appends fields query param when provided', async () => {
+      mockFetcher.fetchWithAuth = jest.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        text: jest.fn().mockResolvedValue(JSON.stringify(profile))
+      });
+
+      await api.getUserProfile({ fields: ['given_name', 'email'] });
+
+      expect(mockFetcher.fetchWithAuth).toHaveBeenCalledWith(
+        `${apiBase}v1/profile?fields=given_name%2Cemail`,
+        { method: 'GET' },
+        { scope: ['read:me:profile'] }
+      );
+    });
+
+    it('appends include_fields=false when includeFields is false', async () => {
+      mockFetcher.fetchWithAuth = jest.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        text: jest.fn().mockResolvedValue(JSON.stringify(profile))
+      });
+
+      await api.getUserProfile({ fields: ['profile_policy'], includeFields: false });
+
+      expect(mockFetcher.fetchWithAuth).toHaveBeenCalledWith(
+        `${apiBase}v1/profile?fields=profile_policy&include_fields=false`,
+        { method: 'GET' },
+        { scope: ['read:me:profile'] }
+      );
+    });
+
+    it('throws ProfileFeatureNotEnabledError on 404', async () => {
+      mockFetcher.fetchWithAuth = jest.fn().mockResolvedValue({
+        ok: false,
+        status: 404,
+        text: jest.fn().mockResolvedValue(JSON.stringify({
+          type: 'not_found', status: 404, title: 'Not Found', detail: 'Not found'
+        }))
+      });
+
+      await expect(api.getUserProfile()).rejects.toThrow(ProfileFeatureNotEnabledError);
+      await expect(api.getUserProfile()).rejects.toMatchObject({ status: 404, name: 'ProfileFeatureNotEnabledError' });
+    });
+
+    it('throws MyAccountApiError on 403', async () => {
+      mockFetcher.fetchWithAuth = jest.fn().mockResolvedValue({
+        ok: false,
+        status: 403,
+        text: jest.fn().mockResolvedValue(JSON.stringify({
+          type: 'A0E-403-0001', status: 403, title: 'Forbidden', detail: 'Insufficient scope'
+        }))
+      });
+
+      await expect(api.getUserProfile()).rejects.toThrow(MyAccountApiError);
+      await expect(api.getUserProfile()).rejects.toMatchObject({ status: 403 });
+    });
+  });
+
+  describe('updateUserProfile', () => {
+    const updatedProfile = {
+      user_id: 'auth0|123',
+      created_at: '2026-01-01T00:00:00.000Z',
+      updated_at: '2026-06-01T00:00:00.000Z',
+      given_name: 'Alice',
+      nickname: 'wonderland_alice',
+      profile_policy: {
+        '/given_name': { label: 'First name', access: 'read_write', source: 'user' }
+      }
+    };
+
+    it('sends PATCH with correct body and returns updated profile', async () => {
+      mockFetcher.fetchWithAuth = jest.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        text: jest.fn().mockResolvedValue(JSON.stringify(updatedProfile))
+      });
+
+      const result = await api.updateUserProfile({ given_name: 'Alice', nickname: 'wonderland_alice' });
+
+      expect(mockFetcher.fetchWithAuth).toHaveBeenCalledWith(
+        `${apiBase}v1/profile`,
+        {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ given_name: 'Alice', nickname: 'wonderland_alice' })
+        },
+        { scope: ['update:me:profile'] }
+      );
+      expect(result.nickname).toBe('wonderland_alice');
+    });
+
+    it('preserves null values inside user_metadata', async () => {
+      mockFetcher.fetchWithAuth = jest.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        text: jest.fn().mockResolvedValue(JSON.stringify(updatedProfile))
+      });
+
+      await api.updateUserProfile({ user_metadata: { old_key: null, theme: 'dark' } });
+
+      const call = (mockFetcher.fetchWithAuth as jest.Mock).mock.calls[0];
+      const body = JSON.parse(call[1].body);
+      expect(body.user_metadata.old_key).toBeNull();
+      expect(body.user_metadata.theme).toBe('dark');
+    });
+
+    it('sends empty body without filtering', async () => {
+      mockFetcher.fetchWithAuth = jest.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        text: jest.fn().mockResolvedValue(JSON.stringify(updatedProfile))
+      });
+
+      await api.updateUserProfile({});
+
+      const call = (mockFetcher.fetchWithAuth as jest.Mock).mock.calls[0];
+      expect(call[1].body).toBe('{}');
+    });
+
+    it('throws ProfileFeatureNotEnabledError on 404', async () => {
+      mockFetcher.fetchWithAuth = jest.fn().mockResolvedValue({
+        ok: false,
+        status: 404,
+        text: jest.fn().mockResolvedValue(JSON.stringify({
+          type: 'not_found', status: 404, title: 'Not Found', detail: 'Not found'
+        }))
+      });
+
+      await expect(api.updateUserProfile({ given_name: 'Alice' })).rejects.toThrow(ProfileFeatureNotEnabledError);
+    });
+
+    it('throws MyAccountApiError with validation_errors on 400', async () => {
+      const errorBody = {
+        type: 'A0E-400-0008',
+        status: 400,
+        title: 'read_only_field',
+        detail: 'Field is read-only',
+        validation_errors: [
+          { pointer: '/given_name', detail: 'Field is managed by the identity provider', source: 'managed_by_identity_provider' }
+        ]
+      };
+      mockFetcher.fetchWithAuth = jest.fn().mockResolvedValue({
+        ok: false,
+        status: 400,
+        text: jest.fn().mockResolvedValue(JSON.stringify(errorBody))
+      });
+
+      await expect(api.updateUserProfile({ given_name: 'Alice' })).rejects.toMatchObject({
+        status: 400,
+        title: 'read_only_field',
+        validation_errors: [{ pointer: '/given_name', source: 'managed_by_identity_provider' }]
+      });
     });
   });
 

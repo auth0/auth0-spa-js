@@ -11,7 +11,11 @@ import type {
   UpdateAuthenticationMethodRequest,
   EnrollmentChallengeOptions,
   EnrollmentChallengeResponse,
-  EnrollmentVerifyOptions
+  EnrollmentVerifyOptions,
+  UserProfile,
+  ProfileFieldPolicy,
+  GetUserProfileOptions,
+  UpdateUserProfileRequest
 } from './types';
 
 export type {
@@ -26,7 +30,11 @@ export type {
   UpdateAuthenticationMethodRequest,
   EnrollmentChallengeOptions,
   EnrollmentChallengeResponse,
-  EnrollmentVerifyOptions
+  EnrollmentVerifyOptions,
+  UserProfile,
+  ProfileFieldPolicy,
+  GetUserProfileOptions,
+  UpdateUserProfileRequest
 } from './types';
 
 /**
@@ -218,6 +226,48 @@ export class MyAccountApiClient {
     return this._handleResponse(res);
   }
 
+  async getUserProfile(options?: GetUserProfileOptions): Promise<UserProfile> {
+    const params = new URLSearchParams();
+    if (options?.fields?.length) {
+      params.set('fields', options.fields.join(','));
+    }
+    if (options?.includeFields === false) {
+      params.set('include_fields', 'false');
+    }
+    const query = params.toString() ? `?${params}` : '';
+
+    const res = await this.myAccountFetcher.fetchWithAuth(
+      `${this.apiBase}v1/profile${query}`,
+      { method: 'GET' },
+      { scope: ['read:me:profile'] }
+    );
+
+    if (res.status === 404) {
+      throw new ProfileFeatureNotEnabledError();
+    }
+
+    return this._handleResponse(res);
+  }
+
+  async updateUserProfile(data: UpdateUserProfileRequest): Promise<UserProfile> {
+    const res = await this.myAccountFetcher.fetchWithAuth(
+      `${this.apiBase}v1/profile`,
+      {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        // JSON.stringify preserves null values inside user_metadata — do not replace with a null-stripping serializer
+        body: JSON.stringify(data)
+      },
+      { scope: ['update:me:profile'] }
+    );
+
+    if (res.status === 404) {
+      throw new ProfileFeatureNotEnabledError();
+    }
+
+    return this._handleResponse(res);
+  }
+
   private async _handleResponse<T = any>(res: Response): Promise<T> {
     let body: any;
     try {
@@ -281,5 +331,22 @@ export class MyAccountApiError extends Error {
     this.detail = detail;
     this.validation_errors = validation_errors;
     Object.setPrototypeOf(this, MyAccountApiError.prototype);
+  }
+}
+
+/**
+ * Thrown when the My Account profile endpoints are called but the
+ * `my_account_profile_endpoints` feature flag is not enabled for the tenant.
+ */
+export class ProfileFeatureNotEnabledError extends MyAccountApiError {
+  constructor() {
+    super({
+      type: 'profile_feature_not_enabled',
+      status: 404,
+      title: 'Profile feature not enabled',
+      detail: 'The my_account_profile_endpoints feature flag is not enabled for this tenant.'
+    });
+    this.name = 'ProfileFeatureNotEnabledError';
+    Object.setPrototypeOf(this, ProfileFeatureNotEnabledError.prototype);
   }
 }
