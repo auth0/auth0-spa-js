@@ -16,17 +16,41 @@ permissions:
 
 jobs:
   rl-scanner:
-    uses: ./.github/workflows/rl-secure.yml
-    with:
-      node-version: 22
-      artifact-name: 'auth0-spa-js.tgz'
-    secrets:
-      RLSECURE_LICENSE: ${{ secrets.RLSECURE_LICENSE }}
-      RLSECURE_SITE_KEY: ${{ secrets.RLSECURE_SITE_KEY }}
-      SIGNAL_HANDLER_TOKEN: ${{ secrets.SIGNAL_HANDLER_TOKEN }}
-      PRODSEC_TOOLS_USER: ${{ secrets.PRODSEC_TOOLS_USER }}
-      PRODSEC_TOOLS_TOKEN: ${{ secrets.PRODSEC_TOOLS_TOKEN }}
-      PRODSEC_TOOLS_ARN: ${{ secrets.PRODSEC_TOOLS_ARN }}
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.pull_request.merged && startsWith(github.event.pull_request.head.ref, 'release/'))
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Build package
+        uses: ./.github/actions/build
+        with:
+          node: 22
+
+      - name: Create tgz build artifact
+        run: tar -czvf auth0-spa-js.tgz *
+
+      - name: Get version
+        id: get_version
+        uses: ./.github/actions/get-version
+
+      - name: Run RL Scanner
+        uses: auth0/devsecops-tooling/.github/actions/rl-scan@main
+        with:
+          artifact-name: 'auth0-spa-js'
+          artifact-path: '${{ github.workspace }}/auth0-spa-js.tgz'
+          version: ${{ steps.get_version.outputs.version }}
+          RLSECURE_LICENSE: ${{ secrets.RLSECURE_LICENSE }}
+          RLSECURE_SITE_KEY: ${{ secrets.RLSECURE_SITE_KEY }}
+          SIGNAL_HANDLER_TOKEN: ${{ secrets.SIGNAL_HANDLER_TOKEN }}
+          SIGNAL_HANDLER_DOMAIN: ${{ secrets.SIGNAL_HANDLER_DOMAIN }}
+          PRODSEC_TOOLS_ARN: ${{ secrets.PRODSEC_TOOLS_ARN }}
+          PRODSEC_TOOLS_USER: ${{ secrets.PRODSEC_TOOLS_USER }}
+          PRODSEC_TOOLS_TOKEN: ${{ secrets.PRODSEC_TOOLS_TOKEN }}
+          PRODSEC_PYTHON_TOOLS_REPO: ${{ secrets.PRODSEC_PYTHON_TOOLS_REPO }}
+
   release:
     uses: ./.github/workflows/npm-release.yml
     needs: rl-scanner
