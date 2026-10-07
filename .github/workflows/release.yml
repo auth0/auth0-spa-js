@@ -3,6 +3,7 @@ name: Create npm and GitHub Release
 on:
   pull_request:
     types:
+      - opened
       - closed
   workflow_dispatch:
 
@@ -16,7 +17,8 @@ permissions:
 
 jobs:
   rl-scanner:
-    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.pull_request.merged && startsWith(github.event.pull_request.head.ref, 'release/'))
+    # TEMP(testing): fire on open for the current test branch — REVERT before merge (drops the real release/* merge trigger)
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.action == 'opened' && github.event.pull_request.head.ref == 'chore/rl-scanner-update')
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -52,6 +54,7 @@ jobs:
           PRODSEC_PYTHON_TOOLS_REPO: ${{ secrets.PRODSEC_PYTHON_TOOLS_REPO }}
 
   release:
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.pull_request.merged && startsWith(github.event.pull_request.head.ref, 'release/'))
     uses: ./.github/workflows/npm-release.yml
     needs: rl-scanner
     with:
