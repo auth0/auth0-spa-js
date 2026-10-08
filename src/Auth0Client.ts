@@ -2077,7 +2077,8 @@ export class Auth0Client {
   async loginWithCustomTokenExchange(
     options: CustomTokenExchangeOptions
   ): Promise<TokenEndpointResponse> {
-    return this._requestToken(this._buildTokenExchangeParams(options));
+    const params = this._buildTokenExchangeParams(options);
+    return this._requestToken(params, { organization: params.organization });
   }
 
   /**

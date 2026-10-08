@@ -751,6 +751,36 @@ describe('Auth0Client', () => {
       expect(capturedRequestOptions.organization).toEqual('org_12345');
     });
 
+    it('passes organization as additionalParameters so _verifyIdToken enforces org_id claim', async () => {
+      const auth0 = await localSetup();
+      let capturedAdditionalParameters: any;
+
+      auth0['_requestToken'] = async function (requestOptions: any, additionalParameters: any) {
+        capturedAdditionalParameters = additionalParameters;
+        return {
+          decodedToken: {
+            encoded: { header: 'h', payload: 'p', signature: 's' },
+            header: {},
+            claims: { __raw: 'raw' },
+            user: {}
+          },
+          id_token: 'fake_id_token',
+          access_token: 'fake_access_token',
+          token_type: 'Bearer',
+          expires_in: 3600,
+          scope: requestOptions.scope
+        };
+      };
+
+      await auth0.loginWithCustomTokenExchange({
+        subject_token: 'external_token_value',
+        subject_token_type: 'urn:acme:legacy-system-token',
+        organization: 'org_12345'
+      });
+
+      expect(capturedAdditionalParameters?.organization).toEqual('org_12345');
+    });
+
     it('stores MFA context and re-throws MfaRequiredError', async () => {
       const auth0 = setup({
         authorizationParams: {

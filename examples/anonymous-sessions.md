@@ -47,16 +47,30 @@ const session = await auth0.anonymous.createSession({
 
 ## Getting an access token
 
-Call `auth0.anonymous.getTokenSilently()` to get a valid access token. The SDK returns a cached token when still fresh and renews it transparently when expired.
+Call `auth0.anonymous.getTokenSilently()` to get a valid access token. The SDK returns a cached token when still fresh and renews it when the access token expires. If the session itself is expired or invalid, the SDK throws an `AnonymousSessionError` — catch it and call `createSession()` to start a new session.
 
 ```js
-const { accessToken } = await auth0.anonymous.getTokenSilently({
-  audience: 'https://api.example.com'
-});
+import { AnonymousSessionError } from '@auth0/auth0-spa-js';
 
-const result = await fetch('https://api.example.com/data', {
-  headers: { Authorization: `Bearer ${accessToken}` }
-});
+try {
+  const { accessToken } = await auth0.anonymous.getTokenSilently({
+    audience: 'https://api.example.com'
+  });
+
+  const result = await fetch('https://api.example.com/data', {
+    headers: { Authorization: `Bearer ${accessToken}` }
+  });
+} catch (e) {
+  if (
+    e instanceof AnonymousSessionError &&
+    (e.code === 'session_expired' || e.code === 'invalid_session_token')
+  ) {
+    // Session is permanently gone. Start a new one.
+    await auth0.anonymous.createSession();
+  } else {
+    throw e;
+  }
+}
 ```
 
 ## Multiple audiences
