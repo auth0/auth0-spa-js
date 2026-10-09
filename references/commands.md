@@ -14,8 +14,11 @@ npm run build:stats
 # Dev server with live reload at http://localhost:3000 (npm start also works)
 npm run dev
 
-# Generate TypeDoc API docs into docs/ (generated output — do not hand-edit)
+# Generate both API docs artifacts (generated output, do not hand-edit):
+# the HTML site in docs/ and the Mintlify JSON in mintlify/
 npm run docs
+npm run docs:html      # HTML site only (cleans docs/ first)
+npm run docs:docsv2    # Mintlify JSON only
 ```
 
 ## Test

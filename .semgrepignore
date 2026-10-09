@@ -2,6 +2,7 @@ __mocks__/
 __tests__/
 cypress/
 docs/
+mintlify/
 static/
 scripts/prepack.js
 *.md
