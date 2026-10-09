@@ -18,13 +18,10 @@ const {
 
 module.exports = {
   ...shared,
+  json: './mintlify/auth0-spa-js.json',
 
-  // Staging directory whose layout mirrors docs-v2's `main/`, so publishing is a
-  // straight copy of two files with no path rewriting.
-  json: './mintlify/docsv2/sdk-artifacts/auth0-spa-js.json',
-
-  // This file is committed to docs-v2. Minified, a rebuild turns into a
-  // single-line diff of 38k changes; pretty-printed, it diffs as just the
+  // This file is committed, here and in docs-v2. Minified, a rebuild turns into
+  // a single-line diff of 38k changes; pretty-printed, it diffs as just the
   // symbols that actually changed.
   pretty: true
 };
