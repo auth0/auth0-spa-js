@@ -156,6 +156,44 @@ export class MfaRequiredError extends GenericError {
 }
 
 /**
+ * Thrown by `signup()` when the server requires identifier verification before
+ * passkey creation. Catch this error, collect OTP codes for each identifier in
+ * `verificationRequired`, then call `passkey.continueSignup(codes)` to complete
+ * the flow. The SDK retains the auth session internally — you do not need to
+ * pass it yourself.
+ *
+ * @category Errors
+ */
+export class PasskeyVerificationRequiredError extends Error {
+  readonly name = 'PasskeyVerificationRequiredError';
+  constructor(public readonly verificationRequired: string[]) {
+    super(
+      'Identifier verification is required before passkey creation. ' +
+      'Collect OTP codes for each identifier and call passkey.continueSignup().'
+    );
+    Object.setPrototypeOf(this, PasskeyVerificationRequiredError.prototype);
+  }
+}
+
+/**
+ * Internal bridge error — carries passkey verification fields from the HTTP
+ * layer to `_requestTokenForPasskey`, where they are re-wrapped as the public
+ * `PasskeyGetTokenError`. Never thrown to application code directly.
+ * @internal
+ */
+export class PasskeyTokenExchangeError extends GenericError {
+  constructor(
+    error: string,
+    error_description: string,
+    public readonly authSession?: string,
+    public readonly verificationRequired?: string[]
+  ) {
+    super(error, error_description);
+    Object.setPrototypeOf(this, PasskeyTokenExchangeError.prototype);
+  }
+}
+
+/**
  * Error thrown when there is no refresh token to use
  *
  * @category Errors

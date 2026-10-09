@@ -14,6 +14,7 @@ import type {
 } from './types';
 import type { PasskeyClient } from '@auth0/auth0-auth-js';
 import { PasskeyError } from './errors';
+import { PasskeyVerificationRequiredError } from '../errors';
 
 /**
  * Client for Auth0 Passkey operations.
@@ -36,6 +37,14 @@ import { PasskeyError } from './errors';
 export class PasskeyApiClient {
   #passkeyClient: PasskeyClient;
   #auth0Client: Auth0Client;
+  #pendingSignup: {
+    authSession: string;
+    publicKey: PublicKeyCredentialCreationOptions;
+    realm?: string;
+    organization?: string;
+    scope?: string;
+    audience?: string;
+  } | null = null;
 
   /**
    * @internal
@@ -68,6 +77,18 @@ export class PasskeyApiClient {
     const { scope, audience, ...challengeOptions } = options;
 
     const challenge = await this.#passkeyClient.register(challengeOptions);
+
+    if (challenge.verificationRequired && challenge.verificationRequired.length > 0) {
+      this.#pendingSignup = {
+        authSession: challenge.authSession,
+        publicKey: prepareCreationOptions(challenge.authnParamsPublicKey),
+        realm: challengeOptions.realm,
+        organization: challengeOptions.organization,
+        scope,
+        audience,
+      };
+      throw new PasskeyVerificationRequiredError(challenge.verificationRequired);
+    }
 
     const publicKeyOptions = prepareCreationOptions(
       challenge.authnParamsPublicKey
@@ -173,7 +194,8 @@ export class PasskeyApiClient {
     const challenge = await this.#passkeyClient.register(options);
     return {
       authSession: challenge.authSession,
-      publicKey: prepareCreationOptions(challenge.authnParamsPublicKey)
+      publicKey: prepareCreationOptions(challenge.authnParamsPublicKey),
+      ...(challenge.verificationRequired && { verificationRequired: challenge.verificationRequired }),
     };
   }
 
@@ -226,7 +248,7 @@ export class PasskeyApiClient {
       throw new PasskeyError('passkey_not_supported', 'WebAuthn is not supported in this browser.');
     }
 
-    const { authSession, credential, realm, organization, scope, audience } = options;
+    const { authSession, credential, realm, organization, scope, audience, verification } = options;
     const response = credential.response;
 
     let serialized: PasskeyCredentialResponse;
@@ -248,7 +270,52 @@ export class PasskeyApiClient {
       realm,
       organization,
       scope,
-      audience
+      audience,
+      verification,
+    });
+  }
+
+  /**
+   * Continue a signup that was interrupted by identifier verification.
+   *
+   * Call this after catching `PasskeyVerificationRequiredError` from `signup()`,
+   * collecting OTP codes from the user, and passing them here. The SDK
+   * internally retains the auth session — you do not need to pass it.
+   *
+   * @param verification - Map of identifier → OTP code (e.g. `{ phone: "123456" }`)
+   * @returns A promise resolving to the token endpoint response
+   * @throws {PasskeyError} If there is no pending signup (signup() was not called first)
+   */
+  async continueSignup(verification: Record<string, string>): Promise<TokenEndpointResponse> {
+    if (!this.#pendingSignup) {
+      throw new PasskeyError(
+        'no_pending_signup',
+        'No pending signup found. Call signup() first and catch PasskeyVerificationRequiredError.'
+      );
+    }
+
+    const { authSession, publicKey, realm, organization, scope, audience } = this.#pendingSignup;
+    this.#pendingSignup = null;
+
+    const credential = await navigator.credentials.create({ publicKey });
+
+    if (!credential) {
+      throw new PasskeyError(
+        'passkey_cancelled',
+        'Passkey creation was cancelled or no credential was returned.'
+      );
+    }
+
+    const serialized = serializeCreationCredential(credential as PublicKeyCredential);
+
+    return this.#auth0Client._requestTokenForPasskey({
+      authSession,
+      credential: serialized,
+      realm,
+      organization,
+      scope,
+      audience,
+      verification,
     });
   }
 

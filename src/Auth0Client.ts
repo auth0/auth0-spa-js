@@ -2351,6 +2351,7 @@ export class Auth0Client {
       scope?: string;
       audience?: string;
       organization?: string;
+      verification?: Record<string, string>;
     }
   ): Promise<TokenEndpointResponse> {
     const audience = options.audience || this.options.authorizationParams.audience;
@@ -2361,6 +2362,7 @@ export class Auth0Client {
       authn_response: options.credential,
       ...(options.realm && { realm: options.realm }),
       ...(organization && { organization }),
+      ...(options.verification && { verification: options.verification }),
       scope: scopesToRequest(this.scope, options.scope, audience),
       audience,
     });

@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Passkey Identifier Verification</title>
+  <meta charset="utf-8" />
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
+    integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh"
+    crossorigin="anonymous" />
+  <script src="/auth0-spa-js.development.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+  <style>
+    pre { font-size: 12px; white-space: pre-wrap; word-break: break-all; }
+    .step-badge { display: inline-block; width: 24px; height: 24px; border-radius: 50%;
+      background: #007bff; color: #fff; text-align: center; line-height: 24px; font-size: 12px;
+      font-weight: bold; margin-right: 8px; }
+    .step-badge.done { background: #28a745; }
+    .step-badge.error { background: #dc3545; }
+    .otp-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+    .otp-row label { width: 60px; margin: 0; font-weight: 600; text-transform: capitalize; }
+    .otp-row input { flex: 1; }
+  </style>
+</head>
+<body class="bg-light">
+<div id="app" class="container py-4">
+  <h3 class="mb-1">Passkey Identifier Verification</h3>
+  <p class="text-muted mb-4">Tests the granular passkey signup flow with inline OTP verification (SDK-11375).</p>
+
+  <!-- Config form -->
+  <div class="card shadow-sm mb-4" v-if="!client">
+    <div class="card-body">
+      <h5 class="card-title">Configure SDK</h5>
+      <div class="form-group">
+        <label>Domain <small class="text-muted">(custom domain required for WebAuthn)</small></label>
+        <input v-model="cfg.domain" class="form-control" placeholder="your-custom-domain.example.com" />
+      </div>
+      <div class="form-group">
+        <label>Client ID</label>
+        <input v-model="cfg.clientId" class="form-control" />
+      </div>
+      <div class="form-group">
+        <label>Connection (realm)</label>
+        <input v-model="cfg.realm" class="form-control" placeholder="Username-Password-Authentication" />
+      </div>
+      <button @click="initClient" class="btn btn-primary" :disabled="!cfg.domain || !cfg.clientId">
+        Initialize SDK
+      </button>
+      <div v-if="initError" class="alert alert-danger mt-2">{{ initError }}</div>
+    </div>
+  </div>
+
+  <!-- Flow -->
+  <div v-if="client">
+    <div class="card shadow-sm mb-3">
+      <div class="card-body">
+        <h6>
+          <span class="step-badge" :class="{ done: !!challenge, error: !!challengeError }">1</span>
+          Get Signup Challenge
+        </h6>
+        <div class="form-row align-items-end">
+          <div class="col">
+            <label>Email</label>
+            <input v-model="form.email" class="form-control" :disabled="!!challenge" />
+          </div>
+          <div class="col">
+            <label>Phone (optional)</label>
+            <input v-model="form.phone" class="form-control" placeholder="+1234567890" :disabled="!!challenge" />
+          </div>
+          <div class="col-auto">
+            <label>Delivery method</label>
+            <select v-model="form.deliveryMethod" class="form-control" :disabled="!!challenge">
+              <option value="">(default)</option>
+              <option value="text">text</option>
+              <option value="voice">voice</option>
+            </select>
+          </div>
+          <div class="col-auto">
+            <button @click="getChallenge" class="btn btn-primary" :disabled="!!challenge || loading">
+              {{ loading && step === 'challenge' ? 'Requesting…' : 'Get Challenge' }}
+            </button>
+          </div>
+        </div>
+        <div v-if="challengeError" class="alert alert-danger mt-2">{{ challengeError }}</div>
+        <div v-if="challenge" class="mt-2">
+          <div class="alert alert-success">
+            Challenge received.
+            <span v-if="challenge.verificationRequired && challenge.verificationRequired.length">
+              Verification required for: <strong>{{ challenge.verificationRequired.join(', ') }}</strong>
+            </span>
+            <span v-else>No verification required.</span>
+          </div>
+          <details>
+            <summary class="text-muted small">Challenge details</summary>
+            <pre class="bg-white border rounded p-2 mt-1">{{ JSON.stringify({ authSession: challenge.authSession, verificationRequired: challenge.verificationRequired, timeout: challenge.publicKey.timeout }, null, 2) }}</pre>
+          </details>
+        </div>
+      </div>
+    </div>
+
+    <!-- OTP collection — only shown when verificationRequired is present -->
+    <div class="card shadow-sm mb-3" v-if="challenge && challenge.verificationRequired && challenge.verificationRequired.length">
+      <div class="card-body">
+        <h6>
+          <span class="step-badge" :class="{ done: otpCollected }">2</span>
+          Collect OTP Codes
+          <small class="text-muted">(collect BEFORE creating the passkey credential)</small>
+        </h6>
+        <p class="text-muted small mb-2">
+          Check your {{ challenge.verificationRequired.join(' and ') }} for the verification code(s).
+        </p>
+        <div class="otp-row" v-for="id in challenge.verificationRequired" :key="id">
+          <label>{{ id }}</label>
+          <input v-model="otpCodes[id]" class="form-control" :placeholder="id + ' OTP'" :disabled="otpCollected" />
+        </div>
+        <button @click="confirmOtp" class="btn btn-success btn-sm mt-1"
+          :disabled="otpCollected || !allOtpsFilled">
+          {{ otpCollected ? 'OTPs confirmed ✓' : 'Confirm OTPs' }}
+        </button>
+      </div>
+    </div>
+
+    <!-- Create credential -->
+    <div class="card shadow-sm mb-3" v-if="challenge && (otpCollected || !needsVerification)">
+      <div class="card-body">
+        <h6>
+          <span class="step-badge" :class="{ done: !!credential, error: !!credentialError }">
+            {{ needsVerification ? '3' : '2' }}
+          </span>
+          Create Passkey Credential
+        </h6>
+        <p class="text-muted small">Invokes <code>navigator.credentials.create()</code> — browser will show biometric prompt.</p>
+        <button @click="createCredential" class="btn btn-primary"
+          :disabled="!!credential || loading">
+          {{ loading && step === 'credential' ? 'Waiting for biometric…' : 'Create Passkey' }}
+        </button>
+        <div v-if="credentialError" class="alert alert-danger mt-2">{{ credentialError }}</div>
+        <div v-if="credential" class="alert alert-success mt-2">Credential created. ✓</div>
+      </div>
+    </div>
+
+    <!-- Token exchange -->
+    <div class="card shadow-sm mb-3" v-if="credential">
+      <div class="card-body">
+        <h6>
+          <span class="step-badge" :class="{ done: !!tokens, error: tokenError && !tokenError.isRetryable }">
+            {{ needsVerification ? '4' : '3' }}
+          </span>
+          Exchange Credential for Tokens
+        </h6>
+
+        <!-- Retry OTP re-entry -->
+        <div v-if="tokenError && tokenError.isRetryable" class="alert alert-warning">
+          <strong>Wrong or missing OTP.</strong> Re-enter codes for:
+          <strong>{{ (tokenError.verificationRequired || []).join(', ') || 'all identifiers' }}</strong>
+          <br /><small>New auth_session: <code>{{ tokenError.authSession }}</code></small>
+          <div class="mt-2">
+            <div class="otp-row"
+              v-for="id in (tokenError.verificationRequired || challenge.verificationRequired)"
+              :key="'retry-' + id">
+              <label>{{ id }}</label>
+              <input v-model="retryOtpCodes[id]" class="form-control" :placeholder="id + ' OTP'" />
+            </div>
+          </div>
+        </div>
+
+        <button @click="exchangeToken" class="btn btn-success"
+          :disabled="loading || (!!tokens)">
+          {{ loading && step === 'token' ? 'Exchanging…' : (tokenError && tokenError.isRetryable ? 'Retry Token Exchange' : 'Get Tokens') }}
+        </button>
+
+        <!-- Terminal error -->
+        <div v-if="tokenError && !tokenError.isRetryable" class="alert alert-danger mt-2">
+          <strong>Terminal error.</strong> {{ tokenError.message }}
+          <br />The session is expired or exhausted. Restart from Step 1.
+          <br /><button @click="reset" class="btn btn-sm btn-outline-danger mt-2">Restart</button>
+        </div>
+
+        <!-- Success -->
+        <div v-if="tokens" class="mt-2">
+          <div class="alert alert-success">Tokens received! ✓</div>
+          <pre class="bg-white border rounded p-2">{{ JSON.stringify({
+            access_token: tokens.access_token ? tokens.access_token.substring(0, 40) + '…' : null,
+            id_token: tokens.id_token ? tokens.id_token.substring(0, 40) + '…' : null,
+            expires_in: tokens.expires_in,
+            token_type: tokens.token_type
+          }, null, 2) }}</pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step-up style: signup() throws + continueSignup() -->
+    <div class="card shadow-sm mb-3" v-if="client">
+      <div class="card-body">
+        <h6>Step-up style: <code>signup()</code> throws → <code>continueSignup(codes)</code></h6>
+        <div class="form-row align-items-end mb-2">
+          <div class="col">
+            <label>Email</label>
+            <input v-model="stepup.email" class="form-control" placeholder="user@example.com" :disabled="stepup.loading || !!stepup.pendingIdentifiers" />
+          </div>
+          <div class="col">
+            <label>Phone (optional)</label>
+            <input v-model="stepup.phone" class="form-control" placeholder="+1234567890" :disabled="stepup.loading || !!stepup.pendingIdentifiers" />
+          </div>
+          <div class="col-auto">
+            <button @click="runStepupSignup" class="btn btn-primary"
+              :disabled="stepup.loading || (!stepup.email && !stepup.phone) || !!stepup.pendingIdentifiers">
+              {{ stepup.loading && !stepup.pendingIdentifiers ? 'Calling signup()…' : 'signup()' }}
+            </button>
+          </div>
+        </div>
+        <!-- OTP collection after PasskeyVerificationRequiredError -->
+        <div v-if="stepup.pendingIdentifiers" class="alert alert-warning">
+          <strong>PasskeyVerificationRequiredError caught</strong> — enter OTP for: <strong>{{ stepup.pendingIdentifiers.join(', ') }}</strong>
+          <div class="otp-row mt-2" v-for="id in stepup.pendingIdentifiers" :key="'su-' + id">
+            <label>{{ id }}</label>
+            <input v-model="stepup.otpCodes[id]" class="form-control" :placeholder="id + ' OTP'" />
+          </div>
+          <button @click="runContinueSignup" class="btn btn-success btn-sm mt-2"
+            :disabled="stepup.loading || !stepupOtpsFilled">
+            {{ stepup.loading ? 'Calling continueSignup()…' : 'continueSignup(codes)' }}
+          </button>
+        </div>
+        <div v-if="stepup.error" class="alert alert-danger mt-2">{{ stepup.error }}</div>
+        <div v-if="stepup.tokens" class="alert alert-success mt-2">
+          Tokens received via continueSignup()! ✓
+          <pre class="mt-1 mb-0 bg-white border rounded p-2" style="font-size:11px">{{ JSON.stringify({ access_token: stepup.tokens.access_token ? stepup.tokens.access_token.substring(0,40)+'…' : null, expires_in: stepup.tokens.expires_in }, null, 2) }}</pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- Controls -->
+    <div class="d-flex gap-2">
+      <button @click="reset" class="btn btn-outline-secondary btn-sm mr-2">Reset flow</button>
+      <button @click="resetClient" class="btn btn-outline-danger btn-sm">Change config</button>
+    </div>
+
+    <!-- Live log -->
+    <div class="card shadow-sm mt-3">
+      <div class="card-body">
+        <h6>Log</h6>
+        <pre class="bg-dark text-light p-2 rounded" style="max-height: 300px; overflow-y: auto;">{{ log }}</pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+new Vue({
+  el: '#app',
+  data: {
+    cfg: { domain: 'yogesh.acmetest.org', clientId: '4SAov6dsh4lAdADB3MHu2YaQj6WRFw0E', realm: 'Username-Password-Authentication' },
+    client: null,
+    initError: '',
+    form: { email: '', phone: '', deliveryMethod: '' },
+    step: '',
+    loading: false,
+    challenge: null,
+    challengeError: '',
+    otpCodes: {},
+    otpCollected: false,
+    credential: null,
+    credentialError: '',
+    tokens: null,
+    tokenError: null,
+    retryOtpCodes: {},
+    log: '',
+    stepup: {
+      email: '',
+      phone: '',
+      loading: false,
+      pendingIdentifiers: null,
+      otpCodes: {},
+      tokens: null,
+      error: '',
+    },
+  },
+
+  computed: {
+    stepupOtpsFilled() {
+      if (!this.stepup.pendingIdentifiers) return false;
+      return this.stepup.pendingIdentifiers.every(id => (this.stepup.otpCodes[id] || '').trim().length > 0);
+    },
+    needsVerification() {
+      return this.challenge && this.challenge.verificationRequired && this.challenge.verificationRequired.length > 0;
+    },
+    allOtpsFilled() {
+      if (!this.challenge || !this.challenge.verificationRequired) return true;
+      return this.challenge.verificationRequired.every(id => (this.otpCodes[id] || '').trim().length > 0);
+    }
+  },
+
+  mounted() {
+    this.autoInit();
+  },
+
+  methods: {
+    addLog(msg) {
+      const ts = new Date().toLocaleTimeString();
+      this.log = `[${ts}] ${msg}\n` + this.log;
+    },
+
+    async initClient() {
+      this.initError = '';
+      try {
+        this.addLog('Initializing SDK…');
+        this.client = await auth0.createAuth0Client({
+          domain: this.cfg.domain,
+          clientId: this.cfg.clientId,
+          useRefreshTokens: true,
+          authorizationParams: { redirect_uri: window.location.href }
+        });
+        this.addLog('SDK initialized.');
+      } catch (e) {
+        this.initError = e.message;
+        this.addLog('Init error: ' + e.message);
+      }
+    },
+
+    async autoInit() {
+      if (this.cfg.domain && this.cfg.clientId) {
+        await this.initClient();
+      }
+    },
+
+    async getChallenge() {
+      this.challengeError = '';
+      this.loading = true;
+      this.step = 'challenge';
+      try {
+        this.addLog('Calling getSignupChallenge…');
+        const opts = { email: this.form.email };
+        if (this.form.phone) opts.phoneNumber = this.form.phone;
+        if (this.cfg.realm) opts.realm = this.cfg.realm;
+        if (this.form.deliveryMethod) opts.deliveryMethod = this.form.deliveryMethod;
+
+        const ch = await this.client.passkey.getSignupChallenge(opts);
+        this.challenge = ch;
+        this.otpCodes = {};
+        if (ch.verificationRequired) {
+          ch.verificationRequired.forEach(id => { this.$set(this.otpCodes, id, ''); });
+        }
+        this.addLog('Challenge received. verificationRequired=' + JSON.stringify(ch.verificationRequired || null));
+      } catch (e) {
+        this.challengeError = (e.name === 'PasskeyRegisterError' && e.statusCode === 429)
+          ? 'Rate limited (429). Try again later.'
+          : e.message;
+        this.addLog('Challenge error: ' + e.message + ' (code=' + e.code + ', status=' + e.statusCode + ')');
+      } finally {
+        this.loading = false;
+        this.step = '';
+      }
+    },
+
+    confirmOtp() {
+      this.otpCollected = true;
+      this.addLog('OTPs confirmed: ' + JSON.stringify(this.otpCodes));
+    },
+
+    async createCredential() {
+      this.credentialError = '';
+      this.loading = true;
+      this.step = 'credential';
+      try {
+        this.addLog('Calling navigator.credentials.create…');
+        const cred = await navigator.credentials.create({ publicKey: this.challenge.publicKey });
+        if (!cred) throw new Error('Credential creation returned null.');
+        this.credential = cred;
+        this.addLog('Credential created: id=' + cred.id);
+      } catch (e) {
+        this.credentialError = e.message;
+        this.addLog('Credential error: ' + e.message);
+      } finally {
+        this.loading = false;
+        this.step = '';
+      }
+    },
+
+    async exchangeToken() {
+      this.loading = true;
+      this.step = 'token';
+      const isRetry = this.tokenError && this.tokenError.isRetryable;
+      try {
+        const authSession = isRetry ? this.tokenError.authSession : this.challenge.authSession;
+        const verification = this.needsVerification
+          ? (isRetry ? { ...this.retryOtpCodes } : { ...this.otpCodes })
+          : undefined;
+
+        this.addLog('Calling getTokenWithPasskey' + (isRetry ? ' (RETRY)' : '') + '…');
+        if (verification) this.addLog('  verification=' + JSON.stringify(verification));
+
+        const result = await this.client.passkey.getTokenWithPasskey({
+          authSession,
+          credential: this.credential,
+          realm: this.cfg.realm || undefined,
+          verification,
+        });
+        this.tokens = result;
+        this.tokenError = null;
+        this.addLog('SUCCESS — tokens received.');
+      } catch (e) {
+        this.addLog('Token error: ' + e.message + ' | isRetryable=' + e.isRetryable
+          + ' | authSession=' + (e.authSession || 'none')
+          + ' | verificationRequired=' + JSON.stringify(e.verificationRequired || null));
+        if (e.name === 'PasskeyGetTokenError') {
+          this.tokenError = e;
+          if (e.isRetryable) {
+            this.retryOtpCodes = {};
+            (e.verificationRequired || this.challenge.verificationRequired || [])
+              .forEach(id => { this.$set(this.retryOtpCodes, id, ''); });
+          }
+        } else {
+          this.tokenError = { message: e.message, isRetryable: false };
+        }
+      } finally {
+        this.loading = false;
+        this.step = '';
+      }
+    },
+
+    async runStepupSignup() {
+      this.stepup.error = '';
+      this.stepup.tokens = null;
+      this.stepup.loading = true;
+      try {
+        this.addLog('calling signup() — expect PasskeyVerificationRequiredError…');
+        const signupOpts = { realm: this.cfg.realm || undefined };
+        if (this.stepup.email) signupOpts.email = this.stepup.email;
+        if (this.stepup.phone) signupOpts.phoneNumber = this.stepup.phone;
+        await this.client.passkey.signup(signupOpts);
+        this.addLog('signup() completed without verification (no verificationRequired)');
+      } catch (e) {
+        if (e.name === 'PasskeyVerificationRequiredError') {
+          this.addLog('PasskeyVerificationRequiredError caught: ' + JSON.stringify(e.verificationRequired));
+          this.stepup.pendingIdentifiers = e.verificationRequired;
+          this.stepup.otpCodes = {};
+          e.verificationRequired.forEach(id => { this.$set(this.stepup.otpCodes, id, ''); });
+        } else {
+          this.stepup.error = e.message;
+          this.addLog('signup() error: ' + e.message);
+        }
+      } finally {
+        this.stepup.loading = false;
+      }
+    },
+
+    async runContinueSignup() {
+      this.stepup.loading = true;
+      try {
+        this.addLog('calling continueSignup() with: ' + JSON.stringify(this.stepup.otpCodes));
+        const result = await this.client.passkey.continueSignup({ ...this.stepup.otpCodes });
+        this.stepup.tokens = result;
+        this.stepup.pendingIdentifiers = null;
+        this.addLog('continueSignup() SUCCESS');
+      } catch (e) {
+        this.stepup.error = e.message;
+        this.addLog('continueSignup() error: ' + e.message);
+      } finally {
+        this.stepup.loading = false;
+      }
+    },
+
+    reset() {
+      this.challenge = null;
+      this.challengeError = '';
+      this.otpCodes = {};
+      this.otpCollected = false;
+      this.credential = null;
+      this.credentialError = '';
+      this.tokens = null;
+      this.tokenError = null;
+      this.retryOtpCodes = {};
+      this.addLog('--- Flow reset ---');
+    },
+
+    resetClient() {
+      this.reset();
+      this.client = null;
+      this.initError = '';
+      this.addLog('--- Client reset ---');
+    }
+  }
+});
+</script>
+</body>
+</html>

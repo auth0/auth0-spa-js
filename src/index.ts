@@ -60,7 +60,8 @@ export {
   MfaRequiredError,
   MissingRefreshTokenError,
   MissingScopesError,
-  UseDpopNonceError
+  UseDpopNonceError,
+  PasskeyVerificationRequiredError
 } from './errors';
 
 export type { MfaRequirements } from './errors';
