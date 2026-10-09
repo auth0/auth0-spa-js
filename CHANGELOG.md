@@ -1,5 +1,12 @@
 # Change Log
 
+## [v2.28.3](https://github.com/auth0/auth0-spa-js/tree/v2.28.3) (2026-10-09)
+[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.28.2...v2.28.3)
+
+**Fixed**
+- fix: pass organization to _verifyIdToken in loginWithCustomTokenExchange [\#1785](https://github.com/auth0/auth0-spa-js/pull/1785) ([yogeshchoudhary147](https://github.com/yogeshchoudhary147))
+- fix(lock): preserve callback abort errors [\#1784](https://github.com/auth0/auth0-spa-js/pull/1784) ([fallintoplace](https://github.com/fallintoplace))
+
 ## [v2.28.2](https://github.com/auth0/auth0-spa-js/tree/v2.28.2) (2026-10-02)
 [Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.28.1...v2.28.2)
 
