@@ -462,7 +462,8 @@ export class Auth0Client {
   private async _verifyIdToken(
     id_token: string,
     nonce?: string,
-    organization?: string
+    organization?: string,
+    max_age?: string | number
   ) {
     const now = await this.nowProvider();
 
@@ -473,7 +474,9 @@ export class Auth0Client {
       nonce,
       organization,
       leeway: this.options.leeway,
-      max_age: parseNumber(this.options.authorizationParams.max_age),
+      max_age: parseNumber(
+        max_age ?? this.options.authorizationParams.max_age
+      ),
       now
     });
   }
@@ -561,6 +564,7 @@ export class Auth0Client {
     code_verifier: string;
     state: string;
     url: string;
+    max_age?: string | number;
   }> {
     const state = encode(createRandomString());
     const nonce = encode(createRandomString());
@@ -592,7 +596,8 @@ export class Auth0Client {
       audience: params.audience || DEFAULT_AUDIENCE,
       redirect_uri: params.redirect_uri,
       state,
-      url
+      url,
+      max_age: params.max_age
     };
   }
 
@@ -678,7 +683,8 @@ export class Auth0Client {
       },
       {
         nonceIn: params.nonce,
-        organization
+        organization,
+        max_age: params.max_age
       }
     );
   }
@@ -862,7 +868,7 @@ export class Auth0Client {
         code: code as string,
         ...(redirect_uri ? { redirect_uri } : {})
       },
-      { nonceIn, organization }
+      { nonceIn, organization, max_age: transaction.max_age }
     );
 
     return {
@@ -1490,7 +1496,8 @@ export class Auth0Client {
             code_verifier,
             redirect_uri,
             scope,
-            audience
+            audience,
+            max_age
           } = await this._prepareAuthorizeUrl(
             params,
             { response_mode: 'web_message' },
@@ -1539,7 +1546,8 @@ export class Auth0Client {
             },
             {
               nonceIn,
-              organization: params.organization
+              organization: params.organization,
+              max_age
             }
           );
 
@@ -1898,7 +1906,8 @@ export class Auth0Client {
       | WebauthnRequestTokenOptions,
     additionalParameters?: RequestTokenAdditionalParameters
   ) {
-    const { nonceIn, organization, scopesToRequest } = additionalParameters || {};
+    const { nonceIn, organization, scopesToRequest, max_age } =
+      additionalParameters || {};
     try {
       const authResult = await oauthToken(
         {
@@ -1919,7 +1928,8 @@ export class Auth0Client {
       let decodedToken = await this._verifyIdToken(
         authResult.id_token,
         nonceIn,
-        organization
+        organization,
+        max_age
       );
 
       // When logging in with authorization_code, check if a different user is authenticating
@@ -2455,4 +2465,5 @@ interface RequestTokenAdditionalParameters {
   nonceIn?: string;
   organization?: string;
   scopesToRequest?: string;
+  max_age?: string | number;
 }
