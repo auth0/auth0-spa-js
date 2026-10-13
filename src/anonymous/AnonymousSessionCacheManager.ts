@@ -64,10 +64,16 @@ export class AnonymousSessionCacheManager {
 
   constructor(clientId: string, cacheMode: 'localStorage' | 'memory') {
     this.baseKey = `${STORAGE_KEY_PREFIX}::${clientId}::anonymous`;
-    this.useLocalStorage =
-      cacheMode === 'localStorage' &&
-      typeof window !== 'undefined' &&
-      !!window.localStorage;
+    try {
+      this.useLocalStorage =
+        cacheMode === 'localStorage' &&
+        typeof window !== 'undefined' &&
+        !!window.localStorage;
+    } catch {
+      // Reading window.localStorage throws when the browser blocks site storage
+      // (e.g. Safari "Block All Cookies"); fall back to memory.
+      this.useLocalStorage = false;
+    }
 
     this.sessionKey = `${this.baseKey}::${SESSION_TOKEN_SUFFIX}`;
     this.sessionStore = this.useLocalStorage

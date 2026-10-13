@@ -62,6 +62,27 @@ describe('AnonymousSessionApiClient', () => {
         expect(localStorage.setItem).toHaveBeenCalledWith(SESSION_TOKEN_KEY, expect.any(String));
       });
     });
+
+    it('falls back to memory when reading localStorage throws (storage blocked)', async () => {
+      const original = Object.getOwnPropertyDescriptor(window, 'localStorage')!;
+      Object.defineProperty(window, 'localStorage', {
+        configurable: true,
+        get() {
+          throw new DOMException('The operation is insecure.', 'SecurityError');
+        }
+      });
+
+      try {
+        let client!: AnonymousSessionApiClient;
+        expect(() => (client = makeClient('localStorage'))).not.toThrow();
+
+        authJsClient.createSession.mockResolvedValue(mockSession());
+        await client.createSession();
+        expect(await client.getTokenSilently()).toMatchObject({ accessToken: 'access_token_123' });
+      } finally {
+        Object.defineProperty(window, 'localStorage', original);
+      }
+    });
   });
 
   describe('createSession', () => {
