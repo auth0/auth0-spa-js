@@ -1,5 +1,11 @@
 # Change Log
 
+## [v2.28.4](https://github.com/auth0/auth0-spa-js/tree/v2.28.4) (2026-10-14)
+[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.28.3...v2.28.4)
+
+**Fixed**
+- fix(anonymous): fall back to memory when localStorage access throws [\#1795](https://github.com/auth0/auth0-spa-js/pull/1795) ([yogeshchoudhary147](https://github.com/yogeshchoudhary147))
+
 ## [v2.28.3](https://github.com/auth0/auth0-spa-js/tree/v2.28.3) (2026-10-09)
 [Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.28.2...v2.28.3)
 
