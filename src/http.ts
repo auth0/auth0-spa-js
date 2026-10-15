@@ -243,7 +243,7 @@ export async function getJSON<T>(
       );
     }
 
-    throw new GenericError(error || 'request_error', errorMessage);
+    throw new GenericError(error || 'request_error', errorMessage, data);
   }
 
   return data;

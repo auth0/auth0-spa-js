@@ -295,3 +295,19 @@ async function loginWithPasskey() {
 
 > [!TIP]
 > Both `signup()` and `login()` throw an `Error` with a descriptive message if the user cancels the biometric prompt (i.e., the WebAuthn API returns `null`). Wrap calls in try/catch to handle cancellation, network failures, or misconfigured connections.
+
+When identifier verification is required and the user enters a wrong OTP code, the SDK throws a `PasskeyGetTokenError` with `isRetryable: true`. Collect new codes for `error.verificationRequired` and call `continueSignup()` again (the same passkey is reused), or call `getTokenWithPasskey()` with `error.authSession`. Other token exchange failures throw a `GenericError` as before (or an `MfaRequiredError` for `mfa_required`).
+
+```ts
+import { PasskeyGetTokenError } from '@auth0/auth0-spa-js';
+
+try {
+  await auth0.passkey.continueSignup(codes);
+} catch (error) {
+  if (error instanceof PasskeyGetTokenError && error.isRetryable) {
+    // Wrong code, session still active. Ask again for error.verificationRequired
+  } else {
+    throw error;
+  }
+}
+```
