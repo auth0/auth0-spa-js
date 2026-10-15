@@ -2,7 +2,8 @@ import { verify } from '../../src/jwt';
 import { MessageChannel } from 'worker_threads';
 import * as utils from '../../src/utils';
 import * as scope from '../../src/scope';
-import { MfaRequiredError } from '../../src/errors';
+import { GenericError, MfaRequiredError } from '../../src/errors';
+import { PasskeyGetTokenError } from '../../src/passkey';
 
 import { fetchResponse, setupFn } from './helpers';
 
@@ -179,6 +180,38 @@ describe('Auth0Client', () => {
       expect(capturedOptions.realm).toBe('Username-Password-Authentication');
     });
 
+    it('includes organization and verification when provided', async () => {
+      const auth0 = setup();
+
+      let capturedOptions: any;
+      auth0['_requestToken'] = async function (options: any) {
+        capturedOptions = options;
+        return {
+          decodedToken: {
+            encoded: { header: 'h', payload: 'p', signature: 's' },
+            header: {},
+            claims: { sub: 'me', __raw: 'raw' },
+            user: { sub: 'me' }
+          },
+          id_token: TEST_ID_TOKEN,
+          access_token: TEST_ACCESS_TOKEN,
+          token_type: 'Bearer',
+          expires_in: 86400,
+          scope: options.scope
+        };
+      };
+
+      await auth0._requestTokenForPasskey({
+        authSession: TEST_AUTH_SESSION,
+        credential: TEST_CREDENTIAL as any,
+        organization: 'org_abc123',
+        verification: { email: '123456' }
+      });
+
+      expect(capturedOptions.organization).toBe('org_abc123');
+      expect(capturedOptions.verification).toEqual({ email: '123456' });
+    });
+
     it('does not include realm when not provided', async () => {
       const auth0 = setup();
 
@@ -206,6 +239,36 @@ describe('Auth0Client', () => {
       });
 
       expect(capturedOptions.realm).toBeUndefined();
+    });
+
+    it('does not include verification when it is empty', async () => {
+      const auth0 = setup();
+
+      let capturedOptions: any;
+      auth0['_requestToken'] = async function (options: any) {
+        capturedOptions = options;
+        return {
+          decodedToken: {
+            encoded: { header: 'h', payload: 'p', signature: 's' },
+            header: {},
+            claims: { sub: 'me', __raw: 'raw' },
+            user: { sub: 'me' }
+          },
+          id_token: TEST_ID_TOKEN,
+          access_token: TEST_ACCESS_TOKEN,
+          token_type: 'Bearer',
+          expires_in: 86400,
+          scope: options.scope
+        };
+      };
+
+      await auth0._requestTokenForPasskey({
+        authSession: TEST_AUTH_SESSION,
+        credential: TEST_CREDENTIAL as any,
+        verification: {}
+      });
+
+      expect(capturedOptions).not.toHaveProperty('verification');
     });
 
     it('caches tokens and establishes session via _requestToken', async () => {
@@ -262,7 +325,7 @@ describe('Auth0Client', () => {
       );
     });
 
-    it('propagates token endpoint errors', async () => {
+    it('propagates terminal token endpoint errors as GenericError', async () => {
       const auth0 = setup();
 
       mockFetch.mockResolvedValueOnce(
@@ -272,15 +335,116 @@ describe('Auth0Client', () => {
         })
       );
 
-      await expect(
-        auth0._requestTokenForPasskey({
+      const err = await auth0
+        ._requestTokenForPasskey({
           authSession: TEST_AUTH_SESSION,
           credential: TEST_CREDENTIAL as any
         })
-      ).rejects.toMatchObject({
+        .catch(e => e);
+
+      expect(err).toBeInstanceOf(GenericError);
+      expect(err).not.toBeInstanceOf(PasskeyGetTokenError);
+      expect(err).toMatchObject({
         error: 'invalid_grant',
         error_description: 'Auth session has expired'
       });
+    });
+
+    it('throws a retryable PasskeyGetTokenError on a wrong OTP code', async () => {
+      const auth0 = setup();
+
+      mockFetch.mockResolvedValueOnce(
+        fetchResponse(false, {
+          error: 'invalid_grant',
+          error_description: 'Invalid or expired session',
+          auth_session: 'auth-session-retry',
+          verification_required: ['email']
+        })
+      );
+
+      const err = await auth0
+        ._requestTokenForPasskey({
+          authSession: TEST_AUTH_SESSION,
+          credential: TEST_CREDENTIAL as any,
+          verification: { email: '000000' }
+        })
+        .catch(e => e);
+
+      expect(err).toBeInstanceOf(PasskeyGetTokenError);
+      expect(err.isRetryable).toBe(true);
+      expect(err.authSession).toBe('auth-session-retry');
+      expect(err.verificationRequired).toEqual(['email']);
+    });
+
+    it('lists every identifier when several OTP codes are wrong', async () => {
+      const auth0 = setup();
+
+      mockFetch.mockResolvedValueOnce(
+        fetchResponse(false, {
+          error: 'invalid_grant',
+          error_description: 'Invalid or expired session',
+          auth_session: 'auth-session-retry',
+          verification_required: ['email', 'phone']
+        })
+      );
+
+      const err = await auth0
+        ._requestTokenForPasskey({
+          authSession: TEST_AUTH_SESSION,
+          credential: TEST_CREDENTIAL as any,
+          verification: { email: '000000', phone: '000000' }
+        })
+        .catch(e => e);
+
+      expect(err).toBeInstanceOf(PasskeyGetTokenError);
+      expect(err.isRetryable).toBe(true);
+      expect(err.authSession).toBe('auth-session-retry');
+      expect(err.verificationRequired).toEqual(['email', 'phone']);
+    });
+
+    it('propagates a missing code error as GenericError', async () => {
+      const auth0 = setup();
+
+      mockFetch.mockResolvedValueOnce(
+        fetchResponse(false, {
+          error: 'invalid_request',
+          error_description: 'Missing required parameter: verification.email'
+        })
+      );
+
+      const err = await auth0
+        ._requestTokenForPasskey({
+          authSession: TEST_AUTH_SESSION,
+          credential: TEST_CREDENTIAL as any
+        })
+        .catch(e => e);
+
+      expect(err).toBeInstanceOf(GenericError);
+      expect(err).not.toBeInstanceOf(PasskeyGetTokenError);
+      expect(err.error).toBe('invalid_request');
+    });
+
+    it('propagates an error with only auth_session as GenericError', async () => {
+      const auth0 = setup();
+
+      mockFetch.mockResolvedValueOnce(
+        fetchResponse(false, {
+          error: 'invalid_grant',
+          error_description: 'Invalid or expired session',
+          auth_session: 'auth-session-retry'
+        })
+      );
+
+      const err = await auth0
+        ._requestTokenForPasskey({
+          authSession: TEST_AUTH_SESSION,
+          credential: TEST_CREDENTIAL as any
+        })
+        .catch(e => e);
+
+      expect(err).toBeInstanceOf(GenericError);
+      expect(err).not.toBeInstanceOf(PasskeyGetTokenError);
+      expect(err.data).toEqual({ auth_session: 'auth-session-retry' });
     });
 
     it('stores MFA context and re-throws MfaRequiredError', async () => {

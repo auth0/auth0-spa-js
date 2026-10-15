@@ -1,10 +1,15 @@
 jest.mock('@auth0/auth0-auth-js', () => ({
+  ...jest.requireActual('@auth0/auth0-auth-js'),
   PasskeyClient: jest.fn()
 }));
 
 import { PasskeyApiClient } from '../../src/passkey/PasskeyApiClient';
-import { MfaRequiredError } from '../../src/errors';
-import { PasskeyError } from '../../src/passkey/errors';
+import {
+  GenericError,
+  MfaRequiredError,
+  PasskeyVerificationRequiredError
+} from '../../src/errors';
+import { PasskeyError, PasskeyGetTokenError } from '../../src/passkey/errors';
 
 const TEST_AUTH_SESSION = 'auth-session-abc123';
 
@@ -325,6 +330,7 @@ describe('PasskeyApiClient', () => {
         userMetadata: { plan: 'pro' },
         realm: 'Username-Password-Authentication',
         organization: 'org_abc123',
+        deliveryMethod: 'voice',
         scope: 'openid profile email',
         audience: 'https://api.example.com'
       });
@@ -340,7 +346,8 @@ describe('PasskeyApiClient', () => {
         picture: 'https://example.com/avatar.png',
         userMetadata: { plan: 'pro' },
         realm: 'Username-Password-Authentication',
-        organization: 'org_abc123'
+        organization: 'org_abc123',
+        deliveryMethod: 'voice'
       });
       expect(mockAuth0Client._requestTokenForPasskey).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -512,6 +519,157 @@ describe('PasskeyApiClient', () => {
           audience: 'https://api.example.com'
         })
       ).rejects.toThrow(mfaError);
+    });
+
+    it('should throw PasskeyVerificationRequiredError when verification is required', async () => {
+      mockPasskeyClient.register.mockResolvedValue({
+        authSession: TEST_AUTH_SESSION,
+        authnParamsPublicKey: {
+          challenge: 'Y2hhbGxlbmdl',
+          rp: { id: 'example.auth0.com', name: 'Example' },
+          user: { id: 'dXNlci0x', name: 'user@example.com', displayName: 'User' },
+          pubKeyCredParams: [{ type: 'public-key', alg: -7 }]
+        },
+        verificationRequired: ['email']
+      });
+      const createMock = jest.fn();
+      Object.defineProperty(global.navigator, 'credentials', {
+        value: { create: createMock },
+        configurable: true
+      });
+
+      const err = await passkeyClient
+        .signup({ email: 'user@example.com' })
+        .catch(e => e);
+
+      expect(err).toBeInstanceOf(PasskeyVerificationRequiredError);
+      expect(err).toBeInstanceOf(GenericError);
+      expect(err.error).toBe('verification_required');
+      expect(err.verificationRequired).toEqual(['email']);
+      expect(createMock).not.toHaveBeenCalled();
+      expect(mockAuth0Client._requestTokenForPasskey).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('continueSignup', () => {
+    const verificationChallenge = {
+      authSession: TEST_AUTH_SESSION,
+      authnParamsPublicKey: {
+        challenge: 'Y2hhbGxlbmdl',
+        rp: { id: 'example.auth0.com', name: 'Example' },
+        user: { id: 'dXNlci0x', name: 'user@example.com', displayName: 'User' },
+        pubKeyCredParams: [{ type: 'public-key', alg: -7 }]
+      },
+      verificationRequired: ['email']
+    };
+
+    let createMock: jest.Mock;
+
+    beforeEach(async () => {
+      mockPasskeyClient.register.mockResolvedValue(verificationChallenge);
+      createMock = jest.fn().mockResolvedValue(createMockPublicKeyCredential('create'));
+      Object.defineProperty(global.navigator, 'credentials', {
+        value: { create: createMock },
+        configurable: true
+      });
+
+      await passkeyClient.signup({ email: 'user@example.com' }).catch(() => {});
+    });
+
+    it('should reuse the session and passkey after a retryable error', async () => {
+      mockAuth0Client._requestTokenForPasskey
+        .mockRejectedValueOnce(
+          new PasskeyGetTokenError('Invalid or expired session', {
+            error: 'invalid_grant',
+            error_description: 'Invalid or expired session',
+            auth_session: 'auth-session-retry',
+            verification_required: ['email']
+          })
+        )
+        .mockResolvedValueOnce({ access_token: 'at_123' });
+
+      const err = await passkeyClient.continueSignup({ email: '000000' }).catch(e => e);
+      expect(err).toBeInstanceOf(PasskeyGetTokenError);
+      expect(err.isRetryable).toBe(true);
+
+      await expect(passkeyClient.continueSignup({ email: '123456' })).resolves.toEqual({
+        access_token: 'at_123'
+      });
+
+      expect(createMock).toHaveBeenCalledTimes(1);
+      const [first, second] = mockAuth0Client._requestTokenForPasskey.mock.calls;
+      expect(first[0].authSession).toBe(TEST_AUTH_SESSION);
+      expect(second[0].authSession).toBe('auth-session-retry');
+      expect(second[0].credential).toEqual(first[0].credential);
+      expect(second[0].verification).toEqual({ email: '123456' });
+    });
+
+    it('should clear the pending signup after a non-retryable error', async () => {
+      mockAuth0Client._requestTokenForPasskey.mockRejectedValueOnce(
+        new GenericError('invalid_grant', 'Invalid or expired session')
+      );
+
+      await expect(passkeyClient.continueSignup({ email: '000000' })).rejects.toBeInstanceOf(
+        GenericError
+      );
+
+      await expect(passkeyClient.continueSignup({ email: '123456' })).rejects.toMatchObject({
+        code: 'no_pending_signup'
+      });
+    });
+
+    it('should keep the pending signup when the passkey prompt is cancelled', async () => {
+      createMock.mockResolvedValueOnce(null);
+      mockAuth0Client._requestTokenForPasskey.mockResolvedValueOnce({ access_token: 'at_123' });
+
+      await expect(passkeyClient.continueSignup({ email: '123456' })).rejects.toMatchObject({
+        code: 'passkey_cancelled'
+      });
+
+      await expect(passkeyClient.continueSignup({ email: '123456' })).resolves.toEqual({
+        access_token: 'at_123'
+      });
+      expect(mockAuth0Client._requestTokenForPasskey.mock.calls[0][0].authSession).toBe(
+        TEST_AUTH_SESSION
+      );
+    });
+
+    it('should keep the pending signup when passkey creation throws', async () => {
+      createMock.mockRejectedValueOnce(new DOMException('Not allowed', 'NotAllowedError'));
+      mockAuth0Client._requestTokenForPasskey.mockResolvedValueOnce({ access_token: 'at_123' });
+
+      await expect(passkeyClient.continueSignup({ email: '123456' })).rejects.toMatchObject({
+        name: 'NotAllowedError'
+      });
+
+      await expect(passkeyClient.continueSignup({ email: '123456' })).resolves.toEqual({
+        access_token: 'at_123'
+      });
+    });
+
+    it('should reject a concurrent continueSignup call', async () => {
+      mockAuth0Client._requestTokenForPasskey.mockResolvedValueOnce({ access_token: 'at_123' });
+
+      const first = passkeyClient.continueSignup({ email: '123456' });
+      const second = passkeyClient.continueSignup({ email: '123456' });
+
+      await expect(second).rejects.toMatchObject({ code: 'no_pending_signup' });
+      await expect(first).resolves.toEqual({ access_token: 'at_123' });
+      expect(createMock).toHaveBeenCalledTimes(1);
+    });
+
+    it('should clear the pending signup when a new signup does not need verification', async () => {
+      mockPasskeyClient.register.mockResolvedValueOnce({
+        ...verificationChallenge,
+        verificationRequired: undefined
+      });
+      mockAuth0Client._requestTokenForPasskey.mockResolvedValueOnce({ access_token: 'at_123' });
+
+      await passkeyClient.signup({ email: 'other@example.com' });
+
+      await expect(passkeyClient.continueSignup({ email: '123456' })).rejects.toMatchObject({
+        code: 'no_pending_signup'
+      });
     });
   });
 
@@ -795,6 +953,46 @@ describe('PasskeyApiClient', () => {
         id: 'example.auth0.com',
         name: 'Example'
       });
+      expect(result.verificationRequired).toBeUndefined();
+    });
+
+    it('should return verificationRequired when the server requires it', async () => {
+      mockPasskeyClient.register.mockResolvedValue({
+        authSession: TEST_AUTH_SESSION,
+        authnParamsPublicKey: {
+          challenge: 'Y2hhbGxlbmdl',
+          rp: { id: 'example.auth0.com', name: 'Example' },
+          user: { id: 'dXNlci0x', name: 'user@example.com', displayName: 'User' },
+          pubKeyCredParams: [{ type: 'public-key', alg: -7 }]
+        },
+        verificationRequired: ['email']
+      });
+
+      const result = await passkeyClient.getSignupChallenge({
+        email: 'user@example.com'
+      });
+
+      expect(result.verificationRequired).toEqual(['email']);
+    });
+
+    it('should return every identifier when several need verification', async () => {
+      mockPasskeyClient.register.mockResolvedValue({
+        authSession: TEST_AUTH_SESSION,
+        authnParamsPublicKey: {
+          challenge: 'Y2hhbGxlbmdl',
+          rp: { id: 'example.auth0.com', name: 'Example' },
+          user: { id: 'dXNlci0x', name: 'user@example.com', displayName: 'User' },
+          pubKeyCredParams: [{ type: 'public-key', alg: -7 }]
+        },
+        verificationRequired: ['email', 'phone']
+      });
+
+      const result = await passkeyClient.getSignupChallenge({
+        email: 'user@example.com',
+        phoneNumber: '+1234567890'
+      });
+
+      expect(result.verificationRequired).toEqual(['email', 'phone']);
     });
 
     it('should forward all supported signup properties to register', async () => {
@@ -819,7 +1017,8 @@ describe('PasskeyApiClient', () => {
         picture: 'https://example.com/avatar.png',
         userMetadata: { plan: 'pro' },
         realm: 'Username-Password-Authentication',
-        organization: 'org_abc123'
+        organization: 'org_abc123',
+        deliveryMethod: 'voice'
       });
 
       // Every supported property is passed straight through to the challenge
@@ -836,7 +1035,8 @@ describe('PasskeyApiClient', () => {
         picture: 'https://example.com/avatar.png',
         userMetadata: { plan: 'pro' },
         realm: 'Username-Password-Authentication',
-        organization: 'org_abc123'
+        organization: 'org_abc123',
+        deliveryMethod: 'voice'
       });
     });
 
@@ -1066,7 +1266,7 @@ describe('PasskeyApiClient', () => {
       expect(result).toEqual(mockTokenResponse);
     });
 
-    it('should forward realm, organization, scope, and audience', async () => {
+    it('should forward realm, organization, scope, audience, and verification', async () => {
       mockAuth0Client._requestTokenForPasskey.mockResolvedValue({
         access_token: 'at_123',
         token_type: 'Bearer',
@@ -1079,7 +1279,8 @@ describe('PasskeyApiClient', () => {
         realm: 'Username-Password-Authentication',
         organization: 'org_abc123',
         scope: 'openid profile email',
-        audience: 'https://api.example.com'
+        audience: 'https://api.example.com',
+        verification: { email: '123456' }
       });
 
       expect(mockAuth0Client._requestTokenForPasskey).toHaveBeenCalledWith(
@@ -1088,7 +1289,8 @@ describe('PasskeyApiClient', () => {
           realm: 'Username-Password-Authentication',
           organization: 'org_abc123',
           scope: 'openid profile email',
-          audience: 'https://api.example.com'
+          audience: 'https://api.example.com',
+          verification: { email: '123456' }
         })
       );
     });

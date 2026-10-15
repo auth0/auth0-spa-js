@@ -43,6 +43,13 @@ export type PasskeyLoginOptions = PasskeyLoginChallengeOptions & {
 export type PasskeySignupChallenge = {
   authSession: string;
   publicKey: PublicKeyCredentialCreationOptions;
+  /**
+   * Identifiers that require OTP verification before token issuance (e.g. `["email"]`).
+   * Absent when no verification is required. Collect OTP codes for each identifier
+   * and pass them as `verification` to `getTokenWithPasskey()` — do NOT call
+   * `navigator.credentials.create()` until all codes have been collected.
+   */
+  verificationRequired?: string[];
 };
 
 /**
@@ -71,4 +78,11 @@ export type PasskeyGetTokenOptions = {
   organization?: string;
   scope?: string;
   audience?: string;
+  /**
+   * OTP codes collected for identifier verification. Required when
+   * `PasskeySignupChallenge.verificationRequired` is non-empty. Keys are the
+   * identifier names (e.g. `"email"`, `"phone"`); values are the OTP codes.
+   * Omit entirely when no verification is required.
+   */
+  verification?: Record<string, string>;
 };
