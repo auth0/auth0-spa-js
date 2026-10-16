@@ -124,7 +124,7 @@ import {
 } from './fetcher';
 import { MyAccountApiClient } from './myaccount';
 import { MfaApiClient } from './mfa';
-import { PasskeyApiClient } from './passkey';
+import { PasskeyApiClient, PasskeyGetTokenError } from './passkey';
 import type { PasskeyCredentialResponse } from './passkey/types';
 import { AuthClient as Auth0AuthJsClient } from '@auth0/auth0-auth-js';
 import { AnonymousSessionApiClient } from './anonymous';
@@ -2342,6 +2342,9 @@ export class Auth0Client {
    * @internal
    * Internal method used by PasskeyApiClient to exchange passkey credentials for tokens.
    * Routes through _requestToken() so tokens are cached, ID token verified, and session established.
+   * A wrong OTP code (the error response includes `auth_session` and
+   * `verification_required`) is thrown as a retryable
+   * `PasskeyGetTokenError`. Other failures are re-thrown unchanged.
    */
   async _requestTokenForPasskey(
     options: {
@@ -2351,19 +2354,37 @@ export class Auth0Client {
       scope?: string;
       audience?: string;
       organization?: string;
+      verification?: Record<string, string>;
     }
   ): Promise<TokenEndpointResponse> {
     const audience = options.audience || this.options.authorizationParams.audience;
     const organization = options.organization || this.options.authorizationParams.organization;
-    return this._requestToken({
-      grant_type: 'urn:okta:params:oauth:grant-type:webauthn',
-      auth_session: options.authSession,
-      authn_response: options.credential,
-      ...(options.realm && { realm: options.realm }),
-      ...(organization && { organization }),
-      scope: scopesToRequest(this.scope, options.scope, audience),
-      audience,
-    });
+    try {
+      return await this._requestToken({
+        grant_type: 'urn:okta:params:oauth:grant-type:webauthn',
+        auth_session: options.authSession,
+        authn_response: options.credential,
+        ...(options.realm && { realm: options.realm }),
+        ...(organization && { organization }),
+        ...(options.verification && { verification: options.verification }),
+        scope: scopesToRequest(this.scope, options.scope, audience),
+        audience,
+      });
+    } catch (e) {
+      if (
+        e instanceof GenericError &&
+        e.data?.auth_session &&
+        e.data?.verification_required
+      ) {
+        throw new PasskeyGetTokenError(e.error_description, {
+          error: e.error,
+          error_description: e.error_description,
+          auth_session: e.data.auth_session,
+          verification_required: e.data.verification_required
+        });
+      }
+      throw e;
+    }
   }
 
   /**

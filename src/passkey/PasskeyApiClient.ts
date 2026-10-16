@@ -13,7 +13,8 @@ import type {
   PasskeyGetTokenOptions
 } from './types';
 import type { PasskeyClient } from '@auth0/auth0-auth-js';
-import { PasskeyError } from './errors';
+import { PasskeyError, PasskeyGetTokenError } from './errors';
+import { PasskeyVerificationRequiredError } from '../errors';
 
 /**
  * Client for Auth0 Passkey operations.
@@ -36,6 +37,16 @@ import { PasskeyError } from './errors';
 export class PasskeyApiClient {
   #passkeyClient: PasskeyClient;
   #auth0Client: Auth0Client;
+  #pendingSignup: {
+    authSession: string;
+    publicKey: PublicKeyCredentialCreationOptions;
+    /** Set after the first attempt, so a retry reuses it without a second biometric prompt. */
+    credential?: PasskeyCredentialResponse;
+    realm?: string;
+    organization?: string;
+    scope?: string;
+    audience?: string;
+  } | null = null;
 
   /**
    * @internal
@@ -65,9 +76,23 @@ export class PasskeyApiClient {
       throw new PasskeyError('passkey_not_supported', 'WebAuthn is not supported in this browser.');
     }
 
+    this.#pendingSignup = null;
+
     const { scope, audience, ...challengeOptions } = options;
 
     const challenge = await this.#passkeyClient.register(challengeOptions);
+
+    if (challenge.verificationRequired && challenge.verificationRequired.length > 0) {
+      this.#pendingSignup = {
+        authSession: challenge.authSession,
+        publicKey: prepareCreationOptions(challenge.authnParamsPublicKey),
+        realm: challengeOptions.realm,
+        organization: challengeOptions.organization,
+        scope,
+        audience,
+      };
+      throw new PasskeyVerificationRequiredError(challenge.verificationRequired);
+    }
 
     const publicKeyOptions = prepareCreationOptions(
       challenge.authnParamsPublicKey
@@ -173,7 +198,8 @@ export class PasskeyApiClient {
     const challenge = await this.#passkeyClient.register(options);
     return {
       authSession: challenge.authSession,
-      publicKey: prepareCreationOptions(challenge.authnParamsPublicKey)
+      publicKey: prepareCreationOptions(challenge.authnParamsPublicKey),
+      ...(challenge.verificationRequired && { verificationRequired: challenge.verificationRequired }),
     };
   }
 
@@ -217,6 +243,7 @@ export class PasskeyApiClient {
    * @returns A promise resolving to the token endpoint response
    * @throws {PasskeyError} If WebAuthn is not supported in the browser
    * @throws {PasskeyError} If the credential is not a valid attestation or assertion response
+   * @throws {PasskeyGetTokenError} If an OTP code is wrong and the session is still active (`isRetryable: true`)
    * @throws {GenericError} If the token exchange fails
    */
   async getTokenWithPasskey(
@@ -226,7 +253,7 @@ export class PasskeyApiClient {
       throw new PasskeyError('passkey_not_supported', 'WebAuthn is not supported in this browser.');
     }
 
-    const { authSession, credential, realm, organization, scope, audience } = options;
+    const { authSession, credential, realm, organization, scope, audience, verification } = options;
     const response = credential.response;
 
     let serialized: PasskeyCredentialResponse;
@@ -248,8 +275,72 @@ export class PasskeyApiClient {
       realm,
       organization,
       scope,
-      audience
+      audience,
+      verification,
     });
+  }
+
+  /**
+   * Continue a signup that was interrupted by identifier verification.
+   *
+   * Call this after catching `PasskeyVerificationRequiredError` from `signup()`,
+   * collecting OTP codes from the user, and passing them here. The SDK
+   * internally retains the auth session — you do not need to pass it.
+   *
+   * If the codes are wrong but the session is still alive, this throws a
+   * `PasskeyGetTokenError` with `isRetryable: true`. Collect new codes for
+   * `error.verificationRequired` and call `continueSignup()` again; the same
+   * passkey is reused, so the user is not prompted again.
+   *
+   * @param verification - Map of identifier → OTP code (e.g. `{ phone: "123456" }`)
+   * @returns A promise resolving to the token endpoint response
+   * @throws {PasskeyError} If there is no pending signup (signup() was not called first)
+   * @throws {PasskeyGetTokenError} If an OTP code is wrong and the session is still active (`isRetryable: true`)
+   * @throws {GenericError} If the token exchange fails
+   */
+  async continueSignup(verification: Record<string, string>): Promise<TokenEndpointResponse> {
+    if (!this.#pendingSignup) {
+      throw new PasskeyError(
+        'no_pending_signup',
+        'No pending signup found. Call signup() first and catch PasskeyVerificationRequiredError.'
+      );
+    }
+
+    const pending = this.#pendingSignup;
+    const { authSession, publicKey, realm, organization, scope, audience } = pending;
+
+    let serialized = pending.credential;
+    if (!serialized) {
+      const credential = await navigator.credentials.create({ publicKey });
+
+      if (!credential) {
+        throw new PasskeyError(
+          'passkey_cancelled',
+          'Passkey creation was cancelled or no credential was returned.'
+        );
+      }
+
+      serialized = serializeCreationCredential(credential as PublicKeyCredential);
+    }
+
+    this.#pendingSignup = null;
+
+    try {
+      return await this.#auth0Client._requestTokenForPasskey({
+        authSession,
+        credential: serialized,
+        realm,
+        organization,
+        scope,
+        audience,
+        verification,
+      });
+    } catch (e) {
+      if (e instanceof PasskeyGetTokenError && e.isRetryable) {
+        this.#pendingSignup = { ...pending, authSession: e.authSession!, credential: serialized };
+      }
+      throw e;
+    }
   }
 
 }

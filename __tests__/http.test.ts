@@ -66,6 +66,29 @@ describe('getJson', () => {
     ).rejects.toHaveProperty('mfa_token', '1234');
   });
 
+  it('keeps the other error response fields on GenericError.data', async () => {
+    mockUnfetch.mockImplementation(() =>
+      Promise.resolve({
+        ok: false,
+        json: () =>
+          Promise.resolve({
+            error: 'invalid_grant',
+            error_description: 'Invalid or expired session',
+            auth_session: 'abc'
+          }),
+        headers: new Headers()
+      })
+    );
+
+    await expect(
+      getJSON('https://test.com/', null, null, null, {}, undefined)
+    ).rejects.toMatchObject({
+      error: 'invalid_grant',
+      error_description: 'Invalid or expired session',
+      data: { auth_session: 'abc' }
+    });
+  });
+
   it('throws MissingRefreshTokenError when missing_refresh_token is returned', async () => {
     mockUnfetch.mockImplementation(() =>
       Promise.resolve({
