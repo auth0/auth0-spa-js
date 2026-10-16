@@ -12,6 +12,7 @@ import {
   getCrypto,
   validateCrypto,
   fromEntries,
+  parseNumber,
   stripAuth0Client
 } from '../src/utils';
 
@@ -557,6 +558,23 @@ describe('utils', () => {
       expect(validateCrypto).toThrowError(`
       auth0-spa-js must run on a secure origin. See https://github.com/auth0/auth0-spa-js/blob/main/FAQ.md#why-do-i-get-auth0-spa-js-must-run-on-a-secure-origin for more information.
     `);
+    });
+  });
+
+  describe('parseNumber', () => {
+    it('parses numeric strings, including "0"', () => {
+      expect(parseNumber('10')).toBe(10);
+      expect(parseNumber('0')).toBe(0);
+    });
+
+    it('returns undefined for non-numeric strings', () => {
+      expect(parseNumber('')).toBeUndefined();
+      expect(parseNumber('abc')).toBeUndefined();
+    });
+
+    it('returns non-string values as-is', () => {
+      expect(parseNumber(0)).toBe(0);
+      expect(parseNumber(undefined)).toBeUndefined();
     });
   });
 

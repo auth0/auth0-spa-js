@@ -2213,6 +2213,26 @@ describe('Auth0Client', () => {
       );
     });
 
+    it('calls `tokenVerifier.verify` with the `max_age` given in the method', async () => {
+      const auth0 = setup();
+
+      jest.spyOn(<any>utils, 'runIframe').mockResolvedValue({
+        access_token: TEST_ACCESS_TOKEN,
+        state: TEST_STATE
+      });
+
+      await getTokenSilently(auth0, {
+        authorizationParams: { max_age: 0 },
+        cacheMode: 'off'
+      });
+
+      expect(tokenVerifier).toHaveBeenCalledWith(
+        expect.objectContaining({
+          max_age: 0
+        })
+      );
+    });
+
     it('throws error if state from popup response is different from the provided state', async () => {
       const auth0 = setup();
 

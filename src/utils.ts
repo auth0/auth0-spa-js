@@ -297,7 +297,8 @@ export const parseNumber = (value: any): number | undefined => {
   if (typeof value !== 'string') {
     return value;
   }
-  return parseInt(value, 10) || undefined;
+  const parsed = parseInt(value, 10);
+  return isNaN(parsed) ? undefined : parsed;
 };
 
 /**

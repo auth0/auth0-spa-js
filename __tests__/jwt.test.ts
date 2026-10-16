@@ -370,6 +370,14 @@ describe('jwt', () => {
     );
   });
 
+  it('validate auth_time is present when max_age is 0', async () => {
+    const id_token = await createJWT({ ...DEFAULT_PAYLOAD });
+
+    expect(() => verify({ ...verifyOptions, id_token, max_age: 0 })).toThrow(
+      'Authentication Time (auth_time) claim must be a number present in the ID token when Max Age (max_age) is specified'
+    );
+  });
+
   it('validate auth_time + max_age is in the future', async () => {
     const yesterday = new Date();
     yesterday.setDate(yesterday.getDate() - 1);

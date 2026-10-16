@@ -140,7 +140,7 @@ export const verify = (options: JWTVerifyOptions) => {
     }
   }
 
-  if (options.max_age && !isNumber(decoded.claims.auth_time)) {
+  if (options.max_age != null && !isNumber(decoded.claims.auth_time)) {
     throw new Error(
       'Authentication Time (auth_time) claim must be a number present in the ID token when Max Age (max_age) is specified'
     );
