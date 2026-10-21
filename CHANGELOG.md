@@ -1,5 +1,14 @@
 # Change Log
 
+## [v2.29.0](https://github.com/auth0/auth0-spa-js/tree/v2.29.0) (2026-10-21)
+[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.28.4...v2.29.0)
+
+**Added**
+- feat(passkey): add identifier verification with step-up pattern [\#1802](https://github.com/auth0/auth0-spa-js/pull/1802) ([yogeshchoudhary147](https://github.com/yogeshchoudhary147))
+
+**Fixed**
+- fix: remove default-audience cache entry when MRRT refresh is missing scopes [\#1804](https://github.com/auth0/auth0-spa-js/pull/1804) ([RaphaelFakhri](https://github.com/RaphaelFakhri))
+
 ## [v2.28.4](https://github.com/auth0/auth0-spa-js/tree/v2.28.4) (2026-10-14)
 [Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.28.3...v2.28.4)
 
