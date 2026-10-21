@@ -1257,6 +1257,35 @@ describe('Auth0Client', () => {
       expect(utils.runIframe).not.toHaveBeenCalled();
     });
 
+    it('does not cache the token when MRRT returns fewer scopes for the default audience', async () => {
+      const auth0 = setup({
+        useRefreshTokens: true,
+        useMrrt: true,
+        cacheLocation: 'localstorage'
+      });
+
+      await loginWithRedirect(auth0);
+
+      await expect(
+        getTokenSilently(
+          auth0,
+          { authorizationParams: { scope: 'read:foo' } },
+          {
+            token: {
+              response: { scope: 'openid profile email offline_access' }
+            }
+          }
+        )
+      ).rejects.toThrow(/read:foo/);
+
+      const cachedToken = await auth0.getTokenSilently({
+        authorizationParams: { scope: 'read:foo' },
+        cacheMode: 'cache-only'
+      });
+
+      expect(cachedToken).toBeUndefined();
+    });
+
     it('handles fetch errors without the worker', async () => {
       const auth0 = setup({
         useRefreshTokens: true,

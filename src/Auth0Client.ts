@@ -1664,7 +1664,7 @@ export class Auth0Client {
             // to avoid storing wrong data
             await this.cacheManager.remove(
               this.options.clientId,
-              options.authorizationParams.audience,
+              options.authorizationParams.audience || DEFAULT_AUDIENCE,
               options.authorizationParams.scope,
             );
 
