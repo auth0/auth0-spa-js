@@ -16,7 +16,16 @@ export interface MfaRequirements {
  * @category Errors
  */
 export class GenericError extends Error {
-  constructor(public error: string, public error_description: string) {
+  /**
+   * @param error - The `error` code from the server response.
+   * @param error_description - The `error_description` from the server response.
+   * @param data - Any other fields from the server's error response (for example `auth_session`).
+   */
+  constructor(
+    public error: string,
+    public error_description: string,
+    public data?: Record<string, any>
+  ) {
     super(error_description);
     Object.setPrototypeOf(this, GenericError.prototype);
   }
@@ -152,6 +161,27 @@ export class MfaRequiredError extends GenericError {
     super(error, error_description);
     //https://github.com/Microsoft/TypeScript-wiki/blob/master/Breaking-Changes.md#extending-built-ins-like-error-array-and-map-may-no-longer-work
     Object.setPrototypeOf(this, MfaRequiredError.prototype);
+  }
+}
+
+/**
+ * Thrown by `signup()` when the server requires identifier verification before
+ * passkey creation. Catch this error, collect OTP codes for each identifier in
+ * `verificationRequired`, then call `passkey.continueSignup(codes)` to complete
+ * the flow. The SDK retains the auth session internally — you do not need to
+ * pass it yourself.
+ *
+ * @category Errors
+ */
+export class PasskeyVerificationRequiredError extends GenericError {
+  constructor(public readonly verificationRequired: Array<'email' | 'phone'>) {
+    super(
+      'verification_required',
+      'Identifier verification is required before passkey creation. ' +
+      'Collect OTP codes for each identifier and call passkey.continueSignup().'
+    );
+    //https://github.com/Microsoft/TypeScript-wiki/blob/master/Breaking-Changes.md#extending-built-ins-like-error-array-and-map-may-no-longer-work
+    Object.setPrototypeOf(this, PasskeyVerificationRequiredError.prototype);
   }
 }
 

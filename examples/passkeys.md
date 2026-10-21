@@ -9,6 +9,7 @@ Passkeys provide password-less authentication using platform biometrics (Face ID
 - [Signup with Passkey](#signup-with-passkey)
 - [Login with Passkey](#login-with-passkey)
 - [Granular Passkey APIs](#granular-passkey-apis)
+- [Identifier Verification](#identifier-verification)
 - [Complete Passkey Flow Example](#complete-passkey-flow-example)
 - [Error Handling](#passkey-error-handling)
 
@@ -264,6 +265,108 @@ async function granularLogin() {
 > [!NOTE]
 > The granular APIs (`getSignupChallenge`, `getLoginChallenge`, `getTokenWithPasskey`) provide the same automatic token caching and session establishment as the simplified `signup()` and `login()` methods. After successful completion, `isAuthenticated()`, `getUser()`, and `getTokenSilently()` work as expected.
 
+### Identifier Verification
+
+Your database connection can ask new users to verify their email or phone number with a one-time code (OTP) during passkey signup. This is off by default and is turned on from the server side. When it's on, the server sends the codes and gives tokens only after they are correct.
+
+The SDK supports this in both signup flows. The user sees the passkey prompt only once, even if they type a wrong code.
+
+#### With `signup()`
+
+`signup()` stops before the passkey prompt and throws `PasskeyVerificationRequiredError`. Ask the user for the codes and call `continueSignup()`:
+
+```js
+import {
+  PasskeyVerificationRequiredError,
+  PasskeyGetTokenError
+} from '@auth0/auth0-spa-js';
+
+const MAX_ATTEMPTS = 3;
+
+async function signupWithVerification(email) {
+  try {
+    return await auth0.passkey.signup({ email });
+  } catch (error) {
+    if (!(error instanceof PasskeyVerificationRequiredError)) throw error;
+
+    let required = error.verificationRequired; // e.g. ['email']
+    for (let attempt = 1; ; attempt++) {
+      const codes = await askUserForCodes(required); // your UI, e.g. { email: '123456' }
+      try {
+        return await auth0.passkey.continueSignup(codes);
+      } catch (e) {
+        if (!(e instanceof PasskeyGetTokenError && e.isRetryable) || attempt === MAX_ATTEMPTS) {
+          throw e;
+        }
+        required = e.verificationRequired;
+      }
+    }
+  }
+}
+```
+
+The first `continueSignup()` call shows the passkey prompt. Retries reuse the same passkey.
+
+> [!NOTE]
+> The pending signup is kept in memory only. If the page reloads, `continueSignup()` throws a `PasskeyError` with code `no_pending_signup`. Call `signup()` again to start over.
+
+#### With the granular APIs
+
+Check `verificationRequired` on the challenge and collect the codes **before** calling `navigator.credentials.create()`. On a retry, send the same `credential` with the new `error.authSession`:
+
+```js
+const MAX_ATTEMPTS = 3;
+
+async function granularSignupWithVerification(email) {
+  const challenge = await auth0.passkey.getSignupChallenge({ email });
+
+  // Collect codes first, so the passkey prompt shows only once
+  let codes = challenge.verificationRequired
+    ? await askUserForCodes(challenge.verificationRequired)
+    : undefined;
+
+  const credential = await navigator.credentials.create({
+    publicKey: challenge.publicKey
+  });
+
+  if (!credential) {
+    throw new Error('Credential creation cancelled');
+  }
+
+  let authSession = challenge.authSession;
+  for (let attempt = 1; ; attempt++) {
+    try {
+      return await auth0.passkey.getTokenWithPasskey({
+        authSession,
+        credential, // same credential on every retry
+        verification: codes
+      });
+    } catch (e) {
+      if (!(e instanceof PasskeyGetTokenError && e.isRetryable) || attempt === MAX_ATTEMPTS) {
+        throw e;
+      }
+      authSession = e.authSession;
+      codes = await askUserForCodes(e.verificationRequired);
+    }
+  }
+}
+```
+
+#### Which errors can be retried
+
+| Error | Retry? | What to do |
+|---|---|---|
+| `PasskeyGetTokenError` with `isRetryable: true` (wrong code, session still active) | Yes | Ask for new codes for `error.verificationRequired`. With the granular APIs, also pass `error.authSession` |
+| `PasskeyError` with code `missing_verification_code` (a code is missing or empty) | Yes | Call the same method again with a code for each identifier. Nothing was sent, so the session is still active |
+| `MfaRequiredError` | No | Finish with MFA using `error.mfa_token`. See [MFA](mfa.md#handling-mfa-required-errors) |
+| Any other error, for example an expired code or session, or a missing code with the granular APIs | No | Start the signup again |
+
+Always cap retries in your app, like `MAX_ATTEMPTS` above.
+
+#### Phone delivery method
+
+For phone verification, pass `deliveryMethod: 'text'` (SMS) or `'voice'` to `signup()` or `getSignupChallenge()` to choose how the code is sent.
+
 ### Complete Passkey Flow Example
 
 ```js
@@ -295,3 +398,19 @@ async function loginWithPasskey() {
 
 > [!TIP]
 > Both `signup()` and `login()` throw an `Error` with a descriptive message if the user cancels the biometric prompt (i.e., the WebAuthn API returns `null`). Wrap calls in try/catch to handle cancellation, network failures, or misconfigured connections.
+
+When identifier verification is required and the user enters a wrong OTP code, the SDK throws a `PasskeyGetTokenError` with `isRetryable: true`. Collect new codes for `error.verificationRequired` and call `continueSignup()` again (the same passkey is reused), or call `getTokenWithPasskey()` again with `error.authSession` and the same `credential`. See [Identifier Verification](#identifier-verification). Other token exchange failures throw a `GenericError` as before (or an `MfaRequiredError` for `mfa_required`).
+
+```ts
+import { PasskeyGetTokenError } from '@auth0/auth0-spa-js';
+
+try {
+  await auth0.passkey.continueSignup(codes);
+} catch (error) {
+  if (error instanceof PasskeyGetTokenError && error.isRetryable) {
+    // Wrong code, session still active. Ask again for error.verificationRequired
+  } else {
+    throw error;
+  }
+}
+```
