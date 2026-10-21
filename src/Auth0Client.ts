@@ -2354,7 +2354,7 @@ export class Auth0Client {
       scope?: string;
       audience?: string;
       organization?: string;
-      verification?: Record<string, string>;
+      verification?: { email?: string; phone?: string };
     }
   ): Promise<TokenEndpointResponse> {
     const audience = options.audience || this.options.authorizationParams.audience;

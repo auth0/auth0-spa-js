@@ -658,6 +658,94 @@ describe('PasskeyApiClient', () => {
       expect(createMock).toHaveBeenCalledTimes(1);
     });
 
+    it.each([{}, { email: '' }])(
+      'should throw missing_verification_code before the passkey prompt for %p',
+      async verification => {
+        mockAuth0Client._requestTokenForPasskey.mockResolvedValueOnce({ access_token: 'at_123' });
+
+        await expect(passkeyClient.continueSignup(verification)).rejects.toMatchObject({
+          code: 'missing_verification_code'
+        });
+        expect(createMock).not.toHaveBeenCalled();
+        expect(mockAuth0Client._requestTokenForPasskey).not.toHaveBeenCalled();
+
+        // Pending signup is kept
+        await expect(passkeyClient.continueSignup({ email: '123456' })).resolves.toEqual({
+          access_token: 'at_123'
+        });
+      }
+    );
+
+    it('should list each identifier that has no code', async () => {
+      mockPasskeyClient.register.mockResolvedValueOnce({
+        ...verificationChallenge,
+        verificationRequired: ['email', 'phone']
+      });
+      await passkeyClient.signup({ email: 'user@example.com' }).catch(() => {});
+
+      const err = await passkeyClient.continueSignup({ email: '123456' }).catch(e => e);
+
+      expect(err).toBeInstanceOf(PasskeyError);
+      expect(err.code).toBe('missing_verification_code');
+      expect(err.message).toContain('phone');
+      expect(err.message).not.toContain('email');
+      expect(createMock).not.toHaveBeenCalled();
+    });
+
+    it.each([
+      [{ email: '', phone: '123456' }, 'email', 'phone'],
+      [{ email: '123456', phone: '' }, 'phone', 'email']
+    ])(
+      'should treat an empty code as missing for %p',
+      async (verification, missing, present) => {
+        mockPasskeyClient.register.mockResolvedValueOnce({
+          ...verificationChallenge,
+          verificationRequired: ['email', 'phone']
+        });
+        await passkeyClient.signup({ email: 'user@example.com' }).catch(() => {});
+
+        const err = await passkeyClient.continueSignup(verification).catch(e => e);
+
+        expect(err.code).toBe('missing_verification_code');
+        expect(err.message).toContain(missing);
+        expect(err.message).not.toContain(present);
+        expect(createMock).not.toHaveBeenCalled();
+        expect(mockAuth0Client._requestTokenForPasskey).not.toHaveBeenCalled();
+      }
+    );
+
+    it('should check codes against verificationRequired from a retryable error', async () => {
+      mockPasskeyClient.register.mockResolvedValueOnce({
+        ...verificationChallenge,
+        verificationRequired: ['email', 'phone']
+      });
+      await passkeyClient.signup({ email: 'user@example.com' }).catch(() => {});
+      mockAuth0Client._requestTokenForPasskey
+        .mockRejectedValueOnce(
+          new PasskeyGetTokenError('Invalid or expired session', {
+            error: 'invalid_grant',
+            error_description: 'Invalid or expired session',
+            auth_session: 'auth-session-retry',
+            verification_required: ['phone']
+          })
+        )
+        .mockResolvedValueOnce({ access_token: 'at_123' });
+
+      await expect(
+        passkeyClient.continueSignup({ email: '123456', phone: '000000' })
+      ).rejects.toBeInstanceOf(PasskeyGetTokenError);
+
+      await expect(passkeyClient.continueSignup({ email: '123456' })).rejects.toMatchObject({
+        code: 'missing_verification_code'
+      });
+
+      await expect(passkeyClient.continueSignup({ phone: '654321' })).resolves.toEqual({
+        access_token: 'at_123'
+      });
+      expect(createMock).toHaveBeenCalledTimes(1);
+      expect(mockAuth0Client._requestTokenForPasskey).toHaveBeenCalledTimes(2);
+    });
+
     it('should clear the pending signup when a new signup does not need verification', async () => {
       mockPasskeyClient.register.mockResolvedValueOnce({
         ...verificationChallenge,

@@ -40,6 +40,7 @@ export class PasskeyApiClient {
   #pendingSignup: {
     authSession: string;
     publicKey: PublicKeyCredentialCreationOptions;
+    verificationRequired: Array<'email' | 'phone'>;
     /** Set after the first attempt, so a retry reuses it without a second biometric prompt. */
     credential?: PasskeyCredentialResponse;
     realm?: string;
@@ -91,6 +92,7 @@ export class PasskeyApiClient {
       this.#pendingSignup = {
         authSession: challenge.authSession,
         publicKey: prepareCreationOptions(challenge.authnParamsPublicKey),
+        verificationRequired: challenge.verificationRequired,
         realm: challengeOptions.realm,
         organization: challengeOptions.organization,
         scope,
@@ -300,14 +302,24 @@ export class PasskeyApiClient {
    * @param verification - Map of identifier → OTP code (e.g. `{ phone: "123456" }`)
    * @returns A promise resolving to the token endpoint response
    * @throws {PasskeyError} If there is no pending signup (signup() was not called first)
+   * @throws {PasskeyError} If a code is missing for a required identifier. The pending signup is kept
    * @throws {PasskeyGetTokenError} If an OTP code is wrong and the session is still active (`isRetryable: true`)
    * @throws {GenericError} If the token exchange fails
    */
-  async continueSignup(verification: Record<string, string>): Promise<TokenEndpointResponse> {
+  async continueSignup(verification: { email?: string; phone?: string }): Promise<TokenEndpointResponse> {
     if (!this.#pendingSignup) {
       throw new PasskeyError(
         'no_pending_signup',
         'No pending signup found. Call signup() first and catch PasskeyVerificationRequiredError.'
+      );
+    }
+
+    // Check before the passkey prompt, so a missing code doesn't leave an unused passkey.
+    const missing = this.#pendingSignup.verificationRequired.filter(id => !verification?.[id]);
+    if (missing.length > 0) {
+      throw new PasskeyError(
+        'missing_verification_code',
+        `Missing OTP code for: ${missing.join(', ')}. Pass a code for each identifier in verificationRequired.`
       );
     }
 
@@ -349,7 +361,12 @@ export class PasskeyApiClient {
       });
     } catch (e) {
       if (e instanceof PasskeyGetTokenError && e.isRetryable) {
-        this.#pendingSignup = { ...pending, authSession: e.authSession!, credential: serialized };
+        this.#pendingSignup = {
+          ...pending,
+          authSession: e.authSession!,
+          verificationRequired: e.verificationRequired ?? pending.verificationRequired,
+          credential: serialized
+        };
       }
       throw e;
     }

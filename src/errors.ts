@@ -174,7 +174,7 @@ export class MfaRequiredError extends GenericError {
  * @category Errors
  */
 export class PasskeyVerificationRequiredError extends GenericError {
-  constructor(public readonly verificationRequired: string[]) {
+  constructor(public readonly verificationRequired: Array<'email' | 'phone'>) {
     super(
       'verification_required',
       'Identifier verification is required before passkey creation. ' +

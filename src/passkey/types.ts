@@ -49,7 +49,7 @@ export type PasskeySignupChallenge = {
    * and pass them as `verification` to `getTokenWithPasskey()` — do NOT call
    * `navigator.credentials.create()` until all codes have been collected.
    */
-  verificationRequired?: string[];
+  verificationRequired?: Array<'email' | 'phone'>;
 };
 
 /**
@@ -84,5 +84,5 @@ export type PasskeyGetTokenOptions = {
    * identifier names (e.g. `"email"`, `"phone"`); values are the OTP codes.
    * Omit entirely when no verification is required.
    */
-  verification?: Record<string, string>;
+  verification?: { email?: string; phone?: string };
 };
