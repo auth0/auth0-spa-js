@@ -1383,6 +1383,35 @@ describe('PasskeyApiClient', () => {
       );
     });
 
+    it.each([{ email: '' }, { email: '123456', phone: '' }])(
+      'should throw missing_verification_code without a request for %p',
+      async verification => {
+        const err = await passkeyClient
+          .getTokenWithPasskey({
+            authSession: TEST_AUTH_SESSION,
+            credential: createTypedPublicKeyCredential('create'),
+            verification
+          })
+          .catch(e => e);
+
+        expect(err).toBeInstanceOf(PasskeyError);
+        expect(err.code).toBe('missing_verification_code');
+        expect(mockAuth0Client._requestTokenForPasskey).not.toHaveBeenCalled();
+      }
+    );
+
+    it('should not treat an undefined code as missing', async () => {
+      mockAuth0Client._requestTokenForPasskey.mockResolvedValue({ access_token: 'at_123' });
+
+      await passkeyClient.getTokenWithPasskey({
+        authSession: TEST_AUTH_SESSION,
+        credential: createTypedPublicKeyCredential('create'),
+        verification: { email: undefined, phone: '123456' }
+      });
+
+      expect(mockAuth0Client._requestTokenForPasskey).toHaveBeenCalledTimes(1);
+    });
+
     it('should throw a PasskeyError if the credential is neither attestation nor assertion', async () => {
       const invalidCredential = {
         id: 'credential-id-789',

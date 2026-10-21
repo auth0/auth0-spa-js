@@ -250,6 +250,7 @@ export class PasskeyApiClient {
    * @returns A promise resolving to the token endpoint response
    * @throws {PasskeyError} If WebAuthn is not supported in the browser
    * @throws {PasskeyError} If the credential is not a valid attestation or assertion response
+   * @throws {PasskeyError} If a code in `verification` is empty. Nothing is sent, so the same session can be retried
    * @throws {PasskeyGetTokenError} If an OTP code is wrong and the session is still active (`isRetryable: true`)
    * @throws {GenericError} If the token exchange fails
    */
@@ -261,6 +262,12 @@ export class PasskeyApiClient {
     }
 
     const { authSession, credential, realm, organization, scope, audience, verification } = options;
+
+    const codes: Record<string, string | undefined> = verification ?? {};
+    if (Object.keys(codes).some(id => codes[id] === '')) {
+      throw new PasskeyError('missing_verification_code', 'OTP codes in verification must not be empty.');
+    }
+
     const response = credential.response;
 
     let serialized: PasskeyCredentialResponse;

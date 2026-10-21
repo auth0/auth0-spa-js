@@ -356,10 +356,10 @@ async function granularSignupWithVerification(email) {
 
 | Error | Retry? | What to do |
 |---|---|---|
-| `PasskeyGetTokenError` with `isRetryable: true` (wrong or expired code, session still active) | Yes | Ask for new codes for `error.verificationRequired`. With the granular APIs, also pass `error.authSession` |
-| `PasskeyError` with code `missing_verification_code` (from `continueSignup()`) | Yes | Call `continueSignup()` again with a code for each identifier. The passkey prompt was not shown |
+| `PasskeyGetTokenError` with `isRetryable: true` (wrong code, session still active) | Yes | Ask for new codes for `error.verificationRequired`. With the granular APIs, also pass `error.authSession` |
+| `PasskeyError` with code `missing_verification_code` (a code is missing or empty) | Yes | Call the same method again with a code for each identifier. Nothing was sent, so the session is still active |
 | `MfaRequiredError` | No | Finish with MFA using `error.mfa_token`. See [MFA](mfa.md#handling-mfa-required-errors) |
-| Any other error, for example an expired session, or a missing code with the granular APIs | No | Start the signup again |
+| Any other error, for example an expired code or session, or a missing code with the granular APIs | No | Start the signup again |
 
 Always cap retries in your app, like `MAX_ATTEMPTS` above.
 
