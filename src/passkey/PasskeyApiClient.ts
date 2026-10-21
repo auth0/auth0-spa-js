@@ -364,7 +364,7 @@ export class PasskeyApiClient {
         this.#pendingSignup = {
           ...pending,
           authSession: e.authSession!,
-          verificationRequired: e.verificationRequired ?? pending.verificationRequired,
+          verificationRequired: e.verificationRequired!,
           credential: serialized
         };
       }

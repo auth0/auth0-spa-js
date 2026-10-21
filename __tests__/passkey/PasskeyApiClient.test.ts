@@ -658,12 +658,12 @@ describe('PasskeyApiClient', () => {
       expect(createMock).toHaveBeenCalledTimes(1);
     });
 
-    it.each([{}, { email: '' }])(
+    it.each([undefined, {}, { email: '' }])(
       'should throw missing_verification_code before the passkey prompt for %p',
       async verification => {
         mockAuth0Client._requestTokenForPasskey.mockResolvedValueOnce({ access_token: 'at_123' });
 
-        await expect(passkeyClient.continueSignup(verification)).rejects.toMatchObject({
+        await expect(passkeyClient.continueSignup(verification as any)).rejects.toMatchObject({
           code: 'missing_verification_code'
         });
         expect(createMock).not.toHaveBeenCalled();

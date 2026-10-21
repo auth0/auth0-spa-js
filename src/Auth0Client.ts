@@ -2376,7 +2376,7 @@ export class Auth0Client {
       if (
         e instanceof GenericError &&
         e.data?.auth_session &&
-        e.data?.verification_required
+        e.data.verification_required
       ) {
         throw new PasskeyGetTokenError(e.error_description, {
           error: e.error,
