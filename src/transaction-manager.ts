@@ -11,6 +11,7 @@ export interface LoginTransaction {
   redirect_uri?: string;
   organization?: string;
   state?: string;
+  max_age?: string | number;
   response_type: 'code';
 }
 

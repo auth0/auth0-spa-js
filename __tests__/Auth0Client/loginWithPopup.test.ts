@@ -566,6 +566,32 @@ describe('Auth0Client', () => {
       );
     });
 
+    it('calls `tokenVerifier.verify` with the `max_age` given in the login method', async () => {
+      const auth0 = setup({ authorizationParams: { max_age: 3600 } });
+
+      await loginWithPopup(auth0, {
+        authorizationParams: { max_age: 0 }
+      });
+
+      expect(tokenVerifier).toHaveBeenCalledWith(
+        expect.objectContaining({
+          max_age: 0
+        })
+      );
+    });
+
+    it('calls `tokenVerifier.verify` with the parsed `max_age` string "0" from constructor', async () => {
+      const auth0 = setup({ authorizationParams: { max_age: '0' } });
+
+      await loginWithPopup(auth0);
+
+      expect(tokenVerifier).toHaveBeenCalledWith(
+        expect.objectContaining({
+          max_age: 0
+        })
+      );
+    });
+
     it('calls `tokenVerifier.verify` with the organization', async () => {
       const auth0 = setup({
         authorizationParams: { organization: 'org_123' }

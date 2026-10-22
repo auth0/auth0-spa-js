@@ -528,6 +528,34 @@ describe('Auth0Client', () => {
       );
     });
 
+    it('calls `tokenVerifier.verify` with the `max_age` given in the login method', async () => {
+      const auth0 = setup();
+
+      await loginWithRedirect(auth0, {
+        authorizationParams: { max_age: 0 }
+      });
+
+      expect(tokenVerifier).toHaveBeenCalledWith(
+        expect.objectContaining({
+          max_age: 0
+        })
+      );
+    });
+
+    it('calls `tokenVerifier.verify` with the `max_age` given in the login method over the one from constructor', async () => {
+      const auth0 = setup({ authorizationParams: { max_age: 3600 } });
+
+      await loginWithRedirect(auth0, {
+        authorizationParams: { max_age: '10' }
+      });
+
+      expect(tokenVerifier).toHaveBeenCalledWith(
+        expect.objectContaining({
+          max_age: 10
+        })
+      );
+    });
+
     it('calls `tokenVerifier.verify` with the global organization', async () => {
       const auth0 = setup({
         authorizationParams: { organization: 'org_123' }
