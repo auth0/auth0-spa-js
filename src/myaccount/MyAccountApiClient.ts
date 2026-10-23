@@ -11,7 +11,11 @@ import type {
   UpdateAuthenticationMethodRequest,
   EnrollmentChallengeOptions,
   EnrollmentChallengeResponse,
-  EnrollmentVerifyOptions
+  EnrollmentVerifyOptions,
+  UserProfile,
+  ProfileFieldPolicy,
+  GetUserProfileOptions,
+  UpdateUserProfileRequest
 } from './types';
 
 export type {
@@ -26,7 +30,11 @@ export type {
   UpdateAuthenticationMethodRequest,
   EnrollmentChallengeOptions,
   EnrollmentChallengeResponse,
-  EnrollmentVerifyOptions
+  EnrollmentVerifyOptions,
+  UserProfile,
+  ProfileFieldPolicy,
+  GetUserProfileOptions,
+  UpdateUserProfileRequest
 } from './types';
 
 /**
@@ -215,6 +223,40 @@ export class MyAccountApiClient {
       },
       { scope: ['create:me:authentication_methods'] }
     );
+    return this._handleResponse(res);
+  }
+
+  async getUserProfile(options?: GetUserProfileOptions): Promise<UserProfile> {
+    const params = new URLSearchParams();
+    if (options?.fields?.length) {
+      params.set('fields', options.fields.join(','));
+    }
+    if (options?.includeFields === false) {
+      params.set('include_fields', 'false');
+    }
+    const query = params.toString() ? `?${params}` : '';
+
+    const res = await this.myAccountFetcher.fetchWithAuth(
+      `${this.apiBase}v1/profile${query}`,
+      { method: 'GET' },
+      { scope: ['read:me:profile'] }
+    );
+
+    return this._handleResponse(res);
+  }
+
+  async updateUserProfile(data: UpdateUserProfileRequest): Promise<UserProfile> {
+    const res = await this.myAccountFetcher.fetchWithAuth(
+      `${this.apiBase}v1/profile`,
+      {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        // JSON.stringify preserves null values inside user_metadata — do not replace with a null-stripping serializer
+        body: JSON.stringify(data)
+      },
+      { scope: ['update:me:profile'] }
+    );
+
     return this._handleResponse(res);
   }
 

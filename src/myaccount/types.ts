@@ -298,6 +298,46 @@ export type EnrollmentChallengeResponse =
   | RecoveryCodeEnrollmentChallengeResponse
   | PasswordEnrollmentChallengeResponse;
 
+// ─── User Profile ─────────────────────────────────────────────────────────────
+
+export interface ProfileFieldPolicy {
+  access: 'read_only' | 'read_write';
+  source: 'user' | 'idp' | 'system';
+  reason?: string;
+}
+
+export interface UserProfile {
+  user_id?: string;
+  created_at?: string;
+  updated_at?: string;
+  given_name?: string;
+  family_name?: string;
+  name?: string;
+  nickname?: string;
+  picture?: string;
+  email?: string;
+  email_verified?: boolean;
+  phone_number?: string;
+  phone_verified?: boolean;
+  username?: string;
+  user_metadata?: Record<string, unknown>;
+  profile_policy?: Record<string, ProfileFieldPolicy>;
+}
+
+export interface GetUserProfileOptions {
+  fields?: string[];
+  includeFields?: boolean;
+}
+
+export interface UpdateUserProfileRequest {
+  given_name?: string;
+  family_name?: string;
+  name?: string;
+  nickname?: string;
+  picture?: string;
+  user_metadata?: Record<string, unknown>;
+}
+
 // ─── Enrollment Verify ────────────────────────────────────────────────────────
 
 interface EnrollmentVerifyBaseOptions {

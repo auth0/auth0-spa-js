@@ -42,5 +42,9 @@ export type {
   TotpEnrollmentVerifyOptions,
   PushNotificationEnrollmentVerifyOptions,
   RecoveryCodeEnrollmentVerifyOptions,
-  PasswordEnrollmentVerifyOptions
+  PasswordEnrollmentVerifyOptions,
+  UserProfile,
+  ProfileFieldPolicy,
+  GetUserProfileOptions,
+  UpdateUserProfileRequest
 } from './types';
