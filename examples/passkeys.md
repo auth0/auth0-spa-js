@@ -281,8 +281,6 @@ import {
   PasskeyGetTokenError
 } from '@auth0/auth0-spa-js';
 
-const MAX_ATTEMPTS = 3;
-
 async function signupWithVerification(email) {
   try {
     return await auth0.passkey.signup({ email });
@@ -290,14 +288,12 @@ async function signupWithVerification(email) {
     if (!(error instanceof PasskeyVerificationRequiredError)) throw error;
 
     let required = error.verificationRequired; // e.g. ['email']
-    for (let attempt = 1; ; attempt++) {
+    while (true) {
       const codes = await askUserForCodes(required); // your UI, e.g. { email: '123456' }
       try {
         return await auth0.passkey.continueSignup(codes);
       } catch (e) {
-        if (!(e instanceof PasskeyGetTokenError && e.isRetryable) || attempt === MAX_ATTEMPTS) {
-          throw e;
-        }
+        if (!(e instanceof PasskeyGetTokenError && e.isRetryable)) throw e;
         required = e.verificationRequired;
       }
     }
@@ -315,8 +311,6 @@ The first `continueSignup()` call shows the passkey prompt. Retries reuse the sa
 Check `verificationRequired` on the challenge and collect the codes **before** calling `navigator.credentials.create()`. On a retry, send the same `credential` with the new `error.authSession`:
 
 ```js
-const MAX_ATTEMPTS = 3;
-
 async function granularSignupWithVerification(email) {
   const challenge = await auth0.passkey.getSignupChallenge({ email });
 
@@ -334,7 +328,7 @@ async function granularSignupWithVerification(email) {
   }
 
   let authSession = challenge.authSession;
-  for (let attempt = 1; ; attempt++) {
+  while (true) {
     try {
       return await auth0.passkey.getTokenWithPasskey({
         authSession,
@@ -342,9 +336,7 @@ async function granularSignupWithVerification(email) {
         verification: codes
       });
     } catch (e) {
-      if (!(e instanceof PasskeyGetTokenError && e.isRetryable) || attempt === MAX_ATTEMPTS) {
-        throw e;
-      }
+      if (!(e instanceof PasskeyGetTokenError && e.isRetryable)) throw e;
       authSession = e.authSession;
       codes = await askUserForCodes(e.verificationRequired);
     }
@@ -361,7 +353,7 @@ async function granularSignupWithVerification(email) {
 | `MfaRequiredError` | No | Finish with MFA using `error.mfa_token`. See [MFA](mfa.md#handling-mfa-required-errors) |
 | Any other error, for example an expired code or session, or a missing code with the granular APIs | No | Start the signup again |
 
-Always cap retries in your app, like `MAX_ATTEMPTS` above.
+You don't need your own retry limit. The server decides how many attempts are allowed, and once they run out, `isRetryable` is `false`.
 
 #### Phone delivery method
 
