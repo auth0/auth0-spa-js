@@ -536,21 +536,6 @@ describe('MyAccountApiClient', () => {
       expect(result.nickname).toBe('wonderland_alice');
     });
 
-    it('preserves null values inside user_metadata', async () => {
-      mockFetcher.fetchWithAuth = jest.fn().mockResolvedValue({
-        ok: true,
-        status: 200,
-        text: jest.fn().mockResolvedValue(JSON.stringify(updatedProfile))
-      });
-
-      await api.updateUserProfile({ user_metadata: { old_key: null, theme: 'dark' } });
-
-      const call = (mockFetcher.fetchWithAuth as jest.Mock).mock.calls[0];
-      const body = JSON.parse(call[1].body);
-      expect(body.user_metadata.old_key).toBeNull();
-      expect(body.user_metadata.theme).toBe('dark');
-    });
-
     it('sends empty body without filtering', async () => {
       mockFetcher.fetchWithAuth = jest.fn().mockResolvedValue({
         ok: true,

@@ -320,7 +320,6 @@ export interface UserProfile {
   phone_number?: string;
   phone_verified?: boolean;
   username?: string;
-  user_metadata?: Record<string, unknown>;
   profile_policy?: Record<string, ProfileFieldPolicy>;
 }
 
@@ -335,7 +334,6 @@ export interface UpdateUserProfileRequest {
   name?: string;
   nickname?: string;
   picture?: string;
-  user_metadata?: Record<string, unknown>;
 }
 
 // ─── Enrollment Verify ────────────────────────────────────────────────────────

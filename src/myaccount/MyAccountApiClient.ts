@@ -263,7 +263,6 @@ export class MyAccountApiClient {
       {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        // JSON.stringify preserves null values inside user_metadata — do not replace with a null-stripping serializer
         body: JSON.stringify(data)
       },
       { scope: ['update:me:profile'] }

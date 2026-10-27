@@ -190,7 +190,7 @@ Read and update the current user's profile. `getUserProfile()` needs the `read:m
 
 ```js
 const profile = await auth0.myAccount.getUserProfile();
-// profile.given_name, profile.email, profile.user_metadata, ...
+// profile.given_name, profile.email, ...
 ```
 
 The response includes `profile_policy`, which describes each field. Use it to decide which fields the user can edit:
@@ -226,19 +226,6 @@ Only the fields you send are changed. The response is the full updated profile.
 const updated = await auth0.myAccount.updateUserProfile({
   given_name: 'Alice',
   nickname: 'wonderland_alice'
-});
-```
-
-#### Update `user_metadata`
-
-Keys you send are added or replaced, and other keys are left as they are. Set a key to `null` to delete it. Sending an empty object (`user_metadata: {}`) clears all metadata.
-
-```js
-const updated = await auth0.myAccount.updateUserProfile({
-  user_metadata: {
-    theme: 'dark',
-    old_key: null // deletes old_key
-  }
 });
 ```
 
