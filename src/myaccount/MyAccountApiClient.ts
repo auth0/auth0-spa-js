@@ -226,6 +226,12 @@ export class MyAccountApiClient {
     return this._handleResponse(res);
   }
 
+  /**
+   * Get the current user's profile, including `profile_policy` with per-field edit permissions.
+   *
+   * @param options - Optional `fields` to return, or set `includeFields: false` to exclude them instead
+   * @returns A promise that resolves to the user's profile
+   */
   async getUserProfile(options?: GetUserProfileOptions): Promise<UserProfile> {
     const params = new URLSearchParams();
     if (options?.fields?.length) {
@@ -245,6 +251,12 @@ export class MyAccountApiClient {
     return this._handleResponse(res);
   }
 
+  /**
+   * Update the current user's profile. Only the fields you send are changed.
+   *
+   * @param data - The profile fields to update
+   * @returns A promise that resolves to the full updated profile
+   */
   async updateUserProfile(data: UpdateUserProfileRequest): Promise<UserProfile> {
     const res = await this.myAccountFetcher.fetchWithAuth(
       `${this.apiBase}v1/profile`,
