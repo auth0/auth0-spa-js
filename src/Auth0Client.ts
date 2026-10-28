@@ -17,6 +17,8 @@ import {
 
 import { getLockManager, type ILockManager } from './lock';
 
+import { singlePromise } from './promise-utils';
+
 import { oauthToken, revokeToken } from './api';
 
 import { injectDefaultScopes, scopesToRequest } from './scope';
@@ -1085,7 +1087,13 @@ export class Auth0Client {
       }
     };
 
-    const result = await this._getTokenSilently(localOptions);
+    // Concurrent calls share the in-flight request instead of queueing on the
+    // lock. `cacheMode` is part of the key so that an `off` call is never
+    // served by an in-flight `on` call.
+    const result = await singlePromise(
+      () => this._getTokenSilently(localOptions),
+      `${this.options.clientId}::${localOptions.authorizationParams.audience}::${localOptions.authorizationParams.scope}::${localOptions.cacheMode}`
+    );
 
     return options.detailedResponse ? result : result?.access_token;
   }
