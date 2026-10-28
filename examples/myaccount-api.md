@@ -184,7 +184,7 @@ await auth0.myAccount.enrollmentVerify({
 Read and update the current user's profile. `getUserProfile()` needs the `read:me:profile` scope, and `updateUserProfile()` needs `update:me:profile`.
 
 > [!NOTE]
-> The profile endpoints must be enabled for your tenant. If they aren't, or the scopes weren't granted, both methods throw a `MyAccountApiError` with `status` `403`.
+> The profile endpoints must be enabled for your tenant. If they aren't, or the scopes weren't granted, both methods fail: with a `MyAccountApiError` with `status` `403`, or with a `MissingScopesError` if you use refresh tokens with MRRT.
 
 #### Get Profile
 
@@ -196,7 +196,7 @@ const profile = await auth0.myAccount.getUserProfile();
 The response includes `profile_policy`, which describes each field. Use it to decide which fields the user can edit:
 
 ```js
-for (const [pointer, policy] of Object.entries(profile.profile_policy)) {
+for (const [pointer, policy] of Object.entries(profile.profile_policy ?? {})) {
   const field = pointer.slice(1); // '/given_name' -> 'given_name'
   const editable = policy.access === 'read_write';
   // policy.reason — why the field is read-only, e.g. 'managed_by_identity_provider'
@@ -205,10 +205,17 @@ for (const [pointer, policy] of Object.entries(profile.profile_policy)) {
 
 #### Select Fields
 
+When you pass `fields`, `profile_policy` is only returned if you include it, and then only for the selected fields. Call `getUserProfile()` without `fields` to get the full policy.
+
 ```js
 // Only these fields, without profile_policy
 const basic = await auth0.myAccount.getUserProfile({
   fields: ['given_name', 'family_name', 'picture']
+});
+
+// These fields, with profile_policy for just these fields (for an edit form)
+const editable = await auth0.myAccount.getUserProfile({
+  fields: ['given_name', 'family_name', 'profile_policy']
 });
 
 // Everything except profile_policy
@@ -220,7 +227,7 @@ const withoutPolicy = await auth0.myAccount.getUserProfile({
 
 #### Update Profile
 
-Only the fields you send are changed. The response is the full updated profile.
+Only the fields you send are changed. The response is the full updated profile. You can update `given_name`, `family_name`, `name`, `nickname` and `picture`. `email`, `phone_number` and `username` can't be changed here, and `null` isn't accepted for any field.
 
 ```js
 const updated = await auth0.myAccount.updateUserProfile({
