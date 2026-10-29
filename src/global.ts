@@ -653,7 +653,9 @@ export interface PopupConfigOptions {
 export interface GetTokenSilentlyOptions {
   /**
    * When `off`, ignores the cache and always sends a
-   * request to Auth0. Concurrent `off` calls are not deduplicated — each makes its own request.
+   * request to Auth0. Concurrent `off` calls for the same audience and scope
+   * share a single request, but never share a request with `on` or
+   * `cache-only` calls.
    * When `cache-only`, only reads from the cache and never sends a request to Auth0.
    * Defaults to `on`, where it both reads from the cache and sends a request to Auth0 as needed.
    */
