@@ -4,6 +4,7 @@
  *
  * Untagged exports land in "Other" deliberately. A misspelt tag is the hazard:
  * TypeDoc treats the typo as a new category and files it under the `*` slot.
+ * Dependency re-exports with a tag we don't use land in "Other" too.
  */
 const { Converter } = require('typedoc');
 
@@ -96,6 +97,17 @@ function load(app) {
         const allowed = isTopLevel ? TOP_LEVEL_CATEGORIES : MEMBER_CATEGORIES;
 
         if (!allowed.includes(category)) {
+          // Re-exports from `@auth0/auth0-auth-js` carry that package's tags,
+          // which follow its own reference. Drop the tag so they land in "Other".
+          const fileName = reflection.sources?.[0]?.fullFileName ?? '';
+
+          if (fileName.includes('/node_modules/')) {
+            const comment =
+              reflection.comment ?? reflection.signatures?.[0]?.comment;
+            comment?.removeTags('@category');
+            continue;
+          }
+
           app.logger.error(
             `Unknown @category "${category}" on ${reflection.getFullName()}. ` +
               `${isTopLevel ? 'Top-level exports' : 'Class members'} take one ` +
