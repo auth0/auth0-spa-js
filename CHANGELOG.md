@@ -1,5 +1,15 @@
 # Change Log
 
+## [v2.30.0](https://github.com/auth0/auth0-spa-js/tree/v2.30.0) (2026-10-29)
+[Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.29.0...v2.30.0)
+
+**Added**
+- feat(myaccount): add getUserProfile and updateUserProfile methods [\#1799](https://github.com/auth0/auth0-spa-js/pull/1799) ([yogeshchoudhary147](https://github.com/yogeshchoudhary147))
+
+**Fixed**
+- fix: getTokenSilently concurrent calls failing with Timeout [\#1817](https://github.com/auth0/auth0-spa-js/pull/1817) ([yogeshchoudhary147](https://github.com/yogeshchoudhary147))
+- fix: verify auth_time against per-request max_age [\#1792](https://github.com/auth0/auth0-spa-js/pull/1792) ([yogeshchoudhary147](https://github.com/yogeshchoudhary147))
+
 ## [v2.29.0](https://github.com/auth0/auth0-spa-js/tree/v2.29.0) (2026-10-21)
 [Full Changelog](https://github.com/auth0/auth0-spa-js/compare/v2.28.4...v2.29.0)
 
