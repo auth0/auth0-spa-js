@@ -181,6 +181,9 @@ await auth0.myAccount.enrollmentVerify({
 
 ### Profile
 
+> [!NOTE]
+> My Account Profile API support via SDKs is currently in Early Access. To request access to this feature, contact your Auth0 representative.
+
 Read and update the current user's profile. `getUserProfile()` needs the `read:me:profile` scope, and `updateUserProfile()` needs `update:me:profile`.
 
 > [!NOTE]
