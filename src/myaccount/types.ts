@@ -300,12 +300,18 @@ export type EnrollmentChallengeResponse =
 
 // ─── User Profile ─────────────────────────────────────────────────────────────
 
+/**
+ * This API is currently in [Beta](https://auth0.com/docs/troubleshoot/product-lifecycle/product-release-stages#beta) and might change before General Availability.
+ */
 export interface ProfileFieldPolicy {
   access: 'read_only' | 'read_write';
   source: 'user' | 'idp' | 'system';
   reason?: string;
 }
 
+/**
+ * This API is currently in [Beta](https://auth0.com/docs/troubleshoot/product-lifecycle/product-release-stages#beta) and might change before General Availability.
+ */
 export interface UserProfile {
   user_id?: string;
   created_at?: string;
@@ -323,11 +329,17 @@ export interface UserProfile {
   profile_policy?: Record<string, ProfileFieldPolicy>;
 }
 
+/**
+ * This API is currently in [Beta](https://auth0.com/docs/troubleshoot/product-lifecycle/product-release-stages#beta) and might change before General Availability.
+ */
 export interface GetUserProfileOptions {
   fields?: string[];
   includeFields?: boolean;
 }
 
+/**
+ * This API is currently in [Beta](https://auth0.com/docs/troubleshoot/product-lifecycle/product-release-stages#beta) and might change before General Availability.
+ */
 export interface UpdateUserProfileRequest {
   given_name?: string;
   family_name?: string;
