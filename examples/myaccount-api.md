@@ -65,7 +65,9 @@ Enrollment is a two-step flow: get a challenge, then verify the credential.
 
 ```js
 // Step 1: get the WebAuthn creation challenge
-const challenge = await auth0.myAccount.enrollmentChallenge({ type: 'passkey' });
+const challenge = await auth0.myAccount.enrollmentChallenge({
+  type: 'passkey'
+});
 
 // Step 2: trigger the browser ceremony
 const credential = await navigator.credentials.create({
@@ -141,7 +143,9 @@ await auth0.myAccount.enrollmentVerify({
 #### Push Notification
 
 ```js
-const challenge = await auth0.myAccount.enrollmentChallenge({ type: 'push-notification' });
+const challenge = await auth0.myAccount.enrollmentChallenge({
+  type: 'push-notification'
+});
 // challenge.barcode_uri — show this as a QR code to link the authenticator app
 
 // No OTP needed — user approves on their device
@@ -155,7 +159,9 @@ await auth0.myAccount.enrollmentVerify({
 #### Recovery Code
 
 ```js
-const challenge = await auth0.myAccount.enrollmentChallenge({ type: 'recovery-code' });
+const challenge = await auth0.myAccount.enrollmentChallenge({
+  type: 'recovery-code'
+});
 // challenge.recovery_code — display this to the user to save securely
 
 // Verify just confirms the user has saved the code
@@ -169,7 +175,9 @@ await auth0.myAccount.enrollmentVerify({
 #### Password
 
 ```js
-const challenge = await auth0.myAccount.enrollmentChallenge({ type: 'password' });
+const challenge = await auth0.myAccount.enrollmentChallenge({
+  type: 'password'
+});
 
 await auth0.myAccount.enrollmentVerify({
   type: 'password',
@@ -179,10 +187,12 @@ await auth0.myAccount.enrollmentVerify({
 });
 ```
 
+<a id="profile"></a>
+
 ### Profile [Beta]
 
 > [!NOTE]
-> The My Account profile API is currently in [Beta](https://auth0.com/docs/troubleshoot/product-lifecycle/product-release-stages#beta). It might change before General Availability, and Auth0 does not support beta functionality for production use. The feature must be enabled for your tenant.
+> The My Account Profile API is currently in [Beta](https://auth0.com/docs/troubleshoot/product-lifecycle/product-release-stages#beta). It might change before General Availability, and Auth0 does not support beta functionality for production use. The feature must be enabled for your tenant.
 
 Read and update the current user's profile. `getUserProfile()` needs the `read:me:profile` scope, and `updateUserProfile()` needs `update:me:profile`.
 
@@ -285,5 +295,4 @@ try {
 }
 ```
 
-> [!IMPORTANT]
-> `interactiveErrorHandler` only affects `getTokenSilently()`. Other methods like `loginWithPopup()` and `loginWithRedirect()` are not affected.
+> [!IMPORTANT] > `interactiveErrorHandler` only affects `getTokenSilently()`. Other methods like `loginWithPopup()` and `loginWithRedirect()` are not affected.
