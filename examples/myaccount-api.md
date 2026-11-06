@@ -179,10 +179,10 @@ await auth0.myAccount.enrollmentVerify({
 });
 ```
 
-### Profile
+### Profile [Beta]
 
 > [!NOTE]
-> My Account Profile API support via SDKs is currently in Early Access. To request access to this feature, contact your Auth0 representative.
+> The My Account profile API is currently in [Beta](https://auth0.com/docs/troubleshoot/product-lifecycle/product-release-stages#beta). It might change before General Availability, and Auth0 does not support beta functionality for production use. The feature must be enabled for your tenant.
 
 Read and update the current user's profile. `getUserProfile()` needs the `read:me:profile` scope, and `updateUserProfile()` needs `update:me:profile`.
 

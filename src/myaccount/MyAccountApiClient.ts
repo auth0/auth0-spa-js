@@ -229,6 +229,10 @@ export class MyAccountApiClient {
   /**
    * Get the current user's profile, including `profile_policy` with per-field edit permissions.
    *
+   * This feature is currently in [Beta](https://auth0.com/docs/troubleshoot/product-lifecycle/product-release-stages#beta).
+   * It might change before General Availability, and Auth0 does not support beta functionality for
+   * production use. The feature must be enabled for your tenant.
+   *
    * @param options - Optional `fields` to return, or set `includeFields: false` to exclude them instead
    * @returns A promise that resolves to the user's profile
    */
@@ -253,6 +257,10 @@ export class MyAccountApiClient {
 
   /**
    * Update the current user's profile. Only the fields you send are changed.
+   *
+   * This feature is currently in [Beta](https://auth0.com/docs/troubleshoot/product-lifecycle/product-release-stages#beta).
+   * It might change before General Availability, and Auth0 does not support beta functionality for
+   * production use. The feature must be enabled for your tenant.
    *
    * @param data - The profile fields to update
    * @returns A promise that resolves to the full updated profile
