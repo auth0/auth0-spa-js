@@ -8,7 +8,10 @@ import * as promiseUtils from '../../src/promise-utils';
 import * as scope from '../../src/scope';
 import * as utils from '../../src/utils';
 
-import { expectToHaveBeenCalledWithAuth0ClientParam } from '../helpers';
+import {
+  expectToHaveBeenCalledWithAuth0ClientParam,
+  setWindowLocation
+} from '../helpers';
 
 import {
   GET_TOKEN_SILENTLY_LOCK_KEY,
@@ -83,16 +86,18 @@ describe('Auth0Client', () => {
   beforeEach(() => {
     // https://www.benmvp.com/blog/mocking-window-location-methods-jest-jsdom/
     delete window.location;
-    window.location = Object.defineProperties(
-      {},
-      {
-        ...Object.getOwnPropertyDescriptors(oldWindowLocation),
-        assign: {
-          configurable: true,
-          value: jest.fn()
+    setWindowLocation(
+      Object.defineProperties(
+        {},
+        {
+          ...Object.getOwnPropertyDescriptors(oldWindowLocation),
+          assign: {
+            configurable: true,
+            value: jest.fn()
+          }
         }
-      }
-    ) as Location;
+      ) as Location
+    );
     // --
 
     mockWindow.open = jest.fn();
@@ -118,7 +123,7 @@ describe('Auth0Client', () => {
     mockFetch.mockReset();
     acquireLockSpy.mockResolvedValue(true);
     jest.clearAllMocks();
-    window.location = oldWindowLocation;
+    setWindowLocation(oldWindowLocation);
   });
 
   describe('getTokenSilently', () => {

@@ -16,7 +16,20 @@ module.exports = {
     ['jest-junit', { outputDirectory: 'test-results/jest' }]
   ],
   coverageReporters: ['lcov', 'text', 'text-summary'],
-  preset: 'ts-jest/presets/js-with-ts',
+  transform: {
+    '^.+\\.ts$': 'ts-jest',
+    // From TypeScript 5.6, ts-jest emits ESM-only dependencies
+    // (`"type": "module"`) as ESM, which Jest can't load, so plain JS goes
+    // through Babel instead.
+    '^.+\\.js$': [
+      'babel-jest',
+      {
+        configFile: false,
+        babelrc: false,
+        presets: [['@babel/preset-env', { targets: { node: 'current' } }]]
+      }
+    ]
+  },
   transformIgnorePatterns: ['node_modules\/(?!(dpop|@auth0\/auth0-auth-js|openid-client|oauth4webapi|jose)\/)'],
   setupFiles: ['jest-localstorage-mock', './jest.setup.js'],
   globals: {

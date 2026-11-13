@@ -1,6 +1,6 @@
 ## Environment
 
-- Node >= 12.x
+- Node ^20.19.0 || >=22.12.0
 
 ## Building
 

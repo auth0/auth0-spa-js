@@ -67,6 +67,7 @@
     "@types/jest": "^28.1.7",
     "@typescript-eslint/eslint-plugin-tslint": "^5.33.1",
     "@typescript-eslint/parser": "^5.33.1",
+    "babel-jest": "^28.1.3",
     "cli-table": "^0.3.6",
     "concurrently": "^7.3.0",
     "cypress": "^15.18.0",
@@ -99,8 +100,8 @@
     "serve": "^14.0.1",
     "ts-jest": "^28.0.8",
     "tslib": "^2.4.0",
-    "typedoc": "^0.25.1",
-    "typescript": "^4.7.4",
+    "typedoc": "^0.28.20",
+    "typescript": "^5.9.3",
     "wait-on": "^9.0.0"
   },
   "files": [

@@ -13,3 +13,15 @@ export const expectToHaveBeenCalledWithHash = (mock, expected) => {
   const hash = new URL(url).hash;
   expect(hash).toEqual(expected);
 };
+
+// TypeScript 5 types the `window.location` setter as `string`, so a mock
+// `Location` can no longer be assigned to it directly. The descriptor matches
+// what a plain assignment creates, so `{ ...window }` still copies it.
+export const setWindowLocation = (location: Location): void => {
+  Object.defineProperty(window, 'location', {
+    configurable: true,
+    enumerable: true,
+    writable: true,
+    value: location
+  });
+};

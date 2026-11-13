@@ -7,7 +7,8 @@ import { expect } from '@jest/globals';
 
 import {
   expectToHaveBeenCalledWithAuth0ClientParam,
-  expectToHaveBeenCalledWithHash
+  expectToHaveBeenCalledWithHash,
+  setWindowLocation
 } from '../helpers';
 
 // @ts-ignore
@@ -64,20 +65,22 @@ describe('Auth0Client', () => {
     jest.spyOn(mockCookies, 'remove');
     // https://www.benmvp.com/blog/mocking-window-location-methods-jest-jsdom/
     delete window.location;
-    window.location = Object.defineProperties(
-      {},
-      {
-        ...Object.getOwnPropertyDescriptors(oldWindowLocation),
-        assign: {
-          configurable: true,
-          value: jest.fn()
-        },
-        replace: {
-          configurable: true,
-          value: jest.fn()
+    setWindowLocation(
+      Object.defineProperties(
+        {},
+        {
+          ...Object.getOwnPropertyDescriptors(oldWindowLocation),
+          assign: {
+            configurable: true,
+            value: jest.fn()
+          },
+          replace: {
+            configurable: true,
+            value: jest.fn()
+          }
         }
-      }
-    ) as Location;
+      ) as Location
+    );
     // --
 
     mockWindow.open = jest.fn();
@@ -99,7 +102,7 @@ describe('Auth0Client', () => {
   afterEach(() => {
     mockFetch.mockReset();
     jest.clearAllMocks();
-    window.location = oldWindowLocation;
+    setWindowLocation(oldWindowLocation);
   });
 
   describe('loginWithRedirect', () => {

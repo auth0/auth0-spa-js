@@ -5,6 +5,7 @@ import {
   SessionStorage
 } from '../src/storage';
 import { expect } from '@jest/globals';
+import { setWindowLocation } from './helpers';
 
 jest.mock('es-cookie');
 
@@ -43,14 +44,14 @@ describe('CookieStorage', () => {
     const options = { daysUntilExpire: 1 };
     const originalLocation = window.location;
     delete window.location;
-    window.location = { ...originalLocation, protocol: 'https:' };
+    setWindowLocation({ ...originalLocation, protocol: 'https:' });
     CookieStorage.save(key, value, options);
     expect(cookieMock.set).toHaveBeenCalledWith(key, JSON.stringify(value), {
       expires: options.daysUntilExpire,
       secure: true,
       sameSite: 'none'
     });
-    window.location = originalLocation;
+    setWindowLocation(originalLocation);
   });
 
   it('returns undefined when there is no object', () => {
@@ -145,7 +146,7 @@ describe('CookieStorageWithLegacySameSite', () => {
     const originalLocation = window.location;
 
     delete window.location;
-    window.location = { ...originalLocation, protocol: 'https:' };
+    setWindowLocation({ ...originalLocation, protocol: 'https:' });
     CookieStorageWithLegacySameSite.save(key, value, options);
 
     expect(cookieMock.set).toHaveBeenCalledWith(key, JSON.stringify(value), {
@@ -163,7 +164,7 @@ describe('CookieStorageWithLegacySameSite', () => {
       }
     );
 
-    window.location = originalLocation;
+    setWindowLocation(originalLocation);
   });
 
   it('returns undefined when there is no object', () => {
