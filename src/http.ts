@@ -10,12 +10,17 @@ import {
   GenericError,
   MfaRequiredError,
   MissingRefreshTokenError,
+  NetworkError,
   UseDpopNonceError
 } from './errors';
 import { Dpop } from './dpop/dpop';
 import { DPOP_NONCE_HEADER } from './dpop/utils';
 
 export const createAbortController = () => new AbortController();
+
+const toNetworkError = (e: Error): never => {
+  throw new NetworkError(e.message, e);
+};
 
 /**
  * Wraps a single `fetch` call with an AbortController-based timeout and
@@ -51,7 +56,11 @@ const fetchWithoutWorker = async (
   fetchOptions: FetchOptions,
   timeout: number
 ) => {
-  const response = await fetchWithTimeout(fetchUrl, fetchOptions, timeout);
+  const response = await fetchWithTimeout(
+    fetchUrl,
+    fetchOptions,
+    timeout
+  ).catch(toNetworkError);
   return {
     ok: response.ok,
     json: await response.json(),
@@ -76,6 +85,8 @@ const fetchWithWorker = async (
   skipTokenStorage?: boolean,
   preserveRefreshToken?: boolean
 ) => {
+  // The worker only replies with `error` when the fetch itself failed or timed
+  // out; API errors come back as an `ok: false` response instead.
   return sendMessage(
     {
       type: 'refresh',
@@ -92,7 +103,7 @@ const fetchWithWorker = async (
       preserveRefreshToken
     },
     worker
-  );
+  ).catch(toNetworkError);
 };
 
 export const switchFetch = async (
