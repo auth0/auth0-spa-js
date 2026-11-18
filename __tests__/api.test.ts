@@ -5,7 +5,7 @@ import {
 
 import version from '../src/version';
 import { oauthToken, revokeToken } from '../src/api';
-import { GenericError } from '../src/errors';
+import { GenericError, NetworkError } from '../src/errors';
 import * as http from '../src/http';
 import * as dpopUtils from '../src/dpop/utils';
 
@@ -260,19 +260,69 @@ describe('oauthToken', () => {
     expect(abortController.abort).not.toHaveBeenCalled();
   });
 
-  it('throws a fetch error when the network is down', async () => {
-    mockFetch.mockReturnValue(Promise.reject(new Error('Failed to fetch')));
+  it('throws a NetworkError when the network is down', async () => {
+    const fetchError = new Error('Failed to fetch');
+    mockFetch.mockReturnValue(Promise.reject(fetchError));
 
-    await expect(
-      oauthToken({
-        baseUrl: 'https://test.com',
-        client_id: 'client_idIn',
-        code: 'codeIn',
-        code_verifier: 'code_verifierIn',
-        grant_type: 'authorization_code',
-        auth0Client: DEFAULT_AUTH0_CLIENT
-      })
-    ).rejects.toMatchObject({ message: 'Failed to fetch' });
+    const result = oauthToken({
+      baseUrl: 'https://test.com',
+      client_id: 'client_idIn',
+      code: 'codeIn',
+      code_verifier: 'code_verifierIn',
+      grant_type: 'authorization_code',
+      auth0Client: DEFAULT_AUTH0_CLIENT
+    });
+
+    await expect(result).rejects.toBeInstanceOf(NetworkError);
+    await expect(result).rejects.not.toBeInstanceOf(GenericError);
+    await expect(result).rejects.toMatchObject({
+      name: 'NetworkError',
+      message: 'Failed to fetch'
+    });
+    expect((await result.catch(e => e)).cause).toBe(fetchError);
+  });
+
+  it('throws a NetworkError when reading the response body fails', async () => {
+    const bodyError = new TypeError('Failed to fetch');
+    mockFetch.mockResolvedValue({
+      ok: true,
+      json: () => Promise.reject(bodyError),
+      headers: new Headers()
+    });
+
+    const result = oauthToken({
+      baseUrl: 'https://test.com',
+      client_id: 'client_idIn',
+      code: 'codeIn',
+      code_verifier: 'code_verifierIn',
+      grant_type: 'authorization_code',
+      auth0Client: DEFAULT_AUTH0_CLIENT
+    });
+
+    await expect(result).rejects.toBeInstanceOf(NetworkError);
+    await expect(result).rejects.toThrow('Failed to fetch');
+    expect((await result.catch(e => e)).cause).toBe(bodyError);
+    expect(mockFetch).toHaveBeenCalledTimes(DEFAULT_SILENT_TOKEN_RETRY_COUNT);
+  });
+
+  it('does not throw a NetworkError when the response body is not JSON', async () => {
+    mockFetch.mockResolvedValue({
+      ok: true,
+      json: () => Promise.reject(new SyntaxError('Unexpected token <')),
+      headers: new Headers()
+    });
+
+    const result = oauthToken({
+      baseUrl: 'https://test.com',
+      client_id: 'client_idIn',
+      code: 'codeIn',
+      code_verifier: 'code_verifierIn',
+      grant_type: 'authorization_code',
+      auth0Client: DEFAULT_AUTH0_CLIENT
+    });
+
+    await expect(result).rejects.toBeInstanceOf(SyntaxError);
+    await expect(result).rejects.not.toBeInstanceOf(NetworkError);
   });
 
   it('surfaces a timeout error when the fetch continuously times out', async () => {
