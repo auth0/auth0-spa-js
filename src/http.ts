@@ -61,9 +61,19 @@ const fetchWithoutWorker = async (
     fetchOptions,
     timeout
   ).catch(toNetworkError);
+
+  let json: any;
+  try {
+    json = await response.json();
+  } catch (e) {
+    // A SyntaxError means the body isn't JSON. Anything else means the
+    // connection failed while the body was being read.
+    throw e instanceof SyntaxError ? e : new NetworkError(e.message, e);
+  }
+
   return {
     ok: response.ok,
-    json: await response.json(),
+    json,
     /**
      * This is not needed, but do it anyway so the object shape is the
      * same as when using a Web Worker (which *does* need this, see
@@ -85,8 +95,9 @@ const fetchWithWorker = async (
   skipTokenStorage?: boolean,
   preserveRefreshToken?: boolean
 ) => {
-  // The worker only replies with `error` when the fetch itself failed or timed
-  // out; API errors come back as an `ok: false` response instead.
+  // The worker only replies with `error` when the request failed at the network
+  // level (the fetch failed, timed out, or the body couldn't be read); API
+  // errors come back as an `ok: false` response instead.
   return sendMessage(
     {
       type: 'refresh',

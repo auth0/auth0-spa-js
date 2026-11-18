@@ -173,7 +173,23 @@ const messageHandler = async ({
     }
 
     headers = fromEntries(response.headers);
-    json = await response.json();
+
+    try {
+      json = await response.json();
+    } catch (error) {
+      // A SyntaxError means the body isn't JSON; the outer catch reports it.
+      // Anything else means the connection failed while the body was being
+      // read, so reply with `error` like a failed fetch so that we retry.
+      if (error instanceof SyntaxError) {
+        throw error;
+      }
+
+      port.postMessage({
+        error: error.message
+      });
+
+      return;
+    }
 
     if (skipTokenStorage) {
       delete json.refresh_token;

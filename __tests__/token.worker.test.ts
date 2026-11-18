@@ -268,6 +268,48 @@ describe('token worker', () => {
     expect(response.error).toEqual('fail');
   });
 
+  it(`errors when reading the response body fails`, async () => {
+    mockFetch.mockReturnValue(
+      Promise.resolve({
+        ok: true,
+        json: () => Promise.reject(new TypeError('Failed to fetch')),
+        headers: new Headers()
+      })
+    );
+
+    const response = await messageHandlerAsync({
+      fetchUrl: TOKEN_ENDPOINT,
+      fetchOptions: {
+        method: 'POST',
+        body: JSON.stringify({})
+      }
+    });
+
+    expect(response.error).toEqual('Failed to fetch');
+  });
+
+  it(`returns ok: false when the response body is not JSON`, async () => {
+    mockFetch.mockReturnValue(
+      Promise.resolve({
+        ok: true,
+        json: () => Promise.reject(new SyntaxError('Unexpected token <')),
+        headers: new Headers()
+      })
+    );
+
+    const response = await messageHandlerAsync({
+      fetchUrl: TOKEN_ENDPOINT,
+      fetchOptions: {
+        method: 'POST',
+        body: JSON.stringify({})
+      }
+    });
+
+    expect(response.error).toBeUndefined();
+    expect(response.ok).toBe(false);
+    expect(response.json.error_description).toEqual('Unexpected token <');
+  });
+
   it(`aborts when timed out`, async () => {
     const originalAbortController = window.AbortController;
     const abortFn = jest.fn();
