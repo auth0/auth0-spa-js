@@ -30,7 +30,7 @@ document.getElementById('call-api').addEventListener('click', async () => {
 
 ### Handling network errors
 
-If the request to Auth0's token endpoint can't complete (for example, the device is offline, a browser extension blocks it, or it times out), the SDK throws a `NetworkError` after retrying. This applies to `getTokenSilently` when using refresh tokens, and to other methods that call the token endpoint, such as `handleRedirectCallback`. Without refresh tokens, `getTokenSilently` uses an iframe, which can't detect network failures, so it throws a `TimeoutError` instead.
+If the request to Auth0's token endpoint can't complete (for example, the device is offline, a browser extension blocks it, or it times out), the SDK throws a `NetworkError` after retrying. This applies to every method that calls the token endpoint, such as `getTokenSilently` and `handleRedirectCallback`. Without refresh tokens, `getTokenSilently` first loads an iframe, which can't detect network failures, so being offline usually gives a `TimeoutError` instead.
 
 A network error doesn't mean the user's session is invalid, so show an offline message or retry later instead of sending the user to log in again:
 
