@@ -13,6 +13,7 @@ import {
   loginWithRedirectFn,
   setupFn
 } from './helpers';
+import { setWindowLocation } from '../helpers';
 
 import {
   TEST_ACCESS_TOKEN,
@@ -83,16 +84,18 @@ describe('Auth0Client', () => {
 
   beforeEach(() => {
     delete window.location;
-    window.location = Object.defineProperties(
-      {},
-      {
-        ...Object.getOwnPropertyDescriptors(oldWindowLocation),
-        assign: {
-          configurable: true,
-          value: jest.fn()
+    setWindowLocation(
+      Object.defineProperties(
+        {},
+        {
+          ...Object.getOwnPropertyDescriptors(oldWindowLocation),
+          assign: {
+            configurable: true,
+            value: jest.fn()
+          }
         }
-      }
-    ) as Location;
+      ) as Location
+    );
 
     mockWindow.open = jest.fn();
     mockWindow.addEventListener = jest.fn();
@@ -116,7 +119,7 @@ describe('Auth0Client', () => {
     mockFetch.mockReset();
     acquireLockSpy.mockResolvedValue(true);
     jest.clearAllMocks();
-    window.location = oldWindowLocation;
+    setWindowLocation(oldWindowLocation);
   });
 
   describe('interactiveErrorHandler', () => {

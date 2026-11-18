@@ -5,6 +5,7 @@ import * as scope from '../../src/scope';
 import { expect } from '@jest/globals';
 
 import { setupFn } from './helpers';
+import { setWindowLocation } from '../helpers';
 
 import {
   TEST_CODE_CHALLENGE,
@@ -32,25 +33,27 @@ describe('Auth0Client', () => {
   beforeEach(() => {
     // https://www.benmvp.com/blog/mocking-window-location-methods-jest-jsdom/
     delete (window as any).location;
-    window.location = Object.defineProperties(
-      {},
-      {
-        ...Object.getOwnPropertyDescriptors(oldWindowLocation),
-        assign: {
-          configurable: true,
-          value: jest.fn()
-        },
-        replace: {
-          configurable: true,
-          value: jest.fn()
-        },
-        search: {
-          configurable: true,
-          writable: true,
-          value: ''
+    setWindowLocation(
+      Object.defineProperties(
+        {},
+        {
+          ...Object.getOwnPropertyDescriptors(oldWindowLocation),
+          assign: {
+            configurable: true,
+            value: jest.fn()
+          },
+          replace: {
+            configurable: true,
+            value: jest.fn()
+          },
+          search: {
+            configurable: true,
+            writable: true,
+            value: ''
+          }
         }
-      }
-    ) as Location;
+      ) as Location
+    );
 
     mockWindow.open = jest.fn();
     mockWindow.addEventListener = jest.fn();
@@ -70,7 +73,7 @@ describe('Auth0Client', () => {
 
   afterEach(() => {
     jest.clearAllMocks();
-    window.location = oldWindowLocation;
+    setWindowLocation(oldWindowLocation);
   });
 
   describe('Native to Web SSO - Session Transfer Token', () => {
@@ -201,26 +204,28 @@ describe('Auth0Client', () => {
 
         // Recreate window.location with href property
         delete (window as any).location;
-        window.location = Object.defineProperties(
-          {},
-          {
-            ...Object.getOwnPropertyDescriptors(oldWindowLocation),
-            href: {
-              configurable: true,
-              writable: true,
-              value: 'https://example.com?stt=test-token&other=param'
-            },
-            search: {
-              configurable: true,
-              writable: true,
-              value: '?stt=test-token&other=param'
-            },
-            assign: {
-              configurable: true,
-              value: jest.fn()
+        setWindowLocation(
+          Object.defineProperties(
+            {},
+            {
+              ...Object.getOwnPropertyDescriptors(oldWindowLocation),
+              href: {
+                configurable: true,
+                writable: true,
+                value: 'https://example.com?stt=test-token&other=param'
+              },
+              search: {
+                configurable: true,
+                writable: true,
+                value: '?stt=test-token&other=param'
+              },
+              assign: {
+                configurable: true,
+                value: jest.fn()
+              }
             }
-          }
-        ) as Location;
+          ) as Location
+        );
 
         const auth0 = setup({
           sessionTransferTokenQueryParamName: 'stt'
@@ -243,26 +248,28 @@ describe('Auth0Client', () => {
         window.history.replaceState = mockReplaceState;
 
         delete (window as any).location;
-        window.location = Object.defineProperties(
-          {},
-          {
-            ...Object.getOwnPropertyDescriptors(oldWindowLocation),
-            href: {
-              configurable: true,
-              writable: true,
-              value: 'https://example.com?session_transfer_token=url-token'
-            },
-            search: {
-              configurable: true,
-              writable: true,
-              value: '?session_transfer_token=url-token'
-            },
-            assign: {
-              configurable: true,
-              value: jest.fn()
+        setWindowLocation(
+          Object.defineProperties(
+            {},
+            {
+              ...Object.getOwnPropertyDescriptors(oldWindowLocation),
+              href: {
+                configurable: true,
+                writable: true,
+                value: 'https://example.com?session_transfer_token=url-token'
+              },
+              search: {
+                configurable: true,
+                writable: true,
+                value: '?session_transfer_token=url-token'
+              },
+              assign: {
+                configurable: true,
+                value: jest.fn()
+              }
             }
-          }
-        ) as Location;
+          ) as Location
+        );
 
         const auth0 = setup({
           sessionTransferTokenQueryParamName: 'session_transfer_token'
@@ -287,26 +294,28 @@ describe('Auth0Client', () => {
         window.history.replaceState = mockReplaceState;
 
         delete (window as any).location;
-        window.location = Object.defineProperties(
-          {},
-          {
-            ...Object.getOwnPropertyDescriptors(oldWindowLocation),
-            href: {
-              configurable: true,
-              writable: true,
-              value: 'https://example.com?session_transfer_token=test-token'
-            },
-            search: {
-              configurable: true,
-              writable: true,
-              value: '?session_transfer_token=test-token'
-            },
-            assign: {
-              configurable: true,
-              value: jest.fn()
+        setWindowLocation(
+          Object.defineProperties(
+            {},
+            {
+              ...Object.getOwnPropertyDescriptors(oldWindowLocation),
+              href: {
+                configurable: true,
+                writable: true,
+                value: 'https://example.com?session_transfer_token=test-token'
+              },
+              search: {
+                configurable: true,
+                writable: true,
+                value: '?session_transfer_token=test-token'
+              },
+              assign: {
+                configurable: true,
+                value: jest.fn()
+              }
             }
-          }
-        ) as Location;
+          ) as Location
+        );
 
         const auth0 = setup();
         // No sessionTransferTokenQueryParamName configured
@@ -326,26 +335,28 @@ describe('Auth0Client', () => {
         window.history.replaceState = mockReplaceState;
 
         delete (window as any).location;
-        window.location = Object.defineProperties(
-          {},
-          {
-            ...Object.getOwnPropertyDescriptors(oldWindowLocation),
-            href: {
-              configurable: true,
-              writable: true,
-              value: 'not-a-valid-url'
-            },
-            search: {
-              configurable: true,
-              writable: true,
-              value: '?stt=test-token'
-            },
-            assign: {
-              configurable: true,
-              value: jest.fn()
+        setWindowLocation(
+          Object.defineProperties(
+            {},
+            {
+              ...Object.getOwnPropertyDescriptors(oldWindowLocation),
+              href: {
+                configurable: true,
+                writable: true,
+                value: 'not-a-valid-url'
+              },
+              search: {
+                configurable: true,
+                writable: true,
+                value: '?stt=test-token'
+              },
+              assign: {
+                configurable: true,
+                value: jest.fn()
+              }
             }
-          }
-        ) as Location;
+          ) as Location
+        );
 
         const auth0 = setup({
           sessionTransferTokenQueryParamName: 'stt'
@@ -367,27 +378,29 @@ describe('Auth0Client', () => {
         window.history.replaceState = mockReplaceState;
 
         delete (window as any).location;
-        window.location = Object.defineProperties(
-          {},
-          {
-            ...Object.getOwnPropertyDescriptors(oldWindowLocation),
-            href: {
-              configurable: true,
-              writable: true,
-              // href intentionally omits the param already (e.g. cleaned elsewhere)
-              value: 'https://example.com'
-            },
-            search: {
-              configurable: true,
-              writable: true,
-              value: '?stt=test-token'
-            },
-            assign: {
-              configurable: true,
-              value: jest.fn()
+        setWindowLocation(
+          Object.defineProperties(
+            {},
+            {
+              ...Object.getOwnPropertyDescriptors(oldWindowLocation),
+              href: {
+                configurable: true,
+                writable: true,
+                // href intentionally omits the param already (e.g. cleaned elsewhere)
+                value: 'https://example.com'
+              },
+              search: {
+                configurable: true,
+                writable: true,
+                value: '?stt=test-token'
+              },
+              assign: {
+                configurable: true,
+                value: jest.fn()
+              }
             }
-          }
-        ) as Location;
+          ) as Location
+        );
 
         const auth0 = setup({
           sessionTransferTokenQueryParamName: 'stt'
@@ -452,31 +465,33 @@ describe('Auth0Client', () => {
         window.history.replaceState = mockReplaceState;
 
         delete (window as any).location;
-        window.location = Object.defineProperties(
-          {},
-          {
-            ...Object.getOwnPropertyDescriptors(oldWindowLocation),
-            href: {
-              configurable: true,
-              writable: true,
-              value: 'https://example.com?my_token=popup-token&foo=bar'
-            },
-            search: {
-              configurable: true,
-              writable: true,
-              value: '?my_token=popup-token&foo=bar'
-            },
-            assign: {
-              configurable: true,
-              value: jest.fn()
-            },
-            origin: {
-              configurable: true,
-              writable: true,
-              value: 'https://example.com'
+        setWindowLocation(
+          Object.defineProperties(
+            {},
+            {
+              ...Object.getOwnPropertyDescriptors(oldWindowLocation),
+              href: {
+                configurable: true,
+                writable: true,
+                value: 'https://example.com?my_token=popup-token&foo=bar'
+              },
+              search: {
+                configurable: true,
+                writable: true,
+                value: '?my_token=popup-token&foo=bar'
+              },
+              assign: {
+                configurable: true,
+                value: jest.fn()
+              },
+              origin: {
+                configurable: true,
+                writable: true,
+                value: 'https://example.com'
+              }
             }
-          }
-        ) as Location;
+          ) as Location
+        );
 
         const auth0 = setup({
           sessionTransferTokenQueryParamName: 'my_token'

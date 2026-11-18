@@ -61,9 +61,6 @@ module.exports = {
   ],
 
   hideGenerator: true,
-  // Types are self-describing in signatures; repeating them in every heading
-  // makes long method titles hard to scan.
-  hideParameterTypesInTitle: true,
   searchInComments: true,
 
   compilerOptions: {

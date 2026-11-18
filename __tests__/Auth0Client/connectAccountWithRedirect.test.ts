@@ -1,4 +1,5 @@
 import { Auth0Client, RedirectConnectAccountOptions } from '../../src';
+import { setWindowLocation } from '../helpers';
 
 (<any>global).crypto = {
   subtle: {
@@ -15,10 +16,10 @@ describe('Auth0Client', () => {
 
   beforeEach(() => {
     delete (window as any).location;
-    window.location = {
+    setWindowLocation({
       ...oldLocation,
       assign: jest.fn()
-    } as Location;
+    } as Location);
     mockMyAccountApi = {
       connectAccount: jest.fn().mockResolvedValue({
         connect_uri: 'https://connect.example.com',
@@ -42,7 +43,7 @@ describe('Auth0Client', () => {
   });
 
   afterEach(() => {
-    window.location = oldLocation;
+    setWindowLocation(oldLocation);
   });
 
   describe('connectAccountWithRedirect', () => {

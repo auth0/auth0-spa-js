@@ -4,6 +4,7 @@ import { expect } from '@jest/globals';
 import { Auth0Client } from '../../src/Auth0Client';
 import { createAuth0Client } from '../../src/index';
 import { TEST_CLIENT_ID, TEST_DOMAIN } from '../constants';
+import { setWindowLocation } from '../helpers';
 
 jest.mock('es-cookie');
 jest.mock('../../src/jwt');
@@ -17,16 +18,18 @@ describe('Auth0Client', () => {
 
     beforeEach(() => {
         delete (window as any).location;
-        window.location = Object.defineProperties(
-            {},
-            {
-                ...Object.getOwnPropertyDescriptors(oldWindowLocation),
-                assign: {
-                    configurable: true,
-                    value: jest.fn()
+        setWindowLocation(
+            Object.defineProperties(
+                {},
+                {
+                    ...Object.getOwnPropertyDescriptors(oldWindowLocation),
+                    assign: {
+                        configurable: true,
+                        value: jest.fn()
+                    }
                 }
-            }
-        ) as Location;
+            ) as Location
+        );
 
         mockWindow.open = jest.fn();
         mockWindow.addEventListener = jest.fn();
@@ -53,7 +56,7 @@ describe('Auth0Client', () => {
 
     afterEach(() => {
         jest.clearAllMocks();
-        window.location = oldWindowLocation;
+        setWindowLocation(oldWindowLocation);
     });
 
     describe('getConfiguration', () => {

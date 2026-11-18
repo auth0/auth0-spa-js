@@ -10,6 +10,7 @@ import {
   getTokenSilentlyFn,
   assertPostFn
 } from './helpers';
+import { setWindowLocation } from '../helpers';
 
 import {
   TEST_CODE_CHALLENGE,
@@ -58,20 +59,22 @@ describe('Auth0Client - Access Token Descoping Prevention', () => {
   beforeEach(() => {
     // https://www.benmvp.com/blog/mocking-window-location-methods-jest-jsdom/
     delete (window as any).location;
-    window.location = Object.defineProperties(
-      {},
-      {
-        ...Object.getOwnPropertyDescriptors(oldWindowLocation),
-        assign: {
-          configurable: true,
-          value: jest.fn()
-        },
-        replace: {
-          configurable: true,
-          value: jest.fn()
+    setWindowLocation(
+      Object.defineProperties(
+        {},
+        {
+          ...Object.getOwnPropertyDescriptors(oldWindowLocation),
+          assign: {
+            configurable: true,
+            value: jest.fn()
+          },
+          replace: {
+            configurable: true,
+            value: jest.fn()
+          }
         }
-      }
-    ) as Location;
+      ) as Location
+    );
     // --
 
     mockWindow.open = jest.fn();
@@ -93,7 +96,7 @@ describe('Auth0Client - Access Token Descoping Prevention', () => {
   afterEach(() => {
     mockFetch.mockReset();
     jest.clearAllMocks();
-    window.location = oldWindowLocation;
+    setWindowLocation(oldWindowLocation);
   });
 
   describe('Refresh Token Flows - Scope Exclusion (Descoping Prevention)', () => {
