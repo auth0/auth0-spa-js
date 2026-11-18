@@ -1347,10 +1347,10 @@ export class Auth0Client {
    *   maintaining security isolation
    * - For localStorage: The token is retrieved from cache and revoked
    *
-   * If `useRefreshTokens` is disabled, this method does nothing. If no refresh token
-   * is stored for the audience (for example after a page reload with the in-memory
-   * cache), it resolves without calling `/oauth/revoke`, as revocation is idempotent
-   * (RFC 7009).
+   * If `useRefreshTokens` is disabled, this method does nothing. If there is no refresh
+   * token to revoke (none stored for the audience or, with `useMrrt`, none stored at all,
+   * for example after a page reload with the in-memory cache), it resolves without
+   * calling `/oauth/revoke`, as revocation is idempotent (RFC 7009).
    *
    * **Online mode:** when `refreshTokenMode` is `'online'`, revoking the ORT via
    * `/oauth/revoke` **also terminates the Auth0 session** and **clears the entire local
@@ -1370,8 +1370,10 @@ export class Auth0Client {
    * When `useMrrt` is enabled, any stored refresh token can be exchanged for any audience
    * in the refresh token policy, so revoking only one audience's token would leave that
    * audience reachable through the others. In that case this method revokes **every**
-   * refresh token held by the SDK, regardless of `audience`, and refreshing for any
-   * audience then requires a new login.
+   * refresh token held by the SDK, regardless of `audience`, so the SDK can no longer
+   * refresh tokens for any audience. Once an access token expires, `getTokenSilently()`
+   * tries silent authentication if `useRefreshTokensFallback` is enabled and the Auth0
+   * session is still active; otherwise the user must log in again.
    *
    * @param options - Optional parameters to identify which refresh token to revoke.
    *   Defaults to the audience configured in `authorizationParams`. Ignored when

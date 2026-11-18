@@ -358,6 +358,9 @@ export interface Auth0ClientOptions {
    * at `<module_path>/dist/auth0-spa-js.worker.production.js`, from the same host as your application or using the Auth0 CDN
    * `https://cdn.auth0.com/js/auth0-spa-js/<version>/auth0-spa-js.worker.production.js`.
    *
+   * The worker must come from the same SDK version as the SDK itself, because an older worker doesn't include fixes made to it in later releases.
+   * If you serve it from a fixed URL, update it on every SDK upgrade and make sure browsers don't keep a cached older copy.
+   *
    * **Note**: The worker is only used when `useRefreshTokens: true`, `cacheLocation: 'memory'`, and the `cache` is not custom.
    */
   workerUrl?: string;

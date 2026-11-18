@@ -1107,24 +1107,21 @@ describe('token worker', () => {
         expect(mockFetch).not.toHaveBeenCalled();
       });
 
-      it('keeps RTs it has not reached yet when a revoke call fails', async () => {
-        mockFetch.mockReturnValueOnce(
-          Promise.resolve({
-            ok: true,
-            json: () => ({ refresh_token: 'rt1' }),
-            headers: new Headers()
-          })
-        );
-        await messageHandlerAsync(tokenMsg('audience1', 'authorization_code'));
-
-        mockFetch.mockReturnValueOnce(
-          Promise.resolve({
-            ok: true,
-            json: () => ({ refresh_token: 'rt2' }),
-            headers: new Headers()
-          })
-        );
-        await messageHandlerAsync(tokenMsg('audience2', 'authorization_code'));
+      it('keeps the failed RT and the ones it has not reached yet when a revoke call fails', async () => {
+        for (const [audience, refresh_token] of [
+          ['audience1', 'rt1'],
+          ['audience2', 'rt2'],
+          ['audience3', 'rt3']
+        ]) {
+          mockFetch.mockReturnValueOnce(
+            Promise.resolve({
+              ok: true,
+              json: () => ({ refresh_token }),
+              headers: new Headers()
+            })
+          );
+          await messageHandlerAsync(tokenMsg(audience, 'authorization_code'));
+        }
 
         mockFetch.mockReturnValueOnce(revokeOk()).mockReturnValueOnce(
           Promise.resolve({
@@ -1140,15 +1137,24 @@ describe('token worker', () => {
 
         expect(response.error).toBe('HTTP error 503');
 
-        // Only the RT whose revocation failed is still stored; a retry targets it alone.
+        // The loop stopped at the failure: one RT revoked, one failed, one never sent.
+        expect(revokedTokens()).toHaveLength(2);
         const [revoked, failed] = revokedTokens();
-        mockFetch.mockReturnValueOnce(revokeOk());
+        const [unattempted] = ['rt1', 'rt2', 'rt3'].filter(
+          rt => rt !== revoked && rt !== failed
+        );
 
-        await revokeHandlerAsync(
+        // A retry sends only what is still stored: the failed RT and the unattempted one.
+        mockFetch.mockReturnValueOnce(revokeOk()).mockReturnValueOnce(revokeOk());
+
+        const retry = await revokeHandlerAsync(
           revokeOpts({ audience: 'audience1', useMrrt: true })
         );
 
-        expect(revokedTokens()).toEqual([revoked, failed, failed]);
+        expect(retry).toEqual({ ok: true });
+        expect(revokedTokens().slice(2).sort()).toEqual(
+          [failed, unattempted].sort()
+        );
       });
     });
 

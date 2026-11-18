@@ -90,7 +90,7 @@ await createAuth0Client({
 
 The `revokeRefreshToken()` method explicitly revokes a refresh token via the `/oauth/revoke` endpoint ([RFC 7009](https://www.rfc-editor.org/rfc/rfc7009)). This invalidates the refresh token so it can no longer be used to obtain new access tokens.
 
-This method only has an effect when `useRefreshTokens` is `true`. If refresh tokens are disabled it returns immediately without doing anything. If no refresh token is stored for the audience (for example, after a page reload with the default in-memory cache), it also resolves without calling `/oauth/revoke`. Revocation is idempotent ([RFC 7009 §2.2](https://www.rfc-editor.org/rfc/rfc7009#section-2.2)). A resolved promise therefore means the SDK no longer holds a refresh token for that audience. It doesn't mean a revocation request was sent.
+This method only has an effect when `useRefreshTokens` is `true`. If refresh tokens are disabled it returns immediately without doing anything. If there is no refresh token to revoke, it also resolves without calling `/oauth/revoke`. That happens when none is stored for the audience or, with [MRRT](#revoking-refresh-tokens-with-mrrt), when none is stored at all (for example, after a page reload with the default in-memory cache). Revocation is idempotent ([RFC 7009 §2.2](https://www.rfc-editor.org/rfc/rfc7009#section-2.2)). A resolved promise therefore means the SDK no longer holds a refresh token for that audience (with MRRT, for any audience). It doesn't mean a revocation request was sent.
 
 > [!WARNING]
 > In [online access](online-access.md#online-access-online-refresh-tokens) mode (`refreshTokenMode: RefreshTokenMode.Online`), `revokeRefreshToken()` behaves differently from offline mode:
@@ -117,7 +117,7 @@ In both modes, if you want a **redirect-based** sign-out, use `logout()` instead
 
 #### Error Handling
 
-`revokeRefreshToken()` throws a `GenericError` if the `/oauth/revoke` endpoint returns an error (for example, if the token has already been revoked or is invalid). Wrap the call in a try/catch:
+`revokeRefreshToken()` throws a `GenericError` if the `/oauth/revoke` endpoint returns an error response (for example, HTTP 503). Wrap the call in a try/catch:
 
 ```js
 import { GenericError } from '@auth0/auth0-spa-js';
@@ -154,7 +154,7 @@ When using [Multi-Resource Refresh Tokens (MRRT)](#using-multi-resource-refresh-
 
 ```js
 // With MRRT, this single call revokes all stored refresh tokens.
-// getTokenSilently() for any audience then needs a new login
-// once its access token expires.
 await auth0.revokeRefreshToken();
 ```
+
+Afterwards the SDK can't refresh tokens for any audience. Once an access token expires, `getTokenSilently()` tries silent authentication if `useRefreshTokensFallback` is enabled and the Auth0 session is still active. Otherwise the user must log in again.

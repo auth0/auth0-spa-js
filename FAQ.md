@@ -182,6 +182,8 @@ const client = new Auth0Client({
 
 In this case, the loading of the `Worker` would comply with a CSP that included `'self'`. You can follow similar steps if you'd prefer to copy the file to your own CDN instead.
 
+The worker file must come from the same SDK version as the SDK itself, because an older worker doesn't include fixes made to it in later releases. Copying it as part of your build, as above, keeps the two in sync. If you host it elsewhere, update it on every SDK upgrade and make sure browsers don't keep serving a cached older copy.
+
 ## Skip the Auth0 login page?
 
 When integrating with third party providers such as Google or Microsoft, being redirected to Auth0 before being redirected to the corresponding provider can be sub-optimal in terms of user-experience.
