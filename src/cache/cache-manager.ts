@@ -320,6 +320,24 @@ export class CacheManager {
     audience: string,
     clientId: string
   ): Promise<string[]> {
+    return this.collectRefreshTokens(clientId, audience);
+  }
+
+  /**
+   * Returns all distinct refresh tokens stored for a given client, across every
+   * audience. With MRRT any of them can mint tokens for any audience in the
+   * refresh token policy, so revocation must cover all of them.
+   *
+   * @param clientId The client id to scope the lookup
+   */
+  async getAllRefreshTokens(clientId: string): Promise<string[]> {
+    return this.collectRefreshTokens(clientId);
+  }
+
+  private async collectRefreshTokens(
+    clientId: string,
+    audience?: string
+  ): Promise<string[]> {
     const keys = await this.getCacheKeys();
 
     if (!keys) return [];
@@ -332,7 +350,7 @@ export class CacheManager {
       if (
         cacheKey.prefix === CACHE_KEY_PREFIX &&
         cacheKey.clientId === clientId &&
-        cacheKey.audience === audience
+        (audience === undefined || cacheKey.audience === audience)
       ) {
         const entry = await this.cache.get<WrappedCacheEntry>(key);
 

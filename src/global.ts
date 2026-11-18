@@ -1101,7 +1101,10 @@ export type GetTokenSilentlyVerboseResponse = Omit<
  * @category Tokens & Users
  */
 export interface RevokeRefreshTokenOptions {
-  /** Audience to identify which refresh token to revoke. Omit for default audience. */
+  /**
+   * Audience to identify which refresh token to revoke. Omit for default audience.
+   * Ignored when `useMrrt` is enabled — every stored refresh token is revoked.
+   */
   audience?: string;
 }
 
