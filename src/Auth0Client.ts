@@ -219,6 +219,9 @@ export class Auth0Client {
   // of them by a request that raced the revocation is never stored. Only
   // revocations add to it, one entry per revoked token, so it stays small.
   private readonly revokedRefreshTokens = new Set<string>();
+  // How many online sessions revokeRefreshToken() has ended. A refresh that was
+  // in flight when its session ended is not saved.
+  private endedOnlineSessions = 0;
 
   private readonly defaultOptions: Partial<Auth0ClientOptions> = {
     authorizationParams: {
@@ -1376,7 +1379,10 @@ export class Auth0Client {
    * Use this when you need to force a sign-out without a redirect (e.g. background
    * revocation). For a redirect-based sign-out, prefer `logout()`. If a request fails
    * after an ORT has been revoked, the local cache is still cleared and the error is
-   * thrown. If nothing was revoked, nothing is cleared, so the call can be retried.
+   * thrown. If a request fails before any ORT is revoked, nothing is cleared and the call
+   * can be retried; a retry, or `logout()`, also covers a request that Auth0 processed but
+   * whose response was lost. A refresh that finishes after revocation has ended the
+   * session isn't saved, and that `getTokenSilently()` call fails with `login_required`.
    *
    * **Important:** Without MRRT, this method revokes the refresh token for a single audience.
    * If your application requests tokens for multiple audiences, each audience may have its
@@ -1459,9 +1465,11 @@ export class Auth0Client {
       );
     } catch (e) {
       // A revoked ORT has already ended the Auth0 session, so clear the local
-      // session even though a later request failed.
+      // session even though a later request failed. Keep the revoke error if
+      // the cleanup fails too.
       if (this.onlineAccess && revokedCount > 0) {
-        await this._clearLocalSession();
+        this.endedOnlineSessions++;
+        await this._clearLocalSession().catch(() => undefined);
       }
       throw e;
     }
@@ -1471,6 +1479,7 @@ export class Auth0Client {
     // and getUser() returns undefined immediately — the stale access token and ID token
     // must not remain visible to the application after the session is gone.
     if (this.onlineAccess) {
+      this.endedOnlineSessions++;
       await this._clearLocalSession();
     }
   }
@@ -1648,7 +1657,7 @@ export class Auth0Client {
       await this.tokenStoreQueue;
     }
 
-    const cache = await this.cacheManager.get(
+    let cache = await this.cacheManager.get(
       new CacheKey({
         scope: options.authorizationParams.scope,
         audience: options.authorizationParams.audience || DEFAULT_AUDIENCE,
@@ -1657,6 +1666,16 @@ export class Auth0Client {
       undefined,
       this.options.useMrrt
     );
+
+    // Reading an expired entry writes it back, which can restore a token that a
+    // revocation removed during the read. Never send a token this client revoked.
+    if (
+      cache?.refresh_token &&
+      this.revokedRefreshTokens.has(cache.refresh_token)
+    ) {
+      await this.cacheManager.stripRefreshToken(cache.refresh_token);
+      cache = { ...cache, refresh_token: undefined };
+    }
 
     // If you don't have a refresh token in memory
     // and you don't have a refresh token in web worker memory
@@ -2006,6 +2025,7 @@ export class Auth0Client {
       max_age,
       sourceRefreshToken
     } = additionalParameters || {};
+    const endedOnlineSessionsAtStart = this.endedOnlineSessions;
     try {
       const authResult = await oauthToken(
         {
@@ -2079,6 +2099,20 @@ export class Auth0Client {
         sourceRefreshToken;
 
       await this._queueTokenStoreTask(async () => {
+        // A refresh (or the MFA grant that completes one) that was in flight
+        // when revokeRefreshToken() ended its online session must not restore
+        // that session. A new login still can.
+        if (
+          this.onlineAccess &&
+          this.endedOnlineSessions !== endedOnlineSessionsAtStart &&
+          (options.grant_type === 'refresh_token' || 'mfa_token' in options)
+        ) {
+          throw new GenericError(
+            'login_required',
+            'The session ended while this request was in flight'
+          );
+        }
+
         // Don't store a refresh token issued in exchange for one that was
         // revoked while this request was in flight.
         if (

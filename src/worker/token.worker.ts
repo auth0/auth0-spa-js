@@ -279,15 +279,21 @@ const revokeStoredTokens = async ({
         signal = abortController.signal;
       }
 
-      let timeoutId: ReturnType<typeof setTimeout>;
+      let timeoutId: ReturnType<typeof setTimeout> | undefined;
+      // One deadline covers the request and reading an error response's body,
+      // so a stalled body can't hold up the revocation queue.
+      const deadline = new Promise<undefined>(resolve => {
+        timeoutId = setTimeout(() => resolve(undefined), timeout);
+      });
       let response: void | Response;
 
       try {
         response = await Promise.race([
-          new Promise<void>(resolve => { timeoutId = setTimeout(resolve, timeout); }),
+          deadline,
           fetch(fetchUrl, { ...fetchOptions, body, signal })
-        ]).finally(() => clearTimeout(timeoutId));
+        ]);
       } catch (error) {
+        clearTimeout(timeoutId);
         port.postMessage({ error: error.message, revoked });
         return;
       }
@@ -301,11 +307,17 @@ const revokeStoredTokens = async ({
       if (!response.ok) {
         let errorDescription: string | undefined;
         try {
-          const { error_description } = JSON.parse(await response.text());
-          errorDescription = error_description;
+          const text = await Promise.race([deadline, response.text()]);
+          if (text === undefined) {
+            // The body didn't arrive in time; report the status instead.
+            if (abortController) abortController.abort();
+          } else {
+            ({ error_description: errorDescription } = JSON.parse(text));
+          }
         } catch {
           // body absent or not valid JSON
         }
+        clearTimeout(timeoutId);
 
         port.postMessage({
           error: errorDescription || `HTTP error ${response.status}`,
@@ -314,6 +326,7 @@ const revokeStoredTokens = async ({
         return;
       }
 
+      clearTimeout(timeoutId);
       revokedTokens.add(refreshToken);
       deleteRefreshTokensByValue(refreshToken);
       revoked++;

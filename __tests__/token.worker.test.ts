@@ -1408,19 +1408,51 @@ describe('token worker', () => {
       await login('audience1', 'rt1');
 
       const loginResponse = heldResponse();
-      mockFetch.mockReturnValueOnce(loginResponse.promise).mockReturnValueOnce(revokeOk());
+      const revoke = heldResponse();
+      mockFetch.mockReturnValueOnce(loginResponse.promise).mockReturnValueOnce(revoke.promise);
 
       const loggingIn = messageHandlerAsync(tokenMsg('audience2', 'authorization_code'));
-      expect(await messageHandlerAsync(revokeMsg('audience1'))).toEqual({ ok: true });
+      const revoking = messageHandlerAsync(revokeMsg('audience1'));
+      await settle();
+
+      // The login response arrives while the revoke request is still pending,
+      // so the worker holds it until the revocation finishes.
+      let loggedIn;
+      loggingIn.then(response => (loggedIn = response));
+      loginResponse.release(tokenResponse('rt2'));
+      await settle();
+      expect(loggedIn).toBeUndefined();
+
+      revoke.release({ ok: true, text: () => Promise.resolve('') });
+      expect(await revoking).toEqual({ ok: true });
+      expect((await loggingIn).ok).toBe(true);
 
       // A new login isn't issued from a revoked token, so its token is stored.
-      loginResponse.release(tokenResponse('rt2'));
-      await loggingIn;
-
       mockFetch.mockReturnValueOnce(Promise.resolve(tokenResponse('rt2_next')));
       await messageHandlerAsync(tokenMsg('audience2', 'refresh_token'));
 
       expect(refreshTokensSent()).toEqual(['rt2']);
+    });
+
+    it('gives up on an error response whose body stalls, so later refreshes are not held up', async () => {
+      await login('audience1', 'rt1');
+
+      mockFetch.mockReturnValueOnce(
+        Promise.resolve({
+          ok: false,
+          status: 503,
+          text: () => new Promise(() => undefined)
+        })
+      );
+
+      expect(
+        await messageHandlerAsync({ ...revokeMsg('audience1'), timeout: 20 })
+      ).toEqual({ error: 'HTTP error 503', revoked: 0 });
+
+      mockFetch.mockReturnValueOnce(Promise.resolve(tokenResponse('rt1_next')));
+      await messageHandlerAsync(tokenMsg('audience1', 'refresh_token'));
+
+      expect(refreshTokensSent()).toEqual(['rt1']);
     });
 
     it('runs revocations one at a time', async () => {

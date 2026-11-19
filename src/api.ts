@@ -100,6 +100,21 @@ export async function oauthToken(
   );
 }
 
+/** Resolves with `promise`'s value, or with `undefined` after `ms` milliseconds. */
+const resolveWithin = <T>(
+  promise: Promise<T>,
+  ms: number
+): Promise<T | undefined> => {
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
+
+  return Promise.race([
+    promise,
+    new Promise<undefined>(resolve => {
+      timeoutId = setTimeout(() => resolve(undefined), ms);
+    })
+  ]).finally(() => clearTimeout(timeoutId));
+};
+
 /**
  * Revokes refresh tokens using the /oauth/revoke endpoint.
  *
@@ -173,6 +188,7 @@ export async function revokeToken(
       ? createQueryParams(params)
       : JSON.stringify(params);
 
+    const deadline = Date.now() + resolvedTimeout;
     const response = await fetchWithTimeout(
       fetchUrl,
       { method: 'POST', body, headers },
@@ -183,7 +199,12 @@ export async function revokeToken(
       let error: string | undefined;
       let errorDescription: string | undefined;
       try {
-        ({ error, error_description: errorDescription } = JSON.parse(await response.text()));
+        // The request's deadline also covers reading the error body, so a
+        // stalled body can't hold up the token-store queue.
+        const text = await resolveWithin(response.text(), deadline - Date.now());
+        if (text !== undefined) {
+          ({ error, error_description: errorDescription } = JSON.parse(text));
+        }
       } catch {
         // body absent or not valid JSON
       }

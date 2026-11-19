@@ -424,7 +424,11 @@ describe('Auth0Client', () => {
       // tokens, is shared by every test in this file.
       let logins = 0;
       const loginToTwoAudiences = async (
-        config: { useMrrt?: boolean; cacheLocation?: 'localstorage' } = {}
+        config: {
+          useMrrt?: boolean;
+          cacheLocation?: 'localstorage';
+          httpTimeoutInSeconds?: number;
+        } = {}
       ) => {
         const auth0 = setup({ useRefreshTokens: true, ...config });
         // The worker's token store is module-level; start every test empty.
@@ -575,21 +579,78 @@ describe('Auth0Client', () => {
           const refreshing = getTokenFor(auth0, AUDIENCE_A);
           await waitForFetchCalls(1);
 
+          const queued = jest.spyOn(auth0 as any, '_queueTokenStoreTask');
+          const saved = jest.spyOn(auth0 as any, '_saveEntryInCache');
+
           const firstRevoke = heldResponse();
           mockFetch.mockReturnValueOnce(firstRevoke.promise).mockResolvedValueOnce(revokeOk);
           const revoking = auth0.revokeRefreshToken();
           await waitForFetchCalls(2);
 
-          // The refresh response arrives while the first revoke request is pending.
+          // The refresh response arrives while the first revoke request is
+          // pending: its save is queued behind the revocation, not run.
           refresh.release(await refreshResponse('at_raced'));
-          await sleep(20);
+          await waitFor(() => queued.mock.calls.length === 2);
+          expect(saved).not.toHaveBeenCalled();
+
           firstRevoke.release(revokeOk);
           await revoking;
 
           await expect(refreshing).resolves.toBe('at_raced');
+          expect(saved).toHaveBeenCalledTimes(1);
           expect(revokedTokens().sort()).toEqual([rtA, rtB].sort());
           expect(
             await (auth0 as any).cacheManager.getAllRefreshTokens(TEST_CLIENT_ID)
+          ).toEqual([]);
+        });
+
+        it('gives up on an error response whose body stalls, so later refreshes are not held up', async () => {
+          const { auth0, rtA } = await loginToTwoAudiences({
+            ...defaultConfig,
+            httpTimeoutInSeconds: 0.05
+          });
+
+          mockFetch.mockResolvedValueOnce({
+            ok: false,
+            status: 503,
+            text: () => new Promise(() => undefined)
+          });
+
+          await expect(
+            auth0.revokeRefreshToken({ audience: AUDIENCE_A })
+          ).rejects.toMatchObject({
+            error: 'revoke_error',
+            error_description: 'HTTP error 503'
+          });
+
+          mockFetch.mockResolvedValueOnce(refreshResponse('at_next'));
+          await expect(getTokenFor(auth0, AUDIENCE_A)).resolves.toBe('at_next');
+          expect(refreshTokensSent()).toEqual([rtA]);
+        });
+
+        it('never sends a refresh token it revoked, even if a cache write-back restored it', async () => {
+          const { auth0, rtA } = await loginToTwoAudiences(defaultConfig);
+          mockFetch.mockResolvedValueOnce(revokeOk);
+          await auth0.revokeRefreshToken({ audience: AUDIENCE_A });
+
+          // Stands for reading an expired entry while the revocation ran: the
+          // read writes the entry back, revoked token included.
+          const cacheManager = (auth0 as any).cacheManager;
+          const keyA = (await cacheManager.getCacheKeys()).find(key =>
+            key.includes(AUDIENCE_A)
+          );
+          const entryA = await cacheManager.cache.get(keyA);
+          await cacheManager.cache.set(keyA, {
+            ...entryA,
+            body: { ...entryA.body, refresh_token: rtA }
+          });
+
+          await expect(getTokenFor(auth0, AUDIENCE_A)).rejects.toMatchObject({
+            error: 'missing_refresh_token'
+          });
+          expect(refreshTokensSent()).toEqual([]);
+          expect(
+            await cacheManager.getRefreshTokensByAudience(AUDIENCE_A, TEST_CLIENT_ID)
           ).toEqual([]);
         });
 
