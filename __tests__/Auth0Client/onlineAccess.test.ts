@@ -3,6 +3,7 @@ import { MessageChannel } from 'worker_threads';
 import * as utils from '../../src/utils';
 import * as scope from '../../src/scope';
 import * as DpopModule from '../../src/dpop/dpop';
+import * as workerUtils from '../../src/worker/worker.utils';
 import { verify } from '../../src/jwt';
 
 import {
@@ -510,6 +511,90 @@ describe('Auth0Client', () => {
 
       expect(await auth0.isAuthenticated()).toBe(false);
       expect(await auth0.getUser()).toBeUndefined();
+    });
+
+    describe.each([
+      ['localStorage', { cacheLocation: 'localstorage' as const }],
+      ['the worker (in-memory cache)', {}]
+    ])('with useMrrt and two ORTs, via %s', (path, cacheConfig) => {
+      const revokeFails = () =>
+        mockFetch.mockResolvedValueOnce({
+          ok: false,
+          status: 503,
+          text: () => Promise.resolve('')
+        });
+
+      const loginToTwoAudiences = async () => {
+        const auth0 = setup({
+          refreshTokenMode: 'online' as const,
+          useRefreshTokens: true,
+          useDpop: true,
+          useMrrt: true,
+          ...cacheConfig
+        } as any);
+        // The worker's token store is shared by every test in this file.
+        (auth0 as any).worker?.postMessage({ type: 'clear' });
+
+        for (const audience of ['https://api-a.example.com', 'https://api-b.example.com']) {
+          await loginWithRedirect(
+            auth0,
+            { authorizationParams: { audience } },
+            { token: { response: { refresh_token: `ort-${audience}-${path}` } } }
+          );
+        }
+
+        mockFetch.mockReset();
+        return auth0;
+      };
+
+      it('still clears the local session when a later revoke request fails', async () => {
+        const auth0 = await loginToTwoAudiences();
+        mockSuccessfulRevoke();
+        revokeFails();
+
+        await expect(auth0.revokeRefreshToken()).rejects.toThrow();
+
+        // The first revocation already ended the Auth0 session.
+        expect(mockFetch).toHaveBeenCalledTimes(2);
+        expect(await auth0.isAuthenticated()).toBe(false);
+        expect(await auth0.getUser()).toBeUndefined();
+      });
+
+      it('keeps the local session when no revoke request succeeds', async () => {
+        const auth0 = await loginToTwoAudiences();
+        revokeFails();
+
+        await expect(auth0.revokeRefreshToken()).rejects.toThrow();
+
+        // Nothing was revoked, so the session is intact and the call can be retried.
+        expect(mockFetch).toHaveBeenCalledTimes(1);
+        expect(await auth0.isAuthenticated()).toBe(true);
+
+        mockSuccessfulRevoke();
+        mockSuccessfulRevoke();
+        await auth0.revokeRefreshToken();
+
+        expect(mockFetch).toHaveBeenCalledTimes(3);
+        expect(await auth0.isAuthenticated()).toBe(false);
+      });
+    });
+
+    it('treats a failed revoke from a worker that reports no count as nothing revoked', async () => {
+      // An older worker file served from `workerUrl` doesn't send `revoked`.
+      const auth0 = setup({
+        refreshTokenMode: 'online' as const,
+        useRefreshTokens: true,
+        useDpop: true
+      } as any);
+      await loginWithRedirect(auth0);
+      mockFetch.mockReset();
+
+      jest
+        .spyOn(workerUtils, 'sendMessage')
+        .mockRejectedValueOnce(new Error('HTTP error 503'));
+
+      await expect(auth0.revokeRefreshToken()).rejects.toThrow('HTTP error 503');
+      expect(await auth0.isAuthenticated()).toBe(true);
     });
   });
 
