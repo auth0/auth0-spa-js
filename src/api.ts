@@ -23,8 +23,6 @@ interface RevokeTokenOptions {
   /** Worker path only: revoke every RT in the worker store, not just the audience's. */
   useMrrt?: boolean;
   onRefreshTokenRevoked?: (refreshToken: string) => Promise<void> | void;
-  /** Worker path only: called with how many RTs the worker revoked before a request failed. */
-  onRevokeFailed?: (revokedCount: number) => void;
 }
 import * as dpopUtils from './dpop/utils';
 import { GenericError } from './errors';
@@ -122,8 +120,7 @@ export async function revokeToken(
     audience,
     client_id,
     useMrrt,
-    onRefreshTokenRevoked,
-    onRevokeFailed
+    onRefreshTokenRevoked
   }: RevokeTokenOptions,
   worker?: Worker
 ): Promise<void> {
@@ -162,7 +159,6 @@ export async function revokeToken(
         worker
       );
     } catch (e) {
-      onRevokeFailed?.((e as { revoked?: number }).revoked ?? 0);
       throw new GenericError('revoke_error', (e as Error).message);
     }
   }

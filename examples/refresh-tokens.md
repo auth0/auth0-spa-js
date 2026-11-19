@@ -92,14 +92,11 @@ The `revokeRefreshToken()` method explicitly revokes a refresh token via the `/o
 
 This method only has an effect when `useRefreshTokens` is `true`. If refresh tokens are disabled it returns immediately without doing anything. If there is no refresh token to revoke, it also resolves without calling `/oauth/revoke`. That happens when none is stored for the audience or, with [MRRT](#revoking-refresh-tokens-with-mrrt), when none is stored at all (for example, after a page reload with the default in-memory cache). Revocation is idempotent ([RFC 7009 §2.2](https://www.rfc-editor.org/rfc/rfc7009#section-2.2)). A resolved promise therefore means the SDK no longer holds a refresh token for that audience (with MRRT, for any audience). It doesn't mean a revocation request was sent.
 
-Revocation also covers refreshes running at the same time. Refreshes the client starts while revocation runs wait for it to finish, and a refresh already in flight can't store the refresh token it gets back if the token it used was revoked. This doesn't extend to other tabs sharing a `localstorage` cache.
-
 > [!WARNING]
 > In [online access](online-access.md#online-access-online-refresh-tokens) mode (`refreshTokenMode: RefreshTokenMode.Online`), `revokeRefreshToken()` behaves differently from offline mode:
 > - The ORT **is** revoked at the authorization server via `/oauth/revoke`.
 > - Because the ORT is session-bound, the Auth0 **session is terminated server-side** as part of revocation.
 > - The entire local cache is cleared immediately — the access token, ID token, and user profile are wiped. `isAuthenticated()` returns `false` and `getUser()` returns `undefined` right away.
-> - If a request fails after an ORT has been revoked, the local cache is still cleared and the error is thrown. If nothing was revoked, nothing is cleared, so you can retry.
 >
 > After calling `revokeRefreshToken()` in online mode, redirect the user to login — `getTokenSilently()` will fail because the session is gone. For a redirect-based sign-out, `logout()` achieves the same result.
 
@@ -109,7 +106,7 @@ await auth0.revokeRefreshToken();
 ```
 
 **How it affects the cache:**
-- **Offline mode:** only the refresh token entry is cleared — the access token remains in cache until it expires. When `getTokenSilently()` next needs a new access token, it will attempt silent auth (via iframe, if `useRefreshTokensFallback` is enabled and the Auth0 session is still active) before requiring a new interactive login.
+- **Offline mode:** only the refresh token entry is cleared — the access token remains in cache until it expires. Once it expires, `getTokenSilently()` will attempt silent auth (via iframe, if `useRefreshTokensFallback` is enabled and the Auth0 session is still active) before requiring a new interactive login.
 - **Online mode:** the entire local cache is cleared (access token, ID token, user profile). `isAuthenticated()` returns `false` immediately. The user must log in again.
 
 **Difference from `logout()`:**

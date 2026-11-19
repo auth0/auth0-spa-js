@@ -210,16 +210,6 @@ export class Auth0Client {
   private worker?: Worker;
   private readonly authJsClient: Auth0AuthJsClient;
 
-  // Revocations and the steps that store a token response run one at a time
-  // (see _queueTokenStoreTask), so a revocation can't interleave with storing a
-  // refresh token.
-  private tokenStoreQueue: Promise<void> = Promise.resolve();
-  private pendingTokenStoreTasks = 0;
-  // Refresh tokens this client has revoked. A token issued in exchange for one
-  // of them by a request that raced the revocation is never stored. Only
-  // revocations add to it, one entry per revoked token, so it stays small.
-  private readonly revokedRefreshTokens = new Set<string>();
-
   private readonly defaultOptions: Partial<Auth0ClientOptions> = {
     authorizationParams: {
       scope: DEFAULT_SCOPE
@@ -1362,10 +1352,6 @@ export class Auth0Client {
    * for example after a page reload with the in-memory cache), it resolves without
    * calling `/oauth/revoke`, as revocation is idempotent (RFC 7009).
    *
-   * Refreshes this client starts while revocation runs wait for it to finish, and one
-   * already in flight can't store a refresh token issued in exchange for a revoked one.
-   * This doesn't extend to other tabs sharing a `localstorage` cache.
-   *
    * **Online mode:** when `refreshTokenMode` is `'online'`, revoking the ORT via
    * `/oauth/revoke` **also terminates the Auth0 session** and **clears the entire local
    * cache** (access token, ID token, user profile). Because Online Refresh Tokens are
@@ -1374,9 +1360,7 @@ export class Auth0Client {
    * immediately so that `isAuthenticated()` returns `false` and `getUser()` returns
    * `undefined` right away, without waiting for the access token to expire.
    * Use this when you need to force a sign-out without a redirect (e.g. background
-   * revocation). For a redirect-based sign-out, prefer `logout()`. If a request fails
-   * after an ORT has been revoked, the local cache is still cleared and the error is
-   * thrown. If nothing was revoked, nothing is cleared, so the call can be retried.
+   * revocation). For a redirect-based sign-out, prefer `logout()`.
    *
    * **Important:** Without MRRT, this method revokes the refresh token for a single audience.
    * If your application requests tokens for multiple audiences, each audience may have its
@@ -1411,12 +1395,6 @@ export class Auth0Client {
       return;
     }
 
-    return this._queueTokenStoreTask(() => this._revokeRefreshToken(options));
-  }
-
-  private async _revokeRefreshToken(
-    options: RevokeRefreshTokenOptions
-  ): Promise<void> {
     const audience =
       options.audience || this.options.authorizationParams.audience;
 
@@ -1433,38 +1411,21 @@ export class Auth0Client {
         this.options.clientId
       );
 
-    let revokedCount = 0;
-
-    try {
-      await revokeToken(
-        {
-          baseUrl: this.domainUrl,
-          timeout: this.httpTimeoutMs,
-          auth0Client: this.options.auth0Client,
-          useFormData: this.options.useFormData,
-          client_id: this.options.clientId,
-          refreshTokens,
-          audience: resolvedAudience,
-          useMrrt: this.options.useMrrt,
-          onRefreshTokenRevoked: refreshToken => {
-            revokedCount++;
-            this.revokedRefreshTokens.add(refreshToken);
-            return this.cacheManager.stripRefreshToken(refreshToken);
-          },
-          onRevokeFailed: count => {
-            revokedCount = count;
-          }
-        },
-        this.worker
-      );
-    } catch (e) {
-      // A revoked ORT has already ended the Auth0 session, so clear the local
-      // session even though a later request failed.
-      if (this.onlineAccess && revokedCount > 0) {
-        await this._clearLocalSession();
-      }
-      throw e;
-    }
+    await revokeToken(
+      {
+        baseUrl: this.domainUrl,
+        timeout: this.httpTimeoutMs,
+        auth0Client: this.options.auth0Client,
+        useFormData: this.options.useFormData,
+        client_id: this.options.clientId,
+        refreshTokens,
+        audience: resolvedAudience,
+        useMrrt: this.options.useMrrt,
+        onRefreshTokenRevoked: refreshToken =>
+          this.cacheManager.stripRefreshToken(refreshToken)
+      },
+      this.worker
+    );
 
     // In online mode the ORT is session-bound: revoking it terminates the Auth0 session
     // server-side. Clear the entire local cache so that isAuthenticated() returns false
@@ -1643,11 +1604,6 @@ export class Auth0Client {
       authorizationParams: AuthorizationParams & { scope: string };
     }
   ): Promise<GetTokenSilentlyResult> {
-    // Don't read a refresh token while a revocation is running.
-    if (this.pendingTokenStoreTasks) {
-      await this.tokenStoreQueue;
-    }
-
     const cache = await this.cacheManager.get(
       new CacheKey({
         scope: options.authorizationParams.scope,
@@ -1791,41 +1747,12 @@ export class Auth0Client {
       return;
     }
 
-    await this._queueTokenStoreTask(async () => {
-      // A revocation that ran meanwhile revoked one of these tokens.
-      if (
-        this.revokedRefreshTokens.has(previousRefreshToken) ||
-        this.revokedRefreshTokens.has(newRefreshToken)
-      ) {
-        return;
-      }
-
-      await this.cacheManager.updateEntry(
-        previousRefreshToken,
-        newRefreshToken,
-        this.options.clientId,
-        this.options.useMrrt
-      );
-    });
-  }
-
-  /**
-   * Runs `task` after every revocation and token-store write queued before it,
-   * or straight away when nothing is queued. A task must not queue another
-   * task and wait for it: that would deadlock.
-   */
-  private _queueTokenStoreTask<T>(task: () => Promise<T>): Promise<T> {
-    const run = async () => task();
-    const result = this.pendingTokenStoreTasks
-      ? this.tokenStoreQueue.then(run)
-      : run();
-    const settle = () => {
-      this.pendingTokenStoreTasks--;
-    };
-
-    this.pendingTokenStoreTasks++;
-    this.tokenStoreQueue = result.then(settle, settle);
-    return result;
+    await this.cacheManager.updateEntry(
+      previousRefreshToken,
+      newRefreshToken,
+      this.options.clientId,
+      this.options.useMrrt
+    );
   }
 
   private async _saveEntryInCache(
@@ -1999,13 +1926,8 @@ export class Auth0Client {
       | WebauthnRequestTokenOptions,
     additionalParameters?: RequestTokenAdditionalParameters
   ) {
-    const {
-      nonceIn,
-      organization,
-      scopesToRequest,
-      max_age,
-      sourceRefreshToken
-    } = additionalParameters || {};
+    const { nonceIn, organization, scopesToRequest, max_age } =
+      additionalParameters || {};
     try {
       const authResult = await oauthToken(
         {
@@ -2073,29 +1995,13 @@ export class Auth0Client {
         ))?.refresh_token;
       }
 
-      // The refresh token this request exchanged, if any.
-      const usedRefreshToken =
-        (options as RefreshTokenRequestTokenOptions).refresh_token ??
-        sourceRefreshToken;
-
-      await this._queueTokenStoreTask(async () => {
-        // Don't store a refresh token issued in exchange for one that was
-        // revoked while this request was in flight.
-        if (
-          usedRefreshToken &&
-          this.revokedRefreshTokens.has(usedRefreshToken)
-        ) {
-          delete authResult.refresh_token;
-        }
-
-        await this._saveEntryInCache({
-          ...authResult,
-          decodedToken,
-          scope: options.scope,
-          audience: options.audience || DEFAULT_AUDIENCE,
-          ...(authResult.scope ? { oauthTokenScope: authResult.scope } : null),
-          client_id: this.options.clientId
-        });
+      await this._saveEntryInCache({
+        ...authResult,
+        decodedToken,
+        scope: options.scope,
+        audience: options.audience || DEFAULT_AUDIENCE,
+        ...(authResult.scope ? { oauthTokenScope: authResult.scope } : null),
+        client_id: this.options.clientId
       });
 
       this.cookieStorage.save(this.isAuthenticatedCookieName, true, {
@@ -2551,7 +2457,7 @@ export class Auth0Client {
 
     const result = await this._requestToken(
       { ...restOptions, mfa_token: mfaToken } as any,
-      { ...additionalParameters, sourceRefreshToken: previous?.refresh_token }
+      additionalParameters
     );
 
     await this._propagateRotatedRefreshToken(
@@ -2603,9 +2509,4 @@ interface RequestTokenAdditionalParameters {
   organization?: string;
   scopesToRequest?: string;
   max_age?: string | number;
-  /**
-   * The refresh token rotated by a grant that doesn't send one, such as the
-   * MFA completion grant.
-   */
-  sourceRefreshToken?: string;
 }

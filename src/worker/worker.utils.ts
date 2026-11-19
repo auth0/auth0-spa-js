@@ -27,12 +27,7 @@ export const sendMessage = <T = any>(
 
     messageChannel.port1.onmessage = function (event) {
       if (event.data.error) {
-        const error = new Error(event.data.error);
-        // A failed revoke also reports how many tokens it revoked first.
-        if (typeof event.data.revoked === 'number') {
-          Object.assign(error, { revoked: event.data.revoked });
-        }
-        reject(error);
+        reject(new Error(event.data.error));
       } else {
         resolve(event.data);
       }

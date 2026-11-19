@@ -161,7 +161,7 @@ To allow you to keep strict Content-Security-Policy (CSP), and not have to allow
 For example, if I have a folder called `static` in the root of my project then I could update my build script to copy the worker file to it:
 
 ```sh
-my-build-script && cp ./node_modules/@auth0/auth0-spa-js/dist/auth0-spa-js.worker.production.js ./static/
+my-build-script && cp ./node_modules/@auth0/auth0-spa-js/dist/auth0-spa-js.worker.development.js ./static/
 ```
 
 Now when instantiating the SDK, I can configure it to load the worker code from that location:
@@ -182,7 +182,7 @@ const client = new Auth0Client({
 
 In this case, the loading of the `Worker` would comply with a CSP that included `'self'`. You can follow similar steps if you'd prefer to copy the file to your own CDN instead.
 
-The worker file must come from the same SDK version as the SDK itself, because an older worker doesn't include fixes made to it in later releases. Copying it as part of your build, as above, keeps the two in sync. If you host it elsewhere, update it on every SDK upgrade and make sure browsers don't keep serving a cached older copy.
+The worker file must come from the same SDK version as the SDK itself, because an older worker doesn't include fixes made to it in later releases. Update it on every SDK upgrade, and make sure browsers don't keep serving a cached older copy.
 
 ## Skip the Auth0 login page?
 

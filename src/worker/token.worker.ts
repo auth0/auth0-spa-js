@@ -10,14 +10,6 @@ import {
 let refreshTokens: Record<string, string> = {};
 let allowedBaseUrl: string | null = null;
 
-// Revocations run one at a time. A token request waits for any revocation in
-// progress before it reads the store and again before it stores its response,
-// and never stores a refresh token issued in exchange for a revoked one.
-let revocations: Promise<void> = Promise.resolve();
-let pendingRevocations = 0;
-// Only revocations add to this, one entry per revoked token, so it stays small.
-const revokedTokens = new Set<string>();
-
 const cacheKey = (audience: string, scope: string) => `${audience}|${scope}`;
 
 const cacheKeyContainsAudience = (audience: string, cacheKey: string) => cacheKey.startsWith(`${audience}|`);
@@ -107,8 +99,6 @@ const messageHandler = async ({
   const { audience, scope } = auth || {};
 
   try {
-    if (pendingRevocations) await revocations;
-
     const body = useFormData
       ? formDataToObject(fetchOptions.body as string)
       : JSON.parse(fetchOptions.body as string);
@@ -195,14 +185,7 @@ const messageHandler = async ({
       return;
     }
 
-    // A revocation may have started while this request was in flight.
-    if (pendingRevocations) await revocations;
-
-    if (json.refresh_token && refreshToken && revokedTokens.has(refreshToken)) {
-      // The token this request used was revoked meanwhile, so the token it was
-      // rotated into must not be stored.
-      delete json.refresh_token;
-    } else if (json.refresh_token) {
+    if (json.refresh_token) {
       // If useMrrt is configured to true we want to save the latest refresh_token
       // to be used when refreshing tokens with MRRT
       if (useMrrt) {
@@ -240,13 +223,11 @@ const messageHandler = async ({
   }
 };
 
-const revokeStoredTokens = async ({
+const revokeMessageHandler = async ({
   data: { timeout, auth, fetchUrl, fetchOptions, useFormData, useMrrt },
   ports: [port]
 }: MessageEvent<WorkerRevokeTokenMessage>) => {
   const { audience } = auth || {};
-  // Sent with any error, so the client knows whether anything was revoked.
-  let revoked = 0;
 
   try {
     // With MRRT any stored RT can mint tokens for any audience in the policy
@@ -288,13 +269,13 @@ const revokeStoredTokens = async ({
           fetch(fetchUrl, { ...fetchOptions, body, signal })
         ]).finally(() => clearTimeout(timeoutId));
       } catch (error) {
-        port.postMessage({ error: error.message, revoked });
+        port.postMessage({ error: error.message });
         return;
       }
 
       if (!response) {
         if (abortController) abortController.abort();
-        port.postMessage({ error: "Timeout when executing 'fetch'", revoked });
+        port.postMessage({ error: "Timeout when executing 'fetch'" });
         return;
       }
 
@@ -307,40 +288,19 @@ const revokeStoredTokens = async ({
           // body absent or not valid JSON
         }
 
-        port.postMessage({
-          error: errorDescription || `HTTP error ${response.status}`,
-          revoked
-        });
+        port.postMessage({ error: errorDescription || `HTTP error ${response.status}` });
         return;
       }
 
-      revokedTokens.add(refreshToken);
       deleteRefreshTokensByValue(refreshToken);
-      revoked++;
     }
 
     port.postMessage({ ok: true });
   } catch (error) {
     port.postMessage({
-      error: error.message || 'Unknown error during token revocation',
-      revoked
+      error: error.message || 'Unknown error during token revocation'
     });
   }
-};
-
-const revokeMessageHandler = (
-  event: MessageEvent<WorkerRevokeTokenMessage>
-): Promise<void> => {
-  pendingRevocations++;
-  // messageRouter doesn't await this, so it must never reject; the reply goes
-  // out on the message port.
-  revocations = revocations
-    .then(() => revokeStoredTokens(event))
-    .catch(() => undefined)
-    .finally(() => {
-      pendingRevocations--;
-    });
-  return revocations;
 };
 
 const isAuthorizedWorkerRequest = (
