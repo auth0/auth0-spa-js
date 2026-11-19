@@ -363,72 +363,110 @@ describe('Auth0Client', () => {
         );
       });
 
+      // Helpers for the end-to-end tests below: real logins and refreshes, with
+      // only the network mocked.
+      const AUDIENCE_A = 'https://api-a.example.com';
+      const AUDIENCE_B = 'https://api-b.example.com';
+
+      const formParam = (opts, name: string) =>
+        new URLSearchParams(opts.body).get(name);
+
+      const refreshTokensSent = () =>
+        mockFetch.mock.calls
+          .filter(
+            ([url, opts]) =>
+              url.endsWith('/oauth/token') &&
+              formParam(opts, 'grant_type') === 'refresh_token'
+          )
+          .map(([, opts]) => formParam(opts, 'refresh_token'));
+
+      const refreshResponse = (access_token: string) =>
+        fetchResponse(true, {
+          id_token: TEST_ID_TOKEN,
+          access_token,
+          refresh_token: `${access_token}_rt`,
+          expires_in: 86400
+        });
+
+      // A fetch response the test releases by hand.
+      const heldResponse = () => {
+        let release!: (response: unknown) => void;
+        const promise = new Promise(resolve => (release = resolve));
+        return { promise, release };
+      };
+
+      const sleep = (ms: number) =>
+        new Promise(resolve => setTimeout(resolve, ms));
+
+      // Polls in real time: getTokenSilently first takes a browser-tabs-lock,
+      // which waits on timers.
+      const waitFor = async (condition: () => boolean) => {
+        for (let i = 0; i < 200 && !condition(); i++) {
+          await sleep(10);
+        }
+        expect(condition()).toBe(true);
+      };
+
+      const waitForFetchCalls = async (count: number) => {
+        await waitFor(() => mockFetch.mock.calls.length >= count);
+        expect(mockFetch).toHaveBeenCalledTimes(count);
+      };
+
+      const getTokenFor = (auth0, audience: string) =>
+        auth0.getTokenSilently({
+          cacheMode: 'off',
+          authorizationParams: { audience }
+        });
+
+      // Two interactive logins: the SDK holds rtA for A and rtB for B (plus, in
+      // the worker with useMrrt, latest_refresh_token = rtB). Values are unique
+      // per test because the worker module, including its record of revoked
+      // tokens, is shared by every test in this file.
+      let logins = 0;
+      const loginToTwoAudiences = async (
+        config: {
+          useMrrt?: boolean;
+          cacheLocation?: 'localstorage';
+          httpTimeoutInSeconds?: number;
+        } = {}
+      ) => {
+        const auth0 = setup({ useRefreshTokens: true, ...config });
+        // The worker's token store is module-level; start every test empty.
+        (auth0 as any).worker?.postMessage({ type: 'clear' });
+
+        const rtA = `rt_a_${++logins}`;
+        const rtB = `rt_b_${logins}`;
+
+        await loginWithRedirect(
+          auth0,
+          { authorizationParams: { audience: AUDIENCE_A } },
+          { token: { response: { refresh_token: rtA } } }
+        );
+        await loginWithRedirect(
+          auth0,
+          { authorizationParams: { audience: AUDIENCE_B } },
+          { token: { response: { refresh_token: rtB } } }
+        );
+
+        mockFetch.mockClear();
+        return { auth0, rtA, rtB };
+      };
+
       // End to end through the real worker (the jest mock routes postMessage
-      // into token.worker's messageRouter); only the network is mocked.
+      // into token.worker's messageRouter).
       describe('with the token worker', () => {
-        const AUDIENCE_A = 'https://api-a.example.com';
-        const AUDIENCE_B = 'https://api-b.example.com';
-
-        const formParam = (opts, name: string) =>
-          new URLSearchParams(opts.body).get(name);
-
-        const refreshTokensSent = () =>
-          mockFetch.mock.calls
-            .filter(
-              ([url, opts]) =>
-                url.endsWith('/oauth/token') &&
-                formParam(opts, 'grant_type') === 'refresh_token'
-            )
-            .map(([, opts]) => formParam(opts, 'refresh_token'));
-
-        const refreshResponse = (access_token: string) =>
-          fetchResponse(true, {
-            id_token: TEST_ID_TOKEN,
-            access_token,
-            refresh_token: `${access_token}_rt`,
-            expires_in: 86400
-          });
-
-        // Two interactive logins leave the worker holding A|scope = rt_a and
-        // B|scope = rt_b, plus latest_refresh_token = rt_b when useMrrt is on.
-        const loginToTwoAudiences = async (config: { useMrrt?: boolean } = {}) => {
-          const auth0 = setup({ useRefreshTokens: true, ...config });
-          // The worker's token store is module-level; start every test empty.
-          (auth0 as any).worker.postMessage({ type: 'clear' });
-
-          await loginWithRedirect(
-            auth0,
-            { authorizationParams: { audience: AUDIENCE_A } },
-            { token: { response: { refresh_token: 'rt_a' } } }
-          );
-          await loginWithRedirect(
-            auth0,
-            { authorizationParams: { audience: AUDIENCE_B } },
-            { token: { response: { refresh_token: 'rt_b' } } }
-          );
-
-          mockFetch.mockClear();
-          return auth0;
-        };
-
-        const getTokenFor = (auth0, audience: string) =>
-          auth0.getTokenSilently({
-            cacheMode: 'off',
-            authorizationParams: { audience }
-          });
-
         beforeEach(() => {
           // Earlier tests stub sendMessage without restoring it.
           (workerUtils.sendMessage as jest.Mock).mockRestore?.();
         });
 
         it('with useMrrt, revoking one audience revokes every RT so the MRRT fallback cannot refresh it', async () => {
-          const auth0 = await loginToTwoAudiences({ useMrrt: true });
+          const { auth0, rtA, rtB } = await loginToTwoAudiences({ useMrrt: true });
           mockFetch.mockResolvedValueOnce(revokeOk).mockResolvedValueOnce(revokeOk);
 
           await auth0.revokeRefreshToken({ audience: AUDIENCE_A });
 
-          expect(revokedTokens().sort()).toEqual(['rt_a', 'rt_b']);
+          expect(revokedTokens().sort()).toEqual([rtA, rtB].sort());
 
           // The server would accept rt_b for audience A, so answer a refresh if one is sent.
           mockFetch.mockResolvedValueOnce(refreshResponse('at_minted'));
@@ -443,12 +481,12 @@ describe('Auth0Client', () => {
         });
 
         it('with useMrrt, revoking an audience with no stored token still revokes every RT', async () => {
-          const auth0 = await loginToTwoAudiences({ useMrrt: true });
+          const { auth0, rtA, rtB } = await loginToTwoAudiences({ useMrrt: true });
           mockFetch.mockResolvedValueOnce(revokeOk).mockResolvedValueOnce(revokeOk);
 
           await auth0.revokeRefreshToken({ audience: 'https://no-such-api.example.com' });
 
-          expect(revokedTokens().sort()).toEqual(['rt_a', 'rt_b']);
+          expect(revokedTokens().sort()).toEqual([rtA, rtB].sort());
 
           // Nothing is left, so a repeat call resolves without contacting /oauth/revoke.
           await auth0.revokeRefreshToken({ audience: AUDIENCE_A });
@@ -457,7 +495,7 @@ describe('Auth0Client', () => {
         });
 
         it('without useMrrt, only the requested audience loses its RT', async () => {
-          const auth0 = await loginToTwoAudiences();
+          const { auth0, rtA, rtB } = await loginToTwoAudiences();
 
           // No RT for this audience: resolves without contacting /oauth/revoke.
           await auth0.revokeRefreshToken({ audience: 'https://no-such-api.example.com' });
@@ -465,7 +503,7 @@ describe('Auth0Client', () => {
 
           mockFetch.mockResolvedValueOnce(revokeOk);
           await auth0.revokeRefreshToken({ audience: AUDIENCE_A });
-          expect(revokedTokens()).toEqual(['rt_a']);
+          expect(revokedTokens()).toEqual([rtA]);
 
           await expect(getTokenFor(auth0, AUDIENCE_A)).rejects.toMatchObject({
             error: 'missing_refresh_token'
@@ -473,7 +511,231 @@ describe('Auth0Client', () => {
 
           mockFetch.mockResolvedValueOnce(refreshResponse('at_b2'));
           await expect(getTokenFor(auth0, AUDIENCE_B)).resolves.toBe('at_b2');
-          expect(refreshTokensSent()).toEqual(['rt_b']);
+          expect(refreshTokensSent()).toEqual([rtB]);
+        });
+
+        it('with useMrrt, a refresh in flight when revocation starts leaves no token in the worker', async () => {
+          const { auth0, rtA } = await loginToTwoAudiences({ useMrrt: true });
+
+          const refresh = heldResponse();
+          mockFetch.mockReturnValueOnce(refresh.promise);
+          const refreshing = getTokenFor(auth0, AUDIENCE_A);
+          await waitForFetchCalls(1);
+
+          mockFetch.mockResolvedValueOnce(revokeOk).mockResolvedValueOnce(revokeOk);
+          await auth0.revokeRefreshToken();
+
+          // Auth0 answered the refresh before it processed the revocation.
+          refresh.release(await refreshResponse('at_raced'));
+          await expect(refreshing).resolves.toBe('at_raced');
+
+          await expect(getTokenFor(auth0, AUDIENCE_A)).rejects.toMatchObject({
+            error: 'missing_refresh_token'
+          });
+          await expect(getTokenFor(auth0, AUDIENCE_B)).rejects.toMatchObject({
+            error: 'missing_refresh_token'
+          });
+          expect(refreshTokensSent()).toEqual([rtA]);
+        });
+      });
+
+      describe('on the main thread (localStorage)', () => {
+        it('with useMrrt, a refresh in flight when revocation starts cannot store its rotated token', async () => {
+          const { auth0, rtA, rtB } = await loginToTwoAudiences({
+            ...defaultConfig,
+            useMrrt: true
+          });
+
+          const refresh = heldResponse();
+          mockFetch.mockReturnValueOnce(refresh.promise);
+          const refreshing = getTokenFor(auth0, AUDIENCE_A);
+          await waitForFetchCalls(1);
+
+          mockFetch.mockResolvedValueOnce(revokeOk).mockResolvedValueOnce(revokeOk);
+          await auth0.revokeRefreshToken();
+          expect(revokedTokens().sort()).toEqual([rtA, rtB].sort());
+
+          // Auth0 answered the refresh before it processed the revocation.
+          refresh.release(await refreshResponse('at_raced'));
+          await expect(refreshing).resolves.toBe('at_raced');
+
+          expect(
+            await (auth0 as any).cacheManager.getAllRefreshTokens(TEST_CLIENT_ID)
+          ).toEqual([]);
+          await expect(getTokenFor(auth0, AUDIENCE_A)).rejects.toMatchObject({
+            error: 'missing_refresh_token'
+          });
+          expect(refreshTokensSent()).toEqual([rtA]);
+        });
+
+        it('with useMrrt, a refresh response that arrives during a revocation is stored after it, without the rotated token', async () => {
+          const { auth0, rtA, rtB } = await loginToTwoAudiences({
+            ...defaultConfig,
+            useMrrt: true
+          });
+
+          const refresh = heldResponse();
+          mockFetch.mockReturnValueOnce(refresh.promise);
+          const refreshing = getTokenFor(auth0, AUDIENCE_A);
+          await waitForFetchCalls(1);
+
+          const queued = jest.spyOn(auth0 as any, '_queueTokenStoreTask');
+          const saved = jest.spyOn(auth0 as any, '_saveEntryInCache');
+
+          const firstRevoke = heldResponse();
+          mockFetch.mockReturnValueOnce(firstRevoke.promise).mockResolvedValueOnce(revokeOk);
+          const revoking = auth0.revokeRefreshToken();
+          await waitForFetchCalls(2);
+
+          // The refresh response arrives while the first revoke request is
+          // pending: its save is queued behind the revocation, not run.
+          refresh.release(await refreshResponse('at_raced'));
+          await waitFor(() => queued.mock.calls.length === 2);
+          expect(saved).not.toHaveBeenCalled();
+
+          firstRevoke.release(revokeOk);
+          await revoking;
+
+          await expect(refreshing).resolves.toBe('at_raced');
+          expect(saved).toHaveBeenCalledTimes(1);
+          expect(revokedTokens().sort()).toEqual([rtA, rtB].sort());
+          expect(
+            await (auth0 as any).cacheManager.getAllRefreshTokens(TEST_CLIENT_ID)
+          ).toEqual([]);
+        });
+
+        it('gives up on an error response whose body stalls, so later refreshes are not held up', async () => {
+          const { auth0, rtA } = await loginToTwoAudiences({
+            ...defaultConfig,
+            httpTimeoutInSeconds: 0.05
+          });
+
+          mockFetch.mockResolvedValueOnce({
+            ok: false,
+            status: 503,
+            text: () => new Promise(() => undefined)
+          });
+
+          await expect(
+            auth0.revokeRefreshToken({ audience: AUDIENCE_A })
+          ).rejects.toMatchObject({
+            error: 'revoke_error',
+            error_description: 'HTTP error 503'
+          });
+
+          mockFetch.mockResolvedValueOnce(refreshResponse('at_next'));
+          await expect(getTokenFor(auth0, AUDIENCE_A)).resolves.toBe('at_next');
+          expect(refreshTokensSent()).toEqual([rtA]);
+        });
+
+        it('never sends a refresh token it revoked, even if a cache write-back restored it', async () => {
+          const { auth0, rtA } = await loginToTwoAudiences(defaultConfig);
+          mockFetch.mockResolvedValueOnce(revokeOk);
+          await auth0.revokeRefreshToken({ audience: AUDIENCE_A });
+
+          // Stands for reading an expired entry while the revocation ran: the
+          // read writes the entry back, revoked token included.
+          const cacheManager = (auth0 as any).cacheManager;
+          const keyA = (await cacheManager.getCacheKeys()).find(key =>
+            key.includes(AUDIENCE_A)
+          );
+          const entryA = await cacheManager.cache.get(keyA);
+          await cacheManager.cache.set(keyA, {
+            ...entryA,
+            body: { ...entryA.body, refresh_token: rtA }
+          });
+
+          await expect(getTokenFor(auth0, AUDIENCE_A)).rejects.toMatchObject({
+            error: 'missing_refresh_token'
+          });
+          expect(refreshTokensSent()).toEqual([]);
+          expect(
+            await cacheManager.getRefreshTokensByAudience(AUDIENCE_A, TEST_CLIENT_ID)
+          ).toEqual([]);
+        });
+
+        it('with useMrrt, a refresh started during a revocation waits for it and sends no revoked token', async () => {
+          const { auth0, rtA, rtB } = await loginToTwoAudiences({
+            ...defaultConfig,
+            useMrrt: true
+          });
+
+          const firstRevoke = heldResponse();
+          mockFetch.mockReturnValueOnce(firstRevoke.promise).mockResolvedValueOnce(revokeOk);
+          const revoking = auth0.revokeRefreshToken();
+          await waitForFetchCalls(1);
+
+          const refreshStarted = jest.spyOn(auth0 as any, '_getTokenUsingRefreshToken');
+          const refreshing = getTokenFor(auth0, AUDIENCE_A);
+          await waitFor(() => refreshStarted.mock.calls.length === 1);
+          await sleep(20);
+
+          // The refresh is past the lock but waiting for the revocation.
+          expect(refreshTokensSent()).toEqual([]);
+
+          firstRevoke.release(revokeOk);
+          await revoking;
+
+          await expect(refreshing).rejects.toMatchObject({
+            error: 'missing_refresh_token'
+          });
+          expect(revokedTokens().sort()).toEqual([rtA, rtB].sort());
+          expect(refreshTokensSent()).toEqual([]);
+        });
+
+        it('without useMrrt, keeps the rotation of a refresh in flight for another audience', async () => {
+          const { auth0, rtA } = await loginToTwoAudiences(defaultConfig);
+
+          const refreshB = heldResponse();
+          mockFetch.mockReturnValueOnce(refreshB.promise);
+          const refreshingB = getTokenFor(auth0, AUDIENCE_B);
+          await waitForFetchCalls(1);
+
+          mockFetch.mockResolvedValueOnce(revokeOk);
+          await auth0.revokeRefreshToken({ audience: AUDIENCE_A });
+          expect(revokedTokens()).toEqual([rtA]);
+
+          refreshB.release(await refreshResponse('at_b2'));
+          await expect(refreshingB).resolves.toBe('at_b2');
+
+          expect(
+            await (auth0 as any).cacheManager.getAllRefreshTokens(TEST_CLIENT_ID)
+          ).toEqual(['at_b2_rt']);
+        });
+
+        it('runs revocations one at a time', async () => {
+          const { auth0, rtA, rtB } = await loginToTwoAudiences(defaultConfig);
+
+          const firstRevoke = heldResponse();
+          mockFetch.mockReturnValueOnce(firstRevoke.promise).mockResolvedValueOnce(revokeOk);
+
+          const revokingA = auth0.revokeRefreshToken({ audience: AUDIENCE_A });
+          const revokingB = auth0.revokeRefreshToken({ audience: AUDIENCE_B });
+          await waitForFetchCalls(1);
+          await sleep(20);
+
+          // B's revocation waits for A's to finish.
+          expect(revokedTokens()).toEqual([rtA]);
+
+          firstRevoke.release(revokeOk);
+          await revokingA;
+          await revokingB;
+
+          expect(revokedTokens()).toEqual([rtA, rtB]);
+        });
+
+        it('does not copy a rotated token into other entries once either token was revoked', async () => {
+          // Stands for a revocation that ran between a refresh saving its entry
+          // and copying the rotated token into the other MRRT entries.
+          const auth0 = setup({ ...defaultConfig, useMrrt: true });
+          await seed(auth0, AUDIENCE_B, 'rt_old');
+          (auth0 as any).revokedRefreshTokens.add('rt_old');
+
+          await (auth0 as any)._propagateRotatedRefreshToken('rt_old', 'rt_new');
+
+          expect(
+            await (auth0 as any).cacheManager.getAllRefreshTokens(TEST_CLIENT_ID)
+          ).toEqual(['rt_old']);
         });
       });
     });

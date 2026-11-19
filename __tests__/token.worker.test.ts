@@ -1221,6 +1221,276 @@ describe('token worker', () => {
     });
   });
 
+  describe('token requests racing a revocation', () => {
+    // A real timeout, so a response the test holds back doesn't time out.
+    const tokenMsg = (audience: string, grant_type: string, useMrrt = true) => ({
+      timeout: 5000,
+      fetchUrl: TOKEN_ENDPOINT,
+      fetchOptions: { method: 'POST', body: JSON.stringify({ grant_type }) },
+      auth: { audience, scope: 'openid offline_access' },
+      useMrrt
+    });
+
+    const revokeMsg = (audience: string, useMrrt = true) => ({
+      type: 'revoke',
+      timeout: 5000,
+      fetchUrl: `${ALLOWED_BASE_URL}/oauth/revoke`,
+      fetchOptions: {
+        method: 'POST',
+        body: JSON.stringify({ client_id: 'client_id' }),
+        headers: {}
+      },
+      useMrrt,
+      auth: { audience }
+    });
+
+    const tokenResponse = (refresh_token: string) => ({
+      ok: true,
+      json: () => ({ access_token: `at_for_${refresh_token}`, refresh_token }),
+      headers: new Headers()
+    });
+
+    const revokeOk = () =>
+      Promise.resolve({ ok: true, text: () => Promise.resolve('') });
+
+    const revokeFails = () =>
+      Promise.resolve({ ok: false, status: 503, text: () => Promise.resolve('') });
+
+    // A fetch response the test releases by hand.
+    const heldResponse = () => {
+      let release!: (response: unknown) => void;
+      const promise = new Promise(resolve => (release = resolve));
+      return { promise, release };
+    };
+
+    const callsTo = (path: string) =>
+      mockFetch.mock.calls
+        .filter(([url]) => url.endsWith(path))
+        .map(([, opts]) => JSON.parse(opts.body));
+
+    const refreshTokensSent = () =>
+      callsTo('/oauth/token')
+        .filter(body => body.grant_type === 'refresh_token')
+        .map(body => body.refresh_token);
+
+    const tokensRevoked = () => callsTo('/oauth/revoke').map(body => body.token);
+
+    const login = async (audience: string, refreshToken: string, useMrrt = true) => {
+      mockFetch.mockReturnValueOnce(Promise.resolve(tokenResponse(refreshToken)));
+      await messageHandlerAsync(tokenMsg(audience, 'authorization_code', useMrrt));
+    };
+
+    const settle = () => new Promise(resolve => setTimeout(resolve, 0));
+
+    it('with useMrrt, does not store the token rotated from one revoked while the refresh was in flight', async () => {
+      await login('audience1', 'rt1');
+
+      const refresh = heldResponse();
+      mockFetch.mockReturnValueOnce(refresh.promise).mockReturnValueOnce(revokeOk());
+
+      const refreshing = messageHandlerAsync(tokenMsg('audience1', 'refresh_token'));
+      expect(await messageHandlerAsync(revokeMsg('audience1'))).toEqual({ ok: true });
+      expect(tokensRevoked()).toEqual(['rt1']);
+
+      // Auth0 answered the refresh before it processed the revocation.
+      refresh.release(tokenResponse('rt1_rotated'));
+      const refreshed = await refreshing;
+
+      // The caller still gets its access token, but the rotated token is not kept.
+      expect(refreshed.ok).toBe(true);
+      expect(refreshed.json).toEqual({ access_token: 'at_for_rt1_rotated' });
+
+      const after = await messageHandlerAsync(tokenMsg('audience1', 'refresh_token'));
+      expect(after.json.error).toBe('missing_refresh_token');
+      expect(refreshTokensSent()).toEqual(['rt1']);
+    });
+
+    it('makes a response that arrives during a revocation wait for it, then drops the rotated token', async () => {
+      await login('audience1', 'rt1');
+
+      const refresh = heldResponse();
+      const revoke = heldResponse();
+      mockFetch.mockReturnValueOnce(refresh.promise).mockReturnValueOnce(revoke.promise);
+
+      const refreshing = messageHandlerAsync(tokenMsg('audience1', 'refresh_token'));
+      const revoking = messageHandlerAsync(revokeMsg('audience1'));
+      await settle();
+      expect(tokensRevoked()).toEqual(['rt1']);
+
+      // The refresh response arrives while the revoke request is still pending.
+      let refreshed;
+      refreshing.then(response => (refreshed = response));
+      refresh.release(tokenResponse('rt1_rotated'));
+      await settle();
+      expect(refreshed).toBeUndefined();
+
+      revoke.release({ ok: true, text: () => Promise.resolve('') });
+      expect(await revoking).toEqual({ ok: true });
+      expect((await refreshing).json).toEqual({ access_token: 'at_for_rt1_rotated' });
+
+      const after = await messageHandlerAsync(tokenMsg('audience1', 'refresh_token'));
+      expect(after.json.error).toBe('missing_refresh_token');
+      expect(refreshTokensSent()).toEqual(['rt1']);
+    });
+
+    it('holds a refresh that arrives during a revocation until it finishes, then finds no token', async () => {
+      await login('audience1', 'rt1');
+
+      const revoke = heldResponse();
+      mockFetch.mockReturnValueOnce(revoke.promise);
+
+      const revoking = messageHandlerAsync(revokeMsg('audience1'));
+      const refreshing = messageHandlerAsync(tokenMsg('audience1', 'refresh_token'));
+      await settle();
+
+      // The refresh is waiting instead of sending a token that is being revoked.
+      expect(refreshTokensSent()).toEqual([]);
+
+      revoke.release({ ok: true, text: () => Promise.resolve('') });
+      expect(await revoking).toEqual({ ok: true });
+      expect((await refreshing).json.error).toBe('missing_refresh_token');
+      expect(refreshTokensSent()).toEqual([]);
+    });
+
+    it('without useMrrt, only drops rotations of the tokens it revoked', async () => {
+      await login('audience1', 'rt1', false);
+      await login('audience2', 'rt2', false);
+
+      const refresh1 = heldResponse();
+      const refresh2 = heldResponse();
+      mockFetch
+        .mockReturnValueOnce(refresh1.promise)
+        .mockReturnValueOnce(refresh2.promise)
+        .mockReturnValueOnce(revokeOk());
+
+      const refreshing1 = messageHandlerAsync(tokenMsg('audience1', 'refresh_token', false));
+      const refreshing2 = messageHandlerAsync(tokenMsg('audience2', 'refresh_token', false));
+      expect(await messageHandlerAsync(revokeMsg('audience1', false))).toEqual({ ok: true });
+      expect(tokensRevoked()).toEqual(['rt1']);
+
+      refresh1.release(tokenResponse('rt1_rotated'));
+      refresh2.release(tokenResponse('rt2_rotated'));
+      await refreshing1;
+      await refreshing2;
+
+      mockFetch.mockReturnValueOnce(Promise.resolve(tokenResponse('rt2_next')));
+
+      const after1 = await messageHandlerAsync(tokenMsg('audience1', 'refresh_token', false));
+      await messageHandlerAsync(tokenMsg('audience2', 'refresh_token', false));
+
+      expect(after1.json.error).toBe('missing_refresh_token');
+      // audience2 kept its rotated token and used it for the next refresh.
+      expect(refreshTokensSent()).toEqual(['rt1', 'rt2', 'rt2_rotated']);
+    });
+
+    it('keeps the rotated token when the revocation of the token it came from fails', async () => {
+      await login('audience1', 'rt1');
+
+      const refresh = heldResponse();
+      mockFetch.mockReturnValueOnce(refresh.promise).mockReturnValueOnce(revokeFails());
+
+      const refreshing = messageHandlerAsync(tokenMsg('audience1', 'refresh_token'));
+      expect(await messageHandlerAsync(revokeMsg('audience1'))).toEqual({
+        error: 'HTTP error 503',
+        revoked: 0
+      });
+
+      refresh.release(tokenResponse('rt1_rotated'));
+      await refreshing;
+
+      mockFetch.mockReturnValueOnce(Promise.resolve(tokenResponse('rt1_next')));
+      await messageHandlerAsync(tokenMsg('audience1', 'refresh_token'));
+
+      expect(refreshTokensSent()).toEqual(['rt1', 'rt1_rotated']);
+    });
+
+    it('keeps the refresh token from a login that completes during a revocation', async () => {
+      await login('audience1', 'rt1');
+
+      const loginResponse = heldResponse();
+      const revoke = heldResponse();
+      mockFetch.mockReturnValueOnce(loginResponse.promise).mockReturnValueOnce(revoke.promise);
+
+      const loggingIn = messageHandlerAsync(tokenMsg('audience2', 'authorization_code'));
+      const revoking = messageHandlerAsync(revokeMsg('audience1'));
+      await settle();
+
+      // The login response arrives while the revoke request is still pending,
+      // so the worker holds it until the revocation finishes.
+      let loggedIn;
+      loggingIn.then(response => (loggedIn = response));
+      loginResponse.release(tokenResponse('rt2'));
+      await settle();
+      expect(loggedIn).toBeUndefined();
+
+      revoke.release({ ok: true, text: () => Promise.resolve('') });
+      expect(await revoking).toEqual({ ok: true });
+      expect((await loggingIn).ok).toBe(true);
+
+      // A new login isn't issued from a revoked token, so its token is stored.
+      mockFetch.mockReturnValueOnce(Promise.resolve(tokenResponse('rt2_next')));
+      await messageHandlerAsync(tokenMsg('audience2', 'refresh_token'));
+
+      expect(refreshTokensSent()).toEqual(['rt2']);
+    });
+
+    it('gives up on an error response whose body stalls, so later refreshes are not held up', async () => {
+      await login('audience1', 'rt1');
+
+      mockFetch.mockReturnValueOnce(
+        Promise.resolve({
+          ok: false,
+          status: 503,
+          text: () => new Promise(() => undefined)
+        })
+      );
+
+      expect(
+        await messageHandlerAsync({ ...revokeMsg('audience1'), timeout: 20 })
+      ).toEqual({ error: 'HTTP error 503', revoked: 0 });
+
+      mockFetch.mockReturnValueOnce(Promise.resolve(tokenResponse('rt1_next')));
+      await messageHandlerAsync(tokenMsg('audience1', 'refresh_token'));
+
+      expect(refreshTokensSent()).toEqual(['rt1']);
+    });
+
+    it('runs revocations one at a time', async () => {
+      await login('audience1', 'rt1', false);
+      await login('audience2', 'rt2', false);
+
+      const firstRevoke = heldResponse();
+      mockFetch.mockReturnValueOnce(firstRevoke.promise).mockReturnValueOnce(revokeOk());
+
+      const revoking1 = messageHandlerAsync(revokeMsg('audience1', false));
+      const revoking2 = messageHandlerAsync(revokeMsg('audience2', false));
+      await settle();
+
+      expect(tokensRevoked()).toEqual(['rt1']);
+
+      firstRevoke.release({ ok: true, text: () => Promise.resolve('') });
+      expect(await revoking1).toEqual({ ok: true });
+      expect(await revoking2).toEqual({ ok: true });
+      expect(tokensRevoked()).toEqual(['rt1', 'rt2']);
+    });
+
+    it.each([
+      ['an error response', revokeFails, 'HTTP error 503'],
+      ['a network error', () => Promise.reject(new Error('Failed to fetch')), 'Failed to fetch']
+    ])('reports how many tokens it revoked before %s', async (_, failure, error) => {
+      await login('audience1', 'rt1');
+      await login('audience2', 'rt2');
+      await login('audience3', 'rt3');
+
+      mockFetch.mockReturnValueOnce(revokeOk()).mockImplementationOnce(failure);
+
+      expect(await messageHandlerAsync(revokeMsg('audience1'))).toEqual({
+        error,
+        revoked: 1
+      });
+    });
+  });
+
   describe('clear message', () => {
     it('clear empties the refresh-token store', async () => {
       // Seed a refresh token via a normal authorization_code round-trip

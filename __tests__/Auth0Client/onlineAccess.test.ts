@@ -3,6 +3,7 @@ import { MessageChannel } from 'worker_threads';
 import * as utils from '../../src/utils';
 import * as scope from '../../src/scope';
 import * as DpopModule from '../../src/dpop/dpop';
+import * as workerUtils from '../../src/worker/worker.utils';
 import { verify } from '../../src/jwt';
 
 import {
@@ -511,6 +512,186 @@ describe('Auth0Client', () => {
       expect(await auth0.isAuthenticated()).toBe(false);
       expect(await auth0.getUser()).toBeUndefined();
     });
+
+    describe.each([
+      ['localStorage', { cacheLocation: 'localstorage' as const }],
+      ['the worker (in-memory cache)', {}]
+    ])('with useMrrt and two ORTs, via %s', (path, cacheConfig) => {
+      const revokeFails = () =>
+        mockFetch.mockResolvedValueOnce({
+          ok: false,
+          status: 503,
+          text: () => Promise.resolve('')
+        });
+
+      const loginToTwoAudiences = async () => {
+        const auth0 = setup({
+          refreshTokenMode: 'online' as const,
+          useRefreshTokens: true,
+          useDpop: true,
+          useMrrt: true,
+          ...cacheConfig
+        } as any);
+        // The worker's token store is shared by every test in this file.
+        (auth0 as any).worker?.postMessage({ type: 'clear' });
+
+        for (const audience of ['https://api-a.example.com', 'https://api-b.example.com']) {
+          await loginWithRedirect(
+            auth0,
+            { authorizationParams: { audience } },
+            { token: { response: { refresh_token: `ort-${audience}-${path}` } } }
+          );
+        }
+
+        mockFetch.mockReset();
+        return auth0;
+      };
+
+      it('still clears the local session when a later revoke request fails', async () => {
+        const auth0 = await loginToTwoAudiences();
+        mockSuccessfulRevoke();
+        revokeFails();
+
+        await expect(auth0.revokeRefreshToken()).rejects.toThrow();
+
+        // The first revocation already ended the Auth0 session.
+        expect(mockFetch).toHaveBeenCalledTimes(2);
+        expect(await auth0.isAuthenticated()).toBe(false);
+        expect(await auth0.getUser()).toBeUndefined();
+      });
+
+      it('keeps the local session when no revoke request succeeds', async () => {
+        const auth0 = await loginToTwoAudiences();
+        revokeFails();
+
+        await expect(auth0.revokeRefreshToken()).rejects.toThrow();
+
+        // Nothing was revoked, so the session is intact and the call can be retried.
+        expect(mockFetch).toHaveBeenCalledTimes(1);
+        expect(await auth0.isAuthenticated()).toBe(true);
+
+        mockSuccessfulRevoke();
+        mockSuccessfulRevoke();
+        await auth0.revokeRefreshToken();
+
+        expect(mockFetch).toHaveBeenCalledTimes(3);
+        expect(await auth0.isAuthenticated()).toBe(false);
+      });
+
+      it('throws the revoke error even if clearing the local session fails too', async () => {
+        const auth0 = await loginToTwoAudiences();
+        mockSuccessfulRevoke();
+        revokeFails();
+        jest
+          .spyOn((auth0 as any).cacheManager, 'clear')
+          .mockRejectedValueOnce(new Error('cache unavailable'));
+
+        await expect(auth0.revokeRefreshToken()).rejects.toMatchObject({
+          error_description: 'HTTP error 503'
+        });
+      });
+    });
+
+    describe.each([
+      ['localStorage', { cacheLocation: 'localstorage' as const }],
+      ['the worker (in-memory cache)', {}]
+    ])('a refresh that finishes after revocation, via %s', (path, cacheConfig) => {
+      const loginOnline = async (auth0, refresh_token: string) =>
+        loginWithRedirect(auth0, undefined, {
+          token: { response: { refresh_token } }
+        });
+
+      const setupLoggedIn = async () => {
+        const auth0 = setup({
+          refreshTokenMode: 'online' as const,
+          useRefreshTokens: true,
+          useDpop: true,
+          ...cacheConfig
+        } as any);
+        // The worker's token store is shared by every test in this file.
+        (auth0 as any).worker?.postMessage({ type: 'clear' });
+        await loginOnline(auth0, `ort-raced-${path}`);
+        mockFetch.mockReset();
+        return auth0;
+      };
+
+      // Polls in real time: getTokenSilently first takes a browser-tabs-lock.
+      const waitForFetchCalls = async (count: number) => {
+        for (let i = 0; i < 200 && mockFetch.mock.calls.length < count; i++) {
+          await new Promise(resolve => setTimeout(resolve, 10));
+        }
+        expect(mockFetch).toHaveBeenCalledTimes(count);
+      };
+
+      it('does not restore the ended session, and that call fails with login_required', async () => {
+        const auth0 = await setupLoggedIn();
+
+        let releaseRefresh!: (response: unknown) => void;
+        mockFetch.mockReturnValueOnce(
+          new Promise(resolve => (releaseRefresh = resolve))
+        );
+        const refreshing = auth0.getTokenSilently({ cacheMode: 'off' });
+        await waitForFetchCalls(1);
+
+        mockSuccessfulRevoke();
+        await auth0.revokeRefreshToken();
+        expect(await auth0.isAuthenticated()).toBe(false);
+
+        // Auth0 answered the refresh before it processed the revocation.
+        releaseRefresh(
+          await fetchResponse(true, {
+            id_token: TEST_ID_TOKEN,
+            access_token: 'access-token-after-revocation',
+            expires_in: 86400
+          })
+        );
+
+        await expect(refreshing).rejects.toMatchObject({
+          error: 'login_required'
+        });
+        expect(await auth0.isAuthenticated()).toBe(false);
+        expect(await auth0.getUser()).toBeUndefined();
+      });
+
+      it('still lets a new login, and its refreshes, through', async () => {
+        const auth0 = await setupLoggedIn();
+        mockSuccessfulRevoke();
+        await auth0.revokeRefreshToken();
+
+        await loginOnline(auth0, `ort-new-${path}`);
+        expect(await auth0.isAuthenticated()).toBe(true);
+
+        mockFetch.mockResolvedValueOnce(
+          fetchResponse(true, {
+            id_token: TEST_ID_TOKEN,
+            access_token: 'access-token-for-new-session',
+            expires_in: 86400
+          })
+        );
+
+        await expect(
+          auth0.getTokenSilently({ cacheMode: 'off' })
+        ).resolves.toBe('access-token-for-new-session');
+      });
+    });
+
+    it('treats a failed revoke from a worker that reports no count as nothing revoked', async () => {
+      // An older worker file served from `workerUrl` doesn't send `revoked`.
+      const auth0 = setup({
+        refreshTokenMode: 'online' as const,
+        useRefreshTokens: true,
+        useDpop: true
+      } as any);
+      await loginWithRedirect(auth0);
+      mockFetch.mockReset();
+
+      jest
+        .spyOn(workerUtils, 'sendMessage')
+        .mockRejectedValueOnce(new Error('HTTP error 503'));
+
+      await expect(auth0.revokeRefreshToken()).rejects.toThrow('HTTP error 503');
+      expect(await auth0.isAuthenticated()).toBe(true);
+    });
   });
 
   describe('online access — MFA grant carries ORT forward when server returns none', () => {
@@ -568,6 +749,46 @@ describe('Auth0Client', () => {
 
       const rt = getCacheEntries().map(e => e?.body?.refresh_token).find(Boolean);
       expect(rt).toBe(TEST_REFRESH_TOKEN);
+    });
+
+    it('does not restore the session when revocation ends it while the MFA grant is in flight', async () => {
+      const auth0 = setup(onlineConfig as any);
+      await loginWithRedirect(auth0);
+      mockFetch.mockReset();
+
+      mockMfaRequired();
+      try { await auth0.getTokenSilently({ cacheMode: 'off' }); } catch (_) {}
+
+      // Hold the MFA grant's response while the ORT is revoked.
+      let releaseVerify!: (response: unknown) => void;
+      mockFetch.mockReturnValueOnce(new Promise(resolve => (releaseVerify = resolve)));
+      const verifying = auth0.mfa.verify({ mfaToken: 'test-mfa-token', otp: '123456' });
+      for (let i = 0; i < 200 && mockFetch.mock.calls.length < 2; i++) {
+        await new Promise(resolve => setTimeout(resolve, 10));
+      }
+      expect(mockFetch).toHaveBeenCalledTimes(2);
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: () => Promise.resolve({}),
+        text: () => Promise.resolve('')
+      });
+      await auth0.revokeRefreshToken();
+
+      releaseVerify(
+        await fetchResponse(true, {
+          id_token: TEST_ID_TOKEN,
+          access_token: TEST_ACCESS_TOKEN,
+          token_type: 'Bearer',
+          expires_in: 86400,
+          scope: 'openid profile email online_access'
+        })
+      );
+
+      await expect(verifying).rejects.toMatchObject({ error: 'login_required' });
+      expect(await auth0.isAuthenticated()).toBe(false);
+      expect(getCacheEntries().map(e => e?.body?.refresh_token).find(Boolean)).toBeUndefined();
     });
 
     it('carries the cached ORT forward on mfa-oob grant', async () => {
