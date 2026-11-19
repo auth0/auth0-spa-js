@@ -161,7 +161,7 @@ To allow you to keep strict Content-Security-Policy (CSP), and not have to allow
 For example, if I have a folder called `static` in the root of my project then I could update my build script to copy the worker file to it:
 
 ```sh
-my-build-script && cp ./node_modules/@auth0/auth0-spa-js/dist/auth0-spa-js.worker.development.js ./static/
+my-build-script && cp ./node_modules/@auth0/auth0-spa-js/dist/auth0-spa-js.worker.production.js ./static/
 ```
 
 Now when instantiating the SDK, I can configure it to load the worker code from that location:
