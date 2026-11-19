@@ -36,6 +36,10 @@ const getRefreshTokensByAudience = (audience: string): string[] => {
   return Array.from(seen);
 };
 
+// Every distinct RT in the store, including the MRRT `latest_refresh_token` slot.
+const getAllRefreshTokens = (): string[] =>
+  Array.from(new Set(Object.values(refreshTokens)));
+
 const deleteRefreshTokensByValue = (refreshToken: string): void => {
   Object.entries(refreshTokens).forEach(([key, token]) => {
     if (token === refreshToken) {
@@ -220,13 +224,18 @@ const messageHandler = async ({
 };
 
 const revokeMessageHandler = async ({
-  data: { timeout, auth, fetchUrl, fetchOptions, useFormData },
+  data: { timeout, auth, fetchUrl, fetchOptions, useFormData, useMrrt },
   ports: [port]
 }: MessageEvent<WorkerRevokeTokenMessage>) => {
   const { audience } = auth || {};
 
   try {
-    const tokensToRevoke = getRefreshTokensByAudience(audience);
+    // With MRRT any stored RT can mint tokens for any audience in the policy
+    // (and the MRRT fallback will use it), so revoking only the audience's own
+    // entries would leave that audience reachable. Revoke the whole store.
+    const tokensToRevoke = useMrrt
+      ? getAllRefreshTokens()
+      : getRefreshTokensByAudience(audience);
 
     if (tokensToRevoke.length === 0) {
       port.postMessage({ ok: true });
