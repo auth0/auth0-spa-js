@@ -17,6 +17,9 @@ let revocations: Promise<void> = Promise.resolve();
 let pendingRevocations = 0;
 // Only revocations add to this, one entry per revoked token, so it stays small.
 const revokedTokens = new Set<string>();
+// Counts `clear` messages. A request that was in flight when the store was
+// cleared belongs to a session that has ended, so its token isn't stored.
+let clears = 0;
 
 const cacheKey = (audience: string, scope: string) => `${audience}|${scope}`;
 
@@ -105,6 +108,7 @@ const messageHandler = async ({
   let refreshToken: string | undefined;
 
   const { audience, scope } = auth || {};
+  const clearsAtStart = clears;
 
   try {
     if (pendingRevocations) await revocations;
@@ -198,7 +202,11 @@ const messageHandler = async ({
     // A revocation may have started while this request was in flight.
     if (pendingRevocations) await revocations;
 
-    if (json.refresh_token && refreshToken && revokedTokens.has(refreshToken)) {
+    if (json.refresh_token && clears !== clearsAtStart) {
+      // The store was cleared while this request was in flight (by logout, or
+      // by revocation ending an online session): don't put a token back.
+      delete json.refresh_token;
+    } else if (json.refresh_token && refreshToken && revokedTokens.has(refreshToken)) {
       // The token this request used was revoked meanwhile, so the token it was
       // rotated into must not be stored.
       delete json.refresh_token;
@@ -396,6 +404,7 @@ const messageRouter = (event: MessageEvent<WorkerMessage>) => {
 
   if ('type' in data && data.type === 'clear') {
     refreshTokens = {};
+    clears++;
     port?.postMessage({ ok: true });
     return;
   }

@@ -28,7 +28,7 @@ interface RevokeTokenOptions {
 }
 import * as dpopUtils from './dpop/utils';
 import { GenericError } from './errors';
-import { getJSON, fetchWithTimeout } from './http';
+import { getJSON, fetchWithTimeout, createAbortController } from './http';
 import { sendMessage } from './worker/worker.utils';
 import { createQueryParams, stripAuth0Client } from './utils';
 
@@ -188,11 +188,13 @@ export async function revokeToken(
       ? createQueryParams(params)
       : JSON.stringify(params);
 
+    const controller = createAbortController();
     const deadline = Date.now() + resolvedTimeout;
     const response = await fetchWithTimeout(
       fetchUrl,
       { method: 'POST', body, headers },
-      resolvedTimeout
+      resolvedTimeout,
+      controller
     );
 
     if (!response.ok) {
@@ -202,7 +204,10 @@ export async function revokeToken(
         // The request's deadline also covers reading the error body, so a
         // stalled body can't hold up the token-store queue.
         const text = await resolveWithin(response.text(), deadline - Date.now());
-        if (text !== undefined) {
+        if (text === undefined) {
+          // The body didn't arrive in time: stop reading it.
+          controller.abort();
+        } else {
           ({ error, error_description: errorDescription } = JSON.parse(text));
         }
       } catch {

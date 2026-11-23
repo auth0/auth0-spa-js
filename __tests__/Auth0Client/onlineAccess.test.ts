@@ -13,11 +13,13 @@ import {
 } from './helpers';
 
 import {
+  TEST_CODE,
   TEST_CODE_CHALLENGE,
   TEST_CLIENT_ID,
   TEST_REFRESH_TOKEN,
   TEST_ACCESS_TOKEN,
-  TEST_ID_TOKEN
+  TEST_ID_TOKEN,
+  TEST_STATE
 } from '../constants';
 import { DEFAULT_AUDIENCE } from '../../src/constants';
 import { InvalidConfigurationError } from '../../src/errors';
@@ -595,7 +597,7 @@ describe('Auth0Client', () => {
     describe.each([
       ['localStorage', { cacheLocation: 'localstorage' as const }],
       ['the worker (in-memory cache)', {}]
-    ])('a refresh that finishes after revocation, via %s', (path, cacheConfig) => {
+    ])('a request that overlaps revocation, via %s', (path, cacheConfig) => {
       const loginOnline = async (auth0, refresh_token: string) =>
         loginWithRedirect(auth0, undefined, {
           token: { response: { refresh_token } }
@@ -672,6 +674,100 @@ describe('Auth0Client', () => {
         await expect(
           auth0.getTokenSilently({ cacheMode: 'off' })
         ).resolves.toBe('access-token-for-new-session');
+      });
+
+      // Runs a redirect login up to its code exchange, which `tokenResponse` answers.
+      const startLogin = async (auth0, tokenResponse: Promise<unknown>) => {
+        mockFetch.mockReturnValueOnce(tokenResponse);
+        await auth0.loginWithRedirect();
+        window.history.pushState({}, '', `/?code=${TEST_CODE}&state=${TEST_STATE}`);
+        return auth0.handleRedirectCallback();
+      };
+
+      it('does not save a login that was in flight when revocation ended the session', async () => {
+        const auth0 = await setupLoggedIn();
+
+        let releaseLogin!: (response: unknown) => void;
+        const finishing = startLogin(
+          auth0,
+          new Promise(resolve => (releaseLogin = resolve))
+        );
+        await waitForFetchCalls(1);
+
+        mockSuccessfulRevoke();
+        await auth0.revokeRefreshToken();
+
+        releaseLogin(
+          await fetchResponse(true, {
+            id_token: TEST_ID_TOKEN,
+            access_token: 'access-token-in-flight',
+            refresh_token: `ort-in-flight-${path}`,
+            expires_in: 86400
+          })
+        );
+        await expect(finishing).rejects.toMatchObject({ error: 'login_required' });
+
+        // Nothing of it was kept: no session, and no refresh token to send.
+        expect(await auth0.isAuthenticated()).toBe(false);
+        await expect(
+          auth0.getTokenSilently({ cacheMode: 'off' })
+        ).rejects.toMatchObject({ error: 'missing_refresh_token' });
+        expect(mockFetch).toHaveBeenCalledTimes(2);
+      });
+
+      it('makes a login that starts during revocation wait for it, so it keeps a refreshable session', async () => {
+        const auth0 = await setupLoggedIn();
+        const dpop = (auth0 as any).dpop;
+
+        let releaseRevoke!: (response: unknown) => void;
+        mockFetch.mockReturnValueOnce(
+          new Promise(resolve => (releaseRevoke = resolve))
+        );
+        const revoking = auth0.revokeRefreshToken();
+        await waitForFetchCalls(1);
+
+        const waiting = jest.spyOn(auth0 as any, '_waitForTokenStoreQueue');
+        const finishing = startLogin(
+          auth0,
+          fetchResponse(true, {
+            id_token: TEST_ID_TOKEN,
+            access_token: 'access-token-new',
+            refresh_token: `ort-new-${path}`,
+            expires_in: 86400
+          })
+        );
+        for (let i = 0; i < 200 && !waiting.mock.calls.length; i++) {
+          await new Promise(resolve => setTimeout(resolve, 10));
+        }
+
+        // The login waits: its code exchange hasn't been sent.
+        expect(waiting).toHaveBeenCalledTimes(1);
+        expect(mockFetch).toHaveBeenCalledTimes(1);
+
+        releaseRevoke({ ok: true, text: () => Promise.resolve('') });
+        await revoking;
+        await finishing;
+        expect(await auth0.isAuthenticated()).toBe(true);
+
+        // Its DPoP proof was made after the cleanup deleted the old key.
+        const lastCall = (fn: jest.Mock) =>
+          fn.mock.invocationCallOrder[fn.mock.invocationCallOrder.length - 1];
+        expect(lastCall(dpop.generateProof)).toBeGreaterThan(lastCall(dpop.clear));
+
+        // Its refresh token survived the cleanup.
+        mockFetch.mockResolvedValueOnce(
+          fetchResponse(true, {
+            id_token: TEST_ID_TOKEN,
+            access_token: 'access-token-refreshed',
+            expires_in: 86400
+          })
+        );
+        await expect(
+          auth0.getTokenSilently({ cacheMode: 'off' })
+        ).resolves.toBe('access-token-refreshed');
+        expect(
+          new URLSearchParams(mockFetch.mock.calls[2][1].body).get('refresh_token')
+        ).toBe(`ort-new-${path}`);
       });
     });
 

@@ -219,8 +219,8 @@ export class Auth0Client {
   // of them by a request that raced the revocation is never stored. Only
   // revocations add to it, one entry per revoked token, so it stays small.
   private readonly revokedRefreshTokens = new Set<string>();
-  // How many online sessions revokeRefreshToken() has ended. A refresh that was
-  // in flight when its session ended is not saved.
+  // How many online sessions revokeRefreshToken() has ended. A token request
+  // that was in flight when its session ended is not saved.
   private endedOnlineSessions = 0;
 
   private readonly defaultOptions: Partial<Auth0ClientOptions> = {
@@ -1141,6 +1141,12 @@ export class Auth0Client {
       return;
     }
 
+    // A refresh doesn't read a refresh token while a revocation runs. Wait
+    // before taking the lock, so other callers aren't kept waiting on it.
+    if (this.options.useRefreshTokens) {
+      await this._waitForTokenStoreQueue();
+    }
+
     // Generate lock key based on client ID and audience for better isolation
     const lockKey = buildGetTokenSilentlyLockKey(
       this.options.clientId,
@@ -1378,11 +1384,14 @@ export class Auth0Client {
    * `undefined` right away, without waiting for the access token to expire.
    * Use this when you need to force a sign-out without a redirect (e.g. background
    * revocation). For a redirect-based sign-out, prefer `logout()`. If a request fails
-   * after an ORT has been revoked, the local cache is still cleared and the error is
-   * thrown. If a request fails before any ORT is revoked, nothing is cleared and the call
-   * can be retried; a retry, or `logout()`, also covers a request that Auth0 processed but
-   * whose response was lost. A refresh that finishes after revocation has ended the
-   * session isn't saved, and that `getTokenSilently()` call fails with `login_required`.
+   * after an ORT has been revoked, the SDK still clears the local cache and then throws
+   * the revoke error; it throws that error even if clearing fails, so the error alone
+   * doesn't mean the cache is empty. If a request fails before any ORT is revoked, nothing
+   * is cleared and the call can be retried. Retrying before the user signs in again, or
+   * calling `logout()`, also covers a request that Auth0 processed but whose response was
+   * lost. Token requests that start while revocation runs, logins included, wait for it
+   * to finish. One already in flight isn't saved: if Auth0 returns tokens for it, the
+   * call fails with `login_required`.
    *
    * **Important:** Without MRRT, this method revokes the refresh token for a single audience.
    * If your application requests tokens for multiple audiences, each audience may have its
@@ -1652,11 +1661,6 @@ export class Auth0Client {
       authorizationParams: AuthorizationParams & { scope: string };
     }
   ): Promise<GetTokenSilentlyResult> {
-    // Don't read a refresh token while a revocation is running.
-    if (this.pendingTokenStoreTasks) {
-      await this.tokenStoreQueue;
-    }
-
     let cache = await this.cacheManager.get(
       new CacheKey({
         scope: options.authorizationParams.scope,
@@ -1847,6 +1851,13 @@ export class Auth0Client {
     return result;
   }
 
+  /** Resolves once the revocations and token-store writes queued so far finish. */
+  private async _waitForTokenStoreQueue(): Promise<void> {
+    if (this.pendingTokenStoreTasks) {
+      await this.tokenStoreQueue;
+    }
+  }
+
   private async _saveEntryInCache(
     entry: CacheEntry & { id_token: string; decodedToken: DecodedToken }
   ) {
@@ -2025,6 +2036,15 @@ export class Auth0Client {
       max_age,
       sourceRefreshToken
     } = additionalParameters || {};
+
+    // In online mode, revocation ends the session and then clears it, the DPoP
+    // key and the worker's store included. A request waits for that, so it
+    // doesn't use the deleted key or have its refresh token cleared. (A refresh
+    // has already waited, before taking its lock.)
+    if (this.onlineAccess && options.grant_type !== 'refresh_token') {
+      await this._waitForTokenStoreQueue();
+    }
+
     const endedOnlineSessionsAtStart = this.endedOnlineSessions;
     try {
       const authResult = await oauthToken(
@@ -2099,13 +2119,12 @@ export class Auth0Client {
         sourceRefreshToken;
 
       await this._queueTokenStoreTask(async () => {
-        // A refresh (or the MFA grant that completes one) that was in flight
-        // when revokeRefreshToken() ended its online session must not restore
-        // that session. A new login still can.
+        // revokeRefreshToken() ended and cleared the online session while this
+        // request was in flight. Its tokens may be bound to the DPoP key that
+        // was deleted, so don't save them; this applies to logins too.
         if (
           this.onlineAccess &&
-          this.endedOnlineSessions !== endedOnlineSessionsAtStart &&
-          (options.grant_type === 'refresh_token' || 'mfa_token' in options)
+          this.endedOnlineSessions !== endedOnlineSessionsAtStart
         ) {
           throw new GenericError(
             'login_required',

@@ -1474,6 +1474,21 @@ describe('token worker', () => {
       expect(tokensRevoked()).toEqual(['rt1', 'rt2']);
     });
 
+    it('does not store the refresh token of a request that was in flight when the store was cleared', async () => {
+      const loginResponse = heldResponse();
+      mockFetch.mockReturnValueOnce(loginResponse.promise);
+
+      const loggingIn = messageHandlerAsync(tokenMsg('audience1', 'authorization_code'));
+      expect(await messageHandlerAsync({ type: 'clear' })).toEqual({ ok: true });
+
+      loginResponse.release(tokenResponse('rt_ended_session'));
+      expect((await loggingIn).json).toEqual({ access_token: 'at_for_rt_ended_session' });
+
+      const after = await messageHandlerAsync(tokenMsg('audience1', 'refresh_token'));
+      expect(after.json.error).toBe('missing_refresh_token');
+      expect(refreshTokensSent()).toEqual([]);
+    });
+
     it.each([
       ['an error response', revokeFails, 'HTTP error 503'],
       ['a network error', () => Promise.reject(new Error('Failed to fetch')), 'Failed to fetch']

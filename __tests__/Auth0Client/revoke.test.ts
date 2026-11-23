@@ -5,6 +5,7 @@ import * as scope from '../../src/scope';
 import * as workerUtils from '../../src/worker/worker.utils';
 import { expect } from '@jest/globals';
 
+import { CacheKey } from '../../src/cache';
 import { fetchResponse, loginWithRedirectFn, setupFn } from './helpers';
 import {
   TEST_CLIENT_ID,
@@ -622,6 +623,8 @@ describe('Auth0Client', () => {
             error: 'revoke_error',
             error_description: 'HTTP error 503'
           });
+          // The stalled read is aborted rather than left running.
+          expect(mockFetch.mock.calls[0][1].signal.aborted).toBe(true);
 
           mockFetch.mockResolvedValueOnce(refreshResponse('at_next'));
           await expect(getTokenFor(auth0, AUDIENCE_A)).resolves.toBe('at_next');
@@ -636,8 +639,8 @@ describe('Auth0Client', () => {
           // Stands for reading an expired entry while the revocation ran: the
           // read writes the entry back, revoked token included.
           const cacheManager = (auth0 as any).cacheManager;
-          const keyA = (await cacheManager.getCacheKeys()).find(key =>
-            key.includes(AUDIENCE_A)
+          const keyA = (await cacheManager.getCacheKeys()).find(
+            key => CacheKey.fromKey(key).audience === AUDIENCE_A
           );
           const entryA = await cacheManager.cache.get(keyA);
           await cacheManager.cache.set(keyA, {
@@ -665,13 +668,16 @@ describe('Auth0Client', () => {
           const revoking = auth0.revokeRefreshToken();
           await waitForFetchCalls(1);
 
-          const refreshStarted = jest.spyOn(auth0 as any, '_getTokenUsingRefreshToken');
+          const waiting = jest.spyOn(auth0 as any, '_waitForTokenStoreQueue');
+          const locking = jest.spyOn((auth0 as any).lockManager, 'runWithLock');
+          const reading = jest.spyOn(auth0 as any, '_getTokenUsingRefreshToken');
           const refreshing = getTokenFor(auth0, AUDIENCE_A);
-          await waitFor(() => refreshStarted.mock.calls.length === 1);
-          await sleep(20);
+          await waitFor(() => waiting.mock.calls.length === 1);
 
-          // The refresh is past the lock but waiting for the revocation.
-          expect(refreshTokensSent()).toEqual([]);
+          // The refresh waits for the revocation before it takes the lock, so
+          // it holds no lock and hasn't read a refresh token yet.
+          expect(locking).not.toHaveBeenCalled();
+          expect(reading).not.toHaveBeenCalled();
 
           firstRevoke.release(revokeOk);
           await revoking;
@@ -679,6 +685,7 @@ describe('Auth0Client', () => {
           await expect(refreshing).rejects.toMatchObject({
             error: 'missing_refresh_token'
           });
+          expect(locking).toHaveBeenCalledTimes(1);
           expect(revokedTokens().sort()).toEqual([rtA, rtB].sort());
           expect(refreshTokensSent()).toEqual([]);
         });
@@ -724,12 +731,15 @@ describe('Auth0Client', () => {
           expect(revokedTokens()).toEqual([rtA, rtB]);
         });
 
-        it('does not copy a rotated token into other entries once either token was revoked', async () => {
-          // Stands for a revocation that ran between a refresh saving its entry
-          // and copying the rotated token into the other MRRT entries.
+        // Each stands for a revocation that ran between a refresh saving its
+        // entry and copying the rotated token into the other MRRT entries.
+        it.each([
+          ['the token it was rotated from', 'rt_old'],
+          ['the rotated token itself', 'rt_new']
+        ])('does not copy a rotated token into other entries once %s was revoked', async (_, revoked) => {
           const auth0 = setup({ ...defaultConfig, useMrrt: true });
           await seed(auth0, AUDIENCE_B, 'rt_old');
-          (auth0 as any).revokedRefreshTokens.add('rt_old');
+          (auth0 as any).revokedRefreshTokens.add(revoked);
 
           await (auth0 as any)._propagateRotatedRefreshToken('rt_old', 'rt_new');
 
