@@ -699,7 +699,7 @@ export class Auth0Client {
    * Returns the user information if available (decoded
    * from the `id_token`).
    *
-   * @typeparam TUser The type to return, has to extend {@link User}.
+   * @typeParam TUser The type to return, has to extend {@link User}.
    *
    * @category User Profile
    */
