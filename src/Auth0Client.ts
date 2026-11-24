@@ -1021,7 +1021,8 @@ export class Auth0Client {
   /**
    * Fetches a new access token and returns the response from the /oauth/token endpoint, omitting the refresh token.
    *
-   * @param options
+   * @param options - The options for the call. `detailedResponse` must be `true`.
+   * @returns The response from the /oauth/token endpoint, or `undefined` if no token could be obtained.
    *
    * @category Tokens
    */
@@ -1032,7 +1033,8 @@ export class Auth0Client {
   /**
    * Fetches a new access token and returns it.
    *
-   * @param options
+   * @param options - The options for the call.
+   * @returns The access token, or `undefined` if no token could be obtained.
    *
    * @category Tokens
    */
