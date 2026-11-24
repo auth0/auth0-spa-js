@@ -769,6 +769,82 @@ describe('Auth0Client', () => {
           new URLSearchParams(mockFetch.mock.calls[2][1].body).get('refresh_token')
         ).toBe(`ort-new-${path}`);
       });
+
+      it('does not let a login that was in flight clear a newer login by another user', async () => {
+        const auth0 = await setupLoggedIn();
+
+        let releaseLogin!: (response: unknown) => void;
+        const finishing = startLogin(
+          auth0,
+          new Promise(resolve => (releaseLogin = resolve))
+        );
+        await waitForFetchCalls(1);
+
+        mockSuccessfulRevoke();
+        await auth0.revokeRefreshToken();
+
+        // Another user signs in after the revocation.
+        mockVerify.mockReturnValueOnce({
+          claims: { sub: 'another-user', exp: Date.now() / 1000 + 86400 },
+          user: { sub: 'another-user' }
+        });
+        await loginOnline(auth0, `ort-another-user-${path}`);
+
+        // The first login's response, for the original user, arrives last.
+        releaseLogin(
+          await fetchResponse(true, {
+            id_token: TEST_ID_TOKEN,
+            access_token: 'access-token-stale',
+            refresh_token: `ort-stale-${path}`,
+            expires_in: 86400
+          })
+        );
+        await expect(finishing).rejects.toMatchObject({ error: 'login_required' });
+
+        expect(await auth0.isAuthenticated()).toBe(true);
+        expect(await auth0.getUser()).toEqual({ sub: 'another-user' });
+      });
+
+      it('does not log out a newer login when a silent-authentication exchange in flight is rejected', async () => {
+        // No refresh token, so getTokenSilently() falls back to the iframe.
+        const auth0 = setup({
+          refreshTokenMode: 'online' as const,
+          useRefreshTokens: true,
+          useRefreshTokensFallback: true,
+          useDpop: true,
+          ...cacheConfig
+        } as any);
+        (auth0 as any).worker?.postMessage({ type: 'clear' });
+        jest
+          .spyOn(<any>utils, 'runIframe')
+          .mockResolvedValue({ code: TEST_CODE, state: TEST_STATE });
+
+        let releaseExchange!: (response: unknown) => void;
+        mockFetch.mockReturnValueOnce(
+          new Promise(resolve => (releaseExchange = resolve))
+        );
+        const silentAuth = auth0.getTokenSilently({ cacheMode: 'off' });
+        await waitForFetchCalls(1);
+
+        // Nothing is stored to revoke, but the local session is still cleared.
+        await auth0.revokeRefreshToken();
+        await loginOnline(auth0, `ort-newer-${path}`);
+
+        const loggingOut = jest.spyOn(auth0, 'logout');
+        releaseExchange(
+          await fetchResponse(true, {
+            id_token: TEST_ID_TOKEN,
+            access_token: 'access-token-stale',
+            refresh_token: `ort-stale-${path}`,
+            expires_in: 86400
+          })
+        );
+        await expect(silentAuth).rejects.toMatchObject({ error: 'login_required' });
+
+        // The newer login survives.
+        expect(loggingOut).not.toHaveBeenCalled();
+        expect(await auth0.isAuthenticated()).toBe(true);
+      });
     });
 
     it('treats a failed revoke from a worker that reports no count as nothing revoked', async () => {

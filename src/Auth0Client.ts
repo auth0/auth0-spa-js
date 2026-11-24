@@ -1537,6 +1537,7 @@ export class Auth0Client {
     }
   ): Promise<GetTokenSilentlyResult> {
     const iframeLockKey = buildIframeLockKey(this.options.clientId);
+    const endedOnlineSessionsAtStart = this.endedOnlineSessions;
 
     // Acquire global iframe lock to serialize iframe authorization flows.
     // This is necessary because the SDK does not support multiple simultaneous transactions.
@@ -1637,7 +1638,12 @@ export class Auth0Client {
         }
       );
     } catch (e) {
-      if (e.error === 'login_required') {
+      // If revocation ended the online session during this call, it has already
+      // cleared the local session. Logging out again could clear a newer login.
+      if (
+        e.error === 'login_required' &&
+        !this._onlineSessionEndedSince(endedOnlineSessionsAtStart)
+      ) {
         // When the login_required error is actually an MFA step-up requirement
         // and the interactive error handler is configured, skip logout so the
         // session is preserved for the popup flow.
@@ -1661,12 +1667,14 @@ export class Auth0Client {
       authorizationParams: AuthorizationParams & { scope: string };
     }
   ): Promise<GetTokenSilentlyResult> {
+    const cacheKey = new CacheKey({
+      scope: options.authorizationParams.scope,
+      audience: options.authorizationParams.audience || DEFAULT_AUDIENCE,
+      clientId: this.options.clientId
+    });
+
     let cache = await this.cacheManager.get(
-      new CacheKey({
-        scope: options.authorizationParams.scope,
-        audience: options.authorizationParams.audience || DEFAULT_AUDIENCE,
-        clientId: this.options.clientId
-      }),
+      cacheKey,
       undefined,
       this.options.useMrrt
     );
@@ -1677,8 +1685,25 @@ export class Auth0Client {
       cache?.refresh_token &&
       this.revokedRefreshTokens.has(cache.refresh_token)
     ) {
-      await this.cacheManager.stripRefreshToken(cache.refresh_token);
-      cache = { ...cache, refresh_token: undefined };
+      const revokedToken = cache.refresh_token;
+
+      // Strip it in the token-store queue, so it can't overwrite a save that
+      // commits meanwhile. Then read again: a login may have stored a new token.
+      await this._queueTokenStoreTask(() =>
+        this.cacheManager.stripRefreshToken(revokedToken)
+      );
+      cache = await this.cacheManager.get(
+        cacheKey,
+        undefined,
+        this.options.useMrrt
+      );
+
+      if (
+        cache?.refresh_token &&
+        this.revokedRefreshTokens.has(cache.refresh_token)
+      ) {
+        cache = { ...cache, refresh_token: undefined };
+      }
     }
 
     // If you don't have a refresh token in memory
@@ -1856,6 +1881,14 @@ export class Auth0Client {
     if (this.pendingTokenStoreTasks) {
       await this.tokenStoreQueue;
     }
+  }
+
+  /**
+   * Whether revokeRefreshToken() has ended an online session since
+   * `endedOnlineSessions` was `count`.
+   */
+  private _onlineSessionEndedSince(count: number): boolean {
+    return this.onlineAccess && this.endedOnlineSessions !== count;
   }
 
   private async _saveEntryInCache(
@@ -2071,12 +2104,15 @@ export class Auth0Client {
       );
 
       // When logging in with authorization_code, check if a different user is authenticating
-      // If so, clear the cache to prevent tokens from multiple users coexisting
+      // If so, clear the cache to prevent tokens from multiple users coexisting.
+      // Not if revocation ended the online session meanwhile: this response won't
+      // be saved, and the cache may already hold a newer login.
       if (options.grant_type === 'authorization_code') {
         const existingIdToken = await this._getIdTokenFromCache();
 
         if (existingIdToken?.decodedToken?.claims?.sub &&
-          existingIdToken.decodedToken.claims.sub !== decodedToken.claims.sub) {
+          existingIdToken.decodedToken.claims.sub !== decodedToken.claims.sub &&
+          !this._onlineSessionEndedSince(endedOnlineSessionsAtStart)) {
           // Different user detected - clear cached tokens
           await this.cacheManager.clear(this.options.clientId);
           this.userCache.remove(CACHE_KEY_ID_TOKEN_SUFFIX);
@@ -2122,10 +2158,7 @@ export class Auth0Client {
         // revokeRefreshToken() ended and cleared the online session while this
         // request was in flight. Its tokens may be bound to the DPoP key that
         // was deleted, so don't save them; this applies to logins too.
-        if (
-          this.onlineAccess &&
-          this.endedOnlineSessions !== endedOnlineSessionsAtStart
-        ) {
+        if (this._onlineSessionEndedSince(endedOnlineSessionsAtStart)) {
           throw new GenericError(
             'login_required',
             'The session ended while this request was in flight'

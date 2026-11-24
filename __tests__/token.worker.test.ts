@@ -1474,6 +1474,33 @@ describe('token worker', () => {
       expect(tokensRevoked()).toEqual(['rt1', 'rt2']);
     });
 
+    it('makes a refresh wait for a revocation queued while it was already waiting for another', async () => {
+      await login('audience1', 'rt1', false);
+      await login('audience2', 'rt2', false);
+
+      const firstRevoke = heldResponse();
+      mockFetch.mockReturnValueOnce(firstRevoke.promise);
+      mockFetch.mockImplementation(url =>
+        url.endsWith('/oauth/revoke')
+          ? revokeOk()
+          : Promise.resolve(tokenResponse('rt1_rotated'))
+      );
+
+      const revoking1 = messageHandlerAsync(revokeMsg('audience2', false));
+      const refreshing = messageHandlerAsync(tokenMsg('audience1', 'refresh_token', false));
+      const revoking2 = messageHandlerAsync(revokeMsg('audience1', false));
+      await settle();
+
+      firstRevoke.release({ ok: true, text: () => Promise.resolve('') });
+      expect(await revoking1).toEqual({ ok: true });
+      expect(await revoking2).toEqual({ ok: true });
+
+      // The refresh waited for the second revocation too, so it never sent rt1.
+      expect((await refreshing).json.error).toBe('missing_refresh_token');
+      expect(refreshTokensSent()).toEqual([]);
+      expect(tokensRevoked()).toEqual(['rt2', 'rt1']);
+    });
+
     it('does not store the refresh token of a request that was in flight when the store was cleared', async () => {
       const loginResponse = heldResponse();
       mockFetch.mockReturnValueOnce(loginResponse.promise);

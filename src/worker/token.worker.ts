@@ -15,7 +15,8 @@ let allowedBaseUrl: string | null = null;
 // and never stores a refresh token issued in exchange for a revoked one.
 let revocations: Promise<void> = Promise.resolve();
 let pendingRevocations = 0;
-// Only revocations add to this, one entry per revoked token, so it stays small.
+// Only revocations add to this, one entry per revoked token, and `clear`
+// empties it, so it stays small.
 const revokedTokens = new Set<string>();
 // Counts `clear` messages. A request that was in flight when the store was
 // cleared belongs to a session that has ended, so its token isn't stored.
@@ -111,7 +112,7 @@ const messageHandler = async ({
   const clearsAtStart = clears;
 
   try {
-    if (pendingRevocations) await revocations;
+    while (pendingRevocations) await revocations;
 
     const body = useFormData
       ? formDataToObject(fetchOptions.body as string)
@@ -200,7 +201,7 @@ const messageHandler = async ({
     }
 
     // A revocation may have started while this request was in flight.
-    if (pendingRevocations) await revocations;
+    while (pendingRevocations) await revocations;
 
     if (json.refresh_token && clears !== clearsAtStart) {
       // The store was cleared while this request was in flight (by logout, or
@@ -404,6 +405,9 @@ const messageRouter = (event: MessageEvent<WorkerMessage>) => {
 
   if ('type' in data && data.type === 'clear') {
     refreshTokens = {};
+    // A request in flight now stores nothing (see `clears`), so nothing still
+    // needs these markers.
+    revokedTokens.clear();
     clears++;
     port?.postMessage({ ok: true });
     return;

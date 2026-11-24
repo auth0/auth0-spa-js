@@ -189,7 +189,8 @@ export async function revokeToken(
       : JSON.stringify(params);
 
     const controller = createAbortController();
-    const deadline = Date.now() + resolvedTimeout;
+    // Monotonic, so a change to the system clock can't stretch the deadline.
+    const deadline = performance.now() + resolvedTimeout;
     const response = await fetchWithTimeout(
       fetchUrl,
       { method: 'POST', body, headers },
@@ -203,7 +204,7 @@ export async function revokeToken(
       try {
         // The request's deadline also covers reading the error body, so a
         // stalled body can't hold up the token-store queue.
-        const text = await resolveWithin(response.text(), deadline - Date.now());
+        const text = await resolveWithin(response.text(), deadline - performance.now());
         if (text === undefined) {
           // The body didn't arrive in time: stop reading it.
           controller.abort();

@@ -631,6 +631,33 @@ describe('Auth0Client', () => {
           expect(refreshTokensSent()).toEqual([rtA]);
         });
 
+        it('keeps the wait for a stalled error body within the timeout when the clock moves back', async () => {
+          const { auth0 } = await loginToTwoAudiences({
+            ...defaultConfig,
+            httpTimeoutInSeconds: 0.05
+          });
+
+          let clock: jest.SpyInstance | undefined;
+          const now = Date.now();
+          mockFetch.mockImplementationOnce(() => {
+            // The system clock is set back a minute while the request is in flight.
+            clock = jest.spyOn(Date, 'now').mockReturnValue(now - 60_000);
+            return Promise.resolve({
+              ok: false,
+              status: 503,
+              text: () => new Promise(() => undefined)
+            });
+          });
+
+          try {
+            await expect(
+              auth0.revokeRefreshToken({ audience: AUDIENCE_A })
+            ).rejects.toMatchObject({ error_description: 'HTTP error 503' });
+          } finally {
+            clock?.mockRestore();
+          }
+        });
+
         it('never sends a refresh token it revoked, even if a cache write-back restored it', async () => {
           const { auth0, rtA } = await loginToTwoAudiences(defaultConfig);
           mockFetch.mockResolvedValueOnce(revokeOk);
@@ -655,6 +682,67 @@ describe('Auth0Client', () => {
           expect(
             await cacheManager.getRefreshTokensByAudience(AUDIENCE_A, TEST_CLIENT_ID)
           ).toEqual([]);
+        });
+
+        it('strips a written-back revoked token behind pending saves, then uses a token a login stored', async () => {
+          const { auth0, rtA } = await loginToTwoAudiences(defaultConfig);
+          mockFetch.mockResolvedValueOnce(revokeOk);
+          await auth0.revokeRefreshToken({ audience: AUDIENCE_A });
+
+          // A write-back restored the revoked token, as in the test above.
+          const cacheManager = (auth0 as any).cacheManager;
+          const keyA = (await cacheManager.getCacheKeys()).find(
+            key => CacheKey.fromKey(key).audience === AUDIENCE_A
+          );
+          const entryA = await cacheManager.cache.get(keyA);
+          await cacheManager.cache.set(keyA, {
+            ...entryA,
+            body: { ...entryA.body, refresh_token: rtA }
+          });
+
+          // Hold the refresh's cache read.
+          const read = heldResponse();
+          const get = cacheManager.get.bind(cacheManager);
+          const reading = jest
+            .spyOn(cacheManager, 'get')
+            .mockImplementationOnce(async (...args: unknown[]) => {
+              await read.promise;
+              return get(...args);
+            });
+          const refreshing = getTokenFor(auth0, AUDIENCE_A);
+          await waitFor(() => reading.mock.calls.length === 1);
+
+          // Meanwhile a login for A reaches its save; hold the save so it stays queued.
+          const save = heldResponse();
+          const saveEntry = (auth0 as any)._saveEntryInCache.bind(auth0);
+          const saving = jest
+            .spyOn(auth0 as any, '_saveEntryInCache')
+            .mockImplementationOnce(async entry => {
+              await save.promise;
+              return saveEntry(entry);
+            });
+          const rtLogin = `rt_login_${logins}`;
+          const loggingIn = loginWithRedirect(
+            auth0,
+            { authorizationParams: { audience: AUDIENCE_A } },
+            { token: { response: { refresh_token: rtLogin } } }
+          );
+          await waitFor(() => saving.mock.calls.length === 1);
+          mockFetch.mockResolvedValueOnce(refreshResponse('at_after_login'));
+
+          // The refresh reads the revoked token, and its strip waits behind the save.
+          const queued = jest.spyOn(auth0 as any, '_queueTokenStoreTask');
+          const stripping = jest.spyOn(cacheManager, 'stripRefreshToken');
+          read.release(undefined);
+          await waitFor(() => queued.mock.calls.length === 1);
+          expect(stripping).not.toHaveBeenCalled();
+
+          // Once the login is saved, the refresh reads the entry again and uses its token.
+          save.release(undefined);
+          await loggingIn;
+          await expect(refreshing).resolves.toBe('at_after_login');
+          expect(stripping).toHaveBeenCalledWith(rtA);
+          expect(refreshTokensSent()).toEqual([rtLogin]);
         });
 
         it('with useMrrt, a refresh started during a revocation waits for it and sends no revoked token', async () => {
