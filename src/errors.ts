@@ -94,8 +94,8 @@ export class ConnectError extends GenericError {
 }
 
 /**
- * Thrown when silent auth times out (usually due to a configuration issue) or
- * when network requests to the Auth server timeout.
+ * Thrown when silent auth times out (usually due to a configuration issue).
+ * Timeouts on token endpoint requests throw `NetworkError` instead.
  *
  * @category Errors
  */
@@ -229,6 +229,26 @@ export class UseDpopNonceError extends GenericError {
     super('use_dpop_nonce', 'Server rejected DPoP proof: wrong nonce');
 
     Object.setPrototypeOf(this, UseDpopNonceError.prototype);
+  }
+}
+
+/**
+ * Thrown when a request to the token endpoint can't complete, for example
+ * because the device is offline, a browser extension blocks it, or it times
+ * out. The request is retried before this is thrown. The `message` is kept from
+ * the underlying failure (e.g. the browser's `Failed to fetch`), and the
+ * original error is available as `cause`.
+ *
+ * @category Errors
+ */
+export class NetworkError extends Error {
+  public readonly cause?: unknown;
+
+  constructor(message: string, cause?: unknown) {
+    super(message);
+    this.name = 'NetworkError';
+    this.cause = cause;
+    Object.setPrototypeOf(this, NetworkError.prototype);
   }
 }
 

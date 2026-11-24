@@ -61,6 +61,7 @@ export {
   MissingRefreshTokenError,
   MissingScopesError,
   UseDpopNonceError,
+  NetworkError,
   PasskeyVerificationRequiredError
 } from './errors';
 
