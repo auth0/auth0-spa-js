@@ -211,6 +211,9 @@ interface BaseLoginOptions {
 }
 
 /**
+ * The options used to configure the client, passed to `createAuth0Client`
+ * or to the `Auth0Client` constructor. `domain` and `clientId` are required.
+ *
  * @category Configuration
  */
 export interface Auth0ClientOptions {
@@ -533,6 +536,10 @@ export interface AuthorizeOptions extends AuthorizationParams {
 }
 
 /**
+ * The options for `loginWithRedirect`.
+ *
+ * @typeParam TAppState - The type of the application state persisted through the redirect.
+ *
  * @category Login & Logout
  */
 export interface RedirectLoginOptions<TAppState = any>
@@ -659,6 +666,8 @@ export interface PopupConfigOptions {
 }
 
 /**
+ * The options for `getTokenSilently`.
+ *
  * @category Tokens & Users
  */
 export interface GetTokenSilentlyOptions {
@@ -778,6 +787,9 @@ export interface LogoutUrlOptions {
 }
 
 /**
+ * The options for `logout`. It extends the options that build the logout URL
+ * with options that control the redirect.
+ *
  * @category Login & Logout
  */
 export interface LogoutOptions extends LogoutUrlOptions {
@@ -998,6 +1010,11 @@ export interface ActClaim {
 }
 
 /**
+ * The claims of the ID token, decoded and validated by the SDK.
+ *
+ * `__raw` holds the encoded token. The standard OpenID Connect claims are typed,
+ * and any custom claim is available through the index signature.
+ *
  * @category Tokens & Users
  */
 export interface IdToken {
@@ -1054,6 +1071,12 @@ export interface IdToken {
 }
 
 /**
+ * The user profile, built from the claims of the ID token.
+ *
+ * Returned by `getUser`. The standard OpenID Connect profile claims are typed,
+ * and any custom claim is available through the index signature.
+ * You do not create it yourself.
+ *
  * @category Tokens & Users
  */
 export class User {
