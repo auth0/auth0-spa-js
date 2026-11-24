@@ -20,6 +20,8 @@ interface RevokeTokenOptions {
   timeout?: number;
   auth0Client?: any;
   useFormData?: boolean;
+  /** Worker path only: revoke every RT in the worker store, not just the audience's. */
+  useMrrt?: boolean;
   onRefreshTokenRevoked?: (refreshToken: string) => Promise<void> | void;
 }
 import * as dpopUtils from './dpop/utils';
@@ -117,6 +119,7 @@ export async function revokeToken(
     refreshTokens,
     audience,
     client_id,
+    useMrrt,
     onRefreshTokenRevoked
   }: RevokeTokenOptions,
   worker?: Worker
@@ -150,6 +153,7 @@ export async function revokeToken(
           fetchUrl,
           fetchOptions: { method: 'POST', body, headers },
           useFormData,
+          useMrrt,
           auth: { audience: audience ?? DEFAULT_AUDIENCE }
         },
         worker

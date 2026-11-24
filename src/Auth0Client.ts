@@ -1347,7 +1347,10 @@ export class Auth0Client {
    *   maintaining security isolation
    * - For localStorage: The token is retrieved from cache and revoked
    *
-   * If `useRefreshTokens` is disabled, this method does nothing.
+   * If `useRefreshTokens` is disabled, this method does nothing. If there is no refresh
+   * token to revoke (none stored for the audience or, with `useMrrt`, none stored at all,
+   * for example after a page reload with the in-memory cache), it resolves without
+   * calling `/oauth/revoke`, as revocation is idempotent (RFC 7009).
    *
    * **Online mode:** when `refreshTokenMode` is `'online'`, revoking the ORT via
    * `/oauth/revoke` **also terminates the Auth0 session** and **clears the entire local
@@ -1359,24 +1362,29 @@ export class Auth0Client {
    * Use this when you need to force a sign-out without a redirect (e.g. background
    * revocation). For a redirect-based sign-out, prefer `logout()`.
    *
-   * **Important:** This method revokes the refresh token for a single audience. If your
-   * application requests tokens for multiple audiences, each audience may have its own
-   * refresh token. To fully revoke all refresh tokens, call this method once per audience.
+   * **Important:** Without MRRT, this method revokes the refresh token for a single audience.
+   * If your application requests tokens for multiple audiences, each audience may have its
+   * own refresh token, so call this method once per audience to fully revoke them all.
    * If you want to terminate the user's session with a redirect, use `logout()` instead.
    *
-   * When using Multi-Resource Refresh Tokens (MRRT), a single refresh token may cover
-   * multiple audiences. In that case, revoking it will affect all cache entries that
-   * share the same token.
+   * When `useMrrt` is enabled, any stored refresh token can be exchanged for any audience
+   * in the refresh token policy, so revoking only one audience's token would leave that
+   * audience reachable through the others. In that case this method revokes **every**
+   * refresh token held by the SDK, regardless of `audience`, so the SDK can no longer
+   * refresh tokens for any audience. When `getTokenSilently()` next needs a new access
+   * token, it tries silent authentication if `useRefreshTokensFallback` is enabled and
+   * the Auth0 session is still active; otherwise the user must log in again.
    *
    * @param options - Optional parameters to identify which refresh token to revoke.
-   *   Defaults to the audience configured in `authorizationParams`.
+   *   Defaults to the audience configured in `authorizationParams`. Ignored when
+   *   `useMrrt` is enabled.
    *
    * @example
    * // Revoke the default refresh token
    * await auth0.revokeRefreshToken();
    *
    * @example
-   * // Revoke refresh tokens for each audience individually
+   * // Without MRRT, revoke refresh tokens for each audience individually
    * await auth0.revokeRefreshToken({ audience: 'https://api.example.com' });
    * await auth0.revokeRefreshToken({ audience: 'https://api2.example.com' });
    *
@@ -1395,10 +1403,13 @@ export class Auth0Client {
     // For the non-worker path the main-thread cache holds the refresh tokens.
     // For the worker path the worker holds its own RT store — the cache returns
     // [] and revokeToken sends a single message; the worker loops internally.
-    const refreshTokens = await this.cacheManager.getRefreshTokensByAudience(
-      resolvedAudience,
-      this.options.clientId
-    );
+    // With MRRT every stored RT can mint tokens for any audience, so all are revoked.
+    const refreshTokens = this.options.useMrrt
+      ? await this.cacheManager.getAllRefreshTokens(this.options.clientId)
+      : await this.cacheManager.getRefreshTokensByAudience(
+        resolvedAudience,
+        this.options.clientId
+      );
 
     await revokeToken(
       {
@@ -1409,6 +1420,7 @@ export class Auth0Client {
         client_id: this.options.clientId,
         refreshTokens,
         audience: resolvedAudience,
+        useMrrt: this.options.useMrrt,
         onRefreshTokenRevoked: refreshToken =>
           this.cacheManager.stripRefreshToken(refreshToken)
       },

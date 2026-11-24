@@ -481,8 +481,14 @@ describe('token worker', () => {
     const revokeOpts = ({
       audience = 'my_audience',
       timeout = 5000,
-      useFormData = false
-    }: { audience?: string; timeout?: number; useFormData?: boolean } = {}) => ({
+      useFormData = false,
+      useMrrt = false
+    }: {
+      audience?: string;
+      timeout?: number;
+      useFormData?: boolean;
+      useMrrt?: boolean;
+    } = {}) => ({
       timeout,
       fetchUrl: `${ALLOWED_BASE_URL}/oauth/revoke`,
       fetchOptions: {
@@ -498,6 +504,7 @@ describe('token worker', () => {
         }
       },
       ...(useFormData && { useFormData }),
+      ...(useMrrt && { useMrrt }),
       auth: { audience, scope: 'openid' }
     });
 
@@ -972,6 +979,245 @@ describe('token worker', () => {
       });
 
       expect(response.error).toBeTruthy();
+    });
+
+    describe('with useMrrt', () => {
+      const tokenMsg = (audience: string, grant_type: string) => ({
+        fetchUrl: TOKEN_ENDPOINT,
+        fetchOptions: {
+          method: 'POST',
+          body: JSON.stringify({ grant_type })
+        },
+        auth: { audience, scope: 'openid offline_access' },
+        useMrrt: true
+      });
+
+      const revokedTokens = () =>
+        mockFetch.mock.calls
+          .filter(([url]) => url.endsWith('/oauth/revoke'))
+          .map(([, opts]) => JSON.parse(opts.body).token);
+
+      const revokeOk = () =>
+        Promise.resolve({ ok: true, text: () => Promise.resolve('') });
+
+      it('revokes every stored RT, including the latest_refresh_token slot, so the revoked audience cannot be refreshed', async () => {
+        // Two interactive grants diverge the store:
+        // audience1|* = rt1, audience2|* = rt2, latest_refresh_token = rt2
+        mockFetch.mockReturnValueOnce(
+          Promise.resolve({
+            ok: true,
+            json: () => ({ refresh_token: 'rt1' }),
+            headers: new Headers()
+          })
+        );
+        await messageHandlerAsync(tokenMsg('audience1', 'authorization_code'));
+
+        mockFetch.mockReturnValueOnce(
+          Promise.resolve({
+            ok: true,
+            json: () => ({ refresh_token: 'rt2' }),
+            headers: new Headers()
+          })
+        );
+        await messageHandlerAsync(tokenMsg('audience2', 'authorization_code'));
+
+        mockFetch.mockReturnValueOnce(revokeOk()).mockReturnValueOnce(revokeOk());
+
+        const response = await revokeHandlerAsync(
+          revokeOpts({ audience: 'audience1', useMrrt: true })
+        );
+
+        expect(response).toEqual({ ok: true });
+        expect(revokedTokens().sort()).toEqual(['rt1', 'rt2']);
+
+        // Without the fix the MRRT fallback picked up rt2 here.
+        const refreshAudience1 = await messageHandlerAsync(
+          tokenMsg('audience1', 'refresh_token')
+        );
+        expect(refreshAudience1.json.error).toBe('missing_refresh_token');
+
+        const refreshAudience2 = await messageHandlerAsync(
+          tokenMsg('audience2', 'refresh_token')
+        );
+        expect(refreshAudience2.json.error).toBe('missing_refresh_token');
+
+        // 2 seeds + 2 revokes; neither refresh reached the network
+        expect(mockFetch).toHaveBeenCalledTimes(4);
+      });
+
+      it('revokes an orphaned latest_refresh_token slot no audience entry references', async () => {
+        mockFetch.mockReturnValueOnce(
+          Promise.resolve({
+            ok: true,
+            json: () => ({ refresh_token: 'rt1' }),
+            headers: new Headers()
+          })
+        );
+        await messageHandlerAsync(tokenMsg('audience1', 'authorization_code'));
+
+        // A refresh that returns no RT evicts audience1|* but leaves
+        // latest_refresh_token = rt1 behind.
+        mockFetch.mockReturnValueOnce(
+          Promise.resolve({
+            ok: false,
+            json: () => ({ error: 'mfa_required', mfa_token: 'mfa-token' }),
+            headers: new Headers()
+          })
+        );
+        await messageHandlerAsync(tokenMsg('audience1', 'refresh_token'));
+
+        mockFetch.mockReturnValueOnce(revokeOk());
+
+        const response = await revokeHandlerAsync(
+          revokeOpts({ audience: 'audience1', useMrrt: true })
+        );
+
+        expect(response).toEqual({ ok: true });
+        expect(revokedTokens()).toEqual(['rt1']);
+
+        const refresh = await messageHandlerAsync(
+          tokenMsg('audience1', 'refresh_token')
+        );
+        expect(refresh.json.error).toBe('missing_refresh_token');
+      });
+
+      it('revokes the whole store regardless of the requested audience', async () => {
+        mockFetch.mockReturnValueOnce(
+          Promise.resolve({
+            ok: true,
+            json: () => ({ refresh_token: 'rt1' }),
+            headers: new Headers()
+          })
+        );
+        await messageHandlerAsync(tokenMsg('audience1', 'authorization_code'));
+
+        mockFetch.mockReturnValueOnce(revokeOk());
+
+        await revokeHandlerAsync(
+          revokeOpts({ audience: 'https://no-such-api/', useMrrt: true })
+        );
+
+        expect(revokedTokens()).toEqual(['rt1']);
+      });
+
+      it('returns ok:true without calling fetch when the store is empty', async () => {
+        const response = await revokeHandlerAsync(revokeOpts({ useMrrt: true }));
+
+        expect(response).toEqual({ ok: true });
+        expect(mockFetch).not.toHaveBeenCalled();
+      });
+
+      it('keeps the failed RT and the ones it has not reached yet when a revoke call fails', async () => {
+        for (const [audience, refresh_token] of [
+          ['audience1', 'rt1'],
+          ['audience2', 'rt2'],
+          ['audience3', 'rt3']
+        ]) {
+          mockFetch.mockReturnValueOnce(
+            Promise.resolve({
+              ok: true,
+              json: () => ({ refresh_token }),
+              headers: new Headers()
+            })
+          );
+          await messageHandlerAsync(tokenMsg(audience, 'authorization_code'));
+        }
+
+        mockFetch.mockReturnValueOnce(revokeOk()).mockReturnValueOnce(
+          Promise.resolve({
+            ok: false,
+            status: 503,
+            text: () => Promise.resolve('')
+          })
+        );
+
+        const response = await revokeHandlerAsync(
+          revokeOpts({ audience: 'audience1', useMrrt: true })
+        );
+
+        expect(response.error).toBe('HTTP error 503');
+
+        // The loop stopped at the failure: one RT revoked, one failed, one never sent.
+        expect(revokedTokens()).toHaveLength(2);
+        const [revoked, failed] = revokedTokens();
+        const [unattempted] = ['rt1', 'rt2', 'rt3'].filter(
+          rt => rt !== revoked && rt !== failed
+        );
+
+        // A retry sends only what is still stored: the failed RT and the unattempted one.
+        mockFetch.mockReturnValueOnce(revokeOk()).mockReturnValueOnce(revokeOk());
+
+        const retry = await revokeHandlerAsync(
+          revokeOpts({ audience: 'audience1', useMrrt: true })
+        );
+
+        expect(retry).toEqual({ ok: true });
+        expect(revokedTokens().slice(2).sort()).toEqual(
+          [failed, unattempted].sort()
+        );
+      });
+    });
+
+    it('without useMrrt, only revokes the requested audience and leaves others usable', async () => {
+      mockFetch.mockReturnValueOnce(
+        Promise.resolve({
+          ok: true,
+          json: () => ({ refresh_token: 'rt1' }),
+          headers: new Headers()
+        })
+      );
+      await messageHandlerAsync({
+        fetchUrl: TOKEN_ENDPOINT,
+        fetchOptions: {
+          method: 'POST',
+          body: JSON.stringify({ grant_type: 'authorization_code' })
+        },
+        auth: { audience: 'audience1', scope: 'openid' }
+      });
+
+      mockFetch.mockReturnValueOnce(
+        Promise.resolve({
+          ok: true,
+          json: () => ({ refresh_token: 'rt2' }),
+          headers: new Headers()
+        })
+      );
+      await messageHandlerAsync({
+        fetchUrl: TOKEN_ENDPOINT,
+        fetchOptions: {
+          method: 'POST',
+          body: JSON.stringify({ grant_type: 'authorization_code' })
+        },
+        auth: { audience: 'audience2', scope: 'openid' }
+      });
+
+      mockFetch.mockReturnValueOnce(
+        Promise.resolve({ ok: true, text: () => Promise.resolve('') })
+      );
+
+      await revokeHandlerAsync(revokeOpts({ audience: 'audience1' }));
+
+      expect(JSON.parse(mockFetch.mock.calls[2][1].body).token).toBe('rt1');
+
+      mockFetch.mockReturnValueOnce(
+        Promise.resolve({
+          ok: true,
+          json: () => ({ refresh_token: 'rt2b' }),
+          headers: new Headers()
+        })
+      );
+      await messageHandlerAsync({
+        fetchUrl: TOKEN_ENDPOINT,
+        fetchOptions: {
+          method: 'POST',
+          body: JSON.stringify({ grant_type: 'refresh_token' })
+        },
+        auth: { audience: 'audience2', scope: 'openid' }
+      });
+
+      expect(JSON.parse(mockFetch.mock.calls[3][1].body).refresh_token).toBe(
+        'rt2'
+      );
     });
   });
 

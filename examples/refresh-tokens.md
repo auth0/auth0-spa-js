@@ -47,6 +47,8 @@ await createAuth0Client({
 
 Using this setting will make the SDK able to reuse the refresh token not only for APIs requested at login, but also for additional APIs allowed in the MRRT policy.
 
+Because of this, `revokeRefreshToken()` revokes every stored refresh token when MRRT is enabled. See [Revoking Refresh Tokens with MRRT](#revoking-refresh-tokens-with-mrrt).
+
 **Note**: This configuration option requires the refresh token policies of your application [to be configured](https://auth0.com/docs/secure/tokens/refresh-tokens/multi-resource-refresh-token/configure-and-implement-multi-resource-refresh-token).
 
 #### Configuring Scopes Per Audience
@@ -88,7 +90,7 @@ await createAuth0Client({
 
 The `revokeRefreshToken()` method explicitly revokes a refresh token via the `/oauth/revoke` endpoint ([RFC 7009](https://www.rfc-editor.org/rfc/rfc7009)). This invalidates the refresh token so it can no longer be used to obtain new access tokens.
 
-This method only has an effect when `useRefreshTokens` is `true`. If refresh tokens are disabled it returns immediately without doing anything.
+This method only has an effect when `useRefreshTokens` is `true`. If refresh tokens are disabled it returns immediately without doing anything. If there is no refresh token to revoke, it also resolves without calling `/oauth/revoke`. That happens when none is stored for the audience or, with [MRRT](#revoking-refresh-tokens-with-mrrt), when none is stored at all (for example, after a page reload with the default in-memory cache). Revocation is idempotent ([RFC 7009 §2.2](https://www.rfc-editor.org/rfc/rfc7009#section-2.2)). A resolved promise therefore means the SDK no longer holds a refresh token for that audience (with MRRT, for any audience). It doesn't mean a revocation request was sent.
 
 > [!WARNING]
 > In [online access](online-access.md#online-access-online-refresh-tokens) mode (`refreshTokenMode: RefreshTokenMode.Online`), `revokeRefreshToken()` behaves differently from offline mode:
@@ -104,7 +106,7 @@ await auth0.revokeRefreshToken();
 ```
 
 **How it affects the cache:**
-- **Offline mode:** only the refresh token entry is cleared — the access token remains in cache until it expires. Once it expires, `getTokenSilently()` will attempt silent auth (via iframe, if `useRefreshTokensFallback` is enabled and the Auth0 session is still active) before requiring a new interactive login.
+- **Offline mode:** only the refresh token entry is cleared — the access token remains in cache until it expires. When `getTokenSilently()` next needs a new access token, it will attempt silent auth (via iframe, if `useRefreshTokensFallback` is enabled and the Auth0 session is still active) before requiring a new interactive login.
 - **Online mode:** the entire local cache is cleared (access token, ID token, user profile). `isAuthenticated()` returns `false` immediately. The user must log in again.
 
 **Difference from `logout()`:**
@@ -115,7 +117,7 @@ In both modes, if you want a **redirect-based** sign-out, use `logout()` instead
 
 #### Error Handling
 
-`revokeRefreshToken()` throws a `GenericError` if the `/oauth/revoke` endpoint returns an error (for example, if the token has already been revoked or is invalid). Wrap the call in a try/catch:
+`revokeRefreshToken()` throws a `GenericError` if the `/oauth/revoke` endpoint returns an error response (for example, HTTP 503). Wrap the call in a try/catch:
 
 ```js
 import { GenericError } from '@auth0/auth0-spa-js';
@@ -131,7 +133,7 @@ try {
 
 #### Revoking Refresh Tokens for Multiple Audiences
 
-If your application requests tokens for more than one audience, each audience may have its own refresh token. Call `revokeRefreshToken()` once per audience to revoke them all:
+If your application requests tokens for more than one audience, each audience may have its own refresh token. Without MRRT, call `revokeRefreshToken()` once per audience to revoke them all:
 
 ```js
 await auth0.revokeRefreshToken({ audience: 'https://api.example.com' });
@@ -148,10 +150,11 @@ If one revocation fails, the error is thrown immediately. Any tokens already rev
 
 #### Revoking Refresh Tokens with MRRT
 
-When using [Multi-Resource Refresh Tokens (MRRT)](#using-multi-resource-refresh-tokens), a single refresh token may cover multiple audiences. Revoking it for any one of those audiences invalidates the shared token and clears all cache entries that reference it:
+When using [Multi-Resource Refresh Tokens (MRRT)](#using-multi-resource-refresh-tokens), any refresh token the SDK holds can be exchanged for any audience in your refresh token policy. Revoking only one audience's token would leave that audience reachable through the others. So with `useMrrt: true`, `revokeRefreshToken()` revokes **every** refresh token held by the SDK, and the `audience` option is ignored:
 
 ```js
-// With MRRT, this single call revokes the shared token and
-// cleans up all cache entries that reference it
+// With MRRT, this single call revokes all stored refresh tokens.
 await auth0.revokeRefreshToken();
 ```
+
+Afterwards the SDK can't refresh tokens for any audience. When `getTokenSilently()` next needs a new access token, it tries silent authentication if `useRefreshTokensFallback` is enabled and the Auth0 session is still active. Otherwise the user must log in again.

@@ -190,6 +190,10 @@ const { accessToken } = await auth0.anonymous.getTokenSilently({
 
 See [Anonymous Sessions](https://github.com/auth0/auth0-spa-js/blob/main/examples/anonymous-sessions.md) for the full guide including explicit session creation with metadata, multiple audiences, and logout.
 
+### Revoking Refresh Tokens
+
+With `useRefreshTokens: true`, call `revokeRefreshToken()` to revoke the refresh tokens the SDK holds for an audience, without redirecting the user. With `useMrrt: true`, it revokes every refresh token the SDK holds and ignores `audience`, because any of them can be exchanged for any audience in your refresh token policy. See [Revoking Refresh Tokens](https://github.com/auth0/auth0-spa-js/blob/main/examples/refresh-tokens.md#revoking-refresh-tokens) for details, including how it behaves in online access mode.
+
 ### More Examples
 
 For comprehensive examples covering various scenarios including logging out, calling APIs, refresh tokens, online access, organizations, passkeys, MFA, DPoP, and more, see the [EXAMPLES.md](https://github.com/auth0/auth0-spa-js/blob/main/EXAMPLES.md) document.

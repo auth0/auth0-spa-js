@@ -1311,6 +1311,59 @@ cacheFactories.forEach(cacheFactory => {
       });
     });
 
+    describe('getAllRefreshTokens()', () => {
+      beforeEach(async () => {
+        await manager.clear();
+      });
+
+      it('returns empty array when nothing is cached', async () => {
+        expect(await manager.getAllRefreshTokens(TEST_CLIENT_ID)).toEqual([]);
+      });
+
+      it('returns every distinct refresh token across audiences', async () => {
+        await manager.set({ ...defaultData, refresh_token: TEST_REFRESH_TOKEN });
+        await manager.set({
+          ...defaultData,
+          scope: 'openid profile email offline_access',
+          refresh_token: TEST_REFRESH_TOKEN
+        });
+        await manager.set({
+          ...defaultData,
+          audience: 'https://other-api.example.com',
+          refresh_token: 'rt_other_audience'
+        });
+
+        const result = await manager.getAllRefreshTokens(TEST_CLIENT_ID);
+
+        expect(result).toHaveLength(2);
+        expect(result).toContain(TEST_REFRESH_TOKEN);
+        expect(result).toContain('rt_other_audience');
+      });
+
+      it('does not return tokens from a different client', async () => {
+        await manager.set({ ...defaultData, refresh_token: TEST_REFRESH_TOKEN });
+        await manager.set({
+          ...defaultData,
+          client_id: 'other_client',
+          refresh_token: 'rt_other_client'
+        });
+
+        expect(await manager.getAllRefreshTokens(TEST_CLIENT_ID)).toEqual([
+          TEST_REFRESH_TOKEN
+        ]);
+      });
+
+      it('ignores the id token entry and entries without a refresh token', async () => {
+        await manager.set({ ...defaultData }); // no refresh_token
+        await manager.setIdToken(TEST_CLIENT_ID, 'id_token', {
+          claims: { __raw: 'id_token' },
+          user: {}
+        });
+
+        expect(await manager.getAllRefreshTokens(TEST_CLIENT_ID)).toEqual([]);
+      });
+    });
+
     describe('getIdToken', () => {
       beforeEach(async () => {
         await manager.clear();

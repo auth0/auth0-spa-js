@@ -29,6 +29,8 @@ export type WorkerRefreshTokenMessage = WorkerTokenMessage & {
 
 export type WorkerRevokeTokenMessage = Omit<WorkerTokenMessage, 'auth'> & {
   type: 'revoke';
+  /** When true the worker revokes every stored RT, not just the audience's. */
+  useMrrt?: boolean;
   auth: {
     audience: string;
   };
