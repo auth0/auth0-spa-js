@@ -586,6 +586,10 @@ export enum ResponseType {
 }
 
 /**
+ * The result returned by `handleRedirectCallback` after a login started with `loginWithRedirect`.
+ *
+ * @typeParam TAppState - The type of the application state persisted through the redirect.
+ *
  * @category Login & Logout
  */
 export interface RedirectLoginResult<TAppState = any> {
@@ -876,7 +880,10 @@ export interface RedirectConnectAccountOptions<TAppState = any> {
  *
  * @template TAppState - The type of application state persisted through the transaction.
  * @example
- * const result = await auth0.connectAccountWithRedirect(options);
+ * await auth0.connectAccountWithRedirect(options);
+ *
+ * // Later, on the callback page
+ * const result = await auth0.handleRedirectCallback();
  * console.log(result.appState); // Access persisted app state
  * console.log(result.connection);   // The connection of the account you connected to.
  * console.log(result.response_type === 'connect_code');   // The response type will be 'connect_code'

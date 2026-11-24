@@ -785,6 +785,16 @@ export class Auth0Client {
    * responses from Auth0. If the response is successful, results
    * will be valid according to their expiration times.
    *
+   * The returned type depends on the flow that started the redirect: a login
+   * started with `loginWithRedirect` returns a {@link RedirectLoginResult},
+   * and an account connection started with `connectAccountWithRedirect`
+   * returns a {@link ConnectAccountRedirectResult}. Use `response_type` to
+   * tell them apart.
+   *
+   * @typeParam TAppState - The type of the application state persisted through the redirect.
+   * @param url - The callback URL, including the query string. Defaults to `window.location.href`.
+   * @returns The result of the login or the account connection, including any `appState` passed to the original redirect call.
+   *
    * @category Authentication
    */
   public async handleRedirectCallback<TAppState = any>(
