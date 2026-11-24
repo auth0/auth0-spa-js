@@ -7,6 +7,7 @@ import { expect } from '@jest/globals';
 // @ts-ignore
 
 import { loginWithPopupFn, loginWithRedirectFn, setupFn } from './helpers';
+import { setWindowLocation } from '../helpers';
 
 import { TEST_CODE_CHALLENGE } from '../constants';
 
@@ -34,16 +35,18 @@ describe('Auth0Client', () => {
   beforeEach(() => {
     // https://www.benmvp.com/blog/mocking-window-location-methods-jest-jsdom/
     delete window.location;
-    window.location = Object.defineProperties(
-      {},
-      {
-        ...Object.getOwnPropertyDescriptors(oldWindowLocation),
-        assign: {
-          configurable: true,
-          value: jest.fn()
+    setWindowLocation(
+      Object.defineProperties(
+        {},
+        {
+          ...Object.getOwnPropertyDescriptors(oldWindowLocation),
+          assign: {
+            configurable: true,
+            value: jest.fn()
+          }
         }
-      }
-    ) as Location;
+      ) as Location
+    );
     // --
 
     mockWindow.open = jest.fn();
@@ -69,7 +72,7 @@ describe('Auth0Client', () => {
   afterEach(() => {
     mockFetch.mockReset();
     jest.clearAllMocks();
-    window.location = oldWindowLocation;
+    setWindowLocation(oldWindowLocation);
   });
 
   describe('isAuthenticated', () => {

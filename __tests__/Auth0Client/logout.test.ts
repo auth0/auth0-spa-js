@@ -3,7 +3,10 @@ import { verify } from '../../src/jwt';
 import { MessageChannel } from 'worker_threads';
 import * as utils from '../../src/utils';
 import * as scope from '../../src/scope';
-import { expectToHaveBeenCalledWithAuth0ClientParam } from '../helpers';
+import {
+  expectToHaveBeenCalledWithAuth0ClientParam,
+  setWindowLocation
+} from '../helpers';
 import { TEST_AUTH0_CLIENT_QUERY_STRING } from '../constants';
 import { expect } from '@jest/globals';
 
@@ -47,16 +50,18 @@ describe('Auth0Client', () => {
   beforeEach(() => {
     // https://www.benmvp.com/blog/mocking-window-location-methods-jest-jsdom/
     delete window.location;
-    window.location = Object.defineProperties(
-      {},
-      {
-        ...Object.getOwnPropertyDescriptors(oldWindowLocation),
-        assign: {
-          configurable: true,
-          value: jest.fn()
+    setWindowLocation(
+      Object.defineProperties(
+        {},
+        {
+          ...Object.getOwnPropertyDescriptors(oldWindowLocation),
+          assign: {
+            configurable: true,
+            value: jest.fn()
+          }
         }
-      }
-    ) as Location;
+      ) as Location
+    );
     // --
 
     mockWindow.open = jest.fn();
@@ -78,7 +83,7 @@ describe('Auth0Client', () => {
   afterEach(() => {
     mockFetch.mockReset();
     jest.clearAllMocks();
-    window.location = oldWindowLocation;
+    setWindowLocation(oldWindowLocation);
   });
 
   describe('logout()', () => {

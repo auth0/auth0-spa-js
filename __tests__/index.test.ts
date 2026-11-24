@@ -26,6 +26,7 @@ import {
 } from './constants';
 import { CookieStorage } from '../src/storage';
 import { DEFAULT_AUDIENCE } from '../src/constants';
+import { setWindowLocation } from './helpers';
 
 jest.mock('../src/worker/token.worker');
 
@@ -117,16 +118,18 @@ describe('Auth0', () => {
   beforeEach(() => {
     // https://www.benmvp.com/blog/mocking-window-location-methods-jest-jsdom/
     delete window.location;
-    window.location = Object.defineProperties(
-      {},
-      {
-        ...Object.getOwnPropertyDescriptors(oldWindowLocation),
-        assign: {
-          configurable: true,
-          value: jest.fn()
+    setWindowLocation(
+      Object.defineProperties(
+        {},
+        {
+          ...Object.getOwnPropertyDescriptors(oldWindowLocation),
+          assign: {
+            configurable: true,
+            value: jest.fn()
+          }
         }
-      }
-    ) as Location;
+      ) as Location
+    );
     // --
 
     window.Worker = jest.fn().mockImplementation(() => ({ postMessage: jest.fn() }));
@@ -143,7 +146,7 @@ describe('Auth0', () => {
   afterEach(() => {
     jest.clearAllMocks();
     getUniqueScopesSpy.mockRestore();
-    window.location = oldWindowLocation;
+    setWindowLocation(oldWindowLocation);
 
     const storage = require('../src/storage').CookieStorageWithLegacySameSite;
     storage.get.mockClear();

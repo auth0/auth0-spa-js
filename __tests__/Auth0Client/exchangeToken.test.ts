@@ -8,6 +8,7 @@ import { MfaRequiredError } from '../../src/errors';
 // @ts-ignore
 
 import { fetchResponse, setupFn, setupMessageEventLister } from './helpers';
+import { setWindowLocation } from '../helpers';
 
 import {
   TEST_ACCESS_TOKEN,
@@ -60,7 +61,7 @@ describe('Auth0Client', () => {
   afterEach(() => {
     mockFetch.mockReset();
     jest.clearAllMocks();
-    window.location = oldWindowLocation;
+    setWindowLocation(oldWindowLocation);
   });
 
   describe('exchangeToken()', () => {
