@@ -699,7 +699,7 @@ export class Auth0Client {
    * Returns the user information if available (decoded
    * from the `id_token`).
    *
-   * @typeparam TUser The type to return, has to extend {@link User}.
+   * @typeParam TUser The type to return, has to extend {@link User}.
    *
    * @category User Profile
    */
@@ -784,6 +784,16 @@ export class Auth0Client {
    * call `handleRedirectCallback` to handle success and error
    * responses from Auth0. If the response is successful, results
    * will be valid according to their expiration times.
+   *
+   * The returned type depends on the flow that started the redirect: a login
+   * started with `loginWithRedirect` returns a {@link RedirectLoginResult},
+   * and an account connection started with `connectAccountWithRedirect`
+   * returns a {@link ConnectAccountRedirectResult}. Use `response_type` to
+   * tell them apart.
+   *
+   * @typeParam TAppState - The type of the application state persisted through the redirect.
+   * @param url - The callback URL, including the query string. Defaults to `window.location.href`.
+   * @returns The result of the login or the account connection, including any `appState` passed to the original redirect call.
    *
    * @category Authentication
    */
@@ -1011,7 +1021,8 @@ export class Auth0Client {
   /**
    * Fetches a new access token and returns the response from the /oauth/token endpoint, omitting the refresh token.
    *
-   * @param options
+   * @param options - The options for the call. `detailedResponse` must be `true`.
+   * @returns The response from the /oauth/token endpoint, or `undefined` if no token could be obtained.
    *
    * @category Tokens
    */
@@ -1022,7 +1033,8 @@ export class Auth0Client {
   /**
    * Fetches a new access token and returns it.
    *
-   * @param options
+   * @param options - The options for the call.
+   * @returns The access token, or `undefined` if no token could be obtained.
    *
    * @category Tokens
    */

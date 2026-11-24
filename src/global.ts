@@ -189,6 +189,13 @@ export interface AuthorizationParams {
 }
 
 /**
+ * The authorization parameters that can be set once on the client through
+ * {@link Auth0ClientOptions.authorizationParams}.
+ *
+ * It accepts every parameter of {@link AuthorizationParams}, such as `audience`,
+ * `redirect_uri`, `organization` and `connection`. The only difference is `scope`,
+ * which can also be an object that maps an audience to its scope.
+ *
  * @category Configuration
  */
 export interface ClientAuthorizationParams extends Omit<AuthorizationParams, 'scope'> {
@@ -204,6 +211,9 @@ interface BaseLoginOptions {
 }
 
 /**
+ * The options used to configure the client, passed to `createAuth0Client`
+ * or to the `Auth0Client` constructor. `domain` and `clientId` are required.
+ *
  * @category Configuration
  */
 export interface Auth0ClientOptions {
@@ -526,6 +536,10 @@ export interface AuthorizeOptions extends AuthorizationParams {
 }
 
 /**
+ * The options for `loginWithRedirect`.
+ *
+ * @typeParam TAppState - The type of the application state persisted through the redirect.
+ *
  * @category Login & Logout
  */
 export interface RedirectLoginOptions<TAppState = any>
@@ -586,6 +600,10 @@ export enum ResponseType {
 }
 
 /**
+ * The result returned by `handleRedirectCallback` after a login started with `loginWithRedirect`.
+ *
+ * @typeParam TAppState - The type of the application state persisted through the redirect.
+ *
  * @category Login & Logout
  */
 export interface RedirectLoginResult<TAppState = any> {
@@ -648,6 +666,8 @@ export interface PopupConfigOptions {
 }
 
 /**
+ * The options for `getTokenSilently`.
+ *
  * @category Tokens & Users
  */
 export interface GetTokenSilentlyOptions {
@@ -767,6 +787,9 @@ export interface LogoutUrlOptions {
 }
 
 /**
+ * The options for `logout`. It extends the options that build the logout URL
+ * with options that control the redirect.
+ *
  * @category Login & Logout
  */
 export interface LogoutOptions extends LogoutUrlOptions {
@@ -876,7 +899,10 @@ export interface RedirectConnectAccountOptions<TAppState = any> {
  *
  * @template TAppState - The type of application state persisted through the transaction.
  * @example
- * const result = await auth0.connectAccountWithRedirect(options);
+ * await auth0.connectAccountWithRedirect(options);
+ *
+ * // Later, on the callback page
+ * const result = await auth0.handleRedirectCallback();
  * console.log(result.appState); // Access persisted app state
  * console.log(result.connection);   // The connection of the account you connected to.
  * console.log(result.response_type === 'connect_code');   // The response type will be 'connect_code'
@@ -984,6 +1010,11 @@ export interface ActClaim {
 }
 
 /**
+ * The claims of the ID token, decoded and validated by the SDK.
+ *
+ * `__raw` holds the encoded token. The standard OpenID Connect claims are typed,
+ * and any custom claim is available through the index signature.
+ *
  * @category Tokens & Users
  */
 export interface IdToken {
@@ -1040,6 +1071,12 @@ export interface IdToken {
 }
 
 /**
+ * The user profile, built from the claims of the ID token.
+ *
+ * Returned by `getUser`. The standard OpenID Connect profile claims are typed,
+ * and any custom claim is available through the index signature.
+ * You do not create it yourself.
+ *
  * @category Tokens & Users
  */
 export class User {

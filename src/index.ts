@@ -14,6 +14,9 @@ export * from './global';
  * compile time. Dynamic values, casts, and plain JS are covered by the runtime check in
  * the `Auth0Client` constructor.
  *
+ * @param options - The client options. `refreshTokenMode: 'online'` requires `useRefreshTokens: true` and `useDpop: true`.
+ * @returns An instance of Auth0Client
+ *
  * @category Getting Started
  */
 export async function createAuth0Client(
@@ -27,12 +30,12 @@ export async function createAuth0Client(
   options: Auth0ClientOptions & { refreshTokenMode?: 'offline' }
 ): Promise<Auth0Client>;
 /**
- * Asynchronously creates the Auth0Client instance and calls `checkSession`.
+ * Asynchronously creates the Auth0Client instance and calls `checkSession`, using the default `offline` refresh token mode.
  *
  * **Note:** There are caveats to using this in a private browser tab, which may not silently authenticate
  * a user on page refresh. Please see [the checkSession docs](https://auth0.github.io/auth0-spa-js/classes/Auth0Client.html#checksession) for more info.
  *
- * @param options The client options
+ * @param options - The client options
  * @returns An instance of Auth0Client
  *
  * @category Getting Started
