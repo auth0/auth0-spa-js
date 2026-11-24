@@ -189,6 +189,13 @@ export interface AuthorizationParams {
 }
 
 /**
+ * The authorization parameters that can be set once on the client through
+ * {@link Auth0ClientOptions.authorizationParams}.
+ *
+ * It accepts every parameter of {@link AuthorizationParams}, such as `audience`,
+ * `redirect_uri`, `organization` and `connection`. The only difference is `scope`,
+ * which can also be an object that maps an audience to its scope.
+ *
  * @category Configuration
  */
 export interface ClientAuthorizationParams extends Omit<AuthorizationParams, 'scope'> {
