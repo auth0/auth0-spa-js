@@ -48,6 +48,11 @@ export const USER_BLOCKED_ERROR_MESSAGE = 'user is blocked';
 
 /**
  * @ignore
+ */
+export const FETCH_TIMEOUT_MESSAGE = "Timeout when executing 'fetch'";
+
+/**
+ * @ignore
  * The error_description returned by the /authorize endpoint when MFA is required
  * but prompt=none prevents interaction (iframe silent auth flow).
  */

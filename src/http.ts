@@ -1,6 +1,7 @@
 import {
   DEFAULT_FETCH_TIMEOUT_MS,
-  DEFAULT_SILENT_TOKEN_RETRY_COUNT
+  DEFAULT_SILENT_TOKEN_RETRY_COUNT,
+  FETCH_TIMEOUT_MESSAGE
 } from './constants';
 
 import { fromEntries } from './utils';
@@ -11,6 +12,7 @@ import {
   MfaRequiredError,
   MissingRefreshTokenError,
   NetworkError,
+  TimeoutError,
   UseDpopNonceError
 } from './errors';
 import { Dpop } from './dpop/dpop';
@@ -18,7 +20,12 @@ import { DPOP_NONCE_HEADER } from './dpop/utils';
 
 export const createAbortController = () => new AbortController();
 
-const toNetworkError = (e: Error): never => {
+// The worker replies with FETCH_TIMEOUT_MESSAGE when a fetch times out.
+const toFetchError = (e: Error): never => {
+  if (e.message === FETCH_TIMEOUT_MESSAGE) {
+    throw new TimeoutError();
+  }
+
   throw new NetworkError(e.message, e);
 };
 
@@ -42,8 +49,10 @@ export const fetchWithTimeout = (
     fetch(fetchUrl, fetchOptions),
     new Promise<never>((_, reject) => {
       timeoutId = setTimeout(() => {
+        // Reject before aborting, otherwise the race settles with the fetch's
+        // AbortError instead of the timeout.
+        reject(new Error(FETCH_TIMEOUT_MESSAGE));
         controller.abort();
-        reject(new Error("Timeout when executing 'fetch'"));
       }, timeout);
     })
   ]).finally(() => {
@@ -60,7 +69,7 @@ const fetchWithoutWorker = async (
     fetchUrl,
     fetchOptions,
     timeout
-  ).catch(toNetworkError);
+  ).catch(toFetchError);
   return {
     ok: response.ok,
     json: await response.json(),
@@ -103,7 +112,7 @@ const fetchWithWorker = async (
       preserveRefreshToken
     },
     worker
-  ).catch(toNetworkError);
+  ).catch(toFetchError);
 };
 
 export const switchFetch = async (

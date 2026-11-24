@@ -1,3 +1,4 @@
+import { FETCH_TIMEOUT_MESSAGE } from '../constants';
 import { MissingRefreshTokenError } from '../errors';
 import { FetchResponse } from '../global';
 import { createQueryParams, fromEntries } from '../utils';
@@ -166,7 +167,7 @@ const messageHandler = async ({
       if (abortController) abortController.abort();
 
       port.postMessage({
-        error: "Timeout when executing 'fetch'"
+        error: FETCH_TIMEOUT_MESSAGE
       });
 
       return;
@@ -266,7 +267,7 @@ const revokeMessageHandler = async ({
 
       if (!response) {
         if (abortController) abortController.abort();
-        port.postMessage({ error: "Timeout when executing 'fetch'" });
+        port.postMessage({ error: FETCH_TIMEOUT_MESSAGE });
         return;
       }
 

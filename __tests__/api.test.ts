@@ -5,7 +5,7 @@ import {
 
 import version from '../src/version';
 import { oauthToken, revokeToken } from '../src/api';
-import { GenericError, NetworkError } from '../src/errors';
+import { GenericError, NetworkError, TimeoutError } from '../src/errors';
 import * as http from '../src/http';
 import * as dpopUtils from '../src/dpop/utils';
 
@@ -297,21 +297,51 @@ describe('oauthToken', () => {
 
     mockFetch.mockReturnValue(createPromise());
 
-    try {
-      await oauthToken({
-        baseUrl: 'https://test.com',
-        client_id: 'client_idIn',
-        code: 'codeIn',
-        code_verifier: 'code_verifierIn',
-        timeout: 100,
-        grant_type: 'authorization_code',
-        auth0Client: DEFAULT_AUTH0_CLIENT
-      });
-    } catch (e) {
-      expect(e.message).toBe("Timeout when executing 'fetch'");
-      expect(mockFetch).toHaveBeenCalledTimes(3);
-      expect(abortController.abort).toHaveBeenCalledTimes(3);
-    }
+    const result = oauthToken({
+      baseUrl: 'https://test.com',
+      client_id: 'client_idIn',
+      code: 'codeIn',
+      code_verifier: 'code_verifierIn',
+      timeout: 100,
+      grant_type: 'authorization_code',
+      auth0Client: DEFAULT_AUTH0_CLIENT
+    });
+
+    await expect(result).rejects.toBeInstanceOf(TimeoutError);
+    await expect(result).rejects.not.toBeInstanceOf(NetworkError);
+    expect(mockFetch).toHaveBeenCalledTimes(3);
+    expect(abortController.abort).toHaveBeenCalledTimes(3);
+  });
+
+  it('throws a TimeoutError when the aborted fetch rejects', async () => {
+    // Real browsers reject a fetch with an AbortError when it's aborted, so
+    // the timeout must still win the race.
+    require('../src/http').createAbortController = jest.fn(
+      () => new AbortController()
+    );
+    mockFetch.mockImplementation(
+      (_, { signal }) =>
+        new Promise((_, reject) =>
+          signal.addEventListener('abort', () =>
+            reject(
+              new DOMException('signal is aborted without reason', 'AbortError')
+            )
+          )
+        )
+    );
+
+    const result = oauthToken({
+      baseUrl: 'https://test.com',
+      client_id: 'client_idIn',
+      code: 'codeIn',
+      code_verifier: 'code_verifierIn',
+      timeout: 100,
+      grant_type: 'authorization_code',
+      auth0Client: DEFAULT_AUTH0_CLIENT
+    });
+
+    await expect(result).rejects.toBeInstanceOf(TimeoutError);
+    expect(mockFetch).toHaveBeenCalledTimes(3);
   });
 
   it('retries the request in the event of a timeout', async () => {

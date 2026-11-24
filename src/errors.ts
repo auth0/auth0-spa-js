@@ -94,8 +94,8 @@ export class ConnectError extends GenericError {
 }
 
 /**
- * Thrown when silent auth times out (usually due to a configuration issue).
- * Timeouts on token endpoint requests throw `NetworkError` instead.
+ * Thrown when silent auth times out (usually due to a configuration issue) or
+ * when network requests to the Auth server timeout.
  *
  * @category Errors
  */
@@ -233,11 +233,11 @@ export class UseDpopNonceError extends GenericError {
 }
 
 /**
- * Thrown when a request to the token endpoint can't complete, for example
- * because the device is offline, a browser extension blocks it, or it times
- * out. The request is retried before this is thrown. The `message` is kept from
- * the underlying failure (e.g. the browser's `Failed to fetch`), and the
- * original error is available as `cause`.
+ * Thrown when a request to the token endpoint fails, for example because the
+ * device is offline or a browser extension blocks it. The request is retried
+ * before this is thrown. The `message` is kept from the underlying failure
+ * (e.g. the browser's `Failed to fetch`), and the original error is available
+ * as `cause`. If the request times out, `TimeoutError` is thrown instead.
  *
  * @category Errors
  */
