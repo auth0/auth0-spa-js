@@ -99,7 +99,7 @@ Revocation also covers refreshes running at the same time. Refreshes the client 
 > - The ORT **is** revoked at the authorization server via `/oauth/revoke`.
 > - Because the ORT is session-bound, the Auth0 **session is terminated server-side** as part of revocation.
 > - The entire local cache is cleared immediately — the access token, ID token, and user profile are wiped. `isAuthenticated()` returns `false` and `getUser()` returns `undefined` right away.
-> - If a request fails after an ORT has been revoked, the SDK still clears the local cache and then throws the revoke error. It throws that error even if clearing fails, so don't treat the error as proof that the cache is empty. If a request fails before any ORT is revoked, nothing is cleared, so you can retry.
+> - If a request fails after an ORT has been revoked, the SDK still attempts to clear the local cache and then throws the revoke error. It throws that error even if clearing fails, so don't treat the error as proof that the cache is empty. If a request fails before any ORT is revoked, nothing is cleared, so you can retry.
 > - A request can also fail after Auth0 has processed it, for example if the response is lost. The session may then have ended even though nothing was cleared. Retrying before the user signs in again, or calling `logout()`, clears it.
 > - Token requests that start while revocation runs, logins included, wait for it to finish. One already in flight isn't saved: if Auth0 returns tokens for it, the call fails with `login_required`.
 >

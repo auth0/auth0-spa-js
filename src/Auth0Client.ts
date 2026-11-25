@@ -1384,9 +1384,9 @@ export class Auth0Client {
    * `undefined` right away, without waiting for the access token to expire.
    * Use this when you need to force a sign-out without a redirect (e.g. background
    * revocation). For a redirect-based sign-out, prefer `logout()`. If a request fails
-   * after an ORT has been revoked, the SDK still clears the local cache and then throws
-   * the revoke error; it throws that error even if clearing fails, so the error alone
-   * doesn't mean the cache is empty. If a request fails before any ORT is revoked, nothing
+   * after an ORT has been revoked, the SDK still attempts to clear the local cache and
+   * then throws the revoke error; it throws that error even if clearing fails, so the error
+   * alone doesn't mean the cache is empty. If a request fails before any ORT is revoked, nothing
    * is cleared and the call can be retried. Retrying before the user signs in again, or
    * calling `logout()`, also covers a request that Auth0 processed but whose response was
    * lost. Token requests that start while revocation runs, logins included, wait for it
