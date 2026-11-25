@@ -25,9 +25,10 @@ export const createAbortController = () => new AbortController();
 export const fetchWithTimeout = (
   fetchUrl: string,
   fetchOptions: FetchOptions,
-  timeout: number
+  timeout: number,
+  // Passing your own lets you abort the request later, while reading its body.
+  controller = createAbortController()
 ): Promise<Response> => {
-  const controller = createAbortController();
   fetchOptions.signal = controller.signal;
 
   let timeoutId: NodeJS.Timeout;

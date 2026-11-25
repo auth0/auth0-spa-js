@@ -92,11 +92,16 @@ The `revokeRefreshToken()` method explicitly revokes a refresh token via the `/o
 
 This method only has an effect when `useRefreshTokens` is `true`. If refresh tokens are disabled it returns immediately without doing anything. If there is no refresh token to revoke, it also resolves without calling `/oauth/revoke`. That happens when none is stored for the audience or, with [MRRT](#revoking-refresh-tokens-with-mrrt), when none is stored at all (for example, after a page reload with the default in-memory cache). Revocation is idempotent ([RFC 7009 §2.2](https://www.rfc-editor.org/rfc/rfc7009#section-2.2)). A resolved promise therefore means the SDK no longer holds a refresh token for that audience (with MRRT, for any audience). It doesn't mean a revocation request was sent.
 
+Revocation also covers refreshes running at the same time. Refreshes the client starts while revocation runs wait for it to finish, and a refresh already in flight can't store the refresh token it gets back if the token it used was revoked. This doesn't extend to other tabs sharing a `localstorage` cache.
+
 > [!WARNING]
 > In [online access](online-access.md#online-access-online-refresh-tokens) mode (`refreshTokenMode: RefreshTokenMode.Online`), `revokeRefreshToken()` behaves differently from offline mode:
 > - The ORT **is** revoked at the authorization server via `/oauth/revoke`.
 > - Because the ORT is session-bound, the Auth0 **session is terminated server-side** as part of revocation.
 > - The entire local cache is cleared immediately — the access token, ID token, and user profile are wiped. `isAuthenticated()` returns `false` and `getUser()` returns `undefined` right away.
+> - If a request fails after an ORT has been revoked, the SDK still attempts to clear the local cache and then throws the revoke error. It throws that error even if clearing fails, so don't treat the error as proof that the cache is empty. If a request fails before any ORT is revoked, nothing is cleared, so you can retry.
+> - A request can also fail after Auth0 has processed it, for example if the response is lost. The session may then have ended even though nothing was cleared. Retrying before the user signs in again, or calling `logout()`, clears it.
+> - Token requests that start while revocation runs, logins included, wait for it to finish. One already in flight isn't saved: if Auth0 returns tokens for it, the call fails with `login_required`.
 >
 > After calling `revokeRefreshToken()` in online mode, redirect the user to login — `getTokenSilently()` will fail because the session is gone. For a redirect-based sign-out, `logout()` achieves the same result.
 

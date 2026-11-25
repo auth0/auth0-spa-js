@@ -210,6 +210,19 @@ export class Auth0Client {
   private worker?: Worker;
   private readonly authJsClient: Auth0AuthJsClient;
 
+  // Revocations and the steps that store a token response run one at a time
+  // (see _queueTokenStoreTask), so a revocation can't interleave with storing a
+  // refresh token.
+  private tokenStoreQueue: Promise<void> = Promise.resolve();
+  private pendingTokenStoreTasks = 0;
+  // Refresh tokens this client has revoked. A token issued in exchange for one
+  // of them by a request that raced the revocation is never stored. Only
+  // revocations add to it, one entry per revoked token, so it stays small.
+  private readonly revokedRefreshTokens = new Set<string>();
+  // How many online sessions revokeRefreshToken() has ended. A token request
+  // that was in flight when its session ended is not saved.
+  private endedOnlineSessions = 0;
+
   private readonly defaultOptions: Partial<Auth0ClientOptions> = {
     authorizationParams: {
       scope: DEFAULT_SCOPE
@@ -1128,6 +1141,12 @@ export class Auth0Client {
       return;
     }
 
+    // A refresh doesn't read a refresh token while a revocation runs. Wait
+    // before taking the lock, so other callers aren't kept waiting on it.
+    if (this.options.useRefreshTokens) {
+      await this._waitForTokenStoreQueue();
+    }
+
     // Generate lock key based on client ID and audience for better isolation
     const lockKey = buildGetTokenSilentlyLockKey(
       this.options.clientId,
@@ -1352,6 +1371,10 @@ export class Auth0Client {
    * for example after a page reload with the in-memory cache), it resolves without
    * calling `/oauth/revoke`, as revocation is idempotent (RFC 7009).
    *
+   * Refreshes this client starts while revocation runs wait for it to finish, and one
+   * already in flight can't store a refresh token issued in exchange for a revoked one.
+   * This doesn't extend to other tabs sharing a `localstorage` cache.
+   *
    * **Online mode:** when `refreshTokenMode` is `'online'`, revoking the ORT via
    * `/oauth/revoke` **also terminates the Auth0 session** and **clears the entire local
    * cache** (access token, ID token, user profile). Because Online Refresh Tokens are
@@ -1360,7 +1383,15 @@ export class Auth0Client {
    * immediately so that `isAuthenticated()` returns `false` and `getUser()` returns
    * `undefined` right away, without waiting for the access token to expire.
    * Use this when you need to force a sign-out without a redirect (e.g. background
-   * revocation). For a redirect-based sign-out, prefer `logout()`.
+   * revocation). For a redirect-based sign-out, prefer `logout()`. If a request fails
+   * after an ORT has been revoked, the SDK still attempts to clear the local cache and
+   * then throws the revoke error; it throws that error even if clearing fails, so the error
+   * alone doesn't mean the cache is empty. If a request fails before any ORT is revoked, nothing
+   * is cleared and the call can be retried. Retrying before the user signs in again, or
+   * calling `logout()`, also covers a request that Auth0 processed but whose response was
+   * lost. Token requests that start while revocation runs, logins included, wait for it
+   * to finish. One already in flight isn't saved: if Auth0 returns tokens for it, the
+   * call fails with `login_required`.
    *
    * **Important:** Without MRRT, this method revokes the refresh token for a single audience.
    * If your application requests tokens for multiple audiences, each audience may have its
@@ -1395,6 +1426,12 @@ export class Auth0Client {
       return;
     }
 
+    return this._queueTokenStoreTask(() => this._revokeRefreshToken(options));
+  }
+
+  private async _revokeRefreshToken(
+    options: RevokeRefreshTokenOptions
+  ): Promise<void> {
     const audience =
       options.audience || this.options.authorizationParams.audience;
 
@@ -1411,27 +1448,47 @@ export class Auth0Client {
         this.options.clientId
       );
 
-    await revokeToken(
-      {
-        baseUrl: this.domainUrl,
-        timeout: this.httpTimeoutMs,
-        auth0Client: this.options.auth0Client,
-        useFormData: this.options.useFormData,
-        client_id: this.options.clientId,
-        refreshTokens,
-        audience: resolvedAudience,
-        useMrrt: this.options.useMrrt,
-        onRefreshTokenRevoked: refreshToken =>
-          this.cacheManager.stripRefreshToken(refreshToken)
-      },
-      this.worker
-    );
+    let revokedCount = 0;
+
+    try {
+      await revokeToken(
+        {
+          baseUrl: this.domainUrl,
+          timeout: this.httpTimeoutMs,
+          auth0Client: this.options.auth0Client,
+          useFormData: this.options.useFormData,
+          client_id: this.options.clientId,
+          refreshTokens,
+          audience: resolvedAudience,
+          useMrrt: this.options.useMrrt,
+          onRefreshTokenRevoked: refreshToken => {
+            revokedCount++;
+            this.revokedRefreshTokens.add(refreshToken);
+            return this.cacheManager.stripRefreshToken(refreshToken);
+          },
+          onRevokeFailed: count => {
+            revokedCount = count;
+          }
+        },
+        this.worker
+      );
+    } catch (e) {
+      // A revoked ORT has already ended the Auth0 session, so clear the local
+      // session even though a later request failed. Keep the revoke error if
+      // the cleanup fails too.
+      if (this.onlineAccess && revokedCount > 0) {
+        this.endedOnlineSessions++;
+        await this._clearLocalSession().catch(() => undefined);
+      }
+      throw e;
+    }
 
     // In online mode the ORT is session-bound: revoking it terminates the Auth0 session
     // server-side. Clear the entire local cache so that isAuthenticated() returns false
     // and getUser() returns undefined immediately — the stale access token and ID token
     // must not remain visible to the application after the session is gone.
     if (this.onlineAccess) {
+      this.endedOnlineSessions++;
       await this._clearLocalSession();
     }
   }
@@ -1480,6 +1537,7 @@ export class Auth0Client {
     }
   ): Promise<GetTokenSilentlyResult> {
     const iframeLockKey = buildIframeLockKey(this.options.clientId);
+    const endedOnlineSessionsAtStart = this.endedOnlineSessions;
 
     // Acquire global iframe lock to serialize iframe authorization flows.
     // This is necessary because the SDK does not support multiple simultaneous transactions.
@@ -1580,7 +1638,12 @@ export class Auth0Client {
         }
       );
     } catch (e) {
-      if (e.error === 'login_required') {
+      // If revocation ended the online session during this call, it has already
+      // cleared the local session. Logging out again could clear a newer login.
+      if (
+        e.error === 'login_required' &&
+        !this._onlineSessionEndedSince(endedOnlineSessionsAtStart)
+      ) {
         // When the login_required error is actually an MFA step-up requirement
         // and the interactive error handler is configured, skip logout so the
         // session is preserved for the popup flow.
@@ -1604,15 +1667,44 @@ export class Auth0Client {
       authorizationParams: AuthorizationParams & { scope: string };
     }
   ): Promise<GetTokenSilentlyResult> {
-    const cache = await this.cacheManager.get(
-      new CacheKey({
-        scope: options.authorizationParams.scope,
-        audience: options.authorizationParams.audience || DEFAULT_AUDIENCE,
-        clientId: this.options.clientId
-      }),
+    const cacheKey = new CacheKey({
+      scope: options.authorizationParams.scope,
+      audience: options.authorizationParams.audience || DEFAULT_AUDIENCE,
+      clientId: this.options.clientId
+    });
+
+    let cache = await this.cacheManager.get(
+      cacheKey,
       undefined,
       this.options.useMrrt
     );
+
+    // Reading an expired entry writes it back, which can restore a token that a
+    // revocation removed during the read. Never send a token this client revoked.
+    if (
+      cache?.refresh_token &&
+      this.revokedRefreshTokens.has(cache.refresh_token)
+    ) {
+      const revokedToken = cache.refresh_token;
+
+      // Strip it in the token-store queue, so it can't overwrite a save that
+      // commits meanwhile. Then read again: a login may have stored a new token.
+      await this._queueTokenStoreTask(() =>
+        this.cacheManager.stripRefreshToken(revokedToken)
+      );
+      cache = await this.cacheManager.get(
+        cacheKey,
+        undefined,
+        this.options.useMrrt
+      );
+
+      if (
+        cache?.refresh_token &&
+        this.revokedRefreshTokens.has(cache.refresh_token)
+      ) {
+        cache = { ...cache, refresh_token: undefined };
+      }
+    }
 
     // If you don't have a refresh token in memory
     // and you don't have a refresh token in web worker memory
@@ -1747,12 +1839,56 @@ export class Auth0Client {
       return;
     }
 
-    await this.cacheManager.updateEntry(
-      previousRefreshToken,
-      newRefreshToken,
-      this.options.clientId,
-      this.options.useMrrt
-    );
+    await this._queueTokenStoreTask(async () => {
+      // A revocation that ran meanwhile revoked one of these tokens.
+      if (
+        this.revokedRefreshTokens.has(previousRefreshToken) ||
+        this.revokedRefreshTokens.has(newRefreshToken)
+      ) {
+        return;
+      }
+
+      await this.cacheManager.updateEntry(
+        previousRefreshToken,
+        newRefreshToken,
+        this.options.clientId,
+        this.options.useMrrt
+      );
+    });
+  }
+
+  /**
+   * Runs `task` after every revocation and token-store write queued before it,
+   * or straight away when nothing is queued. A task must not queue another
+   * task and wait for it: that would deadlock.
+   */
+  private _queueTokenStoreTask<T>(task: () => Promise<T>): Promise<T> {
+    const run = async () => task();
+    const result = this.pendingTokenStoreTasks
+      ? this.tokenStoreQueue.then(run)
+      : run();
+    const settle = () => {
+      this.pendingTokenStoreTasks--;
+    };
+
+    this.pendingTokenStoreTasks++;
+    this.tokenStoreQueue = result.then(settle, settle);
+    return result;
+  }
+
+  /** Resolves once the revocations and token-store writes queued so far finish. */
+  private async _waitForTokenStoreQueue(): Promise<void> {
+    if (this.pendingTokenStoreTasks) {
+      await this.tokenStoreQueue;
+    }
+  }
+
+  /**
+   * Whether revokeRefreshToken() has ended an online session since
+   * `endedOnlineSessions` was `count`.
+   */
+  private _onlineSessionEndedSince(count: number): boolean {
+    return this.onlineAccess && this.endedOnlineSessions !== count;
   }
 
   private async _saveEntryInCache(
@@ -1926,8 +2062,23 @@ export class Auth0Client {
       | WebauthnRequestTokenOptions,
     additionalParameters?: RequestTokenAdditionalParameters
   ) {
-    const { nonceIn, organization, scopesToRequest, max_age } =
-      additionalParameters || {};
+    const {
+      nonceIn,
+      organization,
+      scopesToRequest,
+      max_age,
+      sourceRefreshToken
+    } = additionalParameters || {};
+
+    // In online mode, revocation ends the session and then clears it, the DPoP
+    // key and the worker's store included. A request waits for that, so it
+    // doesn't use the deleted key or have its refresh token cleared. (A refresh
+    // has already waited, before taking its lock.)
+    if (this.onlineAccess && options.grant_type !== 'refresh_token') {
+      await this._waitForTokenStoreQueue();
+    }
+
+    const endedOnlineSessionsAtStart = this.endedOnlineSessions;
     try {
       const authResult = await oauthToken(
         {
@@ -1953,12 +2104,15 @@ export class Auth0Client {
       );
 
       // When logging in with authorization_code, check if a different user is authenticating
-      // If so, clear the cache to prevent tokens from multiple users coexisting
+      // If so, clear the cache to prevent tokens from multiple users coexisting.
+      // Not if revocation ended the online session meanwhile: this response won't
+      // be saved, and the cache may already hold a newer login.
       if (options.grant_type === 'authorization_code') {
         const existingIdToken = await this._getIdTokenFromCache();
 
         if (existingIdToken?.decodedToken?.claims?.sub &&
-          existingIdToken.decodedToken.claims.sub !== decodedToken.claims.sub) {
+          existingIdToken.decodedToken.claims.sub !== decodedToken.claims.sub &&
+          !this._onlineSessionEndedSince(endedOnlineSessionsAtStart)) {
           // Different user detected - clear cached tokens
           await this.cacheManager.clear(this.options.clientId);
           this.userCache.remove(CACHE_KEY_ID_TOKEN_SUFFIX);
@@ -1995,13 +2149,39 @@ export class Auth0Client {
         ))?.refresh_token;
       }
 
-      await this._saveEntryInCache({
-        ...authResult,
-        decodedToken,
-        scope: options.scope,
-        audience: options.audience || DEFAULT_AUDIENCE,
-        ...(authResult.scope ? { oauthTokenScope: authResult.scope } : null),
-        client_id: this.options.clientId
+      // The refresh token this request exchanged, if any.
+      const usedRefreshToken =
+        (options as RefreshTokenRequestTokenOptions).refresh_token ??
+        sourceRefreshToken;
+
+      await this._queueTokenStoreTask(async () => {
+        // revokeRefreshToken() ended and cleared the online session while this
+        // request was in flight. Its tokens may be bound to the DPoP key that
+        // was deleted, so don't save them; this applies to logins too.
+        if (this._onlineSessionEndedSince(endedOnlineSessionsAtStart)) {
+          throw new GenericError(
+            'login_required',
+            'The session ended while this request was in flight'
+          );
+        }
+
+        // Don't store a refresh token issued in exchange for one that was
+        // revoked while this request was in flight.
+        if (
+          usedRefreshToken &&
+          this.revokedRefreshTokens.has(usedRefreshToken)
+        ) {
+          delete authResult.refresh_token;
+        }
+
+        await this._saveEntryInCache({
+          ...authResult,
+          decodedToken,
+          scope: options.scope,
+          audience: options.audience || DEFAULT_AUDIENCE,
+          ...(authResult.scope ? { oauthTokenScope: authResult.scope } : null),
+          client_id: this.options.clientId
+        });
       });
 
       this.cookieStorage.save(this.isAuthenticatedCookieName, true, {
@@ -2457,7 +2637,7 @@ export class Auth0Client {
 
     const result = await this._requestToken(
       { ...restOptions, mfa_token: mfaToken } as any,
-      additionalParameters
+      { ...additionalParameters, sourceRefreshToken: previous?.refresh_token }
     );
 
     await this._propagateRotatedRefreshToken(
@@ -2509,4 +2689,9 @@ interface RequestTokenAdditionalParameters {
   organization?: string;
   scopesToRequest?: string;
   max_age?: string | number;
+  /**
+   * The refresh token rotated by a grant that doesn't send one, such as the
+   * MFA completion grant.
+   */
+  sourceRefreshToken?: string;
 }

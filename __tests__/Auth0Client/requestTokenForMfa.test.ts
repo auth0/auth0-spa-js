@@ -7,6 +7,7 @@ import { MfaRequiredError } from '../../src/errors';
 import { fetchResponse, loginWithRedirectFn, setupFn } from './helpers';
 
 import {
+  TEST_CLIENT_ID,
   TEST_CODE_CHALLENGE,
   TEST_ID_TOKEN,
   TEST_REFRESH_TOKEN
@@ -247,6 +248,68 @@ describe('Auth0Client', () => {
       expect(mockFetch).toHaveBeenCalledTimes(3);
       expect(refreshTokenSentInCall(0)).toBe(TEST_REFRESH_TOKEN);
       expect(refreshTokenSentInCall(2)).toBe('rt2');
+    });
+
+    it('does not store the token the MFA grant rotates from a refresh token revoked meanwhile', async () => {
+      const auth0 = setup({
+        useRefreshTokens: true,
+        useMrrt: true,
+        cacheLocation: 'localstorage'
+      });
+
+      await loginWithRedirect(auth0, {
+        authorizationParams: { audience: API_AUDIENCE, scope: 'openid profile' }
+      });
+
+      mockFetch.mockReset();
+
+      mockMfaRequired();
+      await expect(
+        auth0.getTokenSilently({
+          authorizationParams: {
+            audience: MY_ACCOUNT_AUDIENCE,
+            scope: 'openid create:me:authentication_methods'
+          },
+          cacheMode: 'off'
+        })
+      ).rejects.toBeInstanceOf(MfaRequiredError);
+
+      // Hold the completion grant's response while its refresh token is revoked.
+      let releaseCompletion!: () => void;
+      const completionHeld = new Promise<void>(
+        resolve => (releaseCompletion = resolve)
+      );
+      mockFetch.mockImplementationOnce((_url: string, init: { body: string }) =>
+        completionHeld.then(() =>
+          fetchResponse(true, {
+            id_token: TEST_ID_TOKEN,
+            access_token: 'access-token-after-mfa',
+            refresh_token: 'rt-after-mfa',
+            token_type: 'Bearer',
+            expires_in: 86400,
+            scope: requestBody(init.body).scope
+          })
+        )
+      );
+
+      const verifying = auth0.mfa.verify({ mfaToken: MFA_TOKEN, otp: '123456' });
+      for (let i = 0; i < 200 && mockFetch.mock.calls.length < 2; i++) {
+        await new Promise(resolve => setTimeout(resolve, 10));
+      }
+      expect(mockFetch).toHaveBeenCalledTimes(2);
+
+      mockFetch.mockResolvedValueOnce({ ok: true, text: () => Promise.resolve('') });
+      await auth0.revokeRefreshToken();
+      expect(requestBody(mockFetch.mock.calls[2][1].body).token).toBe(
+        TEST_REFRESH_TOKEN
+      );
+
+      releaseCompletion();
+      await verifying;
+
+      expect(
+        await auth0['cacheManager'].getAllRefreshTokens(TEST_CLIENT_ID)
+      ).toEqual([]);
     });
   });
 });
