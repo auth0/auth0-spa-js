@@ -37,7 +37,7 @@ jobs:
         uses: ./.github/actions/get-version
 
       - name: Run RL Scanner
-        uses: auth0/devsecops-tooling/.github/actions/rl-scan@main
+        uses: auth0/devsecops-tooling/.github/actions/rl-scan@e29f26478db18ff0bcbe4bc447a8fbd54fbeec9e # main on 2026-11-27, TODO: use a release instead
         with:
           artifact-name: 'auth0-spa-js'
           artifact-path: '${{ github.workspace }}/auth0-spa-js.tgz'
