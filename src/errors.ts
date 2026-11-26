@@ -233,6 +233,26 @@ export class UseDpopNonceError extends GenericError {
 }
 
 /**
+ * Thrown when a request to the token endpoint fails, for example because the
+ * device is offline or a browser extension blocks it. The request is retried
+ * before this is thrown. The `message` is kept from the underlying failure
+ * (e.g. the browser's `Failed to fetch`), and the original error is available
+ * as `cause`. If the request times out, `TimeoutError` is thrown instead.
+ *
+ * @category Errors
+ */
+export class NetworkError extends Error {
+  public readonly cause?: unknown;
+
+  constructor(message: string, cause?: unknown) {
+    super(message);
+    this.name = 'NetworkError';
+    this.cause = cause;
+    Object.setPrototypeOf(this, NetworkError.prototype);
+  }
+}
+
+/**
  * Returns an empty string when value is falsy, or when it's value is included in the exclude argument.
  * @param value The value to check
  * @param exclude An array of values that should result in an empty string.

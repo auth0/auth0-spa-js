@@ -50,7 +50,12 @@ import {
   INVALID_REFRESH_TOKEN_ERROR_MESSAGE,
   USER_BLOCKED_ERROR_MESSAGE
 } from '../../src/constants';
-import { GenericError, MfaRequiredError } from '../../src/errors';
+import {
+  GenericError,
+  MfaRequiredError,
+  NetworkError,
+  TimeoutError
+} from '../../src/errors';
 import {
   buildGetTokenSilentlyLockKey,
   buildIframeLockKey
@@ -1155,9 +1160,10 @@ describe('Auth0Client', () => {
       mockFetch.mockReset();
       mockFetch.mockImplementation(() => Promise.reject(new Error('my_error')));
 
-      await expect(
-        auth0.getTokenSilently({ cacheMode: 'off' })
-      ).rejects.toThrow('my_error');
+      const result = auth0.getTokenSilently({ cacheMode: 'off' });
+
+      await expect(result).rejects.toThrow('my_error');
+      await expect(result).rejects.toBeInstanceOf(NetworkError);
 
       expect(mockFetch).toBeCalledTimes(3);
     });
@@ -1179,9 +1185,10 @@ describe('Auth0Client', () => {
         })
       );
 
-      await expect(
-        auth0.getTokenSilently({ cacheMode: 'off' })
-      ).rejects.toThrow('my_error_description');
+      const result = auth0.getTokenSilently({ cacheMode: 'off' });
+
+      await expect(result).rejects.toThrow('my_error_description');
+      await expect(result).rejects.not.toBeInstanceOf(NetworkError);
 
       expect(mockFetch).toBeCalledTimes(1);
     });
@@ -1216,9 +1223,10 @@ describe('Auth0Client', () => {
       );
       jest.spyOn(AbortController.prototype, 'abort');
 
-      await expect(
-        auth0.getTokenSilently({ cacheMode: 'off' })
-      ).rejects.toThrow(`Timeout when executing 'fetch'`);
+      const result = auth0.getTokenSilently({ cacheMode: 'off' });
+
+      await expect(result).rejects.toBeInstanceOf(TimeoutError);
+      await expect(result).rejects.not.toBeInstanceOf(NetworkError);
 
       // Called thrice for the refresh token grant in token worker
       expect(AbortController.prototype.abort).toBeCalledTimes(3);
@@ -1327,9 +1335,9 @@ describe('Auth0Client', () => {
       await loginWithRedirect(auth0);
       mockFetch.mockReset();
       mockFetch.mockImplementation(() => Promise.reject(new Error('my_error')));
-      await expect(
-        auth0.getTokenSilently({ cacheMode: 'off' })
-      ).rejects.toThrow('my_error');
+      const result = auth0.getTokenSilently({ cacheMode: 'off' });
+      await expect(result).rejects.toThrow('my_error');
+      await expect(result).rejects.toBeInstanceOf(NetworkError);
       expect(mockFetch).toBeCalledTimes(3);
     });
 
@@ -1347,9 +1355,9 @@ describe('Auth0Client', () => {
           error_description: 'my_error_description'
         })
       );
-      await expect(
-        auth0.getTokenSilently({ cacheMode: 'off' })
-      ).rejects.toThrow('my_error_description');
+      const result = auth0.getTokenSilently({ cacheMode: 'off' });
+      await expect(result).rejects.toThrow('my_error_description');
+      await expect(result).rejects.not.toBeInstanceOf(NetworkError);
       expect(mockFetch).toBeCalledTimes(1);
     });
 
@@ -1380,9 +1388,9 @@ describe('Auth0Client', () => {
           )
       );
       jest.spyOn(AbortController.prototype, 'abort');
-      await expect(
-        auth0.getTokenSilently({ cacheMode: 'off' })
-      ).rejects.toThrow(`Timeout when executing 'fetch'`);
+      const result = auth0.getTokenSilently({ cacheMode: 'off' });
+      await expect(result).rejects.toBeInstanceOf(TimeoutError);
+      await expect(result).rejects.not.toBeInstanceOf(NetworkError);
       // Called thrice for the refresh token grant in http.switchFetch
       expect(AbortController.prototype.abort).toBeCalledTimes(3);
       expect(mockFetch).toBeCalledTimes(3);
